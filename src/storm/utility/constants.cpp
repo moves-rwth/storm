@@ -121,11 +121,6 @@ namespace storm {
         }
 
         template<>
-        double convertNumber(std::string const& value){
-            return carl::toDouble(carl::parse<storm::RationalNumber>(value));
-        }
-
-        template<>
         storm::storage::sparse::state_type convertNumber(long long const& number){
             return static_cast<storm::storage::sparse::state_type>(number);
         }
@@ -395,7 +390,11 @@ namespace storm {
         
         template<>
         ClnRationalNumber convertNumber(std::string const& number) {
-            return carl::parse<ClnRationalNumber>(number);
+            ClnRationalNumber result;
+            if (carl::try_parse<ClnRationalNumber>(number, result)) {
+                return result;
+            }
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unable to parse '" << number << "' as a rational number.");
         }
         
         template<>
@@ -588,7 +587,11 @@ namespace storm {
         
         template<>
         GmpRationalNumber convertNumber(std::string const& number) {
-            return carl::parse<GmpRationalNumber>(number);
+            GmpRationalNumber result;
+            if (carl::try_parse<GmpRationalNumber>(number, result)) {
+                return result;
+            }
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Unable to parse '" << number << "' as a rational number.");
         }
         
         template<>
@@ -862,7 +865,11 @@ namespace storm {
         }
 
 #endif
-        
+      
+        template<>
+        double convertNumber(std::string const& value){
+            return convertNumber<double>(convertNumber<storm::RationalNumber>(value));
+        }
         
         // Explicit instantiations.
         

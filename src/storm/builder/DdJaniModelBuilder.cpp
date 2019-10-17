@@ -156,14 +156,14 @@ namespace storm {
         template <storm::dd::DdType Type>
         class ParameterCreator<Type, storm::RationalFunction> {
         public:
-            ParameterCreator() : cache(std::make_shared<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>>()) {
+            ParameterCreator() : cache(std::make_shared<storm::RawPolynomialCache>()) {
                 // Intentionally left empty.
             }
             
             void create(storm::jani::Model const& model, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& rowExpressionAdapter) {
                 for (auto const& constant : model.getConstants()) {
                     if (!constant.isDefined()) {
-                        carl::Variable carlVariable = carl::freshRealVariable(constant.getExpressionVariable().getName());
+                        storm::RationalFunctionVariable carlVariable = carl::freshRealVariable(constant.getExpressionVariable().getName());
                         parameters.insert(carlVariable);
                         auto rf = convertVariableToPolynomial(carlVariable);
                         rowExpressionAdapter.setValue(constant.getExpressionVariable(), rf);
@@ -172,12 +172,12 @@ namespace storm {
             }
             
             template<typename RationalFunctionType = storm::RationalFunction, typename TP = typename RationalFunctionType::PolyType, carl::EnableIf<carl::needs_cache<TP>> = carl::dummy>
-            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable) {
+            RationalFunctionType convertVariableToPolynomial(storm::RationalFunctionVariable const& variable) {
                 return RationalFunctionType(typename RationalFunctionType::PolyType(typename RationalFunctionType::PolyType::PolyType(variable), cache));
             }
             
             template<typename RationalFunctionType = storm::RationalFunction, typename TP = typename RationalFunctionType::PolyType, carl::DisableIf<carl::needs_cache<TP>> = carl::dummy>
-            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable) {
+            RationalFunctionType convertVariableToPolynomial(storm::RationalFunctionVariable const& variable) {
                 return RationalFunctionType(variable);
             }
             
@@ -187,10 +187,10 @@ namespace storm {
             
         private:
             // A mapping from our variables to carl's.
-            std::unordered_map<storm::expressions::Variable, carl::Variable> variableToVariableMap;
+            std::unordered_map<storm::expressions::Variable, storm::RationalFunctionVariable> variableToVariableMap;
             
             // The cache that is used in case the underlying type needs a cache.
-            std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache;
+            std::shared_ptr<storm::RawPolynomialCache> cache;
             
             // All created parameters.
             std::set<storm::RationalFunctionVariable> parameters;
@@ -1325,9 +1325,10 @@ namespace storm {
                         
                         STORM_LOG_WARN_COND(!destinationDds.back().transitions.isZero(), "Destination does not have any effect.");
                     }
-                    
+                                        
                     // Now that we have built the destinations, we always take the full guard.
-                    guard = rangedGuard;
+                    storm::dd::Bdd<Type> sourceLocationBdd = this->variables.manager->getEncoding(this->variables.automatonToLocationDdVariableMap.at(automaton.getName()).first, edge.getSourceLocationIndex());
+                    guard = sourceLocationBdd && rangedGuard;
                     
                     // Start by gathering all variables that were written in at least one destination.
                     std::set<storm::expressions::Variable> globalVariablesInSomeDestination;
@@ -1361,8 +1362,8 @@ namespace storm {
                     }
                     
                     // Add the source location and the guard.
-                    storm::dd::Add<Type, ValueType> sourceLocationAndGuard = this->variables.manager->getEncoding(this->variables.automatonToLocationDdVariableMap.at(automaton.getName()).first, edge.getSourceLocationIndex()).template toAdd<ValueType>() * guard.template toAdd<ValueType>();
-                    transitions *= sourceLocationAndGuard;
+                    storm::dd::Add<Type, ValueType> guardAdd = guard.template toAdd<ValueType>();
+                    transitions *= guardAdd;
                     
                     // If we multiply the ranges of global variables, make sure everything stays within its bounds.
                     if (!globalVariablesInSomeDestination.empty()) {
@@ -1381,8 +1382,8 @@ namespace storm {
                     // Finally treat the transient assignments.
                     std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> transientEdgeAssignments;
                     if (!this->transientVariables.empty()) {
-                        performTransientAssignments(edge.getAssignments().getTransientAssignments(), [this, &transientEdgeAssignments, &sourceLocationAndGuard, &exitRates] (storm::jani::Assignment const& assignment) {
-                            auto newTransientEdgeAssignments = sourceLocationAndGuard * this->variables.rowExpressionAdapter->translateExpression(assignment.getAssignedExpression());
+                        performTransientAssignments(edge.getAssignments().getTransientAssignments(), [this, &transientEdgeAssignments, &guardAdd, &exitRates] (storm::jani::Assignment const& assignment) {
+                            auto newTransientEdgeAssignments = guardAdd * this->variables.rowExpressionAdapter->translateExpression(assignment.getAssignedExpression());
                             if (exitRates) {
                                 newTransientEdgeAssignments *= exitRates.get();
                             }
@@ -1390,7 +1391,7 @@ namespace storm {
                         } );
                     }
                     
-                    return EdgeDd(isMarkovian, guard, guard.template toAdd<ValueType>() * transitions, transientEdgeAssignments, globalVariablesInSomeDestination);
+                    return EdgeDd(isMarkovian, guard, transitions, transientEdgeAssignments, globalVariablesInSomeDestination);
                 } else {
                     return EdgeDd(false, rangedGuard, rangedGuard.template toAdd<ValueType>(), std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>>(), std::set<storm::expressions::Variable>());
                 }
@@ -1516,7 +1517,7 @@ namespace storm {
                     
                     // Check for overlapping guards.
                     overlappingGuards = !(edgeDd.guard && allGuards).isZero();
-                    
+
                     // Issue a warning if there are overlapping guards in a DTMC.
                     STORM_LOG_WARN_COND(!overlappingGuards || this->model.getModelType() == storm::jani::ModelType::CTMC || this->model.getModelType() == storm::jani::ModelType::MA, "Guard of an edge in a DTMC overlaps with previous guards.");
                     

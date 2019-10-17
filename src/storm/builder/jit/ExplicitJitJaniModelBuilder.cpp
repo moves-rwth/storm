@@ -2522,22 +2522,22 @@ namespace storm {
             }
             
             template<typename RationalFunctionType, typename TP = typename RationalFunctionType::PolyType, carl::EnableIf<carl::needs_cache<TP>> = carl::dummy>
-            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache) {
+            RationalFunctionType convertVariableToPolynomial(storm::RationalFunctionVariable const& variable, std::shared_ptr<storm::RawPolynomialCache> cache) {
                 return RationalFunctionType(typename RationalFunctionType::PolyType(typename RationalFunctionType::PolyType::PolyType(variable), cache));
             }
                 
             template<typename RationalFunctionType, typename TP = typename RationalFunctionType::PolyType, carl::DisableIf<carl::needs_cache<TP>> = carl::dummy>
-            RationalFunctionType convertVariableToPolynomial(carl::Variable const& variable, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>>) {
+            RationalFunctionType convertVariableToPolynomial(storm::RationalFunctionVariable const& variable, std::shared_ptr<storm::RawPolynomialCache>) {
                 return RationalFunctionType(variable);
             }
             
             template<typename ValueType>
-            std::vector<storm::RationalFunction> getParameters(storm::jani::Model const&, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>>) {
+            std::vector<storm::RationalFunction> getParameters(storm::jani::Model const&, std::shared_ptr<storm::RawPolynomialCache>) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "This function must not be called for this type.");
             }
                 
             template<>
-            std::vector<storm::RationalFunction> getParameters<storm::RationalFunction>(storm::jani::Model const& model, std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache) {
+            std::vector<storm::RationalFunction> getParameters<storm::RationalFunction>(storm::jani::Model const& model, std::shared_ptr<storm::RawPolynomialCache> cache) {
                 std::vector<storm::RationalFunction> parameters;
                 for (auto const& constant : model.getConstants()) {
                     if (!constant.isDefined() && constant.isRealConstant()) {
@@ -2557,7 +2557,7 @@ namespace storm {
                     typedef boost::function<InitializeParametersFunctionType> ImportInitializeParametersFunctionType;
 
                     // Create the carl cache if we are building a parametric model.
-                    cache = std::make_shared<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>>();
+                    cache = std::make_shared<storm::RawPolynomialCache>();
 
                     ImportInitializeParametersFunctionType initializeParametersFunction = boost::dll::import_alias<InitializeParametersFunctionType>(dynamicLibraryPath, "initialize_parameters");
                     std::vector<storm::RationalFunction> parameters = getParameters<ValueType>(this->model, cache);

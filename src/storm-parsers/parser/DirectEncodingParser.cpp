@@ -40,6 +40,7 @@ namespace storm {
             ValueParser<ValueType> valueParser;
             bool sawType = false;
             bool sawParameters = false;
+            std::unordered_map<std::string, ValueType> placeholders;
             size_t nrStates = 0;
             storm::models::ModelType type;
             std::vector<std::string> rewardModelNames;
@@ -56,7 +57,8 @@ namespace storm {
                     STORM_LOG_THROW(!sawType, storm::exceptions::WrongFormatException, "Type declared twice");
                     type = storm::models::getModelType(line.substr(7));
                     STORM_LOG_TRACE("Model type: " << type);
-                    STORM_LOG_THROW(type != storm::models::ModelType::S2pg, storm::exceptions::NotSupportedException, "Stochastic Two Player Games in DRN format are not supported.");
+                    STORM_LOG_THROW(type != storm::models::ModelType::S2pg, storm::exceptions::NotSupportedException,
+                                    "Stochastic Two Player Games in DRN format are not supported.");
                     sawType = true;
 
                 } else if (line == "@parameters") {
@@ -66,23 +68,40 @@ namespace storm {
                     if (line != "") {
                         std::vector<std::string> parameters;
                         boost::split(parameters, line, boost::is_any_of(" "));
-                        for (std::string parameter : parameters) {
+                        for (std::string const& parameter : parameters) {
                             STORM_LOG_TRACE("New parameter: " << parameter);
                             valueParser.addParameter(parameter);
                         }
                     }
                     sawParameters = true;
 
+                } else if (line == "@placeholders") {
+                    // Parse placeholders
+                    while (std::getline(file, line)) {
+                        size_t posColon = line.find(':');
+                        STORM_LOG_THROW(posColon != std::string::npos, storm::exceptions::WrongFormatException, "':' not found.");
+                        std::string placeName = line.substr(0, posColon - 1);
+                        STORM_LOG_THROW(placeName.front() == '$', storm::exceptions::WrongFormatException, "Placeholder must start with dollar symbol $.");
+                        std::string valueStr = line.substr(posColon + 2);
+                        ValueType value = parseValue(valueStr, placeholders, valueParser);
+                        STORM_LOG_TRACE("Placeholder " << placeName << " for value " << value);
+                        auto ret = placeholders.insert(std::make_pair(placeName.substr(1), value));
+                        STORM_LOG_THROW(ret.second, storm::exceptions::WrongFormatException, "Placeholder '$" << placeName << "' was already defined before.");
+                        if (file.peek() == '@') {
+                            // Next character is @ -> placeholder definitions ended
+                            break;
+                        }
+                    }
                 } else if (line == "@reward_models") {
                     // Parse reward models
-                    STORM_LOG_THROW(rewardModelNames.size() == 0, storm::exceptions::WrongFormatException, "Reward model names declared twice");
+                    STORM_LOG_THROW(rewardModelNames.empty(), storm::exceptions::WrongFormatException, "Reward model names declared twice");
                     std::getline(file, line);
                     boost::split(rewardModelNames, line, boost::is_any_of("\t "));
                 } else if (line == "@nr_states") {
                     // Parse no. of states
                     STORM_LOG_THROW(nrStates == 0, storm::exceptions::WrongFormatException, "Number states declared twice");
                     std::getline(file, line);
-                    nrStates = NumberParser<size_t>::parse(line);
+                    nrStates = parseNumber<size_t>(line);
                 } else if (line == "@model") {
                     // Parse rest of the model
                     STORM_LOG_THROW(sawType, storm::exceptions::WrongFormatException, "Type has to be declared before model.");
@@ -90,7 +109,7 @@ namespace storm {
                     STORM_LOG_THROW(nrStates != 0, storm::exceptions::WrongFormatException, "No. of states has to be declared before model.");
 
                     // Construct model components
-                    modelComponents = parseStates(file, type, nrStates, valueParser, rewardModelNames);
+                    modelComponents = parseStates(file, type, nrStates, placeholders, valueParser, rewardModelNames);
                     break;
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Could not parse line '" << line << "'.");
@@ -104,7 +123,10 @@ namespace storm {
         }
 
         template<typename ValueType, typename RewardModelType>
-        std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> DirectEncodingParser<ValueType, RewardModelType>::parseStates(std::istream& file, storm::models::ModelType type, size_t stateSize, ValueParser<ValueType> const& valueParser, std::vector<std::string> const& rewardModelNames) {
+        std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>>
+        DirectEncodingParser<ValueType, RewardModelType>::parseStates(std::istream& file, storm::models::ModelType type, size_t stateSize,
+                                                                      std::unordered_map<std::string, ValueType> const& placeholders, ValueParser<ValueType> const& valueParser,
+                                                                      std::vector<std::string> const& rewardModelNames) {
             // Initialize
             auto modelComponents = std::make_shared<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>>();
             bool nonDeterministic = (type == storm::models::ModelType::Mdp || type == storm::models::ModelType::MarkovAutomaton || type == storm::models::ModelType::Pomdp);
@@ -114,6 +136,7 @@ namespace storm {
             modelComponents->observabilityClasses = std::vector<uint32_t>();
             modelComponents->observabilityClasses->resize(stateSize);
             std::vector<std::vector<ValueType>> stateRewards;
+            std::vector<std::vector<ValueType>> actionRewards;
             if (continuousTime) {
                 modelComponents->exitRates = std::vector<ValueType>(stateSize);
                 if (type == storm::models::ModelType::MarkovAutomaton) {
@@ -128,6 +151,7 @@ namespace storm {
             // Iterate over all lines
             std::string line;
             size_t row = 0;
+            size_t firstRowOfState = 0;
             size_t state = 0;
             bool firstState = true;
             bool firstActionForState = true;
@@ -150,18 +174,19 @@ namespace storm {
                     size_t posEnd = line.find(" ");
                     if (posEnd != std::string::npos) {
                         curString = line.substr(0, posEnd);
-                        line = line.substr(posEnd+1);
+                        line = line.substr(posEnd + 1);
                     } else {
                         line = "";
                     }
-                    size_t parsedId = NumberParser<size_t>::parse(curString);
+                    size_t parsedId = parseNumber<size_t>(curString);
                     STORM_LOG_ASSERT(state == parsedId, "State ids do not correspond.");
                     if (nonDeterministic) {
                         STORM_LOG_TRACE("new Row Group starts at " << row << ".");
                         builder.newRowGroup(row);
                     }
+                    firstRowOfState = row;
 
-                    if (type == storm::models::ModelType::Ctmc || type == storm::models::ModelType::MarkovAutomaton) {
+                    if (continuousTime) {
                         // Parse exit rate for CTMC or MA
                         STORM_LOG_THROW(boost::starts_with(line, "!"), storm::exceptions::WrongFormatException, "Exit rate missing.");
                         line = line.substr(1); //Remove "!"
@@ -169,11 +194,11 @@ namespace storm {
                         posEnd = line.find(" ");
                         if (posEnd != std::string::npos) {
                             curString = line.substr(0, posEnd);
-                            line = line.substr(posEnd+1);
+                            line = line.substr(posEnd + 1);
                         } else {
                             line = "";
                         }
-                        ValueType exitRate = valueParser.parseValue(curString);
+                        ValueType exitRate = parseValue(curString, placeholders, valueParser);
                         if (type == storm::models::ModelType::MarkovAutomaton && !storm::utility::isZero<ValueType>(exitRate)) {
                             modelComponents->markovianStates.get().set(state);
                         }
@@ -185,30 +210,35 @@ namespace storm {
                         // Parse rewards
                         size_t posEndReward = line.find(']');
                         STORM_LOG_THROW(posEndReward != std::string::npos, storm::exceptions::WrongFormatException, "] missing.");
-                        std::string rewardsStr = line.substr(1, posEndReward-1);
+                        std::string rewardsStr = line.substr(1, posEndReward - 1);
                         STORM_LOG_TRACE("State rewards: " << rewardsStr);
                         std::vector<std::string> rewards;
                         boost::split(rewards, rewardsStr, boost::is_any_of(","));
                         if (stateRewards.size() < rewards.size()) {
-                            stateRewards.resize(rewards.size(), std::vector<ValueType>(stateSize, storm::utility::zero<ValueType>()));
+                            stateRewards.resize(rewards.size());
                         }
                         auto stateRewardsIt = stateRewards.begin();
                         for (auto const& rew : rewards) {
-                            (*stateRewardsIt)[state] = valueParser.parseValue(rew);
+                            auto rewardValue = parseValue(rew, placeholders, valueParser);
+                            if (!storm::utility::isZero(rewardValue)) {
+                                if (stateRewardsIt->empty()) {
+                                    stateRewardsIt->resize(stateSize, storm::utility::zero<ValueType>());
+                                }
+                                (*stateRewardsIt)[state] = std::move(rewardValue);
+                            }
                             ++stateRewardsIt;
                         }
-
-                        line = line.substr(posEndReward+1);
+                        line = line.substr(posEndReward + 1);
                     }
 
 
                     if (type == storm::models::ModelType::Pomdp) {
                         if (boost::starts_with(line, "{")) {
                             size_t posEndObservation = line.find("}");
-                            std::string observation = line.substr(1, posEndObservation-1);
+                            std::string observation = line.substr(1, posEndObservation - 1);
                             STORM_LOG_TRACE("State observation " << observation);
                             modelComponents->observabilityClasses.get()[state] = std::stoi(observation);
-                            line = line.substr(posEndObservation+1);
+                            line = line.substr(posEndObservation + 1);
                         } else {
                             STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Expected an observation for state " << state << ".");
                         }
@@ -240,7 +270,7 @@ namespace storm {
                             }
                         }
 
-                        for (std::string label : labels) {
+                        for (std::string const& label : labels) {
                             if (!modelComponents->stateLabeling.containsLabel(label)) {
                                 modelComponents->stateLabeling.addLabel(label);
                             }
@@ -258,50 +288,102 @@ namespace storm {
                     }
                     STORM_LOG_TRACE("New action: " << row);
                     line = line.substr(8); //Remove "\taction "
+                    std::string curString = line;
+                    size_t posEnd = line.find(" ");
+                    if (posEnd != std::string::npos) {
+                        curString = line.substr(0, posEnd);
+                        line = line.substr(posEnd + 1);
+                    } else {
+                        line = "";
+                    }
+                    size_t parsedId = parseNumber<size_t>(curString);
+                    STORM_LOG_ASSERT(row == firstRowOfState + parsedId, "Action ids do not correspond.");
                     // Check for rewards
                     if (boost::starts_with(line, "[")) {
                         // Rewards found
                         size_t posEndReward = line.find(']');
                         STORM_LOG_THROW(posEndReward != std::string::npos, storm::exceptions::WrongFormatException, "] missing.");
-                        std::string rewards = line.substr(1, posEndReward-1);
-                        STORM_LOG_TRACE("Transition rewards: " << rewards);
-                        STORM_LOG_WARN("Transition rewards [" << rewards << "] not parsed.");
-                        // TODO save rewards
-                        line = line.substr(posEndReward+1);
+                        std::string rewardsStr = line.substr(1, posEndReward - 1);
+                        STORM_LOG_TRACE("Action rewards: " << rewardsStr);
+                        std::vector<std::string> rewards;
+                        boost::split(rewards, rewardsStr, boost::is_any_of(","));
+                        if (actionRewards.size() < rewards.size()) {
+                            actionRewards.resize(rewards.size());
+                        }
+                        auto actionRewardsIt = actionRewards.begin();
+                        for (auto const& rew : rewards) {
+                            auto rewardValue = parseValue(rew, placeholders, valueParser);
+                            if (!storm::utility::isZero(rewardValue)) {
+                                if (actionRewardsIt->size() <= row) {
+                                    actionRewardsIt->resize(std::max(row + 1, stateSize), storm::utility::zero<ValueType>());
+                                }
+                                (*actionRewardsIt)[row] = std::move(rewardValue);
+                            }
+                            ++actionRewardsIt;
+                        }
+                        line = line.substr(posEndReward + 1);
                     }
                     // TODO import choice labeling when the export works
 
                 } else {
                     // New transition
-                    size_t posColon = line.find(":");
+                    size_t posColon = line.find(':');
                     STORM_LOG_THROW(posColon != std::string::npos, storm::exceptions::WrongFormatException, "':' not found.");
-                    size_t target = NumberParser<size_t>::parse(line.substr(2, posColon-3));
-                    std::string valueStr = line.substr(posColon+2);
-                    ValueType value = valueParser.parseValue(valueStr);
+                    size_t target = parseNumber<size_t>(line.substr(2, posColon - 3));
+                    std::string valueStr = line.substr(posColon + 2);
+                    ValueType value = parseValue(valueStr, placeholders, valueParser);
                     STORM_LOG_TRACE("Transition " << row << " -> " << target << ": " << value);
                     STORM_LOG_THROW(target < stateSize, storm::exceptions::WrongFormatException, "Target state " << target << " is greater than state size " << stateSize);
                     builder.addNextValue(row, target, value);
                 }
-            }
-
+            } // end state iteration
             STORM_LOG_TRACE("Finished parsing");
-            modelComponents->transitionMatrix = builder.build(row + 1, stateSize, nonDeterministic ? stateSize : 0);
 
-            for (uint64_t i = 0; i < stateRewards.size(); ++i) {
+            // Build transition matrix
+            modelComponents->transitionMatrix = builder.build(row + 1, stateSize, nonDeterministic ? stateSize : 0);
+            STORM_LOG_TRACE("Built matrix");
+
+            // Build reward models
+            uint64_t numRewardModels = std::max(stateRewards.size(), actionRewards.size());
+            for (uint64_t i = 0; i < numRewardModels; ++i) {
                 std::string rewardModelName;
                 if (rewardModelNames.size() <= i) {
                     rewardModelName = "rew" + std::to_string(i);
                 } else {
                     rewardModelName = rewardModelNames[i];
                 }
-                modelComponents->rewardModels.emplace(rewardModelName, storm::models::sparse::StandardRewardModel<ValueType>(std::move(stateRewards[i])));
+                boost::optional<std::vector<ValueType>> stateRewardVector, actionRewardVector;
+                if (i < stateRewards.size() && !stateRewards[i].empty()) {
+                    stateRewardVector = std::move(stateRewards[i]);
+                }
+                if (i < actionRewards.size() && !actionRewards[i].empty()) {
+                    actionRewards[i].resize(row + 1, storm::utility::zero<ValueType>());
+                    actionRewardVector = std::move(actionRewards[i]);
+                }
+                modelComponents->rewardModels.emplace(rewardModelName,
+                                                      storm::models::sparse::StandardRewardModel<ValueType>(std::move(stateRewardVector), std::move(actionRewardVector)));
             }
-            STORM_LOG_TRACE("Built matrix");
+            STORM_LOG_TRACE("Built reward models");
             return modelComponents;
         }
 
+        template<typename ValueType, typename RewardModelType>
+        ValueType DirectEncodingParser<ValueType, RewardModelType>::parseValue(std::string const& valueStr, std::unordered_map<std::string, ValueType> const& placeholders,
+                                                                               ValueParser<ValueType> const& valueParser) {
+            if (boost::starts_with(valueStr, "$")) {
+                auto it = placeholders.find(valueStr.substr(1));
+                STORM_LOG_THROW(it != placeholders.end(), storm::exceptions::WrongFormatException, "Placeholder " << valueStr << " unknown.");
+                return it->second;
+            } else {
+                // Use default value parser
+                return valueParser.parseValue(valueStr);
+            }
+        }
+
+
         // Template instantiations.
         template class DirectEncodingParser<double>;
+        template class DirectEncodingParser<storm::RationalNumber>;
         template class DirectEncodingParser<storm::RationalFunction>;
 
     } // namespace parser

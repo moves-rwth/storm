@@ -209,5 +209,27 @@ namespace storm {
             }
             return out;
         }
+
+
+        std::ostream& operator<<(std::ostream& out, SymbolicModelDescription::ModelType const& type) {
+            switch (type) {
+                case SymbolicModelDescription::ModelType::DTMC:
+                    out << "dtmc";
+                    break;
+                case SymbolicModelDescription::ModelType::CTMC:
+                    out << "ctmc";
+                    break;
+                case SymbolicModelDescription::ModelType::MDP:
+                    out << "mdp";
+                    break;
+                case SymbolicModelDescription::ModelType::MA:
+                    out << "ma";
+                    break;
+                case SymbolicModelDescription::ModelType::POMDP:
+                    out << "pomdp";
+                    break;
+            }
+            return out;
+        }
     }
 }

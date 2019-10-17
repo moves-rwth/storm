@@ -45,12 +45,24 @@ namespace storm {
                 }
             }
             os << std::endl;
+
+            // Optionally write placeholders which only need to be parsed once
+            // This is used to reduce the parsing effort for rational functions
+            // Placeholders begin with the dollar symbol $
+            std::unordered_map<ValueType, std::string> placeholders = generatePlaceholders(sparseModel, exitRates);
+            if (!placeholders.empty()) {
+                os << "@placeholders" << std::endl;
+                for (auto const& entry : placeholders) {
+                    os << "$" << entry.second << " : " << entry.first << std::endl;
+                }
+            }
+
             os << "@reward_models" << std::endl;
             for (auto const& rewardModel : sparseModel->getRewardModels()) {
                 os << rewardModel.first << " ";
             }
             os << std::endl;
-            os << "@nr_states" << std::endl  << sparseModel->getNumberOfStates() <<  std::endl;
+            os << "@nr_states" << std::endl << sparseModel->getNumberOfStates() << std::endl;
             os << "@model" << std::endl;
 
             storm::storage::SparseMatrix<ValueType> const& matrix = sparseModel->getTransitionMatrix();
@@ -61,7 +73,8 @@ namespace storm {
 
                 // Write exit rates for CTMCs and MAs
                 if (!exitRates.empty()) {
-                    os << " !" << exitRates.at(group);
+                    os << " !";
+                    writeValue(os, exitRates.at(group), placeholders);
                 }
 
                 // Write state rewards
@@ -74,8 +87,8 @@ namespace storm {
                         os << ", ";
                     }
 
-                    if(rewardModelEntry.second.hasStateRewards()) {
-                        os << storm::utility::to_string(rewardModelEntry.second.getStateRewardVector().at(group));
+                    if (rewardModelEntry.second.hasStateRewards()) {
+                        writeValue(os, rewardModelEntry.second.getStateRewardVector().at(group), placeholders);
                     } else {
                         os << "0";
                     }
@@ -90,10 +103,11 @@ namespace storm {
                 }
 
                 // Write labels. Only labels with a whitespace are put in (double) quotation marks.
-                for(auto const& label : sparseModel->getStateLabeling().getLabelsOfState(group)) {
-                    STORM_LOG_THROW(std::count( label.begin(), label.end(), '\"' ) == 0, storm::exceptions::NotSupportedException, "Labels with quotation marks are not supported in the DRN format and therefore may not be exported.");
+                for (auto const& label : sparseModel->getStateLabeling().getLabelsOfState(group)) {
+                    STORM_LOG_THROW(std::count(label.begin(), label.end(), '\"') == 0, storm::exceptions::NotSupportedException,
+                                    "Labels with quotation marks are not supported in the DRN format and therefore may not be exported.");
                     // TODO consider escaping the quotation marks. Not sure whether that is a good idea.
-                    if (std::count_if( label.begin(), label.end(), isspace ) > 0) {
+                    if (std::count_if(label.begin(), label.end(), isspace) > 0) {
                         os << " \"" << label << "\"";
                     } else {
                         os << " " << label;
@@ -133,7 +147,7 @@ namespace storm {
                         }
 
                         if (rewardModelEntry.second.hasStateActionRewards()) {
-                            os << storm::utility::to_string(rewardModelEntry.second.getStateActionRewardVector().at(row));
+                            writeValue(os, rewardModelEntry.second.getStateActionRewardVector().at(row), placeholders);
                         } else {
                             os << "0";
                         }
@@ -148,7 +162,8 @@ namespace storm {
                     for (auto it = matrix.begin(row); it != matrix.end(row); ++it) {
                         ValueType prob = it->getValue();
                         os << "\t\t" << it->getColumn() << " : ";
-                        os << storm::utility::to_string(prob) << std::endl;
+                        writeValue(os, prob, placeholders);
+                        os << std::endl;
                     }
 
                 }
@@ -178,6 +193,80 @@ namespace storm {
             }
             return parameters;
         }
+
+        template<typename ValueType>
+        std::unordered_map<ValueType, std::string> generatePlaceholders(std::shared_ptr<storm::models::sparse::Model<ValueType>>, std::vector<ValueType>) {
+            return {};
+        }
+
+        /*!
+         * Helper function to create a possible placeholder.
+         * A new placeholder is inserted if the rational function is not constant and the function does not exist yet.
+         * @param placeholders Existing placeholders.
+         * @param value Value.
+         * @param i Counter to enumerate placeholders.
+         */
+
+        void createPlaceholder(std::unordered_map<storm::RationalFunction, std::string>& placeholders, storm::RationalFunction const& value, size_t& i) {
+            if (!storm::utility::isConstant(value)) {
+                auto ret = placeholders.insert(std::make_pair(value, std::to_string(i)));
+                if (ret.second) {
+                    // New element was inserted
+                    ++i;
+                }
+            }
+        }
+
+        template<>
+        std::unordered_map<storm::RationalFunction, std::string>
+        generatePlaceholders(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> sparseModel, std::vector<storm::RationalFunction> exitRates) {
+            std::unordered_map<storm::RationalFunction, std::string> placeholders;
+            size_t i = 0;
+
+            // Exit rates
+            for (auto const& exitRate : exitRates) {
+                createPlaceholder(placeholders, exitRate, i);
+            }
+
+            // Rewards
+            for (auto const& rewardModelEntry : sparseModel->getRewardModels()) {
+                if (rewardModelEntry.second.hasStateRewards()) {
+                    for (auto const& reward : rewardModelEntry.second.getStateRewardVector()) {
+                        createPlaceholder(placeholders, reward, i);
+                    }
+                }
+                if (rewardModelEntry.second.hasStateActionRewards()) {
+                    for (auto const& reward : rewardModelEntry.second.getStateActionRewardVector()) {
+                        createPlaceholder(placeholders, reward, i);
+                    }
+                }
+            }
+
+            // Transition probabilities
+            for (auto const& entry : sparseModel->getTransitionMatrix()) {
+                createPlaceholder(placeholders, entry.getValue(), i);
+            }
+
+            return placeholders;
+        }
+
+        template<typename ValueType>
+        void writeValue(std::ostream& os, ValueType value, std::unordered_map<ValueType, std::string> const& placeholders) {
+            if (storm::utility::isConstant(value)) {
+                os << value;
+                return;
+            }
+
+            // Try to use placeholder
+            auto it = placeholders.find(value);
+            if (it != placeholders.end()) {
+                // Use placeholder
+                os << "$" << it->second;
+            } else {
+                os << value;
+            }
+        }
+
 
         // Template instantiations
         template void explicitExportSparseModel<double>(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<double>> sparseModel, std::vector<std::string> const& parameters);

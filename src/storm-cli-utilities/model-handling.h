@@ -42,6 +42,7 @@
 #include "storm/settings/modules/AbstractionSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
+#include "storm/settings/modules/TransformationSettings.h"
 #include "storm/storage/Qvbs.h"
 
 #include "storm/utility/Stopwatch.h"
@@ -350,11 +351,18 @@ namespace storm {
             auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
             auto bisimulationSettings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+            auto transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
             
             std::pair<std::shared_ptr<storm::models::sparse::Model<ValueType>>, bool> result = std::make_pair(model, false);
             
             if (result.first->isOfType(storm::models::ModelType::MarkovAutomaton)) {
                 result.first = preprocessSparseMarkovAutomaton(result.first->template as<storm::models::sparse::MarkovAutomaton<ValueType>>());
+                if (transformationSettings.isChainEliminationSet() &&
+                    result.first->isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                    result.first = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(
+                            result.first->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(),
+                            !transformationSettings.isIgnoreLabelingSet());
+                }
                 result.second = true;
             }
             
@@ -637,19 +645,31 @@ namespace storm {
         
         template<typename ValueType>
         void verifyProperties(SymbolicInput const& input, std::function<std::unique_ptr<storm::modelchecker::CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states)> const& verificationCallback, std::function<void(std::unique_ptr<storm::modelchecker::CheckResult> const&)> const& postprocessingCallback = PostprocessingIdentity()) {
+            auto transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
             auto const& properties = input.preprocessedProperties ? input.preprocessedProperties.get() : input.properties;
             for (auto const& property : properties) {
                 printModelCheckingProperty(property);
+                bool ignored = false;
                 storm::utility::Stopwatch watch(true);
                 std::unique_ptr<storm::modelchecker::CheckResult> result;
                 try {
-                    result = verificationCallback(property.getRawFormula(), property.getFilter().getStatesFormula());
+                    auto rawFormula = property.getRawFormula();
+                    if (transformationSettings.isChainEliminationSet() &&
+                        !storm::transformer::NonMarkovianChainTransformer<ValueType>::preservesFormula(*rawFormula)) {
+                        STORM_LOG_WARN("Property is not preserved by elimination of non-markovian states.");
+                        ignored = true;
+                    } else {
+                        result = verificationCallback(property.getRawFormula(),
+                                                      property.getFilter().getStatesFormula());
+                    }
                 } catch (storm::exceptions::BaseException const& ex) {
                     STORM_LOG_WARN("Cannot handle property: " << ex.what());
                 }
                 watch.stop();
-                postprocessingCallback(result);
-                printResult<ValueType>(result, property, &watch);
+                if (!ignored) {
+                    postprocessingCallback(result);
+                    printResult<ValueType>(result, property, &watch);
+                }
             }
         }
         
@@ -748,10 +768,14 @@ namespace storm {
         template <typename ValueType>
         void verifyWithSparseEngine(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input) {
             auto sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
+            auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
             verifyProperties<ValueType>(input,
-                                        [&sparseModel] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+                                        [&sparseModel,&ioSettings] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
                                             bool filterForInitialStates = states->isInitialFormula();
                                             auto task = storm::api::createTask<ValueType>(formula, filterForInitialStates);
+                                            if (ioSettings.isExportSchedulerSet()) {
+                                                task.setProduceSchedulers(true);
+                                            }
                                             std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithSparseEngine<ValueType>(sparseModel, task);
                                             
                                             std::unique_ptr<storm::modelchecker::CheckResult> filter;
@@ -764,6 +788,17 @@ namespace storm {
                                                 result->filter(filter->asQualitativeCheckResult());
                                             }
                                             return result;
+                                        },
+                                        [&sparseModel,&ioSettings] (std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
+                                            if (ioSettings.isExportSchedulerSet()) {
+                                                if (result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler()) {
+                                                    auto const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
+                                                    STORM_PRINT_AND_LOG("Exporting scheduler ... ")
+                                                    storm::api::exportScheduler(sparseModel, scheduler, ioSettings.getExportSchedulerFilename());
+                                                } else {
+                                                    STORM_LOG_ERROR("Scheduler requested but could not be generated.");
+                                                }
+                                            }
                                         });
         }
         

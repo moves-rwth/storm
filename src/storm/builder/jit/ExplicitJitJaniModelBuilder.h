@@ -202,7 +202,7 @@ namespace storm {
                 std::string gmpIncludeDirectory;
                 
                 /// A cache that is used by carl.
-                std::shared_ptr<carl::Cache<carl::PolynomialFactorizationPair<RawPolynomial>>> cache;
+                std::shared_ptr<storm::RawPolynomialCache> cache;
             };
 
         }

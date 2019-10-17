@@ -35,6 +35,11 @@ TEST(DirectEncodingParserTest, MdpParsing) {
     ASSERT_EQ(5ul, modelPtr->getStates("six").getNumberOfSetBits());
     ASSERT_TRUE(modelPtr->hasLabel("eleven"));
     ASSERT_EQ(2ul, modelPtr->getStates("eleven").getNumberOfSetBits());
+    ASSERT_EQ(1ul, modelPtr->getNumberOfRewardModels());
+    ASSERT_TRUE(modelPtr->hasRewardModel("coinflips"));
+    ASSERT_TRUE(!modelPtr->getRewardModel("coinflips").hasStateRewards());
+    ASSERT_TRUE(modelPtr->getRewardModel("coinflips").hasStateActionRewards());
+    ASSERT_TRUE(!modelPtr->getRewardModel("coinflips").isAllZero());
 }
 
 TEST(DirectEncodingParserTest, CtmcParsing) {
@@ -50,6 +55,11 @@ TEST(DirectEncodingParserTest, CtmcParsing) {
     ASSERT_EQ(64ul, modelPtr->getStates("premium").getNumberOfSetBits());
     ASSERT_TRUE(modelPtr->hasLabel("minimum"));
     ASSERT_EQ(132ul, modelPtr->getStates("minimum").getNumberOfSetBits());
+    ASSERT_EQ(1ul, modelPtr->getNumberOfRewardModels());
+    ASSERT_TRUE(modelPtr->hasRewardModel("num_repairs"));
+    ASSERT_TRUE(!modelPtr->getRewardModel("num_repairs").hasStateRewards());
+    ASSERT_TRUE(modelPtr->getRewardModel("num_repairs").hasStateActionRewards());
+    ASSERT_TRUE(!modelPtr->getRewardModel("num_repairs").isAllZero());
 }
 
 TEST(DirectEncodingParserTest, MarkovAutomatonParsing) {
@@ -63,7 +73,11 @@ TEST(DirectEncodingParserTest, MarkovAutomatonParsing) {
     ASSERT_EQ(19ul, ma->getNumberOfChoices());
     ASSERT_EQ(10ul, ma->getMarkovianStates().getNumberOfSetBits());
     ASSERT_EQ(5, ma->getMaximalExitRate());
+    ASSERT_EQ(1ul, ma->getNumberOfRewardModels());
     ASSERT_TRUE(ma->hasRewardModel("avg_waiting_time"));
+    ASSERT_TRUE(ma->getRewardModel("avg_waiting_time").hasStateRewards());
+    ASSERT_TRUE(!ma->getRewardModel("avg_waiting_time").hasStateActionRewards());
+    ASSERT_TRUE(!ma->getRewardModel("avg_waiting_time").isAllZero());
     ASSERT_TRUE(modelPtr->hasLabel("init"));
     ASSERT_EQ(1ul, modelPtr->getInitialStates().getNumberOfSetBits());
     ASSERT_TRUE(modelPtr->hasLabel("one_job_finished"));

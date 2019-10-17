@@ -6,6 +6,7 @@
 #include "storm/utility/DDEncodingExporter.h"
 #include "storm/utility/file.h"
 #include "storm/utility/macros.h"
+#include "storm/storage/Scheduler.h"
 
 namespace storm {
     
@@ -42,5 +43,14 @@ namespace storm {
         void exportSymbolicModelAsDot(std::shared_ptr<storm::models::symbolic::Model<Type,ValueType>> const& model, std::string const& filename) {
             model->writeDotToFile(filename);
         }
+        
+        template <typename ValueType>
+        void exportScheduler(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::storage::Scheduler<ValueType> const& scheduler, std::string const& filename) {
+            std::ofstream stream;
+            storm::utility::openFile(filename, stream);
+            scheduler.printToStream(stream, model);
+            storm::utility::closeFile(stream);
+        }
+        
     }
 }

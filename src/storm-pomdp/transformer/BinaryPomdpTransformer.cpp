@@ -83,7 +83,7 @@ namespace storm {
             storm::storage::SparseMatrixBuilder<ValueType> builder(0,0,0,true,true);
             uint64_t currRow = 0;
             std::vector<uint64_t> origRowToSimpleRowMap(pomdp.getNumberOfChoices(), std::numeric_limits<uint64_t>::max());
-            uint64 currAuxState = queue.size();
+            uint64_t currAuxState = queue.size();
             while (!queue.empty()) {
                 auto group = std::move(queue.front());
                 queue.pop();

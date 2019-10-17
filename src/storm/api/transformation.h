@@ -2,6 +2,7 @@
 
 #include "storm/transformer/ContinuousToDiscreteTimeModelTransformer.h"
 #include "storm/transformer/SymbolicToSparseTransformer.h"
+#include "storm/transformer/NonMarkovianChainTransformer.h"
 
 #include "storm/utility/macros.h"
 #include "storm/utility/builder.h"
@@ -10,7 +11,30 @@
 
 namespace storm {
     namespace api {
-        
+
+        /*!
+         * Eliminates chains of non-Markovian states from a given Markov Automaton
+         */
+        template<typename ValueType>
+        std::pair<std::shared_ptr<storm::models::sparse::Model<ValueType>>, std::vector<std::shared_ptr<storm::logic::Formula const>>>
+        eliminateNonMarkovianChains(std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> const &ma,
+                                    std::vector<std::shared_ptr<storm::logic::Formula const>> const &formulas,
+                                    bool ignoreLabeling) {
+
+            auto newFormulas = storm::transformer::NonMarkovianChainTransformer<ValueType>::checkAndTransformFormulas(
+                    formulas);
+            STORM_LOG_WARN_COND(newFormulas.size() == formulas.size(),
+                                "The state elimination does not preserve all properties.");
+            STORM_LOG_WARN_COND(!ignoreLabeling,
+                                "Labels are ignored for the state elimination. This may cause incorrect results.");
+            return std::make_pair(
+                    storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(ma,
+                                                                                                             !ignoreLabeling),
+                    newFormulas);
+
+        }
+
+
         /*!
          * Transforms the given continuous model to a discrete time model.
          * If such a transformation does not preserve one of the given formulas, a warning is issued.

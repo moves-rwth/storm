@@ -32,8 +32,9 @@ namespace storm {
         }
 
         template<typename ValueType>
-        storm::storage::DFT<ValueType> DFTGalileoParser<ValueType>::parseDFT(const std::string& filename, bool defaultInclusive, bool binaryDependencies) {
-            storm::builder::DFTBuilder<ValueType> builder(defaultInclusive, binaryDependencies);
+        storm::storage::DFT<ValueType>
+        DFTGalileoParser<ValueType>::parseDFT(const std::string &filename, bool defaultInclusive) {
+            storm::builder::DFTBuilder<ValueType> builder(defaultInclusive);
             ValueParser<ValueType> valueParser;
             // Regular expression to detect comments
             // taken from: https://stackoverflow.com/questions/9449887/removing-c-c-style-comments-using-boostregex
@@ -101,7 +102,7 @@ namespace storm {
                         std::string name = parseName(tokens[0]);
 
                         std::vector<std::string> childNames;
-                        for(unsigned i = 2; i < tokens.size(); ++i) {
+                        for(size_t i = 2; i < tokens.size(); ++i) {
                             childNames.push_back(parseName(tokens[i]));
                         }
                         bool success = true;
@@ -113,12 +114,12 @@ namespace storm {
                         } else if (type == "or") {
                             success = builder.addOrElement(name, childNames);
                         } else if (boost::starts_with(type, "vot")) {
-                            unsigned threshold = NumberParser<unsigned>::parse(type.substr(3));
+                            size_t threshold = storm::parser::parseNumber<size_t>(type.substr(3));
                             success = builder.addVotElement(name, threshold, childNames);
                         } else if (type.find("of") != std::string::npos) {
                             size_t pos = type.find("of");
-                            unsigned threshold = NumberParser<unsigned>::parse(type.substr(0, pos));
-                            unsigned count = NumberParser<unsigned>::parse(type.substr(pos + 2));
+                            size_t threshold = storm::parser::parseNumber<size_t>(type.substr(0, pos));
+                            size_t count = storm::parser::parseNumber<size_t>(type.substr(pos + 2));
                             STORM_LOG_THROW(count == childNames.size(), storm::exceptions::WrongFormatException, "Voting gate number " << count << " does not correspond to number of children " << childNames.size() << " in line " << lineNo << ".");
                             success = builder.addVotElement(name, threshold, childNames);
                         } else if (type == "pand") {
@@ -190,7 +191,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::pair<bool, unsigned> DFTGalileoParser<ValueType>::parseNumber(std::string name, std::string& line) {
+        std::pair<bool, size_t> DFTGalileoParser<ValueType>::parseNumber(std::string name, std::string& line) {
             // Build regex for: name=(number)
             std::regex nameRegex(name + "\\s*=\\s*([[:digit:]]+)");
             std::smatch match;
@@ -198,7 +199,7 @@ namespace storm {
                 std::string value = match.str(1);
                 // Remove matched part
                 line = std::regex_replace(line, nameRegex, "");
-                return std::make_pair(true, NumberParser<unsigned>::parse(value));
+                return std::make_pair(true, storm::parser::parseNumber<size_t>(value));
             } else {
                 // No match found
                 return std::make_pair(false, 0);
@@ -236,7 +237,7 @@ namespace storm {
                 }
             }
             // Erlang distribution
-            std::pair<bool, unsigned> resultNum = parseNumber("phases", line);
+            std::pair<bool, size_t> resultNum = parseNumber("phases", line);
             if (resultNum.first) {
                 STORM_LOG_THROW(distribution == Distribution::None || distribution == Distribution::Exponential, storm::exceptions::WrongFormatException, "A different distribution was already defined for basic element '" << name << "' in line " << lineNo << ".");
                 erlangPhases = resultNum.second;
@@ -301,6 +302,24 @@ namespace storm {
                 case Constant:
                     if (storm::utility::isZero(firstValDistribution) || storm::utility::isOne(firstValDistribution)) {
                         return builder.addBasicElementProbability(parseName(name), firstValDistribution, dormancyFactor, false); // TODO set transient BEs
+                    } else {
+                        // Model constant BEs with probability 0 < p < 1
+                        bool success = true;
+                        if (!builder.nameInUse("constantBeTrigger")) {
+                            // Use a unique constantly failed element that triggers failsafe elements probabilistically
+                            success = success && builder.addBasicElementProbability("constantBeTrigger",
+                                                                                    storm::utility::one<ValueType>(),
+                                                                                    storm::utility::one<ValueType>(),
+                                                                                    false);
+                        }
+                        std::vector<std::string> childNames;
+                        childNames.push_back("constantBeTrigger");
+                        success = success &&
+                                  builder.addBasicElementProbability(parseName(name), storm::utility::zero<ValueType>(),
+                                                                     storm::utility::one<ValueType>(), false);
+                        childNames.push_back(parseName(name));
+                        return success &&
+                               builder.addDepElement(parseName(name) + "_pdep", childNames, firstValDistribution);
                     }
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Constant distribution is not supported for basic element '" << name << "' in line " << lineNo << ".");
                     break;

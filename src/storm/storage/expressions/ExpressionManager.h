@@ -25,8 +25,7 @@ namespace storm {
             enum class VariableSelection { OnlyRegularVariables, OnlyAuxiliaryVariables, AllVariables };
             
             VariableIterator(ExpressionManager const& manager, std::unordered_map<std::string, uint_fast64_t>::const_iterator nameIndexIterator, std::unordered_map<std::string, uint_fast64_t>::const_iterator nameIndexIteratorEnd, VariableSelection const& selection);
-            VariableIterator(VariableIterator const& other) = default;
-            VariableIterator& operator=(VariableIterator const& other) = default;
+            VariableIterator(VariableIterator&& other) = default;
             
             // Define the basic input iterator operations.
             bool operator==(VariableIterator const& other);

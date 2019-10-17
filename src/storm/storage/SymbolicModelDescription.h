@@ -64,6 +64,7 @@ namespace storm {
         };
         
         std::ostream& operator<<(std::ostream& out, SymbolicModelDescription const& model);
-        
+
+        std::ostream& operator<<(std::ostream& out, SymbolicModelDescription::ModelType const& type);
     }
 }
