@@ -306,7 +306,7 @@ namespace storm {
                         STORM_PRINT_AND_LOG("#STATS " << m->getNumberOfTransitions() << " transitions in " << modelname << std::endl);
                         storm::RationalNumber numScheds = storm::utility::one<storm::RationalNumber>();
                         for (uint64_t state = 0; state < m->getNumberOfStates(); ++state) {
-                            storm::RationalNumber numChoices = storm::utility::convertNumber<storm::RationalNumber, uint64_t>(m->getNumberOfChoices());
+                            storm::RationalNumber numChoices = storm::utility::convertNumber<storm::RationalNumber, uint64_t>(m->getNumberOfChoices(state));
                             numScheds *= storm::utility::max(storm::utility::one<storm::RationalNumber>(), numChoices);
                         }
                         auto numSchedsStr = storm::utility::to_string(numScheds);
