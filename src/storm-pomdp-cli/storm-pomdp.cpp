@@ -183,6 +183,7 @@ int main(const int argc, const char** argv) {
                     }
                     STORM_LOG_THROW(validFormula, storm::exceptions::InvalidPropertyException,
                                     "The formula is not supported by the grid approximation");
+                    STORM_LOG_ASSERT(!targetObservationSet.empty(), "The set of target observations is empty!");
 
                     storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<double> checker = storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<double>();
                     double overRes = storm::utility::one<double>();
@@ -203,6 +204,60 @@ int main(const int argc, const char** argv) {
                     pomdp = selfLoopEliminator.transform();
                     STORM_PRINT_AND_LOG(oldChoiceCount - pomdp->getNumberOfChoices() << " choices eliminated through self-loop elimination." << std::endl);
                 }
+                if (pomdpSettings.isGridApproximationSet()) {
+                    std::string rewardModelName;
+                    storm::logic::RewardOperatorFormula const &rewFormula = formula->asRewardOperatorFormula();
+                    if (rewFormula.hasRewardModelName()) {
+                        rewardModelName = rewFormula.getRewardModelName();
+                    }
+                    storm::logic::Formula const &subformula1 = rewFormula.getSubformula();
+
+                    std::set<uint32_t> targetObservationSet;
+                    //TODO refactor
+                    bool validFormula = false;
+                    if (subformula1.isEventuallyFormula()) {
+                        storm::logic::EventuallyFormula const &eventuallyFormula = subformula1.asEventuallyFormula();
+                        storm::logic::Formula const &subformula2 = eventuallyFormula.getSubformula();
+                        if (subformula2.isAtomicLabelFormula()) {
+                            storm::logic::AtomicLabelFormula const &alFormula = subformula2.asAtomicLabelFormula();
+                            validFormula = true;
+                            std::string targetLabel = alFormula.getLabel();
+                            auto labeling = pomdp->getStateLabeling();
+                            for (size_t state = 0; state < pomdp->getNumberOfStates(); ++state) {
+                                if (labeling.getStateHasLabel(targetLabel, state)) {
+                                    targetObservationSet.insert(pomdp->getObservation(state));
+                                }
+                            }
+                        } else if (subformula2.isAtomicExpressionFormula()) {
+                            validFormula = true;
+                            std::stringstream stream;
+                            stream << subformula2.asAtomicExpressionFormula().getExpression();
+                            storm::logic::AtomicLabelFormula formula3 = storm::logic::AtomicLabelFormula(stream.str());
+                            std::string targetLabel = formula3.getLabel();
+                            auto labeling = pomdp->getStateLabeling();
+                            for (size_t state = 0; state < pomdp->getNumberOfStates(); ++state) {
+                                if (labeling.getStateHasLabel(targetLabel, state)) {
+                                    targetObservationSet.insert(pomdp->getObservation(state));
+                                }
+                            }
+                        }
+                    }
+                    STORM_LOG_THROW(validFormula, storm::exceptions::InvalidPropertyException,
+                                    "The formula is not supported by the grid approximation");
+                    STORM_LOG_ASSERT(!targetObservationSet.empty(), "The set of target observations is empty!");
+
+                    storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<double> checker = storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<double>();
+                    double overRes = storm::utility::one<double>();
+                    double underRes = storm::utility::zero<double>();
+                    std::unique_ptr<storm::pomdp::modelchecker::POMDPCheckResult<double>> result;
+                    result = checker.computeReachabilityReward(*pomdp, targetObservationSet,
+                                                               rewFormula.getOptimalityType() ==
+                                                               storm::OptimizationDirection::Minimize,
+                                                               pomdpSettings.getGridResolution());
+                    overRes = result->OverapproximationValue;
+                    underRes = result->UnderapproximationValue;
+                }
+
             }
             if (pomdpSettings.getMemoryBound() > 1) {
                 STORM_PRINT_AND_LOG("Computing the unfolding for memory bound " << pomdpSettings.getMemoryBound() << " and memory pattern '" << storm::storage::toString(pomdpSettings.getMemoryPattern()) << "' ...");
