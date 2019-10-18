@@ -27,7 +27,8 @@ namespace storm {
 
                 std::unique_ptr<POMDPCheckResult<ValueType>>
                 computeReachabilityReward(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                          std::set<uint32_t> target_observations, uint64_t gridResolution);
+                                          std::set<uint32_t> targetObservations, bool min,
+                                          uint64_t gridResolution);
 
             private:
                 /**
@@ -173,7 +174,7 @@ namespace storm {
                  * @param probabilities
                  * @return
                  */
-                uint64_t getBeliefIdInVector(std::vector<storm::pomdp::Belief<ValueType>> &grid, uint32_t observation,
+                uint64_t getBeliefIdInVector(std::vector<storm::pomdp::Belief<ValueType>> const &grid, uint32_t observation,
                                              std::vector<ValueType> probabilities);
 
                 storm::storage::SparseMatrix<ValueType>
@@ -181,6 +182,10 @@ namespace storm {
 
                 storm::storage::SparseMatrix<ValueType>
                 buildTransitionMatrix(std::vector<std::vector<std::map<uint64_t, ValueType>>> transitions);
+
+                ValueType getRewardAfterAction(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp, uint64_t action, storm::pomdp::Belief<ValueType> belief);
+
+                storm::utility::ConstantsComparator<ValueType> cc;
             };
 
         }

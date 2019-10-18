@@ -18,14 +18,13 @@ namespace storm {
         namespace modelchecker {
             template<typename ValueType, typename RewardModelType>
             ApproximatePOMDPModelchecker<ValueType, RewardModelType>::ApproximatePOMDPModelchecker() {
-                //Intentionally left empty
+                cc = storm::utility::ConstantsComparator<ValueType>(storm::utility::convertNumber<ValueType>(0.00000000001), false);
             }
 
             template<typename ValueType, typename RewardModelType>
             std::unique_ptr<POMDPCheckResult<ValueType>>
-            ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeReachabilityProbability(
-                    storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                    std::set<uint32_t> targetObservations, bool min, uint64_t gridResolution) {
+            ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeReachabilityProbability(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
+                                                                                                     std::set<uint32_t> targetObservations, bool min, uint64_t gridResolution) {
                 storm::utility::Stopwatch beliefGridTimer(true);
                 uint64_t maxIterations = 100;
                 bool finished = false;
@@ -77,6 +76,9 @@ namespace storm {
 
                         uint64_t numChoices = pomdp.getNumberOfChoices(
                                 pomdp.getStatesWithObservation(currentBelief.observation).front());
+                        std::vector<std::map<uint32_t, ValueType>> observationProbabilitiesInAction(numChoices);
+                        std::vector<std::map<uint32_t, uint64_t>> nextBelievesInAction(numChoices);
+
                         for (uint64_t action = 0; action < numChoices; ++action) {
                             std::map<uint32_t, ValueType> actionObservationProbabilities = computeObservationProbabilitiesAfterAction(
                                     pomdp, currentBelief, action);
@@ -94,8 +96,8 @@ namespace storm {
                                                                                                             nextId);
                                 nextId = beliefList.size();
                             }
-                            observationProbabilitiesInAction.push_back(actionObservationProbabilities);
-                            nextBelievesInAction.push_back(actionObservationBelieves);
+                            observationProbabilitiesInAction[action] = actionObservationProbabilities;
+                            nextBelievesInAction[action] = actionObservationBelieves;
                         }
                         observationProbabilities.emplace(
                                 std::make_pair(currentBelief.id, observationProbabilitiesInAction));
@@ -111,7 +113,6 @@ namespace storm {
                 STORM_PRINT("Nr Believes " << beliefList.size() << std::endl)
                 STORM_PRINT("Time generation of next believes: " << nextBeliefGeneration << std::endl)
                 // Value Iteration
-                storm::utility::ConstantsComparator<ValueType> cc(storm::utility::convertNumber<ValueType>(0.00000000001), false);
                 while (!finished && iteration < maxIterations) {
                     storm::utility::Stopwatch iterationTimer(true);
                     STORM_LOG_DEBUG("Iteration " << iteration + 1);
@@ -171,10 +172,8 @@ namespace storm {
                             result[currentBelief.id] = chosenValue;
                             chosenActions[currentBelief.id] = chosenActionIndex;
                             // Check if the iteration brought an improvement
-                            if ((min && cc.isLess(storm::utility::zero<ValueType>(),
-                                                  result_backup[currentBelief.id] - result[currentBelief.id])) ||
-                                (!min && cc.isLess(storm::utility::zero<ValueType>(),
-                                                   result[currentBelief.id] - result_backup[currentBelief.id]))) {
+                            if ((min && cc.isLess(storm::utility::zero<ValueType>(), result_backup[currentBelief.id] - result[currentBelief.id])) ||
+                                (!min && cc.isLess(storm::utility::zero<ValueType>(), result[currentBelief.id] - result_backup[currentBelief.id]))) {
                                 improvement = true;
                             }
                         }
@@ -182,11 +181,8 @@ namespace storm {
                     finished = !improvement;
                     storm::utility::Stopwatch backupTimer(true);
                     // back up
-                    for (auto iter = result.begin(); iter != result.end(); ++iter) {
-                        result_backup[iter->first] = result[iter->first];
-                    }
-                    backupTimer.stop();
-                    STORM_PRINT("Time Backup " << backupTimer << std::endl);
+                    result_backup = result;
+
                     ++iteration;
                     iterationTimer.stop();
                     STORM_PRINT("Iteration " << iteration << ": " << iterationTimer << std::endl);
@@ -214,7 +210,7 @@ namespace storm {
                 overApproxTimer.stop();
 
                 // Now onto the under-approximation
-                bool useMdp = false;//true;
+                bool useMdp = /*false;*/true;
                 storm::utility::Stopwatch underApproxTimer(true);
                 ValueType underApprox = useMdp ? computeUnderapproximationWithMDP(pomdp, beliefList, beliefIsTarget, targetObservations, observationProbabilities, nextBelieves,
                                                                                   result, chosenActions, gridResolution, initialBelief.id, min) :
@@ -497,7 +493,6 @@ namespace storm {
                     std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
                     std::map<uint64_t, ValueType> &result,
                     uint64_t gridResolution, uint64_t currentBeliefId, uint64_t nextId, bool min) {
-                storm::utility::ConstantsComparator<ValueType> cc(storm::utility::convertNumber<ValueType>(0.00000000001), false);
                 storm::pomdp::Belief<ValueType> currentBelief = beliefList[currentBeliefId];
 
                 //TODO put this in extra function
@@ -571,9 +566,9 @@ namespace storm {
 
             template<typename ValueType, typename RewardModelType>
             uint64_t ApproximatePOMDPModelchecker<ValueType, RewardModelType>::getBeliefIdInVector(
-                    std::vector<storm::pomdp::Belief<ValueType>> &grid, uint32_t observation,
+                    std::vector<storm::pomdp::Belief<ValueType>> const &grid, uint32_t observation,
                     std::vector<ValueType> probabilities) {
-                storm::utility::ConstantsComparator<ValueType> cc(storm::utility::convertNumber<ValueType>(0.00000000001), false);
+                // TODO This one is quite slow
                 for (auto const &belief : grid) {
                     if (belief.observation == observation) {
                         bool same = true;
@@ -757,8 +752,7 @@ namespace storm {
                     uint64_t actionIndex) {
                 std::map<uint32_t, ValueType> res;
                 // the id is not important here as we immediately discard the belief (very hacky, I don't like it either)
-                std::vector<ValueType> postProbabilities = getBeliefAfterAction(pomdp, belief, actionIndex,
-                                                                                0).probabilities;
+                std::vector<ValueType> postProbabilities = getBeliefAfterAction(pomdp, belief, actionIndex, 0).probabilities;
                 for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
                     uint32_t observation = pomdp.getObservation(state);
                     if (postProbabilities[state] != storm::utility::zero<ValueType>()) {
@@ -782,8 +776,7 @@ namespace storm {
                 uint32_t observation = 0;
                 for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
                     if (belief.probabilities[state] != storm::utility::zero<ValueType>()) {
-                        auto row = pomdp.getTransitionMatrix().getRow(
-                                pomdp.getChoiceIndex(storm::storage::StateActionPair(state, actionIndex)));
+                        auto row = pomdp.getTransitionMatrix().getRow(pomdp.getChoiceIndex(storm::storage::StateActionPair(state, actionIndex)));
                         for (auto const &entry : row) {
                             observation = pomdp.getObservation(entry.getColumn());
                             distributionAfter[entry.getColumn()] += belief.probabilities[state] * entry.getValue();
@@ -795,15 +788,14 @@ namespace storm {
 
             template<typename ValueType, typename RewardModelType>
             uint64_t ApproximatePOMDPModelchecker<ValueType, RewardModelType>::getBeliefAfterActionAndObservation(
-                    storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                    std::vector<storm::pomdp::Belief<ValueType>> &beliefList, std::vector<bool> &beliefIsTarget,
-                    std::set<uint32_t> &targetObservations, storm::pomdp::Belief<ValueType> belief,
-                    uint64_t actionIndex, uint32_t observation, uint64_t id) {
-                std::vector<ValueType> distributionAfter(pomdp.getNumberOfStates(), storm::utility::zero<ValueType>());
+                    storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp, std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
+                    std::vector<bool> &beliefIsTarget, std::set<uint32_t> &targetObservations, storm::pomdp::Belief<ValueType> belief, uint64_t actionIndex, uint32_t observation,
+                    uint64_t id) {
+                storm::utility::Stopwatch distrWatch(true);
+                std::vector<ValueType> distributionAfter(pomdp.getNumberOfStates()); //, storm::utility::zero<ValueType>());
                 for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
                     if (belief.probabilities[state] != storm::utility::zero<ValueType>()) {
-                        auto row = pomdp.getTransitionMatrix().getRow(
-                                pomdp.getChoiceIndex(storm::storage::StateActionPair(state, actionIndex)));
+                        auto row = pomdp.getTransitionMatrix().getRow(pomdp.getChoiceIndex(storm::storage::StateActionPair(state, actionIndex)));
                         for (auto const &entry : row) {
                             if (pomdp.getObservation(entry.getColumn()) == observation) {
                                 distributionAfter[entry.getColumn()] += belief.probabilities[state] * entry.getValue();
@@ -811,19 +803,30 @@ namespace storm {
                         }
                     }
                 }
+                distrWatch.stop();
                 // We have to normalize the distribution
+                storm::utility::Stopwatch normalizationWatch(true);
                 auto sum = storm::utility::zero<ValueType>();
                 for (ValueType const &entry : distributionAfter) {
                     sum += entry;
                 }
+
                 for (size_t i = 0; i < pomdp.getNumberOfStates(); ++i) {
                     distributionAfter[i] /= sum;
                 }
+                normalizationWatch.stop();
                 if (getBeliefIdInVector(beliefList, observation, distributionAfter) != uint64_t(-1)) {
-                    return getBeliefIdInVector(beliefList, observation, distributionAfter);
+                    storm::utility::Stopwatch getWatch(true);
+                    auto res = getBeliefIdInVector(beliefList, observation, distributionAfter);
+                    getWatch.stop();
+                    //STORM_PRINT("Distribution: "<< distrWatch.getTimeInNanoseconds() << " / Normalization: " << normalizationWatch.getTimeInNanoseconds() << " / getId: " << getWatch.getTimeInNanoseconds() << std::endl)
+                    return res;
                 } else {
+                    storm::utility::Stopwatch pushWatch(true);
                     beliefList.push_back(storm::pomdp::Belief<ValueType>{id, observation, distributionAfter});
                     beliefIsTarget.push_back(targetObservations.find(observation) != targetObservations.end());
+                    pushWatch.stop();
+                    //STORM_PRINT("Distribution: "<< distrWatch.getTimeInNanoseconds() << " / Normalization: " << normalizationWatch.getTimeInNanoseconds() << " / generateBelief: " << pushWatch.getTimeInNanoseconds() << std::endl)
                     return id;
                 }
             }
