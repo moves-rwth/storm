@@ -24,6 +24,8 @@
 #include "storm/settings/modules/BuildSettings.h"
 #include "storm/settings/modules/JitBuilderSettings.h"
 #include "storm/settings/modules/TopologicalEquationSolverSettings.h"
+#include "storm/settings/modules/ModelCheckerSettings.h"
+#include "storm/settings/modules/MultiplierSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
 
@@ -67,6 +69,8 @@ void initializeSettings() {
     storm::settings::addModule<storm::settings::modules::ResourceSettings>();
     storm::settings::addModule<storm::settings::modules::JitBuilderSettings>();
     storm::settings::addModule<storm::settings::modules::TopologicalEquationSolverSettings>();
+    storm::settings::addModule<storm::settings::modules::ModelCheckerSettings>();
+    storm::settings::addModule<storm::settings::modules::MultiplierSettings>();
 
 
     storm::settings::addModule<storm::settings::modules::POMDPSettings>();

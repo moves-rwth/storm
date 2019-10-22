@@ -77,7 +77,7 @@ namespace storm {
                                                             std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
                                                             std::map<uint64_t, ValueType> &result,
                                                             std::map<uint64_t, uint64_t> chosenActions,
-                                                            uint64_t gridResolution, uint64_t initialBeliefId, bool min);
+                                                            uint64_t gridResolution, uint64_t initialBeliefId, bool min, bool computeReward);
 
                 ValueType computeUnderapproximationWithMDP(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                                                            std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
@@ -87,7 +87,7 @@ namespace storm {
                                                            std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
                                                            std::map<uint64_t, ValueType> &result,
                                                            std::map<uint64_t, uint64_t> chosenActions,
-                                                           uint64_t gridResolution, uint64_t initialBeliefId, bool min);
+                                                           uint64_t gridResolution, uint64_t initialBeliefId, bool min, bool computeRewards);
 
                 /**
                  *

@@ -71,9 +71,6 @@ namespace storm {
                         result_backup.emplace(std::make_pair(currentBelief.id, storm::utility::zero<ValueType>()));
 
                         //TODO put this in extra function
-                        std::vector<std::map<uint32_t, ValueType>> observationProbabilitiesInAction;
-                        std::vector<std::map<uint32_t, uint64_t>> nextBelievesInAction;
-
                         uint64_t numChoices = pomdp.getNumberOfChoices(
                                 pomdp.getStatesWithObservation(currentBelief.observation).front());
                         std::vector<std::map<uint32_t, ValueType>> observationProbabilitiesInAction(numChoices);
@@ -86,6 +83,8 @@ namespace storm {
                             for (auto iter = actionObservationProbabilities.begin();
                                  iter != actionObservationProbabilities.end(); ++iter) {
                                 uint32_t observation = iter->first;
+                                // THIS CALL IS SLOW
+                                // TODO speed this up
                                 actionObservationBelieves[observation] = getBeliefAfterActionAndObservation(pomdp,
                                                                                                             beliefList,
                                                                                                             beliefIsTarget,
@@ -110,7 +109,6 @@ namespace storm {
                 std::map<uint64_t, std::vector<std::vector<ValueType>>> subSimplexCache;
                 std::map<uint64_t, std::vector<ValueType>> lambdaCache;
 
-                STORM_PRINT("Nr Believes " << beliefList.size() << std::endl)
                 STORM_PRINT("Time generation of next believes: " << nextBeliefGeneration << std::endl)
                 // Value Iteration
                 while (!finished && iteration < maxIterations) {
@@ -131,7 +129,7 @@ namespace storm {
                             ValueType currentValue;
 
                             for (uint64_t action = 0; action < numChoices; ++action) {
-                                currentValue = storm::utility::zero<ValueType>(); // simply change this for rewards?
+                                currentValue = storm::utility::zero<ValueType>();
                                 for (auto iter = observationProbabilities[currentBelief.id][action].begin();
                                      iter != observationProbabilities[currentBelief.id][action].end(); ++iter) {
                                     uint32_t observation = iter->first;
@@ -172,8 +170,7 @@ namespace storm {
                             result[currentBelief.id] = chosenValue;
                             chosenActions[currentBelief.id] = chosenActionIndex;
                             // Check if the iteration brought an improvement
-                            if ((min && cc.isLess(storm::utility::zero<ValueType>(), result_backup[currentBelief.id] - result[currentBelief.id])) ||
-                                (!min && cc.isLess(storm::utility::zero<ValueType>(), result[currentBelief.id] - result_backup[currentBelief.id]))) {
+                            if (cc.isLess(storm::utility::zero<ValueType>(), result[currentBelief.id] - result_backup[currentBelief.id])) {
                                 improvement = true;
                             }
                         }
@@ -209,12 +206,12 @@ namespace storm {
                 overApproxTimer.stop();
 
                 // Now onto the under-approximation
-                bool useMdp = /*false;*/true;
+                bool useMdp = true;
                 storm::utility::Stopwatch underApproxTimer(true);
                 ValueType underApprox = useMdp ? computeUnderapproximationWithMDP(pomdp, beliefList, beliefIsTarget, targetObservations, observationProbabilities, nextBelieves,
-                                                                                  result, chosenActions, gridResolution, initialBelief.id, min) :
+                                                                                  result, chosenActions, gridResolution, initialBelief.id, min, false) :
                                         computeUnderapproximationWithDTMC(pomdp, beliefList, beliefIsTarget, targetObservations, observationProbabilities, nextBelieves, result,
-                                                                          chosenActions, gridResolution, initialBelief.id, min);
+                                                                          chosenActions, gridResolution, initialBelief.id, min, false);
                 underApproxTimer.stop();
 
                 STORM_PRINT("Time Belief Grid Generation: " << beliefGridTimer << std::endl
@@ -281,7 +278,6 @@ namespace storm {
                     result_backup.emplace(std::make_pair(currentBelief.id, storm::utility::zero<ValueType>()));
                     if (!isTarget) {
                         //TODO put this in extra function
-                        storm::utility::Stopwatch beliefWatch(true);
                         // As we need to grab some parameters which are the same for all states with the same observation, we simply select some state as the representative
                         uint64_t representativeState = pomdp.getStatesWithObservation(currentBelief.observation).front();
                         uint64_t numChoices = pomdp.getNumberOfChoices(representativeState);
@@ -291,16 +287,12 @@ namespace storm {
                         std::vector<ValueType> actionRewardsInState(numChoices);
 
                         for (uint64_t action = 0; action < numChoices; ++action) {
-                            storm::utility::Stopwatch aopWatch(true);
                             std::map<uint32_t, ValueType> actionObservationProbabilities = computeObservationProbabilitiesAfterAction(
                                     pomdp, currentBelief, action);
-                            aopWatch.stop();
-                            //STORM_PRINT("AOP " << actionObservationProbabilities.size() << ": " << aopWatch << std::endl)
                             std::map<uint32_t, uint64_t> actionObservationBelieves;
                             for (auto iter = actionObservationProbabilities.begin();
                                  iter != actionObservationProbabilities.end(); ++iter) {
                                 uint32_t observation = iter->first;
-                                storm::utility::Stopwatch callWatch(true);
                                 // THIS CALL IS SLOW
                                 // TODO speed this up
                                 actionObservationBelieves[observation] = getBeliefAfterActionAndObservation(pomdp,
@@ -312,8 +304,6 @@ namespace storm {
                                                                                                             observation,
                                                                                                             nextId);
                                 nextId = beliefList.size();
-                                callWatch.stop();
-                                //STORM_PRINT("Overall: " << callWatch << std::endl)
                             }
                             observationProbabilitiesInAction[action] = actionObservationProbabilities;
                             nextBelievesInAction[action] = actionObservationBelieves;
@@ -325,8 +315,6 @@ namespace storm {
                                 std::make_pair(currentBelief.id, observationProbabilitiesInAction));
                         nextBelieves.emplace(std::make_pair(currentBelief.id, nextBelievesInAction));
                         beliefActionRewards.emplace(std::make_pair(currentBelief.id, actionRewardsInState));
-                        beliefWatch.stop();
-                        //STORM_PRINT("Belief " << currentBelief.id << " (" << isTarget << "): " << beliefWatch << std::endl)
                     }
 
                 }
@@ -336,7 +324,6 @@ namespace storm {
                 std::map<uint64_t, std::vector<std::vector<ValueType>>> subSimplexCache;
                 std::map<uint64_t, std::vector<ValueType>> lambdaCache;
 
-                STORM_PRINT("Nr Grid Believes " << beliefGrid.size() << std::endl)
                 STORM_PRINT("Time generation of next believes: " << nextBeliefGeneration << std::endl)
                 // Value Iteration
                 while (!finished && iteration < maxIterations) {
@@ -357,13 +344,9 @@ namespace storm {
                             ValueType currentValue;
 
                             for (uint64_t action = 0; action < numChoices; ++action) {
-                                storm::utility::Stopwatch actionWatch(true);
-
                                 currentValue = beliefActionRewards[currentBelief.id][action];
-                                storm::utility::Stopwatch loopTimer(true);
                                 for (auto iter = observationProbabilities[currentBelief.id][action].begin();
                                      iter != observationProbabilities[currentBelief.id][action].end(); ++iter) {
-                                    storm::utility::Stopwatch subsimplexTime(true);
                                     uint32_t observation = iter->first;
                                     storm::pomdp::Belief<ValueType> nextBelief = beliefList[nextBelieves[currentBelief.id][action][observation]];
                                     // compute subsimplex and lambdas according to the Lovejoy paper to approximate the next belief
@@ -381,9 +364,6 @@ namespace storm {
                                         subSimplexCache[nextBelief.id] = subSimplex;
                                         lambdaCache[nextBelief.id] = lambdas;
                                     }
-                                    subsimplexTime.stop();
-                                    //STORM_PRINT("--subsimplex: " << subsimplexTime.getTimeInNanoseconds() << "ns" << std::endl)
-                                    storm::utility::Stopwatch sumTime(true);
                                     auto sum = storm::utility::zero<ValueType>();
                                     for (size_t j = 0; j < lambdas.size(); ++j) {
                                         if (!cc.isEqual(lambdas[j], storm::utility::zero<ValueType>())) {
@@ -393,11 +373,7 @@ namespace storm {
                                     }
 
                                     currentValue += iter->second * sum;
-                                    sumTime.stop();
-                                    //STORM_PRINT("--value: " << sumTime.getTimeInNanoseconds() << "ns" << std::endl)
                                 }
-                                loopTimer.stop();
-                                //STORM_PRINT("-Loop: " << loopTimer.getTimeInNanoseconds() << "ns" << std::endl)
                                 // Update the selected actions
                                 if ((min && cc.isLess(storm::utility::zero<ValueType>(), chosenValue - currentValue)) ||
                                     (!min &&
@@ -407,8 +383,6 @@ namespace storm {
                                     chosenValue = currentValue;
                                     chosenActionIndex = action;
                                 }
-                                actionWatch.stop();
-                                //STORM_PRINT("Action: " << actionWatch.getTimeInNanoseconds() << "ns" << std::endl)
                             }
 
                             result[currentBelief.id] = chosenValue;
@@ -450,14 +424,14 @@ namespace storm {
                     }
                 }
                 overApproxTimer.stop();
-                /*
+
                 // Now onto the under-approximation
-                bool useMdp = false;true;
+                bool useMdp = true;
                 storm::utility::Stopwatch underApproxTimer(true);
                 ValueType underApprox = useMdp ? computeUnderapproximationWithMDP(pomdp, beliefList, beliefIsTarget, targetObservations, observationProbabilities, nextBelieves,
-                                                                                  result, chosenActions, gridResolution, initialBelief.id, min) :
-                                        computeUnderapproximationWithDTMC(pomdp, beliefList, beliefIsTarget, targetObservations, observationProbabilities, nextBelieves, result,
-                                                                          chosenActions, gridResolution, initialBelief.id, min);
+                                                                                  result, chosenActions, gridResolution, initialBelief.id, min, true) :
+                                        computeUnderapproximationWithDTMC(pomdp, beliefList, beliefIsTarget, targetObservations, observationProbabilities, nextBelieves,
+                                                                          result, chosenActions, gridResolution, initialBelief.id, min, true);
                 underApproxTimer.stop();
 
                 STORM_PRINT("Time Belief Grid Generation: " << beliefGridTimer << std::endl
@@ -465,12 +439,11 @@ namespace storm {
                                                             << std::endl
                                                             << "Time Underapproximation: " << underApproxTimer
                                                             << std::endl);
-*/
                 STORM_PRINT("Over-Approximation Result: " << overApprox << std::endl);
-                //STORM_PRINT("Under-Approximation Result: " << underApprox << std::endl);
+                STORM_PRINT("Under-Approximation Result: " << underApprox << std::endl);
 
                 return std::make_unique<POMDPCheckResult<ValueType>>(
-                        POMDPCheckResult<ValueType>{overApprox, storm::utility::zero<ValueType>()});
+                        POMDPCheckResult<ValueType>{overApprox, underApprox});
             }
 
             template<typename ValueType, typename RewardModelType>
@@ -483,7 +456,8 @@ namespace storm {
                                                                                                         std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
                                                                                                         std::map<uint64_t, ValueType> &result,
                                                                                                         std::map<uint64_t, uint64_t> chosenActions,
-                                                                                                        uint64_t gridResolution, uint64_t initialBeliefId, bool min) {
+                                                                                                        uint64_t gridResolution, uint64_t initialBeliefId, bool min,
+                                                                                                        bool computeReward) {
                 std::set<uint64_t> visitedBelieves;
                 std::deque<uint64_t> believesToBeExpanded;
                 std::map<uint64_t, uint64_t> beliefStateMap;
@@ -539,14 +513,30 @@ namespace storm {
                 for (auto targetState : targetStates) {
                     labeling.addLabelToState("target", targetState);
                 }
-                storm::storage::sparse::ModelComponents<ValueType, RewardModelType> modelComponents(
-                        buildTransitionMatrix(transitions), labeling);
+
+                storm::models::sparse::StandardRewardModel<ValueType> rewardModel(std::vector<ValueType>(beliefStateMap.size()));
+                for (auto const &iter : beliefStateMap) {
+                    auto currentBelief = beliefList[iter.first];
+                    // Add the reward collected by taking the chosen Action in the belief
+                    rewardModel.setStateReward(iter.second, getRewardAfterAction(pomdp, pomdp.getChoiceIndex(
+                            storm::storage::StateActionPair(pomdp.getStatesWithObservation(currentBelief.observation).front(), chosenActions[iter.first])),
+                                                                                 currentBelief));
+                }
+
+                std::unordered_map<std::string, RewardModelType> rewardModels = {{"std", rewardModel}};
+
+                storm::storage::sparse::ModelComponents<ValueType, RewardModelType> modelComponents(buildTransitionMatrix(transitions), labeling, rewardModels);
 
                 storm::models::sparse::Dtmc<ValueType, RewardModelType> underApproxDtmc(modelComponents);
                 auto model = std::make_shared<storm::models::sparse::Dtmc<ValueType, RewardModelType>>(underApproxDtmc);
                 model->printModelInformationToStream(std::cout);
 
-                std::string propertyString = min ? "Pmin=? [F \"target\"]" : "Pmax=? [F \"target\"]";
+                std::string propertyString;
+                if (computeReward) {
+                    propertyString = min ? "Rmin=? [F \"target\"]" : "Rmax=? [F \"target\"]";
+                } else {
+                    propertyString = min ? "Pmin=? [F \"target\"]" : "Pmax=? [F \"target\"]";
+                }
                 std::vector<storm::jani::Property> propertyVector = storm::api::parseProperties(propertyString);
                 std::shared_ptr<storm::logic::Formula const> property = storm::api::extractFormulasFromProperties(
                         propertyVector).front();
@@ -569,7 +559,8 @@ namespace storm {
                                                                                                        std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
                                                                                                        std::map<uint64_t, ValueType> &result,
                                                                                                        std::map<uint64_t, uint64_t> chosenActions,
-                                                                                                       uint64_t gridResolution, uint64_t initialBeliefId, bool min) {
+                                                                                                       uint64_t gridResolution, uint64_t initialBeliefId, bool min,
+                                                                                                       bool computeRewards) {
                 std::set<uint64_t> visitedBelieves;
                 std::deque<uint64_t> believesToBeExpanded;
                 std::map<uint64_t, uint64_t> beliefStateMap;
@@ -598,7 +589,6 @@ namespace storm {
                                 pomdp.getStatesWithObservation(beliefList[currentBeliefId].observation).front());
                         if (chosenActions.find(currentBeliefId) == chosenActions.end()) {
                             // If the current Belief is not part of the grid, the next states have not been computed yet.
-                            // For now, this is a very dirty workaround because I am currently to lazy to refactor everything to be able to do this without the extractBestAction method
                             std::vector<std::map<uint32_t, ValueType>> observationProbabilitiesInAction;
                             std::vector<std::map<uint32_t, uint64_t>> nextBelievesInAction;
                             for (uint64_t action = 0; action < numChoices; ++action) {
@@ -638,7 +628,6 @@ namespace storm {
                                     believesToBeExpanded.push_back(nextBeliefId);
                                 }
                                 transitionsInStateWithAction[beliefStateMap[nextBeliefId]] = iter->second;
-                                //STORM_PRINT("Transition with action " << action << " from state " << beliefStateMap[currentBeliefId] << " to state " << beliefStateMap[nextBeliefId] << " with prob " << iter->second << std::endl)
                             }
                             actionTransitionStorage.push_back(transitionsInStateWithAction);
                         }
@@ -659,10 +648,32 @@ namespace storm {
                         buildTransitionMatrix(transitions), labeling);
 
                 storm::models::sparse::Mdp<ValueType, RewardModelType> underApproxMdp(modelComponents);
+
+                if (computeRewards) {
+                    storm::models::sparse::StandardRewardModel<ValueType> rewardModel(boost::none, std::vector<ValueType>(modelComponents.transitionMatrix.getRowCount()));
+                    for (auto const &iter : beliefStateMap) {
+                        auto currentBelief = beliefList[iter.first];
+                        auto representativeState = pomdp.getStatesWithObservation(currentBelief.observation).front();
+                        for (uint64_t action = 0; action < underApproxMdp.getNumberOfChoices(iter.second); ++action) {
+                            // Add the reward
+                            rewardModel.setStateActionReward(underApproxMdp.getChoiceIndex(storm::storage::StateActionPair(iter.second, action)),
+                                                             getRewardAfterAction(pomdp, pomdp.getChoiceIndex(storm::storage::StateActionPair(representativeState, action)),
+                                                                                  currentBelief));
+                        }
+                    }
+                    underApproxMdp.addRewardModel("std", rewardModel);
+                    underApproxMdp.restrictRewardModels(std::set<std::string>({"std"}));
+                }
+
                 auto model = std::make_shared<storm::models::sparse::Mdp<ValueType, RewardModelType>>(underApproxMdp);
                 model->printModelInformationToStream(std::cout);
 
-                std::string propertyString = min ? "Pmin=? [F \"target\"]" : "Pmax=? [F \"target\"]";
+                std::string propertyString;
+                if (computeRewards) {
+                    propertyString = min ? "Rmin=? [F \"target\"]" : "Rmax=? [F \"target\"]";
+                } else {
+                    propertyString = min ? "Pmin=? [F \"target\"]" : "Pmax=? [F \"target\"]";
+                }
                 std::vector<storm::jani::Property> propertyVector = storm::api::parseProperties(propertyString);
                 std::shared_ptr<storm::logic::Formula const> property = storm::api::extractFormulasFromProperties(
                         propertyVector).front();
@@ -696,7 +707,6 @@ namespace storm {
                     smb.newRowGroup(currentRow);
                     for (auto const &map : actionTransitions) {
                         for (auto const &transition : map) {
-                            //STORM_PRINT(" Add transition from state " << currentRowGroup << " to state " << transition.first << " with prob " << transition.second << std::endl)
                             smb.addNextValue(currentRow, transition.first, transition.second);
                         }
                         ++currentRow;
