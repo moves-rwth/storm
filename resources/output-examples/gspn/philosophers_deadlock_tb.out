@@ -1,0 +1,24 @@
+Storm 1.3.1 (dev)
+
+Command line arguments: --jani philosophers.jani --constants TIME_BOUND=10 --janiproperty MaxPrReachDeadlockTB
+Current working directory: ~/storm/build/bin
+
+Time for model input parsing: 0.059s.
+
+Time for model construction: 0.240s.
+
+--------------------------------------------------------------
+Model type: 	CTMC (sparse)
+States: 	34
+Transitions: 	89
+Reward Models:  none
+State Labels: 	3 labels
+   * deadlock -> 0 item(s)
+   * init -> 1 item(s)
+   * deadl -> 1 item(s)
+Choice Labels: 	none
+--------------------------------------------------------------
+
+Model checking property "MaxPrReachDeadlockTB": Pmax=? [true U<=10 "deadl"] ...
+Result (for initial states): 0.8547786624
+Time for model checking: 0.016s.

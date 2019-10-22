@@ -310,8 +310,41 @@ The result is an expression over the parameter p.
 
 ## Running Storm on GSPNs
 
-{:.alert .alert-info}
-Coming soon.
+The binary `storm-gsnp` handles [Generalized Stochastic Petri Nets (GSPNs)](languages.html#gspns).
+GSPNs can be analysed by first converting them to the [JANI format](languages.html#jani) and then analyzing the JANI model as [shown before](#running-storm-on-jani-input).
+
+### Running Storm on Pnpro input
+
+#### Example 6 (Analysis of a GSPN)
+
+We start by parsing a GSPN given in the [pnpro format](languages.html#greatspn-editor-projects) used by the GreatSPN editor.
+The GSPN models four dining philosophers.
+
+{% include includes/show_model.html name="GSPN model of dining philosophers" class="gspn_dining_philosophers" path="gspn/philosophers.pnpro" %}
+
+We convert the GSPN into a JANI file with the following command:
+
+```console
+$ storm-gspn --gspnfile philosophers.pnpro --to-jani philosophers.jani --addprops --capacity 1
+```
+
+The argument `--capacity <value>` specifies the maximal capacity for all places.
+Alternatively, it is possible to provide a file specifying the capacity for each place with `--capacitiesfile <filename>`.
+The flag `-addprops` automatically adds some properties which are commonly used in Petri net analysis.
+
+On the resulting JANI file we compute for example the maximal probability of reaching a deadlock within 10 time units:
+
+```console
+$ storm --jani philosophers.jani --constants TIME_BOUND=10 --janiproperty MaxPrReachDeadlockTB
+```
+
+{% include includes/show_output.html class="gspn_philosophers_output_deadlock_tb" path="gspn/philosophers_deadlock_tb.out" %}
+
+For additional commandline options see the help for GSPNs with:
+
+```console
+$ storm-gspn --help gspn
+```
 
 
 ## Running Storm on pGCL

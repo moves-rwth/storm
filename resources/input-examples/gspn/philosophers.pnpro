@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- This project file has been saved by the New GreatSPN Editor, v.100 --><project name="Dining Philosophers" version="121">
+  <gspn name="Philosophers4">
+    <nodes>
+      <place marking="1" name="fork1" x="21.0" y="4.0"/>
+      <transition delay="lambda" delay-x="-0.5" delay-y="1.5" name="T0" rotation="0.7853981633974483" type="EXP" x="26.55" y="9.0"/>
+      <transition delay="lambda" name="T1" rotation="2.356194490192345" type="EXP" x="16.55" y="9.0"/>
+      <place marking="1" name="fork4" x="11.0" y="14.0"/>
+      <place marking="1" name="fork2" x="31.0" y="14.0"/>
+      <transition delay="lambda" delay-x="0.0" delay-y="1.5" name="T2" rotation="0.7853981633974483" type="EXP" x="16.55" y="19.0"/>
+      <transition delay="lambda" name="T3" rotation="2.356194490192345" type="EXP" x="26.55" y="19.0"/>
+      <place marking="1" name="fork3" x="21.0" y="24.0"/>
+      <place name="eating1" x="11.0" y="9.0"/>
+      <place label-y="-1.5" marking="1" name="thinking1" x="16.0" y="4.0"/>
+      <place label-y="-1.5" name="wait1" x="6.0" y="4.0"/>
+      <place label-y="-1.5" name="eating2" x="26.0" y="4.0"/>
+      <place marking="1" name="thinking2" x="31.0" y="9.0"/>
+      <place label-y="-1.5" name="wait2" x="36.0" y="4.0"/>
+      <place name="eating3" x="31.0" y="19.0"/>
+      <place marking="1" name="thinking4" x="11.0" y="19.0"/>
+      <place name="eating4" x="16.0" y="24.0"/>
+      <place marking="1" name="thinking3" x="26.0" y="24.0"/>
+      <place name="wait3" x="36.0" y="24.0"/>
+      <place name="wait4" x="6.0" y="24.0"/>
+      <transition delay="rho" delay-x="0.0" delay-y="1.5" name="T4" rotation="2.356194490192345" type="EXP" x="6.55" y="9.0"/>
+      <transition delay="rho" name="T5" rotation="2.356194490192345" type="EXP" x="36.55" y="19.0"/>
+      <transition delay="mu" delay-x="-0.5" name="T6" rotation="0.7853981633974483" type="EXP" x="36.55" y="9.0"/>
+      <transition delay="mu" delay-x="0.0" name="T7" rotation="0.7853981633974483" type="EXP" x="6.55" y="19.0"/>
+      <transition delay="mu" name="T8" type="EXP" x="11.55" y="4.0"/>
+      <transition delay="rho" name="T9" type="EXP" x="31.55" y="4.0"/>
+      <transition delay="mu" name="T10" type="EXP" x="31.55" y="24.0"/>
+      <transition delay="rho" delay-x="0.0" delay-y="1.5" name="T11" type="EXP" x="11.55" y="24.0"/>
+      <constant consttype="REAL" name="lambda" value="1" x="1.4375" y="2.0"/>
+      <constant consttype="REAL" name="mu" value="1" x="1.4375" y="3.0"/>
+      <constant consttype="REAL" name="rho" value="1" x="1.5" y="4.0"/>
+    </nodes>
+    <edges>
+      <arc head="fork4" kind="OUTPUT" mult-k="0.5" tail="T1"/>
+      <arc head="fork2" kind="OUTPUT" mult-k="0.5" tail="T0"/>
+      <arc head="fork3" kind="OUTPUT" mult-k="0.5" tail="T2"/>
+      <arc head="fork4" kind="OUTPUT" mult-k="0.18173828125000002" tail="T2"/>
+      <arc head="fork1" kind="OUTPUT" mult-k="0.5" tail="T1"/>
+      <arc head="fork1" kind="OUTPUT" mult-k="0.5" tail="T0"/>
+      <arc head="fork2" kind="OUTPUT" mult-k="0.5" tail="T3"/>
+      <arc head="fork3" kind="OUTPUT" mult-k="0.5" tail="T3"/>
+      <arc head="thinking1" kind="OUTPUT" mult-k="0.5" tail="T1"/>
+      <arc head="T8" kind="INPUT" mult-k="0.5" tail="thinking1"/>
+      <arc head="wait1" kind="OUTPUT" mult-k="0.5" tail="T8"/>
+      <arc head="T4" kind="INPUT" mult-k="0.5" tail="wait1"/>
+      <arc head="eating1" kind="OUTPUT" mult-k="0.5" tail="T4"/>
+      <arc head="T1" kind="INPUT" mult-k="0.5" tail="eating1"/>
+      <arc head="T4" kind="INPUT" mult-k="0.5" tail="fork4"/>
+      <arc head="T7" kind="INPUT" mult-k="0.5" tail="fork4"/>
+      <arc head="T5" kind="INPUT" mult-k="0.5" tail="fork2"/>
+      <arc head="T6" kind="INPUT" mult-k="0.5" tail="fork2"/>
+      <arc head="T0" kind="INPUT" mult-k="0.5" tail="eating2"/>
+      <arc head="thinking2" kind="OUTPUT" mult-k="0.5" tail="T0"/>
+      <arc head="T6" kind="INPUT" mult-k="0.5" tail="thinking2"/>
+      <arc head="wait2" kind="OUTPUT" mult-k="0.5" tail="T6"/>
+      <arc head="T9" kind="INPUT" mult-k="0.5" tail="wait2"/>
+      <arc head="eating2" kind="OUTPUT" mult-k="0.5" tail="T9"/>
+      <arc head="thinking3" kind="OUTPUT" mult-k="0.5" tail="T3"/>
+      <arc head="T10" kind="INPUT" mult-k="0.5" tail="thinking3"/>
+      <arc head="wait3" kind="OUTPUT" mult-k="0.5" tail="T10"/>
+      <arc head="T5" kind="INPUT" mult-k="0.5" tail="wait3"/>
+      <arc head="eating3" kind="OUTPUT" mult-k="0.5" tail="T5"/>
+      <arc head="T3" kind="INPUT" mult-k="0.5" tail="eating3"/>
+      <arc head="T2" kind="INPUT" mult-k="0.5" tail="eating4"/>
+      <arc head="thinking4" kind="OUTPUT" mult-k="0.5" tail="T2"/>
+      <arc head="T7" kind="INPUT" mult-k="0.5" tail="thinking4"/>
+      <arc head="wait4" kind="OUTPUT" mult-k="0.5" tail="T7"/>
+      <arc head="T11" kind="INPUT" mult-k="0.5" tail="wait4"/>
+      <arc head="eating4" kind="OUTPUT" mult-k="0.5" tail="T11"/>
+      <arc head="T8" kind="INPUT" mult-k="0.5" tail="fork1">
+        <point x="19.5" y="2.5"/>
+        <point x="14.0" y="2.5"/>
+      </arc>
+      <arc head="T9" kind="INPUT" mult-k="0.5" tail="fork1">
+        <point x="24.5" y="2.5"/>
+        <point x="30.0" y="2.5"/>
+      </arc>
+      <arc head="T11" kind="INPUT" mult-k="0.5" tail="fork3">
+        <point x="19.5" y="27.5"/>
+        <point x="14.5" y="27.5"/>
+      </arc>
+      <arc head="T10" kind="INPUT" mult-k="0.5" tail="fork3">
+        <point x="24.5" y="27.5"/>
+        <point x="30.0" y="27.5"/>
+      </arc>
+    </edges>
+  </gspn>
+</project>
