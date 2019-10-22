@@ -53,7 +53,7 @@ namespace storm {
             storm::storage::StronglyConnectedComponentDecompositionOptions const options;
             this->sccs = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
             acyclic = true;
-            for (auto i = 0; acyclic && i < sccs.size(); ++i) {
+            for (size_t i = 0; acyclic && i < sccs.size(); ++i) {
                 acyclic &= sccs.getBlock(i).size() <= 1;
             }
         }
@@ -91,13 +91,9 @@ namespace storm {
             auto matrix = this->model->getTransitionMatrix();
 
             auto initialMiddleStates = storm::storage::BitVector(numberOfStates);
-            // Check if MC contains cycles
-            storm::storage::StronglyConnectedComponentDecompositionOptions const options;
-
-            // Create the Order
-
+            // Add possible cycle breaking states
             if (!acyclic) {
-                for (auto i = 0; i < sccs.size(); ++i) {
+                for (size_t i = 0; i < sccs.size(); ++i) {
                     auto scc = sccs.getBlock(i);
                     if (scc.size() > 1) {
                         auto states = scc.getStates();

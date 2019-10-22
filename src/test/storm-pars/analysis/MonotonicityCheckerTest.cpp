@@ -150,8 +150,8 @@ std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> regions = 
 
     storm::analysis::MonotonicityChecker<storm::RationalFunction> monotonicityChecker = storm::analysis::MonotonicityChecker<storm::RationalFunction>(dtmc, formulas, regions, true);
     auto result = monotonicityChecker.checkMonotonicity();
-    EXPECT_EQ(1, result.size());
-    EXPECT_EQ(2, result.begin()->second.size());
+    EXPECT_EQ(1ul, result.size());
+    EXPECT_EQ(2ul, result.begin()->second.size());
     auto monotone = result.begin()->second.begin();
     EXPECT_EQ(true, monotone->second.first);
     EXPECT_EQ(false, monotone->second.second);
@@ -198,8 +198,8 @@ TEST(MonotonicityCheckerTest, Brp_with_bisimulation_samples) {
 
     auto monotonicityChecker = storm::analysis::MonotonicityChecker<storm::RationalFunction>(dtmc, formulas, regions, true, 50);
     auto result = monotonicityChecker.checkMonotonicity();
-    EXPECT_EQ(1, result.size());
-    EXPECT_EQ(2, result.begin()->second.size());
+    EXPECT_EQ(1ul, result.size());
+    EXPECT_EQ(2ul, result.begin()->second.size());
     auto monotone = result.begin()->second.begin();
     EXPECT_EQ(true, monotone->second.first);
     EXPECT_EQ(false, monotone->second.second);

@@ -231,14 +231,14 @@ namespace storm {
         }
 
         std::vector<uint_fast64_t> Order::sortStates(storm::storage::BitVector* states) {
-            auto numberOfSetBits = states->getNumberOfSetBits();
+            uint_fast64_t numberOfSetBits = states->getNumberOfSetBits();
             auto stateSize = states->size();
             auto result = std::vector<uint_fast64_t>(numberOfSetBits, stateSize);
             for (auto state : *states) {
                 if (result[0] == stateSize) {
                     result[0] = state;
                 } else {
-                    auto i = 0;
+                    uint_fast64_t i = 0;
                     bool added = false;
                     while (i < numberOfSetBits && !added) {
                         if (result[i] == stateSize) {
@@ -249,7 +249,7 @@ namespace storm {
                             if (compareRes == ABOVE) {
                                 auto temp = result[i];
                                 result[i] = state;
-                                for (auto j = i + 1; j < numberOfSetBits && result[j + 1] != stateSize; j++) {
+                                for (uint_fast64_t j = i + 1; j < numberOfSetBits && result[j + 1] != stateSize; j++) {
                                     auto temp2 = result[j];
                                     result[j] = temp;
                                     temp = temp2;
@@ -261,7 +261,7 @@ namespace storm {
                                 ++i;
                                 auto temp = result[i];
                                 result[i] = state;
-                                for (auto j = i + 1; j < numberOfSetBits && result[j + 1] != stateSize; j++) {
+                                for (uint_fast64_t j = i + 1; j < numberOfSetBits && result[j + 1] != stateSize; j++) {
                                     auto temp2 = result[j];
                                     result[j] = temp;
                                     temp = temp2;
@@ -275,10 +275,6 @@ namespace storm {
             }
 
             return result;
-        }
-
-        void Order::toString(std::ostream &out) {
-            
         }
 
         bool Order::above(Node *node1, Node *node2) {

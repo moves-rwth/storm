@@ -104,7 +104,7 @@ namespace storm {
                 }
 
             } else {
-                auto i = 0;
+                size_t i = 0;
                 for (auto itr = map.begin(); i < map.size() && itr != map.end(); ++itr) {
                     auto order = itr->first;
 
@@ -553,7 +553,7 @@ namespace storm {
 
                 // Check monotonicity in variable (*itr) by instantiating the model
                 // all other variables fixed on lb, only increasing (*itr)
-                for (auto i = 0; (monDecr || monIncr) && i < numberOfSamples; ++i) {
+                for (uint_fast64_t i = 0; (monDecr || monIncr) && i < numberOfSamples; ++i) {
                     // Create valuation
                     auto valuation = storm::utility::parametric::Valuation<ValueType>();
                     for (auto itr2 = variables.begin(); itr2 != variables.end(); ++itr2) {
@@ -629,7 +629,7 @@ namespace storm {
                 bool monDecr = true;
                 bool monIncr = true;
 
-                for (auto i = 0; i < numberOfSamples; ++i) {
+                for (uint_fast64_t i = 0; i < numberOfSamples; ++i) {
                     auto valuation = storm::utility::parametric::Valuation<ValueType>();
                     for (auto itr2 = variables.begin(); itr2 != variables.end(); ++itr2) {
                         // Only change value for current variable

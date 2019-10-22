@@ -679,10 +679,9 @@ namespace storm {
 
                     storm::storage::BitVector selectedStates(matrix.getRowCount());
                     storm::storage::BitVector selfLoopStates(matrix.getRowCount());
-                    for (auto i = 0; i < decomposition.size(); ++i) {
+                    for (size_t i = 0; i < decomposition.size(); ++i) {
                         auto scc = decomposition.getBlock(i);
                         if (scc.size() > 1) {
-                            auto nrInitial = 0;
                             auto statesScc = scc.getStates();
                             std::vector<uint_fast64_t> entryStates;
                             for (auto state : statesScc) {

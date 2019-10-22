@@ -53,7 +53,7 @@ TEST(OrderExtenderTest, Brp_with_bisimulation) {
     EXPECT_EQ(dtmc->getNumberOfStates(), std::get<2>(criticalTuple));
 
     auto order = std::get<0>(criticalTuple);
-    for (auto i = 0; i < dtmc->getNumberOfStates(); ++i) {
+    for (uint_fast64_t i = 0; i < dtmc->getNumberOfStates(); ++i) {
         EXPECT_TRUE((*order->getAddedStates())[i]);
     }
 
@@ -86,8 +86,8 @@ TEST(OrderExtenderTest, Brp_without_bisimulation) {
 
     auto *extender = new storm::analysis::OrderExtender<storm::RationalFunction>(dtmc);
     auto criticalTuple = extender->toOrder(formulas);
-    EXPECT_EQ(183, std::get<1>(criticalTuple));
-    EXPECT_EQ(186, std::get<2>(criticalTuple));
+    EXPECT_EQ(183ul, std::get<1>(criticalTuple));
+    EXPECT_EQ(186ul, std::get<2>(criticalTuple));
 }
 
 

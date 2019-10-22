@@ -30,7 +30,7 @@ namespace storm {
             auto matrix = model->getTransitionMatrix();
             std::set<typename utility::parametric::VariableType<ValueType>::type> variables =  models::sparse::getProbabilityParameters(*model);
 
-            for (auto i = 0; i < numberOfSamples; ++i) {
+            for (uint_fast64_t i = 0; i < numberOfSamples; ++i) {
                 auto valuation = utility::parametric::Valuation<ValueType>();
                 for (auto var: variables) {
                     auto lb = region.getLowerBoundary(var.name());
