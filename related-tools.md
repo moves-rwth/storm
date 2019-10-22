@@ -57,7 +57,7 @@ This website (including the website for [Stormpy](https://moves-rwth.github.io/s
 
 # Development
 
-We are happy to use [Xcode](https://developer.apple.com/xcode/){:target="_blank"}, [CLion](https://www.jetbrains.com/clion/){:target="_blank"}, [Valgrind](http://valgrind.org/){:target="_blank"}, [Git](https://git-scm.com/){:target="_blank"} and [Jenkins](https://jenkins.io/){:target="_blank"} for development purposes.
+We are happy to use [Xcode](https://developer.apple.com/xcode/){:target="_blank"}, [CLion](https://www.jetbrains.com/clion/){:target="_blank"}, [Valgrind](http://valgrind.org/){:target="_blank"}, [Git](https://git-scm.com/){:target="_blank"} and [Travis CI](https://travis-ci.org/){:target="_blank"} for development purposes.
 
 ## References
 

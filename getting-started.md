@@ -6,7 +6,8 @@ layout: default
 
 ## Obtaining Storm
 
-To be able to run Storm, you need to obtain it and run it on your system. Currently, you can choose whether you want to [install](documentation/installation/installation.html) or try it in a [virtual machine](documentation/vm/vm.html) image we provide.
+To be able to run Storm, you need to obtain it and run it on your system.
+Currently, you can choose whether you want to [install](documentation/installation/installation.html) it, try an up-to-date [Docker image](documentation/installation/installation.html#docker) or in a [virtual machine](documentation/vm/vm.html) image we provide.
 
 ## Model Types
 
