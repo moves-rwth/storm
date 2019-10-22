@@ -112,8 +112,8 @@ void processOptions() {
                                         "Lower bound: " << std::to_string(preResults.lowerBEBound) << std::endl <<
                                         "Upper bound: " << std::to_string(preResults.upperBEBound) << std::endl);
 
-    preResults.fdepConflicts = storm::dft::utility::FDEPConflictFinder::getDependencyConflicts(*dft, useSMT,
-                                                                                               solverTimeout);
+    // TODO: move into API call?
+    preResults.fdepConflicts = storm::dft::utility::FDEPConflictFinder<ValueType>::getDependencyConflicts(*dft, useSMT, solverTimeout);
 
     if (preResults.fdepConflicts.empty()) {
         STORM_LOG_DEBUG("No FDEP conflicts found" << std::endl);

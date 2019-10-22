@@ -66,7 +66,7 @@ namespace {
         dft->setDynamicBehaviorInfo();
         EXPECT_EQ(dft->getDynamicBehavior(), true_vector);
 
-        EXPECT_TRUE(storm::dft::utility::FDEPConflictFinder::getDependencyConflicts(*dft, true).empty());
+        EXPECT_TRUE(storm::dft::utility::FDEPConflictFinder<double>::getDependencyConflicts(*dft, true).empty());
     }
 
     TEST(DftSmtTest, FDEPConflictSPARETest) {
@@ -78,7 +78,7 @@ namespace {
         dft->setDynamicBehaviorInfo();
         EXPECT_EQ(dft->getDynamicBehavior(), true_vector);
 
-        EXPECT_TRUE(storm::dft::utility::FDEPConflictFinder::getDependencyConflicts(*dft, true).empty());
+        EXPECT_TRUE(storm::dft::utility::FDEPConflictFinder<double>::getDependencyConflicts(*dft, true).empty());
     }
 
     TEST(DftSmtTest, FDEPConflictSEQTest) {
@@ -91,6 +91,6 @@ namespace {
         dft->setDynamicBehaviorInfo();
         EXPECT_EQ(dft->getDynamicBehavior(), expected_dynamic_vector);
 
-        EXPECT_EQ(storm::dft::utility::FDEPConflictFinder::getDependencyConflicts(*dft, true).size(), uint64_t(3));
+        EXPECT_EQ(storm::dft::utility::FDEPConflictFinder<double>::getDependencyConflicts(*dft, true).size(), uint64_t(3));
     }
 }
