@@ -65,7 +65,7 @@ namespace storm {
             bool ParametricSettings::isSampleExactSet() const {
                 return this->getOption(sampleExactOptionName).getHasOptionBeenSet();
             }
-            
+
         } // namespace modules
     } // namespace settings
 } // namespace storm

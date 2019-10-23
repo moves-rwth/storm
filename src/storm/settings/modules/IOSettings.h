@@ -290,11 +290,6 @@ namespace storm {
                  * @return The property filter.
                  */
                 std::string getPropertyFilter() const;
-                
-                /*!
-                 * Retrieves whether a DTMC/CTMC should be converted to an MDP/MA
-                 */
-                bool isToNondeterministicModelSet() const;
 
                 /*!
                  * Retrieves whether the input model is to be read from the quantitative verification benchmark set (QVBS)
@@ -354,7 +349,6 @@ namespace storm {
                 static const std::string janiPropertyOptionShortName;
                 static const std::string propertyOptionName;
                 static const std::string propertyOptionShortName;
-                static const std::string toNondetOptionName;
                 static const std::string qvbsInputOptionName;
                 static const std::string qvbsInputOptionShortName;
                 static const std::string qvbsRootOptionName;

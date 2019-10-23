@@ -89,6 +89,18 @@ namespace storm {
             
         }
         
+        template <typename ValueType>
+        std::shared_ptr<storm::logic::Formula const> checkAndTransformContinuousToDiscreteTimeFormula(storm::logic::Formula const& formula, std::string const& timeRewardName = "_time") {
+            storm::transformer::ContinuousToDiscreteTimeModelTransformer<ValueType> transformer;
+            if (transformer.preservesFormula(formula)) {
+                return transformer.checkAndTransformFormulas({formula.asSharedPointer()}, timeRewardName).front();
+            } else {
+                STORM_LOG_ERROR("Unable to transform formula " << formula << " to discrete time.");
+            }
+            return nullptr;
+        }
+        
+        
         /*!
          * Transforms the given symbolic model to a sparse model.
          */

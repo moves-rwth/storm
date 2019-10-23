@@ -25,6 +25,7 @@ Version 1.3.x
 - Fixed linking with Mathsat on macOS
 - Fixed compilation for macOS mojave
 - Support for export of MTBDDs from storm
+- Support for monotonicity checking of pMCs using the `--monotonicity-analysis` option. Use `--help monotonicity` for all options.
 
 ### Version 1.3.0 (2018/12)
 - Slightly improved scheduler extraction
