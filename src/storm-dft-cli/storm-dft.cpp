@@ -5,7 +5,7 @@
 #include "storm-dft/settings/modules/DftGspnSettings.h"
 #include "storm-dft/settings/modules/DftIOSettings.h"
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
-#include <storm/exceptions/UnmetRequirementException.h>
+#include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/IOSettings.h"
@@ -66,10 +66,8 @@ void processOptions() {
         dft = dftTransformator.transformBinaryFDEPs(*dft);
     }
     // Check well-formedness of DFT
-    std::stringstream stream;
-    if (!dft->checkWellFormedness(stream)) {
-        STORM_LOG_THROW(false, storm::exceptions::UnmetRequirementException, "DFT is not well-formed: " << stream.str());
-    }
+    auto wellFormedResult = storm::api::isWellFormed(*dft, false);
+    STORM_LOG_THROW(wellFormedResult.first, storm::exceptions::UnmetRequirementException, "DFT is not well-formed: " << wellFormedResult.second);
 
     if (dftGspnSettings.isTransformToGspn()) {
         // Transform to GSPN

@@ -760,7 +760,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        bool DFT<ValueType>::checkWellFormedness(std::ostream& stream) const {
+        bool DFT<ValueType>::checkWellFormedness(bool validForAnalysis, std::ostream& stream) const {
             bool wellformed = true;
             // Check independence of spare modules
             // TODO: comparing one element of each spare module sufficient?
@@ -774,6 +774,21 @@ namespace storm {
                         stream << "Spare modules of '" << getElement(module1->first)->name() << "' and '" << getElement(module2->first)->name() << "' should not overlap.";
                         wellformed = false;
                     }
+                }
+            }
+
+            if (validForAnalysis) {
+                // Check that each dependency is binary
+                for (size_t idDependency : this->getDependencies()) {
+                    std::shared_ptr<DFTDependency<ValueType> const> dependency = this->getDependency(idDependency);
+                    if (dependency->dependentEvents().size() != 1) {
+                        if (!wellformed) {
+                            stream << std::endl;
+                        }
+                        stream << "Dependency '" << dependency->name() << "' is not binary.";
+                        wellformed = false;
+                    }
+
                 }
             }
             // TODO check VOT gates

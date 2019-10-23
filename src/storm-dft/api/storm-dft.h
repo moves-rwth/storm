@@ -1,6 +1,7 @@
 #pragma once
 
 #include <type_traits>
+#include <utility>
 
 #include "storm-dft/parser/DFTGalileoParser.h"
 #include "storm-dft/parser/DFTJsonParser.h"
@@ -59,12 +60,14 @@ namespace storm {
          * Check whether the DFT is well-formed.
          *
          * @param dft DFT.
-         * @return True iff the DFT is well-formed.
+         * @param validForAnalysis  If true, additional (more restrictive) checks are performed to check whether the DFT is valid for analysis.
+         * @return Pair where the first entry is true iff the DFT is well-formed. The second entry contains the error messages for illformed parts.
          */
         template<typename ValueType>
-        bool isWellFormed(storm::storage::DFT<ValueType> const& dft) {
+        std::pair<bool, std::string> isWellFormed(storm::storage::DFT<ValueType> const& dft, bool validForAnalysis = true) {
             std::stringstream stream;
-            return dft.checkWellFormedness(stream);
+            bool wellFormed = dft.checkWellFormedness(validForAnalysis, stream);
+            return std::pair<bool, std::string>(wellFormed, stream.str());
         }
 
         /*!
