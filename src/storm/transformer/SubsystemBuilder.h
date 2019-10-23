@@ -21,6 +21,8 @@ namespace storm {
             std::vector<uint64_t> newToOldActionIndexMapping;
             // marks the actions of the original model that are still available in the subsystem
             storm::storage::BitVector keptActions;
+            // If set, deadlock states have been introduced and have been assigned this label.
+            boost::optional<std::string> deadlockLabel;
         };
 
         struct SubsystemBuilderOptions {

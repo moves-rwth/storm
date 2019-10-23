@@ -168,6 +168,12 @@ namespace storm {
                         components.choiceOrigins.get()->clearOriginOfChoice(choice);
                     }
                 }
+                // get a unique label for the deadlock states
+                result.deadlockLabel = "deadl";
+                while (components.stateLabeling.containsLabel(result.deadlockLabel.get())) {
+                    result.deadlockLabel->push_back('_');
+                }
+                components.stateLabeling.addLabel(result.deadlockLabel.get(), std::move(subDeadlockStates));
             }
             
             transformModelSpecificComponents<ValueType, RewardModelType>(originalModel, subsystemStates, components);

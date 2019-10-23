@@ -54,9 +54,11 @@ namespace storm {
                     }
                     
                     // Remove states that are irrelevant for all properties (e.g. because they are only reachable via goal states
-                    removeIrrelevantStates(model, originalFormula);
+                    boost::optional<std::string> deadlockLabel;
+                    removeIrrelevantStates(model, deadlockLabel, originalFormula);
                     
                     PreprocessorData data(model);
+                    data.deadlockLabel = deadlockLabel;
                     
                     //Invoke preprocessing on the individual objectives
                     for (auto const& subFormula : originalFormula.getSubformulas()) {
@@ -90,18 +92,7 @@ namespace storm {
                 }
                 
                 template <typename SparseModelType>
-                storm::storage::BitVector getZeroRewardStates(SparseModelType const& model, storm::storage::SparseMatrix<typename SparseModelType::ValueType> const& backwardTransitions, typename SparseModelType::RewardModelType const& rewardModel, boost::optional<storm::storage::BitVector> const& rew0States) {
-                    storm::storage::BitVector statesWithoutReward = rewardModel.getStatesWithZeroReward(model.getTransitionMatrix());
-                    if (rew0States) {
-                        statesWithoutReward |= rew0States.get();
-                    }
-                    storm::storage::BitVector result = storm::utility::graph::performProbGreater0E(model.getBackwardTransitions(), statesWithoutReward, ~statesWithoutReward);
-                    result.complement();
-                    return result;
-                }
-                
-                template <typename SparseModelType>
-                void SparseMultiObjectivePreprocessor<SparseModelType>::removeIrrelevantStates(std::shared_ptr<SparseModelType>& model, storm::logic::MultiObjectiveFormula const& originalFormula) {
+                void SparseMultiObjectivePreprocessor<SparseModelType>::removeIrrelevantStates(std::shared_ptr<SparseModelType>& model, boost::optional<std::string>& deadlockLabel, storm::logic::MultiObjectiveFormula const& originalFormula) {
                     storm::storage::BitVector absorbingStates(model->getNumberOfStates(), true);
                     
                     storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> mc(*model);
@@ -161,9 +152,12 @@ namespace storm {
                             if (pathFormula.isEventuallyFormula()) {
                                 auto rewardModel = storm::utility::createFilteredRewardModel(baseRewardModel, model->isDiscreteTimeModel(), pathFormula.asEventuallyFormula());
                                 storm::storage::BitVector statesWithoutReward = rewardModel.get().getStatesWithZeroReward(model->getTransitionMatrix());
+                                // Make states that can not reach a state with non-zero reward absorbing
                                 absorbingStatesForSubformula = storm::utility::graph::performProb0A(backwardTransitions, statesWithoutReward, ~statesWithoutReward);
                                 auto phi = mc.check(pathFormula.asEventuallyFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                                // Make states that reach phi with prob 1 while only visiting states with reward 0 absorbing
                                 absorbingStatesForSubformula |= storm::utility::graph::performProb1A(model->getTransitionMatrix(), model->getTransitionMatrix().getRowGroupIndices(), backwardTransitions, statesWithoutReward, phi);
+                                // Make states that are only reachable via phi absorbing
                                 absorbingStatesForSubformula |= getOnlyReachableViaPhi(*model, phi);
                             } else if (pathFormula.isCumulativeRewardFormula()) {
                                 auto rewardModel = storm::utility::createFilteredRewardModel(baseRewardModel, model->isDiscreteTimeModel(), pathFormula.asCumulativeRewardFormula());
@@ -205,6 +199,7 @@ namespace storm {
                         auto const& submodel = storm::transformer::buildSubsystem(*model, storm::storage::BitVector(model->getNumberOfStates(), true), subsystemActions, false, options);
                         STORM_LOG_INFO("Making states absorbing reduced the state space from " << model->getNumberOfStates() << " to " << submodel.model->getNumberOfStates() << ".");
                         model = submodel.model->template as<SparseModelType>();
+                        deadlockLabel = submodel.deadlockLabel;
                     }
                 }
                 
@@ -489,13 +484,32 @@ namespace storm {
                     } else {
                         STORM_LOG_INFO("Objective " << *data.objectives.back()->originalFormula << " can not be transformed to an expected total/cumulative reward property.");
                         if (formula.isReachabilityRewardFormula()) {
+                            // TODO: this probably needs some better treatment regarding schedulers that do not reach the goal state allmost surely
                             assert(optionalRewardModelName.is_initialized());
-                            data.objectives.back()->formula =  std::make_shared<storm::logic::RewardOperatorFormula>(formula.asSharedPointer(), optionalRewardModelName.get(), opInfo);
+                            if (data.deadlockLabel) {
+                                // We made some states absorbing and created a new deadlock state. To make sure that this deadlock state gets value zero, we add it to the set of goal states of the formula.
+                                std::shared_ptr<storm::logic::Formula const> newSubSubformula = std::make_shared<storm::logic::AtomicLabelFormula const>(data.deadlockLabel.get());
+                                std::shared_ptr<storm::logic::Formula const> newSubformula = std::make_shared<storm::logic::BinaryBooleanStateFormula const>(storm::logic::BinaryBooleanStateFormula::OperatorType::Or, formula.getSubformula().asSharedPointer(), newSubSubformula);
+                                boost::optional<storm::logic::RewardAccumulation> newRewardAccumulation;
+                                if (formula.hasRewardAccumulation()) {
+                                    newRewardAccumulation = formula.getRewardAccumulation();
+                                }
+                                std::shared_ptr<storm::logic::Formula const> newFormula = std::make_shared<storm::logic::EventuallyFormula const>(newSubformula, formula.getContext(), newRewardAccumulation);
+                                data.objectives.back()->formula =  std::make_shared<storm::logic::RewardOperatorFormula>(newFormula, optionalRewardModelName.get(), opInfo);
+                            } else {
+                                data.objectives.back()->formula =  std::make_shared<storm::logic::RewardOperatorFormula>(formula.asSharedPointer(), optionalRewardModelName.get(), opInfo);
+                            }
                         } else if (formula.isReachabilityTimeFormula() && data.model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
                             // Reduce to reachability rewards so that time formulas do not have to be treated seperately later.
                             std::string rewardModelName = data.rewardModelNamePrefix + std::to_string(data.objectives.size());
-                            auto newsubformula = std::make_shared<storm::logic::EventuallyFormula>(formula.getSubformula().asSharedPointer(), storm::logic::FormulaContext::Reward);
-                            data.objectives.back()->formula =  std::make_shared<storm::logic::RewardOperatorFormula>(newsubformula, rewardModelName, opInfo);
+                            std::shared_ptr<storm::logic::Formula const> newSubformula = formula.getSubformula().asSharedPointer();
+                            if (data.deadlockLabel) {
+                                // We made some states absorbing and created a new deadlock state. To make sure that this deadlock state gets value zero, we add it to the set of goal states of the formula.
+                                std::shared_ptr<storm::logic::Formula const> newSubSubformula = std::make_shared<storm::logic::AtomicLabelFormula const>(data.deadlockLabel.get());
+                                newSubformula = std::make_shared<storm::logic::BinaryBooleanStateFormula const>(storm::logic::BinaryBooleanStateFormula::OperatorType::Or, formula.getSubformula().asSharedPointer(), newSubSubformula);
+                            }
+                            auto newFormula = std::make_shared<storm::logic::EventuallyFormula>(newSubformula, storm::logic::FormulaContext::Reward);
+                            data.objectives.back()->formula =  std::make_shared<storm::logic::RewardOperatorFormula>(newFormula, rewardModelName, opInfo);
                             std::vector<typename SparseModelType::ValueType> timeRewards(data.model->getNumberOfStates(), storm::utility::zero<typename SparseModelType::ValueType>());
                             storm::utility::vector::setVectorValues(timeRewards, dynamic_cast<storm::models::sparse::MarkovAutomaton<typename SparseModelType::ValueType> const&>(*data.model).getMarkovianStates(), storm::utility::one<typename SparseModelType::ValueType>());
                             data.model->addRewardModel(rewardModelName, typename SparseModelType::RewardModelType(std::move(timeRewards)));

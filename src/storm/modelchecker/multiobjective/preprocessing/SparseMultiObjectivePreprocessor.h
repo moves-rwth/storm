@@ -47,13 +47,16 @@ namespace storm {
                         
                         std::string rewardModelNamePrefix;
                         
+                        // If set, some states have been merged to a deadlock state with this label.
+                        boost::optional<std::string> deadlockLabel;
+                        
                         PreprocessorData(std::shared_ptr<SparseModelType> model);
                     };
                     
                     /*!
                      * Removes states that are irrelevant for all objectives, e.g., because they are only reachable via goal states.
                      */
-                    static void removeIrrelevantStates(std::shared_ptr<SparseModelType>& model, storm::logic::MultiObjectiveFormula const& originalFormula);
+                    static void removeIrrelevantStates(std::shared_ptr<SparseModelType>& model, boost::optional<std::string>& deadlockLabel, storm::logic::MultiObjectiveFormula const& originalFormula);
                     
                     /*!
                      * Apply the neccessary preprocessing for the given formula.
