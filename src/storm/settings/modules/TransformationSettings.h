@@ -34,6 +34,15 @@ namespace storm {
                  */
                 bool isIgnoreLabelingSet() const;
 
+                /*!
+                 * Retrieves whether a DTMC/CTMC should be converted to an MDP/MA
+                 */
+                bool isToNondeterministicModelSet() const;
+                
+                /*!
+                 * Retrieves whether a CTMC/MA should be converted to a DTMC/MDP
+                 */
+                bool isToDiscreteTimeModelSet() const;
 
                 bool check() const override;
 
@@ -46,6 +55,8 @@ namespace storm {
                 // Define the string names of the options as constants.
                 static const std::string chainEliminationOptionName;
                 static const std::string ignoreLabelingOptionName;
+                static const std::string toNondetOptionName;
+                static const std::string toDiscreteTimeOptionName;
 
             };
 

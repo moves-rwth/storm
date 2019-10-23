@@ -371,7 +371,14 @@ namespace storm {
                 result.second = true;
             }
             
-            if (ioSettings.isToNondeterministicModelSet()) {
+            if (transformationSettings.isToDiscreteTimeModelSet()) {
+                // TODO: we should also transform the properties at this point.
+                STORM_LOG_WARN_COND(!model->hasRewardModel("_time"), "Scheduled transformation to discrete time model, but a reward model named '_time' is already present in this model. We might take the wrong reward model later.");
+                result.first = storm::api::transformContinuousToDiscreteTimeSparseModel(std::move(*result.first), storm::api::extractFormulasFromProperties(input.properties)).first;
+                result.second = true;
+            }
+            
+            if (transformationSettings.isToNondeterministicModelSet()) {
                 result.first = storm::api::transformToNondeterministicModel<ValueType>(std::move(*result.first));
                 result.second = true;
             }
@@ -658,6 +665,14 @@ namespace storm {
                         !storm::transformer::NonMarkovianChainTransformer<ValueType>::preservesFormula(*rawFormula)) {
                         STORM_LOG_WARN("Property is not preserved by elimination of non-markovian states.");
                         ignored = true;
+                    } else if (transformationSettings.isToDiscreteTimeModelSet()) {
+                        auto propertyFormula = storm::api::checkAndTransformContinuousToDiscreteTimeFormula<ValueType>(*property.getRawFormula());
+                        auto filterFormula = storm::api::checkAndTransformContinuousToDiscreteTimeFormula<ValueType>(*property.getFilter().getStatesFormula());
+                        if (propertyFormula && filterFormula) {
+                            result = verificationCallback(propertyFormula, filterFormula);
+                        } else {
+                            ignored = true;
+                        }
                     } else {
                         result = verificationCallback(property.getRawFormula(),
                                                       property.getFilter().getStatesFormula());

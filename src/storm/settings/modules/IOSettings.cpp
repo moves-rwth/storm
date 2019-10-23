@@ -44,7 +44,6 @@ namespace storm {
             const std::string IOSettings::janiPropertyOptionShortName = "jprop";
             const std::string IOSettings::propertyOptionName = "prop";
             const std::string IOSettings::propertyOptionShortName = "prop";
-            const std::string IOSettings::toNondetOptionName = "to-nondet";
             
             const std::string IOSettings::qvbsInputOptionName = "qvbs";
             const std::string IOSettings::qvbsInputOptionShortName = "qvbs";
@@ -90,7 +89,6 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of constants and their value, e.g. a=1,b=2,c=3.").setDefaultValueString("").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, janiPropertyOptionName, false, "Specifies the properties from the jani model (given by --" + janiInputOptionName + ")  to be checked.").setShortName(janiPropertyOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of properties to be checked").setDefaultValueString("").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, toNondetOptionName, false, "If set, DTMCs/CTMCs are converted to MDPs/MAs (without actual nondeterminism) before model checking.").setIsAdvanced().build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, qvbsInputOptionName, false, "Selects a model from the Quantitative Verification Benchmark Set.").setShortName(qvbsInputOptionShortName)
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("model", "The short model name as in the benchmark set.").build())
@@ -264,10 +262,6 @@ namespace storm {
 
             std::string IOSettings::getPropertyFilter() const {
                 return this->getOption(propertyOptionName).getArgumentByName("filter").getValueAsString();
-            }
-            
-            bool IOSettings::isToNondeterministicModelSet() const {
-                return this->getOption(toNondetOptionName).getHasOptionBeenSet();
             }
             
             bool IOSettings::isQvbsInputSet() const {
