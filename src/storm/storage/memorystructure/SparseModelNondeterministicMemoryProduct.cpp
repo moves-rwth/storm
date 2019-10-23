@@ -19,6 +19,9 @@ namespace storm {
 
             template<typename SparseModelType>
             std::shared_ptr<SparseModelType> SparseModelNondeterministicMemoryProduct<SparseModelType>::build() const {
+                // For Markov automata, we can not introduce nondeterminism at Markovian states.
+                // We could introduce new intermediate probabilistic states, however that is not supported yet.
+                STORM_LOG_THROW(!model.isOfType(storm::models::ModelType::MarkovAutomaton), storm::exceptions::NotSupportedException, "Nondeterministic memory product not supported for Markov automata as this would introduce nondeterminism at Markovian states.");
                 // For simplicity we first build the 'full' product of model and memory (with model.numStates * memory.numStates states).
                 storm::storage::sparse::ModelComponents<ValueType> components;
                 components.transitionMatrix = buildTransitions();
@@ -34,12 +37,13 @@ namespace storm {
                 for (auto const& rewModel : model.getRewardModels()) {
                     components.rewardModels.emplace(rewModel.first, buildRewardModel(rewModel.second, reachableStates));
                 }
+                /* Markov automata are not supported (This code would introduce nondeterminism at Markovian states...)
                 if (model.isOfType(storm::models::ModelType::MarkovAutomaton)) {
                     STORM_LOG_ASSERT((std::is_same<SparseModelType, storm::models::sparse::MarkovAutomaton<ValueType>>::value), "Model has unexpected type.");
                     auto ma = model.template as<storm::models::sparse::MarkovAutomaton<ValueType>>();
                     components.exitRates = buildExitRateVector(*ma, reachableStates);
                     components.markovianStates = buildMarkovianStateLabeling(*ma, reachableStates);
-                }
+                } */
                 return std::make_shared<SparseModelType>(std::move(components));
             }
         
@@ -132,6 +136,7 @@ namespace storm {
                 return storm::models::sparse::StandardRewardModel<ValueType>(std::move(stateRewards), std::move(actionRewards));
             }
         
+            /* Markov Automata currently not supported.
             template<typename SparseModelType>
             std::vector<typename SparseModelNondeterministicMemoryProduct<SparseModelType>::ValueType> SparseModelNondeterministicMemoryProduct<SparseModelType>::buildExitRateVector(storm::models::sparse::MarkovAutomaton<ValueType> const& modelAsMA, storm::storage::BitVector const& reachableStates) const {
                 std::vector<ValueType> res;
@@ -162,7 +167,7 @@ namespace storm {
                 }
                 assert(currReachableState == reachableStates.getNumberOfSetBits());
                 return res;
-            }
+            }*/
 
             template<typename SparseModelType>
             uint64_t SparseModelNondeterministicMemoryProduct<SparseModelType>::getProductState(uint64_t modelState, uint64_t memoryState) const {
