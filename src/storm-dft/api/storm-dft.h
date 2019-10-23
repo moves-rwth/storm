@@ -9,6 +9,7 @@
 #include "storm-dft/modelchecker/dft/DFTModelChecker.h"
 #include "storm-dft/modelchecker/dft/DFTASFChecker.h"
 #include "storm-dft/transformations/DftToGspnTransformator.h"
+#include "storm-dft/transformations/DftTransformator.h"
 #include "storm-dft/utility/FDEPConflictFinder.h"
 #include "storm-dft/utility/FailureBoundFinder.h"
 
@@ -71,6 +72,52 @@ namespace storm {
         }
 
         /*!
+         * Apply transformations for DFT.
+         *
+         * @param dft DFT.
+         * @param uniqueBE Flag whether a unique constant failed BE is created.
+         * @param binaryFDEP Flag whether all dependencies should be binary (only one dependent child).
+         * @return Transformed DFT.
+         */
+        template<typename ValueType>
+        std::shared_ptr<storm::storage::DFT<ValueType>> applyTransformations(storm::storage::DFT<ValueType> const& dft, bool uniqueBE, bool binaryFDEP) {
+            std::shared_ptr<storm::storage::DFT<ValueType>> transformedDFT = std::make_shared<storm::storage::DFT<ValueType>>(dft);
+            auto dftTransformator = storm::transformations::dft::DftTransformator<ValueType>();
+            if (uniqueBE) {
+                transformedDFT = dftTransformator.transformUniqueFailedBe(*transformedDFT);
+            }
+            if (binaryFDEP && !dft.getDependencies().empty()) {
+                transformedDFT = dftTransformator.transformBinaryFDEPs(*transformedDFT);
+            }
+            return transformedDFT;
+        }
+
+        template <typename ValueType>
+        bool computeDependencyConflicts(storm::storage::DFT<ValueType> const& dft, bool useSMT, double solverTimeout) {
+            std::vector<std::pair<uint64_t, uint64_t>> fdepConflicts = storm::dft::utility::FDEPConflictFinder<ValueType>::getDependencyConflicts(*dft, useSMT, solverTimeout);
+
+            if (fdepConflicts.empty()) {
+                return false;
+            }
+            for (auto pair: fdepConflicts) {
+                STORM_LOG_DEBUG("Conflict between " << dft.getElement(pair.first)->name() << " and " << dft.getElement(pair.second)->name());
+            }
+
+            // Set the conflict map of the dft
+            std::set<size_t> conflict_set;
+            for (auto conflict : fdepConflicts) {
+                conflict_set.insert(size_t(conflict.first));
+                conflict_set.insert(size_t(conflict.second));
+            }
+            for (size_t depId : dft->getDependencies()) {
+                if (!conflict_set.count(depId)) {
+                    dft->setDependencyNotInConflict(depId);
+                }
+            }
+            return true;
+        }
+
+        /*!
          * Compute the exact or approximate analysis result of the given DFT according to the given properties.
          * First the Markov model is built from the DFT and then this model is checked against the given properties.
          *
@@ -82,8 +129,8 @@ namespace storm {
          * @param allowDCForRelevantEvents If true, Don't Care propagation is allowed even for relevant events.
          * @param approximationError Allowed approximation error.  Value 0 indicates no approximation.
          * @param approximationHeuristic Heuristic used for state space exploration.
-         * @param eliminateChains If true, chains of non-Markovian states are elimianted from the resulting MA
-         * @param ignoreLabeling If true, the labeling of states is ignored during state elimination
+         * @param eliminateChains If true, chains of non-Markovian states are eliminated from the resulting MA.
+         * @param ignoreLabeling If true, the labeling of states is ignored during state elimination.
          * @param printOutput If true, model information, timings, results, etc. are printed.
          * @return Results.
          */
@@ -91,14 +138,12 @@ namespace storm {
         typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results
         analyzeDFT(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred = true,
                    bool allowModularisation = true, std::set<size_t> const& relevantEvents = {}, bool allowDCForRelevantEvents = true, double approximationError = 0.0,
-                   storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH,
-                   bool eliminateChains = false, bool ignoreLabeling = false, bool printOutput = false) {
+                   storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH, bool eliminateChains = false,
+                   bool ignoreLabeling = false, bool printOutput = false) {
             storm::modelchecker::DFTModelChecker<ValueType> modelChecker(printOutput);
             typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(dft, properties, symred, allowModularisation, relevantEvents,
-                                                                                                               allowDCForRelevantEvents, approximationError,
-                                                                                                               approximationHeuristic,
-                                                                                                               eliminateChains,
-                                                                                                               ignoreLabeling);
+                                                                                                               allowDCForRelevantEvents, approximationError, approximationHeuristic,
+                                                                                                               eliminateChains, ignoreLabeling);
             if (printOutput) {
                 modelChecker.printTimings();
                 modelChecker.printResults(results);
@@ -114,8 +159,7 @@ namespace storm {
          * @return Result result vector
          */
         template<typename ValueType>
-        void
-        analyzeDFTSMT(storm::storage::DFT<ValueType> const &dft, bool printOutput);
+        void analyzeDFTSMT(storm::storage::DFT<ValueType> const& dft, bool printOutput);
 
         /*!
          * Export DFT to JSON file.
@@ -142,7 +186,7 @@ namespace storm {
          * @param file File.
          */
         template<typename ValueType>
-        void exportDFTToSMT(storm::storage::DFT<ValueType> const &dft, std::string const &file);
+        void exportDFTToSMT(storm::storage::DFT<ValueType> const& dft, std::string const& file);
 
         /*!
          * Transform DFT to GSPN.

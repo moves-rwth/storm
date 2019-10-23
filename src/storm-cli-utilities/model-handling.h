@@ -326,12 +326,20 @@ namespace storm {
         
         template <typename ValueType>
         std::shared_ptr<storm::models::sparse::Model<ValueType>> preprocessSparseMarkovAutomaton(std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> const& model) {
+            auto transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
+
             std::shared_ptr<storm::models::sparse::Model<ValueType>> result = model;
             model->close();
             if (model->isConvertibleToCtmc()) {
                 STORM_LOG_WARN_COND(false, "MA is convertible to a CTMC, consider using a CTMC instead.");
                 result = model->convertToCtmc();
             }
+
+            if (transformationSettings.isChainEliminationSet() && result->isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                result = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(
+                        result->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(), !transformationSettings.isIgnoreLabelingSet());
+            }
+
             return result;
         }
         
@@ -351,18 +359,12 @@ namespace storm {
             auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
             auto bisimulationSettings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-            auto transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
-            
+
+
             std::pair<std::shared_ptr<storm::models::sparse::Model<ValueType>>, bool> result = std::make_pair(model, false);
             
             if (result.first->isOfType(storm::models::ModelType::MarkovAutomaton)) {
                 result.first = preprocessSparseMarkovAutomaton(result.first->template as<storm::models::sparse::MarkovAutomaton<ValueType>>());
-                if (transformationSettings.isChainEliminationSet() &&
-                    result.first->isOfType(storm::models::ModelType::MarkovAutomaton)) {
-                    result.first = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(
-                            result.first->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(),
-                            !transformationSettings.isIgnoreLabelingSet());
-                }
                 result.second = true;
             }
             
