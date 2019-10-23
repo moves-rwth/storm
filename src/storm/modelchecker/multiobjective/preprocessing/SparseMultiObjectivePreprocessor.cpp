@@ -44,6 +44,8 @@ namespace storm {
                             model = storm::transformer::MemoryIncorporation<SparseModelType>::incorporateGoalMemory(originalModel, originalFormula.getSubformulas());
                         } else if (schedRestr.getMemoryPattern() == storm::storage::SchedulerClass::MemoryPattern::Arbitrary && schedRestr.getMemoryStates() > 1) {
                             model = storm::transformer::MemoryIncorporation<SparseModelType>::incorporateFullMemory(originalModel, schedRestr.getMemoryStates());
+                        } else if (schedRestr.getMemoryPattern() == storm::storage::SchedulerClass::MemoryPattern::Counter && schedRestr.getMemoryStates() > 1) {
+                            model = storm::transformer::MemoryIncorporation<SparseModelType>::incorporateCountingMemory(originalModel, schedRestr.getMemoryStates());
                         } else if (schedRestr.isPositional()) {
                             model = std::make_shared<SparseModelType>(originalModel);
                         } else {

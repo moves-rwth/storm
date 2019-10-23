@@ -34,6 +34,11 @@ namespace storm {
              * Incorporates a memory structure where the nondeterminism of the model decides which successor state to choose.
              */
             static std::shared_ptr<SparseModelType> incorporateFullMemory(SparseModelType const& model, uint64_t memoryStates);
+            
+            /*!
+             * Incorporates a memory structure where the nondeterminism of the model can increment a counter.
+             */
+            static std::shared_ptr<SparseModelType> incorporateCountingMemory(SparseModelType const& model, uint64_t memoryStates);
 
         };
     }

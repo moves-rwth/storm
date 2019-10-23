@@ -11,6 +11,7 @@ namespace storm {
             enum class MemoryPattern {
                 Arbitrary,
                 GoalMemory,
+                Counter
             };
             
             SchedulerClass();

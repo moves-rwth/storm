@@ -16,7 +16,7 @@ namespace storm {
             const std::string MultiObjectiveSettings::exportPlotOptionName = "exportplot";
             const std::string MultiObjectiveSettings::precisionOptionName = "precision";
             const std::string MultiObjectiveSettings::maxStepsOptionName = "maxsteps";
-            const std::string MultiObjectiveSettings::schedulerRestrictionOptionName = "schedrest";
+            const std::string MultiObjectiveSettings::schedulerRestrictionOptionName = "purescheds";
             const std::string MultiObjectiveSettings::printResultsOptionName = "printres";
             const std::string MultiObjectiveSettings::encodingOptionName = "encoding";
             
@@ -31,9 +31,9 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("type", "The type of precision.").setDefaultValueString("abs").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(precTypes)).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, maxStepsOptionName, true, "Aborts the computation after the given number of refinement steps (= computed pareto optimal points).").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("value", "the threshold for the number of refinement steps to be performed.").build()).build());
-                std::vector<std::string> memoryPatterns = {"positional", "goalmemory", "arbitrary"};
+                std::vector<std::string> memoryPatterns = {"positional", "goalmemory", "arbitrary", "counter"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, schedulerRestrictionOptionName, false, "Restricts the class of considered schedulers to non-randomized schedulers with the provided memory pattern.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("memorypattern", "The Pattern of the memory.").setDefaultValueString("positional").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(memoryPatterns)).build())
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("memorypattern", "The pattern of the memory.").setDefaultValueString("positional").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(memoryPatterns)).build())
                                 .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("memorystates", "The Number of memory states (only if supported by the pattern).").setDefaultValueUnsignedInteger(0).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, printResultsOptionName, true, "Prints intermediate results of the computation to standard output.").build());
                 std::vector<std::string> encodingTypes = {"auto", "classic", "flow"};
@@ -100,8 +100,12 @@ namespace storm {
                     result.setMemoryPattern(storm::storage::SchedulerClass::MemoryPattern::GoalMemory);
                     STORM_LOG_THROW(states == 0, storm::exceptions::IllegalArgumentException, "The number of memory states should not be provided for the given memory pattern.");
                 } else if (pattern == "arbitrary") {
-                    STORM_LOG_THROW(states > 0, storm::exceptions::IllegalArgumentException, "Invalid number of memory states for provided Pattern. Please specify a positive number.");
+                    STORM_LOG_THROW(states > 0, storm::exceptions::IllegalArgumentException, "Invalid number of memory states for provided pattern. Please specify a positive number.");
                     result.setMemoryPattern(storm::storage::SchedulerClass::MemoryPattern::Arbitrary);
+                    result.setMemoryStates(states);
+                } else if (pattern == "counter") {
+                    STORM_LOG_THROW(states > 0, storm::exceptions::IllegalArgumentException, "Invalid number of memory states for provided pattern. Please specify a positive number.");
+                    result.setMemoryPattern(storm::storage::SchedulerClass::MemoryPattern::Counter);
                     result.setMemoryStates(states);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Invalid memory pattern: " + pattern + ".");

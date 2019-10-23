@@ -87,6 +87,12 @@ namespace storm {
             auto memory = storm::storage::NondeterministicMemoryStructureBuilder().build(storm::storage::NondeterministicMemoryStructurePattern::Full, memoryStates);
             return storm::storage::SparseModelNondeterministicMemoryProduct<SparseModelType>(model, memory).build();
         }
+        
+        template <class SparseModelType>
+        std::shared_ptr<SparseModelType> MemoryIncorporation<SparseModelType>::incorporateCountingMemory(SparseModelType const& model, uint64_t memoryStates) {
+            auto memory = storm::storage::NondeterministicMemoryStructureBuilder().build(storm::storage::NondeterministicMemoryStructurePattern::SelectiveCounter, memoryStates);
+            return storm::storage::SparseModelNondeterministicMemoryProduct<SparseModelType>(model, memory).build();
+        }
 
         template class MemoryIncorporation<storm::models::sparse::Mdp<double>>;
         template class MemoryIncorporation<storm::models::sparse::MarkovAutomaton<double>>;
