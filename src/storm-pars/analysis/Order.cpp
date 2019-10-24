@@ -1,5 +1,7 @@
 #include <iostream>
 #include <fstream>
+#include <algorithm>
+
 #include "Order.h"
 
 namespace storm {
