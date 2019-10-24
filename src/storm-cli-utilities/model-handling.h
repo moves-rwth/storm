@@ -359,7 +359,7 @@ namespace storm {
             auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
             auto bisimulationSettings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-
+            auto transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
 
             std::pair<std::shared_ptr<storm::models::sparse::Model<ValueType>>, bool> result = std::make_pair(model, false);
             
