@@ -8,26 +8,33 @@ Version 1.3.x
 -------------
 
 ### Version 1.3.1 (under development)
-- Added support for multi-dimensional quantile queries
-- Allow to quickly check a benchmark from the [Quantitative Verification Benchmark Set](http://qcomp.org/benchmarks/) using the --qvbs option.
-- Added script resources/examples/download_qvbs.sh to download the QVBS.
+- Added support for multi-dimensional quantile queries.
+- Allow to quickly check a benchmark from the [Quantitative Verification Benchmark Set](http://qcomp.org/benchmarks/) using the `--qvbs` option.
+- Added script `resources/examples/download_qvbs.sh` to download the QVBS.
 - If an option is unknown, Storm now suggests similar option names.
 - Flagged several options as 'advanced' to clean up the `--help`-message. Use `--help all` to display a complete list of options.
-- Support for the new `round` operator in the PRISM language
-- Support for parsing of exact time bounds for properties, e.g., `P=? [F=27 "goal"]`
-- Export of optimal schedulers when checking MDPs with the sparse engine (experimental). Use  `--exportscheduler <filename>` 
-- JANI: Allow bounded types for constants
+- Support for the new `round` operator in the PRISM language.
+- Support for parsing of exact time bounds for properties, e.g., `P=? [F=27 "goal"]`.
+- Export of optimal schedulers when checking MDPs with the sparse engine (experimental). Use  `--exportscheduler <filename>`.
+- JANI: Allow bounded types for constants.
 - JANI: Support for non-trivial reward accumulations.
 - JANI: Fixed support for reward expressions over non-transient variables.
-- DRN: Added support for exact parsing and action-based rewards
-- storm-conv can now apply transformations on a prism file
-- Fixed sparse bisimulation of MDPs (which failed if all non-absorbing states in the quotient are initial)
-- Fixed linking with Mathsat on macOS
-- Fixed compilation for macOS mojave
-- Support for export of MTBDDs from storm
-- Support for monotonicity checking of pMCs using the `--monotonicity-analysis` option. Use `--help monotonicity` for all options.
+- DRN: Added support for exact parsing and action-based rewards.
+- DRN: Support for placeholder variables which allows to parse recurring rational functions only once.
+- Fixed sparse bisimulation of MDPs (which failed if all non-absorbing states in the quotient are initial).
+- Support for export of MTBDDs from Storm.
+- New settings module `transformation` for Markov chain transformations. Use `--help transformation` to get a list of available transformations.
+- Support for eliminating chains of Non-Markovian states in MAs via `--eliminate-chains`.
+- `storm-conv` can now apply transformations on a prism file.
+- `storm-dft`: Support partial-order for state space generation.
+- `storm-dft`: Compute lower and upper bounds for number of BE failures via SMT.
+- `storm-dft`: Support for constant failed BEs. Use flag `--uniquefailedbe` to create a unique constant failed BE.
+- `storm-dft`: Support for probabilistic BEs via PDEPs.
+- Fixed linking with Mathsat on macOS.
+- Fixed compilation for macOS Mojave.
+- Several bug fixes.
 
-### Version 1.3.0 (2018/12)
+## Version 1.3.0 (2018/12)
 - Slightly improved scheduler extraction
 - Environments are now part of the c++ API
 - Heavily extended JANI support, in particular:
