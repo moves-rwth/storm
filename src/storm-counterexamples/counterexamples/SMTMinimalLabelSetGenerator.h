@@ -3,10 +3,11 @@
 #include <queue>
 #include <chrono>
 
-#include "storm/solver/Z3SmtSolver.h"
-
+#include "storm-counterexamples/counterexamples/GuaranteedLabelSet.h"
 #include "storm-counterexamples/counterexamples/HighLevelCounterexample.h"
+#include "storm-counterexamples/settings/modules/CounterexampleGeneratorSettings.h"
 
+#include "storm/solver/Z3SmtSolver.h"
 #include "storm/storage/prism/Program.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/sparse/PrismChoiceOrigins.h"
@@ -17,13 +18,10 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
-#include "storm-counterexamples/settings/modules/CounterexampleGeneratorSettings.h"
-
+#include "storm/utility/cli.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotSupportedException.h"
 
-#include "storm/utility/counterexamples.h"
-#include "storm/utility/cli.h"
 
 namespace storm {
     
@@ -165,7 +163,7 @@ namespace storm {
                 }
                 
                 // Compute the set of labels that are known to be taken in any case.
-                relevancyInformation.knownLabels = storm::utility::counterexamples::getGuaranteedLabelSet(model, labelSets, psiStates, relevancyInformation.relevantLabels);
+                relevancyInformation.knownLabels = storm::counterexamples::getGuaranteedLabelSet(model, labelSets, psiStates, relevancyInformation.relevantLabels);
                 if (!relevancyInformation.knownLabels.empty()) {
                     storm::storage::FlatSet<uint_fast64_t> remainingLabels;
                     std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), relevancyInformation.knownLabels.begin(), relevancyInformation.knownLabels.end(), std::inserter(remainingLabels, remainingLabels.end()));
@@ -1349,7 +1347,7 @@ namespace storm {
                 storm::storage::FlatSet<uint_fast64_t> locallyRelevantLabels;
                 std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), commandSet.begin(), commandSet.end(), std::inserter(locallyRelevantLabels, locallyRelevantLabels.begin()));
                 
-                std::vector<storm::storage::FlatSet<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalModel, originalLabelSets, statesThatCanReachTargetStates, locallyRelevantLabels);
+                std::vector<storm::storage::FlatSet<uint_fast64_t>> guaranteedLabelSets = storm::counterexamples::getGuaranteedLabelSets(originalModel, originalLabelSets, statesThatCanReachTargetStates, locallyRelevantLabels);
                 STORM_LOG_DEBUG("Found " << reachableLabels.size() << " reachable labels and " << reachableStates.getNumberOfSetBits() << " reachable states.");
                 
                 // Search for states on the border of the reachable state space, i.e. states that are still reachable
@@ -1466,7 +1464,7 @@ namespace storm {
                 storm::storage::FlatSet<uint_fast64_t> locallyRelevantLabels;
                 std::set_difference(relevancyInformation.relevantLabels.begin(), relevancyInformation.relevantLabels.end(), commandSet.begin(), commandSet.end(), std::inserter(locallyRelevantLabels, locallyRelevantLabels.begin()));
                 
-                std::vector<storm::storage::FlatSet<uint_fast64_t>> guaranteedLabelSets = storm::utility::counterexamples::getGuaranteedLabelSets(originalModel, originalLabelSets, statesThatCanReachTargetStates, locallyRelevantLabels);
+                std::vector<storm::storage::FlatSet<uint_fast64_t>> guaranteedLabelSets = storm::counterexamples::getGuaranteedLabelSets(originalModel, originalLabelSets, statesThatCanReachTargetStates, locallyRelevantLabels);
                 
                 // Search for states for which we could enable another option and possibly improve the reachability probability.
                 std::set<storm::storage::FlatSet<uint_fast64_t>> cutLabels;

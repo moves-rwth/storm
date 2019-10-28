@@ -37,21 +37,6 @@ namespace storm {
                 CoreSettings();
 
                 /*!
-                 * Retrieves whether the counterexample option was set.
-                 *
-                 * @return True if the counterexample option was set.
-                 */
-                bool isCounterexampleSet() const;
-
-                /*!
-                 * Retrieves the name of the file to which the counterexample is to be written if the counterexample
-                 * option was set.
-                 *
-                 * @return The name of the file to which the counterexample is to be written.
-                 */
-                std::string getCounterexampleFilename() const;
-
-                /*!
                  * Retrieves the selected equation solver.
                  *
                  * @return The selected convergence criterion.
@@ -150,8 +135,6 @@ namespace storm {
                 Engine engine;
 
                 // Define the string names of the options as constants.
-                static const std::string counterexampleOptionName;
-                static const std::string counterexampleOptionShortName;
                 static const std::string eqSolverOptionName;
                 static const std::string lpSolverOptionName;
                 static const std::string smtSolverOptionName;

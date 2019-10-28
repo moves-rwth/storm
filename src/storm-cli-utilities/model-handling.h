@@ -268,12 +268,14 @@ namespace storm {
             storm::builder::BuilderOptions options(createFormulasToRespect(input.properties), input.model.get());
             options.setBuildChoiceLabels(buildSettings.isBuildChoiceLabelsSet());
             options.setBuildStateValuations(buildSettings.isBuildStateValuationsSet());
+            bool buildChoiceOrigins = false;
             if (storm::settings::manager().hasModule(storm::settings::modules::CounterexampleGeneratorSettings::moduleName)) {
                 auto counterexampleGeneratorSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
-                options.setBuildChoiceOrigins(counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet());
-            } else {
-                options.setBuildChoiceOrigins(false);
+                if (counterexampleGeneratorSettings.isCounterexampleSet()) {
+                    buildChoiceOrigins = counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet();
+                }
             }
+            options.setBuildChoiceOrigins(buildChoiceOrigins);
             options.setAddOutOfBoundsState(buildSettings.isBuildOutOfBoundsStateSet());
             if (buildSettings.isBuildFullModelSet()) {
                 options.clearTerminalStates();
@@ -929,6 +931,7 @@ namespace storm {
         void processInputWithValueTypeAndDdlib(SymbolicInput const& input) {
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
             auto abstractionSettings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
+            auto counterexampleSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
 
             // For several engines, no model building step is performed, but the verification is started right away.
             storm::settings::modules::CoreSettings::Engine engine = coreSettings.getEngine();
@@ -941,11 +944,9 @@ namespace storm {
                 std::shared_ptr<storm::models::ModelBase> model = buildPreprocessExportModelWithValueTypeAndDdlib<DdType, BuildValueType, VerificationValueType>(input, engine);
 
                 if (model) {
-                    if (coreSettings.isCounterexampleSet()) {
-                        auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+                    if (counterexampleSettings.isCounterexampleSet()) {
                         generateCounterexamples<VerificationValueType>(model, input);
                     } else {
-                        auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
                         verifyModel<DdType, VerificationValueType>(model, input, coreSettings);
                     }
                 }

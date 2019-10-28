@@ -20,8 +20,6 @@ namespace storm {
         namespace modules {
             
             const std::string CoreSettings::moduleName = "core";
-            const std::string CoreSettings::counterexampleOptionName = "counterexample";
-            const std::string CoreSettings::counterexampleOptionShortName = "cex";
             const std::string CoreSettings::eqSolverOptionName = "eqsolver";
             const std::string CoreSettings::lpSolverOptionName = "lpsolver";
             const std::string CoreSettings::smtSolverOptionName = "smtsolver";
@@ -35,8 +33,6 @@ namespace storm {
             const std::string CoreSettings::intelTbbOptionShortName = "tbb";
             
             CoreSettings::CoreSettings() : ModuleSettings(moduleName), engine(CoreSettings::Engine::Sparse) {
-                this->addOption(storm::settings::OptionBuilder(moduleName, counterexampleOptionName, false, "Generates a counterexample for the given PRCTL formulas if not satisfied by the model.").setShortName(counterexampleOptionShortName).build());
-
                 std::vector<std::string> engines = {"sparse", "hybrid", "dd", "dd-to-sparse", "expl", "abs"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, engineOptionName, false, "Sets which engine is used for model building and model checking.").setShortName(engineOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the engine to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(engines)).setDefaultValueString("sparse").build()).build());
@@ -60,10 +56,6 @@ namespace storm {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, cudaOptionName, false, "Sets whether to use CUDA.").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, intelTbbOptionName, false, "Sets whether to use Intel TBB (if Storm was built with support for TBB).").setShortName(intelTbbOptionShortName).build());
-            }
-
-            bool CoreSettings::isCounterexampleSet() const {
-                return this->getOption(counterexampleOptionName).getHasOptionBeenSet();
             }
 
             storm::solver::EquationSolverType  CoreSettings::getEquationSolver() const {
