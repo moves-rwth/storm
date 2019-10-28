@@ -4,7 +4,7 @@
 
 #include "storm-parsers/parser/MappedFile.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/BuildSettings.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/OutOfRangeException.h"
 
@@ -91,7 +91,7 @@ namespace storm {
             // Initialize variables for the parsing run.
             uint_fast64_t source = 0, target = 0, lastSource = 0, choice = 0, lastChoice = 0, curRow = 0;
             double val = 0.0;
-            bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet();
+            bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet();
             bool hadDeadlocks = false;
 
             // The first state already starts a new row group of the matrix.

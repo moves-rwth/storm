@@ -33,7 +33,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/JitBuilderSettings.h"
 
-#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/BuildSettings.h"
 
 #include "storm/utility/OsDetection.h"
 #include "storm-config.h"
@@ -574,7 +574,7 @@ namespace storm {
                 modelData["double"] = cpptempl::make_data(list);
                 
                 list = cpptempl::data_list();
-                if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet()) {
+                if (storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet()) {
                     list.push_back(cpptempl::data_map());
                 }
                 modelData["dontFixDeadlocks"] = cpptempl::make_data(list);

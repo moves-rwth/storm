@@ -22,8 +22,6 @@ namespace storm {
             const std::string CoreSettings::moduleName = "core";
             const std::string CoreSettings::counterexampleOptionName = "counterexample";
             const std::string CoreSettings::counterexampleOptionShortName = "cex";
-            const std::string CoreSettings::dontFixDeadlockOptionName = "nofixdl";
-            const std::string CoreSettings::dontFixDeadlockOptionShortName = "ndl";
             const std::string CoreSettings::eqSolverOptionName = "eqsolver";
             const std::string CoreSettings::lpSolverOptionName = "lpsolver";
             const std::string CoreSettings::smtSolverOptionName = "smtsolver";
@@ -38,8 +36,7 @@ namespace storm {
             
             CoreSettings::CoreSettings() : ModuleSettings(moduleName), engine(CoreSettings::Engine::Sparse) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, counterexampleOptionName, false, "Generates a counterexample for the given PRCTL formulas if not satisfied by the model.").setShortName(counterexampleOptionShortName).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, dontFixDeadlockOptionName, false, "If the model contains deadlock states, they need to be fixed by setting this option.").setShortName(dontFixDeadlockOptionShortName).setIsAdvanced().build());
-                
+
                 std::vector<std::string> engines = {"sparse", "hybrid", "dd", "dd-to-sparse", "expl", "abs"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, engineOptionName, false, "Sets which engine is used for model building and model checking.").setShortName(engineOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the engine to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(engines)).setDefaultValueString("sparse").build()).build());
@@ -68,15 +65,7 @@ namespace storm {
             bool CoreSettings::isCounterexampleSet() const {
                 return this->getOption(counterexampleOptionName).getHasOptionBeenSet();
             }
-            
-            bool CoreSettings::isDontFixDeadlocksSet() const {
-                return this->getOption(dontFixDeadlockOptionName).getHasOptionBeenSet();
-            }
-            
-            std::unique_ptr<storm::settings::SettingMemento> CoreSettings::overrideDontFixDeadlocksSet(bool stateToSet) {
-                return this->overrideOption(dontFixDeadlockOptionName, stateToSet);
-            }
-            
+
             storm::solver::EquationSolverType  CoreSettings::getEquationSolver() const {
                 std::string equationSolverName = this->getOption(eqSolverOptionName).getArgumentByName("name").getValueAsString();
                 if (equationSolverName == "gmm++") {

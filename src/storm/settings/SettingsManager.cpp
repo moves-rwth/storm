@@ -630,12 +630,8 @@ namespace storm {
             return SettingsManager::manager();
         }
         
-        storm::settings::modules::CoreSettings& mutableCoreSettings() {
-            return dynamic_cast<storm::settings::modules::CoreSettings&>(mutableManager().getModule(storm::settings::modules::CoreSettings::moduleName));
-        }
-        
-        storm::settings::modules::IOSettings& mutableIOSettings() {
-            return dynamic_cast<storm::settings::modules::IOSettings&>(mutableManager().getModule(storm::settings::modules::IOSettings::moduleName));
+        storm::settings::modules::BuildSettings& mutableBuildSettings() {
+            return dynamic_cast<storm::settings::modules::BuildSettings&>(mutableManager().getModule(storm::settings::modules::BuildSettings::moduleName));
         }
         
         storm::settings::modules::AbstractionSettings& mutableAbstractionSettings() {
