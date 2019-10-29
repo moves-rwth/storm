@@ -24,7 +24,7 @@ namespace storm {
             Formula(storm::expressions::Variable const& variable, storm::expressions::Expression const& expression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
 
             /*!
-             * Creates a formula with the given name
+             * Creates a formula with the given name and the assigning expression
              *
              * @param name the name of the formula.
              * @param expression The expression associated with this formula.
@@ -32,6 +32,16 @@ namespace storm {
              * @param lineNumber The line number in which the transition reward is defined.
              */
             Formula(std::string const& name, storm::expressions::Expression const& expression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            
+            /*!
+             * Creates a formula with the given name
+             *
+             * @param name the name of the formula.
+             * @param filename The filename in which the transition reward is defined.
+             * @param lineNumber The line number in which the transition reward is defined.
+             */
+            Formula(std::string const& name, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+
             
             // Create default implementations of constructors/assignment.
             Formula() = default;
@@ -76,6 +86,7 @@ namespace storm {
             
             /*!
              * Substitutes all variables in the expression of the formula according to the given map.
+             * Will not substitute the placeholder variable (if given).
              *
              * @param substitution The substitution to perform.
              * @return The resulting formula.
