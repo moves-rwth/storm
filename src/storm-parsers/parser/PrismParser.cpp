@@ -12,6 +12,7 @@
 
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/VariableExpression.h"
+#include "storm/storage/BitVector.h"
 
 #include "storm-parsers/parser/ExpressionParser.h"
 
@@ -94,7 +95,7 @@ namespace storm {
             
             // Defined constants. Will be checked before undefined constants.
             // ">>" before literal '=' because we can still parse an undefined constant afterwards.
-            definedBooleanConstantDefinition = (((qi::lit("const") >> qi::lit("bool")) > freshIdentifier) >> (qi::lit("=") > expression_ > qi::lit(";")))[qi::_val = phoenix::bind(&PrismParser::createDefinedBooleanConstant, phoenix::ref(*this), qi::_1, qi::_2)];
+            definedBooleanConstantDefinition = (((qi::lit("const") >> qi::lit("bool")) > freshIdentifier) >> (qi::lit("=") > expression_[qi::_pass = phoenix::bind(&PrismParser::isOfBoolType, phoenix::ref(*this), qi::_1)] > qi::lit(";")))[qi::_val = phoenix::bind(&PrismParser::createDefinedBooleanConstant, phoenix::ref(*this), qi::_1, qi::_2)];
             definedBooleanConstantDefinition.name("defined boolean constant declaration");
             
             definedIntegerConstantDefinition = (((qi::lit("const") >> -qi::lit("int")) >> freshIdentifier) >> (qi::lit("=") > expression_ > qi::lit(";")))[qi::_val = phoenix::bind(&PrismParser::createDefinedIntegerConstant, phoenix::ref(*this), qi::_1, qi::_2)]; // '>>' before freshIdentifier because of the optional 'int'.  Otherwise, undefined constant 'const bool b;' would not parse.
@@ -312,42 +313,55 @@ namespace storm {
             formulaDefinition.name("formula definition");
             this->secondRun = true;
             this->expressionParser->setIdentifierMapping(&this->identifiers_);
-            auto formulas = std::move(this->globalProgramInformation.formulas);
-            this->globalProgramInformation.moveToSecondRun();
 
             // We need to parse the formula rhs between the first run and the second run, because
             // * in the first run, the type of the formula (int, bool, clock) is not known
             // * in the second run, formulas might be used before they are declared
-            createFormulaIdentifiers(formulas);
-
+            createFormulaIdentifiers(this->globalProgramInformation.formulas);
+            
+            this->globalProgramInformation.moveToSecondRun();
         }
         
-        void PrismParser::createFormulaIdentifiers(std::vector<storm::prism::Formula>& formulas) {
+        void PrismParser::createFormulaIdentifiers(std::vector<storm::prism::Formula> const& formulas) {
             STORM_LOG_THROW(formulas.size() == this->formulaExpressions.size(), storm::exceptions::UnexpectedException, "Unexpected number of formulas and formula expressions");
-            auto expressionIt = formulaExpressions.begin();
-            for (auto& formula : formulas) {
-                storm::expressions::Expression expression;
-                try {
-                    expression = this->expressionParser->parseFromString(*expressionIt);
-                } catch (storm::exceptions::WrongFormatException const& e) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ": Invalid expression for formula '" << formula.getName() << "' at line '" << formula.getLineNumber() << "':\n\t" << *expressionIt);
-                }
-                storm::expressions::Variable variable;
-                try {
-                    if (expression.hasIntegerType()) {
-                         variable = manager->declareIntegerVariable(formula.getName());
-                    } else if (expression.hasBooleanType()) {
-                         variable = manager->declareBooleanVariable(formula.getName());
-                    } else {
-                        STORM_LOG_ASSERT(expression.hasNumericalType(), "Unexpected type for formula expression of formula " << formula.getName());
-                         variable = manager->declareRationalVariable(formula.getName());
+            
+            storm::storage::BitVector unprocessed(formulas.size(), true);
+            // It might be that formulas are declared in a weird order.
+            // We follow a trial-and-error approach: If we can not parse the expression for one formula,
+            // we assume a subsequent formula has to be evaluated first.
+            // We cycle through the formulas until no further progress is made
+            bool progress = true;
+            while (progress) {
+                progress = false;
+                for (uint64_t formulaIndex = unprocessed.getNextSetIndex(0); formulaIndex < formulas.size(); formulaIndex = unprocessed.getNextSetIndex(formulaIndex + 1)) {
+                    storm::expressions::Expression expression = this->expressionParser->parseFromString(formulaExpressions[formulaIndex], true);
+                    if (expression.isInitialized()) {
+                        progress = true;
+                        unprocessed.set(formulaIndex, false);
+                        storm::expressions::Variable variable;
+                        try {
+                            if (expression.hasIntegerType()) {
+                                variable = manager->declareIntegerVariable(formulas[formulaIndex].getName());
+                            } else if (expression.hasBooleanType()) {
+                                variable = manager->declareBooleanVariable(formulas[formulaIndex].getName());
+                            } else {
+                                STORM_LOG_ASSERT(expression.hasNumericalType(), "Unexpected type for formula expression of formula " << formulas[formulaIndex].getName());
+                                variable = manager->declareRationalVariable(formulas[formulaIndex].getName());
+                            }
+                            this->identifiers_.add(formulas[formulaIndex].getName(), variable.getExpression());
+                        } catch (storm::exceptions::InvalidArgumentException const& e) {
+                            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ": illegal identifier '" << formulas[formulaIndex].getName() << "' at line '" << formulas[formulaIndex].getLineNumber());
+                        }
+                        this->expressionParser->setIdentifierMapping(&this->identifiers_);
                     }
-                    this->identifiers_.add(formula.getName(), variable.getExpression());
-                } catch (storm::exceptions::InvalidArgumentException const& e) {
-                    STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ": illegal identifier '" << formula.getName() << "' at line '" << formula.getLineNumber());
                 }
-                this->expressionParser->setIdentifierMapping(&this->identifiers_);
-                ++expressionIt;
+            }
+            if (!unprocessed.empty()) {
+                for (auto const& formulaIndex : unprocessed) {
+                    STORM_LOG_ERROR("Parsing error in " << this->getFilename() << ": Invalid expression for formula '" << formulas[formulaIndex].getName() << "' at line '" << formulas[formulaIndex].getLineNumber() << "':\n\t" << formulaExpressions[formulaIndex]);
+                }
+                STORM_LOG_THROW(unprocessed.getNumberOfSetBits() == 1, storm::exceptions::WrongFormatException, "Unable to parse expressions for " << unprocessed.getNumberOfSetBits() << " formulas. This could be due to circular dependencies");
+                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Unable to parse expression for formula '" << formulas[unprocessed.getNextSetIndex(0)].getName() << "' formulas.");
             }
         }
         
@@ -412,6 +426,18 @@ namespace storm {
                 }
             }
             return true;
+        }
+        
+        bool PrismParser::isOfBoolType(storm::expressions::Expression const& expression) {
+            return !this->secondRun || expression.hasBooleanType();
+        }
+        
+        bool PrismParser::isOfIntType(storm::expressions::Expression const& expression) {
+            return !this->secondRun || expression.hasIntegerType();
+        }
+        
+        bool PrismParser::isOfDoubleType(storm::expressions::Expression const& expression) {
+            return !this->secondRun || expression.hasNumericalType();
         }
         
         bool PrismParser::addInitialStatesConstruct(storm::expressions::Expression const& initialStatesExpression, GlobalProgramInformation& globalProgramInformation) {

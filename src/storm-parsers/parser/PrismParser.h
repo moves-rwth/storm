@@ -167,7 +167,7 @@ namespace storm {
             /*!
              * Parses the stored formula Expressions.
              */
-            void createFormulaIdentifiers(std::vector<storm::prism::Formula>& formulas);
+            void createFormulaIdentifiers(std::vector<storm::prism::Formula> const& formulas);
             
             // A flag that stores whether the grammar is currently doing the second run.
             bool secondRun;
@@ -298,6 +298,9 @@ namespace storm {
             bool isFreshModuleName(std::string const& moduleName);
             bool isFreshLabelName(std::string const& moduleName);
             bool isFreshRewardModelName(std::string const& moduleName);
+            bool isOfBoolType(storm::expressions::Expression const& expression);
+            bool isOfIntType(storm::expressions::Expression const& expression);
+            bool isOfDoubleType(storm::expressions::Expression const& expression);
             bool isValidModuleRenamingList(std::string const& oldModuleName, std::map<std::string, std::string> const& renaming, GlobalProgramInformation const& globalProgramInformation) const;
             bool addInitialStatesConstruct(storm::expressions::Expression const& initialStatesExpression, GlobalProgramInformation& globalProgramInformation);
             bool addSystemCompositionConstruct(std::shared_ptr<storm::prism::Composition> const& composition, GlobalProgramInformation& globalProgramInformation);
