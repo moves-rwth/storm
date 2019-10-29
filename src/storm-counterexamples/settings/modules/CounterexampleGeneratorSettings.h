@@ -37,7 +37,21 @@ namespace storm {
                  * @return True iff a minimal command set counterexample is to be generated.
                  */
                 bool isMinimalCommandSetGenerationSet() const;
-                
+
+                /*!
+                 * Retrieves whether the option to generate a shortest path counterexample was set.
+                 *
+                 * @return True iff a shortest path counterexample is to be generated.
+                 */
+                bool isShortestPathGenerationSet() const;
+
+                /*!
+                 * Retrieves the maximal number K of shortest paths which should be generated.
+                 *
+                 * @return The upper bound on the number of shortest paths.
+                 */
+                size_t getShortestPathMaxK() const;
+
                 /*!
                  * Retrieves whether the MILP-based technique is to be used to generate a minimal command set
                  * counterexample.
@@ -87,6 +101,7 @@ namespace storm {
                 static const std::string counterexampleOptionName;
                 static const std::string counterexampleOptionShortName;
                 static const std::string counterexampleTypeOptionName;
+                static const std::string shortestPathMaxKOptionName;
                 static const std::string minimalCommandMethodOptionName;
                 static const std::string encodeReachabilityOptionName;
                 static const std::string schedulerCutsOptionName;

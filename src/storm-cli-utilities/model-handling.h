@@ -540,24 +540,38 @@ namespace storm {
             
             auto counterexampleSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
             if (counterexampleSettings.isMinimalCommandSetGenerationSet()) {
-                
                 bool useMilp = counterexampleSettings.isUseMilpBasedMinimalCommandSetGenerationSet();
                 for (auto const& property : input.properties) {
                     std::shared_ptr<storm::counterexamples::Counterexample> counterexample;
                     printComputingCounterexample(property);
                     storm::utility::Stopwatch watch(true);
                     if (useMilp) {
-                        STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "Counterexample generation using MILP is currently only supported for MDPs.");
-                        counterexample = storm::api::computeHighLevelCounterexampleMilp(input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
+                        STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException,
+                                        "Counterexample generation using MILP is currently only supported for MDPs.");
+                        counterexample = storm::api::computeHighLevelCounterexampleMilp(input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(),
+                                                                                        property.getRawFormula());
                     } else {
-                        STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Dtmc) || sparseModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "Counterexample generation using MaxSAT is currently only supported for discrete-time models.");
+                        STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Dtmc) || sparseModel->isOfType(storm::models::ModelType::Mdp),
+                                        storm::exceptions::NotSupportedException, "Counterexample generation using MaxSAT is currently only supported for discrete-time models.");
 
                         if (sparseModel->isOfType(storm::models::ModelType::Dtmc)) {
-                            counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(input.model.get(), sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>(), property.getRawFormula());
+                            counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(input.model.get(), sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>(),
+                                                                                              property.getRawFormula());
                         } else {
-                            counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
+                            counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(),
+                                                                                              property.getRawFormula());
                         }
                     }
+                    watch.stop();
+                    printCounterexample(counterexample, &watch);
+                }
+            } else if (counterexampleSettings.isShortestPathGenerationSet()) {
+                for (auto const& property : input.properties) {
+                    std::shared_ptr<storm::counterexamples::Counterexample> counterexample;
+                    printComputingCounterexample(property);
+                    storm::utility::Stopwatch watch(true);
+                    STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Dtmc), storm::exceptions::NotSupportedException, "Counterexample generation using shortest paths is currently only supported for DTMCs.");
+                    counterexample = storm::api::computeKShortestPathCounterexample(sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>(), property.getRawFormula(), counterexampleSettings.getShortestPathMaxK());
                     watch.stop();
                     printCounterexample(counterexample, &watch);
                 }

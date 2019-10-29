@@ -23,6 +23,7 @@ Version 1.3.x
 - DRN: Support for placeholder variables which allows to parse recurring rational functions only once.
 - Fixed sparse bisimulation of MDPs (which failed if all non-absorbing states in the quotient are initial).
 - Support for export of MTBDDs from Storm.
+- Support for k-shortest path counterexamples (arguments `-cex --cextype shortestpath`)
 - New settings module `transformation` for Markov chain transformations. Use `--help transformation` to get a list of available transformations.
 - Support for eliminating chains of Non-Markovian states in MAs via `--eliminate-chains`.
 - Export to dot format allows for maximal line width in states (argument `--dot-maxwidth <width>`)

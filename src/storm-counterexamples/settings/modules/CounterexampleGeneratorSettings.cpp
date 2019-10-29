@@ -16,6 +16,7 @@ namespace storm {
             const std::string CounterexampleGeneratorSettings::counterexampleOptionName = "counterexample";
             const std::string CounterexampleGeneratorSettings::counterexampleOptionShortName = "cex";
             const std::string CounterexampleGeneratorSettings::counterexampleTypeOptionName = "cextype";
+            const std::string CounterexampleGeneratorSettings::shortestPathMaxKOptionName = "shortestpath-maxk";
             const std::string CounterexampleGeneratorSettings::minimalCommandMethodOptionName = "mincmdmethod";
             const std::string CounterexampleGeneratorSettings::encodeReachabilityOptionName = "encreach";
             const std::string CounterexampleGeneratorSettings::schedulerCutsOptionName = "schedcuts";
@@ -23,9 +24,11 @@ namespace storm {
 
             CounterexampleGeneratorSettings::CounterexampleGeneratorSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, counterexampleOptionName, false, "Generates a counterexample for the given PRCTL formulas if not satisfied by the model.").setShortName(counterexampleOptionShortName).build());
-                std::vector<std::string> cextype = {"mincmd"};
+                std::vector<std::string> cextype = {"mincmd", "shortestpath"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, counterexampleTypeOptionName, false, "Generates a counterexample of the given type if the given PRCTL formula is not satisfied by the model.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("type", "The type of the counterexample to compute.").setDefaultValueString("mincmd").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(cextype)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, shortestPathMaxKOptionName, false, "Maximal number K of shortest paths to generate.").setIsAdvanced()
+                                .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("maxk", "Upper bound on number of generated paths. Default value is 10.").setDefaultValueUnsignedInteger(10).build()).build());
                 std::vector<std::string> method = {"maxsat", "milp"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, minimalCommandMethodOptionName, true, "Sets which method is used to derive the counterexample in terms of a minimal command/edge set.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "The name of the method to use.").setDefaultValueString("maxsat").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(method)).build()).build());
@@ -44,6 +47,14 @@ namespace storm {
 
             bool CounterexampleGeneratorSettings::isMinimalCommandSetGenerationSet() const {
                 return this->getOption(counterexampleTypeOptionName).getArgumentByName("type").getValueAsString() == "mincmd";
+            }
+
+            bool CounterexampleGeneratorSettings::isShortestPathGenerationSet() const {
+                return this->getOption(counterexampleTypeOptionName).getArgumentByName("type").getValueAsString() == "shortestpath";
+            }
+
+            size_t CounterexampleGeneratorSettings::getShortestPathMaxK() const {
+                return this->getOption(shortestPathMaxKOptionName).getArgumentByName("maxk").getValueAsUnsignedInteger();
             }
             
             bool CounterexampleGeneratorSettings::isUseMilpBasedMinimalCommandSetGenerationSet() const {
