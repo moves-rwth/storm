@@ -350,8 +350,9 @@ namespace storm {
                             if (includeLabeling || firstValue != nullptr || secondValue != nullptr || hasStateValuations()) {
                                 outStream << "label = \"" << state;
                                 if (hasStateValuations()) {
+                                    std::string stateInfo = getStateValuations().getStateInfo(state);
                                     std::vector<std::string> results;
-                                    boost::split(results, getStateValuations().getStateInfo(state), [](char c) { return c == ',';});
+                                    boost::split(results, stateInfo, [](char c) { return c == ',';});
                                     storm::utility::outputFixedWidth(outStream, results, maxWidthLabel);
                                 }
                                 outStream << ": ";
