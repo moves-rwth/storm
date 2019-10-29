@@ -34,6 +34,7 @@
 #include "storm-cli-utilities/cli.h"
 #include "storm-cli-utilities/model-handling.h"
 
+#include "storm-pomdp/transformer/KnownProbabilityTransformer.h"
 #include "storm-pomdp/transformer/ApplyFiniteSchedulerToPomdp.h"
 #include "storm-pomdp/transformer/GlobalPOMDPSelfLoopEliminator.h"
 #include "storm-pomdp/transformer/GlobalPomdpMecChoiceEliminator.h"
@@ -134,6 +135,8 @@ int main(const int argc, const char** argv) {
 
         if (formula) {
             if (formula->isProbabilityOperatorFormula()) {
+                boost::optional<storm::storage::BitVector> prob1States;
+                boost::optional<storm::storage::BitVector> prob0States;
                 if (pomdpSettings.isSelfloopReductionSet() && !storm::solver::minimize(formula->asProbabilityOperatorFormula().getOptimalityType())) {
                     STORM_PRINT_AND_LOG("Eliminating self-loop choices ...");
                     uint64_t oldChoiceCount = pomdp->getNumberOfChoices();
@@ -144,12 +147,16 @@ int main(const int argc, const char** argv) {
                 if (pomdpSettings.isQualitativeReductionSet()) {
                     storm::analysis::QualitativeAnalysis<double> qualitativeAnalysis(*pomdp);
                     STORM_PRINT_AND_LOG("Computing states with probability 0 ...");
-                    std::cout << qualitativeAnalysis.analyseProb0(formula->asProbabilityOperatorFormula()) << std::endl;
+                    prob0States = qualitativeAnalysis.analyseProb0(formula->asProbabilityOperatorFormula());
+                    std::cout << *prob0States << std::endl;
                     STORM_PRINT_AND_LOG(" done." << std::endl);
                     STORM_PRINT_AND_LOG("Computing states with probability 1 ...");
-                    std::cout << qualitativeAnalysis.analyseProb1(formula->asProbabilityOperatorFormula()) << std::endl;
+                    prob1States = qualitativeAnalysis.analyseProb1(formula->asProbabilityOperatorFormula());
+                    std::cout << *prob1States << std::endl;
                     STORM_PRINT_AND_LOG(" done." << std::endl);
-                    std::cout << "actual reduction not yet implemented..." << std::endl;
+                    //std::cout << "actual reduction not yet implemented..." << std::endl;
+                    storm::pomdp::transformer::KnownProbabilityTransformer<double> kpt = storm::pomdp::transformer::KnownProbabilityTransformer<double>();
+                    pomdp = kpt.transform(*pomdp, *prob0States, *prob1States);
                 }
                 if (pomdpSettings.isGridApproximationSet()) {
                     storm::logic::ProbabilityOperatorFormula const &probFormula = formula->asProbabilityOperatorFormula();
