@@ -10,7 +10,7 @@ namespace {
         std::shared_ptr<storm::storage::DFT<double>> dft = storm::api::loadDFTGalileoFile<double>(file);
         EXPECT_EQ(3ul, dft->nrElements());
         EXPECT_EQ(2ul, dft->nrBasicElements());
-        EXPECT_TRUE(storm::api::isWellFormed(*dft));
+        EXPECT_TRUE(storm::api::isWellFormed(*dft).first);
     }
 
     TEST(DftParserTest, LoadFromJsonFile) {
@@ -18,7 +18,7 @@ namespace {
         std::shared_ptr<storm::storage::DFT<double>> dft = storm::api::loadDFTJsonFile<double>(file);
         EXPECT_EQ(3ul, dft->nrElements());
         EXPECT_EQ(2ul, dft->nrBasicElements());
-        EXPECT_TRUE(storm::api::isWellFormed(*dft));
+        EXPECT_TRUE(storm::api::isWellFormed(*dft).first);
     }
 
     TEST(DftParserTest, CatchCycles) {

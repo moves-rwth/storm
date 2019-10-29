@@ -1,7 +1,7 @@
 #include "MarkovAutomatonSparseTransitionParser.h"
 
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/BuildSettings.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm-parsers/parser/MappedFile.h"
@@ -18,7 +18,7 @@ namespace storm {
         typename MarkovAutomatonSparseTransitionParser<ValueType>::FirstPassResult MarkovAutomatonSparseTransitionParser<ValueType>::firstPass(char const* buf) {
             MarkovAutomatonSparseTransitionParser::FirstPassResult result;
 
-            bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet();
+            bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet();
 
             // Skip the format hint if it is there.
             buf = trimWhitespaces(buf);
@@ -171,7 +171,7 @@ namespace storm {
         typename MarkovAutomatonSparseTransitionParser<ValueType>::Result MarkovAutomatonSparseTransitionParser<ValueType>::secondPass(char const* buf, FirstPassResult const& firstPassResult) {
             Result result(firstPassResult);
 
-            bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet();
+            bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet();
 
             // Skip the format hint if it is there.
             buf = trimWhitespaces(buf);

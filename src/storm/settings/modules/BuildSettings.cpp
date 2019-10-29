@@ -25,15 +25,19 @@ namespace storm {
             const std::string explorationChecksOptionShortName = "ec";
             const std::string prismCompatibilityOptionName = "prismcompat";
             const std::string prismCompatibilityOptionShortName = "pc";
+            const std::string dontFixDeadlockOptionName = "nofixdl";
+            const std::string dontFixDeadlockOptionShortName = "ndl";
             const std::string noBuildOptionName = "nobuild";
             const std::string fullModelBuildOptionName = "buildfull";
             const std::string buildChoiceLabelOptionName = "buildchoicelab";
             const std::string buildStateValuationsOptionName = "buildstateval";
             const std::string buildOutOfBoundsStateOptionName = "buildoutofboundsstate";
             const std::string bitsForUnboundedVariablesOptionName = "int-bits";
+
             BuildSettings::BuildSettings() : ModuleSettings(moduleName) {
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, prismCompatibilityOptionName, false, "Enables PRISM compatibility. This may be necessary to process some PRISM models.").setShortName(prismCompatibilityOptionShortName).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, dontFixDeadlockOptionName, false, "If the model contains deadlock states, they need to be fixed by setting this option.").setShortName(dontFixDeadlockOptionShortName).setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, jitOptionName, false, "If set, the model is built using the JIT model builder.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, fullModelBuildOptionName, false, "If set, include all rewards and labels.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, buildChoiceLabelOptionName, false, "If set, also build the choice labels").setIsAdvanced().build());
@@ -59,6 +63,14 @@ namespace storm {
 
             bool BuildSettings::isPrismCompatibilityEnabled() const {
                 return this->getOption(prismCompatibilityOptionName).getHasOptionBeenSet();
+            }
+
+            bool BuildSettings::isDontFixDeadlocksSet() const {
+                return this->getOption(dontFixDeadlockOptionName).getHasOptionBeenSet();
+            }
+
+            std::unique_ptr<storm::settings::SettingMemento> BuildSettings::overrideDontFixDeadlocksSet(bool stateToSet) {
+                return this->overrideOption(dontFixDeadlockOptionName, stateToSet);
             }
 
             bool BuildSettings::isBuildFullModelSet() const {

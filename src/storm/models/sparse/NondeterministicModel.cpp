@@ -1,15 +1,14 @@
 #include "storm/models/sparse/NondeterministicModel.h"
 
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/exceptions/InvalidOperationException.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/storage/Scheduler.h"
 #include "storm/storage/memorystructure/MemoryStructureBuilder.h"
 #include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
 #include "storm/transformer/SubsystemBuilder.h"
-
-#include "storm/adapters/RationalFunctionAdapter.h"
-
-#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/utility/export.h"
 
 namespace storm {
     namespace models {
@@ -72,8 +71,8 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            void NondeterministicModel<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, bool linebreakLabel, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>* scheduler, bool finalizeOutput) const {
-                Model<ValueType, RewardModelType>::writeDotToStream(outStream, includeLabeling, linebreakLabel, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
+            void NondeterministicModel<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, size_t maxWidthLabel, bool includeLabeling, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>* scheduler, bool finalizeOutput) const {
+                Model<ValueType, RewardModelType>::writeDotToStream(outStream, maxWidthLabel, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
                 
                 // Write the probability distributions for all the states.
                 for (uint_fast64_t state = 0; state < this->getNumberOfStates(); ++state) {
@@ -125,14 +124,7 @@ namespace storm {
                                 outStream << " [ label = \"{";
                             }
                             arrowHasLabel = true;
-                            bool firstLabel = true;
-                            for (auto const& label : this->getChoiceLabeling().getLabelsOfChoice(rowIndex)) {
-                                if (!firstLabel) {
-                                    outStream << ", ";
-                                }
-                                firstLabel = false;
-                                outStream << label;
-                            }
+                            storm::utility::outputFixedWidth(outStream, this->getChoiceLabeling().getLabelsOfChoice(rowIndex), maxWidthLabel);
                             outStream << "}";
                         }
                         if (arrowHasLabel) {
@@ -157,7 +149,7 @@ namespace storm {
                         }
                         outStream << ";" << std::endl;
                         
-                        // Now draw all probabilitic arcs that belong to this nondeterminstic choice.
+                        // Now draw all probabilistic arcs that belong to this non-deterministic choice.
                         for (auto const& transition : row) {
                             if (subsystem == nullptr || subsystem->get(transition.getColumn())) {
                                 outStream << "\t\"" << state << "c" << choice << "\" -> " << transition.getColumn() << " [ label= \"" << transition.getValue() << "\" ]";

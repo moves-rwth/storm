@@ -268,12 +268,14 @@ namespace storm {
             storm::builder::BuilderOptions options(createFormulasToRespect(input.properties), input.model.get());
             options.setBuildChoiceLabels(buildSettings.isBuildChoiceLabelsSet());
             options.setBuildStateValuations(buildSettings.isBuildStateValuationsSet());
+            bool buildChoiceOrigins = false;
             if (storm::settings::manager().hasModule(storm::settings::modules::CounterexampleGeneratorSettings::moduleName)) {
                 auto counterexampleGeneratorSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
-                options.setBuildChoiceOrigins(counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet());
-            } else {
-                options.setBuildChoiceOrigins(false);
+                if (counterexampleGeneratorSettings.isCounterexampleSet()) {
+                    buildChoiceOrigins = counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet();
+                }
             }
+            options.setBuildChoiceOrigins(buildChoiceOrigins);
             options.setAddOutOfBoundsState(buildSettings.isBuildOutOfBoundsStateSet());
             if (buildSettings.isBuildFullModelSet()) {
                 options.clearTerminalStates();
@@ -326,12 +328,20 @@ namespace storm {
         
         template <typename ValueType>
         std::shared_ptr<storm::models::sparse::Model<ValueType>> preprocessSparseMarkovAutomaton(std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> const& model) {
+            auto transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
+
             std::shared_ptr<storm::models::sparse::Model<ValueType>> result = model;
             model->close();
             if (model->isConvertibleToCtmc()) {
                 STORM_LOG_WARN_COND(false, "MA is convertible to a CTMC, consider using a CTMC instead.");
                 result = model->convertToCtmc();
             }
+
+            if (transformationSettings.isChainEliminationSet() && result->isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                result = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(
+                        result->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(), !transformationSettings.isIgnoreLabelingSet());
+            }
+
             return result;
         }
         
@@ -352,17 +362,11 @@ namespace storm {
             auto bisimulationSettings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
             auto transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
-            
+
             std::pair<std::shared_ptr<storm::models::sparse::Model<ValueType>>, bool> result = std::make_pair(model, false);
             
             if (result.first->isOfType(storm::models::ModelType::MarkovAutomaton)) {
                 result.first = preprocessSparseMarkovAutomaton(result.first->template as<storm::models::sparse::MarkovAutomaton<ValueType>>());
-                if (transformationSettings.isChainEliminationSet() &&
-                    result.first->isOfType(storm::models::ModelType::MarkovAutomaton)) {
-                    result.first = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(
-                            result.first->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(),
-                            !transformationSettings.isIgnoreLabelingSet());
-                }
                 result.second = true;
             }
             
@@ -395,7 +399,7 @@ namespace storm {
             }
             
             if (ioSettings.isExportDotSet()) {
-                storm::api::exportSparseModelAsDot(model, ioSettings.getExportDotFilename());
+                storm::api::exportSparseModelAsDot(model, ioSettings.getExportDotFilename(), ioSettings.getExportDotMaxWidth());
             }
         }
         
@@ -536,24 +540,38 @@ namespace storm {
             
             auto counterexampleSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
             if (counterexampleSettings.isMinimalCommandSetGenerationSet()) {
-                
                 bool useMilp = counterexampleSettings.isUseMilpBasedMinimalCommandSetGenerationSet();
                 for (auto const& property : input.properties) {
                     std::shared_ptr<storm::counterexamples::Counterexample> counterexample;
                     printComputingCounterexample(property);
                     storm::utility::Stopwatch watch(true);
                     if (useMilp) {
-                        STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "Counterexample generation using MILP is currently only supported for MDPs.");
-                        counterexample = storm::api::computeHighLevelCounterexampleMilp(input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
+                        STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException,
+                                        "Counterexample generation using MILP is currently only supported for MDPs.");
+                        counterexample = storm::api::computeHighLevelCounterexampleMilp(input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(),
+                                                                                        property.getRawFormula());
                     } else {
-                        STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Dtmc) || sparseModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::NotSupportedException, "Counterexample generation using MaxSAT is currently only supported for discrete-time models.");
+                        STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Dtmc) || sparseModel->isOfType(storm::models::ModelType::Mdp),
+                                        storm::exceptions::NotSupportedException, "Counterexample generation using MaxSAT is currently only supported for discrete-time models.");
 
                         if (sparseModel->isOfType(storm::models::ModelType::Dtmc)) {
-                            counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(input.model.get(), sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>(), property.getRawFormula());
+                            counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(input.model.get(), sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>(),
+                                                                                              property.getRawFormula());
                         } else {
-                            counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(), property.getRawFormula());
+                            counterexample = storm::api::computeHighLevelCounterexampleMaxSmt(input.model.get(), sparseModel->template as<storm::models::sparse::Mdp<ValueType>>(),
+                                                                                              property.getRawFormula());
                         }
                     }
+                    watch.stop();
+                    printCounterexample(counterexample, &watch);
+                }
+            } else if (counterexampleSettings.isShortestPathGenerationSet()) {
+                for (auto const& property : input.properties) {
+                    std::shared_ptr<storm::counterexamples::Counterexample> counterexample;
+                    printComputingCounterexample(property);
+                    storm::utility::Stopwatch watch(true);
+                    STORM_LOG_THROW(sparseModel->isOfType(storm::models::ModelType::Dtmc), storm::exceptions::NotSupportedException, "Counterexample generation using shortest paths is currently only supported for DTMCs.");
+                    counterexample = storm::api::computeKShortestPathCounterexample(sparseModel->template as<storm::models::sparse::Dtmc<ValueType>>(), property.getRawFormula(), counterexampleSettings.getShortestPathMaxK());
                     watch.stop();
                     printCounterexample(counterexample, &watch);
                 }
@@ -927,6 +945,7 @@ namespace storm {
         void processInputWithValueTypeAndDdlib(SymbolicInput const& input) {
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
             auto abstractionSettings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
+            auto counterexampleSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
 
             // For several engines, no model building step is performed, but the verification is started right away.
             storm::settings::modules::CoreSettings::Engine engine = coreSettings.getEngine();
@@ -939,11 +958,9 @@ namespace storm {
                 std::shared_ptr<storm::models::ModelBase> model = buildPreprocessExportModelWithValueTypeAndDdlib<DdType, BuildValueType, VerificationValueType>(input, engine);
 
                 if (model) {
-                    if (coreSettings.isCounterexampleSet()) {
-                        auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+                    if (counterexampleSettings.isCounterexampleSet()) {
                         generateCounterexamples<VerificationValueType>(model, input);
                     } else {
-                        auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
                         verifyModel<DdType, VerificationValueType>(model, input, coreSettings);
                     }
                 }

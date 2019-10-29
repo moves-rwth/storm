@@ -1,7 +1,9 @@
 #include "storm/models/sparse/DeterministicModel.h"
+
+#include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/constants.h"
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/utility/export.h"
 
 namespace storm {
     namespace models {
@@ -20,8 +22,8 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
-            void DeterministicModel<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, bool linebreakLabel, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>* scheduler, bool finalizeOutput) const {
-                Model<ValueType, RewardModelType>::writeDotToStream(outStream, includeLabeling, linebreakLabel, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
+            void DeterministicModel<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, size_t maxWidthLabel, bool includeLabeling, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>* scheduler, bool finalizeOutput) const {
+                Model<ValueType, RewardModelType>::writeDotToStream(outStream, maxWidthLabel, includeLabeling, subsystem, firstValue, secondValue, stateColoring, colors, scheduler, false);
                 
                 // iterate over all transitions and draw the arrows with probability information attached.
                 auto rowIt = this->getTransitionMatrix().begin();
@@ -33,14 +35,7 @@ namespace storm {
                         arrowOrigin = "\"" + arrowOrigin + "c\"";
                         outStream << "\t" << arrowOrigin << " [shape = \"point\"]" << std::endl;
                         outStream << "\t" << i << " -> " << arrowOrigin << " [label= \"{";
-                        bool firstLabel = true;
-                        for (auto const& label : this->getChoiceLabeling().getLabelsOfChoice(i)) {
-                            if (!firstLabel) {
-                                outStream << ", ";
-                            }
-                            firstLabel = false;
-                            outStream << label;
-                        }
+                        storm::utility::outputFixedWidth(outStream, this->getChoiceLabeling().getLabelsOfChoice(i), maxWidthLabel);
                         outStream << "}\"];" << std::endl;
                     }
                     

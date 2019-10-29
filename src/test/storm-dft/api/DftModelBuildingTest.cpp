@@ -11,7 +11,7 @@ namespace {
         // Initialize
         std::string file = STORM_TEST_RESOURCES_DIR "/dft/dont_care.dft";
         std::shared_ptr<storm::storage::DFT<double>> dft = storm::api::loadDFTGalileoFile<double>(file);
-        EXPECT_TRUE(storm::api::isWellFormed(*dft));
+        EXPECT_TRUE(storm::api::isWellFormed(*dft).first);
         std::string property = "Tmin=? [F \"failed\"]";
         std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
         std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;

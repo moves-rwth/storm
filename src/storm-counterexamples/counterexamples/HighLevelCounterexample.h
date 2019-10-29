@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Counterexample.h"
-
+#include "storm-counterexamples/counterexamples/Counterexample.h"
 #include "storm/storage/SymbolicModelDescription.h"
 
 namespace storm {

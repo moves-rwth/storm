@@ -77,7 +77,7 @@ namespace {
             storm::transformations::dft::DftTransformator<double> dftTransformator = storm::transformations::dft::DftTransformator<double>();
             std::shared_ptr<storm::storage::DFT<double>> dft = dftTransformator.transformBinaryFDEPs(
                     *(storm::api::loadDFTGalileoFile<double>(file)));
-            EXPECT_TRUE(storm::api::isWellFormed(*dft));
+            EXPECT_TRUE(storm::api::isWellFormed(*dft).first);
             std::string property = "Tmin=? [F \"failed\"]";
             std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
             std::set<size_t> relevantEvents;
@@ -92,7 +92,7 @@ namespace {
         double analyzeReliability(std::string const &file, double bound) {
             storm::transformations::dft::DftTransformator<double> dftTransformator = storm::transformations::dft::DftTransformator<double>();
             std::shared_ptr<storm::storage::DFT<double>> dft = dftTransformator.transformBinaryFDEPs(*(storm::api::loadDFTGalileoFile<double>(file)));
-            EXPECT_TRUE(storm::api::isWellFormed(*dft));
+            EXPECT_TRUE(storm::api::isWellFormed(*dft).first);
             std::string property = "Pmin=? [F<=" + std::to_string(bound) + " \"failed\"]";
             std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(
                     storm::api::parseProperties(property));

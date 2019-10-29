@@ -3,12 +3,14 @@
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/builder/ParallelCompositionBuilder.h"
+#include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/utility/bitoperations.h"
 #include "storm/utility/DirectEncodingExporter.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/ModelType.h"
 
+#include "storm-dft/api/storm-dft.h"
 #include "storm-dft/builder/ExplicitDFTModelBuilder.h"
 #include "storm-dft/storage/dft/DFTIsomorphism.h"
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
@@ -18,15 +20,18 @@ namespace storm {
     namespace modelchecker {
 
         template<typename ValueType>
-        typename DFTModelChecker<ValueType>::dft_results
-        DFTModelChecker<ValueType>::check(storm::storage::DFT<ValueType> const &origDft,
-                                          std::vector<std::shared_ptr<const storm::logic::Formula>> const &properties,
-                                          bool symred, bool allowModularisation, std::set<size_t> const &relevantEvents,
-                                          bool allowDCForRelevantEvents, double approximationError,
-                                          storm::builder::ApproximationHeuristic approximationHeuristic,
-                                          bool eliminateChains, bool ignoreLabeling) {
+        typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::check(storm::storage::DFT<ValueType> const& origDft,
+                                                                                           std::vector<std::shared_ptr<const storm::logic::Formula>> const& properties, bool symred,
+                                                                                           bool allowModularisation, std::set<size_t> const& relevantEvents,
+                                                                                           bool allowDCForRelevantEvents, double approximationError,
+                                                                                           storm::builder::ApproximationHeuristic approximationHeuristic, bool eliminateChains,
+                                                                                           bool ignoreLabeling) {
             totalTimer.start();
             dft_results results;
+
+            // Check well-formedness of DFT
+            auto wellFormedResult = storm::api::isWellFormed(origDft, true);
+            STORM_LOG_THROW(wellFormedResult.first, storm::exceptions::UnmetRequirementException, "DFT is not well-formed for analysis: " << wellFormedResult.second);
 
             // Optimizing DFT
             storm::storage::DFT<ValueType> dft = origDft.optimize();
@@ -37,18 +42,14 @@ namespace storm {
             // TODO: distinguish for all properties, not only for first one
             if (properties[0]->isTimeOperatorFormula() && allowModularisation) {
                 // Use parallel composition as modularisation approach for expected time
-                std::shared_ptr<storm::models::sparse::Model<ValueType>> model = buildModelViaComposition(dft,
-                                                                                                          properties,
-                                                                                                          symred, true,
-                                                                                                          relevantEvents);
+                std::shared_ptr<storm::models::sparse::Model<ValueType>> model = buildModelViaComposition(dft, properties, symred, true, relevantEvents);
                 // Model checking
                 std::vector<ValueType> resultsValue = checkModel(model, properties);
                 for (ValueType result : resultsValue) {
                     results.push_back(result);
                 }
             } else {
-                results = checkHelper(dft, properties, symred, allowModularisation, relevantEvents,
-                                      allowDCForRelevantEvents, approximationError, approximationHeuristic,
+                results = checkHelper(dft, properties, symred, allowModularisation, relevantEvents, allowDCForRelevantEvents, approximationError, approximationHeuristic,
                                       eliminateChains, ignoreLabeling);
             }
             totalTimer.stop();
@@ -56,13 +57,11 @@ namespace storm {
         }
 
         template<typename ValueType>
-        typename DFTModelChecker<ValueType>::dft_results
-        DFTModelChecker<ValueType>::checkHelper(storm::storage::DFT<ValueType> const &dft,
-                                                property_vector const &properties, bool symred,
-                                                bool allowModularisation, std::set<size_t> const &relevantEvents,
-                                                bool allowDCForRelevantEvents, double approximationError,
-                                                storm::builder::ApproximationHeuristic approximationHeuristic,
-                                                bool eliminateChains, bool ignoreLabeling) {
+        typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::checkHelper(storm::storage::DFT<ValueType> const& dft, property_vector const& properties,
+                                                                                                 bool symred, bool allowModularisation, std::set<size_t> const& relevantEvents,
+                                                                                                 bool allowDCForRelevantEvents, double approximationError,
+                                                                                                 storm::builder::ApproximationHeuristic approximationHeuristic,
+                                                                                                 bool eliminateChains, bool ignoreLabeling) {
             STORM_LOG_TRACE("Check helper called");
             std::vector<storm::storage::DFT<ValueType>> dfts;
             bool invResults = false;
@@ -425,10 +424,7 @@ namespace storm {
                     storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), parameterNames);
                 }
                 if (ioSettings.isExportDotSet()) {
-                    std::ofstream stream;
-                    storm::utility::openFile(ioSettings.getExportDotFilename(), stream);
-                    model->writeDotToStream(stream, true, true);
-                    storm::utility::closeFile(stream);
+                    storm::api::exportSparseModelAsDot(model, ioSettings.getExportDotFilename(), ioSettings.getExportDotMaxWidth());
                 }
 
                 // Model checking

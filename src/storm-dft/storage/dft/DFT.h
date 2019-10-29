@@ -243,10 +243,12 @@ namespace storm {
 
             /*!
              * Check if the DFT is well-formed.
+             *
+             * @param validForAnalysis If true, additional (more restrictive) checks are performed to check whether the DFT is valid for analysis.
              * @param stream Output stream where warnings about non-well-formed parts are written.
              * @return True iff the DFT is well-formed.
              */
-            bool checkWellFormedness(std::ostream& stream) const;
+            bool checkWellFormedness(bool validForAnalysis, std::ostream& stream) const;
 
             uint64_t maxRank() const;
             
