@@ -399,7 +399,7 @@ namespace storm {
             }
             
             if (ioSettings.isExportDotSet()) {
-                storm::api::exportSparseModelAsDot(model, ioSettings.getExportDotFilename());
+                storm::api::exportSparseModelAsDot(model, ioSettings.getExportDotFilename(), ioSettings.getExportDotMaxWidth());
             }
         }
         
