@@ -824,12 +824,16 @@ namespace storm {
                                         },
                                         [&sparseModel,&ioSettings] (std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
                                             if (ioSettings.isExportSchedulerSet()) {
-                                                if (result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler()) {
-                                                    auto const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
-                                                    STORM_PRINT_AND_LOG("Exporting scheduler ... ")
-                                                    storm::api::exportScheduler(sparseModel, scheduler, ioSettings.getExportSchedulerFilename());
+                                                if (result->isExplicitQuantitativeCheckResult()) {
+                                                    if (result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler()) {
+                                                        auto const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
+                                                        STORM_PRINT_AND_LOG("Exporting scheduler ... ")
+                                                        storm::api::exportScheduler(sparseModel, scheduler, ioSettings.getExportSchedulerFilename());
+                                                    } else {
+                                                        STORM_LOG_ERROR("Scheduler requested but could not be generated.");
+                                                    }
                                                 } else {
-                                                    STORM_LOG_ERROR("Scheduler requested but could not be generated.");
+                                                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export not supported for this property.");
                                                 }
                                             }
                                         });
