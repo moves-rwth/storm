@@ -192,7 +192,12 @@ namespace storm {
             std::string const& getFilename() const;
 
             mutable std::set<std::string> observables;
+            
+            // Store the expressions of formulas. They have to be parsed after the first and before the second run
             std::vector<std::string> formulaExpressions;
+            // Stores a proper order in which formulas can be evaluated. This is necessary since formulas might depend on each other.
+            // E.g. for "formula x = y; formula y = z;" we have to swap the order of the two formulas.
+            std::vector<uint64_t> formulaOrder;
             
             // A function used for annotating the entities with their position.
             phoenix::function<PositionAnnotation> annotate;
@@ -206,6 +211,11 @@ namespace storm {
             // Rules for model type.
             qi::rule<Iterator, storm::prism::Program::ModelType(), Skipper> modelTypeDefinition;
 
+            // Rules for parsing expressions of specific type
+            qi::rule<Iterator, storm::expressions::Expression(), Skipper> boolExpression;
+            qi::rule<Iterator, storm::expressions::Expression(), Skipper> intExpression;
+            qi::rule<Iterator, storm::expressions::Expression(), Skipper> numericalExpression;
+            
             // Rules for parsing the program header.
             qi::rule<Iterator, storm::prism::Constant(), Skipper> undefinedConstantDefinition;
             qi::rule<Iterator, storm::prism::Constant(), Skipper> undefinedBooleanConstantDefinition;
@@ -246,7 +256,7 @@ namespace storm {
             qi::rule<Iterator, storm::prism::RewardModel(GlobalProgramInformation&), qi::locals<std::string, std::vector<storm::prism::StateReward>, std::vector<storm::prism::StateActionReward>, std::vector<storm::prism::TransitionReward>>, Skipper> rewardModelDefinition;
             qi::rule<Iterator, storm::prism::StateReward(), Skipper> stateRewardDefinition;
             qi::rule<Iterator, storm::prism::StateActionReward(GlobalProgramInformation&), Skipper> stateActionRewardDefinition;
-            qi::rule<Iterator, storm::prism::TransitionReward(GlobalProgramInformation&), Skipper> transitionRewardDefinition;
+            qi::rule<Iterator, storm::prism::TransitionReward(GlobalProgramInformation&), qi::locals<std::string, storm::expressions::Expression, storm::expressions::Expression,storm::expressions::Expression>, Skipper> transitionRewardDefinition;
             
             // Rules for initial states expression.
             qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> initialStatesConstruct;
@@ -300,7 +310,7 @@ namespace storm {
             bool isFreshRewardModelName(std::string const& moduleName);
             bool isOfBoolType(storm::expressions::Expression const& expression);
             bool isOfIntType(storm::expressions::Expression const& expression);
-            bool isOfDoubleType(storm::expressions::Expression const& expression);
+            bool isOfNumericalType(storm::expressions::Expression const& expression);
             bool isValidModuleRenamingList(std::string const& oldModuleName, std::map<std::string, std::string> const& renaming, GlobalProgramInformation const& globalProgramInformation) const;
             bool addInitialStatesConstruct(storm::expressions::Expression const& initialStatesExpression, GlobalProgramInformation& globalProgramInformation);
             bool addSystemCompositionConstruct(std::shared_ptr<storm::prism::Composition> const& composition, GlobalProgramInformation& globalProgramInformation);
