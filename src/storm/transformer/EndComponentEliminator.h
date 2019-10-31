@@ -89,7 +89,7 @@ namespace storm {
                 sinkRows.resize(result.newToOldRowMapping.size());
                 
                 result.matrix = buildTransformedMatrix(originalMatrix, newRowGroupIndices, result.newToOldRowMapping, result.oldToNewStateMapping, sinkRows, addSelfLoopAtSinkStates);
-                STORM_LOG_DEBUG("EndComponentEliminator is done. Resulting  matrix has " << result.matrix.getRowGroupCount() << " row groups.");
+                STORM_LOG_DEBUG("EndComponentEliminator is done. Resulting matrix has " << result.matrix.getRowGroupCount() << " row groups.");
                 return result;
             }
             

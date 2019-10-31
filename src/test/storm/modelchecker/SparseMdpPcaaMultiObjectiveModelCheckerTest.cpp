@@ -65,7 +65,7 @@ TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, team3with3objectives) {
     storm::Environment env;
     
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/multiobj_team3.nm";
-    std::string formulasAsString = "multi(Pmax=? [ F \"task1_compl\" ], R{\"w_1_total\"}>=2.210204082 [ C ],  P>=0.5 [ F \"task2_compl\" ])"; // numerical
+    std::string formulasAsString = "multi(Pmax=? [ F \"task1_compl\" ], R{\"w_1_total\"}>=2.210204082 [ C ], P>=0.5 [ F \"task2_compl\" ])"; // numerical
     
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
@@ -83,7 +83,7 @@ TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, scheduler) {
     storm::Environment env;
     
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/multiobj_scheduler05.nm";
-    std::string formulasAsString = "multi(R{\"time\"}<= 11.778[ F \"tasks_complete\" ], R{\"energy\"}<=1.45 [  F \"tasks_complete\" ]) ";
+    std::string formulasAsString = "multi(R{\"time\"}<= 11.778[ F \"tasks_complete\" ], R{\"energy\"}<=1.45 [ F \"tasks_complete\" ]) ";
     
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);

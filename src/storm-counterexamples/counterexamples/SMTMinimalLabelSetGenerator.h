@@ -1690,7 +1690,7 @@ namespace storm {
 
                     for (uint64_t i = 0; i < maximalReachabilityProbability.size(); ++i) {
                         STORM_LOG_THROW((strictBound && maximalReachabilityProbability[i] >= propertyThreshold[i]) || (!strictBound && maximalReachabilityProbability[i] > propertyThreshold[i]), storm::exceptions::InvalidArgumentException, "Given probability threshold " << propertyThreshold[i] << " can not be " << (strictBound ? "achieved" : "exceeded") << " in model with maximal reachability probability of " << maximalReachabilityProbability[i] << ".");
-                        std::cout << std::endl << "Maximal property value  in model is " << maximalReachabilityProbability[i] << "." << std::endl << std::endl;
+                        std::cout << std::endl << "Maximal property value in model is " << maximalReachabilityProbability[i] << "." << std::endl << std::endl;
                     }
 
                 }

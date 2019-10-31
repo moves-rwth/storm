@@ -67,7 +67,7 @@ namespace storm {
                 }
                 
                 STORM_LOG_THROW(farestHalfspaceIndex<halfspaces.size(), storm::exceptions::UnexpectedException, "There is no seperating vector.");
-                STORM_LOG_DEBUG("Found separating  weight vector: " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(halfspaces[farestHalfspaceIndex].normalVector())) << ".");
+                STORM_LOG_DEBUG("Found separating weight vector: " << storm::utility::vector::toString(storm::utility::vector::convertNumericVector<double>(halfspaces[farestHalfspaceIndex].normalVector())) << ".");
                 return halfspaces[farestHalfspaceIndex].normalVector();
             }
             

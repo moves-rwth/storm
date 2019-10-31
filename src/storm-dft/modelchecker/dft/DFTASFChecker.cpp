@@ -544,7 +544,7 @@ namespace storm {
             storm::utility::openFile(filename, stream);
             stream << "; time point variables" << std::endl;
             for (auto const &timeVarEntry : timePointVariables) {
-                stream << "(declare-fun " << varNames[timeVarEntry.second] << "()  Int)" << std::endl;
+                stream << "(declare-fun " << varNames[timeVarEntry.second] << "() Int)" << std::endl;
             }
             stream << "; claim variables" << std::endl;
             for (auto const &claimVarEntry : claimVariables) {

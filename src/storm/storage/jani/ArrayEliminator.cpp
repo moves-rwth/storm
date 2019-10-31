@@ -110,7 +110,7 @@ namespace storm {
                         } else {
                             variables = "variables " + variables;
                         }
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unable to  determine array size: Size of ConstructorArrayExpression '" << expression << "' still contains the " << variables << ".");
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unable to determine array size: Size of ConstructorArrayExpression '" << expression << "' still contains the " << variables << ".");
                     }
                 }
                 

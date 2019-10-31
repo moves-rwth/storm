@@ -61,7 +61,7 @@ TEST(SparseMdpCbMultiObjectiveModelCheckerTest, zeroconf) {
 TEST(SparseMdpCbMultiObjectiveModelCheckerTest, team3with3objectives) {
     
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/multiobj_team3.nm";
-    std::string formulasAsString = "multi(P>=0.75 [ F \"task1_compl\" ], R{\"w_1_total\"}>=2.210204082 [ C ],  P>=0.5 [ F \"task2_compl\" ])"; // numerical
+    std::string formulasAsString = "multi(P>=0.75 [ F \"task1_compl\" ], R{\"w_1_total\"}>=2.210204082 [ C ], P>=0.5 [ F \"task2_compl\" ])"; // numerical
     
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);

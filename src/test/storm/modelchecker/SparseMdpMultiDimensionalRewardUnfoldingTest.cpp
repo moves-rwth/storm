@@ -165,7 +165,7 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, single_obj_zeroconf_dl) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/zeroconf_dl_not_unfolded.nm";
     std::string constantsDef = "N=1000,K=2,reset=true";
     std::string formulasAsString = "Pmin=? [ F{\"t\"}<50 \"ipfound\" ]";
-    formulasAsString += "; \n Pmax=? [multi(F{\"t\"}<50 \"ipfound\", F{\"r\"}<=0 \"ipfound\")  ]";
+    formulasAsString += "; \n Pmax=? [multi(F{\"t\"}<50 \"ipfound\", F{\"r\"}<=0 \"ipfound\") ]";
 
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
@@ -457,7 +457,7 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, zeroconf_dl) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/zeroconf_dl_not_unfolded.nm";
     std::string constantsDef = "N=1000,K=2,reset=true";
     std::string formulasAsString = "multi(Pmin=? [ F{\"t\"}<50 \"ipfound\" ])";
-    formulasAsString += "; \n multi(Pmax=? [multi(F{\"t\"}<50 \"ipfound\", F{\"r\"}<=0 \"ipfound\")  ])";
+    formulasAsString += "; \n multi(Pmax=? [multi(F{\"t\"}<50 \"ipfound\", F{\"r\"}<=0 \"ipfound\") ])";
 
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
