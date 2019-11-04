@@ -1123,7 +1123,7 @@ namespace storm {
             for (auto const& formula : this->getFormulas()) {
                 std::set<storm::expressions::Variable> containedVariables = formula.getExpression().getVariables();
                 bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
-                STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << formula.getFilename() << ", line " << formula.getLineNumber() << ": formula expression refers to unknown identifiers.");
+                STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << formula.getFilename() << ", line " << formula.getLineNumber() << ": expression '"<< formula.getExpression() << "'of formula '" << formula.getName() << "' refers to unknown identifiers.");
                 if (formula.hasExpressionVariable()) {
                     all.insert(formula.getExpressionVariable());
                     variablesAndConstants.insert(formula.getExpressionVariable());

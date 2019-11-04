@@ -10,6 +10,10 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        Formula::Formula(std::string const& name, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), name(name) {
+            // Intentionally left empty.
+        }
+        
         std::string const& Formula::getName() const {
             return this->name;
         }
@@ -27,11 +31,13 @@ namespace storm {
         }
         
         storm::expressions::Type const& Formula::getType() const {
+            assert(this->getExpression().isInitialized());
             assert(!hasExpressionVariable() || this->getExpressionVariable().getType() ==  this->getExpression().getType());
             return this->getExpressionVariable().getType();
         }
         
         Formula Formula::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
+            assert(this->getExpression().isInitialized());
             if (hasExpressionVariable()) {
                 return Formula(this->getExpressionVariable(), this->getExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
             } else {
