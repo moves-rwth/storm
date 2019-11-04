@@ -32,10 +32,10 @@ namespace storm {
         }
         
         template <typename ValueType>
-        void exportSparseModelAsDot(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::string const& filename) {
+        void exportSparseModelAsDot(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::string const& filename, size_t maxWidth = 30) {
             std::ofstream stream;
             storm::utility::openFile(filename, stream);
-            model->writeDotToStream(stream);
+            model->writeDotToStream(stream, maxWidth);
             storm::utility::closeFile(stream);
         }
 

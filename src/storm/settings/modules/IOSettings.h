@@ -38,6 +38,13 @@ namespace storm {
                 std::string getExportDotFilename() const;
 
                 /*!
+                 * Retrieves the maximal width for labels in the dot format.
+                 *
+                 * @return The maximal width.
+                 */
+                size_t getExportDotMaxWidth() const;
+
+                /*!
                  * Retrieves whether the export-to-dot option for jani was set.
                  *
                  * @return True if the export-to-jani-dot option was set.
@@ -325,6 +332,7 @@ namespace storm {
             private:
                 // Define the string names of the options as constants.
                 static const std::string exportDotOptionName;
+                static const std::string exportDotMaxWidthOptionName;
                 static const std::string exportJaniDotOptionName;
                 static const std::string exportExplicitOptionName;
                 static const std::string exportDdOptionName;

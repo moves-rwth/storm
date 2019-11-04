@@ -51,6 +51,13 @@ namespace storm {
             std::vector<storm::prism::Assignment> const& getAssignments() const;
             
             /*!
+             * Retrieves a reference to the map of variable names to their respective assignments.
+             *
+             * @return A reference to the map of variable names to their respective assignments.
+             */
+            std::vector<storm::prism::Assignment>& getAssignments();
+            
+            /*!
              * Retrieves a reference to the assignment for the variable with the given name.
              *
              * @return A reference to the assignment for the variable with the given name.

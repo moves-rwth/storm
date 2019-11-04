@@ -33,6 +33,10 @@ namespace storm {
             return this->assignments;
         }
         
+        std::vector<storm::prism::Assignment>& Update::getAssignments() {
+            return this->assignments;
+        }
+        
         storm::prism::Assignment const& Update::getAssignment(std::string const& variableName) const {
             auto const& variableIndexPair = this->variableToAssignmentIndexMap.find(variableName);
             STORM_LOG_THROW(variableIndexPair != this->variableToAssignmentIndexMap.end(), storm::exceptions::OutOfRangeException, "Variable '" << variableName << "' is not assigned in update.");

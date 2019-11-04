@@ -273,6 +273,31 @@ namespace storm {
             return this->invariant;
         }
 
+        void Module::setLineNumber(uint_fast64_t lineNumber) {
+            LocatedInformation::setLineNumber(lineNumber);
+            // Also set the line number of the components of the module, in case of a renaming.
+            if (isRenamedFromModule()) {
+                for (auto& v : booleanVariables) {
+                    v.setLineNumber(lineNumber);
+                }
+                for (auto& v : integerVariables) {
+                    v.setLineNumber(lineNumber);
+                }
+                for (auto& v : clockVariables) {
+                    v.setLineNumber(lineNumber);
+                }
+                for (auto& c : commands) {
+                    c.setLineNumber(lineNumber);
+                    for (auto& u : c.getUpdates()) {
+                        u.setLineNumber(lineNumber);
+                        for (auto& a : u.getAssignments()) {
+                            a.setLineNumber(lineNumber);
+                        }
+                    }
+                }
+            }
+        }
+        
         std::ostream& operator<<(std::ostream& stream, Module const& module) {
             stream << "module " << module.getName() << std::endl;
             for (auto const& booleanVariable : module.getBooleanVariables()) {

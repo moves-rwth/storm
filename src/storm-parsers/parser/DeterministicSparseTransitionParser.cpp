@@ -14,7 +14,7 @@
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/BuildSettings.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/macros.h"
@@ -82,7 +82,7 @@ namespace storm {
 
             uint_fast64_t row, col, lastRow = 0;
             double val;
-            bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet();
+            bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet();
             bool hadDeadlocks = false;
 
             // Read all transitions from file. Note that we assume that the

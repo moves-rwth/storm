@@ -1123,7 +1123,7 @@ namespace storm {
             for (auto const& formula : this->getFormulas()) {
                 std::set<storm::expressions::Variable> containedVariables = formula.getExpression().getVariables();
                 bool isValid = std::includes(variablesAndConstants.begin(), variablesAndConstants.end(), containedVariables.begin(), containedVariables.end());
-                STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << formula.getFilename() << ", line " << formula.getLineNumber() << ": formula expression refers to unknown identifiers.");
+                STORM_LOG_THROW(isValid, storm::exceptions::WrongFormatException, "Error in " << formula.getFilename() << ", line " << formula.getLineNumber() << ": expression '"<< formula.getExpression() << "'of formula '" << formula.getName() << "' refers to unknown identifiers.");
                 if (formula.hasExpressionVariable()) {
                     all.insert(formula.getExpressionVariable());
                     variablesAndConstants.insert(formula.getExpressionVariable());
@@ -1134,6 +1134,7 @@ namespace storm {
             bool hasProbabilisticCommand = false;
             bool hasMarkovianCommand = false;
             bool hasLabeledMarkovianCommand = false;
+            std::map<std::pair<storm::expressions::Variable,uint64_t>,std::pair<uint64_t,std::string>> writtenGlobalVariables;
             for (auto const& module : this->getModules()) {
                 std::set<storm::expressions::Variable> legalVariables = globalVariables;
                 for (auto const& variable : module.getBooleanVariables()) {
@@ -1217,6 +1218,13 @@ namespace storm {
                             }
                             STORM_LOG_THROW(alreadyAssignedVariables.find(assignedVariable) == alreadyAssignedVariables.end(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": duplicate assignment to variable '" << assignment.getVariableName() << "'.");
                             STORM_LOG_THROW(assignedVariable.getType() == assignment.getExpression().getType() || (assignedVariable.getType().isRationalType() && assignment.getExpression().getType().isNumericalType()), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": illegally assigning a value of type '" << assignment.getExpression().getType() << "' to variable '" << assignment.getVariableName() << "' of type '" << assignedVariable.getType() << "'.");
+                            
+                            if (command.isLabeled() && globalVariables.find(assignedVariable) != globalVariables.end()) {
+                                std::pair<storm::expressions::Variable, uint64_t>variableActionIndexPair(assignedVariable, command.getActionIndex());
+                                std::pair<uint64_t,std::string> lineModuleNamePair(command.getLineNumber(), module.getName());
+                                auto insertionResult = writtenGlobalVariables.emplace(variableActionIndexPair, lineModuleNamePair);
+                                STORM_LOG_THROW(insertionResult.second || insertionResult.first->second.second == module.getName(), storm::exceptions::WrongFormatException, "Error in " << command.getFilename() << ", line " << command.getLineNumber() << ": Syncronizing command with action label '" << command.getActionName() << "' illegally assigns a value to global variable '" << assignedVariable.getName() << "'. Previous assignment to the variable at line " << insertionResult.first->second.first << " in module '" << insertionResult.first->second.second << "'.");
+                            }
                             
                             containedVariables = assignment.getExpression().getVariables();
                             illegalVariables.clear();

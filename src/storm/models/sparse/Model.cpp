@@ -2,16 +2,16 @@
 
 #include <boost/algorithm/string/join.hpp>
 
-#include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/utility/vector.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/utility/NumberTraits.h"
-
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/utility/vector.h"
+#include "storm/utility/export.h"
+#include "storm/utility/NumberTraits.h"
+
 
 namespace storm {
     namespace models {
@@ -336,7 +336,7 @@ namespace storm {
             }
             
             template<typename ValueType, typename RewardModelType>
-            void Model<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, bool includeLabeling, bool linebreakLabel, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>*, bool finalizeOutput) const {
+            void Model<ValueType, RewardModelType>::writeDotToStream(std::ostream& outStream, size_t maxWidthLabel, bool includeLabeling, storm::storage::BitVector const* subsystem, std::vector<ValueType> const* firstValue, std::vector<ValueType> const* secondValue, std::vector<uint_fast64_t> const* stateColoring, std::vector<std::string> const* colors, std::vector<uint_fast64_t>*, bool finalizeOutput) const {
                 outStream << "digraph model {" << std::endl;
 
                 // Write all states to the stream.
@@ -350,26 +350,17 @@ namespace storm {
                             if (includeLabeling || firstValue != nullptr || secondValue != nullptr || hasStateValuations()) {
                                 outStream << "label = \"" << state;
                                 if (hasStateValuations()) {
-                                    outStream << " " << getStateValuations().getStateInfo(state);
+                                    std::string stateInfo = getStateValuations().getStateInfo(state);
+                                    std::vector<std::string> results;
+                                    boost::split(results, stateInfo, [](char c) { return c == ',';});
+                                    storm::utility::outputFixedWidth(outStream, results, maxWidthLabel);
                                 }
                                 outStream << ": ";
                                 
                                 // Now print the state labeling to the stream if requested.
                                 if (includeLabeling) {
                                     outStream << "{";
-                                    bool includeComma = false;
-                                    for (std::string const& label : this->getLabelsOfState(state)) {
-                                        if (includeComma) {
-                                            if (linebreakLabel) {
-                                                outStream << ",\n";
-                                            } else {
-                                                outStream << ", ";
-                                            }
-                                        } else {
-                                            includeComma = true;
-                                        }
-                                        outStream << label;
-                                    }
+                                    storm::utility::outputFixedWidth(outStream, this->getLabelsOfState(state), maxWidthLabel);
                                     outStream << "}";
                                 }
                                 

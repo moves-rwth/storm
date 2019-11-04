@@ -53,14 +53,14 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation) {
 
     auto *extender = new storm::analysis::OrderExtender<storm::RationalFunction>(dtmc);
     auto criticalTuple = extender->toOrder(formulas);
-    ASSERT_EQ(183, std::get<1>(criticalTuple));
-    ASSERT_EQ(186, std::get<2>(criticalTuple));
+    ASSERT_EQ(183ul, std::get<1>(criticalTuple));
+    ASSERT_EQ(186ul, std::get<2>(criticalTuple));
 
     auto assumptionChecker = storm::analysis::AssumptionChecker<storm::RationalFunction>(formulas[0], dtmc, region, 3);
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction>(&assumptionChecker, dtmc->getNumberOfStates(), true);
     auto result = assumptionMaker.createAndCheckAssumption(std::get<1>(criticalTuple), std::get<2>(criticalTuple), std::get<0>(criticalTuple));
 
-    EXPECT_EQ(3, result.size());
+    EXPECT_EQ(3ul, result.size());
 
     bool foundFirst = false;
     bool foundSecond = false;
@@ -123,15 +123,15 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation_no_validation) {
 
     auto *extender = new storm::analysis::OrderExtender<storm::RationalFunction>(dtmc);
     auto criticalTuple = extender->toOrder(formulas);
-    ASSERT_EQ(183, std::get<1>(criticalTuple));
-    ASSERT_EQ(186, std::get<2>(criticalTuple));
+    ASSERT_EQ(183ul, std::get<1>(criticalTuple));
+    ASSERT_EQ(186ul, std::get<2>(criticalTuple));
 
     auto assumptionChecker = storm::analysis::AssumptionChecker<storm::RationalFunction>(formulas[0], dtmc, region, 3);
     // This one does not validate the assumptions!
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction>(&assumptionChecker, dtmc->getNumberOfStates(), false);
     auto result = assumptionMaker.createAndCheckAssumption(std::get<1>(criticalTuple), std::get<2>(criticalTuple), std::get<0>(criticalTuple));
 
-    EXPECT_EQ(3, result.size());
+    EXPECT_EQ(3ul, result.size());
 
     bool foundFirst = false;
     bool foundSecond = false;
@@ -188,8 +188,8 @@ TEST(AssumptionMakerTest, Simple1) {
     auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= p <= 0.999999", vars);
 
-    ASSERT_EQ(dtmc->getNumberOfStates(), 5);
-    ASSERT_EQ(dtmc->getNumberOfTransitions(), 8);
+    ASSERT_EQ(dtmc->getNumberOfStates(), 5ul);
+    ASSERT_EQ(dtmc->getNumberOfTransitions(), 8ul);
 
     storm::storage::BitVector above(5);
     above.set(3);
@@ -204,7 +204,7 @@ TEST(AssumptionMakerTest, Simple1) {
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction>(&assumptionChecker, dtmc->getNumberOfStates(), true);
     auto result = assumptionMaker.createAndCheckAssumption(1, 2, order);
 
-    EXPECT_EQ(3, result.size());
+    EXPECT_EQ(3ul, result.size());
 
     bool foundFirst = false;
     bool foundSecond = false;
@@ -260,8 +260,8 @@ TEST(AssumptionMakerTest, Simple2) {
     auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= p <= 0.999999", vars);
 
-    ASSERT_EQ(dtmc->getNumberOfStates(), 5);
-    ASSERT_EQ(dtmc->getNumberOfTransitions(), 8);
+    ASSERT_EQ(dtmc->getNumberOfStates(), 5ul);
+    ASSERT_EQ(dtmc->getNumberOfTransitions(), 8ul);
 
     storm::storage::BitVector above(5);
     above.set(3);
@@ -277,9 +277,7 @@ TEST(AssumptionMakerTest, Simple2) {
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction>(&assumptionChecker, dtmc->getNumberOfStates(), true);
     auto result = assumptionMaker.createAndCheckAssumption(1, 2, order);
 
-    auto itr = result.begin();
-
-    EXPECT_EQ(3, result.size());
+    EXPECT_EQ(3ul, result.size());
 
     bool foundFirst = false;
     bool foundSecond = false;

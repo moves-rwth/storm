@@ -83,7 +83,11 @@ namespace storm {
              */
             void setAcceptDoubleLiterals(bool flag);
 
-            storm::expressions::Expression parseFromString(std::string const& expressionString) const;
+            /*!
+             * Parses an expression from the given string.
+             * @param ignoreError If set, no exception is thrown upon a parser error. The returned expression will be uninitialized.
+             */
+            storm::expressions::Expression parseFromString(std::string const& expressionString, bool ignoreError = false) const;
 
         private:
             struct orOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {

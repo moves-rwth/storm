@@ -1,3 +1,5 @@
+#pragma once
+
 #include "storm-dft/storage/dft/DFT.h"
 #include "storm-dft/builder/DFTBuilder.h"
 #include "storm/utility/macros.h"

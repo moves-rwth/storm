@@ -214,7 +214,7 @@ namespace storm {
             return true;
         }
 
-        storm::expressions::Expression ExpressionParser::parseFromString(std::string const& expressionString) const {
+        storm::expressions::Expression ExpressionParser::parseFromString(std::string const& expressionString, bool ignoreError) const {
             PositionIteratorType first(expressionString.begin());
             PositionIteratorType iter = first;
             PositionIteratorType last(expressionString.end());
@@ -225,12 +225,16 @@ namespace storm {
             try {
                 // Start parsing.
                 bool succeeded = qi::phrase_parse(iter, last, *this, storm::spirit_encoding::space_type() | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)) >> (qi::eol | qi::eoi), result);
-                STORM_LOG_THROW(succeeded, storm::exceptions::WrongFormatException, "Could not parse expression '" << expressionString << "'.");
+                succeeded &= (iter == last);
+                if (!succeeded) {
+                    STORM_LOG_THROW(ignoreError, storm::exceptions::WrongFormatException, "Could not parse expression '" << expressionString << "'.");
+                    return storm::expressions::Expression();
+                }
                 STORM_LOG_DEBUG("Parsed expression successfully.");
             } catch (qi::expectation_failure<PositionIteratorType> const& e) {
-                STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, e.what_);
+                STORM_LOG_THROW(ignoreError, storm::exceptions::WrongFormatException, e.what_);
+                return storm::expressions::Expression();
             }
-
             return result;
         }
     }

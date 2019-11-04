@@ -4,6 +4,7 @@
 namespace storm {
     namespace transformations {
         namespace dft {
+
             template<typename ValueType>
             DftTransformator<ValueType>::DftTransformator() {
             }
