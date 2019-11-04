@@ -39,6 +39,10 @@ namespace storm {
             return this->updates;
         }
         
+        std::vector<storm::prism::Update>& Command::getUpdates() {
+            return this->updates;
+        }
+        
         uint_fast64_t Command::getGlobalIndex() const {
             return this->globalIndex;
         }

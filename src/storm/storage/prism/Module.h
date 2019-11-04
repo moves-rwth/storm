@@ -274,6 +274,14 @@ namespace storm {
              storm::expressions::Expression const& getInvariant() const;
             
             friend std::ostream& operator<<(std::ostream& stream, Module const& module);
+            
+            /*!
+             * Sets the line number of this module.
+             * If this is a renamed module, the line number of all the stored components will be set as well.
+             *
+             * @param lineNumber The new line number for this information.
+             */
+            virtual void setLineNumber(uint_fast64_t lineNumber) override;
 
         private:
             /*!
