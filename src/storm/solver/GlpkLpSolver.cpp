@@ -26,7 +26,8 @@ namespace storm {
 
 #ifdef STORM_HAVE_GLPK
         template<typename ValueType>
-        GlpkLpSolver<ValueType>::GlpkLpSolver(std::string const& name, OptimizationDirection const& optDir) : LpSolver<ValueType>(optDir), lp(nullptr), variableToIndexMap(), nextVariableIndex(1), nextConstraintIndex(1), modelContainsIntegerVariables(false), isInfeasibleFlag(false), isUnboundedFlag(false), rowIndices(), columnIndices(), coefficientValues() {
+        GlpkLpSolver<ValueType>::GlpkLpSolver(std::string const& name, OptimizationDirection const& optDir) : LpSolver<ValueType>(optDir), lp(nullptr), variableToIndexMap(), modelContainsIntegerVariables(false), isInfeasibleFlag(false), isUnboundedFlag(false) {
+            
             // Create the LP problem for glpk.
             lp = glp_create_prob();
             
@@ -36,10 +37,6 @@ namespace storm {
             // Set whether the glpk output shall be printed to the command line.
             glp_term_out(storm::settings::getModule<storm::settings::modules::DebugSettings>().isDebugSet() || storm::settings::getModule<storm::settings::modules::GlpkSettings>().isOutputSet() ? GLP_ON : GLP_OFF);
             
-            // Because glpk uses 1-based indexing (wtf!?), we need to put dummy elements into the matrix vectors.
-            rowIndices.push_back(0);
-            columnIndices.push_back(0);
-            coefficientValues.push_back(0);
         }
         
         template<typename ValueType>
@@ -146,13 +143,12 @@ namespace storm {
             STORM_LOG_ASSERT(boundType == GLP_FR || boundType == GLP_UP || boundType == GLP_LO || boundType == GLP_DB, "Illegal bound type for variable '" << variable.getName() << "'.");
             
             // Finally, create the actual variable.
-            glp_add_cols(this->lp, 1);
-            glp_set_col_name(this->lp, nextVariableIndex, variable.getName().c_str());
-            glp_set_col_bnds(lp, nextVariableIndex, boundType, storm::utility::convertNumber<double>(lowerBound), storm::utility::convertNumber<double>(upperBound));
-            glp_set_col_kind(this->lp, nextVariableIndex, variableType);
-            glp_set_obj_coef(this->lp, nextVariableIndex, storm::utility::convertNumber<double>(objectiveFunctionCoefficient));
-            this->variableToIndexMap.emplace(variable, this->nextVariableIndex);
-            ++this->nextVariableIndex;
+            int variableIndex = glp_add_cols(this->lp, 1);
+            glp_set_col_name(this->lp, variableIndex, variable.getName().c_str());
+            glp_set_col_bnds(lp, variableIndex, boundType, storm::utility::convertNumber<double>(lowerBound), storm::utility::convertNumber<double>(upperBound));
+            glp_set_col_kind(this->lp, variableIndex, variableType);
+            glp_set_obj_coef(this->lp, variableIndex, storm::utility::convertNumber<double>(objectiveFunctionCoefficient));
+            this->variableToIndexMap.emplace(variable, variableIndex);
             if (!incrementalData.empty()) {
                 incrementalData.back().variables.push_back(variable);
             }
@@ -166,8 +162,8 @@ namespace storm {
         template<typename ValueType>
         void GlpkLpSolver<ValueType>::addConstraint(std::string const& name, storm::expressions::Expression const& constraint) {
             // Add the row that will represent this constraint.
-            glp_add_rows(this->lp, 1);
-            glp_set_row_name(this->lp, nextConstraintIndex, name.c_str());
+            int constraintIndex = glp_add_rows(this->lp, 1);
+            glp_set_row_name(this->lp, constraintIndex, name.c_str());
             
             STORM_LOG_THROW(constraint.getManager() == this->getManager(), storm::exceptions::InvalidArgumentException, "Constraint was not built over the proper variables.");
             STORM_LOG_THROW(constraint.isRelationalExpression(), storm::exceptions::InvalidArgumentException, "Illegal constraint is not a relational expression.");
@@ -177,42 +173,43 @@ namespace storm {
             storm::expressions::LinearCoefficientVisitor::VariableCoefficients rightCoefficients = storm::expressions::LinearCoefficientVisitor().getLinearCoefficients(constraint.getOperand(1));
             leftCoefficients.separateVariablesFromConstantPart(rightCoefficients);
             
-            // Now we need to transform the coefficients to the vector representation.
-            std::vector<int> variables;
-            std::vector<double> coefficients;
-            for (auto const& variableCoefficientPair : leftCoefficients) {
-                auto variableIndexPair = this->variableToIndexMap.find(variableCoefficientPair.first);
-                variables.push_back(variableIndexPair->second);
-                coefficients.push_back(leftCoefficients.getCoefficient(variableIndexPair->first));
-            }
             
             // Determine the type of the constraint and add it properly.
             switch (constraint.getOperator()) {
                 case storm::expressions::OperatorType::Less:
-                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_UP, 0, rightCoefficients.getConstantPart() - storm::settings::getModule<storm::settings::modules::GlpkSettings>().getIntegerTolerance());
+                    glp_set_row_bnds(this->lp, constraintIndex, GLP_UP, 0, rightCoefficients.getConstantPart() - storm::settings::getModule<storm::settings::modules::GlpkSettings>().getIntegerTolerance());
                     break;
                 case storm::expressions::OperatorType::LessOrEqual:
-                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_UP, 0, rightCoefficients.getConstantPart());
+                    glp_set_row_bnds(this->lp, constraintIndex, GLP_UP, 0, rightCoefficients.getConstantPart());
                     break;
                 case storm::expressions::OperatorType::Greater:
-                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_LO, rightCoefficients.getConstantPart() + storm::settings::getModule<storm::settings::modules::GlpkSettings>().getIntegerTolerance(), 0);
+                    glp_set_row_bnds(this->lp, constraintIndex, GLP_LO, rightCoefficients.getConstantPart() + storm::settings::getModule<storm::settings::modules::GlpkSettings>().getIntegerTolerance(), 0);
                     break;
                 case storm::expressions::OperatorType::GreaterOrEqual:
-                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_LO, rightCoefficients.getConstantPart(), 0);
+                    glp_set_row_bnds(this->lp, constraintIndex, GLP_LO, rightCoefficients.getConstantPart(), 0);
                     break;
                 case storm::expressions::OperatorType::Equal:
-                    glp_set_row_bnds(this->lp, nextConstraintIndex, GLP_FX, rightCoefficients.getConstantPart(), rightCoefficients.getConstantPart());
+                    glp_set_row_bnds(this->lp, constraintIndex, GLP_FX, rightCoefficients.getConstantPart(), rightCoefficients.getConstantPart());
                     break;
                 default:
                     STORM_LOG_ASSERT(false, "Illegal operator in LP solver constraint.");
             }
             
-            // Record the variables and coefficients in the coefficient matrix.
-            rowIndices.insert(rowIndices.end(), variables.size(), nextConstraintIndex);
-            columnIndices.insert(columnIndices.end(), variables.begin(), variables.end());
-            coefficientValues.insert(coefficientValues.end(), coefficients.begin(), coefficients.end());
+            // Now we need to transform the coefficients to the vector representation.
+            int len = std::distance(leftCoefficients.begin(), leftCoefficients.end());
+            // glpk uses 1-based indexing (wtf!?)...
+            std::vector<int> variableIndices(1, -1);
+            std::vector<double> coefficients(1, 0.0);
+            variableIndices.reserve(len + 1);
+            coefficients.reserve(len + 1);
+            for (auto const& variableCoefficientPair : leftCoefficients) {
+                auto variableIndexPair = this->variableToIndexMap.find(variableCoefficientPair.first);
+                variableIndices.push_back(variableIndexPair->second);
+                coefficients.push_back(variableCoefficientPair.second);
+            }
             
-            ++nextConstraintIndex;
+            glp_set_mat_row(this->lp, constraintIndex, len, variableIndices.data(), coefficients.data());
+            
             this->currentModelHasBeenOptimized = false;
         }
         
@@ -224,8 +221,6 @@ namespace storm {
             
             // Start by setting the model sense.
             glp_set_obj_dir(this->lp, this->getOptimizationDirection() == OptimizationDirection::Minimize ? GLP_MIN : GLP_MAX);
-            
-            glp_load_matrix(this->lp, rowIndices.size() - 1, rowIndices.data(), columnIndices.data(), coefficientValues.data());
             
             int error = 0;
             if (this->modelContainsIntegerVariables) {
@@ -383,7 +378,6 @@ namespace storm {
         
         template<typename ValueType>
         void GlpkLpSolver<ValueType>::writeModelToFile(std::string const& filename) const {
-            glp_load_matrix(this->lp, rowIndices.size() - 1, rowIndices.data(), columnIndices.data(), coefficientValues.data());
             glp_write_lp(this->lp, 0, filename.c_str());
         }
         
@@ -391,7 +385,7 @@ namespace storm {
         template<typename ValueType>
         void GlpkLpSolver<ValueType>::push()  {
             IncrementalLevel lvl;
-            lvl.firstConstraintIndex = nextConstraintIndex;
+            lvl.firstConstraintIndex = glp_get_num_rows(this->lp) + 1;
             incrementalData.push_back(lvl);
         }
         
@@ -401,10 +395,9 @@ namespace storm {
                 STORM_LOG_ERROR("Tried to pop from a solver without pushing before.");
             } else {
                 IncrementalLevel const& lvl = incrementalData.back();
-                
-                std::vector<int> indicesToBeRemoved = storm::utility::vector::buildVectorForRange(lvl.firstConstraintIndex, nextConstraintIndex);
-                glp_del_rows(this->lp, indicesToBeRemoved.size(), indicesToBeRemoved.data());
-                nextConstraintIndex = lvl.firstConstraintIndex;
+                // Since glpk uses 1-based indexing, we need to prepend an additional index
+                std::vector<int> indicesToBeRemoved = storm::utility::vector::buildVectorForRange(lvl.firstConstraintIndex - 1, glp_get_num_rows(this->lp) + 1);
+                glp_del_rows(this->lp, indicesToBeRemoved.size() - 1, indicesToBeRemoved.data());
                 indicesToBeRemoved.clear();
                 
                 if (!lvl.variables.empty()) {
@@ -420,9 +413,9 @@ namespace storm {
                             variableToIndexMap.erase(var);
                         }
                     }
-                    std::vector<int> indicesToBeRemoved = storm::utility::vector::buildVectorForRange(firstIndex, nextVariableIndex);
-                    glp_del_cols(this->lp, indicesToBeRemoved.size(), indicesToBeRemoved.data());
-                    nextVariableIndex = firstIndex;
+                    // Since glpk uses 1-based indexing, we need to prepend an additional index
+                    std::vector<int> indicesToBeRemoved = storm::utility::vector::buildVectorForRange(firstIndex - 1, glp_get_num_cols(this->lp) + 1);
+                    glp_del_cols(this->lp, indicesToBeRemoved.size() - 1, indicesToBeRemoved.data());
                 }
                 incrementalData.pop_back();
                 update();

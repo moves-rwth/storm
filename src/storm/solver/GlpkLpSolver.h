@@ -115,23 +115,12 @@ namespace storm {
             // A mapping from variables to their indices.
             std::map<storm::expressions::Variable, int> variableToIndexMap;
             
-            // A counter used for getting the next variable index.
-            int nextVariableIndex;
-            
-            // A counter used for getting the next constraint index.
-            int nextConstraintIndex;
-            
             // A flag storing whether the model is an LP or an MILP.
             bool modelContainsIntegerVariables;
             
             // Flags that store whether the MILP was found to be infeasible or unbounded.
             mutable bool isInfeasibleFlag;
             mutable bool isUnboundedFlag;
-            
-            // The arrays that store the coefficient matrix of the problem.
-            std::vector<int> rowIndices;
-            std::vector<int> columnIndices;
-            std::vector<double> coefficientValues;
             
             struct IncrementalLevel {
                 std::vector<storm::expressions::Variable> variables;

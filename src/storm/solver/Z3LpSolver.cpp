@@ -300,7 +300,7 @@ namespace storm {
         
         template<typename ValueType>
         void Z3LpSolver<ValueType>::writeModelToFile(std::string const& filename) const {
-            STORM_LOG_THROW(!this->isUnbounded(), storm::exceptions::NotImplementedException, "Exporting LP Problems to a file is not implemented for z3.");
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Exporting LP Problems to a file is not implemented for z3.");
         }
         
         template<typename ValueType>
