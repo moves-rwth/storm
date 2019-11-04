@@ -417,7 +417,6 @@ namespace storm {
             if (incrementalData.empty()) {
                 STORM_LOG_ERROR("Tried to pop from a solver without pushing before.");
             } else {
-                // TODO: check if we need to update before deleting
                 IncrementalLevel const& lvl = incrementalData.back();
                 
                 std::vector<int> indicesToBeRemoved = storm::utility::vector::buildVectorForRange(lvl.firstConstraintIndex, nextConstraintIndex);

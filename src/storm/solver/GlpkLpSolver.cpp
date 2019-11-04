@@ -8,6 +8,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/constants.h"
+#include "storm/utility/vector.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
@@ -65,35 +66,35 @@ namespace storm {
         
         template<typename ValueType>
         storm::expressions::Variable GlpkLpSolver<ValueType>::addBoundedContinuousVariable(std::string const& name, ValueType lowerBound, ValueType upperBound, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareRationalVariable(name);
+            storm::expressions::Variable newVariable = this->manager->declareOrGetVariable(name, this->manager->getRationalType());
             this->addVariable(newVariable, GLP_CV, GLP_DB, lowerBound, upperBound, objectiveFunctionCoefficient);
             return newVariable;
         }
         
         template<typename ValueType>
         storm::expressions::Variable GlpkLpSolver<ValueType>::addLowerBoundedContinuousVariable(std::string const& name, ValueType lowerBound, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareRationalVariable(name);
+            storm::expressions::Variable newVariable = this->manager->declareOrGetVariable(name, this->manager->getRationalType());
             this->addVariable(newVariable, GLP_CV, GLP_LO, lowerBound, 0, objectiveFunctionCoefficient);
             return newVariable;
         }
         
         template<typename ValueType>
         storm::expressions::Variable GlpkLpSolver<ValueType>::addUpperBoundedContinuousVariable(std::string const& name, ValueType upperBound, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareRationalVariable(name);
+            storm::expressions::Variable newVariable = this->manager->declareOrGetVariable(name, this->manager->getRationalType());
             this->addVariable(newVariable, GLP_CV, GLP_UP, 0, upperBound, objectiveFunctionCoefficient);
             return newVariable;
         }
         
         template<typename ValueType>
         storm::expressions::Variable GlpkLpSolver<ValueType>::addUnboundedContinuousVariable(std::string const& name, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareRationalVariable(name);
+            storm::expressions::Variable newVariable = this->manager->declareOrGetVariable(name, this->manager->getRationalType());
             this->addVariable(newVariable, GLP_CV, GLP_FR, 0, 0, objectiveFunctionCoefficient);
             return newVariable;
         }
         
         template<typename ValueType>
         storm::expressions::Variable GlpkLpSolver<ValueType>::addBoundedIntegerVariable(std::string const& name, ValueType lowerBound, ValueType upperBound, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareIntegerVariable(name);
+            storm::expressions::Variable newVariable = this->manager->declareOrGetVariable(name, this->manager->getIntegerType());
             this->addVariable(newVariable, GLP_IV, GLP_DB, lowerBound, upperBound, objectiveFunctionCoefficient);
             this->modelContainsIntegerVariables = true;
             return newVariable;
@@ -101,7 +102,7 @@ namespace storm {
         
         template<typename ValueType>
         storm::expressions::Variable GlpkLpSolver<ValueType>::addLowerBoundedIntegerVariable(std::string const& name, ValueType lowerBound, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareIntegerVariable(name);
+            storm::expressions::Variable newVariable = this->manager->declareOrGetVariable(name, this->manager->getIntegerType());
             this->addVariable(newVariable, GLP_IV, GLP_LO, lowerBound, 0, objectiveFunctionCoefficient);
             this->modelContainsIntegerVariables = true;
             return newVariable;
@@ -109,7 +110,7 @@ namespace storm {
 
         template<typename ValueType>
         storm::expressions::Variable GlpkLpSolver<ValueType>::addUpperBoundedIntegerVariable(std::string const& name, ValueType upperBound, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareIntegerVariable(name);
+            storm::expressions::Variable newVariable = this->manager->declareOrGetVariable(name, this->manager->getIntegerType());
             this->addVariable(newVariable, GLP_IV, GLP_UP, 0, upperBound, objectiveFunctionCoefficient);
             this->modelContainsIntegerVariables = true;
             return newVariable;
@@ -117,7 +118,7 @@ namespace storm {
         
         template<typename ValueType>
         storm::expressions::Variable GlpkLpSolver<ValueType>::addUnboundedIntegerVariable(std::string const& name, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareIntegerVariable(name);
+            storm::expressions::Variable newVariable = this->manager->declareOrGetVariable(name, this->manager->getIntegerType());
             this->addVariable(newVariable, GLP_IV, GLP_FR, 0, 0, objectiveFunctionCoefficient);
             this->modelContainsIntegerVariables = true;
             return newVariable;
@@ -125,7 +126,7 @@ namespace storm {
         
         template<typename ValueType>
         storm::expressions::Variable GlpkLpSolver<ValueType>::addBinaryVariable(std::string const& name, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareIntegerVariable(name);
+            storm::expressions::Variable newVariable = this->manager->declareOrGetVariable(name, this->manager->getIntegerType());
             this->addVariable(newVariable, GLP_BV, GLP_FR, 0, 0, objectiveFunctionCoefficient);
             this->modelContainsIntegerVariables = true;
             return newVariable;
@@ -133,6 +134,11 @@ namespace storm {
         
         template<typename ValueType>
         void GlpkLpSolver<ValueType>::addVariable(storm::expressions::Variable const& variable, int variableType, int boundType, ValueType lowerBound, ValueType upperBound, ValueType objectiveFunctionCoefficient) {
+            
+            // Assert whether the variable does not exist yet.
+            // Due to incremental usage (push(), pop()), a variable might be declared in the manager but not in the lp model.
+            STORM_LOG_ASSERT(variableToIndexMap.count(variable) == 0, "Variable " << variable.getName() << " exists already in the model.");
+            
             // Check for valid variable type.
             STORM_LOG_ASSERT(variableType == GLP_CV || variableType == GLP_IV || variableType == GLP_BV, "Illegal type '" << variableType << "' for glpk variable.");
             
@@ -147,6 +153,9 @@ namespace storm {
             glp_set_obj_coef(this->lp, nextVariableIndex, storm::utility::convertNumber<double>(objectiveFunctionCoefficient));
             this->variableToIndexMap.emplace(variable, this->nextVariableIndex);
             ++this->nextVariableIndex;
+            if (!incrementalData.empty()) {
+                incrementalData.back().variables.push_back(variable);
+            }
         }
         
         template<typename ValueType>
@@ -381,12 +390,43 @@ namespace storm {
         
         template<typename ValueType>
         void GlpkLpSolver<ValueType>::push()  {
-            throw storm::exceptions::NotImplementedException() << "The glpk interface currently does not support push() operations. Select another LP solver.";
+            IncrementalLevel lvl;
+            lvl.firstConstraintIndex = nextConstraintIndex;
+            incrementalData.push_back(lvl);
         }
         
         template<typename ValueType>
         void GlpkLpSolver<ValueType>::pop()  {
-            throw storm::exceptions::NotImplementedException() << "The glpk interface currently does not support pop() operations. Select another LP solver.";
+            if (incrementalData.empty()) {
+                STORM_LOG_ERROR("Tried to pop from a solver without pushing before.");
+            } else {
+                IncrementalLevel const& lvl = incrementalData.back();
+                
+                std::vector<int> indicesToBeRemoved = storm::utility::vector::buildVectorForRange(lvl.firstConstraintIndex, nextConstraintIndex);
+                glp_del_rows(this->lp, indicesToBeRemoved.size(), indicesToBeRemoved.data());
+                nextConstraintIndex = lvl.firstConstraintIndex;
+                indicesToBeRemoved.clear();
+                
+                if (!lvl.variables.empty()) {
+                    int firstIndex = -1;
+                    bool first = true;
+                    for (auto const& var : lvl.variables) {
+                        if (first) {
+                            auto it = variableToIndexMap.find(var);
+                            firstIndex = it->second;
+                            variableToIndexMap.erase(it);
+                            first = false;
+                        } else {
+                            variableToIndexMap.erase(var);
+                        }
+                    }
+                    std::vector<int> indicesToBeRemoved = storm::utility::vector::buildVectorForRange(firstIndex, nextVariableIndex);
+                    glp_del_cols(this->lp, indicesToBeRemoved.size(), indicesToBeRemoved.data());
+                    nextVariableIndex = firstIndex;
+                }
+                incrementalData.pop_back();
+                update();
+            }
         }
 
         

@@ -132,6 +132,13 @@ namespace storm {
             std::vector<int> rowIndices;
             std::vector<int> columnIndices;
             std::vector<double> coefficientValues;
+            
+            struct IncrementalLevel {
+                std::vector<storm::expressions::Variable> variables;
+                int firstConstraintIndex;
+            };
+            std::vector<IncrementalLevel> incrementalData;
+            
         };
 #else
         // If glpk is not available, we provide a stub implementation that emits an error if any of its methods is called.
