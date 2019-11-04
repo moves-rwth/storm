@@ -263,14 +263,14 @@ namespace storm {
             moduleDefinition = ((qi::lit("module") > freshModuleName > *(variableDefinition(qi::_a, qi::_b, qi::_c))) > -invariantConstruct > (*commandDefinition(qi::_r1)) > qi::lit("endmodule"))[qi::_val = phoenix::bind(&PrismParser::createModule, phoenix::ref(*this), qi::_1, qi::_a, qi::_b, qi::_c, qi::_2, qi::_3, qi::_r1)];
             moduleDefinition.name("module definition");
             
-            moduleRenamingList = (qi::lit("[") > ((identifier > qi::lit("=") > identifier)[phoenix::insert(qi::_a, phoenix::construct<std::pair<std::string,std::string>>(qi::_1, qi::_2))] % ",") > qi::lit("]"))[qi::_val = qi::_a];
-            moduleRenamingList.name("Module renaming list");
+            moduleRenaming = (qi::lit("[") > ((identifier > qi::lit("=") > identifier)[phoenix::insert(qi::_a, phoenix::construct<std::pair<std::string,std::string>>(qi::_1, qi::_2))] % ",") > qi::lit("]"))[qi::_val = phoenix::bind(&PrismParser::createModuleRenaming, phoenix::ref(*this), qi::_a)];
+            moduleRenaming.name("Module renaming list");
             
-            moduleRenaming = (((qi::lit("module") > freshModuleName) >> qi::lit("="))
+            renamedModule = (((qi::lit("module") > freshModuleName) >> qi::lit("="))
                               > knownModuleName[qi::_a = qi::_1]
-                              > (moduleRenamingList[qi::_b = qi::_1])[qi::_pass = phoenix::bind(&PrismParser::isValidModuleRenamingList, phoenix::ref(*this), qi::_a, qi::_b, qi::_r1)]
+                              > (moduleRenaming[qi::_b = qi::_1])[qi::_pass = phoenix::bind(&PrismParser::isValidModuleRenaming, phoenix::ref(*this), qi::_a, qi::_b, qi::_r1)]
                               > qi::lit("endmodule"))[qi::_val = phoenix::bind(&PrismParser::createRenamedModule, phoenix::ref(*this), qi::_1, qi::_a, qi::_b, qi::_r1)];
-            moduleRenaming.name("module definition via renaming");
+            renamedModule.name("module definition via renaming");
             
             start = (qi::eps[phoenix::bind(&PrismParser::removeInitialConstruct, phoenix::ref(*this), phoenix::ref(globalProgramInformation))]
                      > modelTypeDefinition[phoenix::bind(&PrismParser::setModelType, phoenix::ref(*this), phoenix::ref(globalProgramInformation), qi::_1)]
@@ -279,7 +279,7 @@ namespace storm {
                          | undefinedConstantDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::constants, phoenix::ref(globalProgramInformation)), qi::_1)]
                          | formulaDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::formulas, phoenix::ref(globalProgramInformation)), qi::_1)]
                          | globalVariableDefinition(phoenix::ref(globalProgramInformation))
-                         | (moduleRenaming(phoenix::ref(globalProgramInformation)) | moduleDefinition(phoenix::ref(globalProgramInformation)))[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::modules, phoenix::ref(globalProgramInformation)), qi::_1)]
+                         | (renamedModule(phoenix::ref(globalProgramInformation)) | moduleDefinition(phoenix::ref(globalProgramInformation)))[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::modules, phoenix::ref(globalProgramInformation)), qi::_1)]
                          | initialStatesConstruct(phoenix::ref(globalProgramInformation))
                          | rewardModelDefinition(phoenix::ref(globalProgramInformation))[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::rewardModels, phoenix::ref(globalProgramInformation)), qi::_1)]
                          | labelDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::labels, phoenix::ref(globalProgramInformation)), qi::_1)]
@@ -301,6 +301,7 @@ namespace storm {
             qi::on_success(clockVariableDefinition, setLocationInfoFunction);
             qi::on_success(moduleDefinition, setLocationInfoFunction);
             qi::on_success(moduleRenaming, setLocationInfoFunction);
+            qi::on_success(renamedModule, setLocationInfoFunction);
             qi::on_success(formulaDefinition, setLocationInfoFunction);
             qi::on_success(rewardModelDefinition, setLocationInfoFunction);
             qi::on_success(labelDefinition, setLocationInfoFunction);
@@ -732,8 +733,9 @@ namespace storm {
             return storm::prism::Module(moduleName, booleanVariables, integerVariables, clockVariables, invariant.is_initialized()? invariant.get() : storm::expressions::Expression(), commands, this->getFilename());
         }
         
-        bool PrismParser::isValidModuleRenamingList(std::string const& oldModuleName, std::map<std::string, std::string> const& renaming, GlobalProgramInformation const& globalProgramInformation) const {
+        bool PrismParser::isValidModuleRenaming(std::string const& oldModuleName, storm::prism::ModuleRenaming const& moduleRenaming, GlobalProgramInformation const& globalProgramInformation) const {
             if (!this->secondRun) {
+                auto const& renaming = moduleRenaming.getRenaming();
                 auto const& moduleIndexPair = globalProgramInformation.moduleToIndexMap.find(oldModuleName);
                 if (moduleIndexPair == globalProgramInformation.moduleToIndexMap.end()) {
                     STORM_LOG_ERROR("Parsing error in " << this->getFilename() << ": No module named '" << oldModuleName << "' to rename.");
@@ -766,11 +768,16 @@ namespace storm {
             return true;
         }
         
-        storm::prism::Module PrismParser::createRenamedModule(std::string const& newModuleName, std::string const& oldModuleName, std::map<std::string, std::string> const& renaming, GlobalProgramInformation& globalProgramInformation) const {
+        storm::prism::ModuleRenaming PrismParser::createModuleRenaming(std::map<std::string,std::string> const& renaming) const {
+            return storm::prism::ModuleRenaming(renaming);
+        }
+        
+        storm::prism::Module PrismParser::createRenamedModule(std::string const& newModuleName, std::string const& oldModuleName, storm::prism::ModuleRenaming const& moduleRenaming, GlobalProgramInformation& globalProgramInformation) const {
             // Check whether the module to rename actually exists.
             auto const& moduleIndexPair = globalProgramInformation.moduleToIndexMap.find(oldModuleName);
             STORM_LOG_THROW(moduleIndexPair != globalProgramInformation.moduleToIndexMap.end(), storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ": No module named '" << oldModuleName << "' to rename.");
             storm::prism::Module const& moduleToRename = globalProgramInformation.modules[moduleIndexPair->second];
+            auto const& renaming = moduleRenaming.getRenaming();
             
             if (!this->secondRun) {
                 // Register all (renamed) variables for later use.
@@ -843,7 +850,7 @@ namespace storm {
                     if(observable) {
                         this->observables.erase(renamingPair->second);
                     }
-                    booleanVariables.push_back(storm::prism::BooleanVariable(manager->getVariable(renamingPair->second), variable.hasInitialValue() ? variable.getInitialValueExpression().substitute(expressionRenaming) : variable.getInitialValueExpression(), observable, this->getFilename()));
+                    booleanVariables.push_back(storm::prism::BooleanVariable(manager->getVariable(renamingPair->second), variable.hasInitialValue() ? variable.getInitialValueExpression().substitute(expressionRenaming) : variable.getInitialValueExpression(), observable, this->getFilename(), moduleRenaming.getLineNumber()));
                 }
                 
                 // Rename the integer variables.
@@ -855,7 +862,7 @@ namespace storm {
                     if(observable) {
                         this->observables.erase(renamingPair->second);
                     }
-                    integerVariables.push_back(storm::prism::IntegerVariable(manager->getVariable(renamingPair->second), variable.getLowerBoundExpression().substitute(expressionRenaming), variable.getUpperBoundExpression().substitute(expressionRenaming), variable.hasInitialValue() ? variable.getInitialValueExpression().substitute(expressionRenaming) : variable.getInitialValueExpression(), observable, this->getFilename()));
+                    integerVariables.push_back(storm::prism::IntegerVariable(manager->getVariable(renamingPair->second), variable.getLowerBoundExpression().substitute(expressionRenaming), variable.getUpperBoundExpression().substitute(expressionRenaming), variable.hasInitialValue() ? variable.getInitialValueExpression().substitute(expressionRenaming) : variable.getInitialValueExpression(), observable, this->getFilename(), moduleRenaming.getLineNumber()));
                 }
 
                 // Rename the clock variables.
@@ -867,7 +874,7 @@ namespace storm {
                     if (observable) {
                         this->observables.erase(renamingPair->second);
                     }
-                    clockVariables.push_back(storm::prism::ClockVariable(manager->getVariable(renamingPair->second), observable, this->getFilename()));
+                    clockVariables.push_back(storm::prism::ClockVariable(manager->getVariable(renamingPair->second), observable, this->getFilename(), moduleRenaming.getLineNumber()));
                 }
                 
                 // Rename invariant (if present)
@@ -885,12 +892,12 @@ namespace storm {
                         for (auto const& assignment : update.getAssignments()) {
                             auto const& renamingPair = renaming.find(assignment.getVariableName());
                             if (renamingPair != renaming.end()) {
-                                assignments.emplace_back(manager->getVariable(renamingPair->second), assignment.getExpression().substitute(expressionRenaming), this->getFilename());
+                                assignments.emplace_back(manager->getVariable(renamingPair->second), assignment.getExpression().substitute(expressionRenaming), this->getFilename(), moduleRenaming.getLineNumber());
                             } else {
-                                assignments.emplace_back(assignment.getVariable(), assignment.getExpression().substitute(expressionRenaming), this->getFilename());
+                                assignments.emplace_back(assignment.getVariable(), assignment.getExpression().substitute(expressionRenaming), this->getFilename(), moduleRenaming.getLineNumber());
                             }
                         }
-                        updates.emplace_back(globalProgramInformation.currentUpdateIndex, update.getLikelihoodExpression().substitute(expressionRenaming), assignments, this->getFilename());
+                        updates.emplace_back(globalProgramInformation.currentUpdateIndex, update.getLikelihoodExpression().substitute(expressionRenaming), assignments, this->getFilename(), moduleRenaming.getLineNumber());
                         ++globalProgramInformation.currentUpdateIndex;
                     }
                     
@@ -910,7 +917,7 @@ namespace storm {
                         actionIndex = nameIndexPair->second;
                     }
                     
-                    commands.emplace_back(globalProgramInformation.currentCommandIndex, command.isMarkovian(), actionIndex, newActionName, command.getGuardExpression().substitute(expressionRenaming), updates, this->getFilename());
+                    commands.emplace_back(globalProgramInformation.currentCommandIndex, command.isMarkovian(), actionIndex, newActionName, command.getGuardExpression().substitute(expressionRenaming), updates, this->getFilename(), moduleRenaming.getLineNumber());
                     ++globalProgramInformation.currentCommandIndex;
                 }
                 
