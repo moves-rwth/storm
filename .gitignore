@@ -1,5 +1,6 @@
 ##Third-Party libs
 resources/3rdparty/log4cplus-1.1.3-rc1/
+resources/3rdparty/l3pp/.git/
 resources/3rdparty/gtest-1.7.0/
 resources/3rdparty/eigen/
 resources/3rdparty/gmm-5.2/

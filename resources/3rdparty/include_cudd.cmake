@@ -28,7 +28,7 @@ if (NOT STORM_PORTABLE)
 	set(STORM_CUDD_FLAGS "${STORM_CUDD_FLAGS} -march=native")
 endif()
 
-# Set sysroot to circumvent problems in macOS "Mojave" where the header files are no longer in /usr/include
+# Set sysroot to circumvent problems in macOS "Mojave" (or higher) where the header files are no longer in /usr/include
 set(CUDD_INCLUDE_FLAGS "")
 if (CMAKE_OSX_SYSROOT)
     set(CUDD_INCLUDE_FLAGS "CPPFLAGS=--sysroot=${CMAKE_OSX_SYSROOT}")

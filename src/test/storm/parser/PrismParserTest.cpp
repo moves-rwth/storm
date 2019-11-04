@@ -219,3 +219,8 @@ TEST(PrismParser, IllegalInputTest) {
     
     EXPECT_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"), storm::exceptions::WrongFormatException);
 }
+
+TEST(PrismParser, IllegalSynchronizedWriteTest) {
+    EXPECT_THROW(storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2-illegalSynchronizingWrite.nm"), storm::exceptions::WrongFormatException);
+}
+

@@ -148,13 +148,3 @@ TEST(ExplicitJitJaniModelBuilderTest, FailComposition) {
     
     ASSERT_THROW(storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel).build();, storm::exceptions::WrongFormatException);
 }
-
-TEST(ExplicitJitJaniModelBuilderTest, IllegalSynchronizingWrites) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2-illegalSynchronizingWrite.nm");
-    storm::jani::Model janiModel = program.toJani().substituteConstantsFunctions();
-    storm::builder::BuilderOptions options;
-    options.setExplorationChecks(true);
-    
-    ASSERT_THROW(storm::builder::jit::ExplicitJitJaniModelBuilder<double>(janiModel, options).build(), storm::exceptions::WrongFormatException);
-}
-
