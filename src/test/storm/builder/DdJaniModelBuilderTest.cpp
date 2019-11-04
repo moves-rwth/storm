@@ -292,20 +292,6 @@ TEST(DdJaniModelBuilderTest_Cudd, Mdp) {
     EXPECT_EQ(59ul, mdp->getNumberOfChoices());
 }
 
-TEST(DdJaniModelBuilderTest_Cudd, IllegalSynchronizingWrites) {
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2-illegalSynchronizingWrite.nm");
-    storm::jani::Model janiModel = modelDescription.toJani(true).preprocess().asJaniModel();
-    storm::builder::DdJaniModelBuilder<storm::dd::DdType::CUDD, double> builder;
-    EXPECT_THROW(std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD>> model = builder.build(janiModel), storm::exceptions::WrongFormatException);
-}
-
-TEST(DdJaniModelBuilderTest_Sylvan, IllegalSynchronizingWrites) {
-    storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2-illegalSynchronizingWrite.nm");
-    storm::jani::Model janiModel = modelDescription.toJani(true).preprocess().asJaniModel();
-    storm::builder::DdJaniModelBuilder<storm::dd::DdType::Sylvan, double> builder;
-    EXPECT_THROW(std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = builder.build(janiModel), storm::exceptions::WrongFormatException);
-}
-
 TEST(DdJaniModelBuilderTest_Cudd, SynchronizationVectors) {
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/SmallPrismTest.nm");
     storm::jani::Model janiModel = modelDescription.toJani(true).preprocess().asJaniModel();
