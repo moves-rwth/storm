@@ -95,6 +95,9 @@ namespace storm {
             
             virtual void push() override;
             virtual void pop() override;
+            
+            virtual void setMaximalMILPGap(ValueType const& gap, bool relative) override;
+            virtual ValueType getMILPGap(bool relative) const override;
 
         private:
             /*!
@@ -121,6 +124,10 @@ namespace storm {
             // Flags that store whether the MILP was found to be infeasible or unbounded.
             mutable bool isInfeasibleFlag;
             mutable bool isUnboundedFlag;
+            
+            mutable double maxMILPGap;
+            mutable bool maxMILPGapRelative;
+            mutable double actualRelativeMILPGap;
             
             struct IncrementalLevel {
                 std::vector<storm::expressions::Variable> variables;
@@ -238,6 +245,14 @@ namespace storm {
             }
             
             virtual void pop() override {
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
+            }
+            
+            virtual ValueType getMILPGap(bool relative) const override {
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
+            }
+            
+            virtual ValueType getMILPGap(bool relative) const override {
                 throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
 

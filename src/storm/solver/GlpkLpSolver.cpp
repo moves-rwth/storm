@@ -20,7 +20,6 @@
 #include "storm/settings/modules/GlpkSettings.h"
 
 
-
 namespace storm {
     namespace solver {
 
@@ -37,6 +36,11 @@ namespace storm {
             // Set whether the glpk output shall be printed to the command line.
             glp_term_out(storm::settings::getModule<storm::settings::modules::DebugSettings>().isDebugSet() || storm::settings::getModule<storm::settings::modules::GlpkSettings>().isOutputSet() ? GLP_ON : GLP_OFF);
             
+            // Set the maximal allowed MILP gap to its default value
+            glp_iocp* defaultParameters = new glp_iocp();
+            glp_init_iocp(defaultParameters);
+            this->maxMILPGap = defaultParameters->mip_gap;
+            this->maxMILPGapRelative = true;
         }
         
         template<typename ValueType>
@@ -213,6 +217,24 @@ namespace storm {
             this->currentModelHasBeenOptimized = false;
         }
         
+        // Method used within the MIP solver to terminate early
+        void callback(glp_tree* t, void* info) {
+            auto& mipgap = *static_cast<std::pair<double, bool>*>(info);
+            double actualRelativeGap = glp_ios_mip_gap(t);
+            double factor = storm::utility::one<double>();
+            if (!mipgap.second) {
+                // Compute absolute gap
+                factor = storm::utility::abs(glp_mip_obj_val(glp_ios_get_prob(t))) + DBL_EPSILON;
+                assert(factor >= 0.0);
+            }
+            if (actualRelativeGap * factor <= mipgap.first) {
+                // Terminate early
+                mipgap.first = actualRelativeGap;
+                mipgap.second = true; // The gap is relative.
+                glp_ios_terminate(t);
+            }
+        }
+        
         template<typename ValueType>
         void GlpkLpSolver<ValueType>::optimize() const {
             // First, reset the flags.
@@ -228,8 +250,21 @@ namespace storm {
                 glp_init_iocp(parameters);
                 parameters->presolve = GLP_ON;
                 parameters->tol_int = storm::settings::getModule<storm::settings::modules::GlpkSettings>().getIntegerTolerance();
+                
+                // Check whether we allow sub-optimal solutions via a non-zero MIP gap.
+                // parameters->mip_gap = this->maxMILPGap; (only works for relative values. Also, we need to obtain the actual gap anyway.
+                std::pair<double, bool> mipgap(this->maxMILPGap, this->maxMILPGapRelative);
+                if (!storm::utility::isZero(this->maxMILPGap)) {
+                    parameters->cb_func = &callback;
+                    parameters->cb_info = &mipgap;
+                }
+                
+                // Invoke mip solving
                 error = glp_intopt(this->lp, parameters);
                 delete parameters;
+                
+                // mipgap.first has been set to the achieved mipgap (either within the callback function or because it has been set to this->maxMILPGap)
+                this->actualRelativeMILPGap = mipgap.first;
                 
                 // In case the error is caused by an infeasible problem, we do not want to view this as an error and
                 // reset the error code.
@@ -238,6 +273,9 @@ namespace storm {
                     error = 0;
                 } else if (error == GLP_ENODFS) {
                     this->isUnboundedFlag = true;
+                    error = 0;
+                } else if (error == GLP_ESTOP) {
+                    // Early termination due to achieved MIP Gap. That's fine.
                     error = 0;
                 } else if (error == GLP_EBOUND) {
                     throw storm::exceptions::InvalidStateException() << "The bounds of some variables are illegal. Note that glpk only accepts integer bounds for integer variables.";
@@ -282,13 +320,7 @@ namespace storm {
                 return false;
             }
             
-            int status = 0;
-            if (this->modelContainsIntegerVariables) {
-                status = glp_mip_status(this->lp);
-            } else {
-                status = glp_get_status(this->lp);
-            }
-            return status == GLP_OPT;
+            return !isInfeasible() && !isUnbounded();
         }
         
         template<typename ValueType>
@@ -438,7 +470,25 @@ namespace storm {
                 }
             }
         }
-
+        
+        template<typename ValueType>
+        void GlpkLpSolver<ValueType>::setMaximalMILPGap(ValueType const& gap, bool relative) {
+            if (relative) {
+                this->maxMILPGap = storm::utility::convertNumber<double>(gap);
+            } else {
+                this->maxMILPGap = storm::utility::convertNumber<double>(gap);
+            }
+        }
+        
+        template<typename ValueType>
+        ValueType GlpkLpSolver<ValueType>::getMILPGap(bool relative) const {
+            STORM_LOG_ASSERT(this->isOptimal(), "Asked for the MILP gap although there is no (bounded) solution.");
+            if (relative) {
+                return this->actualRelativeMILPGap;
+            } else {
+                return storm::utility::abs<ValueType>(this->actualRelativeMILPGap * getObjectiveValue());
+            }
+        }
         
         template class GlpkLpSolver<double>;
         template class GlpkLpSolver<storm::RationalNumber>;

@@ -294,6 +294,20 @@ namespace storm {
              * that were added after the last call to push().
              */
 			virtual void pop() = 0;
+			
+			/*!
+             * Specifies the maximum difference between lower- and upper objective bounds that triggers termination.
+             * That means a solution is considered optimal if
+             * upperBound - lowerBound < gap * (relative ? |upperBound| : 1).
+             * Only relevant for programs with integer/boolean variables.
+             */
+            virtual void setMaximalMILPGap(ValueType const& gap, bool relative) = 0;
+            
+            /*!
+             * Returns the obtained gap after a call to optimize()
+             */
+            virtual ValueType getMILPGap(bool relative) const = 0;
+			
         
         protected:
             // The manager responsible for the variables.
