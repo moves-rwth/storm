@@ -235,8 +235,8 @@ namespace storm {
             qi::rule<Iterator, std::string(), Skipper> knownModuleName;
             qi::rule<Iterator, std::string(), Skipper> freshModuleName;
             qi::rule<Iterator, storm::prism::Module(GlobalProgramInformation&), qi::locals<std::vector<storm::prism::BooleanVariable>, std::vector<storm::prism::IntegerVariable>, std::vector<storm::prism::ClockVariable>>, Skipper> moduleDefinition;
-            qi::rule<Iterator, std::map<std::string, std::string>, qi::locals<std::map<std::string, std::string>>, Skipper> moduleRenamingList;
-            qi::rule<Iterator, storm::prism::Module(GlobalProgramInformation&), qi::locals<std::string,std::map<std::string, std::string>>, Skipper> moduleRenaming;
+            qi::rule<Iterator, storm::prism::ModuleRenaming, qi::locals<std::map<std::string, std::string>>, Skipper> moduleRenaming;
+            qi::rule<Iterator, storm::prism::Module(GlobalProgramInformation&), qi::locals<std::string, storm::prism::ModuleRenaming>, Skipper> renamedModule;
             
             // Rules for variable definitions.
             qi::rule<Iterator, qi::unused_type(std::vector<storm::prism::BooleanVariable>&, std::vector<storm::prism::IntegerVariable>&, std::vector<storm::prism::ClockVariable>&), Skipper> variableDefinition;
@@ -311,7 +311,7 @@ namespace storm {
             bool isOfBoolType(storm::expressions::Expression const& expression);
             bool isOfIntType(storm::expressions::Expression const& expression);
             bool isOfNumericalType(storm::expressions::Expression const& expression);
-            bool isValidModuleRenamingList(std::string const& oldModuleName, std::map<std::string, std::string> const& renaming, GlobalProgramInformation const& globalProgramInformation) const;
+            bool isValidModuleRenaming(std::string const& oldModuleName, storm::prism::ModuleRenaming const& renaming, GlobalProgramInformation const& globalProgramInformation) const;
             bool addInitialStatesConstruct(storm::expressions::Expression const& initialStatesExpression, GlobalProgramInformation& globalProgramInformation);
             bool addSystemCompositionConstruct(std::shared_ptr<storm::prism::Composition> const& composition, GlobalProgramInformation& globalProgramInformation);
             void setModelType(GlobalProgramInformation& globalProgramInformation, storm::prism::Program::ModelType const& modelType);
@@ -344,7 +344,8 @@ namespace storm {
             storm::prism::IntegerVariable createIntegerVariable(std::string const& variableName, storm::expressions::Expression lowerBoundExpression, storm::expressions::Expression upperBoundExpression, storm::expressions::Expression initialValueExpression) const;
             storm::prism::ClockVariable createClockVariable(std::string const& variableName) const;
             storm::prism::Module createModule(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::ClockVariable> const& clockVariables, boost::optional<storm::expressions::Expression> const& invariant, std::vector<storm::prism::Command> const& commands, GlobalProgramInformation& globalProgramInformation) const;
-            storm::prism::Module createRenamedModule(std::string const& newModuleName, std::string const& oldModuleName, std::map<std::string, std::string> const& renaming, GlobalProgramInformation& globalProgramInformation) const;
+            storm::prism::ModuleRenaming createModuleRenaming(std::map<std::string,std::string> const& renaming) const;
+            storm::prism::Module createRenamedModule(std::string const& newModuleName, std::string const& oldModuleName, storm::prism::ModuleRenaming const& renaming, GlobalProgramInformation& globalProgramInformation) const;
             storm::prism::Program createProgram(GlobalProgramInformation const& globalProgramInformation) const;
             void createObservablesList(std::vector<std::string> const& observables);
 

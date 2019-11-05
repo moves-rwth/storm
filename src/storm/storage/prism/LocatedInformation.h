@@ -51,7 +51,7 @@ namespace storm {
              *
              * @param lineNumber The new line number for this information.
              */
-            virtual void setLineNumber(uint_fast64_t lineNumber);
+            void setLineNumber(uint_fast64_t lineNumber);
 
         private:
             // The file in which the piece of information was found.

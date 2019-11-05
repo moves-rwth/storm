@@ -10,7 +10,7 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        Module::Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::ClockVariable> const& clockVariables, storm::expressions::Expression const& invariant, std::vector<storm::prism::Command> const& commands, std::string const& renamedFromModule, std::map<std::string, std::string> const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), moduleName(moduleName), booleanVariables(booleanVariables), booleanVariableToIndexMap(), integerVariables(integerVariables), integerVariableToIndexMap(), clockVariables(clockVariables), clockVariableToIndexMap(), invariant(invariant), commands(commands), synchronizingActionIndices(), actionIndicesToCommandIndexMap(), renamedFromModule(renamedFromModule), renaming(renaming) {
+        Module::Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::ClockVariable> const& clockVariables, storm::expressions::Expression const& invariant, std::vector<storm::prism::Command> const& commands, std::string const& renamedFromModule, storm::prism::ModuleRenaming const& renaming, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), moduleName(moduleName), booleanVariables(booleanVariables), booleanVariableToIndexMap(), integerVariables(integerVariables), integerVariableToIndexMap(), clockVariables(clockVariables), clockVariableToIndexMap(), invariant(invariant), commands(commands), synchronizingActionIndices(), actionIndicesToCommandIndexMap(), renamedFromModule(renamedFromModule), renaming(renaming) {
             // Initialize the internal mappings for fast information retrieval.
             this->createMappings();
         }
@@ -126,7 +126,7 @@ namespace storm {
         
         std::map<std::string, std::string> const& Module::getRenaming() const {
             STORM_LOG_THROW(this->isRenamedFromModule(), storm::exceptions::InvalidAccessException, "Unable to retrieve renaming of module that was not created by renaming.");
-            return this->renaming;
+            return this->renaming.getRenaming();
         }
         
         std::set<uint_fast64_t> const& Module::getCommandIndicesByActionIndex(uint_fast64_t actionIndex) const {
@@ -273,31 +273,6 @@ namespace storm {
             return this->invariant;
         }
 
-        void Module::setLineNumber(uint_fast64_t lineNumber) {
-            LocatedInformation::setLineNumber(lineNumber);
-            // Also set the line number of the components of the module, in case of a renaming.
-            if (isRenamedFromModule()) {
-                for (auto& v : booleanVariables) {
-                    v.setLineNumber(lineNumber);
-                }
-                for (auto& v : integerVariables) {
-                    v.setLineNumber(lineNumber);
-                }
-                for (auto& v : clockVariables) {
-                    v.setLineNumber(lineNumber);
-                }
-                for (auto& c : commands) {
-                    c.setLineNumber(lineNumber);
-                    for (auto& u : c.getUpdates()) {
-                        u.setLineNumber(lineNumber);
-                        for (auto& a : u.getAssignments()) {
-                            a.setLineNumber(lineNumber);
-                        }
-                    }
-                }
-            }
-        }
-        
         std::ostream& operator<<(std::ostream& stream, Module const& module) {
             stream << "module " << module.getName() << std::endl;
             for (auto const& booleanVariable : module.getBooleanVariables()) {

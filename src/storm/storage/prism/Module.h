@@ -11,6 +11,7 @@
 #include "storm/storage/prism/IntegerVariable.h"
 #include "storm/storage/prism/ClockVariable.h"
 #include "storm/storage/prism/Command.h"
+#include "storm/storage/prism/ModuleRenaming.h"
 #include "storm/storage/BoostTypes.h"
 #include "storm/utility/OsDetection.h"
 
@@ -47,7 +48,7 @@ namespace storm {
              * @param filename The filename in which the module is defined.
              * @param lineNumber The line number in which the module is defined.
              */
-            Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::ClockVariable> const& clockVariables, storm::expressions::Expression const& invariant, std::vector<storm::prism::Command> const& commands, std::string const& renamedFromModule, std::map<std::string, std::string> const& renaming, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Module(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::ClockVariable> const& clockVariables, storm::expressions::Expression const& invariant, std::vector<storm::prism::Command> const& commands, std::string const& renamedFromModule, storm::prism::ModuleRenaming const& renaming, std::string const& filename = "", uint_fast64_t lineNumber = 0);
 
             // Create default implementations of constructors/assignment.
             Module() = default;
@@ -275,14 +276,6 @@ namespace storm {
             
             friend std::ostream& operator<<(std::ostream& stream, Module const& module);
             
-            /*!
-             * Sets the line number of this module.
-             * If this is a renamed module, the line number of all the stored components will be set as well.
-             *
-             * @param lineNumber The new line number for this information.
-             */
-            virtual void setLineNumber(uint_fast64_t lineNumber) override;
-
         private:
             /*!
              * Computes the locally maintained mappings for fast data retrieval.
@@ -326,7 +319,7 @@ namespace storm {
             std::string renamedFromModule;
             
             // If the module was created by renaming, this mapping contains the provided renaming of identifiers.
-            std::map<std::string, std::string> renaming;
+            storm::prism::ModuleRenaming renaming;
         };
         
     } // namespace prism
