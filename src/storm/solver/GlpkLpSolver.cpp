@@ -261,6 +261,7 @@ namespace storm {
                 
                 // Invoke mip solving
                 error = glp_intopt(this->lp, parameters);
+                int status = glp_mip_status(this->lp);
                 delete parameters;
                 
                 // mipgap.first has been set to the achieved mipgap (either within the callback function or because it has been set to this->maxMILPGap)
@@ -268,7 +269,7 @@ namespace storm {
                 
                 // In case the error is caused by an infeasible problem, we do not want to view this as an error and
                 // reset the error code.
-                if (error == GLP_ENOPFS) {
+                if (error == GLP_ENOPFS || status == GLP_NOFEAS) {
                     this->isInfeasibleFlag = true;
                     error = 0;
                 } else if (error == GLP_ENODFS) {
