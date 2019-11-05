@@ -28,6 +28,10 @@ namespace storm {
             try {
                 std::string fileContent((std::istreambuf_iterator<char>(inputFileStream)), (std::istreambuf_iterator<char>()));
                 result = parseFromString(fileContent, filename, prismCompatibility);
+            } catch(storm::exceptions::WrongFormatException& e) {
+                // In case of an exception properly close the file before passing exception.
+                storm::utility::closeFile(inputFileStream);
+                throw e;
             } catch(std::exception& e) {
                 // In case of an exception properly close the file before passing exception.
                 storm::utility::closeFile(inputFileStream);
