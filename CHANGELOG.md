@@ -13,9 +13,10 @@ Version 1.3.x
 - Added script `resources/examples/download_qvbs.sh` to download the QVBS.
 - If an option is unknown, Storm now suggests similar option names.
 - Flagged several options as 'advanced' to clean up the `--help`-message. Use `--help all` to display a complete list of options.
-- Support for the new `round` operator in the PRISM language.
 - Support for parsing of exact time bounds for properties, e.g., `P=? [F=27 "goal"]`.
 - Export of optimal schedulers when checking MDPs with the sparse engine (experimental). Use  `--exportscheduler <filename>`.
+- PRISM language: Support for the new `round` operator.	
+- PRISM language: Improved error messages of the parser.	
 - JANI: Allow bounded types for constants.
 - JANI: Support for non-trivial reward accumulations.
 - JANI: Fixed support for reward expressions over non-transient variables.
@@ -33,7 +34,7 @@ Version 1.3.x
 - `storm-dft`: Support for constant failed BEs. Use flag `--uniquefailedbe` to create a unique constant failed BE.
 - `storm-dft`: Support for probabilistic BEs via PDEPs.
 - Fixed linking with Mathsat on macOS.
-- Fixed compilation for macOS Mojave.
+- Fixed compilation for macOS Mojave and higher.
 - Several bug fixes.
 
 ## Version 1.3.0 (2018/12)
