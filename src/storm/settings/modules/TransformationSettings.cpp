@@ -18,9 +18,9 @@ namespace storm {
 
             TransformationSettings::TransformationSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, chainEliminationOptionName, false,
-                                                               "If set, chains of non-Markovian states are eliminated if the resulting model is a Markov Automaton.").build());
+                                                               "If set, chains of non-Markovian states are eliminated if the resulting model is a Markov Automaton.").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, ignoreLabelingOptionName, false,
-                                                               "If set, the elimination of chains ignores the labels for all non-Markovian states. This may cause wrong results.").build());
+                                                               "If set, the elimination of chains ignores the labels for all non-Markovian states. This may cause wrong results.").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, toNondetOptionName, false, "If set, DTMCs/CTMCs are converted to MDPs/MAs (without actual nondeterminism) before model checking.").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, toDiscreteTimeOptionName, false, "If set, CTMCs/MAs are converted to DTMCs/MDPs (which might or might not preserve the provided properties).").setIsAdvanced().build());
             }

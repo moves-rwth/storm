@@ -32,12 +32,12 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, maxStepsOptionName, true, "Aborts the computation after the given number of refinement steps (= computed pareto optimal points).").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("value", "the threshold for the number of refinement steps to be performed.").build()).build());
                 std::vector<std::string> memoryPatterns = {"positional", "goalmemory", "arbitrary", "counter"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, schedulerRestrictionOptionName, false, "Restricts the class of considered schedulers to non-randomized schedulers with the provided memory pattern.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, schedulerRestrictionOptionName, false, "Restricts the class of considered schedulers to non-randomized schedulers with the provided memory pattern.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("memorypattern", "The pattern of the memory.").setDefaultValueString("positional").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(memoryPatterns)).build())
                                 .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("memorystates", "The Number of memory states (only if supported by the pattern).").setDefaultValueUnsignedInteger(0).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, printResultsOptionName, true, "Prints intermediate results of the computation to standard output.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, printResultsOptionName, true, "Prints intermediate results of the computation to standard output.").setIsAdvanced().build());
                 std::vector<std::string> encodingTypes = {"auto", "classic", "flow"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, encodingOptionName, true, "The prefered type of encoding for constraint-based methods.")
+                this->addOption(storm::settings::OptionBuilder(moduleName, encodingOptionName, true, "The prefered type of encoding for constraint-based methods.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("type", "The type.").setDefaultValueString("auto").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(encodingTypes)).build()).build());
             }
             

@@ -17,8 +17,8 @@ namespace storm {
             const std::string ResourceSettings::printTimeAndMemoryOptionShortName = "tm";
 
             ResourceSettings::ResourceSettings() : ModuleSettings(moduleName) {
-                this->addOption(storm::settings::OptionBuilder(moduleName, timeoutOptionName, false, "If given, computation will abort after the timeout has been reached.").setShortName(timeoutOptionShortName)
-                                .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("time", "The number of seconds after which to timeout.").setDefaultValueUnsignedInteger(0).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, timeoutOptionName, false, "If given, computation will abort after the timeout has been reached.").setIsAdvanced().setShortName(timeoutOptionShortName)
+                                .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("time", "Seconds after which to timeout.").setDefaultValueUnsignedInteger(0).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, printTimeAndMemoryOptionName, false, "Prints CPU time and memory consumption at the end.").setShortName(printTimeAndMemoryOptionShortName).build());
             }
             
