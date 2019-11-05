@@ -9,6 +9,7 @@ Version 1.3.x
 
 ### Version 1.3.1 (under development)
 - Added support for multi-dimensional quantile queries.
+- Added support for multi-objective model checking under pure (deterministic) schedulers with bounded memory using `--purescheds`.
 - Allow to quickly check a benchmark from the [Quantitative Verification Benchmark Set](http://qcomp.org/benchmarks/) using the `--qvbs` option.
 - Added script `resources/examples/download_qvbs.sh` to download the QVBS.
 - If an option is unknown, Storm now suggests similar option names.
