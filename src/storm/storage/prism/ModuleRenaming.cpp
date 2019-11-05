@@ -26,6 +26,7 @@ namespace storm {
                 }
             }
             stream << "]";
+            return stream;
         }
         
     } // namespace prism
