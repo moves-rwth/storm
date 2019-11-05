@@ -246,4 +246,73 @@ TEST(GlpkLpSolver, MILPUnbounded) {
     ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
     ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
+
+TEST(GlpkLpSolver, Incremental) {
+    storm::solver::GlpkLpSolver<double> solver(storm::OptimizationDirection::Maximize);
+    storm::expressions::Variable x,y,z;
+    ASSERT_NO_THROW(x = solver.addUnboundedContinuousVariable("x", 1));
+    
+    solver.push();
+    ASSERT_NO_THROW(solver.addConstraint("", x <= solver.getConstant(12)));
+    ASSERT_NO_THROW(solver.optimize());
+    // max x s.t. x<=12
+    ASSERT_TRUE(solver.isOptimal());
+    EXPECT_EQ(12.0, solver.getContinuousValue(x));
+    
+    solver.push();
+    ASSERT_NO_THROW(y = solver.addUnboundedContinuousVariable("y"));
+    ASSERT_NO_THROW(solver.addConstraint("", y <= solver.getConstant(6)));
+    ASSERT_NO_THROW(solver.addConstraint("", x <= y));
+    // max x s.t. x<=12 and y <= 6 and x <= y
+    ASSERT_NO_THROW(solver.optimize());
+    ASSERT_TRUE(solver.isOptimal());
+    EXPECT_EQ(6.0, solver.getContinuousValue(x));
+    EXPECT_EQ(6.0, solver.getContinuousValue(y));
+    
+    solver.pop();
+    ASSERT_NO_THROW(solver.optimize());
+    // max x s.t. x<=12
+    ASSERT_TRUE(solver.isOptimal());
+    EXPECT_EQ(12.0, solver.getContinuousValue(x));
+    
+    solver.push();
+    ASSERT_NO_THROW(y = solver.addUnboundedContinuousVariable("y", 10));
+    ASSERT_NO_THROW(solver.addConstraint("", y <= solver.getConstant(20)));
+    ASSERT_NO_THROW(solver.addConstraint("", y <= -x));
+    // max x+10y s.t. x<=12 and y<=20 and y<=-x
+    ASSERT_NO_THROW(solver.optimize());
+    ASSERT_TRUE(solver.isOptimal());
+    EXPECT_EQ(-20, solver.getContinuousValue(x));
+    EXPECT_EQ(20, solver.getContinuousValue(y));
+    
+    solver.pop();
+    ASSERT_NO_THROW(solver.optimize());
+    // max x s.t. x<=12
+    ASSERT_TRUE(solver.isOptimal());
+    EXPECT_EQ(12.0, solver.getContinuousValue(x));
+    
+    solver.push();
+    ASSERT_NO_THROW(z = solver.addUnboundedIntegerVariable("z"));
+    ASSERT_NO_THROW(solver.addConstraint("", z <= solver.getConstant(6)));
+    ASSERT_NO_THROW(solver.addConstraint("", x <= z));
+    ASSERT_NO_THROW(solver.optimize());
+    // max x s.t. x<=12 and z <= 6 and x <= z
+    ASSERT_TRUE(solver.isOptimal());
+    EXPECT_EQ(6.0, solver.getContinuousValue(x));
+    EXPECT_EQ(6, solver.getIntegerValue(z));
+    
+    solver.pop();
+    ASSERT_NO_THROW(solver.optimize());
+    // max x s.t. x<=12
+    ASSERT_TRUE(solver.isOptimal());
+    EXPECT_EQ(12.0, solver.getContinuousValue(x));
+    
+    solver.pop();
+    // max x s.t. true
+    ASSERT_NO_THROW(solver.optimize());
+    ASSERT_FALSE(solver.isOptimal());
+    ASSERT_TRUE(solver.isUnbounded());
+    ASSERT_FALSE(solver.isInfeasible());
+}
+
 #endif

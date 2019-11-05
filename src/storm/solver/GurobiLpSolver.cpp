@@ -184,7 +184,7 @@ namespace storm {
         
         template<typename ValueType>
         void GurobiLpSolver<ValueType>::addConstraint(std::string const& name, storm::expressions::Expression const& constraint) {
-            STORM_LOG_TRACE("Adding constraint " << name << " to GurobiLpSolver:" << std::endl << "\t" << constraint);
+            STORM_LOG_TRACE("Adding constraint " << (name == "" ? std::to_string(nextConstraintIndex) : name) << " to GurobiLpSolver:" << std::endl << "\t" << constraint);
             STORM_LOG_THROW(constraint.isRelationalExpression(), storm::exceptions::InvalidArgumentException, "Illegal constraint is not a relational expression.");
             STORM_LOG_THROW(constraint.getOperator() != storm::expressions::OperatorType::NotEqual, storm::exceptions::InvalidArgumentException, "Illegal constraint uses inequality operator.");
             
@@ -345,9 +345,10 @@ namespace storm {
             double value = 0;
             int error = GRBgetdblattrelement(model, GRB_DBL_ATTR_X, variableIndexPair->second, &value);
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ", error code " << error << ").");
-            STORM_LOG_THROW(std::abs(std::round(value) - value) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
-            
-            return static_cast<int_fast64_t>(std::round(value));
+            double roundedValue = std::round(value);
+            double diff = std::abs(roundedValue - value);
+            STORM_LOG_ERROR_COND(diff <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), "Illegal value for integer variable in Gurobi solution (" << value << "). Difference to nearest int is " << diff);
+            return static_cast<int_fast64_t>(roundedValue);
         }
         
         template<typename ValueType>
@@ -366,10 +367,10 @@ namespace storm {
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ", error code " << error << ").");
 
             if (value > 0.5) {
-                STORM_LOG_THROW(std::abs(value - 1.0) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
+                STORM_LOG_ERROR_COND(std::abs(value - 1.0) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), "Illegal value for integer variable in Gurobi solution (" << value << ").");
                 return true;
             } else {
-                STORM_LOG_THROW(std::abs(value) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
+                STORM_LOG_ERROR_COND(std::abs(value) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), "Illegal value for integer variable in Gurobi solution (" << value << ").");
                 return false;
             }
         }
@@ -416,7 +417,6 @@ namespace storm {
             if (incrementalData.empty()) {
                 STORM_LOG_ERROR("Tried to pop from a solver without pushing before.");
             } else {
-                // TODO: check if we need to update before deleting
                 IncrementalLevel const& lvl = incrementalData.back();
                 
                 std::vector<int> indicesToBeRemoved = storm::utility::vector::buildVectorForRange(lvl.firstConstraintIndex, nextConstraintIndex);
@@ -499,9 +499,10 @@ namespace storm {
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to set Gurobi solution index (" << GRBgeterrormsg(env) << ", error code " << error << ").");
             error = GRBgetdblattrelement(model, GRB_DBL_ATTR_Xn, variableIndexPair->second, &value);
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ", error code " << error << ").");
-            STORM_LOG_THROW(std::abs(std::round(value) - value) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
-            
-            return static_cast<int_fast64_t>(std::round(value));
+            double roundedValue = std::round(value);
+            double diff = std::abs(roundedValue - value);
+            STORM_LOG_ERROR_COND(diff <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), "Illegal value for integer variable in Gurobi solution (" << value << "). Difference to nearest int is " << diff);
+            return static_cast<int_fast64_t>(roundedValue);
         }
         
         template<typename ValueType>
@@ -523,10 +524,10 @@ namespace storm {
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ", error code " << error << ").");
 
             if (value > 0.5) {
-                STORM_LOG_THROW(std::abs(value - 1) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
+                STORM_LOG_ERROR_COND(std::abs(value - 1) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), "Illegal value for integer variable in Gurobi solution (" << value << ").");
                 return true;
             } else {
-                STORM_LOG_THROW(std::abs(value) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in Gurobi solution (" << value << ").");
+                STORM_LOG_ERROR_COND(std::abs(value) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), "Illegal value for integer variable in Gurobi solution (" << value << ").");
                 return false;
             }
         }
@@ -569,7 +570,7 @@ namespace storm {
             if (relative) {
                 return result;
             } else {
-                return result * getObjectiveValue();
+                return storm::utility::abs<ValueType>(result * getObjectiveValue());
             }
         }
         

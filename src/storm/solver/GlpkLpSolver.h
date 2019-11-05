@@ -95,6 +95,9 @@ namespace storm {
             
             virtual void push() override;
             virtual void pop() override;
+            
+            virtual void setMaximalMILPGap(ValueType const& gap, bool relative) override;
+            virtual ValueType getMILPGap(bool relative) const override;
 
         private:
             /*!
@@ -115,12 +118,6 @@ namespace storm {
             // A mapping from variables to their indices.
             std::map<storm::expressions::Variable, int> variableToIndexMap;
             
-            // A counter used for getting the next variable index.
-            int nextVariableIndex;
-            
-            // A counter used for getting the next constraint index.
-            int nextConstraintIndex;
-            
             // A flag storing whether the model is an LP or an MILP.
             bool modelContainsIntegerVariables;
             
@@ -128,10 +125,16 @@ namespace storm {
             mutable bool isInfeasibleFlag;
             mutable bool isUnboundedFlag;
             
-            // The arrays that store the coefficient matrix of the problem.
-            std::vector<int> rowIndices;
-            std::vector<int> columnIndices;
-            std::vector<double> coefficientValues;
+            mutable double maxMILPGap;
+            mutable bool maxMILPGapRelative;
+            mutable double actualRelativeMILPGap;
+            
+            struct IncrementalLevel {
+                std::vector<storm::expressions::Variable> variables;
+                int firstConstraintIndex;
+            };
+            std::vector<IncrementalLevel> incrementalData;
+            
         };
 #else
         // If glpk is not available, we provide a stub implementation that emits an error if any of its methods is called.
@@ -242,6 +245,14 @@ namespace storm {
             }
             
             virtual void pop() override {
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
+            }
+            
+            virtual ValueType getMILPGap(bool relative) const override {
+                throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
+            }
+            
+            virtual ValueType getMILPGap(bool relative) const override {
                 throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without support for glpk. Yet, a method was called that requires this support. Please choose a version of support with glpk support.";
             }
 

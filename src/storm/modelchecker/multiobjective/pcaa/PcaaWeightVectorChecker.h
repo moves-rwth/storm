@@ -5,7 +5,7 @@
 #include "storm/storage/Scheduler.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
-#include "storm/modelchecker/multiobjective/SparseMultiObjectivePreprocessorResult.h"
+#include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectivePreprocessorResult.h"
 #include "storm/modelchecker/multiobjective/Objective.h"
 
 
@@ -93,10 +93,10 @@ namespace storm {
             public:
 
                 template<typename VT = typename ModelType::ValueType, typename std::enable_if<std::is_same<ModelType, storm::models::sparse::Mdp<VT>>::value, int>::type = 0>
-                static std::unique_ptr<PcaaWeightVectorChecker<ModelType>> create(SparseMultiObjectivePreprocessorResult<ModelType> const& preprocessorResult);
+                static std::unique_ptr<PcaaWeightVectorChecker<ModelType>> create(preprocessing::SparseMultiObjectivePreprocessorResult<ModelType> const& preprocessorResult);
                 
                 template<typename VT = typename ModelType::ValueType, typename std::enable_if<std::is_same<ModelType, storm::models::sparse::MarkovAutomaton<VT>>::value, int>::type = 0>
-                static std::unique_ptr<PcaaWeightVectorChecker<ModelType>> create(SparseMultiObjectivePreprocessorResult<ModelType> const& preprocessorResult);
+                static std::unique_ptr<PcaaWeightVectorChecker<ModelType>> create(preprocessing::SparseMultiObjectivePreprocessorResult<ModelType> const& preprocessorResult);
             };
 
         }

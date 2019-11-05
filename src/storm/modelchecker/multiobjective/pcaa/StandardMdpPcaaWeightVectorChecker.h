@@ -32,7 +32,7 @@ namespace storm {
                  *
                  */
                 
-                StandardMdpPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseMdpModelType> const& preprocessorResult);
+                StandardMdpPcaaWeightVectorChecker(preprocessing::SparseMultiObjectivePreprocessorResult<SparseMdpModelType> const& preprocessorResult);
 
                 virtual ~StandardMdpPcaaWeightVectorChecker() = default;
 

@@ -1,10 +1,11 @@
 #include "storm/modelchecker/multiobjective/pcaa/SparsePcaaQuery.h"
 
-#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/modelchecker/multiobjective/Objective.h"
+#include "storm/modelchecker/multiobjective/MultiObjectivePostprocessing.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/storage/geometry/Hyperrectangle.h"
 #include "storm/utility/constants.h"
@@ -19,7 +20,7 @@ namespace storm {
             
             
             template <class SparseModelType, typename GeometryValueType>
-            SparsePcaaQuery<SparseModelType, GeometryValueType>::SparsePcaaQuery(SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult) :
+            SparsePcaaQuery<SparseModelType, GeometryValueType>::SparsePcaaQuery(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult) :
                 originalModel(preprocessorResult.originalModel), originalFormula(preprocessorResult.originalFormula), objectives(preprocessorResult.objectives) {
 
                 this->weightVectorChecker = WeightVectorCheckerFactory<SparseModelType>::create(preprocessorResult);
@@ -130,79 +131,20 @@ namespace storm {
                 this->refinementSteps.size() >= env.modelchecker().multi().getMaxSteps();
             }
             
-            
-            template<typename SparseModelType, typename GeometryValueType>
-            typename SparsePcaaQuery<SparseModelType, GeometryValueType>::Point SparsePcaaQuery<SparseModelType, GeometryValueType>::transformPointToOriginalModel(Point const& point) const {
-                Point result;
-                result.reserve(point.size());
-                for(uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
-                    auto const& obj = this->objectives[objIndex];
-                    if (storm::solver::maximize(obj.formula->getOptimalityType())) {
-                        if (obj.considersComplementaryEvent) {
-                            result.push_back(storm::utility::one<GeometryValueType>() - point[objIndex]);
-                        } else {
-                            result.push_back(point[objIndex]);
-                        }
-                    } else {
-                        if (obj.considersComplementaryEvent) {
-                            result.push_back(storm::utility::one<GeometryValueType>() + point[objIndex]);
-                        } else {
-                            result.push_back(-point[objIndex]);
-                        }
-                    }
-                }
-                return result;
-            }
-            
-            template<typename SparseModelType, typename GeometryValueType>
-            std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> SparsePcaaQuery<SparseModelType, GeometryValueType>::transformPolytopeToOriginalModel(std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> const& polytope) const {
-                if(polytope->isEmpty()) {
-                    return storm::storage::geometry::Polytope<GeometryValueType>::createEmptyPolytope();
-                }
-                if(polytope->isUniversal()) {
-                    return storm::storage::geometry::Polytope<GeometryValueType>::createUniversalPolytope();
-                }
-                uint_fast64_t numObjectives = this->objectives.size();
-                std::vector<std::vector<GeometryValueType>> transformationMatrix(numObjectives, std::vector<GeometryValueType>(numObjectives, storm::utility::zero<GeometryValueType>()));
-                std::vector<GeometryValueType> transformationVector;
-                transformationVector.reserve(numObjectives);
-                for(uint_fast64_t objIndex = 0; objIndex < numObjectives; ++objIndex) {
-                    auto const& obj = this->objectives[objIndex];
-                    if (storm::solver::maximize(obj.formula->getOptimalityType())) {
-                        if (obj.considersComplementaryEvent) {
-                            transformationMatrix[objIndex][objIndex] = -storm::utility::one<GeometryValueType>();
-                            transformationVector.push_back(storm::utility::one<GeometryValueType>());
-                        } else {
-                            transformationMatrix[objIndex][objIndex] = storm::utility::one<GeometryValueType>();
-                            transformationVector.push_back(storm::utility::zero<GeometryValueType>());
-                        }
-                    } else {
-                        if (obj.considersComplementaryEvent) {
-                            transformationMatrix[objIndex][objIndex] = storm::utility::one<GeometryValueType>();
-                            transformationVector.push_back(storm::utility::one<GeometryValueType>());
-                        } else {
-                            transformationMatrix[objIndex][objIndex] = -storm::utility::one<GeometryValueType>();
-                            transformationVector.push_back(storm::utility::zero<GeometryValueType>());
-                        }
-                    }
-                }
-                return polytope->affineTransformation(transformationMatrix, transformationVector);
-            }
-            
             template<typename SparseModelType, typename GeometryValueType>
             void SparsePcaaQuery<SparseModelType, GeometryValueType>::exportPlotOfCurrentApproximation(Environment const& env) const {
                
                 STORM_LOG_ERROR_COND(objectives.size()==2, "Exporting plot requested but this is only implemented for the two-dimensional case.");
                 
-                auto transformedUnderApprox = transformPolytopeToOriginalModel(underApproximation);
-                auto transformedOverApprox = transformPolytopeToOriginalModel(overApproximation);
+                auto transformedUnderApprox = transformObjectivePolytopeToOriginal(this->objectives, underApproximation);
+                auto transformedOverApprox = transformObjectivePolytopeToOriginal(this->objectives, overApproximation);
                 
                 // Get pareto points as well as a hyperrectangle that is used to guarantee that the resulting polytopes are bounded.
                 storm::storage::geometry::Hyperrectangle<GeometryValueType> boundaries(std::vector<GeometryValueType>(objectives.size(), storm::utility::zero<GeometryValueType>()), std::vector<GeometryValueType>(objectives.size(), storm::utility::zero<GeometryValueType>()));
                 std::vector<std::vector<GeometryValueType>> paretoPoints;
                 paretoPoints.reserve(refinementSteps.size());
                 for(auto const& step : refinementSteps) {
-                    paretoPoints.push_back(transformPointToOriginalModel(step.lowerBoundPoint));
+                    paretoPoints.push_back(transformObjectiveValuesToOriginal(this->objectives, step.lowerBoundPoint));
                     boundaries.enlarge(paretoPoints.back());
                 }
                 auto underApproxVertices = transformedUnderApprox->getVertices();

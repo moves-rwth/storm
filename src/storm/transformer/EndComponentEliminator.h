@@ -27,25 +27,19 @@ namespace storm {
             };
             
             /*
-             * Identifies end components and substitutes them by a single state.
+             * Substitutes the given end components by a single state.
+             *
              *
              * Only states in the given subsystem are kept. Transitions leading to a state outside of the subsystem will be
-             * removed (but the corresponding row is kept, possibly yielding empty rows). 
-             * The ECs are then identified on the subsystem.
-             *
-             * Only ECs for which possibleECRows is true for all choices are considered.
-             * Furthermore, the rows that contain a transition leading outside of the subsystem are not considered for an EC.
+             * removed (but the corresponding row is kept, possibly yielding empty rows).
+             * The given ECs all have to lie within the provided subsystem.
              *
              * For each such EC (that is not contained in another EC), we add a new state and redirect all incoming and outgoing
              * transitions of the EC to (and from) this state.
              * If addSinkRowStates is true for at least one state of an eliminated EC, a row is added to the new state (representing the choice to stay at the EC forever).
              * If addSelfLoopAtSinkStates is true, such rows get a selfloop (with value 1). Otherwise, the row remains empty.
              */
-            static EndComponentEliminatorReturnType transform(storm::storage::SparseMatrix<ValueType> const& originalMatrix, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& possibleECRows, storm::storage::BitVector const& addSinkRowStates, bool addSelfLoopAtSinkStates = false) {
-                STORM_LOG_DEBUG("Invoked EndComponentEliminator on matrix with " << originalMatrix.getRowGroupCount() << " row groups and " << subsystemStates.getNumberOfSetBits() << " subsystem states.");
-                
-                storm::storage::MaximalEndComponentDecomposition<ValueType> ecs = computeECs(originalMatrix, possibleECRows, subsystemStates);
-                
+            static EndComponentEliminatorReturnType transform(storm::storage::SparseMatrix<ValueType> const& originalMatrix, storm::storage::MaximalEndComponentDecomposition<ValueType> ecs, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& addSinkRowStates, bool addSelfLoopAtSinkStates = false) {
                 //further shrink the set of kept states by removing all states that are part of an EC
                 storm::storage::BitVector keptStates = subsystemStates;
                 for (auto const& ec : ecs) {
@@ -93,8 +87,30 @@ namespace storm {
                 return result;
             }
             
-        private:
+            /*
+             * Identifies end components and substitutes them by a single state.
+             *
+             * Only states in the given subsystem are kept. Transitions leading to a state outside of the subsystem will be
+             * removed (but the corresponding row is kept, possibly yielding empty rows).
+             * The ECs are then identified on the subsystem.
+             *
+             * Only ECs for which possibleECRows is true for all choices are considered.
+             * Furthermore, the rows that contain a transition leading outside of the subsystem are not considered for an EC.
+             *
+             * For each such EC (that is not contained in another EC), we add a new state and redirect all incoming and outgoing
+             * transitions of the EC to (and from) this state.
+             * If addSinkRowStates is true for at least one state of an eliminated EC, a row is added to the new state (representing the choice to stay at the EC forever).
+             * If addSelfLoopAtSinkStates is true, such rows get a selfloop (with value 1). Otherwise, the row remains empty.
+             */
+            static EndComponentEliminatorReturnType transform(storm::storage::SparseMatrix<ValueType> const& originalMatrix, storm::storage::BitVector const& subsystemStates, storm::storage::BitVector const& possibleECRows, storm::storage::BitVector const& addSinkRowStates, bool addSelfLoopAtSinkStates = false) {
+                STORM_LOG_DEBUG("Invoked EndComponentEliminator on matrix with " << originalMatrix.getRowGroupCount() << " row groups and " << subsystemStates.getNumberOfSetBits() << " subsystem states.");
+                
+                //storm::storage::MaximalEndComponentDecomposition<ValueType> ecs = computeECs(originalMatrix, possibleECRows, subsystemStates);
+                storm::storage::MaximalEndComponentDecomposition<ValueType> ecs(originalMatrix, originalMatrix.transpose(true), subsystemStates, possibleECRows);
+                return transform(originalMatrix, ecs, subsystemStates, addSinkRowStates, addSelfLoopAtSinkStates);
+            }
             
+        private:
             static storm::storage::MaximalEndComponentDecomposition<ValueType> computeECs(storm::storage::SparseMatrix<ValueType> const& originalMatrix, storm::storage::BitVector const& possibleECRows, storm::storage::BitVector const& subsystemStates) {
                 // Get an auxiliary matrix to identify the correct end components w.r.t. the possible EC rows and the subsystem.
                 // This is done by redirecting choices that can never be part of an EC to a sink state.

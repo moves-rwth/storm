@@ -99,6 +99,9 @@ namespace storm {
             virtual void push() override;
             virtual void pop() override;
 
+            virtual void setMaximalMILPGap(ValueType const& gap, bool relative) override;
+            virtual ValueType getMILPGap(bool relative) const override;
+            
         private:
              virtual storm::expressions::Expression getValue(storm::expressions::Variable const& variable) const;
 
@@ -116,12 +119,18 @@ namespace storm {
             mutable bool lastCheckUnbounded;
             mutable std::unique_ptr<z3::expr> lastCheckObjectiveValue;
             mutable std::unique_ptr<z3::model> lastCheckModel;
-
+            
             // An expression adapter that is used for translating the expression into Z3's format.
             std::unique_ptr<storm::adapters::Z3ExpressionAdapter> expressionAdapter;
 
-            // The function that is to be optimized
-            storm::expressions::Expression optimizationFunction;
+            // The function that is to be optimized (we interpret this as a sum)
+            std::vector<storm::expressions::Expression> optimizationSummands;
+
+            // Stores whether this solver is used in an incremental way (with push() and pop())
+            bool isIncremental;
+            
+            // Stores the number of optimization summands at each call of push().
+            std::vector<uint64_t> incrementaOptimizationSummandIndicators;
 
 #endif
         };
