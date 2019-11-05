@@ -259,8 +259,8 @@ TEST(GlpkLpSolver, Incremental) {
     ASSERT_TRUE(solver.isOptimal());
     EXPECT_EQ(12.0, solver.getContinuousValue(x));
     
-    ASSERT_NO_THROW(y = solver.addUnboundedContinuousVariable("y"));
     solver.push();
+    ASSERT_NO_THROW(y = solver.addUnboundedContinuousVariable("y"));
     ASSERT_NO_THROW(solver.addConstraint("", y <= solver.getConstant(6)));
     ASSERT_NO_THROW(solver.addConstraint("", x <= y));
     // max x s.t. x<=12 and y <= 6 and x <= y
@@ -296,12 +296,17 @@ TEST(GlpkLpSolver, Incremental) {
     ASSERT_NO_THROW(solver.addConstraint("", z <= solver.getConstant(6)));
     ASSERT_NO_THROW(solver.addConstraint("", x <= z));
     ASSERT_NO_THROW(solver.optimize());
-    // max x s.t. x<=12 and y <= 6 and x <= y
+    // max x s.t. x<=12 and z <= 6 and x <= z
     ASSERT_TRUE(solver.isOptimal());
     EXPECT_EQ(6.0, solver.getContinuousValue(x));
     EXPECT_EQ(6, solver.getIntegerValue(z));
     
     solver.pop();
+    ASSERT_NO_THROW(solver.optimize());
+    // max x s.t. x<=12
+    ASSERT_TRUE(solver.isOptimal());
+    EXPECT_EQ(12.0, solver.getContinuousValue(x));
+    
     solver.pop();
     // max x s.t. true
     ASSERT_NO_THROW(solver.optimize());

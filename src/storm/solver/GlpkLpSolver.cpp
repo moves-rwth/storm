@@ -419,6 +419,23 @@ namespace storm {
                 }
                 incrementalData.pop_back();
                 update();
+                // Check whether we need to adapt the current basis (i.e. the number of basic variables does not equal the number of constraints)
+                int n = glp_get_num_rows(lp);
+                int m = glp_get_num_cols(lp);
+                int nb(0), mb(0);
+                for (int i = 1; i <= n; ++i) {
+                    if (glp_get_row_stat(lp, i) == GLP_BS) {
+                        ++nb;
+                    }
+                }
+                for (int j = 1; j <= m; ++j) {
+                    if (glp_get_col_stat(lp, j) == GLP_BS) {
+                        ++mb;
+                    }
+                }
+                if (n != (nb + mb)) {
+                    glp_std_basis(this->lp);
+                }
             }
         }
 
