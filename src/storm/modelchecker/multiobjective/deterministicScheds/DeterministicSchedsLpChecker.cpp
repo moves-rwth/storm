@@ -118,14 +118,12 @@ namespace storm {
                     return {{}, {}};
                 }
                 
-                if (gurobiLpModel) {
-                    // For gurobi, it is possible to specify a gap between the obtained lower/upper objective bounds.
-                    // Let p be the found solution point, q be the optimal (unknown) solution point, and w be the current weight vector.
-                    // The gap between the solution p and q is |w*p - w*q| = |w*(p-q)|
-                    GeometryValueType milpGap = storm::utility::vector::dotProduct(currentWeightVector, eps);
-                    gurobiLpModel->setMaximalMILPGap(storm::utility::convertNumber<ValueType>(milpGap), false);
-                    gurobiLpModel->update();
-                }
+                // Specify a gap between the obtained lower/upper objective bounds.
+                // Let p be the found solution point, q be the optimal (unknown) solution point, and w be the current weight vector.
+                // The gap between the solution p and q is |w*p - w*q| = |w*(p-q)|
+                GeometryValueType milpGap = storm::utility::vector::dotProduct(currentWeightVector, eps);
+                lpModel->setMaximalMILPGap(storm::utility::convertNumber<ValueType>(milpGap), false);
+                lpModel->update();
                 
                 std::vector<Point> foundPoints;
                 std::vector<Polytope> infeasableAreas;
@@ -343,17 +341,8 @@ namespace storm {
 
                 uint64_t numStates = model.getNumberOfStates();
                 uint64_t initialState = *model.getInitialStates().begin();
-                if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isLpSolverSetFromDefaultValue()) {
-#ifdef STORM_HAVE_GUROBI
-                    STORM_LOG_INFO("Using Gurobi as LPSolver");
-                    lpModel = storm::utility::solver::getLpSolver<ValueType>("model", storm::solver::LpSolverTypeSelection::Gurobi);
-#else
-                    STORM_LOG_WARN("Selected LP-solver might not support incremental solving. Consider installing Gurobi.");
-#endif
-                } else {
-                    lpModel = storm::utility::solver::getLpSolver<ValueType>("model");
-                }
-                gurobiLpModel = dynamic_cast<storm::solver::GurobiLpSolver<ValueType>*>(lpModel.get());
+                STORM_LOG_WARN_COND(!storm::settings::getModule<storm::settings::modules::CoreSettings>().isLpSolverSetFromDefaultValue() || storm::settings::getModule<storm::settings::modules::CoreSettings>().getLpSolver() == storm::solver::LpSolverType::Gurobi, "The selected MILP solver might not perform well. Consider installing / using Gurobi.");
+                lpModel = storm::utility::solver::getLpSolver<ValueType>("model");
                 
                 lpModel->setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 initialStateResults.clear();
@@ -614,10 +603,8 @@ namespace storm {
                         Point newPoint = validateCurrentModel(env);
                         swValidate.stop();
                         GeometryValueType offset = storm::utility::convertNumber<GeometryValueType>(lpModel->getObjectiveValue());
-                        if (gurobiLpModel) {
-                            // Gurobi gives us the gap between the found solution and the known bound.
-                            offset += storm::utility::convertNumber<GeometryValueType>(gurobiLpModel->getMILPGap(false));
-                        }
+                        // Get the gap between the found solution and the known bound.
+                        offset += storm::utility::convertNumber<GeometryValueType>(lpModel->getMILPGap(false));
                         // we might want to shift the halfspace to guarantee that our point is included.
                         offset = std::max(offset, storm::utility::vector::dotProduct(currentWeightVector, newPoint));
                         auto halfspace = storm::storage::geometry::Halfspace<GeometryValueType>(currentWeightVector, offset).invert();
