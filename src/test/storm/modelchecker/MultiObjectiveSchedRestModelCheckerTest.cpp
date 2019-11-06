@@ -1,8 +1,6 @@
 #include "gtest/gtest.h"
 #include "storm-config.h"
 
-#if defined STORM_HAVE_GUROBI
-
 #include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 
@@ -395,5 +393,3 @@ namespace {
         
     }
 }
-
-#endif /* STORM_HAVE_GUROBI */
