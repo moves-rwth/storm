@@ -430,7 +430,9 @@ namespace storm {
                 IncrementalLevel const& lvl = incrementalData.back();
                 // Since glpk uses 1-based indexing, we need to prepend an additional index
                 std::vector<int> indicesToBeRemoved = storm::utility::vector::buildVectorForRange(lvl.firstConstraintIndex - 1, glp_get_num_rows(this->lp) + 1);
-                glp_del_rows(this->lp, indicesToBeRemoved.size() - 1, indicesToBeRemoved.data());
+                if (indicesToBeRemoved.size() > 1) {
+                    glp_del_rows(this->lp, indicesToBeRemoved.size() - 1, indicesToBeRemoved.data());
+                }
                 indicesToBeRemoved.clear();
                 
                 if (!lvl.variables.empty()) {
