@@ -67,6 +67,7 @@ namespace storm {
         
         template<typename ValueType>
         storm::expressions::Variable GlpkLpSolver<ValueType>::addBoundedContinuousVariable(std::string const& name, ValueType lowerBound, ValueType upperBound, ValueType objectiveFunctionCoefficient) {
+            STORM_LOG_ASSERT(lowerBound != upperBound, "GLPK does not support variable bounds of the form [x,x].");
             storm::expressions::Variable newVariable = this->manager->declareOrGetVariable(name, this->manager->getRationalType());
             this->addVariable(newVariable, GLP_CV, GLP_DB, lowerBound, upperBound, objectiveFunctionCoefficient);
             return newVariable;
@@ -95,6 +96,7 @@ namespace storm {
         
         template<typename ValueType>
         storm::expressions::Variable GlpkLpSolver<ValueType>::addBoundedIntegerVariable(std::string const& name, ValueType lowerBound, ValueType upperBound, ValueType objectiveFunctionCoefficient) {
+            STORM_LOG_ASSERT(lowerBound != upperBound, "GLPK does not support variable bounds of the form [x,x].");
             storm::expressions::Variable newVariable = this->manager->declareOrGetVariable(name, this->manager->getIntegerType());
             this->addVariable(newVariable, GLP_IV, GLP_DB, lowerBound, upperBound, objectiveFunctionCoefficient);
             this->modelContainsIntegerVariables = true;
@@ -362,10 +364,10 @@ namespace storm {
                 value = glp_get_col_prim(this->lp, static_cast<int>(variableIndexPair->second));
             }
 
-            // Now check the desired precision was actually achieved.
-            STORM_LOG_THROW(std::fabs(static_cast<int>(value) - value) <= storm::settings::getModule<storm::settings::modules::GlpkSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for integer variable in glpk solution (" << value << ").");
-            
-            return static_cast<int_fast64_t>(value);
+            double roundedValue = std::round(value);
+            double diff = std::abs(roundedValue - value);
+            STORM_LOG_ERROR_COND(diff <= storm::settings::getModule<storm::settings::modules::GlpkSettings>().getIntegerTolerance(), "Illegal value for integer variable in GLPK solution (" << value << "). Difference to nearest int is " << diff);
+            return static_cast<int_fast64_t>(roundedValue);
         }
         
         template<typename ValueType>
@@ -386,7 +388,13 @@ namespace storm {
                 value = glp_get_col_prim(this->lp, static_cast<int>(variableIndexPair->second));
             }
 
-            STORM_LOG_THROW(std::fabs(static_cast<int>(value) - value) <= storm::settings::getModule<storm::settings::modules::GlpkSettings>().getIntegerTolerance(), storm::exceptions::InvalidStateException, "Illegal value for binary variable in glpk solution (" << value << ").");
+            if (value > 0.5) {
+                STORM_LOG_ERROR_COND(std::abs(value - 1.0) <= storm::settings::getModule<storm::settings::modules::GlpkSettings>().getIntegerTolerance(), "Illegal value for binary variable in GLPK solution (" << value << ").");
+                return true;
+            } else {
+                STORM_LOG_ERROR_COND(std::abs(value) <= storm::settings::getModule<storm::settings::modules::GlpkSettings>().getIntegerTolerance(), "Illegal value for binary variable in GLPK solution (" << value << ").");
+                return false;
+            }
             
             return static_cast<bool>(value);
         }

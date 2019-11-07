@@ -367,10 +367,10 @@ namespace storm {
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to get Gurobi solution (" << GRBgeterrormsg(env) << ", error code " << error << ").");
 
             if (value > 0.5) {
-                STORM_LOG_ERROR_COND(std::abs(value - 1.0) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), "Illegal value for integer variable in Gurobi solution (" << value << ").");
+                STORM_LOG_ERROR_COND(std::abs(value - 1.0) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), "Illegal value for binary variable in Gurobi solution (" << value << ").");
                 return true;
             } else {
-                STORM_LOG_ERROR_COND(std::abs(value) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), "Illegal value for integer variable in Gurobi solution (" << value << ").");
+                STORM_LOG_ERROR_COND(std::abs(value) <= storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance(), "Illegal value for binary variable in Gurobi solution (" << value << ").");
                 return false;
             }
         }
