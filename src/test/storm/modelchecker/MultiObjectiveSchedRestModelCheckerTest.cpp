@@ -16,6 +16,8 @@
 #include "storm/environment/Environment.h"
 #include "storm/exceptions/InvalidOperationException.h"
 
+#if defined STORM_HAVE_HYPRO || defined STORM_HAVE_Z3_OPTIMIZE
+
 namespace {
     
     storm::Environment getPositionalDeterministicEnvironment() {
@@ -393,3 +395,5 @@ namespace {
         
     }
 }
+
+#endif /* defined STORM_HAVE_HYPRO || defined STORM_HAVE_Z3_OPTIMIZE */
