@@ -453,7 +453,15 @@ namespace storm {
                                 }
                             }
                         }
-                        auto objValueVariable = lpModel->addBoundedContinuousVariable("x" + std::to_string(objIndex), objectiveHelper[objIndex].getLowerValueBoundAtState(env, initialState), objectiveHelper[objIndex].getUpperValueBoundAtState(env, initialState));
+                        ValueType lowerBound = objectiveHelper[objIndex].getLowerValueBoundAtState(env, initialState);
+                        ValueType upperBound = objectiveHelper[objIndex].getUpperValueBoundAtState(env, initialState);
+                        storm::expressions::Expression objValueVariable;
+                        if (lowerBound == upperBound) {
+                            // GLPK does not like point-intervals......
+                            objValueVariable = lpModel->getConstant(lowerBound);
+                        } else {
+                            objValueVariable = lpModel->addBoundedContinuousVariable("x" + std::to_string(objIndex), lowerBound, upperBound).getExpression();
+                        }
                         if (objValue.empty()) {
                             lpModel->addConstraint("", objValueVariable == zero);
                         } else {
@@ -472,10 +480,21 @@ namespace storm {
                         for (uint64_t state = 0; state < numStates; ++state) {
                             auto valIt = schedulerIndependentStates.find(state);
                             if (valIt == schedulerIndependentStates.end()) {
-                                if (objectiveHelper[objIndex].minimizing()) {
-                                    stateVars.push_back(lpModel->addBoundedContinuousVariable("x" + std::to_string(objIndex) + "_" + std::to_string(state), -objectiveHelper[objIndex].getUpperValueBoundAtState(env, state), -objectiveHelper[objIndex].getLowerValueBoundAtState(env, state)).getExpression());
+                                ValueType lowerBound = objectiveHelper[objIndex].getLowerValueBoundAtState(env, state);
+                                ValueType upperBound = objectiveHelper[objIndex].getUpperValueBoundAtState(env, state);
+                                if (lowerBound == upperBound) {
+                                    // glpk does not like variables with point-interval bounds...
+                                    if (objectiveHelper[objIndex].minimizing()) {
+                                        stateVars.push_back(lpModel->getConstant(-lowerBound));
+                                    } else {
+                                        stateVars.push_back(lpModel->getConstant(lowerBound));
+                                    }
                                 } else {
-                                    stateVars.push_back(lpModel->addBoundedContinuousVariable("x" + std::to_string(objIndex) + "_" + std::to_string(state), objectiveHelper[objIndex].getLowerValueBoundAtState(env, state), objectiveHelper[objIndex].getUpperValueBoundAtState(env, state)).getExpression());
+                                    if (objectiveHelper[objIndex].minimizing()) {
+                                        stateVars.push_back(lpModel->addBoundedContinuousVariable("x" + std::to_string(objIndex) + "_" + std::to_string(state), -upperBound, -lowerBound).getExpression());
+                                    } else {
+                                        stateVars.push_back(lpModel->addBoundedContinuousVariable("x" + std::to_string(objIndex) + "_" + std::to_string(state), lowerBound, upperBound).getExpression());
+                                    }
                                 }
                             } else {
                                 ValueType value = valIt->second;
