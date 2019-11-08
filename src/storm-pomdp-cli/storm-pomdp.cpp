@@ -200,12 +200,18 @@ int main(const int argc, const char** argv) {
                     double overRes = storm::utility::one<double>();
                     double underRes = storm::utility::zero<double>();
                     std::unique_ptr<storm::pomdp::modelchecker::POMDPCheckResult<double>> result;
-                    result = checker.computeReachabilityProbability(*pomdp, targetObservationSet,
-                                                                    probFormula.getOptimalityType() ==
-                                                                    storm::OptimizationDirection::Minimize,
-                                                                    pomdpSettings.getGridResolution());
+
+                    //result = checker.refineReachabilityProbability(*pomdp, targetObservationSet,probFormula.getOptimalityType() == storm::OptimizationDirection::Minimize, pomdpSettings.getGridResolution(),1,10);
+                    result = checker.computeReachabilityProbabilityOTF(*pomdp, targetObservationSet, probFormula.getOptimalityType() == storm::OptimizationDirection::Minimize,
+                                                                       pomdpSettings.getGridResolution());
                     overRes = result->OverapproximationValue;
                     underRes = result->UnderapproximationValue;
+                    if (overRes != underRes) {
+                        STORM_PRINT("Overapproximation Result: " << overRes << std::endl)
+                        STORM_PRINT("Underapproximation Result: " << underRes << std::endl)
+                    } else {
+                        STORM_PRINT("Result: " << overRes << std::endl)
+                    }
                 }
             } else if (formula->isRewardOperatorFormula()) {
                 if (pomdpSettings.isSelfloopReductionSet() && storm::solver::minimize(formula->asRewardOperatorFormula().getOptimalityType())) {

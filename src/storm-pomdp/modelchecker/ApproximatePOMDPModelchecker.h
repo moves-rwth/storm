@@ -26,6 +26,11 @@ namespace storm {
                                                uint64_t startingResolution, uint64_t stepSize, uint64_t maxNrOfRefinements);
 
                 std::unique_ptr<POMDPCheckResult<ValueType>>
+                computeReachabilityProbabilityOTF(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
+                                                  std::set<uint32_t> targetObservations, bool min,
+                                                  uint64_t gridResolution);
+
+                std::unique_ptr<POMDPCheckResult<ValueType>>
                 computeReachabilityProbability(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                                                std::set<uint32_t> targetObservations, bool min,
                                                uint64_t gridResolution);
