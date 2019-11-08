@@ -944,13 +944,14 @@ namespace storm {
                     std::vector<ValueType> probabilities, uint64_t resolution) {
                 // This is the Freudenthal Triangulation as described in Lovejoy (a whole lotta math)
                 // Variable names are based on the paper
-                std::vector<ValueType> x(probabilities.size());
-                std::vector<ValueType> v(probabilities.size());
-                std::vector<ValueType> d(probabilities.size());
+                uint64_t probSize = probabilities.size();
+                std::vector<ValueType> x(probSize);
+                std::vector<ValueType> v(probSize);
+                std::vector<ValueType> d(probSize);
                 auto convResolution = storm::utility::convertNumber<ValueType>(resolution);
 
-                for (size_t i = 0; i < probabilities.size(); ++i) {
-                    for (size_t j = i; j < probabilities.size(); ++j) {
+                for (size_t i = 0; i < probSize; ++i) {
+                    for (size_t j = i; j < probSize; ++j) {
                         x[i] += convResolution * probabilities[j];
                     }
                     v[i] = storm::utility::floor(x[i]);
@@ -959,14 +960,14 @@ namespace storm {
 
                 auto p = storm::utility::vector::getSortedIndices(d);
 
-                std::vector<std::vector<ValueType>> qs(probabilities.size(), std::vector<ValueType>(probabilities.size()));
-                for (size_t i = 0; i < probabilities.size(); ++i) {
+                std::vector<std::vector<ValueType>> qs(probSize, std::vector<ValueType>(probSize));
+                for (size_t i = 0; i < probSize; ++i) {
                     if (i == 0) {
-                        for (size_t j = 0; j < probabilities.size(); ++j) {
+                        for (size_t j = 0; j < probSize; ++j) {
                             qs[i][j] = v[j];
                         }
                     } else {
-                        for (size_t j = 0; j < probabilities.size(); ++j) {
+                        for (size_t j = 0; j < probSize; ++j) {
                             if (j == p[i - 1]) {
                                 qs[i][j] = qs[i - 1][j] + storm::utility::one<ValueType>();
                             } else {
@@ -975,18 +976,18 @@ namespace storm {
                         }
                     }
                 }
-                std::vector<std::vector<ValueType>> subSimplex(qs.size(), std::vector<ValueType>(probabilities.size()));
-                for (size_t j = 0; j < qs.size(); ++j) {
-                    for (size_t i = 0; i < probabilities.size() - 1; ++i) {
+                std::vector<std::vector<ValueType>> subSimplex(probSize, std::vector<ValueType>(probSize));
+                for (size_t j = 0; j < probSize; ++j) {
+                    for (size_t i = 0; i < probSize - 1; ++i) {
                         subSimplex[j][i] = (qs[j][i] - qs[j][i + 1]) / convResolution;
                     }
 
-                    subSimplex[j][probabilities.size() - 1] = qs[j][probabilities.size() - 1] / convResolution;
+                    subSimplex[j][probSize - 1] = qs[j][probSize - 1] / convResolution;
                 }
 
-                std::vector<ValueType> lambdas(probabilities.size(), storm::utility::zero<ValueType>());
+                std::vector<ValueType> lambdas(probSize, storm::utility::zero<ValueType>());
                 auto sum = storm::utility::zero<ValueType>();
-                for (size_t i = 1; i < probabilities.size(); ++i) {
+                for (size_t i = 1; i < probSize; ++i) {
                     lambdas[i] = d[p[i - 1]] - d[p[i]];
                     sum += d[p[i - 1]] - d[p[i]];
                 }
