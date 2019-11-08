@@ -16,7 +16,9 @@ namespace storm {
                 std::map<uint64_t, uint64_t> stateMap;
                 std::map<uint32_t, uint32_t> observationMap;
 
-                storm::models::sparse::StateLabeling newLabeling(pomdp.getNumberOfStates() - prob0States.getNumberOfSetBits() - prob1States.getNumberOfSetBits() + 2);
+                uint64_t nrNewStates = prob0States.empty() ? 1 : 2;
+
+                storm::models::sparse::StateLabeling newLabeling(pomdp.getNumberOfStates() - prob0States.getNumberOfSetBits() - prob1States.getNumberOfSetBits() + nrNewStates);
 
                 std::vector<uint32_t> newObservations;
 
