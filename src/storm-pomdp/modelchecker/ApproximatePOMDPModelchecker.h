@@ -21,6 +21,11 @@ namespace storm {
                 explicit ApproximatePOMDPModelchecker();
 
                 std::unique_ptr<POMDPCheckResult<ValueType>>
+                refineReachabilityProbability(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
+                                               std::set<uint32_t> const &targetObservations, bool min,
+                                               uint64_t startingResolution, uint64_t stepSize, uint64_t maxNrOfRefinements);
+
+                std::unique_ptr<POMDPCheckResult<ValueType>>
                 computeReachabilityProbability(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                                                std::set<uint32_t> targetObservations, bool min,
                                                uint64_t gridResolution);

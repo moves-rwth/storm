@@ -23,6 +23,27 @@ namespace storm {
 
             template<typename ValueType, typename RewardModelType>
             std::unique_ptr<POMDPCheckResult<ValueType>>
+            ApproximatePOMDPModelchecker<ValueType, RewardModelType>::refineReachabilityProbability(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
+                                                                                                    std::set<uint32_t> const &targetObservations, bool min,
+                                                                                                    uint64_t startingResolution, uint64_t stepSize, uint64_t maxNrOfRefinements) {
+                uint64_t currentResolution = startingResolution;
+                uint64_t currentRefinement = 0;
+                std::unique_ptr<POMDPCheckResult<ValueType>> res = std::make_unique<POMDPCheckResult<ValueType>>(
+                        POMDPCheckResult<ValueType>{storm::utility::one<ValueType>(), storm::utility::zero<ValueType>()});
+                while (currentRefinement < maxNrOfRefinements && !cc.isEqual(storm::utility::zero<ValueType>(), res->OverapproximationValue - res->UnderapproximationValue)) {
+                    STORM_PRINT("--------------------------------------------------------------" << std::endl)
+                    STORM_PRINT("Refinement Step " << currentRefinement + 1 << " - Resolution " << currentResolution << std::endl)
+                    STORM_PRINT("--------------------------------------------------------------" << std::endl)
+                    res = computeReachabilityProbability(pomdp, targetObservations, min, currentResolution);
+                    currentResolution += stepSize;
+                    ++currentRefinement;
+                }
+                STORM_PRINT("Procedure took " << currentRefinement << " refinement steps" << std::endl)
+                return res;
+            }
+
+            template<typename ValueType, typename RewardModelType>
+            std::unique_ptr<POMDPCheckResult<ValueType>>
             ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeReachabilityProbability(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                                                                                                      std::set<uint32_t> targetObservations, bool min, uint64_t gridResolution) {
                 storm::utility::Stopwatch beliefGridTimer(true);
