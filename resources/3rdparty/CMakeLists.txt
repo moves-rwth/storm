@@ -521,14 +521,14 @@ list(APPEND STORM_3RDPARTY_SOURCES ${STORM_3RDPARTY_SOURCE_DIR}/cpptemplate/cppt
 ##	Google Test gtest
 ##
 #############################################################
-set(GOOGLETEST_LIB_DIR ${STORM_3RDPARTY_BINARY_DIR}/gtest-1.7.0)
+set(GOOGLETEST_LIB_DIR ${STORM_3RDPARTY_BINARY_DIR}/gtest-1.10.0)
 ExternalProject_Add(
         googletest
         #For downloads (may be useful later!)
         #SVN_REPOSITORY http://googletest.googlecode.com/svn/trunk/
         #TIMEOUT 10
         DOWNLOAD_COMMAND ""
-        SOURCE_DIR "${STORM_3RDPARTY_SOURCE_DIR}/gtest-1.7.0"
+        SOURCE_DIR "${STORM_3RDPARTY_SOURCE_DIR}/gtest-1.10.0"
         # Force the same output paths for debug and release builds so that
         # we know in which place the binaries end up when using the Xcode generator
         CMAKE_ARGS  -Dgtest_force_shared_crt=ON -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG:PATH=${GOOGLETEST_LIB_DIR} -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH=${GOOGLETEST_LIB_DIR}
@@ -544,10 +544,10 @@ ExternalProject_Add(
 
 # Specify include dir
 ExternalProject_Get_Property(googletest source_dir)
-set(GTEST_INCLUDE_DIR ${source_dir}/include)
+set(GTEST_INCLUDE_DIR ${source_dir}/googletest/include)
 # Specify MainTest's link libraries
 ExternalProject_Get_Property(googletest binary_dir)
-set(GTEST_LIBRARIES ${binary_dir}/libgtest${STATIC_EXT} ${binary_dir}/libgtest_main${STATIC_EXT})
+set(GTEST_LIBRARIES ${binary_dir}/lib/libgtest${STATIC_EXT} ${binary_dir}/lib/libgtest_main${STATIC_EXT})
 
 add_dependencies(test-resources googletest)
 list(APPEND STORM_TEST_LINK_LIBRARIES ${GTEST_LIBRARIES})
