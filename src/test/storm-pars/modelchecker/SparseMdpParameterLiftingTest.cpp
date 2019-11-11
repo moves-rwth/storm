@@ -51,7 +51,7 @@ namespace {
             RationalPIEnvironment
     > TestingTypes;
     
-   TYPED_TEST_SUITE(SparseMdpParameterLiftingTest, TestingTypes);
+   TYPED_TEST_SUITE(SparseMdpParameterLiftingTest, TestingTypes,);
 
     TYPED_TEST(SparseMdpParameterLiftingTest, two_dice_Prob) {
         

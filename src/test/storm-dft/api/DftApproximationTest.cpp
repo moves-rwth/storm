@@ -83,7 +83,7 @@ namespace {
             ApproxBoundDifferenceConfig
         > TestingTypes;
 
-    TYPED_TEST_SUITE(DftApproximationTest, TestingTypes);
+    TYPED_TEST_SUITE(DftApproximationTest, TestingTypes,);
 
     TYPED_TEST(DftApproximationTest, HecsMTTF) {
         double errorBound = 2;

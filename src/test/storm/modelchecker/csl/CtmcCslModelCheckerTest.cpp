@@ -292,7 +292,7 @@ namespace {
             HybridSylvanGmmxxGmresEnvironment
         > TestingTypes;
     
-    TYPED_TEST_SUITE(CtmcCslModelCheckerTest, TestingTypes);
+    TYPED_TEST_SUITE(CtmcCslModelCheckerTest, TestingTypes,);
 
     TYPED_TEST(CtmcCslModelCheckerTest, Cluster) {
         std::string formulasString = "P=? [ F<=100 !\"minimum\"]";

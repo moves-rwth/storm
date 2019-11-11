@@ -117,7 +117,7 @@ namespace {
             AllOptimizationsConfig
         > TestingTypes;
 
-    TYPED_TEST_SUITE(DftModelCheckerTest, TestingTypes);
+    TYPED_TEST_SUITE(DftModelCheckerTest, TestingTypes,);
 
     TYPED_TEST(DftModelCheckerTest, AndMTTF) {
         double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/and.dft");

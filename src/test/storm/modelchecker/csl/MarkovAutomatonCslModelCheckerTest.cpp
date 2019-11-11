@@ -215,7 +215,7 @@ namespace {
             SparseRationalRationalSearchEnvironment
         > TestingTypes;
     
-    TYPED_TEST_SUITE(MarkovAutomatonCslModelCheckerTest, TestingTypes);
+    TYPED_TEST_SUITE(MarkovAutomatonCslModelCheckerTest, TestingTypes,);
     
 
     TYPED_TEST(MarkovAutomatonCslModelCheckerTest, server) {

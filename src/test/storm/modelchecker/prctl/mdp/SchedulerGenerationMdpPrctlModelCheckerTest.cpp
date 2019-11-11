@@ -85,7 +85,7 @@ namespace {
             //RationalRationalSearchEnvironment
     > TestingTypes;
     
-   TYPED_TEST_SUITE(SchedulerGenerationMdpPrctlModelCheckerTest, TestingTypes);
+   TYPED_TEST_SUITE(SchedulerGenerationMdpPrctlModelCheckerTest, TestingTypes,);
 
     
     TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, reachability) {

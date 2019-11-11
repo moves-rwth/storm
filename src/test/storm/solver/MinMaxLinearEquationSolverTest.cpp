@@ -131,7 +131,7 @@ namespace {
             RationalRationalSearchEnvironment
     > TestingTypes;
     
-    TYPED_TEST_SUITE(MinMaxLinearEquationSolverTest, TestingTypes);
+    TYPED_TEST_SUITE(MinMaxLinearEquationSolverTest, TestingTypes,);
     
     TYPED_TEST(MinMaxLinearEquationSolverTest, SolveEquations) {
         typedef typename TestFixture::ValueType ValueType;

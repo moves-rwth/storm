@@ -566,7 +566,7 @@ namespace {
             DdSylvanRationalSearchEnvironment
         > TestingTypes;
     
-    TYPED_TEST_SUITE(DtmcPrctlModelCheckerTest, TestingTypes);
+    TYPED_TEST_SUITE(DtmcPrctlModelCheckerTest, TestingTypes,);
 
     TYPED_TEST(DtmcPrctlModelCheckerTest, Die) {
         std::string formulasString = "P=? [F \"one\"]";

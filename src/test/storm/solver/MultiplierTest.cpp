@@ -48,7 +48,7 @@ namespace {
             GmmxxEnvironment
     > TestingTypes;
     
-    TYPED_TEST_SUITE(MultiplierTest, TestingTypes);
+    TYPED_TEST_SUITE(MultiplierTest, TestingTypes,);
     
     TYPED_TEST(MultiplierTest, repeatedMultiplyTest) {
         typedef typename TestFixture::ValueType ValueType;

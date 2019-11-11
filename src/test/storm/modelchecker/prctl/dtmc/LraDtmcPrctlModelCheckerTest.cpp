@@ -111,7 +111,7 @@ namespace {
             NativeWalkerChaeEnvironment
     > TestingTypes;
     
-   TYPED_TEST_SUITE(LraDtmcPrctlModelCheckerTest, TestingTypes);
+   TYPED_TEST_SUITE(LraDtmcPrctlModelCheckerTest, TestingTypes,);
 
     
     

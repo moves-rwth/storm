@@ -120,7 +120,7 @@ namespace {
             NativeWalkerChaeEnvironment
     > TestingTypes;
     
-    TYPED_TEST_SUITE(ConditionalDtmcPrctlModelCheckerTest, TestingTypes);
+    TYPED_TEST_SUITE(ConditionalDtmcPrctlModelCheckerTest, TestingTypes,);
 
  
     TYPED_TEST(ConditionalDtmcPrctlModelCheckerTest, Conditional) {

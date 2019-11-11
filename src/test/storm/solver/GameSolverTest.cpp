@@ -68,7 +68,7 @@ namespace {
             RationalPiEnvironment
     > TestingTypes;
     
-    TYPED_TEST_SUITE(GameSolverTest, TestingTypes);
+    TYPED_TEST_SUITE(GameSolverTest, TestingTypes,);
     
     TYPED_TEST(GameSolverTest, SolveEquations) {
         typedef typename TestFixture::ValueType ValueType;
