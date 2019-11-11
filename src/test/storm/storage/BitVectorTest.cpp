@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm/storage/BitVector.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/OutOfRangeException.h"

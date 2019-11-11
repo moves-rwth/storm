@@ -2,7 +2,7 @@
 // Created by Jip Spel on 20.09.18.
 //
 
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 #include "storm-pars/analysis/MonotonicityChecker.h"

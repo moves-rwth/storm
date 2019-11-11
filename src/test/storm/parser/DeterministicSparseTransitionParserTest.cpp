@@ -5,7 +5,7 @@
  *      Author: Manuel Sascha Weiand
  */
 
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 
 #include "storm-parsers/parser/DeterministicSparseTransitionParser.h"
@@ -21,10 +21,10 @@
 TEST(DeterministicSparseTransitionParserTest, NonExistingFile) {
 
     // No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!
-    ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitions(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitions(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
 
     storm::storage::SparseMatrix<double> nullMatrix;
-    ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitionRewards(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not", nullMatrix), storm::exceptions::FileIoException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitionRewards(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not", nullMatrix), storm::exceptions::FileIoException);
 }
 
 TEST(DeterministicSparseTransitionParserTest, BasicTransitionsParsing) {
@@ -171,10 +171,10 @@ TEST(DeterministicSparseTransitionParserTest, Whitespaces) {
 TEST(DeterministicSparseTransitionParserTest, MixedTransitionOrder) {
 
     // Since the MatrixBuilder needs sequential input of new elements reordering of transitions or states should throw an exception.
-    ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitions(STORM_TEST_RESOURCES_DIR "/tra/dtmc_mixedStateOrder.tra"), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitions(STORM_TEST_RESOURCES_DIR "/tra/dtmc_mixedStateOrder.tra"), storm::exceptions::InvalidArgumentException);
 
     storm::storage::SparseMatrix<double> transitionMatrix = storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitions(STORM_TEST_RESOURCES_DIR "/tra/dtmc_general.tra");
-    ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitionRewards(STORM_TEST_RESOURCES_DIR "/rew/dtmc_mixedStateOrder.trans.rew", transitionMatrix), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitionRewards(STORM_TEST_RESOURCES_DIR "/rew/dtmc_mixedStateOrder.trans.rew", transitionMatrix), storm::exceptions::InvalidArgumentException);
 }
 
 TEST(DeterministicSparseTransitionParserTest, FixDeadlocks) {
@@ -202,13 +202,13 @@ TEST(DeterministicSparseTransitionParserTest, DontFixDeadlocks) {
     // Try to parse a transitions file containing a deadlock state with the fixDeadlocksFlag unset. This should throw an exception.
     std::unique_ptr<storm::settings::SettingMemento> dontFixDeadlocks = storm::settings::mutableBuildSettings().overrideDontFixDeadlocksSet(true);
 
-    ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitions(STORM_TEST_RESOURCES_DIR "/tra/dtmc_deadlock.tra"), storm::exceptions::WrongFormatException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitions(STORM_TEST_RESOURCES_DIR "/tra/dtmc_deadlock.tra"), storm::exceptions::WrongFormatException);
 }
 
 TEST(DeterministicSparseTransitionParserTest, DoubledLines) {
     // There is a redundant line in the transition file. As the transition already exists this should throw an exception.
     // Note: If two consecutive lines are doubled no exception is thrown.
-    ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitions(STORM_TEST_RESOURCES_DIR "/tra/dtmc_doubledLines.tra"), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitions(STORM_TEST_RESOURCES_DIR "/tra/dtmc_doubledLines.tra"), storm::exceptions::InvalidArgumentException);
 }
 
 TEST(DeterministicSparseTransitionParserTest, RewardForNonExistentTransition) {
@@ -216,5 +216,5 @@ TEST(DeterministicSparseTransitionParserTest, RewardForNonExistentTransition) {
     storm::storage::SparseMatrix<double> transitionMatrix = storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitions(STORM_TEST_RESOURCES_DIR "/tra/dtmc_general.tra");
 
     // There is a reward for a transition that does not exist in the transition matrix.
-    ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitionRewards(STORM_TEST_RESOURCES_DIR "/rew/dtmc_rewardForNonExTrans.trans.rew", transitionMatrix), storm::exceptions::WrongFormatException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::DeterministicSparseTransitionParser<>::parseDeterministicTransitionRewards(STORM_TEST_RESOURCES_DIR "/rew/dtmc_rewardForNonExTrans.trans.rew", transitionMatrix), storm::exceptions::WrongFormatException);
 }

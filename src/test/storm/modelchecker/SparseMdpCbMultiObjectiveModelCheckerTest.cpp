@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"

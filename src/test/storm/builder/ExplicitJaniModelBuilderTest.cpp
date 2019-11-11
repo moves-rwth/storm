@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
@@ -145,5 +145,5 @@ TEST(ExplicitJaniModelBuilderTest, FailComposition) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/system_composition.nm");
     storm::jani::Model janiModel = program.toJani().substituteConstantsFunctions();
 
-    ASSERT_THROW(storm::builder::ExplicitModelBuilder<double>(janiModel).build(), storm::exceptions::WrongFormatException);
+    STORM_SILENT_ASSERT_THROW(storm::builder::ExplicitModelBuilder<double>(janiModel).build(), storm::exceptions::WrongFormatException);
 }

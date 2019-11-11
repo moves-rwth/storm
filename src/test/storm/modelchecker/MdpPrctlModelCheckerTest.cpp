@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 
 #include "test/storm_gtest.h"
@@ -577,7 +577,7 @@ namespace {
         // For some methods this requires end-component elimination which is (currently) not supported in the Dd engine
 
         if (TypeParam::engine == MdpEngine::PrismDd && this->env().solver().minMax().getMethod() == storm::solver::MinMaxMethod::RationalSearch) {
-            EXPECT_THROW(checker->check(this->env(), tasks[0]), storm::exceptions::UncheckedRequirementException);
+            STORM_SILENT_EXPECT_THROW(checker->check(this->env(), tasks[0]), storm::exceptions::UncheckedRequirementException);
         } else {
             result = checker->check(this->env(), tasks[0]);
             EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());

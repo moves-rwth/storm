@@ -146,7 +146,7 @@ namespace storm {
                             matrixBuilder.newRowGroup(curRow);
                             matrixBuilder.addNextValue(curRow, node, 1);
                             ++curRow;
-                            STORM_LOG_WARN("Warning while parsing " << filename << ": node " << node << " has no outgoing transitions. A self-loop was inserted.");
+                            STORM_LOG_INFO("Warning while parsing " << filename << ": node " << node << " has no outgoing transitions. A self-loop was inserted.");
                         } else {
                             STORM_LOG_ERROR("Error while parsing " << filename << ": node " << node << " has no outgoing transitions.");
                         }

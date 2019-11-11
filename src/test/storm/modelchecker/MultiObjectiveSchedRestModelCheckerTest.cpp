@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 
 #include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
@@ -147,7 +147,7 @@ namespace {
         expected = parsePoints({"0.5,0.5","1,1"});
         
         env.modelchecker().multi().setEncodingType(storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Flow);
-        EXPECT_THROW(storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula()), storm::exceptions::InvalidOperationException);
+        STORM_SILENT_EXPECT_THROW(storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula()), storm::exceptions::InvalidOperationException);
         
         env.modelchecker().multi().setEncodingType(storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Classic);
         result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula());
@@ -186,7 +186,7 @@ namespace {
         expected = parsePoints({"0,1"});
         
         env.modelchecker().multi().setEncodingType(storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Flow);
-        EXPECT_THROW(storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula()), storm::exceptions::InvalidOperationException);
+        STORM_SILENT_EXPECT_THROW(storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula()), storm::exceptions::InvalidOperationException);
         
         env.modelchecker().multi().setEncodingType(storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Classic);
         result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula());
@@ -202,7 +202,7 @@ namespace {
         expected = parsePoints({"0,1,0", "2,1,1"});
         
         env.modelchecker().multi().setEncodingType(storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Flow);
-        EXPECT_THROW(storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula()), storm::exceptions::InvalidOperationException);
+        STORM_SILENT_EXPECT_THROW(storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula()), storm::exceptions::InvalidOperationException);
         
         env.modelchecker().multi().setEncodingType(storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Classic);
         result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula());
@@ -238,7 +238,7 @@ namespace {
         expected = parsePoints({"1,0","0,1", "0.3,3/7"});
         
         env.modelchecker().multi().setEncodingType(storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Flow);
-        EXPECT_THROW(storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula()), storm::exceptions::InvalidOperationException);
+        STORM_SILENT_EXPECT_THROW(storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula()), storm::exceptions::InvalidOperationException);
         
         env.modelchecker().multi().setEncodingType(storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Classic);
         result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula());
@@ -275,7 +275,7 @@ namespace {
         expected = parsePoints({"1,0,0","0,1,0","0.3,3/7,4/7"});
         
         env.modelchecker().multi().setEncodingType(storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Flow);
-        EXPECT_THROW(storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula()), storm::exceptions::InvalidOperationException);
+        STORM_SILENT_EXPECT_THROW(storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula()), storm::exceptions::InvalidOperationException);
         
         env.modelchecker().multi().setEncodingType(storm::MultiObjectiveModelCheckerEnvironment::EncodingType::Classic);
         result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[formulaIndex]->asMultiObjectiveFormula());

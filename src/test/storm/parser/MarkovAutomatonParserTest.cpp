@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 
 #include "storm-parsers/parser/MarkovAutomatonParser.h"
@@ -8,7 +8,7 @@
 
 TEST(MarkovAutomatonParserTest, NonExistingFile) {
     // No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!
-    ASSERT_THROW(storm::parser::MarkovAutomatonParser<>::parseMarkovAutomaton(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not", STORM_TEST_RESOURCES_DIR "/nonExistingFile.not", STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::MarkovAutomatonParser<>::parseMarkovAutomaton(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not", STORM_TEST_RESOURCES_DIR "/nonExistingFile.not", STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
 }
 
 TEST(MarkovAutomatonParserTest, BasicParsing) {
@@ -57,8 +57,8 @@ TEST(MarkovAutomatonParserTest, MismatchedFiles) {
     // Test file combinations that do not match, i.e. differing number of states, transitions, etc.
 
     // The labeling file contains a label for a non existent state.
-    ASSERT_THROW(storm::parser::MarkovAutomatonParser<>::parseMarkovAutomaton(STORM_TEST_RESOURCES_DIR "/tra/ma_general.tra", STORM_TEST_RESOURCES_DIR "/lab/ma_mismatched.lab"), storm::exceptions::OutOfRangeException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::MarkovAutomatonParser<>::parseMarkovAutomaton(STORM_TEST_RESOURCES_DIR "/tra/ma_general.tra", STORM_TEST_RESOURCES_DIR "/lab/ma_mismatched.lab"), storm::exceptions::OutOfRangeException);
 
     // The state reward file contains a reward for a non existent state.
-    ASSERT_THROW(storm::parser::MarkovAutomatonParser<>::parseMarkovAutomaton(STORM_TEST_RESOURCES_DIR "/tra/ma_general.tra", STORM_TEST_RESOURCES_DIR "/lab/ma_general.lab", STORM_TEST_RESOURCES_DIR "/rew/ma_mismatched.state.rew"), storm::exceptions::OutOfRangeException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::MarkovAutomatonParser<>::parseMarkovAutomaton(STORM_TEST_RESOURCES_DIR "/tra/ma_general.tra", STORM_TEST_RESOURCES_DIR "/lab/ma_general.lab", STORM_TEST_RESOURCES_DIR "/rew/ma_mismatched.state.rew"), storm::exceptions::OutOfRangeException);
 }

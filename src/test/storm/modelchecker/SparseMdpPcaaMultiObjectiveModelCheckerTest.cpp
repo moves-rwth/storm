@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 
 #if defined STORM_HAVE_HYPRO || defined STORM_HAVE_Z3_OPTIMIZE

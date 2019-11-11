@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 
 #ifdef STORM_HAVE_Z3_OPTIMIZE
@@ -183,10 +183,10 @@ TEST(Z3LpSolver, LPInfeasible) {
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());
     ASSERT_TRUE(solver.isInfeasible());
-    ASSERT_THROW(solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
 TEST(Z3LpSolver, MILPInfeasible) {
@@ -209,10 +209,10 @@ TEST(Z3LpSolver, MILPInfeasible) {
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());
     ASSERT_TRUE(solver.isInfeasible());
-    ASSERT_THROW(solver.getBinaryValue(x), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getIntegerValue(y), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getBinaryValue(x), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getIntegerValue(y), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
 TEST(Z3LpSolver, LPUnbounded) {
@@ -233,10 +233,10 @@ TEST(Z3LpSolver, LPUnbounded) {
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_TRUE(solver.isUnbounded());
     ASSERT_FALSE(solver.isInfeasible());
-    ASSERT_THROW(solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
 TEST(Z3LpSolver, MILPUnbounded) {
@@ -257,10 +257,10 @@ TEST(Z3LpSolver, MILPUnbounded) {
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_TRUE(solver.isUnbounded());
     ASSERT_FALSE(solver.isInfeasible());
-    ASSERT_THROW(solver.getBinaryValue(x), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getIntegerValue(y), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getBinaryValue(x), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getIntegerValue(y), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
 TEST(Z3LpSolver, Incremental) {

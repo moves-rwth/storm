@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 
 #include "storm-dft/api/storm-dft.h"
@@ -23,11 +23,11 @@ namespace {
 
     TEST(DftParserTest, CatchCycles) {
         std::string file = STORM_TEST_RESOURCES_DIR "/dft/cyclic.dft";
-        EXPECT_THROW(storm::api::loadDFTGalileoFile<double>(file), storm::exceptions::WrongFormatException);
+        STORM_SILENT_EXPECT_THROW(storm::api::loadDFTGalileoFile<double>(file), storm::exceptions::WrongFormatException);
     }
 
     TEST(DftParserTest, CatchSeqChildren) {
         std::string file = STORM_TEST_RESOURCES_DIR "/dft/seqChild.dft";
-        EXPECT_THROW(storm::api::loadDFTGalileoFile<double>(file), storm::exceptions::WrongFormatException);
+        STORM_SILENT_EXPECT_THROW(storm::api::loadDFTGalileoFile<double>(file), storm::exceptions::WrongFormatException);
     }
 }

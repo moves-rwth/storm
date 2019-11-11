@@ -4,6 +4,7 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/utility/constants.h"
+#include "storm/utility/initialize.h"
 
 
 namespace testing {
@@ -26,3 +27,25 @@ namespace testing {
         }
     }
 }
+
+namespace storm {
+    namespace test {
+        inline void initialize() {
+            storm::utility::initializeLogger();
+        }
+        
+        inline void enableLogOutput(bool const& value = true) {
+            storm::utility::setLogLevel(value ? l3pp::LogLevel::WARN : l3pp::LogLevel::OFF);
+        }
+    }
+}
+
+#define STORM_SILENT_EXPECT_THROW(statement, expected_exception) \
+    storm::test::enableLogOutput(false); \
+    EXPECT_THROW(statement, expected_exception); \
+    storm::test::enableLogOutput(true)
+    
+#define STORM_SILENT_ASSERT_THROW(statement, expected_exception) \
+    storm::test::enableLogOutput(false); \
+    ASSERT_THROW(statement, expected_exception); \
+    storm::test::enableLogOutput(true)
