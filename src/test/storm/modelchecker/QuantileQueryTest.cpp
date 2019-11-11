@@ -160,7 +160,7 @@ namespace {
             ExactEnvironment
         > TestingTypes;
     
-    TYPED_TEST_CASE(QuantileQueryTest, TestingTypes);
+    TYPED_TEST_SUITE(QuantileQueryTest, TestingTypes);
     
 
     TYPED_TEST(QuantileQueryTest, simple_Dtmc) {

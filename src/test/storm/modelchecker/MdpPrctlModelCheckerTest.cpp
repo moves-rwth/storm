@@ -434,7 +434,7 @@ namespace {
             DdSylvanRationalRationalSearchEnvironment
         > TestingTypes;
     
-    TYPED_TEST_CASE(MdpPrctlModelCheckerTest, TestingTypes);
+    TYPED_TEST_SUITE(MdpPrctlModelCheckerTest, TestingTypes);
     
 
     TYPED_TEST(MdpPrctlModelCheckerTest, Dice) {

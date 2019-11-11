@@ -64,7 +64,7 @@ namespace {
             RationalPiEnvironment
     > TestingTypes;
     
-   TYPED_TEST_CASE(SparseDtmcParameterLiftingTest, TestingTypes);
+   TYPED_TEST_SUITE(SparseDtmcParameterLiftingTest, TestingTypes);
 
     
     TYPED_TEST(SparseDtmcParameterLiftingTest, Brp_Prob) {

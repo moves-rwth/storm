@@ -314,7 +314,7 @@ namespace {
             TopologicalEigenRationalLUEnvironment
     > TestingTypes;
     
-    TYPED_TEST_CASE(LinearEquationSolverTest, TestingTypes);
+    TYPED_TEST_SUITE(LinearEquationSolverTest, TestingTypes);
     
     
     TYPED_TEST(LinearEquationSolverTest, solveEquationSystem) {
