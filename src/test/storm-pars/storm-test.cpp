@@ -1,5 +1,5 @@
 #include "test/storm_gtest.h"
-3#include "storm-pars/settings/ParsSettings.h"
+#include "storm-pars/settings/ParsSettings.h"
 
 int main(int argc, char **argv) {
   storm::settings::initializeParsSettings("Storm-pars (Functional) Testing Suite", "test-pars");
