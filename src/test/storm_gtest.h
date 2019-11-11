@@ -32,20 +32,31 @@ namespace storm {
     namespace test {
         inline void initialize() {
             storm::utility::initializeLogger();
+            // Only enable error output by default.
+            storm::utility::setLogLevel(l3pp::LogLevel::ERR);
         }
         
-        inline void enableLogOutput(bool const& value = true) {
-            storm::utility::setLogLevel(value ? l3pp::LogLevel::WARN : l3pp::LogLevel::OFF);
+        inline void enableErrorOutput() {
+            // Only decrease the log level
+            if (storm::utility::getLogLevel() > l3pp::LogLevel::ERR) {
+                storm::utility::setLogLevel(l3pp::LogLevel::ERR);
+            }
+        }
+        
+        inline void disableOutput() {
+            storm::utility::setLogLevel(l3pp::LogLevel::OFF);
         }
     }
 }
 
-#define STORM_SILENT_EXPECT_THROW(statement, expected_exception) \
-    storm::test::enableLogOutput(false); \
-    EXPECT_THROW(statement, expected_exception); \
-    storm::test::enableLogOutput(true)
-    
+
 #define STORM_SILENT_ASSERT_THROW(statement, expected_exception) \
-    storm::test::enableLogOutput(false); \
+    storm::test::disableOutput(); \
     ASSERT_THROW(statement, expected_exception); \
-    storm::test::enableLogOutput(true)
+    storm::test::enableErrorOutput()
+    
+#define STORM_SILENT_EXPECT_THROW(statement, expected_exception) \
+    storm::test::disableOutput(); \
+    EXPECT_THROW(statement, expected_exception); \
+    storm::test::enableErrorOutput()
+    
