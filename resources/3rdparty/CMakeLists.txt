@@ -539,7 +539,7 @@ ExternalProject_Add(
         # Wrap download, configure and build steps in a script to log output
         LOG_CONFIGURE ON
         LOG_BUILD ON
-        BUILD_BYPRODUCTS ${GOOGLETEST_LIB_DIR}/libgtest${STATIC_EXT} ${GOOGLETEST_LIB_DIR}/libgtest_main${STATIC_EXT}
+        BUILD_BYPRODUCTS ${GOOGLETEST_LIB_DIR}/lib/libgtest${STATIC_EXT} ${GOOGLETEST_LIB_DIR}/lib/libgtest_main${STATIC_EXT}
 )
 
 # Specify include dir
