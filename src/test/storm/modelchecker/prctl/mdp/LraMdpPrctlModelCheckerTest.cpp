@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 
 #include "test/storm_gtest.h"
 
@@ -106,7 +106,7 @@ namespace {
 #endif
         > TestingTypes;
     
-    TYPED_TEST_CASE(LraMdpPrctlModelCheckerTest, TestingTypes);
+    TYPED_TEST_SUITE(LraMdpPrctlModelCheckerTest, TestingTypes);
     
     
     TYPED_TEST(LraMdpPrctlModelCheckerTest, LRA_SingleMec) {

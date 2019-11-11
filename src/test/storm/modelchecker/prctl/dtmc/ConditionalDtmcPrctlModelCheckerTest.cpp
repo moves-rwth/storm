@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "test/storm_gtest.h"
 #include "storm-config.h"
 
@@ -120,7 +120,7 @@ namespace {
             NativeWalkerChaeEnvironment
     > TestingTypes;
     
-    TYPED_TEST_CASE(ConditionalDtmcPrctlModelCheckerTest, TestingTypes);
+    TYPED_TEST_SUITE(ConditionalDtmcPrctlModelCheckerTest, TestingTypes);
 
  
     TYPED_TEST(ConditionalDtmcPrctlModelCheckerTest, Conditional) {

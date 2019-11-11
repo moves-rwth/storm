@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 
 #include "storm-parsers/parser/FormulaParser.h"
@@ -85,7 +85,7 @@ namespace {
             //RationalRationalSearchEnvironment
     > TestingTypes;
     
-   TYPED_TEST_CASE(SchedulerGenerationMdpPrctlModelCheckerTest, TestingTypes);
+   TYPED_TEST_SUITE(SchedulerGenerationMdpPrctlModelCheckerTest, TestingTypes);
 
     
     TYPED_TEST(SchedulerGenerationMdpPrctlModelCheckerTest, reachability) {

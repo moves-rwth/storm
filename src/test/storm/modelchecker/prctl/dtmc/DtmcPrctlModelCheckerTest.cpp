@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "test/storm_gtest.h"
 #include "storm-config.h"
 
@@ -566,7 +566,7 @@ namespace {
             DdSylvanRationalSearchEnvironment
         > TestingTypes;
     
-    TYPED_TEST_CASE(DtmcPrctlModelCheckerTest, TestingTypes);
+    TYPED_TEST_SUITE(DtmcPrctlModelCheckerTest, TestingTypes);
 
     TYPED_TEST(DtmcPrctlModelCheckerTest, Die) {
         std::string formulasString = "P=? [F \"one\"]";
