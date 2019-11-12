@@ -53,6 +53,11 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, serverRationalNumbers) {
 
 
 TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, server) {
+    
+    if (!storm::test::z3AtLeastVersion(4,8,5)) {
+        GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
+    }
+    
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
 
@@ -84,6 +89,10 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, server) {
 }
 
 TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_pareto_3Obj) {
+    if (!storm::test::z3AtLeastVersion(4,8,5)) {
+        GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
+    }
+
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
 
@@ -139,6 +148,9 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_achievability_3Obj
 }
 
 TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, jobscheduler_quantitative_3Obj) {
+    if (!storm::test::z3AtLeastVersion(4,8,5)) {
+        GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
+    }
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
 

@@ -49,6 +49,28 @@ namespace storm {
     }
 }
 
+// Some tests have to be skipped for specific z3 versions because of a bug that was present in z3.
+#ifdef STORM_HAVE_Z3
+#include <z3.h>
+namespace storm {
+    namespace test {
+        inline bool z3AtLeastVersion(unsigned expectedMajor, unsigned expectedMinor, unsigned expectedBuildNumber) {
+            std::vector<unsigned> actual(4), expected({expectedMajor, expectedMinor, expectedBuildNumber, 0u});
+            Z3_get_version(&actual[0], &actual[1], &actual[2], &actual[3]);
+            for (uint64_t i = 0; i < 4; ++i) {
+                if (actual[i] > expected[i]) {
+                    return true;
+                }
+                if (actual[i] < expected[i]) {
+                    return false;
+                }
+            }
+            return true; // Equal versions
+        }
+    }
+}
+#endif
+
 
 #define STORM_SILENT_ASSERT_THROW(statement, expected_exception) \
     storm::test::disableOutput(); \

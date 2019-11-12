@@ -15,22 +15,6 @@
 
 #include <cmath>
 
-// Early versions sometimes have buggy features. We therefore might disable some tests.
-#include <z3.h>
-bool z3AtLeastVersion(unsigned expectedMajor, unsigned expectedMinor, unsigned expectedBuildNumber) {
-    std::vector<unsigned> actual(4), expected({expectedMajor, expectedMinor, expectedBuildNumber, 0u});
-    Z3_get_version(&actual[0], &actual[1], &actual[2], &actual[3]);
-    for (uint64_t i = 0; i < 4; ++i) {
-        if (actual[i] > expected[i]) {
-            return true;
-        }
-        if (actual[i] < expected[i]) {
-            return false;
-        }
-    }
-    return true; // Equal versions
-}
-
 TEST(Z3LpSolver, LPOptimizeMax) {
     storm::solver::Z3LpSolver<double> solver(storm::OptimizationDirection::Maximize);
     storm::expressions::Variable x;
@@ -291,9 +275,8 @@ TEST(Z3LpSolver, Incremental) {
     ASSERT_TRUE(solver.isOptimal());
     EXPECT_EQ(12.0, solver.getContinuousValue(x));
     
-    
-    if (!z3AtLeastVersion(4,8,5)) {
-        GTEST_SKIP() << "Test disabled since the z3 version is too old.";
+    if (!storm::test::z3AtLeastVersion(4,8,5)) {
+        GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
     }
     solver.push();
     ASSERT_NO_THROW(y = solver.addUnboundedContinuousVariable("y", 10));

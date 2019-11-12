@@ -347,6 +347,9 @@ TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, one_dim_walk_small) {
 }
 
 TEST(SparseMdpMultiDimensionalRewardUnfoldingTest, one_dim_walk_large) {
+    if (!storm::test::z3AtLeastVersion(4,8,5)) {
+        GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
+    }
     storm::Environment env;
     
     std::string programFile = STORM_TEST_RESOURCES_DIR "/mdp/one_dim_walk.nm";

@@ -17,6 +17,9 @@
 #include "storm/environment/Environment.h"
 
 TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, consensus) {
+    if (!storm::test::z3AtLeastVersion(4,8,5)) {
+        GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
+    }
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
     
@@ -47,6 +50,10 @@ TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, consensus) {
 }
 
 TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, zeroconf) {
+    if (!storm::test::z3AtLeastVersion(4,8,5)) {
+        GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
+    }
+
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
     
@@ -66,6 +73,10 @@ TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, zeroconf) {
 }
 
 TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, team3with3objectives) {
+    if (!storm::test::z3AtLeastVersion(4,8,5)) {
+        GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
+    }
+
     storm::Environment env;
     env.modelchecker().multi().setMethod(storm::modelchecker::multiobjective::MultiObjectiveMethod::Pcaa);
 
