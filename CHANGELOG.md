@@ -16,8 +16,8 @@ Version 1.3.x
 - Flagged several options as 'advanced' to clean up the `--help`-message. Use `--help all` to display a complete list of options.
 - Support for parsing of exact time bounds for properties, e.g., `P=? [F=27 "goal"]`.
 - Export of optimal schedulers when checking MDPs with the sparse engine (experimental). Use  `--exportscheduler <filename>`.
-- PRISM language: Support for the new `round` operator.	
-- PRISM language: Improved error messages of the parser.	
+- PRISM language: Support for the new `round` operator.
+- PRISM language: Improved error messages of the parser.
 - JANI: Allow bounded types for constants.
 - JANI: Support for non-trivial reward accumulations.
 - JANI: Fixed support for reward expressions over non-transient variables.
@@ -30,11 +30,14 @@ Version 1.3.x
 - Support for eliminating chains of Non-Markovian states in MAs via `--eliminate-chains`.
 - Export to dot format allows for maximal line width in states (argument `--dot-maxwidth <width>`)
 - `storm-conv` can now apply transformations on a prism file.
+- `storm-pars`: Enabled building, bisimulation and analysis of symbolic models.
 - `storm-dft`: Support partial-order for state space generation.
 - `storm-dft`: Compute lower and upper bounds for number of BE failures via SMT.
+- `storm-dft`: Allow to set relevant events which are not set to Don't Care.
 - `storm-dft`: Support for constant failed BEs. Use flag `--uniquefailedbe` to create a unique constant failed BE.
 - `storm-dft`: Support for probabilistic BEs via PDEPs.
 - Fixed linking with Mathsat on macOS.
+- Fixed linking with IntelTBB for GCC.
 - Fixed compilation for macOS Mojave and higher.
 - Several bug fixes.
 
