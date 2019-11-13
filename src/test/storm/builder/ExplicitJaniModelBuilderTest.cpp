@@ -7,6 +7,8 @@
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/generator/JaniNextStateGenerator.h"
 #include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/Property.h"
+#include "storm-parsers/api/model_descriptions.h"
 
 
 TEST(ExplicitJaniModelBuilderTest, Dtmc) {
@@ -149,8 +151,7 @@ TEST(ExplicitJaniModelBuilderTest, FailComposition) {
 }
 
 TEST(ExplicitJaniModelBuilderTest, unassignedVariables) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/unassigned-variables.jani");
-    storm::jani::Model janiModel = program.toJani();
+    storm::jani::Model janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/unassigned-variables.jani").first;
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(25ul, model->getNumberOfStates());
     EXPECT_EQ(81ul, model->getNumberOfTransitions());
