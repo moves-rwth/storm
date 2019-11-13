@@ -180,13 +180,9 @@ namespace storm {
         std::vector<std::string> getParameters(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> sparseModel) {
             std::vector<std::string> parameters;
             std::set<storm::RationalFunctionVariable> parametersProb = storm::models::sparse::getProbabilityParameters(*sparseModel);
-            for (auto const& parameter : parametersProb) {
-                std::stringstream stream;
-                stream << parameter;
-                parameters.push_back(stream.str());
-            }
             std::set<storm::RationalFunctionVariable> parametersReward = storm::models::sparse::getRewardParameters(*sparseModel);
-            for (auto const& parameter : parametersReward) {
+            parametersProb.insert(parametersReward.begin(), parametersReward.end());
+            for (auto const& parameter : parametersProb) {
                 std::stringstream stream;
                 stream << parameter;
                 parameters.push_back(stream.str());
