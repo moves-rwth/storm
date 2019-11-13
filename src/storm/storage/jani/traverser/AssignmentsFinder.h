@@ -22,7 +22,9 @@ namespace storm {
             AssignmentsFinder() = default;
             
             ResultType find(Model const& model, storm::jani::Variable const& variable);
+            ResultType find(Automaton const& automaton, storm::jani::Variable const& variable);
             ResultType find(Model const& model, storm::expressions::Variable const& variable);
+            ResultType find(Automaton const& automaton, storm::expressions::Variable const& variable);
             
             virtual ~AssignmentsFinder() = default;
             
