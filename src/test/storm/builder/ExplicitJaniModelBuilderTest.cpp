@@ -147,3 +147,11 @@ TEST(ExplicitJaniModelBuilderTest, FailComposition) {
 
     STORM_SILENT_ASSERT_THROW(storm::builder::ExplicitModelBuilder<double>(janiModel).build(), storm::exceptions::WrongFormatException);
 }
+
+TEST(ExplicitJaniModelBuilderTest, unassignedVariables) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/unassigned-variables.jani");
+    storm::jani::Model janiModel = program.toJani();
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
+    EXPECT_EQ(25ul, model->getNumberOfStates());
+    EXPECT_EQ(81ul, model->getNumberOfTransitions());
+}
