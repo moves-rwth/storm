@@ -4,10 +4,13 @@ Changelog
 This changelog lists only the most important changes. Smaller (bug)fixes as well as non-mature features are not part of the changelog.
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
-Version 1.3.x
+Version 1.4.x
 -------------
 
-### Version 1.3.1 (under development)
+### Version 1.4.1 (under development)
+
+
+### Version 1.4.0 (2019/11)
 - Added support for multi-dimensional quantile queries.
 - Added support for multi-objective model checking under pure (deterministic) schedulers with bounded memory using `--purescheds`.
 - Allow to quickly check a benchmark from the [Quantitative Verification Benchmark Set](http://qcomp.org/benchmarks/) using the `--qvbs` option.
@@ -40,6 +43,9 @@ Version 1.3.x
 - Fixed linking with IntelTBB for GCC.
 - Fixed compilation for macOS Mojave and higher.
 - Several bug fixes.
+
+Version 1.3.x
+-------------
 
 ## Version 1.3.0 (2018/12)
 - Slightly improved scheduler extraction
