@@ -21,10 +21,16 @@ namespace storm {
         std::shared_ptr<models::sparse::Model<ValueType, RewardModelType>>
         NonMarkovianChainTransformer<ValueType, RewardModelType>::eliminateNonmarkovianStates(
                 std::shared_ptr<models::sparse::MarkovAutomaton<ValueType, RewardModelType>> ma,
-                bool preserveLabels) {
+                EliminationLabelBehavior labelBehavior) {
             // TODO reward models
 
-            STORM_LOG_WARN_COND(preserveLabels, "Labels are not preserved! Results may be incorrect.");
+            STORM_LOG_WARN_COND(labelBehavior == EliminationLabelBehavior::KeepLabels, "Labels are not preserved! Results may be incorrect. Continue at your own caution.");
+            if (labelBehavior == EliminationLabelBehavior::DeleteLabels) {
+                STORM_PRINT("Use Label Deletion" << std::endl)
+            }
+            if (labelBehavior == EliminationLabelBehavior::MergeLabels) {
+                STORM_PRINT("Use Label Merging" << std::endl)
+            }
             STORM_LOG_WARN("Reward Models and Choice Labelings are ignored!");
             if (ma->isClosed() && ma->getMarkovianStates().full()) {
                 storm::storage::sparse::ModelComponents<ValueType, RewardModelType> components(
@@ -69,7 +75,8 @@ namespace storm {
                              entryIt != entryIte; ++entryIt) {
                             uint_fast64_t predecessor = entryIt->getColumn();
                             if (!ma->isMarkovianState(predecessor) && !statesToKeep.count(predecessor)) {
-                                if (!preserveLabels || currLabels == ma->getLabelsOfState(predecessor)) {
+                                if (labelBehavior == EliminationLabelBehavior::DeleteLabels || labelBehavior == EliminationLabelBehavior::MergeLabels ||
+                                    currLabels == ma->getLabelsOfState(predecessor)) {
                                     // If labels are not to be preserved or states are labeled the same
                                     if (!eliminationMapping.count(predecessor)) {
                                         eliminationMapping[predecessor] = base_state;
@@ -111,7 +118,8 @@ namespace storm {
                          entryIt != entryIte; ++entryIt) {
                         uint_fast64_t predecessor = entryIt->getColumn();
                         if (!ma->isMarkovianState(predecessor) && !statesToKeep.count(predecessor)) {
-                            if (!preserveLabels || currLabels == ma->getLabelsOfState(predecessor)) {
+                            if (labelBehavior == EliminationLabelBehavior::DeleteLabels || labelBehavior == EliminationLabelBehavior::MergeLabels ||
+                                currLabels == ma->getLabelsOfState(predecessor)) {
                                 // If labels are not to be preserved or states are labeled the same
                                 if (!eliminationMapping.count(predecessor)) {
                                     eliminationMapping[predecessor] = base_state;
@@ -146,6 +154,10 @@ namespace storm {
 
             // TODO explore if one can construct elimination mapping and state remapping in one step
 
+            uint64_t newStateCount = ma->getNumberOfStates() - eliminationMapping.size();
+
+            std::vector<std::set<std::string>> labelMap(newStateCount, std::set<std::string>());
+
             // Construct a mapping of old state space to new one
             std::vector<uint_fast64_t> stateRemapping(ma->getNumberOfStates(), -1);
             uint_fast64_t currentNewState = 0;
@@ -159,14 +171,26 @@ namespace storm {
                     } else {
                         stateRemapping[state] = stateRemapping[eliminationMapping[state]];
                     }
-                } else if (stateRemapping[state] == uint_fast64_t(-1)) {
-                    stateRemapping[state] = currentNewState;
-                    queue.push(state);
-                    ++currentNewState;
+                    if (labelBehavior == EliminationLabelBehavior::MergeLabels) {
+                        //add all labels to the label set for the representative
+                        for (auto const &label : ma->getLabelsOfState(state)) {
+                            labelMap[stateRemapping[eliminationMapping[state]]].insert(label);
+                        }
+                    }
+                } else {
+                    if (stateRemapping[state] == uint_fast64_t(-1)) {
+                        stateRemapping[state] = currentNewState;
+                        queue.push(state);
+                        ++currentNewState;
+                    }
+                    if (labelBehavior == EliminationLabelBehavior::MergeLabels) {
+                        for (auto const &label : ma->getLabelsOfState(state)) {
+                            labelMap[stateRemapping[state]].insert(label);
+                        }
+                    }
                 }
             }
 
-            uint64_t newStateCount = ma->getNumberOfStates() - eliminationMapping.size();
             // Build the new MA
             storm::storage::SparseMatrix<ValueType> newTransitionMatrix;
             storm::models::sparse::StateLabeling newStateLabeling(
@@ -180,13 +204,24 @@ namespace storm {
             // Initialize the matrix builder and helper variables
             storm::storage::SparseMatrixBuilder<ValueType> matrixBuilder = storm::storage::SparseMatrixBuilder<ValueType>(
                     0, 0, 0, false, true, 0);
+
+            for (auto const &label : ma->getStateLabeling()) {
+                if (!newStateLabeling.containsLabel(label)) {
+                    newStateLabeling.addLabel(label);
+                }
+            }
             uint_fast64_t currentRow = 0;
             uint_fast64_t state = 0;
             while (!queue.empty()) {
                 state = queue.front();
                 queue.pop();
 
-                for (auto const &label : ma->getLabelsOfState(state)) {
+                std::set<std::string> labelSet = ma->getLabelsOfState(state);
+                if (labelBehavior == EliminationLabelBehavior::MergeLabels) {
+                    labelSet = labelMap[stateRemapping[state]];
+                }
+
+                for (auto const &label : labelSet) {
                     if (!newStateLabeling.containsLabel(label)) {
                         newStateLabeling.addLabel(label);
                     }

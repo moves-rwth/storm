@@ -25,7 +25,7 @@ namespace storm {
                                                                                            bool allowModularisation, std::set<size_t> const& relevantEvents,
                                                                                            bool allowDCForRelevantEvents, double approximationError,
                                                                                            storm::builder::ApproximationHeuristic approximationHeuristic, bool eliminateChains,
-                                                                                           bool ignoreLabeling) {
+                                                                                           storm::transformer::EliminationLabelBehavior labelBehavior) {
             totalTimer.start();
             dft_results results;
 
@@ -50,7 +50,7 @@ namespace storm {
                 }
             } else {
                 results = checkHelper(dft, properties, symred, allowModularisation, relevantEvents, allowDCForRelevantEvents, approximationError, approximationHeuristic,
-                                      eliminateChains, ignoreLabeling);
+                                      eliminateChains, labelBehavior);
             }
             totalTimer.stop();
             return results;
@@ -61,7 +61,7 @@ namespace storm {
                                                                                                  bool symred, bool allowModularisation, std::set<size_t> const& relevantEvents,
                                                                                                  bool allowDCForRelevantEvents, double approximationError,
                                                                                                  storm::builder::ApproximationHeuristic approximationHeuristic,
-                                                                                                 bool eliminateChains, bool ignoreLabeling) {
+                                                                                                 bool eliminateChains, storm::transformer::EliminationLabelBehavior labelBehavior) {
             STORM_LOG_TRACE("Check helper called");
             std::vector<storm::storage::DFT<ValueType>> dfts;
             bool invResults = false;
@@ -160,7 +160,7 @@ namespace storm {
             } else {
                 // No modularisation was possible
                 return checkDFT(dft, properties, symred, relevantEvents, allowDCForRelevantEvents, approximationError,
-                                approximationHeuristic, eliminateChains, ignoreLabeling);
+                                approximationHeuristic, eliminateChains, labelBehavior);
             }
         }
 
@@ -299,7 +299,7 @@ namespace storm {
                                              std::set<size_t> const &relevantEvents, bool allowDCForRelevantEvents,
                                              double approximationError,
                                              storm::builder::ApproximationHeuristic approximationHeuristic,
-                                             bool eliminateChains, bool ignoreLabeling) {
+                                             bool eliminateChains, storm::transformer::EliminationLabelBehavior labelBehavior) {
             explorationTimer.start();
 
             // Find symmetries
@@ -406,8 +406,7 @@ namespace storm {
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
                 if (eliminateChains && model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
                     auto ma = std::static_pointer_cast<storm::models::sparse::MarkovAutomaton<ValueType>>(model);
-                    model = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(ma,
-                                                                                                                     !ignoreLabeling);
+                    model = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(ma, labelBehavior);
                 }
                 explorationTimer.stop();
 

@@ -3,6 +3,12 @@
 
 namespace storm {
     namespace transformer {
+        enum EliminationLabelBehavior {
+            KeepLabels,
+            MergeLabels,
+            DeleteLabels
+        };
+
         /**
          * Transformer for eliminating chains of non-Markovian states (instantaneous path fragment leading to the same outcome) from Markov automata.
          */
@@ -19,7 +25,8 @@ namespace storm {
              * @return A reference to the new model after eliminating non-Markovian states.
              */
             static std::shared_ptr<models::sparse::Model<ValueType, RewardModelType>> eliminateNonmarkovianStates(
-                    std::shared_ptr<models::sparse::MarkovAutomaton<ValueType, RewardModelType>> ma, bool preserveLabels = true
+            std::shared_ptr<models::sparse::MarkovAutomaton < ValueType, RewardModelType>> ma,
+            EliminationLabelBehavior labelBehavior = EliminationLabelBehavior::KeepLabels
             );
 
             /**
