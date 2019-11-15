@@ -16,11 +16,14 @@ namespace storm {
          * Eliminates chains of non-Markovian states from a given Markov Automaton
          */
         template<typename ValueType>
-        std::pair<std::shared_ptr<storm::models::sparse::Model<ValueType>>, std::vector<std::shared_ptr<storm::logic::Formula const>>> eliminateNonMarkovianChains(std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> const& ma, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas,bool ignoreLabeling) {
+        std::pair<std::shared_ptr<storm::models::sparse::Model<ValueType>>, std::vector<std::shared_ptr<storm::logic::Formula const>>>
+        eliminateNonMarkovianChains(std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> const &ma,
+                                    std::vector<std::shared_ptr<storm::logic::Formula const>> const &formulas, storm::transformer::EliminationLabelBehavior labelBehavior) {
             auto newFormulas = storm::transformer::NonMarkovianChainTransformer<ValueType>::checkAndTransformFormulas(formulas);
             STORM_LOG_WARN_COND(newFormulas.size() == formulas.size(), "The state elimination does not preserve all properties.");
-            STORM_LOG_WARN_COND(!ignoreLabeling, "Labels are ignored for the state elimination. This may cause incorrect results.");
-            return std::make_pair(storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(ma, !ignoreLabeling), newFormulas);
+            STORM_LOG_WARN_COND(!(labelBehavior == storm::transformer::EliminationLabelBehavior::KeepLabels),
+                                "Labels are not preserved by the state elimination. This may cause incorrect results.");
+            return std::make_pair(storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(ma, labelBehavior), newFormulas);
 
         }
 

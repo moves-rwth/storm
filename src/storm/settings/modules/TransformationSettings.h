@@ -3,6 +3,7 @@
 
 #include "storm-config.h"
 #include "storm/settings/modules/ModuleSettings.h"
+#include "storm/api/transformation.h"
 
 namespace storm {
     namespace settings {
@@ -28,11 +29,11 @@ namespace storm {
 
 
                 /*!
-                 * Retrieves whether the preserve-labeling option for jani was set.
+                 * Retrieves how the transformer should deal with labels when non-Markovian states are eliminated
                  *
-                 * @return True if the preserve-labeling option was set.
+                 * @return the label behavior
                  */
-                bool isIgnoreLabelingSet() const;
+                storm::transformer::EliminationLabelBehavior getLabelBehavior() const;
 
                 /*!
                  * Retrieves whether a DTMC/CTMC should be converted to an MDP/MA
@@ -54,7 +55,7 @@ namespace storm {
             private:
                 // Define the string names of the options as constants.
                 static const std::string chainEliminationOptionName;
-                static const std::string ignoreLabelingOptionName;
+                static const std::string labelBehaviorOptionName;
                 static const std::string toNondetOptionName;
                 static const std::string toDiscreteTimeOptionName;
 

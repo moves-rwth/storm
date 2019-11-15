@@ -339,7 +339,7 @@ namespace storm {
 
             if (transformationSettings.isChainEliminationSet() && result->isOfType(storm::models::ModelType::MarkovAutomaton)) {
                 result = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(
-                        result->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(), !transformationSettings.isIgnoreLabelingSet());
+                        result->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(), transformationSettings.getLabelBehavior());
             }
 
             return result;

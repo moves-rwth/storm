@@ -181,7 +181,7 @@ namespace storm {
                 auto eliminationResult = storm::api::eliminateNonMarkovianChains(
                         result.model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(),
                         storm::api::extractFormulasFromProperties(input.properties),
-                        transformationSettings.isIgnoreLabelingSet());
+                        transformationSettings.getLabelBehavior());
                 result.model = eliminationResult.first;
                 // Set transformed properties as new properties in input
                 result.formulas = eliminationResult.second;
