@@ -81,6 +81,15 @@ namespace storm {
                 beliefIsTarget.push_back(
                         targetObservations.find(initialBelief.observation) != targetObservations.end());
 
+                // These are the components to build the MDP from the grid
+                std::map<uint64_t, uint64_t> beliefStateMap;
+                std::vector<std::vector<std::map<uint64_t, ValueType>>> mdpTransitions;
+                std::vector<uint64_t> targetStates;
+                uint64_t mdpStateId = 0;
+
+                beliefStateMap[initialBelief.id] = mdpStateId;
+                ++mdpStateId;
+
                 // for the initial belief, add the triangulated initial states
                 std::pair<std::vector<std::vector<ValueType>>, std::vector<ValueType>> initTemp = computeSubSimplexAndLambdas(
                         initialBelief.probabilities, gridResolution);
@@ -90,6 +99,8 @@ namespace storm {
                 lambdaCache[0] = initLambdas;
                 bool initInserted = false;
 
+                std::vector<std::map<uint64_t, ValueType>> initTransitionsInBelief;
+                std::map<uint64_t, ValueType> initTransitionInActionBelief;
 
                 for (size_t j = 0; j < initLambdas.size(); ++j) {
                     if (!cc.isEqual(initLambdas[j], storm::utility::zero<ValueType>())) {
@@ -107,12 +118,21 @@ namespace storm {
                                 beliefGrid.push_back(gridBelief);
                                 beliefIsTarget.push_back(targetObservations.find(initialBelief.observation) != targetObservations.end());
                                 beliefsToBeExpanded.push_back(nextId);
+
+                                beliefStateMap[nextId] = mdpStateId;
+                                initTransitionInActionBelief[mdpStateId] = initLambdas[j];
                                 ++nextId;
+                                ++mdpStateId;
                             }
                         }
                     }
                 }
 
+                // If the initial belief is not on the grid, we add the transitions from our initial MDP state to the triangulated beliefs
+                if (!initTransitionInActionBelief.empty()) {
+                    initTransitionsInBelief.push_back(initTransitionInActionBelief);
+                    mdpTransitions.push_back(initTransitionsInBelief);
+                }
 
                 //beliefsToBeExpanded.push_back(initialBelief.id); TODO I'm curious what happens if we do this instead of first triangulating. Should do nothing special if belief is on grid, otherwise it gets interesting
 
@@ -124,6 +144,14 @@ namespace storm {
                     if (isTarget) {
                         result.emplace(std::make_pair(currId, storm::utility::one<ValueType>()));
                         result_backup.emplace(std::make_pair(currId, storm::utility::one<ValueType>()));
+
+                        // MDP stuff
+                        std::vector<std::map<uint64_t, ValueType>> transitionsInBelief;
+                        targetStates.push_back(beliefStateMap[currId]);
+                        std::map<uint64_t, ValueType> transitionInActionBelief;
+                        transitionInActionBelief[beliefStateMap[currId]] = storm::utility::one<ValueType>();
+                        transitionsInBelief.push_back(transitionInActionBelief);
+                        mdpTransitions.push_back(transitionsInBelief);
                     } else {
                         result.emplace(std::make_pair(currId, storm::utility::zero<ValueType>()));
                         result_backup.emplace(std::make_pair(currId, storm::utility::zero<ValueType>()));
@@ -131,12 +159,14 @@ namespace storm {
                         uint64_t numChoices = pomdp.getNumberOfChoices(pomdp.getStatesWithObservation(beliefList[currId].observation).front());
                         std::vector<std::map<uint32_t, ValueType>> observationProbabilitiesInAction(numChoices);
                         std::vector<std::map<uint32_t, uint64_t>> nextBelievesInAction(numChoices);
+                        std::vector<std::map<uint64_t, ValueType>> transitionsInBelief;
 
                         for (uint64_t action = 0; action < numChoices; ++action) {
                             std::map<uint32_t, ValueType> actionObservationProbabilities = computeObservationProbabilitiesAfterAction(pomdp, beliefList[currId], action);
                             std::map<uint32_t, uint64_t> actionObservationBelieves;
-                            for (auto iter = actionObservationProbabilities.begin();
-                                 iter != actionObservationProbabilities.end(); ++iter) {
+                            std::map<uint64_t, ValueType> transitionInActionBelief;
+
+                            for (auto iter = actionObservationProbabilities.begin(); iter != actionObservationProbabilities.end(); ++iter) {
                                 uint32_t observation = iter->first;
                                 // THIS CALL IS SLOW
                                 // TODO speed this up
@@ -159,7 +189,6 @@ namespace storm {
                                     subSimplexCache[idNextBelief] = subSimplex;
                                     lambdaCache[idNextBelief] = lambdas;
                                 }
-
                                 for (size_t j = 0; j < lambdas.size(); ++j) {
                                     if (!cc.isEqual(lambdas[j], storm::utility::zero<ValueType>())) {
                                         if (getBeliefIdInVector(beliefGrid, observation, subSimplex[j]) == uint64_t(-1)) {
@@ -169,23 +198,49 @@ namespace storm {
                                             beliefGrid.push_back(gridBelief);
                                             beliefIsTarget.push_back(targetObservations.find(observation) != targetObservations.end());
                                             beliefsToBeExpanded.push_back(nextId);
+
+                                            beliefStateMap[nextId] = mdpStateId;
+                                            transitionInActionBelief[mdpStateId] = iter->second * lambdas[j];
                                             ++nextId;
+                                            ++mdpStateId;
+                                        } else {
+                                            transitionInActionBelief[beliefStateMap[getBeliefIdInVector(beliefGrid, observation, subSimplex[j])]] = iter->second * lambdas[j];
                                         }
                                     }
                                 }
                             }
                             observationProbabilitiesInAction[action] = actionObservationProbabilities;
                             nextBelievesInAction[action] = actionObservationBelieves;
+                            if (!transitionInActionBelief.empty()) {
+                                transitionsInBelief.push_back(transitionInActionBelief);
+                            }
                         }
-                        observationProbabilities.emplace(
-                                std::make_pair(currId, observationProbabilitiesInAction));
+                        observationProbabilities.emplace(std::make_pair(currId, observationProbabilitiesInAction));
                         nextBelieves.emplace(std::make_pair(currId, nextBelievesInAction));
+                        if (transitionsInBelief.empty()) {
+                            std::map<uint64_t, ValueType> transitionInActionBelief;
+                            transitionInActionBelief[beliefStateMap[currId]] = storm::utility::one<ValueType>();
+                            transitionsInBelief.push_back(transitionInActionBelief);
+                        }
+                        mdpTransitions.push_back(transitionsInBelief);
                     }
                 }
                 expansionTimer.stop();
                 STORM_PRINT("Grid size: " << beliefGrid.size() << std::endl)
                 STORM_PRINT("#Believes in List: " << beliefList.size() << std::endl)
                 STORM_PRINT("Belief space expansion took " << expansionTimer << std::endl)
+
+                storm::models::sparse::StateLabeling mdpLabeling(mdpTransitions.size());
+                mdpLabeling.addLabel("init");
+                mdpLabeling.addLabel("target");
+                mdpLabeling.addLabelToState("init", 0);
+                for (auto targetState : targetStates) {
+                    mdpLabeling.addLabelToState("target", targetState);
+                }
+
+                storm::storage::sparse::ModelComponents<ValueType, RewardModelType> modelComponents(buildTransitionMatrix(mdpTransitions), mdpLabeling);
+                storm::models::sparse::Mdp<ValueType, RewardModelType> overApproxMdp(modelComponents);
+                overApproxMdp.printModelInformationToStream(std::cout);
 
                 storm::utility::Stopwatch overApproxTimer(true);
                 // Value Iteration
@@ -276,21 +331,34 @@ namespace storm {
                 }
                 overApproxTimer.stop();
 
-                storm::utility::Stopwatch underApproxTimer(true);
+                ValueType underApprox = storm::utility::zero<ValueType>();
+                /*storm::utility::Stopwatch underApproxTimer(true);
                 ValueType underApprox = computeUnderapproximationWithMDP(pomdp, beliefList, beliefIsTarget, targetObservations, observationProbabilities, nextBelieves,
                                                                          result, chosenActions, gridResolution, initialBelief.id, min, false);
-                underApproxTimer.stop();
+                underApproxTimer.stop();*/
 
-                STORM_PRINT("Time Overapproximation: " << overApproxTimer
-                                                       << std::endl
-                                                       << "Time Underapproximation: " << underApproxTimer
-                                                       << std::endl);
+                // STORM_PRINT("Time Overapproximation: " << overApproxTimer << std::endl << "Time Underapproximation: " << underApproxTimer << std::endl);
 
                 STORM_PRINT("Over-Approximation Result: " << overApprox << std::endl);
-                STORM_PRINT("Under-Approximation Result: " << underApprox << std::endl);
+                //STORM_PRINT("Under-Approximation Result: " << underApprox << std::endl);
 
-                return std::make_unique<POMDPCheckResult<ValueType>>(
-                        POMDPCheckResult<ValueType>{overApprox, underApprox});
+                auto model = std::make_shared<storm::models::sparse::Mdp<ValueType, RewardModelType>>(overApproxMdp);
+                auto modelPtr = std::static_pointer_cast<storm::models::sparse::Model<ValueType, RewardModelType>>(model);
+
+
+                std::vector<std::string> parameterNames;
+                storm::api::exportSparseModelAsDrn(modelPtr, "test", parameterNames);
+
+                std::string propertyString = min ? "Pmin=? [F \"target\"]" : "Pmax=? [F \"target\"]";
+                std::vector<storm::jani::Property> propertyVector = storm::api::parseProperties(propertyString);
+                std::shared_ptr<storm::logic::Formula const> property = storm::api::extractFormulasFromProperties(propertyVector).front();
+
+                std::unique_ptr<storm::modelchecker::CheckResult> res(storm::api::verifyWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(property, true)));
+                STORM_LOG_ASSERT(res, "Result not exist.");
+                res->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
+                STORM_PRINT("OverApprox MDP: " << (res->asExplicitQuantitativeCheckResult<ValueType>().getValueMap().begin()->second) << std::endl);
+
+                return std::make_unique<POMDPCheckResult<ValueType>>(POMDPCheckResult<ValueType>{overApprox, underApprox});
 
             }
 
