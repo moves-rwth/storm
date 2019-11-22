@@ -58,7 +58,30 @@ namespace storm {
                  * @param min
                  * @return
                  */
-                uint64_t extractBestAction(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
+                std::vector<uint64_t> extractBestActions(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
+                                                         std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
+                                                         std::vector<bool> &beliefIsTarget,
+                                                         std::set<uint32_t> &target_observations,
+                                                         std::map<uint64_t, std::vector<std::map<uint32_t, ValueType>>> &observationProbabilities,
+                                                         std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
+                                                         std::map<uint64_t, ValueType> &result,
+                                                         uint64_t gridResolution, uint64_t currentBeliefId, uint64_t nextId,
+                                                         bool min);
+
+                /**
+                 * TODO
+                 * @param pomdp
+                 * @param beliefList
+                 * @param observationProbabilities
+                 * @param nextBelieves
+                 * @param result
+                 * @param gridResolution
+                 * @param currentBeliefId
+                 * @param nextId
+                 * @param min
+                 * @return
+                 */
+                std::vector<uint64_t> extractBestAction(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                                            std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
                                            std::vector<bool> &beliefIsTarget,
                                            std::set<uint32_t> &target_observations,
@@ -90,7 +113,7 @@ namespace storm {
                                                             std::map<uint64_t, std::vector<std::map<uint32_t, ValueType>>> &observationProbabilities,
                                                             std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
                                                             std::map<uint64_t, ValueType> &result,
-                                                            std::map<uint64_t, uint64_t> chosenActions,
+                                                            std::map<uint64_t, std::vector<uint64_t>> chosenActions,
                                                             uint64_t gridResolution, uint64_t initialBeliefId, bool min, bool computeReward);
 
                 ValueType computeUnderapproximationWithMDP(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
@@ -100,7 +123,7 @@ namespace storm {
                                                            std::map<uint64_t, std::vector<std::map<uint32_t, ValueType>>> &observationProbabilities,
                                                            std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
                                                            std::map<uint64_t, ValueType> &result,
-                                                           std::map<uint64_t, uint64_t> chosenActions,
+                                                           std::map<uint64_t, std::vector<uint64_t>> chosenActions,
                                                            uint64_t gridResolution, uint64_t initialBeliefId, bool min, bool computeRewards);
 
                 /**
@@ -200,6 +223,8 @@ namespace storm {
                 ValueType getRewardAfterAction(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp, uint64_t action, storm::pomdp::Belief<ValueType> belief);
 
                 storm::utility::ConstantsComparator<ValueType> cc;
+                double precision;
+                bool useMdp;
             };
 
         }
