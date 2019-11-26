@@ -414,11 +414,16 @@ namespace storm {
 
             template<typename ValueType, typename RewardModelType>
             std::unique_ptr<POMDPCheckResult<ValueType>>
-            ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeReachabilityProbability(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                                                                                     std::set<uint32_t> targetObservations, bool min, uint64_t gridResolution) {
+            ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeReachability(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
+                                                                                          std::set<uint32_t> targetObservations, bool min, uint64_t gridResolution,
+                                                                                          bool computeRewards) {
                 storm::utility::Stopwatch beliefGridTimer(true);
                 bool finished = false;
                 uint64_t iteration = 0;
+
+                if (computeRewards) {
+                    RewardModelType pomdpRewardModel = pomdp.getUniqueRewardModel();
+                }
 
                 std::vector<storm::pomdp::Belief<ValueType>> beliefList;
                 std::vector<bool> beliefIsTarget;
@@ -427,220 +432,10 @@ namespace storm {
                 storm::pomdp::Belief<ValueType> initialBelief = getInitialBelief(pomdp, nextId);
                 ++nextId;
                 beliefList.push_back(initialBelief);
-                beliefIsTarget.push_back(
-                        targetObservations.find(initialBelief.observation) != targetObservations.end());
-
-
-                std::vector<storm::pomdp::Belief<ValueType>> beliefGrid;
-                constructBeliefGrid(pomdp, targetObservations, gridResolution, beliefList, beliefGrid, beliefIsTarget,
-                                    nextId);
-                nextId = beliefList.size();
-                beliefGridTimer.stop();
-
-                storm::utility::Stopwatch overApproxTimer(true);
-                // Belief ID -> Value
-                std::map<uint64_t, ValueType> result;
-                std::map<uint64_t, ValueType> result_backup;
-                // Belief ID -> ActionIndex
-                std::map<uint64_t, std::vector<uint64_t>> chosenActions;
-
-                // Belief ID -> Observation -> Probability
-                std::map<uint64_t, std::vector<std::map<uint32_t, ValueType>>> observationProbabilities;
-                // current ID -> action -> next ID
-                std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> nextBelieves;
-
-                storm::utility::Stopwatch nextBeliefGeneration(true);
-                for (size_t i = 0; i < beliefGrid.size(); ++i) {
-                    auto currentBelief = beliefGrid[i];
-                    bool isTarget = beliefIsTarget[currentBelief.id];
-                    if (isTarget) {
-                        result.emplace(std::make_pair(currentBelief.id, storm::utility::one<ValueType>()));
-                        result_backup.emplace(std::make_pair(currentBelief.id, storm::utility::one<ValueType>()));
-                    } else {
-                        result.emplace(std::make_pair(currentBelief.id, storm::utility::zero<ValueType>()));
-                        result_backup.emplace(std::make_pair(currentBelief.id, storm::utility::zero<ValueType>()));
-
-                        //TODO put this in extra function
-                        uint64_t numChoices = pomdp.getNumberOfChoices(
-                                pomdp.getStatesWithObservation(currentBelief.observation).front());
-                        std::vector<std::map<uint32_t, ValueType>> observationProbabilitiesInAction(numChoices);
-                        std::vector<std::map<uint32_t, uint64_t>> nextBelievesInAction(numChoices);
-
-                        for (uint64_t action = 0; action < numChoices; ++action) {
-                            std::map<uint32_t, ValueType> actionObservationProbabilities = computeObservationProbabilitiesAfterAction(pomdp, currentBelief, action);
-                            std::map<uint32_t, uint64_t> actionObservationBelieves;
-                            for (auto iter = actionObservationProbabilities.begin(); iter != actionObservationProbabilities.end(); ++iter) {
-                                uint32_t observation = iter->first;
-                                // THIS CALL IS SLOW
-                                // TODO speed this up
-                                actionObservationBelieves[observation] = getBeliefAfterActionAndObservation(pomdp,
-                                                                                                            beliefList,
-                                                                                                            beliefIsTarget,
-                                                                                                            targetObservations,
-                                                                                                            currentBelief,
-                                                                                                            action,
-                                                                                                            observation,
-                                                                                                            nextId);
-                                nextId = beliefList.size();
-                            }
-                            observationProbabilitiesInAction[action] = actionObservationProbabilities;
-                            nextBelievesInAction[action] = actionObservationBelieves;
-                        }
-                        observationProbabilities.emplace(
-                                std::make_pair(currentBelief.id, observationProbabilitiesInAction));
-                        nextBelieves.emplace(std::make_pair(currentBelief.id, nextBelievesInAction));
-                    }
-                }
-                nextBeliefGeneration.stop();
-
-                //Use chaching to avoid multiple computation of the subsimplices and lambdas
-                std::map<uint64_t, std::vector<std::vector<ValueType>>> subSimplexCache;
-                std::map<uint64_t, std::vector<ValueType>> lambdaCache;
-
-                STORM_PRINT("Time generation of next believes: " << nextBeliefGeneration << std::endl)
-                // Value Iteration
-                while (!finished && iteration < maxIterations) {
-                    storm::utility::Stopwatch iterationTimer(true);
-                    STORM_LOG_DEBUG("Iteration " << iteration + 1);
-                    bool improvement = false;
-                    for (size_t i = 0; i < beliefGrid.size(); ++i) {
-                        storm::pomdp::Belief<ValueType> currentBelief = beliefGrid[i];
-                        bool isTarget = beliefIsTarget[currentBelief.id];
-                        if (!isTarget) {
-                            // we can take any state with the observation as they have the same number of choices
-                            uint64_t numChoices = pomdp.getNumberOfChoices(
-                                    pomdp.getStatesWithObservation(currentBelief.observation).front());
-                            // Initialize the values for the value iteration
-                            ValueType chosenValue = min ? storm::utility::infinity<ValueType>()
-                                                        : -storm::utility::infinity<ValueType>();
-                            std::vector<uint64_t> chosenActionIndices;
-                            ValueType currentValue;
-
-                            for (uint64_t action = 0; action < numChoices; ++action) {
-                                currentValue = storm::utility::zero<ValueType>();
-                                for (auto iter = observationProbabilities[currentBelief.id][action].begin();
-                                     iter != observationProbabilities[currentBelief.id][action].end(); ++iter) {
-                                    uint32_t observation = iter->first;
-                                    storm::pomdp::Belief<ValueType> nextBelief = beliefList[nextBelieves[currentBelief.id][action][observation]];
-                                    // compute subsimplex and lambdas according to the Lovejoy paper to approximate the next belief
-                                    // cache the values  to not always re-calculate
-                                    std::vector<std::vector<ValueType>> subSimplex;
-                                    std::vector<ValueType> lambdas;
-                                    if (subSimplexCache.count(nextBelief.id) > 0) {
-                                        subSimplex = subSimplexCache[nextBelief.id];
-                                        lambdas = lambdaCache[nextBelief.id];
-                                    } else {
-                                        std::pair<std::vector<std::vector<ValueType>>, std::vector<ValueType>> temp = computeSubSimplexAndLambdas(
-                                                nextBelief.probabilities, gridResolution);
-                                        subSimplex = temp.first;
-                                        lambdas = temp.second;
-                                        subSimplexCache[nextBelief.id] = subSimplex;
-                                        lambdaCache[nextBelief.id] = lambdas;
-                                    }
-                                    auto sum = storm::utility::zero<ValueType>();
-                                    for (size_t j = 0; j < lambdas.size(); ++j) {
-                                        if (!cc.isEqual(lambdas[j], storm::utility::zero<ValueType>())) {
-                                            sum += lambdas[j] * result_backup.at(
-                                                    getBeliefIdInVector(beliefGrid, observation, subSimplex[j]));
-                                        }
-                                    }
-                                    currentValue += iter->second * sum;
-                                }
-                                // Update the selected actions
-                                if ((min && cc.isLess(storm::utility::zero<ValueType>(), chosenValue - currentValue)) ||
-                                    (!min &&
-                                     cc.isLess(storm::utility::zero<ValueType>(), currentValue - chosenValue)) ||
-                                    cc.isEqual(storm::utility::zero<ValueType>(), chosenValue - currentValue)) {
-                                    chosenValue = currentValue;
-                                    if (!(useMdp && cc.isEqual(storm::utility::zero<ValueType>(), chosenValue - currentValue))) {
-                                        chosenActionIndices.clear();
-                                    }
-                                    chosenActionIndices.push_back(action);
-                                }
-                            }
-                            result[currentBelief.id] = chosenValue;
-                            chosenActions[currentBelief.id] = chosenActionIndices;
-                            // Check if the iteration brought an improvement
-                            if (cc.isLess(storm::utility::zero<ValueType>(), result[currentBelief.id] - result_backup[currentBelief.id])) {
-                                improvement = true;
-                            }
-                        }
-                    }
-                    finished = !improvement;
-                    // back up
-                    result_backup = result;
-
-                    ++iteration;
-                    iterationTimer.stop();
-                    STORM_PRINT("Iteration " << iteration << ": " << iterationTimer << std::endl);
-                }
-
-                STORM_PRINT("Overapproximation took " << iteration << " iterations" << std::endl);
-
-                beliefGrid.push_back(initialBelief);
                 beliefIsTarget.push_back(targetObservations.find(initialBelief.observation) != targetObservations.end());
 
-                std::pair<std::vector<std::vector<ValueType>>, std::vector<ValueType>> temp = computeSubSimplexAndLambdas(
-                        initialBelief.probabilities, gridResolution);
-                std::vector<std::vector<ValueType>> initSubSimplex = temp.first;
-                std::vector<ValueType> initLambdas = temp.second;
-
-                auto overApprox = storm::utility::zero<ValueType>();
-                for (size_t j = 0; j < initLambdas.size(); ++j) {
-                    if (initLambdas[j] != storm::utility::zero<ValueType>()) {
-                        overApprox += initLambdas[j] *
-                                      result_backup[getBeliefIdInVector(beliefGrid, initialBelief.observation,
-                                                                        initSubSimplex[j])];
-                    }
-                }
-                overApproxTimer.stop();
-
-                // Now onto the under-approximation
-                storm::utility::Stopwatch underApproxTimer(true);
-                ValueType underApprox = useMdp ? computeUnderapproximationWithMDP(pomdp, beliefList, beliefIsTarget, targetObservations, observationProbabilities, nextBelieves,
-                                                                                  result, chosenActions, gridResolution, initialBelief.id, min, false) :
-                                        computeUnderapproximationWithDTMC(pomdp, beliefList, beliefIsTarget, targetObservations, observationProbabilities, nextBelieves, result,
-                                                                          chosenActions, gridResolution, initialBelief.id, min, false);
-                underApproxTimer.stop();
-
-                STORM_PRINT("Time Belief Grid Generation: " << beliefGridTimer << std::endl
-                                                            << "Time Overapproximation: " << overApproxTimer
-                                                            << std::endl
-                                                            << "Time Underapproximation: " << underApproxTimer
-                                                            << std::endl);
-
-                STORM_PRINT("Over-Approximation Result: " << overApprox << std::endl);
-                STORM_PRINT("Under-Approximation Result: " << underApprox << std::endl);
-
-                return std::make_unique<POMDPCheckResult<ValueType>>(
-                        POMDPCheckResult<ValueType>{overApprox, underApprox});
-            }
-
-            //TODO This function reuses a lot of code from the probability computation, refactor to minimize code duplication!
-            template<typename ValueType, typename RewardModelType>
-            std::unique_ptr<POMDPCheckResult<ValueType>>
-            ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeReachabilityReward(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                                                                                std::set<uint32_t> targetObservations, bool min, uint64_t gridResolution) {
-                storm::utility::Stopwatch beliefGridTimer(true);
-                bool finished = false;
-                uint64_t iteration = 0;
-
-                RewardModelType pomdpRewardModel = pomdp.getUniqueRewardModel();
-
-                std::vector<storm::pomdp::Belief<ValueType>> beliefList;
-                std::vector<bool> beliefIsTarget;
-                uint64_t nextId = 0;
-                // Initial belief always has ID 0
-                storm::pomdp::Belief<ValueType> initialBelief = getInitialBelief(pomdp, nextId);
-                ++nextId;
-                beliefList.push_back(initialBelief);
-                beliefIsTarget.push_back(
-                        targetObservations.find(initialBelief.observation) != targetObservations.end());
-
-
                 std::vector<storm::pomdp::Belief<ValueType>> beliefGrid;
-                constructBeliefGrid(pomdp, targetObservations, gridResolution, beliefList, beliefGrid, beliefIsTarget,
-                                    nextId);
+                constructBeliefGrid(pomdp, targetObservations, gridResolution, beliefList, beliefGrid, beliefIsTarget, nextId);
                 nextId = beliefList.size();
                 beliefGridTimer.stop();
 
@@ -662,9 +457,12 @@ namespace storm {
                 for (size_t i = 0; i < beliefGrid.size(); ++i) {
                     auto currentBelief = beliefGrid[i];
                     bool isTarget = beliefIsTarget[currentBelief.id];
-                    result.emplace(std::make_pair(currentBelief.id, storm::utility::zero<ValueType>()));
-                    result_backup.emplace(std::make_pair(currentBelief.id, storm::utility::zero<ValueType>()));
-                    if (!isTarget) {
+                    if (isTarget) {
+                        result.emplace(std::make_pair(currentBelief.id, computeRewards ? storm::utility::zero<ValueType>() : storm::utility::one<ValueType>()));
+                        result_backup.emplace(std::make_pair(currentBelief.id, computeRewards ? storm::utility::zero<ValueType>() : storm::utility::one<ValueType>()));
+                    } else {
+                        result.emplace(std::make_pair(currentBelief.id, storm::utility::zero<ValueType>()));
+                        result_backup.emplace(std::make_pair(currentBelief.id, storm::utility::zero<ValueType>()));
                         //TODO put this in extra function
                         // As we need to grab some parameters which are the same for all states with the same observation, we simply select some state as the representative
                         uint64_t representativeState = pomdp.getStatesWithObservation(currentBelief.observation).front();
@@ -675,34 +473,28 @@ namespace storm {
                         std::vector<ValueType> actionRewardsInState(numChoices);
 
                         for (uint64_t action = 0; action < numChoices; ++action) {
-                            std::map<uint32_t, ValueType> actionObservationProbabilities = computeObservationProbabilitiesAfterAction(
-                                    pomdp, currentBelief, action);
+                            std::map<uint32_t, ValueType> actionObservationProbabilities = computeObservationProbabilitiesAfterAction(pomdp, currentBelief, action);
                             std::map<uint32_t, uint64_t> actionObservationBelieves;
-                            for (auto iter = actionObservationProbabilities.begin();
-                                 iter != actionObservationProbabilities.end(); ++iter) {
+                            for (auto iter = actionObservationProbabilities.begin(); iter != actionObservationProbabilities.end(); ++iter) {
                                 uint32_t observation = iter->first;
                                 // THIS CALL IS SLOW
                                 // TODO speed this up
-                                actionObservationBelieves[observation] = getBeliefAfterActionAndObservation(pomdp,
-                                                                                                            beliefList,
-                                                                                                            beliefIsTarget,
-                                                                                                            targetObservations,
-                                                                                                            currentBelief,
-                                                                                                            action,
-                                                                                                            observation,
-                                                                                                            nextId);
+                                actionObservationBelieves[observation] = getBeliefAfterActionAndObservation(pomdp, beliefList, beliefIsTarget, targetObservations, currentBelief,
+                                                                                                            action, observation, nextId);
                                 nextId = beliefList.size();
                             }
                             observationProbabilitiesInAction[action] = actionObservationProbabilities;
                             nextBelievesInAction[action] = actionObservationBelieves;
-
-                            actionRewardsInState[action] = getRewardAfterAction(pomdp, pomdp.getChoiceIndex(storm::storage::StateActionPair(representativeState, action)),
-                                                                                currentBelief);
+                            if (computeRewards) {
+                                actionRewardsInState[action] = getRewardAfterAction(pomdp, pomdp.getChoiceIndex(storm::storage::StateActionPair(representativeState, action)),
+                                                                                    currentBelief);
+                            }
                         }
-                        observationProbabilities.emplace(
-                                std::make_pair(currentBelief.id, observationProbabilitiesInAction));
+                        observationProbabilities.emplace(std::make_pair(currentBelief.id, observationProbabilitiesInAction));
                         nextBelieves.emplace(std::make_pair(currentBelief.id, nextBelievesInAction));
-                        beliefActionRewards.emplace(std::make_pair(currentBelief.id, actionRewardsInState));
+                        if (computeRewards) {
+                            beliefActionRewards.emplace(std::make_pair(currentBelief.id, actionRewardsInState));
+                        }
                     }
 
                 }
@@ -723,16 +515,14 @@ namespace storm {
                         bool isTarget = beliefIsTarget[currentBelief.id];
                         if (!isTarget) {
                             // we can take any state with the observation as they have the same number of choices
-                            uint64_t numChoices = pomdp.getNumberOfChoices(
-                                    pomdp.getStatesWithObservation(currentBelief.observation).front());
+                            uint64_t numChoices = pomdp.getNumberOfChoices(pomdp.getStatesWithObservation(currentBelief.observation).front());
                             // Initialize the values for the value iteration
-                            ValueType chosenValue = min ? storm::utility::infinity<ValueType>()
-                                                        : -storm::utility::infinity<ValueType>();
+                            ValueType chosenValue = min ? storm::utility::infinity<ValueType>() : -storm::utility::infinity<ValueType>();
                             std::vector<uint64_t> chosenActionIndices;
                             ValueType currentValue;
 
                             for (uint64_t action = 0; action < numChoices; ++action) {
-                                currentValue = beliefActionRewards[currentBelief.id][action];
+                                currentValue = computeRewards ? beliefActionRewards[currentBelief.id][action] : storm::utility::zero<ValueType>();
                                 for (auto iter = observationProbabilities[currentBelief.id][action].begin();
                                      iter != observationProbabilities[currentBelief.id][action].end(); ++iter) {
                                     uint32_t observation = iter->first;
@@ -745,8 +535,8 @@ namespace storm {
                                         subSimplex = subSimplexCache[nextBelief.id];
                                         lambdas = lambdaCache[nextBelief.id];
                                     } else {
-                                        std::pair<std::vector<std::vector<ValueType>>, std::vector<ValueType>> temp = computeSubSimplexAndLambdas(
-                                                nextBelief.probabilities, gridResolution);
+                                        std::pair<std::vector<std::vector<ValueType>>, std::vector<ValueType>> temp = computeSubSimplexAndLambdas(nextBelief.probabilities,
+                                                                                                                                                  gridResolution);
                                         subSimplex = temp.first;
                                         lambdas = temp.second;
                                         subSimplexCache[nextBelief.id] = subSimplex;
@@ -755,8 +545,7 @@ namespace storm {
                                     auto sum = storm::utility::zero<ValueType>();
                                     for (size_t j = 0; j < lambdas.size(); ++j) {
                                         if (!cc.isEqual(lambdas[j], storm::utility::zero<ValueType>())) {
-                                            sum += lambdas[j] * result_backup.at(
-                                                    getBeliefIdInVector(beliefGrid, observation, subSimplex[j]));
+                                            sum += lambdas[j] * result_backup.at(getBeliefIdInVector(beliefGrid, observation, subSimplex[j]));
                                         }
                                     }
 
@@ -764,8 +553,7 @@ namespace storm {
                                 }
                                 // Update the selected actions
                                 if ((min && cc.isLess(storm::utility::zero<ValueType>(), chosenValue - currentValue)) ||
-                                    (!min &&
-                                     cc.isLess(storm::utility::zero<ValueType>(), currentValue - chosenValue)) ||
+                                    (!min && cc.isLess(storm::utility::zero<ValueType>(), currentValue - chosenValue)) ||
                                     cc.isEqual(storm::utility::zero<ValueType>(), chosenValue - currentValue)) {
                                     chosenValue = currentValue;
                                     if (!(useMdp && cc.isEqual(storm::utility::zero<ValueType>(), chosenValue - currentValue))) {
@@ -774,13 +562,10 @@ namespace storm {
                                     chosenActionIndices.push_back(action);
                                 }
                             }
-
                             result[currentBelief.id] = chosenValue;
-
                             chosenActions[currentBelief.id] = chosenActionIndices;
                             // Check if the iteration brought an improvement
-                            if (cc.isLess(storm::utility::zero<ValueType>(), result_backup[currentBelief.id] - result[currentBelief.id]) ||
-                                cc.isLess(storm::utility::zero<ValueType>(), result[currentBelief.id] - result_backup[currentBelief.id])) {
+                            if (!cc.isEqual(storm::utility::zero<ValueType>(), result_backup[currentBelief.id] - result[currentBelief.id])) {
                                 improvement = true;
                             }
                         }
@@ -797,20 +582,16 @@ namespace storm {
                 STORM_PRINT("Overapproximation took " << iteration << " iterations" << std::endl);
 
                 beliefGrid.push_back(initialBelief);
-                beliefIsTarget.push_back(
-                        targetObservations.find(initialBelief.observation) != targetObservations.end());
+                beliefIsTarget.push_back(targetObservations.find(initialBelief.observation) != targetObservations.end());
 
-                std::pair<std::vector<std::vector<ValueType>>, std::vector<ValueType>> temp = computeSubSimplexAndLambdas(
-                        initialBelief.probabilities, gridResolution);
+                std::pair<std::vector<std::vector<ValueType>>, std::vector<ValueType>> temp = computeSubSimplexAndLambdas(initialBelief.probabilities, gridResolution);
                 std::vector<std::vector<ValueType>> initSubSimplex = temp.first;
                 std::vector<ValueType> initLambdas = temp.second;
 
                 auto overApprox = storm::utility::zero<ValueType>();
                 for (size_t j = 0; j < initLambdas.size(); ++j) {
                     if (initLambdas[j] != storm::utility::zero<ValueType>()) {
-                        overApprox += initLambdas[j] *
-                                      result_backup[getBeliefIdInVector(beliefGrid, initialBelief.observation,
-                                                                        initSubSimplex[j])];
+                        overApprox += initLambdas[j] * result_backup[getBeliefIdInVector(beliefGrid, initialBelief.observation, initSubSimplex[j])];
                     }
                 }
                 overApproxTimer.stop();
@@ -818,9 +599,9 @@ namespace storm {
                 // Now onto the under-approximation
                 storm::utility::Stopwatch underApproxTimer(true);
                 ValueType underApprox = useMdp ? computeUnderapproximationWithMDP(pomdp, beliefList, beliefIsTarget, targetObservations, observationProbabilities, nextBelieves,
-                                                                                  result, chosenActions, gridResolution, initialBelief.id, min, true) :
+                                                                                  result, chosenActions, gridResolution, initialBelief.id, min, computeRewards) :
                                         computeUnderapproximationWithDTMC(pomdp, beliefList, beliefIsTarget, targetObservations, observationProbabilities, nextBelieves,
-                                                                          result, chosenActions, gridResolution, initialBelief.id, min, true);
+                                                                          result, chosenActions, gridResolution, initialBelief.id, min, computeRewards);
                 underApproxTimer.stop();
 
                 STORM_PRINT("Time Belief Grid Generation: " << beliefGridTimer << std::endl
@@ -831,8 +612,21 @@ namespace storm {
                 STORM_PRINT("Over-Approximation Result: " << overApprox << std::endl);
                 STORM_PRINT("Under-Approximation Result: " << underApprox << std::endl);
 
-                return std::make_unique<POMDPCheckResult<ValueType>>(
-                        POMDPCheckResult<ValueType>{overApprox, underApprox});
+                return std::make_unique<POMDPCheckResult<ValueType>>(POMDPCheckResult<ValueType>{overApprox, underApprox});
+            }
+
+            template<typename ValueType, typename RewardModelType>
+            std::unique_ptr<POMDPCheckResult<ValueType>>
+            ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeReachabilityProbability(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
+                                                                                                     std::set<uint32_t> targetObservations, bool min, uint64_t gridResolution) {
+                return computeReachability(pomdp, targetObservations, min, gridResolution, false);
+            }
+
+            template<typename ValueType, typename RewardModelType>
+            std::unique_ptr<POMDPCheckResult<ValueType>>
+            ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeReachabilityReward(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
+                                                                                                std::set<uint32_t> targetObservations, bool min, uint64_t gridResolution) {
+                return computeReachability(pomdp, targetObservations, min, gridResolution, true);
             }
 
             template<typename ValueType, typename RewardModelType>

@@ -60,6 +60,20 @@ namespace storm {
                                        uint64_t gridResolution, bool computeRewards);
 
                 /**
+                 *
+                 * @param pomdp
+                 * @param targetObservations
+                 * @param min
+                 * @param gridResolution
+                 * @param computeRewards
+                 * @return
+                 */
+                std::unique_ptr<POMDPCheckResult<ValueType>>
+                computeReachability(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
+                                    std::set<uint32_t> targetObservations, bool min,
+                                    uint64_t gridResolution, bool computeRewards);
+
+                /**
                  * TODO
                  * @param pomdp
                  * @param beliefList
