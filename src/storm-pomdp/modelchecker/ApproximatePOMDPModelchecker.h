@@ -46,6 +46,20 @@ namespace storm {
 
             private:
                 /**
+                 *
+                 * @param pomdp
+                 * @param targetObservations
+                 * @param min
+                 * @param gridResolution
+                 * @param computeRewards
+                 * @return
+                 */
+                std::unique_ptr<POMDPCheckResult<ValueType>>
+                computeReachabilityOTF(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
+                                       std::set<uint32_t> targetObservations, bool min,
+                                       uint64_t gridResolution, bool computeRewards);
+
+                /**
                  * TODO
                  * @param pomdp
                  * @param beliefList
@@ -225,6 +239,7 @@ namespace storm {
                 storm::utility::ConstantsComparator<ValueType> cc;
                 double precision;
                 bool useMdp;
+                uint64_t maxIterations;
             };
 
         }
