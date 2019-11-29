@@ -26,6 +26,7 @@ namespace storm {
             std::vector<std::string> fscModes = {"standard", "simple-linear", "simple-linear-inverse"};
             const std::string transformBinaryOption = "transformbinary";
             const std::string transformSimpleOption = "transformsimple";
+            const std::string memlessSearchOption = "memlesssearch";
 
             POMDPSettings::POMDPSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportAsParametricModelOption, false, "Export the parametric file.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which to write the model.").build()).build());
@@ -45,6 +46,7 @@ namespace storm {
                                 10).addValidatorUnsignedInteger(
                                 storm::settings::ArgumentValidatorFactory::createUnsignedGreaterValidator(
                                         0)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, memlessSearchOption, false, "Search for a qualitative memoryless scheuler").build());
             }
 
             bool POMDPSettings::isExportToParametricSet() const {
@@ -79,7 +81,11 @@ namespace storm {
                 return this->getOption(gridApproximationOption).getArgumentByName(
                         "resolution").getValueAsUnsignedInteger();
             }
-            
+
+            bool POMDPSettings::isMemlessSearchSet() const {
+                return this->getOption(memlessSearchOption).getHasOptionBeenSet();
+            }
+
             uint64_t POMDPSettings::getMemoryBound() const {
                 return this->getOption(memoryBoundOption).getArgumentByName("bound").getValueAsUnsignedInteger();
             }
