@@ -18,6 +18,7 @@
 #include "storm/storage/jani/JSONExporter.h"
 #include "storm/storage/jani/ArrayEliminator.h"
 #include "storm/storage/jani/FunctionEliminator.h"
+#include "storm/storage/jani/VariablesToConstantsTransformer.h"
 #include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
 
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
@@ -638,7 +639,6 @@ namespace storm {
             return constantToIndex.find(name) != constantToIndex.end();
         }
 
-
         void Model::removeConstant(std::string const& name) {
             auto pos = constantToIndex.find(name);
             if (pos != constantToIndex.end()) {
@@ -1025,12 +1025,16 @@ namespace storm {
             return result;
         }
         
-        Model Model::substituteConstants() const {
-            Model result(*this);
+        Model& Model::replaceUnassignedVariablesWithConstants() {
+            VariablesToConstantsTransformer().transform(*this);
+            return *this;
+        }
+        
+        Model& Model::substituteConstantsInPlace() {
 
             // Gather all defining expressions of constants.
             std::map<storm::expressions::Variable, storm::expressions::Expression> constantSubstitution;
-            for (auto& constant : result.getConstants()) {
+            for (auto& constant : this->getConstants()) {
                 if (constant.hasConstraint()) {
                     constant.setConstraintExpression(substituteJaniExpression(constant.getConstraintExpression(), constantSubstitution));
                 }
@@ -1040,30 +1044,38 @@ namespace storm {
                 }
             }
             
-            for (auto& functionDefinition : result.getGlobalFunctionDefinitions()) {
+            for (auto& functionDefinition : this->getGlobalFunctionDefinitions()) {
                 functionDefinition.second.substitute(constantSubstitution);
             }
             
             // Substitute constants in all global variables.
-            result.getGlobalVariables().substitute(constantSubstitution);
+            this->getGlobalVariables().substitute(constantSubstitution);
             
             // Substitute constants in initial states expression.
-            result.setInitialStatesRestriction(substituteJaniExpression(this->getInitialStatesRestriction(), constantSubstitution));
+            this->setInitialStatesRestriction(substituteJaniExpression(this->getInitialStatesRestriction(), constantSubstitution));
             
-            for (auto& rewMod : result.getNonTrivialRewardExpressions()) {
+            for (auto& rewMod : this->getNonTrivialRewardExpressions()) {
                 rewMod.second = substituteJaniExpression(rewMod.second, constantSubstitution);
             }
             
             // Substitute constants in variables of automata and their edges.
-            for (auto& automaton : result.getAutomata()) {
+            for (auto& automaton : this->getAutomata()) {
                 automaton.substitute(constantSubstitution);
             }
             
+            return *this;
+        }
+        
+        Model Model::substituteConstants() const {
+            Model result(*this);
+            result.substituteConstantsInPlace();
             return result;
         }
         
         Model Model::substituteConstantsFunctions() const {
-            auto result = substituteConstants();
+            Model result(*this);
+            result.replaceUnassignedVariablesWithConstants();
+            result.substituteConstantsInPlace();
             result.substituteFunctions();
             return result;
         }

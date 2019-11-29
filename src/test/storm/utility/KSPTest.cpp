@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 
 #include "storm/builder/ExplicitModelBuilder.h"
@@ -73,7 +73,7 @@ TEST(KSPTest, kTooLargeException) {
     auto model = buildExampleModel();
     storm::utility::ksp::ShortestPathsGenerator<double> spg(*model, stateWithOnlyOnePath);
 
-    ASSERT_THROW(spg.getDistance(2), std::invalid_argument);
+    STORM_SILENT_ASSERT_THROW(spg.getDistance(2), std::invalid_argument);
 }
 
 TEST(KSPTest, kspStateSet) {

@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
@@ -49,7 +49,7 @@ namespace {
             EliminationEnvironment
     > TestingTypes;
     
-    TYPED_TEST_CASE(ParametricDtmcPrctlModelCheckerTest, TestingTypes);
+    TYPED_TEST_SUITE(ParametricDtmcPrctlModelCheckerTest, TestingTypes,);
     TYPED_TEST(ParametricDtmcPrctlModelCheckerTest, Die) {
         storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pdtmc/parametric_die.pm");
         storm::generator::NextStateGeneratorOptions options;

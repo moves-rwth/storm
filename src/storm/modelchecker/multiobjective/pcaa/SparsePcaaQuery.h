@@ -2,7 +2,7 @@
 #define STORM_MODELCHECKER_MULTIOBJECTIVE_PCAA_SPARSEPCAAQUERY_H_
 
 #include "storm/modelchecker/results/CheckResult.h"
-#include "storm/modelchecker/multiobjective/SparseMultiObjectivePreprocessorResult.h"
+#include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectivePreprocessorResult.h"
 #include "storm/modelchecker/multiobjective/pcaa/PcaaWeightVectorChecker.h"
 #include "storm/storage/geometry/Polytope.h"
 
@@ -55,7 +55,7 @@ namespace storm {
                  * Creates a new query for the Pareto curve approximation algorithm (Pcaa)
                  * @param preprocessorResult the result from preprocessing
                  */
-                SparsePcaaQuery(SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult);
+                SparsePcaaQuery(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult);
                 
                 /*
                  * Returns a weight vector w that separates the under approximation from the given point p, i.e.,
@@ -88,13 +88,6 @@ namespace storm {
                  * Returns true iff the maximum number of refinement steps (as possibly specified in the settings) has been reached
                  */
                 bool maxStepsPerformed(Environment const& env) const;
-                
-                /*
-                 * Transforms the given point (or polytope) to values w.r.t. the original model/formula (e.g. negates values for minimizing objectives).
-                 */
-                Point transformPointToOriginalModel(Point const& polytope) const;
-                std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> transformPolytopeToOriginalModel(std::shared_ptr<storm::storage::geometry::Polytope<GeometryValueType>> const& polytope) const;
-
                 
                 SparseModelType const& originalModel;
                 storm::logic::MultiObjectiveFormula const& originalFormula;

@@ -7,7 +7,7 @@
 #include "storm/transformer/EndComponentEliminator.h"
 #include "storm/modelchecker/multiobjective/Objective.h"
 #include "storm/modelchecker/multiobjective/pcaa/PcaaWeightVectorChecker.h"
-#include "storm/modelchecker/multiobjective/SparseMultiObjectivePreprocessorResult.h"
+#include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectivePreprocessorResult.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -34,8 +34,7 @@ namespace storm {
                  * @param possibleBottomStates The states for which it is posible to not collect further reward with prob. 1
                  *
                  */
-                
-                StandardPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
+                StandardPcaaWeightVectorChecker(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
                 
                 /*!
                  * - computes the optimal expected reward w.r.t. the weighted sum of the rewards of the individual objectives
@@ -63,7 +62,7 @@ namespace storm {
                 
             protected:
                 
-                void initialize(SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
+                void initialize(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
                 virtual void initializeModelTypeSpecificData(SparseModelType const& model) = 0;
 
                 /*!

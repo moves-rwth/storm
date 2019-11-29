@@ -7,7 +7,7 @@ namespace storm {
     namespace storage {
 
         template<typename ValueType>
-        DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(dft.stateBitVectorSize()), mId(id), failableElements(dft.nrElements(), dft.getRelevantEvents()), mPseudoState(false), mDft(dft), mStateGenerationInfo(stateGenerationInfo) {
+        DFTState<ValueType>::DFTState(DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(dft.stateBitVectorSize()), mId(id), failableElements(dft.nrElements()), indexRelevant(0), mPseudoState(false), mDft(dft), mStateGenerationInfo(stateGenerationInfo) {
             // TODO: use construct()
             
             // Initialize uses
@@ -33,7 +33,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        DFTState<ValueType>::DFTState(storm::storage::BitVector const& status, DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(status), mId(id), failableElements(dft.nrElements(), dft.getRelevantEvents()), mPseudoState(true), mDft(dft), mStateGenerationInfo(stateGenerationInfo) {
+        DFTState<ValueType>::DFTState(storm::storage::BitVector const& status, DFT<ValueType> const& dft, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) : mStatus(status), mId(id), failableElements(dft.nrElements()), indexRelevant(0), mPseudoState(true), mDft(dft), mStateGenerationInfo(stateGenerationInfo) {
             // Intentionally left empty
         }
         
@@ -82,14 +82,10 @@ namespace storm {
                 STORM_LOG_ASSERT(dependencyId == dependency->id(), "Ids do not match.");
                 assert(dependency->dependentEvents().size() == 1);
                 if (hasFailed(dependency->triggerEvent()->id()) && getElementState(dependency->dependentEvents()[0]->id()) == DFTElementState::Operational) {
-                    failableElements.addDependency(dependencyId);
+                    failableElements.addDependency(dependency->id(), mDft.isDependencyInConflict(dependency->id()));
                     STORM_LOG_TRACE("New dependency failure: " << *dependency);
                 }
             }
-
-            // Initialize remaining relevant events
-            failableElements.remainingRelevantEvents = mDft.getRelevantEvents();
-            this->updateRemainingRelevantEvents();
 
             mPseudoState = false;
         }
@@ -243,7 +239,7 @@ namespace storm {
                     // Check if restriction prevents failure of dependent event
                     if (!isEventDisabledViaRestriction(dependency->dependentEvents()[0]->id())) {
                         // Add dependency as possible failure
-                        failableElements.addDependency(dependency->id());
+                        failableElements.addDependency(dependency->id(), mDft.isDependencyInConflict(dependency->id()));
                         STORM_LOG_TRACE("New dependency failure: " << *dependency);
                         addedFailableDependency = true;
                     }
@@ -313,18 +309,6 @@ namespace storm {
                 STORM_LOG_ASSERT(dependency->dependentEvents()[0]->id() == id, "Ids do not match.");
                 setDependencyDontCare(dependency->id());
                 failableElements.removeDependency(dependency->id());
-            }
-        }
-
-        template<typename ValueType>
-        void DFTState<ValueType>::updateRemainingRelevantEvents() {
-            for (auto it = failableElements.remainingRelevantEvents.begin(); it != failableElements.remainingRelevantEvents.end(); ) {
-                if (isOperational(*it)) {
-                    ++it;
-                } else {
-                    // Element is not relevant anymore
-                    it = failableElements.remainingRelevantEvents.erase(it);
-                }
             }
         }
 
@@ -481,6 +465,22 @@ namespace storm {
             for(size_t id : postIds) {
                 if(isOperational(id)) {
                     return true;
+                }
+            }
+            return false;
+        }
+
+        template<typename ValueType>
+        bool DFTState<ValueType>::hasOperationalRelevantEvent() {
+            // Iterate over remaining relevant events
+            // All events with index < indexRelevant are already failed
+            while (indexRelevant < mDft.getRelevantEvents().size()) {
+                if (isOperational(mDft.getRelevantEvents()[indexRelevant])) {
+                    // Relevant event is still operational
+                    return true;
+                } else {
+                    // Consider next relevant event
+                    ++indexRelevant;
                 }
             }
             return false;

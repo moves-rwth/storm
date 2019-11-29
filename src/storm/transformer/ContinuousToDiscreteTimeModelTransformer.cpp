@@ -91,6 +91,8 @@ namespace storm {
             fragment.setUntilFormulasAllowed(true);
             fragment.setRewardOperatorsAllowed(true);
             fragment.setReachabilityRewardFormulasAllowed(true);
+            fragment.setTotalRewardFormulasAllowed(true);
+            fragment.setMultiObjectiveFormulasAllowed(true);
             return formula.isInFragment(fragment);
         }
   

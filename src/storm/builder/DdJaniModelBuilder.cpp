@@ -28,7 +28,7 @@
 #include "storm/models/symbolic/StandardRewardModel.h"
 
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/BuildSettings.h"
 
 #include "storm/utility/macros.h"
 #include "storm/utility/jani.h"
@@ -288,7 +288,7 @@ namespace storm {
             
             boost::any visit(storm::jani::AutomatonComposition const& composition, boost::any const&) override {
                 auto it = automata.find(composition.getAutomatonName());
-                STORM_LOG_THROW(it == automata.end(), storm::exceptions::InvalidArgumentException, "Cannot build symbolic model from JANI model whose system composition that refers to the automaton '" << composition.getAutomatonName() << "' multiple times.");
+                STORM_LOG_THROW(it == automata.end(), storm::exceptions::InvalidArgumentException, "Cannot build symbolic model from JANI model whose system composition refers to the automaton '" << composition.getAutomatonName() << "' multiple times.");
                 automata.insert(it, composition.getAutomatonName());
                 return boost::none;
             }
@@ -1325,9 +1325,10 @@ namespace storm {
                         
                         STORM_LOG_WARN_COND(!destinationDds.back().transitions.isZero(), "Destination does not have any effect.");
                     }
-                    
+                                        
                     // Now that we have built the destinations, we always take the full guard.
-                    guard = rangedGuard;
+                    storm::dd::Bdd<Type> sourceLocationBdd = this->variables.manager->getEncoding(this->variables.automatonToLocationDdVariableMap.at(automaton.getName()).first, edge.getSourceLocationIndex());
+                    guard = sourceLocationBdd && rangedGuard;
                     
                     // Start by gathering all variables that were written in at least one destination.
                     std::set<storm::expressions::Variable> globalVariablesInSomeDestination;
@@ -1361,8 +1362,8 @@ namespace storm {
                     }
                     
                     // Add the source location and the guard.
-                    storm::dd::Add<Type, ValueType> sourceLocationAndGuard = this->variables.manager->getEncoding(this->variables.automatonToLocationDdVariableMap.at(automaton.getName()).first, edge.getSourceLocationIndex()).template toAdd<ValueType>() * guard.template toAdd<ValueType>();
-                    transitions *= sourceLocationAndGuard;
+                    storm::dd::Add<Type, ValueType> guardAdd = guard.template toAdd<ValueType>();
+                    transitions *= guardAdd;
                     
                     // If we multiply the ranges of global variables, make sure everything stays within its bounds.
                     if (!globalVariablesInSomeDestination.empty()) {
@@ -1381,8 +1382,8 @@ namespace storm {
                     // Finally treat the transient assignments.
                     std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>> transientEdgeAssignments;
                     if (!this->transientVariables.empty()) {
-                        performTransientAssignments(edge.getAssignments().getTransientAssignments(), [this, &transientEdgeAssignments, &sourceLocationAndGuard, &exitRates] (storm::jani::Assignment const& assignment) {
-                            auto newTransientEdgeAssignments = sourceLocationAndGuard * this->variables.rowExpressionAdapter->translateExpression(assignment.getAssignedExpression());
+                        performTransientAssignments(edge.getAssignments().getTransientAssignments(), [this, &transientEdgeAssignments, &guardAdd, &exitRates] (storm::jani::Assignment const& assignment) {
+                            auto newTransientEdgeAssignments = guardAdd * this->variables.rowExpressionAdapter->translateExpression(assignment.getAssignedExpression());
                             if (exitRates) {
                                 newTransientEdgeAssignments *= exitRates.get();
                             }
@@ -1390,9 +1391,9 @@ namespace storm {
                         } );
                     }
                     
-                    return EdgeDd(isMarkovian, guard, guard.template toAdd<ValueType>() * transitions, transientEdgeAssignments, globalVariablesInSomeDestination);
+                    return EdgeDd(isMarkovian, guard, transitions, transientEdgeAssignments, globalVariablesInSomeDestination);
                 } else {
-                    return EdgeDd(false, rangedGuard, rangedGuard.template toAdd<ValueType>(), std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>>(), std::set<storm::expressions::Variable>());
+                    return EdgeDd(edge.hasRate(), rangedGuard, rangedGuard.template toAdd<ValueType>(), std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>>(), std::set<storm::expressions::Variable>());
                 }
             }
             
@@ -1516,7 +1517,7 @@ namespace storm {
                     
                     // Check for overlapping guards.
                     overlappingGuards = !(edgeDd.guard && allGuards).isZero();
-                    
+
                     // Issue a warning if there are overlapping guards in a DTMC.
                     STORM_LOG_WARN_COND(!overlappingGuards || this->model.getModelType() == storm::jani::ModelType::CTMC || this->model.getModelType() == storm::jani::ModelType::MA, "Guard of an edge in a DTMC overlaps with previous guards.");
                     
@@ -1931,7 +1932,7 @@ namespace storm {
             
             if (!deadlockStates.isZero()) {
                 // If we need to fix deadlocks, we do so now.
-                if (!storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet()) {
+                if (!storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet()) {
                     STORM_LOG_INFO("Fixing deadlocks in " << deadlockStates.getNonZeroCount() << " states. The first three of these states are: ");
                     
                     storm::dd::Add<Type, ValueType> deadlockStatesAdd = deadlockStates.template toAdd<ValueType>();

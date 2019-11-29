@@ -24,7 +24,7 @@ namespace storm {
             public:
                 typedef typename SparseMaModelType::ValueType ValueType;
                 
-                StandardMaPcaaWeightVectorChecker(SparseMultiObjectivePreprocessorResult<SparseMaModelType> const& preprocessorResult);
+                StandardMaPcaaWeightVectorChecker(preprocessing::SparseMultiObjectivePreprocessorResult<SparseMaModelType> const& preprocessorResult);
                 
                 virtual ~StandardMaPcaaWeightVectorChecker() = default;
 

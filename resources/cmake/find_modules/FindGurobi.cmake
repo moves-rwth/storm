@@ -56,6 +56,7 @@ find_library( GUROBI_LIBRARY
                     "/Library/gurobi702/mac64/lib"
                     "/Library/gurobi801/mac64/lib"
                     "/Library/gurobi810/mac64/lib"
+                    "/Library/gurobi811/mac64/lib"
                     "${GUROBI_ROOT}/lib"
               )
 
@@ -72,6 +73,7 @@ find_library( GUROBI_CXX_LIBRARY
                     "/Library/gurobi702/mac64/lib"
                     "/Library/gurobi801/mac64/lib"
                     "/Library/gurobi810/mac64/lib"
+                    "/Library/gurobi811/mac64/lib"
                     "${GUROBI_ROOT}/lib"
               )
 

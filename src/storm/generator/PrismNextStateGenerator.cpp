@@ -107,7 +107,8 @@ namespace storm {
 
 #ifdef STORM_HAVE_CARL
             else if (std::is_same<ValueType, storm::RationalFunction>::value && !program.undefinedConstantsAreGraphPreserving()) {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The program contains undefined constants that appear in some places other than update probabilities and reward value expressions, which is not admitted.");
+                auto undef = program.getUndefinedConstantsAsString();
+                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The program contains undefined constants that appear in some places other than update probabilities and reward value expressions, which is not admitted. Undefined constants are: " << undef);
             }
 #endif
         }

@@ -22,7 +22,9 @@ namespace storm {
                 virtual ~EliminatorBase() = default;
 
                 void eliminate(uint64_t row, uint64_t column, bool clearRow);
-                
+
+                void eliminateLoop(uint64_t row);
+
                 // Provide virtual methods that can be customized by subclasses to govern side-effect of the elimination.
                 virtual void updateValue(storm::storage::sparse::state_type const& state, ValueType const& loopProbability);
                 virtual void updatePredecessor(storm::storage::sparse::state_type const& predecessor, ValueType const& probability, storm::storage::sparse::state_type const& state);

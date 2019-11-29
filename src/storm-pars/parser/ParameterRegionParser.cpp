@@ -12,9 +12,9 @@ namespace storm {
         template<typename ParametricType>
         void ParameterRegionParser<ParametricType>::parseParameterBoundaries(Valuation& lowerBoundaries, Valuation& upperBoundaries, std::string const& parameterBoundariesString, std::set<VariableType> const& consideredVariables) {
             std::string::size_type positionOfFirstRelation = parameterBoundariesString.find("<=");
-            STORM_LOG_THROW(positionOfFirstRelation!=std::string::npos, storm::exceptions::InvalidArgumentException, "When parsing the region" << parameterBoundariesString << " I could not find  a '<=' after the first number");
+            STORM_LOG_THROW(positionOfFirstRelation!=std::string::npos, storm::exceptions::InvalidArgumentException, "When parsing the region" << parameterBoundariesString << " I could not find a '<=' after the first number");
             std::string::size_type positionOfSecondRelation = parameterBoundariesString.find("<=", positionOfFirstRelation+2);
-            STORM_LOG_THROW(positionOfSecondRelation!=std::string::npos, storm::exceptions::InvalidArgumentException, "When parsing the region" << parameterBoundariesString << " I could not find  a '<=' after the parameter");
+            STORM_LOG_THROW(positionOfSecondRelation!=std::string::npos, storm::exceptions::InvalidArgumentException, "When parsing the region" << parameterBoundariesString << " I could not find a '<=' after the parameter");
 
             std::string parameter = parameterBoundariesString.substr(positionOfFirstRelation+2,positionOfSecondRelation-(positionOfFirstRelation+2));
 

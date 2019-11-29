@@ -30,13 +30,27 @@ namespace storm {
             /*!
              * Parse states and return transition matrix.
              *
-             * @param file      Input file stream.
-             * @param type      Model type.
+             * @param file Input file stream.
+             * @param type Model type.
              * @param stateSize No. of states
+             * @param placeholders Placeholders for values.
+             * @param valueParser Value parser.
+             * @param rewardModelNames Names of reward models.
              *
              * @return Transition matrix.
              */
-            static std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>> parseStates(std::istream& file, storm::models::ModelType type, size_t stateSize, ValueParser<ValueType> const& valueParser, std::vector<std::string> const& rewardModelNames);
+            static std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>>
+            parseStates(std::istream& file, storm::models::ModelType type, size_t stateSize, std::unordered_map<std::string, ValueType> const& placeholders,
+                        ValueParser<ValueType> const& valueParser, std::vector<std::string> const& rewardModelNames);
+
+            /*!
+             * Parse value from string while using placeholders.
+             * @param valueStr String.
+             * @param placeholders Placeholders.
+             * @param valueParser Value parser.
+             * @return
+             */
+            static ValueType parseValue(std::string const& valueStr, std::unordered_map<std::string, ValueType> const& placeholders, ValueParser<ValueType> const& valueParser);
         };
 
     } // namespace parser

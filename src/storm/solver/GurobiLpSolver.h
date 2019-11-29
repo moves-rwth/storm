@@ -107,6 +107,9 @@ namespace storm {
             virtual void push() override;
             virtual void pop() override;
             
+            virtual void setMaximalMILPGap(ValueType const& gap, bool relative) override;
+            virtual ValueType getMILPGap(bool relative) const override;
+            
             // Methods to retrieve values of sub-optimal solutions found along the way.
             void setMaximalSolutionCount(uint64_t value); // How many solutions will be stored (at max)
             uint64_t getSolutionCount() const; // How many solutions have been found
@@ -115,18 +118,7 @@ namespace storm {
             bool getBinaryValue(storm::expressions::Variable const& name, uint64_t const& solutionIndex) const;
             ValueType getObjectiveValue(uint64_t const& solutionIndex) const;
             
-            /*!
-             * Specifies the maximum difference between lower- and upper objective bounds that triggers termination.
-             * That means a solution is considered optimal if
-             * upperBound - lowerBound < gap * (relative ? |upperBound| : 1).
-             * Only relevant for programs with integer/boolean variables.
-             */
-            void setMaximalMILPGap(ValueType const& gap, bool relative);
-            
-            /*!
-             * Returns the obtained gap after a call to optimize()
-             */
-            ValueType getMILPGap(bool relative) const;
+
             
         private:
             /*!

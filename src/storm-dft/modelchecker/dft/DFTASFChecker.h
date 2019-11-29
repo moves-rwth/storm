@@ -44,6 +44,7 @@ namespace storm {
             using ValueType = double;
         public:
             DFTASFChecker(storm::storage::DFT<ValueType> const&);
+
             /**
              * Generate general variables and constraints for the DFT and store them in the corresponding maps and vectors
              *
@@ -80,21 +81,18 @@ namespace storm {
             storm::solver::SmtSolver::CheckResult checkTleFailsWithLeq(uint64_t bound);
 
             /**
-             * Get the minimal number of BEs necessary for the TLE to fail (lower bound for number of failures to check)
+             * Check if two given dependencies are conflicting in their resolution, i.e. check if non-determinism may occur.
+             * Note that this is a very conservative check using SMT formulae.
+             * We only check if sequences exist, where one of the dependencies is triggered before the other is completely resolved
              *
-             * @param timeout timeout for each query in seconds, defaults to 10 seconds
-             * @return the minimal number
+             * @param dep1Index Index of the first dependency
+             * @param dep2Index Index of the second dependency
+             * @param timeout timeout for the solver
+             * @return "Sat" if the dependencies are conflicting, "Unsat" if they are not, otherwise "Unknown"
              */
-            uint64_t getLeastFailureBound(uint_fast64_t timeout = 10);
+            storm::solver::SmtSolver::CheckResult
+            checkDependencyConflict(uint64_t dep1Index, uint64_t dep2Index, uint64_t timeout = 10);
 
-            /**
-             * Get the number of BE failures for which the TLE always fails (upper bound for number of failures to check).
-             * Note that the returned value may be higher than the real one when dependencies are present.
-             *
-             * @param timeout timeout for each query in seconds, defaults to 10 seconds
-             * @return the number
-             */
-            uint64_t getAlwaysFailedBound(uint_fast64_t timeout = 10);
 
             /**
              * Set the timeout of the solver
@@ -107,8 +105,14 @@ namespace storm {
              * Unset the timeout for the solver
              */
             void unsetSolverTimeout();
-            
-        private:
+
+            /**
+             *  Get a reference to the DFT
+             */
+            storm::storage::DFT<ValueType> const &getDFT() {
+                return dft;
+            }
+
             /**
              * Helper function to check if the TLE fails before or at a given timepoint while visiting exactly
              * a given number of non-Markovian states
@@ -122,34 +126,16 @@ namespace storm {
             checkFailsLeqWithEqNonMarkovianState(uint64_t checkbound, uint64_t nrNonMarkovian);
 
             /**
-             * Helper function that checks if the DFT can fail at a timepoint while visiting less than a given number of Markovian states
+             * Helper function that checks if the DFT can fail at a timepoint while visiting a given number of Markovian states
              *
              * @param timepoint point in time to check
              * @return "Sat" if a sequence of BE failures exists such that less than checkNumber Markovian states are visited,
              * "Unsat" if it does not, otherwise "Unknown"
              */
-            storm::solver::SmtSolver::CheckResult checkFailsAtTimepointWithOnlyMarkovianState(uint64_t timepoint);
-
-            /**
-             * Helper function for correction of least failure bound when dependencies are present.
-             * The main idea is to check if a later point of failure for the TLE than the pre-computed bound exists, but
-             * up until that point the number of non-Markovian states visited is so large, that less than the pre-computed bound BEs fail by themselves.
-             * The corrected bound is then (newTLEFailureTimepoint)-(nrNonMarkovianStatesVisited). This term is minimized.
-             *
-             * @param bound known lower bound to be corrected
-             * @param timeout timeout timeout for each query in seconds
-             * @return the corrected bound
-             */
-            uint64_t correctLowerBound(uint64_t bound, uint_fast64_t timeout);
-
-            /**
-             * Helper function for correction of bound for number of BEs such that the DFT always fails when dependencies are present
-             *
-             * @param bound known bound to be corrected
-             * @param timeout timeout timeout for each query in seconds
-             * @return the corrected bound
-             */
-            uint64_t correctUpperBound(uint64_t bound, uint_fast64_t timeout);
+            storm::solver::SmtSolver::CheckResult
+            checkFailsAtTimepointWithEqNonMarkovianState(uint64_t timepoint, uint64_t nrNonMarkovian);
+            
+        private:
 
             uint64_t getClaimVariableIndex(uint64_t spareIndex, uint64_t childIndex) const;
 

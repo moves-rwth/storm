@@ -5,7 +5,7 @@
  *      Author: Manuel Sascha Weiand
  */
 
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 
 #include <string>
@@ -16,7 +16,7 @@
 
 TEST(MappedFileTest, NonExistingFile) {
 	// No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!
-	ASSERT_THROW(storm::parser::MappedFile(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
+	STORM_SILENT_ASSERT_THROW(storm::parser::MappedFile(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
 }
 
 TEST(MappedFileTest, BasicFunctionality) {

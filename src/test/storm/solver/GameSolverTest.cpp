@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
@@ -68,7 +68,7 @@ namespace {
             RationalPiEnvironment
     > TestingTypes;
     
-    TYPED_TEST_CASE(GameSolverTest, TestingTypes);
+    TYPED_TEST_SUITE(GameSolverTest, TestingTypes,);
     
     TYPED_TEST(GameSolverTest, SolveEquations) {
         typedef typename TestFixture::ValueType ValueType;

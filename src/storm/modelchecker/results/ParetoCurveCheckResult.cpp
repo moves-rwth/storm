@@ -65,13 +65,25 @@ namespace storm {
             out << points.size() << " Pareto optimal points found:" << std::endl;
             for(auto const& p : points) {
                 out << "   (";
-                for(auto it = p.begin(); it != p.end(); ++it){
-                    if(it != p.begin()){
+                for (auto it = p.begin(); it != p.end(); ++it){
+                    if (it != p.begin()){
                         out << ", ";
                     }
-                    out << std::setw(10) << *it;
+                    out << std::setw(storm::NumberTraits<ValueType>::IsExact ? 20 : 11) << *it;
                 }
-                out << " )" << std::endl;
+                out << " )";
+                if (storm::NumberTraits<ValueType>::IsExact) {
+                    out << " approx. ";
+                    out << "   (";
+                    for (auto it = p.begin(); it != p.end(); ++it) {
+                        if(it != p.begin()){
+                            out << ", ";
+                        }
+                        out << std::setw(11) << storm::utility::convertNumber<double>(*it);
+                    }
+                    out << " )";
+                }
+                out << std::endl;
             }
             return out;
         }

@@ -249,7 +249,47 @@ namespace storm {
                     elementsWithEntryInColumnEqualRow.shrink_to_fit();
                 }
             }
-            
+
+            template<typename ValueType, ScalingMode Mode>
+            void EliminatorBase<ValueType, Mode>::eliminateLoop(uint64_t state) {
+                // Start by finding value of the selfloop.
+                bool hasEntryInColumn = false;
+                ValueType columnValue = storm::utility::zero<ValueType>();
+                FlexibleRowType& entriesInRow = matrix.getRow(state);
+                for (auto entryIt = entriesInRow.begin(), entryIte = entriesInRow.end(); entryIt != entryIte; ++entryIt) {
+                    if (entryIt->getColumn() == state) {
+                        columnValue = entryIt->getValue();
+                        hasEntryInColumn = true;
+                    }
+                }
+
+                // Scale all entries in this row.
+                // Depending on the scaling mode, we scale the other entries of the row.
+                STORM_LOG_TRACE((hasEntryInColumn ? "State has entry in column." : "State does not have entry in column."));
+                if (Mode == ScalingMode::Divide) {
+                    STORM_LOG_ASSERT(hasEntryInColumn, "The scaling mode 'divide' requires an element in the given column.");
+                    STORM_LOG_ASSERT(storm::utility::isZero(columnValue), "The scaling mode 'divide' requires a non-zero element in the given column.");
+                    columnValue = storm::utility::one<ValueType>() / columnValue;
+                } else if (Mode == ScalingMode::DivideOneMinus) {
+                    if (hasEntryInColumn) {
+                        STORM_LOG_ASSERT(columnValue != storm::utility::one<ValueType>(), "The scaling mode 'divide-one-minus' requires a non-one value in the given column.");
+                        columnValue = storm::utility::one<ValueType>() / (storm::utility::one<ValueType>() - columnValue);
+                        columnValue = storm::utility::simplify(columnValue);
+                    }
+                }
+
+                if (hasEntryInColumn) {
+                    for (auto entryIt = entriesInRow.begin(), entryIte = entriesInRow.end(); entryIt != entryIte; ++entryIt) {
+                        // Scale the entries in a different column, set state transition probability to 0.
+                        if (entryIt->getColumn() != state) {
+                            entryIt->setValue(storm::utility::simplify((ValueType) (entryIt->getValue() * columnValue)));
+                        } else {
+                            entryIt->setValue(storm::utility::zero<ValueType>());
+                        }
+                    }
+                }
+            }
+
             template<typename ValueType, ScalingMode Mode>
             void EliminatorBase<ValueType, Mode>::updateValue(storm::storage::sparse::state_type const&, ValueType const&) {
                 // Intentionally left empty.

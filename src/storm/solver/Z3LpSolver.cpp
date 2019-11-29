@@ -9,6 +9,7 @@
 
 #include "storm/utility/macros.h"
 #include "storm/utility/constants.h"
+#include "storm/utility/file.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
@@ -25,13 +26,12 @@ namespace storm {
 #ifdef STORM_HAVE_Z3_OPTIMIZE
         
         template<typename ValueType>
-        Z3LpSolver<ValueType>::Z3LpSolver(std::string const& name, OptimizationDirection const& optDir) : LpSolver<ValueType>(optDir) {
+        Z3LpSolver<ValueType>::Z3LpSolver(std::string const& name, OptimizationDirection const& optDir) : LpSolver<ValueType>(optDir), isIncremental(false) {
             z3::config config;
             config.set("model", true);
             context = std::unique_ptr<z3::context>(new z3::context(config));
             solver = std::unique_ptr<z3::optimize>(new z3::optimize(*context));
             expressionAdapter = std::unique_ptr<storm::adapters::Z3ExpressionAdapter>(new storm::adapters::Z3ExpressionAdapter(*this->manager, *context));
-            optimizationFunction = this->getManager().rational(storm::utility::zero<storm::RationalNumber>());
         }
         
         template<typename ValueType>
@@ -64,71 +64,134 @@ namespace storm {
         
         template<typename ValueType>
         storm::expressions::Variable Z3LpSolver<ValueType>::addBoundedContinuousVariable(std::string const& name, ValueType lowerBound, ValueType upperBound, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareVariable(name, this->manager->getRationalType());
+            storm::expressions::Variable newVariable;
+            if (isIncremental) {
+                newVariable = this->manager->declareOrGetVariable(name, this->manager->getRationalType());
+            } else {
+                newVariable = this->manager->declareVariable(name, this->manager->getRationalType());
+            }
             solver->add(expressionAdapter->translateExpression((newVariable.getExpression() >= this->manager->rational(lowerBound)) && (newVariable.getExpression() <= this->manager->rational(upperBound))));
-            optimizationFunction = optimizationFunction + this->manager->rational(objectiveFunctionCoefficient) * newVariable;
+            if (!storm::utility::isZero(objectiveFunctionCoefficient)) {
+                optimizationSummands.push_back(this->manager->rational(objectiveFunctionCoefficient) * newVariable);
+            }
             return newVariable;
         }
         
         template<typename ValueType>
         storm::expressions::Variable Z3LpSolver<ValueType>::addLowerBoundedContinuousVariable(std::string const& name, ValueType lowerBound, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareVariable(name, this->manager->getRationalType());
+            storm::expressions::Variable newVariable;
+            if (isIncremental) {
+                newVariable = this->manager->declareOrGetVariable(name, this->manager->getRationalType());
+            } else {
+                newVariable = this->manager->declareVariable(name, this->manager->getRationalType());
+            }
             solver->add(expressionAdapter->translateExpression(newVariable.getExpression() >= this->manager->rational(lowerBound)));
-            optimizationFunction = optimizationFunction + this->manager->rational(objectiveFunctionCoefficient) * newVariable;
+            if (!storm::utility::isZero(objectiveFunctionCoefficient)) {
+                optimizationSummands.push_back(this->manager->rational(objectiveFunctionCoefficient) * newVariable);
+            }
             return newVariable;
         }
 
         template<typename ValueType>
         storm::expressions::Variable Z3LpSolver<ValueType>::addUpperBoundedContinuousVariable(std::string const& name, ValueType upperBound, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareVariable(name, this->manager->getRationalType());
+            storm::expressions::Variable newVariable;
+            if (isIncremental) {
+                newVariable = this->manager->declareOrGetVariable(name, this->manager->getRationalType());
+            } else {
+                newVariable = this->manager->declareVariable(name, this->manager->getRationalType());
+            }
             solver->add(expressionAdapter->translateExpression(newVariable.getExpression() <= this->manager->rational(upperBound)));
-            optimizationFunction = optimizationFunction + this->manager->rational(objectiveFunctionCoefficient) * newVariable;
+            if (!storm::utility::isZero(objectiveFunctionCoefficient)) {
+                optimizationSummands.push_back(this->manager->rational(objectiveFunctionCoefficient) * newVariable);
+            }
             return newVariable;
         }
 
         template<typename ValueType>
         storm::expressions::Variable Z3LpSolver<ValueType>::addUnboundedContinuousVariable(std::string const& name, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareVariable(name, this->manager->getRationalType());
-            optimizationFunction = optimizationFunction + this->manager->rational(objectiveFunctionCoefficient) * newVariable;
+            storm::expressions::Variable newVariable;
+            if (isIncremental) {
+                newVariable = this->manager->declareOrGetVariable(name, this->manager->getRationalType());
+            } else {
+                newVariable = this->manager->declareVariable(name, this->manager->getRationalType());
+            }
+            if (!storm::utility::isZero(objectiveFunctionCoefficient)) {
+                optimizationSummands.push_back(this->manager->rational(objectiveFunctionCoefficient) * newVariable);
+            }
             return newVariable;
         }
         
         template<typename ValueType>
         storm::expressions::Variable Z3LpSolver<ValueType>::addBoundedIntegerVariable(std::string const& name, ValueType lowerBound, ValueType upperBound, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareVariable(name, this->manager->getIntegerType());
+            storm::expressions::Variable newVariable;
+            if (isIncremental) {
+                newVariable = this->manager->declareOrGetVariable(name, this->manager->getIntegerType());
+            } else {
+                newVariable = this->manager->declareVariable(name, this->manager->getIntegerType());
+            }
             solver->add(expressionAdapter->translateExpression((newVariable.getExpression() >= this->manager->rational(lowerBound)) && (newVariable.getExpression() <= this->manager->rational(upperBound))));
-            optimizationFunction = optimizationFunction + this->manager->rational(objectiveFunctionCoefficient) * newVariable;
+            if (!storm::utility::isZero(objectiveFunctionCoefficient)) {
+                optimizationSummands.push_back(this->manager->rational(objectiveFunctionCoefficient) * newVariable);
+            }
             return newVariable;
         }
         
         template<typename ValueType>
         storm::expressions::Variable Z3LpSolver<ValueType>::addLowerBoundedIntegerVariable(std::string const& name, ValueType lowerBound, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareVariable(name, this->manager->getIntegerType());
+            storm::expressions::Variable newVariable;
+            if (isIncremental) {
+                newVariable = this->manager->declareOrGetVariable(name, this->manager->getIntegerType());
+            } else {
+                newVariable = this->manager->declareVariable(name, this->manager->getIntegerType());
+            }
             solver->add(expressionAdapter->translateExpression(newVariable.getExpression() >= this->manager->rational(lowerBound)));
-            optimizationFunction = optimizationFunction + this->manager->rational(objectiveFunctionCoefficient) * newVariable;
+            if (!storm::utility::isZero(objectiveFunctionCoefficient)) {
+                optimizationSummands.push_back(this->manager->rational(objectiveFunctionCoefficient) * newVariable);
+            }
             return newVariable;
         }
         
         template<typename ValueType>
         storm::expressions::Variable Z3LpSolver<ValueType>::addUpperBoundedIntegerVariable(std::string const& name, ValueType upperBound, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareVariable(name, this->manager->getIntegerType());
+            storm::expressions::Variable newVariable;
+            if (isIncremental) {
+                newVariable = this->manager->declareOrGetVariable(name, this->manager->getIntegerType());
+            } else {
+                newVariable = this->manager->declareVariable(name, this->manager->getIntegerType());
+            }
             solver->add(expressionAdapter->translateExpression(newVariable.getExpression() <= this->manager->rational(upperBound)));
-            optimizationFunction = optimizationFunction + this->manager->rational(objectiveFunctionCoefficient) * newVariable;
+            if (!storm::utility::isZero(objectiveFunctionCoefficient)) {
+                optimizationSummands.push_back(this->manager->rational(objectiveFunctionCoefficient) * newVariable);
+            }
             return newVariable;
         }
         
         template<typename ValueType>
         storm::expressions::Variable Z3LpSolver<ValueType>::addUnboundedIntegerVariable(std::string const& name, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareVariable(name, this->manager->getIntegerType());
-            optimizationFunction = optimizationFunction + this->manager->rational(objectiveFunctionCoefficient) * newVariable;
+            storm::expressions::Variable newVariable;
+            if (isIncremental) {
+                newVariable = this->manager->declareOrGetVariable(name, this->manager->getIntegerType());
+            } else {
+                newVariable = this->manager->declareVariable(name, this->manager->getIntegerType());
+            }
+            if (!storm::utility::isZero(objectiveFunctionCoefficient)) {
+                optimizationSummands.push_back(this->manager->rational(objectiveFunctionCoefficient) * newVariable);
+            }
             return newVariable;
         }
         
         template<typename ValueType>
         storm::expressions::Variable Z3LpSolver<ValueType>::addBinaryVariable(std::string const& name, ValueType objectiveFunctionCoefficient) {
-            storm::expressions::Variable newVariable = this->manager->declareVariable(name, this->manager->getIntegerType());
+            storm::expressions::Variable newVariable;
+            if (isIncremental) {
+                newVariable = this->manager->declareOrGetVariable(name, this->manager->getIntegerType());
+            } else {
+                newVariable = this->manager->declareVariable(name, this->manager->getIntegerType());
+            }
             solver->add(expressionAdapter->translateExpression((newVariable.getExpression() >= this->manager->rational(storm::utility::zero<storm::RationalNumber>())) && (newVariable.getExpression() <= this->manager->rational(storm::utility::one<storm::RationalNumber>()))));
-            optimizationFunction = optimizationFunction + this->manager->rational(objectiveFunctionCoefficient) * newVariable;
+            if (!storm::utility::isZero(objectiveFunctionCoefficient)) {
+                optimizationSummands.push_back(this->manager->rational(objectiveFunctionCoefficient) * newVariable);
+            }
             return newVariable;
         }
 
@@ -148,6 +211,7 @@ namespace storm {
             solver->push();
 
             // Solve the optimization problem depending on the optimization direction
+            storm::expressions::Expression optimizationFunction = storm::expressions::sum(optimizationSummands);
             z3::optimize::handle optFuncHandle = this->getOptimizationDirection() == OptimizationDirection::Minimize ? solver->minimize(expressionAdapter->translateExpression(optimizationFunction)) :  solver->maximize(expressionAdapter->translateExpression(optimizationFunction));
             z3::check_result chkRes = solver->check();
             STORM_LOG_THROW(chkRes != z3::unknown, storm::exceptions::InvalidStateException, "Unable to solve LP problem with Z3: Check result is unknown.");
@@ -255,19 +319,40 @@ namespace storm {
         
         template<typename ValueType>
         void Z3LpSolver<ValueType>::writeModelToFile(std::string const& filename) const {
-            STORM_LOG_THROW(!this->isUnbounded(), storm::exceptions::NotImplementedException, "Exporting LP Problems to a file is not implemented for z3.");
+            std::ofstream stream;
+            storm::utility::openFile(filename, stream);
+            stream << Z3_optimize_to_string(*context, *solver);
+            storm::utility::closeFile(stream);
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Exporting LP Problems to a file is not implemented for z3.");
         }
         
         template<typename ValueType>
         void Z3LpSolver<ValueType>::push()  {
+            incrementaOptimizationSummandIndicators.push_back(optimizationSummands.size());
             solver->push();
         }
         
         template<typename ValueType>
         void Z3LpSolver<ValueType>::pop()  {
+            STORM_LOG_ASSERT(!incrementaOptimizationSummandIndicators.empty(), "Tried to pop() without push()ing first.");
             solver->pop();
+            // Delete summands of the optimization function that have been added since the last call to push()
+            optimizationSummands.resize(incrementaOptimizationSummandIndicators.back());
+            incrementaOptimizationSummandIndicators.pop_back();
+            isIncremental = true;
         }
-
+        
+        template<typename ValueType>
+        void Z3LpSolver<ValueType>::setMaximalMILPGap(ValueType const&, bool) {
+            // Since the solver is always exact, setting a gap has no effect.
+            // Intentionally left empty.
+        }
+        
+        template<typename ValueType>
+        ValueType Z3LpSolver<ValueType>::getMILPGap(bool relative) const {
+            // Since the solver is precise, the milp gap is always zero.
+            return storm::utility::zero<ValueType>();
+        }
 #else
         template<typename ValueType>
         Z3LpSolver<ValueType>::Z3LpSolver(std::string const&, OptimizationDirection const&) {
@@ -405,6 +490,16 @@ namespace storm {
         
         template<typename ValueType>
         void Z3LpSolver<ValueType>::pop()  {
+            throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that requires this support.";
+        }
+        
+        template<typename ValueType>
+        void Z3LpSolver<ValueType>::setMaximalMILPGap(ValueType const& gap, bool relative) {
+            throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that requires this support.";
+        }
+        
+        template<typename ValueType>
+        ValueType Z3LpSolver<ValueType>::getMILPGap(bool relative) const {
             throw storm::exceptions::NotImplementedException() << "This version of storm was compiled without Z3 or the version of Z3 does not support optimization. Yet, a method was called that requires this support.";
         }
 #endif

@@ -25,6 +25,29 @@ namespace storm {
             return this->comment;
         }
         
+        std::string Property::asPrismSyntax() const {
+            std::stringstream stream;
+            if (!this->getName().empty()) {
+                stream << "\"" << this->getName() << "\": ";
+            }
+            auto fe = this->getFilter();
+            if (fe.isDefault()) {
+                stream << *fe.getFormula();
+            } else {
+                stream << "filter(" << storm::modelchecker::toString(fe.getFilterType()) << ", " << *fe.getFormula();
+                if (fe.getStatesFormula() && !fe.getStatesFormula()->isInitialFormula()) {
+                    stream << ", " << *fe.getFormula();
+                }
+                stream << ")";
+            }
+            stream << ";";
+            
+            if (!this->getComment().empty()) {
+                stream << " // " << this->getComment();
+            }
+            return stream.str();
+        }
+        
         Property Property::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
             std::set<storm::expressions::Variable> remainingUndefinedConstants;
             for (auto const& constant : undefinedConstants) {

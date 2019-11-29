@@ -428,6 +428,16 @@ namespace storm {
             std::vector<std::reference_wrapper<Constant const>> getUndefinedConstants() const;
             
             /*!
+             * Replaces each variable to which we never assign a value with a constant.
+             */
+            Model& replaceUnassignedVariablesWithConstants();
+            
+            /*!
+             * Substitutes all constants in all expressions of the model.
+             */
+            Model& substituteConstantsInPlace();
+            
+            /*!
              * Substitutes all constants in all expressions of the model. The original model is not modified, but
              * instead a new model is created.
              */
@@ -453,8 +463,10 @@ namespace storm {
             void substituteFunctions(std::vector<Property>& properties);
             
             /*!
-             * Substitutes all constants in all expressions of the model. The original model is not modified, but
-             * instead a new model is created. Afterwards, all function calls are substituted with the defining expression.
+             * 1. Tries to replace variables by constants (if possible).
+             * 2. Substitutes all constants in all expressions of the model.
+             * 3. Afterwards, all function calls are substituted with the defining expression.
+             * The original model is not modified, but  instead a new model is created.
              */
             Model substituteConstantsFunctions() const;
 

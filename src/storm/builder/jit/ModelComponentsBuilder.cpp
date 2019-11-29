@@ -10,7 +10,7 @@
 #include "storm/builder/RewardModelBuilder.h"
 
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/BuildSettings.h"
 
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/utility/macros.h"
@@ -27,7 +27,7 @@ namespace storm {
                     markovianStates = std::make_unique<storm::storage::BitVector>(10);
                 }
                 
-                dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet();
+                dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet();
             }
             
             template <typename IndexType, typename ValueType>

@@ -5,7 +5,7 @@
  *      Author: Manuel Sascha Weiand
  */
 
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 
 #include "storm-parsers/parser/NondeterministicSparseTransitionParser.h"
@@ -13,7 +13,7 @@
 #include "storm/settings/SettingMemento.h"
 
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/BuildSettings.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/WrongFormatException.h"
 
@@ -21,10 +21,10 @@
 
 TEST(NondeterministicSparseTransitionParserTest, NonExistingFile) {
 	// No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!
-	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
+	STORM_SILENT_ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
 
 	storm::storage::SparseMatrix<double> nullInformation;
-	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitionRewards(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not", nullInformation), storm::exceptions::FileIoException);
+	STORM_SILENT_ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitionRewards(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not", nullInformation), storm::exceptions::FileIoException);
 }
 
 
@@ -202,15 +202,15 @@ TEST(NondeterministicSparseTransitionParserTest, Whitespaces) {
 
 TEST(NondeterministicSparseTransitionParserTest, MixedTransitionOrder) {
 	// Since the MatrixBuilder needs sequential input of new elements reordering of transitions or states should throw an exception.
-	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_TEST_RESOURCES_DIR "/tra/mdp_mixedStateOrder.tra"), storm::exceptions::InvalidArgumentException);
+	STORM_SILENT_ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_TEST_RESOURCES_DIR "/tra/mdp_mixedStateOrder.tra"), storm::exceptions::InvalidArgumentException);
 
 	storm::storage::SparseMatrix<double> modelInformation = storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_TEST_RESOURCES_DIR "/tra/mdp_general.tra");
-	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitionRewards(STORM_TEST_RESOURCES_DIR "/rew/mdp_mixedStateOrder.trans.rew", modelInformation), storm::exceptions::InvalidArgumentException);
+	STORM_SILENT_ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitionRewards(STORM_TEST_RESOURCES_DIR "/rew/mdp_mixedStateOrder.trans.rew", modelInformation), storm::exceptions::InvalidArgumentException);
 }
 
 TEST(NondeterministicSparseTransitionParserTest, FixDeadlocks) {
 	// Set the fixDeadlocks flag temporarily. It is set to its old value once the deadlockOption object is destructed.
-    std::unique_ptr<storm::settings::SettingMemento> fixDeadlocks = storm::settings::mutableCoreSettings().overrideDontFixDeadlocksSet(false);
+    std::unique_ptr<storm::settings::SettingMemento> fixDeadlocks = storm::settings::mutableBuildSettings().overrideDontFixDeadlocksSet(false);
 
 	// Parse a transitions file with the fixDeadlocks Flag set and test if it works.
 	storm::storage::SparseMatrix<double> result(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_TEST_RESOURCES_DIR "/tra/mdp_deadlock.tra"));
@@ -251,14 +251,14 @@ TEST(NondeterministicSparseTransitionParserTest, FixDeadlocks) {
 
 TEST(NondeterministicSparseTransitionParserTest, DontFixDeadlocks) {
 	// Try to parse a transitions file containing a deadlock state with the fixDeadlocksFlag unset. This should throw an exception.
-    std::unique_ptr<storm::settings::SettingMemento> dontFixDeadlocks = storm::settings::mutableCoreSettings().overrideDontFixDeadlocksSet(true);
+    std::unique_ptr<storm::settings::SettingMemento> dontFixDeadlocks = storm::settings::mutableBuildSettings().overrideDontFixDeadlocksSet(true);
 
-	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_TEST_RESOURCES_DIR "/tra/mdp_deadlock.tra"), storm::exceptions::WrongFormatException);
+	STORM_SILENT_ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_TEST_RESOURCES_DIR "/tra/mdp_deadlock.tra"), storm::exceptions::WrongFormatException);
 }
 
 TEST(NondeterministicSparseTransitionParserTest, DoubledLines) {
 	// There is a redundant line in the transition file. As the transition already exists this should throw an exception.
-	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_TEST_RESOURCES_DIR "/tra/mdp_doubledLines.tra"), storm::exceptions::InvalidArgumentException);
+	STORM_SILENT_ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_TEST_RESOURCES_DIR "/tra/mdp_doubledLines.tra"), storm::exceptions::InvalidArgumentException);
 }
 
 TEST(NondeterministicSparseTransitionParserTest, RewardForNonExistentTransition) {
@@ -267,5 +267,5 @@ TEST(NondeterministicSparseTransitionParserTest, RewardForNonExistentTransition)
 	storm::storage::SparseMatrix<double> transitionResult = storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitions(STORM_TEST_RESOURCES_DIR "/tra/mdp_general.tra");
 
 	// There is a reward for a transition that does not exist in the transition matrix.
-	ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitionRewards(STORM_TEST_RESOURCES_DIR "/rew/mdp_rewardForNonExTrans.trans.rew", transitionResult), storm::exceptions::WrongFormatException);
+	STORM_SILENT_ASSERT_THROW(storm::parser::NondeterministicSparseTransitionParser<>::parseNondeterministicTransitionRewards(STORM_TEST_RESOURCES_DIR "/rew/mdp_rewardForNonExTrans.trans.rew", transitionResult), storm::exceptions::WrongFormatException);
 }

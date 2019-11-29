@@ -1,7 +1,8 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 
 #include "storm-dft/api/storm-dft.h"
+#include "storm-dft/transformations/DftTransformator.h"
 #include "storm-parsers/api/storm-parsers.h"
 
 namespace {
@@ -73,8 +74,10 @@ namespace {
         }
 
         double analyzeMTTF(std::string const& file) {
-            std::shared_ptr<storm::storage::DFT<double>> dft = storm::api::loadDFTGalileoFile<double>(file);
-            EXPECT_TRUE(storm::api::isWellFormed(*dft));
+            storm::transformations::dft::DftTransformator<double> dftTransformator = storm::transformations::dft::DftTransformator<double>();
+            std::shared_ptr<storm::storage::DFT<double>> dft = dftTransformator.transformBinaryFDEPs(
+                    *(storm::api::loadDFTGalileoFile<double>(file)));
+            EXPECT_TRUE(storm::api::isWellFormed(*dft).first);
             std::string property = "Tmin=? [F \"failed\"]";
             std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(property));
             std::set<size_t> relevantEvents;
@@ -86,9 +89,10 @@ namespace {
             return boost::get<double>(results[0]);
         }
 
-        double analyzeReliability(std::string const& file, double bound) {
-            std::shared_ptr<storm::storage::DFT<double>> dft = storm::api::loadDFTGalileoFile<double>(file);
-            EXPECT_TRUE(storm::api::isWellFormed(*dft));
+        double analyzeReliability(std::string const &file, double bound) {
+            storm::transformations::dft::DftTransformator<double> dftTransformator = storm::transformations::dft::DftTransformator<double>();
+            std::shared_ptr<storm::storage::DFT<double>> dft = dftTransformator.transformBinaryFDEPs(*(storm::api::loadDFTGalileoFile<double>(file)));
+            EXPECT_TRUE(storm::api::isWellFormed(*dft).first);
             std::string property = "Pmin=? [F<=" + std::to_string(bound) + " \"failed\"]";
             std::vector<std::shared_ptr<storm::logic::Formula const>> properties = storm::api::extractFormulasFromProperties(
                     storm::api::parseProperties(property));
@@ -113,7 +117,7 @@ namespace {
             AllOptimizationsConfig
         > TestingTypes;
 
-    TYPED_TEST_CASE(DftModelCheckerTest, TestingTypes);
+    TYPED_TEST_SUITE(DftModelCheckerTest, TestingTypes,);
 
     TYPED_TEST(DftModelCheckerTest, AndMTTF) {
         double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/and.dft");
@@ -147,17 +151,28 @@ namespace {
     }
 
     TYPED_TEST(DftModelCheckerTest, FdepMTTF) {
-        double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep2.dft");
-        EXPECT_FLOAT_EQ(result, 2);
-        result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep3.dft");
-        EXPECT_FLOAT_EQ(result, 2.5);
         if (this->getConfig().useMod) {
-            EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep.dft"), storm::exceptions::NotSupportedException);
-            EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep4.dft"), storm::exceptions::NotSupportedException);
-            EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep5.dft"), storm::exceptions::NotSupportedException);
+            STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep.dft"), storm::exceptions::NotSupportedException);
+STORM_SILENT_EXPECT_THROW(this->
+analyzeMTTF(STORM_TEST_RESOURCES_DIR
+"/dft/fdep2.dft"), storm::exceptions::NotSupportedException);
+STORM_SILENT_EXPECT_THROW(this->
+analyzeMTTF(STORM_TEST_RESOURCES_DIR
+"/dft/fdep3.dft"), storm::exceptions::NotSupportedException);
+            STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep4.dft"), storm::exceptions::NotSupportedException);
+            STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep5.dft"), storm::exceptions::NotSupportedException);
         } else {
-            result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep.dft");
+double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR
+"/dft/fdep.dft");
             EXPECT_FLOAT_EQ(result, 2 / 3.0);
+result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR
+"/dft/fdep2.dft");
+EXPECT_FLOAT_EQ(result,
+2);
+result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR
+"/dft/fdep3.dft");
+EXPECT_FLOAT_EQ(result,
+2.5);
             result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep4.dft");
             EXPECT_FLOAT_EQ(result, 1);
             result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep5.dft");
@@ -168,13 +183,24 @@ namespace {
     TYPED_TEST(DftModelCheckerTest, PdepMTTF) {
         double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep.dft");
         EXPECT_FLOAT_EQ(result, 8 / 3.0);
-        result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep3.dft");
-        EXPECT_FLOAT_EQ(result, 67 / 24.0);
+
         if (this->getConfig().useMod) {
-            result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep2.dft");
-            EXPECT_FLOAT_EQ(result, 38 / 15.0);
-            EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep4.dft"), storm::exceptions::NotSupportedException);
+STORM_SILENT_EXPECT_THROW(this->
+analyzeMTTF(STORM_TEST_RESOURCES_DIR
+"/dft/pdep2.dft"), storm::exceptions::NotSupportedException);
+STORM_SILENT_EXPECT_THROW(this->
+analyzeMTTF(STORM_TEST_RESOURCES_DIR
+"/dft/pdep3.dft"), storm::exceptions::NotSupportedException);
+            STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep4.dft"), storm::exceptions::NotSupportedException);
         } else {
+result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR
+"/dft/pdep2.dft");
+EXPECT_FLOAT_EQ(result,
+38 / 15.0);
+result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR
+"/dft/pdep3.dft");
+EXPECT_FLOAT_EQ(result,
+67 / 24.0);
             result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep4.dft");
             EXPECT_EQ(result, storm::utility::infinity<double>());
         }
@@ -210,8 +236,6 @@ namespace {
         EXPECT_FLOAT_EQ(result, 6);
         result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq5.dft");
         EXPECT_EQ(result, storm::utility::infinity<double>());
-        result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/seq6.dft");
-        EXPECT_FLOAT_EQ(result, 30000);
 
         result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex.dft");
         EXPECT_FLOAT_EQ(result, 0.5);
@@ -219,6 +243,21 @@ namespace {
         EXPECT_FLOAT_EQ(result, storm::utility::infinity<double>());
         result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/mutex3.dft");
         EXPECT_FLOAT_EQ(result, storm::utility::infinity<double>());
+if (this->
+
+getConfig()
+
+.useMod){
+STORM_SILENT_EXPECT_THROW(this->
+analyzeMTTF(STORM_TEST_RESOURCES_DIR
+"/dft/seq6.dft"), storm::exceptions::NotSupportedException);
+}
+else {
+result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR
+"/dft/seq6.dft");
+EXPECT_FLOAT_EQ(result,
+30000);
+}
     }
 
     TYPED_TEST(DftModelCheckerTest, Symmetry) {

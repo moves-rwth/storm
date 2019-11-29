@@ -38,11 +38,11 @@ jobs:
     ###
     # Stage: Build Carl
     ###
-    # ubuntu-19.04 - DefaultDebugTravis
+    # ubuntu-19.10 - DefaultDebugTravis
     - stage: Build Carl
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebugTravis TASK=TestDocker LINUX=ubuntu-19.04 COMPILER=gcc
+      env: CONFIG=DefaultDebugTravis TASK=TestDocker LINUX=ubuntu-19.10 COMPILER=gcc
       before_script:
         - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
@@ -53,11 +53,11 @@ jobs:
         - provider: script
           skip_cleanup: true
           script: bash travis/deploy_docker.sh carl
-    # ubuntu-19.04 - DefaultReleaseTravis
+    # ubuntu-19.10 - DefaultReleaseTravis
     - stage: Build Carl
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultReleaseTravis TASK=TestDockerDoxygen LINUX=ubuntu-19.04 COMPILER=gcc
+      env: CONFIG=DefaultReleaseTravis TASK=TestDockerDoxygen LINUX=ubuntu-19.10 COMPILER=gcc
       before_script:
         - python -c "import fcntl; fcntl.fcntl(1, fcntl.F_SETFL, 0)" # Workaround for nonblocking mode
       script:
@@ -136,11 +136,11 @@ jobs:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-18.10 - DefaultDebug
+    # debian-10 - DefaultDebug
     - stage: Build (1st run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug TASK=Test LINUX=ubuntu-18.10 COMPILER=gcc
+      env: CONFIG=DefaultDebug TASK=Test LINUX=debian-10 COMPILER=gcc
       install:
         - rm -rf build
         - travis/skip_test.sh
@@ -152,11 +152,11 @@ jobs:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-18.10 - DefaultRelease
+    # debian-10 - DefaultRelease
     - stage: Build (1st run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease TASK=Test LINUX=ubuntu-18.10 COMPILER=gcc
+      env: CONFIG=DefaultRelease TASK=Test LINUX=debian-10 COMPILER=gcc
       install:
         - rm -rf build
         - travis/skip_test.sh
@@ -168,11 +168,11 @@ jobs:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-19.04 - DefaultDebugTravis
+    # ubuntu-19.10 - DefaultDebugTravis
     - stage: Build (1st run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebugTravis TASK=TestDocker LINUX=ubuntu-19.04 COMPILER=gcc
+      env: CONFIG=DefaultDebugTravis TASK=TestDocker LINUX=ubuntu-19.10 COMPILER=gcc
       install:
         - rm -rf build
         - travis/skip_test.sh
@@ -184,11 +184,11 @@ jobs:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-19.04 - DefaultReleaseTravis
+    # ubuntu-19.10 - DefaultReleaseTravis
     - stage: Build (1st run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultReleaseTravis TASK=TestDockerDoxygen LINUX=ubuntu-19.04 COMPILER=gcc
+      env: CONFIG=DefaultReleaseTravis TASK=TestDockerDoxygen LINUX=ubuntu-19.10 COMPILER=gcc
       install:
         - rm -rf build
         - travis/skip_test.sh
@@ -264,11 +264,11 @@ jobs:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-18.10 - DefaultDebug
+    # debian-10 - DefaultDebug
     - stage: Build (2nd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug TASK=Test LINUX=ubuntu-18.10 COMPILER=gcc
+      env: CONFIG=DefaultDebug TASK=Test LINUX=debian-10 COMPILER=gcc
       install:
         - travis/skip_test.sh
       before_script:
@@ -279,11 +279,11 @@ jobs:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-18.10 - DefaultRelease
+    # debian-10 - DefaultRelease
     - stage: Build (2nd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease TASK=Test LINUX=ubuntu-18.10 COMPILER=gcc
+      env: CONFIG=DefaultRelease TASK=Test LINUX=debian-10 COMPILER=gcc
       install:
         - travis/skip_test.sh
       before_script:
@@ -294,11 +294,11 @@ jobs:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-19.04 - DefaultDebugTravis
+    # ubuntu-19.10 - DefaultDebugTravis
     - stage: Build (2nd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebugTravis TASK=TestDocker LINUX=ubuntu-19.04 COMPILER=gcc
+      env: CONFIG=DefaultDebugTravis TASK=TestDocker LINUX=ubuntu-19.10 COMPILER=gcc
       install:
         - travis/skip_test.sh
       before_script:
@@ -309,11 +309,11 @@ jobs:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-19.04 - DefaultReleaseTravis
+    # ubuntu-19.10 - DefaultReleaseTravis
     - stage: Build (2nd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultReleaseTravis TASK=TestDockerDoxygen LINUX=ubuntu-19.04 COMPILER=gcc
+      env: CONFIG=DefaultReleaseTravis TASK=TestDockerDoxygen LINUX=ubuntu-19.10 COMPILER=gcc
       install:
         - travis/skip_test.sh
       before_script:
@@ -388,11 +388,11 @@ jobs:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-18.10 - DefaultDebug
+    # debian-10 - DefaultDebug
     - stage: Build (3rd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug TASK=Test LINUX=ubuntu-18.10 COMPILER=gcc
+      env: CONFIG=DefaultDebug TASK=Test LINUX=debian-10 COMPILER=gcc
       install:
         - travis/skip_test.sh
       before_script:
@@ -403,11 +403,11 @@ jobs:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-18.10 - DefaultRelease
+    # debian-10 - DefaultRelease
     - stage: Build (3rd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease TASK=Test LINUX=ubuntu-18.10 COMPILER=gcc
+      env: CONFIG=DefaultRelease TASK=Test LINUX=debian-10 COMPILER=gcc
       install:
         - travis/skip_test.sh
       before_script:
@@ -418,11 +418,11 @@ jobs:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-19.04 - DefaultDebugTravis
+    # ubuntu-19.10 - DefaultDebugTravis
     - stage: Build (3rd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebugTravis TASK=TestDocker LINUX=ubuntu-19.04 COMPILER=gcc
+      env: CONFIG=DefaultDebugTravis TASK=TestDocker LINUX=ubuntu-19.10 COMPILER=gcc
       install:
         - travis/skip_test.sh
       before_script:
@@ -433,11 +433,11 @@ jobs:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-19.04 - DefaultReleaseTravis
+    # ubuntu-19.10 - DefaultReleaseTravis
     - stage: Build (3rd run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultReleaseTravis TASK=TestDockerDoxygen LINUX=ubuntu-19.04 COMPILER=gcc
+      env: CONFIG=DefaultReleaseTravis TASK=TestDockerDoxygen LINUX=ubuntu-19.10 COMPILER=gcc
       install:
         - travis/skip_test.sh
       before_script:
@@ -512,11 +512,11 @@ jobs:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-18.10 - DefaultDebug
+    # debian-10 - DefaultDebug
     - stage: Build (4th run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug TASK=Test LINUX=ubuntu-18.10 COMPILER=gcc
+      env: CONFIG=DefaultDebug TASK=Test LINUX=debian-10 COMPILER=gcc
       install:
         - travis/skip_test.sh
       before_script:
@@ -527,11 +527,11 @@ jobs:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-18.10 - DefaultRelease
+    # debian-10 - DefaultRelease
     - stage: Build (4th run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease TASK=Test LINUX=ubuntu-18.10 COMPILER=gcc
+      env: CONFIG=DefaultRelease TASK=Test LINUX=debian-10 COMPILER=gcc
       install:
         - travis/skip_test.sh
       before_script:
@@ -542,11 +542,11 @@ jobs:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-19.04 - DefaultDebugTravis
+    # ubuntu-19.10 - DefaultDebugTravis
     - stage: Build (4th run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebugTravis TASK=TestDocker LINUX=ubuntu-19.04 COMPILER=gcc
+      env: CONFIG=DefaultDebugTravis TASK=TestDocker LINUX=ubuntu-19.10 COMPILER=gcc
       install:
         - travis/skip_test.sh
       before_script:
@@ -557,11 +557,11 @@ jobs:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-19.04 - DefaultReleaseTravis
+    # ubuntu-19.10 - DefaultReleaseTravis
     - stage: Build (4th run)
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultReleaseTravis TASK=TestDockerDoxygen LINUX=ubuntu-19.04 COMPILER=gcc
+      env: CONFIG=DefaultReleaseTravis TASK=TestDockerDoxygen LINUX=ubuntu-19.10 COMPILER=gcc
       install:
         - travis/skip_test.sh
       before_script:
@@ -636,11 +636,11 @@ jobs:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-18.10 - DefaultDebug
+    # debian-10 - DefaultDebug
     - stage: Tasks
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebug TASK=Test LINUX=ubuntu-18.10 COMPILER=gcc
+      env: CONFIG=DefaultDebug TASK=Test LINUX=debian-10 COMPILER=gcc
       install:
         - travis/skip_test.sh
       before_script:
@@ -651,11 +651,11 @@ jobs:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-18.10 - DefaultRelease
+    # debian-10 - DefaultRelease
     - stage: Tasks
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultRelease TASK=Test LINUX=ubuntu-18.10 COMPILER=gcc
+      env: CONFIG=DefaultRelease TASK=Test LINUX=debian-10 COMPILER=gcc
       install:
         - travis/skip_test.sh
       before_script:
@@ -666,11 +666,11 @@ jobs:
         - docker cp storm:/opt/storm/. .
       after_failure:
         - find build -iname '*err*.log' -type f -print -exec cat {} \;
-    # ubuntu-19.04 - DefaultDebugTravis
+    # ubuntu-19.10 - DefaultDebugTravis
     - stage: Tasks
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultDebugTravis TASK=TestDocker LINUX=ubuntu-19.04 COMPILER=gcc
+      env: CONFIG=DefaultDebugTravis TASK=TestDocker LINUX=ubuntu-19.10 COMPILER=gcc
       install:
         - travis/skip_test.sh
       before_script:
@@ -685,11 +685,11 @@ jobs:
         - provider: script
           skip_cleanup: true
           script: bash travis/deploy_docker.sh storm
-    # ubuntu-19.04 - DefaultReleaseTravis
+    # ubuntu-19.10 - DefaultReleaseTravis
     - stage: Tasks
       os: linux
       compiler: gcc
-      env: CONFIG=DefaultReleaseTravis TASK=TestDockerDoxygen LINUX=ubuntu-19.04 COMPILER=gcc
+      env: CONFIG=DefaultReleaseTravis TASK=TestDockerDoxygen LINUX=ubuntu-19.10 COMPILER=gcc
       install:
         - travis/skip_test.sh
       before_script:

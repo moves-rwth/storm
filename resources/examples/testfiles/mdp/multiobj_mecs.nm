@@ -1,0 +1,20 @@
+mdp
+const double p1 = 0.5;
+const double p2 = 0.5;
+module main
+	
+	x : [0..4];
+	
+	[] x=0 -> p1 : (x'=1) + (1-p1) : (x'=3);
+	[up] x>=1 & x<=3 -> (x'=x+1);
+	[down] x>=2 & x<=3 -> (x'=1);
+endmodule
+
+label "t1" = x=4;
+label "t2" = x=3;
+
+rewards "test"
+	[down] x=2: 27;
+	[up] x=3: 2;
+endrewards
+

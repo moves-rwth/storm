@@ -25,8 +25,8 @@ namespace storm {
             
             
             template <class SparseModelType>
-            SparseCbAchievabilityQuery<SparseModelType>::SparseCbAchievabilityQuery(SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult) : SparseCbQuery<SparseModelType>(preprocessorResult) {
-                STORM_LOG_ASSERT(preprocessorResult.queryType == SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Achievability, "Invalid query Type");
+            SparseCbAchievabilityQuery<SparseModelType>::SparseCbAchievabilityQuery(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult) : SparseCbQuery<SparseModelType>(preprocessorResult) {
+                STORM_LOG_ASSERT(preprocessorResult.queryType == preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>::QueryType::Achievability, "Invalid query Type");
                 solver = storm::utility::solver::SmtSolverFactory().create(*this->expressionManager);
             }
 

@@ -49,10 +49,30 @@ namespace storm {
         }
 
         template<typename ParametricType>
+        typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion<ParametricType>::getLowerBoundary(const std::string varName) const {
+            for (auto itr = lowerBoundaries.begin(); itr != lowerBoundaries.end(); ++itr) {
+                if (itr->first.name().compare(varName) == 0) {
+                    return (*itr).second;
+                }
+            }
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Tried to find a lower boundary for variableName " << varName << " which is not specified by this region");
+        }
+
+        template<typename ParametricType>
         typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion<ParametricType>::getUpperBoundary(VariableType const& variable) const {
             auto const& result = upperBoundaries.find(variable);
             STORM_LOG_THROW(result != upperBoundaries.end(), storm::exceptions::InvalidArgumentException, "Tried to find an upper boundary for variable " << variable << " which is not specified by this region");
             return (*result).second;
+        }
+
+        template<typename ParametricType>
+        typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion<ParametricType>::getUpperBoundary(const std::string varName) const {
+            for (auto itr = upperBoundaries.begin(); itr != upperBoundaries.end(); ++itr) {
+                if (itr->first.name().compare(varName) == 0) {
+                    return (*itr).second;
+                }
+            }
+            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Tried to find an upper boundary for variableName " << varName << " which is not specified by this region");
         }
 
         template<typename ParametricType>

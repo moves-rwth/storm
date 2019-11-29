@@ -6,6 +6,8 @@
 #include "storm-conv/settings/modules/ConversionGeneralSettings.h"
 #include "storm-conv/settings/modules/ConversionInputSettings.h"
 #include "storm-conv/settings/modules/ConversionOutputSettings.h"
+#include "storm-conv/settings/modules/JaniExportSettings.h"
+#include "storm-conv/settings/modules/PrismExportSettings.h"
 
 #include "storm/api/storm.h"
 #include "storm-parsers/api/storm-parsers.h"
@@ -117,6 +119,52 @@ namespace storm {
             stopStopwatch(exportingTime);
         }
         
+        void processPrismInputPrismOutput(storm::prism::Program const& prismProg, std::vector<storm::jani::Property> const& properties) {
+            auto const& output = storm::settings::getModule<storm::settings::modules::ConversionOutputSettings>();
+            auto const& input = storm::settings::getModule<storm::settings::modules::ConversionInputSettings>();
+            auto const& prism = storm::settings::getModule<storm::settings::modules::PrismExportSettings>();
+            
+            auto conversionTime = startStopwatch("Processing Prism Program ... " );
+
+            // Get the name of the output file
+            std::string outputFilename = "";
+            if (output.isPrismOutputFilenameSet()) {
+                outputFilename = output.getPrismOutputFilename();
+            } else if (input.isPrismInputSet() && !output.isStdOutOutputEnabled()) {
+                outputFilename = input.getPrismInputFilename();
+                // Remove extension if present
+                auto dotPos = outputFilename.rfind('.');
+                if (dotPos != std::string::npos) {
+                    outputFilename.erase(dotPos);
+                }
+                std::string suffix = "";
+                if (input.isConstantsSet()) {
+                    suffix = input.getConstantDefinitionString();
+                    std::replace(suffix.begin(), suffix.end(), ',', '_');
+                    std::replace(suffix.begin(), suffix.end(), '=', '-');
+                }
+                suffix += "_converted.prism";
+                outputFilename += suffix;
+            }
+            
+            storm::prism::Program outputProgram = prismProg;
+            std::vector<storm::jani::Property> outputProperties = properties;
+            storm::api::transformPrism(outputProgram, outputProperties, prism.isSimplifySet(), prism.isExportFlattenedSet());
+            
+            stopStopwatch(conversionTime);
+            auto exportingTime = startStopwatch("Exporting Prism program ... ");
+            
+            if (outputFilename != "") {
+                storm::api::exportPrismToFile(outputProgram, outputProperties, outputFilename);
+                STORM_PRINT_AND_LOG("Stored to file '" << outputFilename << "'");
+            }
+            
+            if (output.isStdOutOutputEnabled()) {
+                storm::api::printPrismToStream(outputProgram, outputProperties, std::cout);
+            }
+            stopStopwatch(exportingTime);
+        }
+        
         void processPrismInput() {
             auto parsingTime = startStopwatch("Parsing PRISM input ... " );
 
@@ -145,6 +193,8 @@ namespace storm {
             auto const& output = storm::settings::getModule<storm::settings::modules::ConversionOutputSettings>();
             if (output.isJaniOutputSet()) {
                 processPrismInputJaniOutput(prismProg.asPrismProgram(), properties);
+            } else if (output.isPrismOutputSet()) {
+                processPrismInputPrismOutput(prismProg.asPrismProgram(), properties);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "There is either no outputformat specified or the provided combination of input and output format is not compatible.");
             }
@@ -251,6 +301,7 @@ namespace storm {
             if (output.isJaniOutputSet()) {
                 processJaniInputJaniOutput(janiModel, properties);
             } else {
+                STORM_LOG_THROW(!output.isPrismOutputSet(), storm::exceptions::InvalidSettingsException, "Conversion from Jani to Prism is not supported.");
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "There is either no outputformat specified or the provided combination of input and output format is not compatible.");
             }
         }

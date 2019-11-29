@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/BitVector.h"
 #include "storm/exceptions/InvalidStateException.h"
@@ -73,20 +73,20 @@ TEST(SparseMatrixBuilder, AddNextValue) {
     storm::storage::SparseMatrixBuilder<double> matrixBuilder1(3, 4, 5);
     ASSERT_NO_THROW(matrixBuilder1.addNextValue(0, 1, 1.0));
     ASSERT_NO_THROW(matrixBuilder1.addNextValue(0, 2, 1.2));
-    ASSERT_THROW(matrixBuilder1.addNextValue(0, 4, 0.5), storm::exceptions::OutOfRangeException);
-    ASSERT_THROW(matrixBuilder1.addNextValue(3, 1, 0.5), storm::exceptions::OutOfRangeException);
+    STORM_SILENT_ASSERT_THROW(matrixBuilder1.addNextValue(0, 4, 0.5), storm::exceptions::OutOfRangeException);
+    STORM_SILENT_ASSERT_THROW(matrixBuilder1.addNextValue(3, 1, 0.5), storm::exceptions::OutOfRangeException);
     
     storm::storage::SparseMatrixBuilder<double> matrixBuilder2(3, 4);
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(0, 1, 1.0));
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(0, 2, 1.2));
-    ASSERT_THROW(matrixBuilder2.addNextValue(0, 4, 0.5), storm::exceptions::OutOfRangeException);
-    ASSERT_THROW(matrixBuilder2.addNextValue(3, 1, 0.5), storm::exceptions::OutOfRangeException);
+    STORM_SILENT_ASSERT_THROW(matrixBuilder2.addNextValue(0, 4, 0.5), storm::exceptions::OutOfRangeException);
+    STORM_SILENT_ASSERT_THROW(matrixBuilder2.addNextValue(3, 1, 0.5), storm::exceptions::OutOfRangeException);
     
     storm::storage::SparseMatrixBuilder<double> matrixBuilder3(3);
     ASSERT_NO_THROW(matrixBuilder3.addNextValue(0, 1, 1.0));
     ASSERT_NO_THROW(matrixBuilder3.addNextValue(1, 2, 1.2));
     ASSERT_NO_THROW(matrixBuilder3.addNextValue(2, 4, 0.5));
-    ASSERT_THROW(matrixBuilder3.addNextValue(3, 1, 0.2), storm::exceptions::OutOfRangeException);
+    STORM_SILENT_ASSERT_THROW(matrixBuilder3.addNextValue(3, 1, 0.2), storm::exceptions::OutOfRangeException);
     
     storm::storage::SparseMatrixBuilder<double> matrixBuilder4;
     ASSERT_NO_THROW(matrixBuilder4.addNextValue(0, 1, 1.0));
@@ -109,7 +109,7 @@ TEST(SparseMatrix, Build) {
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(0, 2, 1.2));
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(1, 0, 0.5));
     ASSERT_NO_THROW(matrixBuilder2.addNextValue(1, 1, 0.7));
-    ASSERT_THROW(matrixBuilder2.build(), storm::exceptions::InvalidStateException);
+    STORM_SILENT_ASSERT_THROW(matrixBuilder2.build(), storm::exceptions::InvalidStateException);
     
     storm::storage::SparseMatrixBuilder<double> matrixBuilder3;
     ASSERT_NO_THROW(matrixBuilder3.addNextValue(0, 1, 1.0));
@@ -334,7 +334,7 @@ TEST(SparseMatrix, Submatrix) {
     storm::storage::BitVector rowGroupConstraint(4);
     storm::storage::BitVector columnConstraint(4);
 
-    ASSERT_THROW(matrix.getSubmatrix(true, rowGroupConstraint, columnConstraint), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_ASSERT_THROW(matrix.getSubmatrix(true, rowGroupConstraint, columnConstraint), storm::exceptions::InvalidArgumentException);
 
     std::vector<uint_fast64_t> rowGroupIndices = {0, 1, 2, 4, 5};
     
@@ -422,7 +422,7 @@ TEST(SparseMatrix, RestrictRows) {
     constraint2.set(2);
     
     storm::storage::SparseMatrix<double> matrix2Prime;
-    ASSERT_THROW(matrix2Prime = matrix2.restrictRows(constraint2), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_ASSERT_THROW(matrix2Prime = matrix2.restrictRows(constraint2), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(matrix2Prime = matrix2.restrictRows(constraint2, true));
     
     storm::storage::SparseMatrixBuilder<double> matrixBuilder3(2, 4, 3, true, true, 3);
@@ -441,7 +441,7 @@ TEST(SparseMatrix, RestrictRows) {
     constraint3.set(1);
     
     storm::storage::SparseMatrix<double> matrix3Prime;
-    ASSERT_THROW(matrix3Prime = matrix3.restrictRows(constraint3), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_ASSERT_THROW(matrix3Prime = matrix3.restrictRows(constraint3), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(matrix3Prime = matrix3.restrictRows(constraint3, true));
 
     storm::storage::SparseMatrixBuilder<double> matrixBuilder4(1, 4, 1, true, true, 2);

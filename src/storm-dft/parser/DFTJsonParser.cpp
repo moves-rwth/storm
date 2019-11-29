@@ -126,7 +126,7 @@ namespace storm {
                         success = false;
                     }
                 } else {
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name: " << type << "  not recognized.");
+                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name: " << type << " not recognized.");
                     success = false;
                 }
 

@@ -2,6 +2,7 @@
 
 #include "storm/transformer/ContinuousToDiscreteTimeModelTransformer.h"
 #include "storm/transformer/SymbolicToSparseTransformer.h"
+#include "storm/transformer/NonMarkovianChainTransformer.h"
 
 #include "storm/utility/macros.h"
 #include "storm/utility/builder.h"
@@ -10,23 +11,36 @@
 
 namespace storm {
     namespace api {
-        
+
+        /*!
+         * Eliminates chains of non-Markovian states from a given Markov Automaton
+         */
+        template<typename ValueType>
+        std::pair<std::shared_ptr<storm::models::sparse::Model<ValueType>>, std::vector<std::shared_ptr<storm::logic::Formula const>>> eliminateNonMarkovianChains(std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> const& ma, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas,bool ignoreLabeling) {
+            auto newFormulas = storm::transformer::NonMarkovianChainTransformer<ValueType>::checkAndTransformFormulas(formulas);
+            STORM_LOG_WARN_COND(newFormulas.size() == formulas.size(), "The state elimination does not preserve all properties.");
+            STORM_LOG_WARN_COND(!ignoreLabeling, "Labels are ignored for the state elimination. This may cause incorrect results.");
+            return std::make_pair(storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(ma, !ignoreLabeling), newFormulas);
+
+        }
+
+
         /*!
          * Transforms the given continuous model to a discrete time model.
          * If such a transformation does not preserve one of the given formulas, a warning is issued.
          */
         template <typename ValueType>
-        std::pair<std::shared_ptr<storm::models::sparse::Model<ValueType>>, std::vector<std::shared_ptr<storm::logic::Formula const>>>  transformContinuousToDiscreteTimeSparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
-            
+        std::pair<std::shared_ptr<storm::models::sparse::Model<ValueType>>, std::vector<std::shared_ptr<storm::logic::Formula const>>> transformContinuousToDiscreteTimeSparseModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+
             storm::transformer::ContinuousToDiscreteTimeModelTransformer<ValueType> transformer;
-            
+
             std::string timeRewardName = "_time";
             while(model->hasRewardModel(timeRewardName)) {
                 timeRewardName += "_";
             }
             auto newFormulas = transformer.checkAndTransformFormulas(formulas, timeRewardName);
             STORM_LOG_WARN_COND(newFormulas.size() == formulas.size(), "Transformation of a " << model->getType() << " to a discrete time model does not preserve all properties.");
-            
+
             if (model->isOfType(storm::models::ModelType::Ctmc)) {
                 return std::make_pair(transformer.transform(*model->template as<storm::models::sparse::Ctmc<ValueType>>(), timeRewardName), newFormulas);
             } else if (model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
@@ -44,16 +58,16 @@ namespace storm {
          */
         template <typename ValueType>
         std::pair<std::shared_ptr<storm::models::sparse::Model<ValueType>>, std::vector<std::shared_ptr<storm::logic::Formula const>>> transformContinuousToDiscreteTimeSparseModel(storm::models::sparse::Model<ValueType>&& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
-            
+
             storm::transformer::ContinuousToDiscreteTimeModelTransformer<ValueType> transformer;
-            
+
              std::string timeRewardName = "_time";
             while(model.hasRewardModel(timeRewardName)) {
                 timeRewardName += "_";
             }
             auto newFormulas = transformer.checkAndTransformFormulas(formulas, timeRewardName);
             STORM_LOG_WARN_COND(newFormulas.size() == formulas.size(), "Transformation of a " << model.getType() << " to a discrete time model does not preserve all properties.");
-           
+
             if (model.isOfType(storm::models::ModelType::Ctmc)) {
                 return std::make_pair(transformer.transform(std::move(*model.template as<storm::models::sparse::Ctmc<ValueType>>()), timeRewardName), newFormulas);
             } else if (model.isOfType(storm::models::ModelType::MarkovAutomaton)) {
@@ -62,9 +76,20 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Transformation of a " << model.getType() << " to a discrete time model is not supported.");
             }
             return std::make_pair(nullptr, newFormulas);;
-            
+
         }
-        
+
+        template <typename ValueType>
+        std::shared_ptr<storm::logic::Formula const> checkAndTransformContinuousToDiscreteTimeFormula(storm::logic::Formula const& formula, std::string const& timeRewardName = "_time") {
+            storm::transformer::ContinuousToDiscreteTimeModelTransformer<ValueType> transformer;
+            if (transformer.preservesFormula(formula)) {
+                return transformer.checkAndTransformFormulas({formula.asSharedPointer()}, timeRewardName).front();
+            } else {
+                STORM_LOG_ERROR("Unable to transform formula " << formula << " to discrete time.");
+            }
+            return nullptr;
+        }
+
         /*!
          * Transforms the given symbolic model to a sparse model.
          */
@@ -82,7 +107,7 @@ namespace storm {
             }
             return nullptr;
         }
-        
+
         template <typename ValueType>
         std::shared_ptr<storm::models::sparse::Model<ValueType>> transformToNondeterministicModel(storm::models::sparse::Model<ValueType>&& model) {
             storm::storage::sparse::ModelComponents<ValueType> components(std::move(model.getTransitionMatrix()), std::move(model.getStateLabeling()), std::move(model.getRewardModels()));
@@ -99,6 +124,6 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot transform model of type " << model.getType() << " to a nondeterministic model.");
             }
         }
-        
+
     }
 }

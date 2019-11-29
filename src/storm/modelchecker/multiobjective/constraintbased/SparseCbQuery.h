@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "storm/modelchecker/results/CheckResult.h"
-#include "storm/modelchecker/multiobjective/SparseMultiObjectivePreprocessorResult.h"
+#include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectivePreprocessorResult.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
@@ -30,7 +30,7 @@ namespace storm {
                 
             protected:
                 
-                SparseCbQuery(SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
+                SparseCbQuery(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
                 
                 SparseModelType const& originalModel;
                 storm::logic::MultiObjectiveFormula const& originalFormula;

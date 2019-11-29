@@ -18,6 +18,7 @@ namespace storm {
             
             const std::string IOSettings::moduleName = "io";
             const std::string IOSettings::exportDotOptionName = "exportdot";
+            const std::string IOSettings::exportDotMaxWidthOptionName = "dot-maxwidth";
             const std::string IOSettings::exportExplicitOptionName = "exportexplicit";
             const std::string IOSettings::exportDdOptionName = "exportdd";
             const std::string IOSettings::exportJaniDotOptionName = "exportjanidot";
@@ -44,16 +45,17 @@ namespace storm {
             const std::string IOSettings::janiPropertyOptionShortName = "jprop";
             const std::string IOSettings::propertyOptionName = "prop";
             const std::string IOSettings::propertyOptionShortName = "prop";
-            const std::string IOSettings::toNondetOptionName = "to-nondet";
             
             const std::string IOSettings::qvbsInputOptionName = "qvbs";
             const std::string IOSettings::qvbsInputOptionShortName = "qvbs";
             const std::string IOSettings::qvbsRootOptionName = "qvbsroot";
             
             IOSettings::IOSettings() : ModuleSettings(moduleName) {
-                this->addOption(storm::settings::OptionBuilder(moduleName, exportDotOptionName, "", "If given, the loaded model will be written to the specified file in the dot format.").setIsAdvanced()
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportDotOptionName, false, "If given, the loaded model will be written to the specified file in the dot format.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, exportJaniDotOptionName, "", "If given, the loaded jani model will be written to the specified file in the dot format.").setIsAdvanced()
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportDotMaxWidthOptionName, false, "The maximal width for labels in the dot format. For longer lines a linebreak is inserted. Value 0 represents no linebreaks.").setIsAdvanced()
+                                .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("width", "The maximal line width for the dot format. Default is 0 meaning no linebreaks.").setDefaultValueUnsignedInteger(0).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportJaniDotOptionName, false, "If given, the loaded jani model will be written to the specified file in the dot format.").setIsAdvanced()
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportCdfOptionName, false, "Exports the cumulative density function for reward bounded properties into a .csv file.").setIsAdvanced().setShortName(exportCdfOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("directory", "A path to an existing directory where the cdf files will be stored.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportSchedulerOptionName, false, "Exports the choices of an optimal scheduler to the given file (if supported by engine).").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The output file.").build()).build());
@@ -88,9 +90,8 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The file from which to read the choice labels.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, constantsOptionName, false, "Specifies the constant replacements to use in symbolic models. Note that this requires the model to be given as an symbolic model (i.e., via --" + prismInputOptionName + " or --" + janiInputOptionName + ").").setShortName(constantsOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of constants and their value, e.g. a=1,b=2,c=3.").setDefaultValueString("").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, janiPropertyOptionName, false, "Specifies the properties from the jani model (given by --" + janiInputOptionName + ")  to be checked.").setShortName(janiPropertyOptionShortName)
+                this->addOption(storm::settings::OptionBuilder(moduleName, janiPropertyOptionName, false, "Specifies the properties from the jani model (given by --" + janiInputOptionName + ") to be checked.").setShortName(janiPropertyOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of properties to be checked").setDefaultValueString("").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, toNondetOptionName, false, "If set, DTMCs/CTMCs are converted to MDPs/MAs (without actual nondeterminism) before model checking.").setIsAdvanced().build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, qvbsInputOptionName, false, "Selects a model from the Quantitative Verification Benchmark Set.").setShortName(qvbsInputOptionShortName)
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("model", "The short model name as in the benchmark set.").build())
@@ -112,6 +113,10 @@ namespace storm {
 
             std::string IOSettings::getExportDotFilename() const {
                 return this->getOption(exportDotOptionName).getArgumentByName("filename").getValueAsString();
+            }
+
+            size_t IOSettings::getExportDotMaxWidth() const {
+                return this->getOption(exportDotMaxWidthOptionName).getArgumentByName("width").getValueAsUnsignedInteger();
             }
 
             bool IOSettings::isExportJaniDotSet() const {
@@ -264,10 +269,6 @@ namespace storm {
 
             std::string IOSettings::getPropertyFilter() const {
                 return this->getOption(propertyOptionName).getArgumentByName("filter").getValueAsString();
-            }
-            
-            bool IOSettings::isToNondeterministicModelSet() const {
-                return this->getOption(toNondetOptionName).getHasOptionBeenSet();
             }
             
             bool IOSettings::isQvbsInputSet() const {

@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 #include "storm-parsers/parser/FormulaParser.h"
 #include "storm/logic/FragmentSpecification.h"
@@ -164,19 +164,19 @@ TEST(FormulaParserTest, WrongFormatTest) {
     storm::parser::FormulaParser formulaParser(manager);
     std::string input = "P>0.5 [ a ]";
     std::shared_ptr<storm::logic::Formula const> formula(nullptr);
-	EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
+	STORM_SILENT_EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
     
     input = "P=0.5 [F \"a\"]";
-    EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
+    STORM_SILENT_EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
 
     input = "P>0.5 [F !(x = 0)]";
-    EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
+    STORM_SILENT_EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
 
     input = "P>0.5 [F !y]";
-    EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
+    STORM_SILENT_EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
 
     input = "P>0.5 [F y!=0)]";
-    EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
+    STORM_SILENT_EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
 }
 
 TEST(FormulaParserTest, MultiObjectiveFormulaTest) {

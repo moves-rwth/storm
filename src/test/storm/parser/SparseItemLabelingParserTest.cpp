@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 #include "storm/models/sparse/StateLabeling.h"
 #include "storm-parsers/parser/SparseItemLabelingParser.h"
@@ -10,7 +10,7 @@
 
 TEST(SparseItemLabelingParserTest, NonExistingFile) {
 	// No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!
-	ASSERT_THROW(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(0,STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
+	STORM_SILENT_ASSERT_THROW(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(0,STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
 }
 
 TEST(SparseItemLabelingParserTest, BasicDeterministicParsing) {
@@ -101,22 +101,22 @@ TEST(SparseItemLabelingParserTest, BasicNondeterministicParsing) {
 
 TEST(SparseItemLabelingParserTest, NoDeclarationTagHeader) {
 	// No #DECLARATION tag in file
-	ASSERT_THROW(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(3, STORM_TEST_RESOURCES_DIR "/lab/noDeclarationTag.lab"), storm::exceptions::WrongFormatException);
+	STORM_SILENT_ASSERT_THROW(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(3, STORM_TEST_RESOURCES_DIR "/lab/noDeclarationTag.lab"), storm::exceptions::WrongFormatException);
 }
 
 TEST(SparseItemLabelingParserTest, NoEndTagHeader) {
 	// No #END tag in file.
-	ASSERT_THROW(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(3, STORM_TEST_RESOURCES_DIR "/lab/noEndTag.lab"), storm::exceptions::WrongFormatException);
+	STORM_SILENT_ASSERT_THROW(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(3, STORM_TEST_RESOURCES_DIR "/lab/noEndTag.lab"), storm::exceptions::WrongFormatException);
 }
 
 TEST(SparseItemLabelingParserTest, MisspelledDeclarationTagHeader) {
 	// The #DECLARATION tag is misspelled.
-	ASSERT_THROW(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(3, STORM_TEST_RESOURCES_DIR "/lab/declarationMisspell.lab"), storm::exceptions::WrongFormatException);
+	STORM_SILENT_ASSERT_THROW(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(3, STORM_TEST_RESOURCES_DIR "/lab/declarationMisspell.lab"), storm::exceptions::WrongFormatException);
 }
 
 TEST(SparseItemLabelingParserTest, MisspelledEndTagHeader) {
 	// The #END tag is misspelled.
-	ASSERT_THROW(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(3, STORM_TEST_RESOURCES_DIR "/lab/endMisspell.lab"), storm::exceptions::WrongFormatException);
+	STORM_SILENT_ASSERT_THROW(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(3, STORM_TEST_RESOURCES_DIR "/lab/endMisspell.lab"), storm::exceptions::WrongFormatException);
 }
 
 TEST(SparseItemLabelingParserTest, NoLabelDeclaredNoneGiven) {
@@ -130,27 +130,27 @@ TEST(SparseItemLabelingParserTest, NoLabelDeclaredNoneGiven) {
 
 TEST(SparseItemLabelingParserTest, UndeclaredLabelsGiven) {
 	// Undeclared labels given.
-	ASSERT_THROW(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(3, STORM_TEST_RESOURCES_DIR "/lab/undeclaredLabelsGiven.lab"), storm::exceptions::WrongFormatException);
+	STORM_SILENT_ASSERT_THROW(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(3, STORM_TEST_RESOURCES_DIR "/lab/undeclaredLabelsGiven.lab"), storm::exceptions::WrongFormatException);
 }
 
 TEST(SparseItemLabelingParserTest, LabelForNonExistentState) {
 	// The index of one of the state that are to be labeled is higher than the number of states in the model.
-	ASSERT_THROW(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(3, STORM_TEST_RESOURCES_DIR "/lab/labelForNonexistentState.lab"), storm::exceptions::OutOfRangeException);
+	STORM_SILENT_ASSERT_THROW(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(3, STORM_TEST_RESOURCES_DIR "/lab/labelForNonexistentState.lab"), storm::exceptions::OutOfRangeException);
 }
 
 // Note: As implemented at the moment, each label given for a state in any line is set to true for that state (logical or over all lines for that state).
 // This behavior might not be ideal as multiple lines for one state are not necessary and might indicate a corrupt or wrong file.
 TEST(SparseItemLabelingParserTest, DoubledLines) {
 	// There are multiple lines attributing labels to the same state.
-	ASSERT_THROW(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(6, STORM_TEST_RESOURCES_DIR "/lab/doubledLines.lab"), storm::exceptions::WrongFormatException);
+	STORM_SILENT_ASSERT_THROW(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(6, STORM_TEST_RESOURCES_DIR "/lab/doubledLines.lab"), storm::exceptions::WrongFormatException);
 
 	// There is a line for a state that has been skipped.
-	ASSERT_THROW(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(6, STORM_TEST_RESOURCES_DIR "/lab/doubledLinesSkipped.lab"), storm::exceptions::WrongFormatException);
+	STORM_SILENT_ASSERT_THROW(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(6, STORM_TEST_RESOURCES_DIR "/lab/doubledLinesSkipped.lab"), storm::exceptions::WrongFormatException);
 }
 
 TEST(SparseItemLabelingParserTest, WrongProposition) {
    // Swapped the state index and the label at one entry.
-   ASSERT_THROW(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(3, STORM_TEST_RESOURCES_DIR "/lab/swappedStateAndProposition.lab"), storm::exceptions::WrongFormatException);
+   STORM_SILENT_ASSERT_THROW(storm::parser::SparseItemLabelingParser::parseAtomicPropositionLabeling(3, STORM_TEST_RESOURCES_DIR "/lab/swappedStateAndProposition.lab"), storm::exceptions::WrongFormatException);
 }
 
 TEST(SparseItemLabelingParserTest, Whitespaces) {

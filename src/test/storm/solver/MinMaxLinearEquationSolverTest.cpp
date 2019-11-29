@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 
 #include "test/storm_gtest.h"
@@ -131,7 +131,7 @@ namespace {
             RationalRationalSearchEnvironment
     > TestingTypes;
     
-    TYPED_TEST_CASE(MinMaxLinearEquationSolverTest, TestingTypes);
+    TYPED_TEST_SUITE(MinMaxLinearEquationSolverTest, TestingTypes,);
     
     TYPED_TEST(MinMaxLinearEquationSolverTest, SolveEquations) {
         typedef typename TestFixture::ValueType ValueType;

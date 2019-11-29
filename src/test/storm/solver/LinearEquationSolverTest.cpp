@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
@@ -314,7 +314,7 @@ namespace {
             TopologicalEigenRationalLUEnvironment
     > TestingTypes;
     
-    TYPED_TEST_CASE(LinearEquationSolverTest, TestingTypes);
+    TYPED_TEST_SUITE(LinearEquationSolverTest, TestingTypes,);
     
     
     TYPED_TEST(LinearEquationSolverTest, solveEquationSystem) {

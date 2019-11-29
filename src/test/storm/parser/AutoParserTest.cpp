@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -8,7 +8,7 @@
 
 TEST(AutoParserTest, NonExistingFile) {
     // No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!
-    ASSERT_THROW(storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not", STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not", STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
 }
 
 TEST(AutoParserTest, BasicParsing) {
@@ -26,12 +26,12 @@ TEST(AutoParserTest, BasicParsing) {
 
 TEST(AutoParserTest, WrongHint) {
     // The hint given describes the content but does not conform to the format.
-    ASSERT_THROW(storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/wrongHint.tra", STORM_TEST_RESOURCES_DIR "/lab/autoParser.lab"), storm::exceptions::WrongFormatException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/wrongHint.tra", STORM_TEST_RESOURCES_DIR "/lab/autoParser.lab"), storm::exceptions::WrongFormatException);
 }
 
 TEST(AutoParserTest, NoHint) {
     // There is no hint contained in the given file, so the parser cannot decide which kind of model it is.
-    ASSERT_THROW(storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/noHint.tra", STORM_TEST_RESOURCES_DIR "/lab/autoParser.lab"), storm::exceptions::WrongFormatException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::AutoParser<>::parseModel(STORM_TEST_RESOURCES_DIR "/tra/noHint.tra", STORM_TEST_RESOURCES_DIR "/lab/autoParser.lab"), storm::exceptions::WrongFormatException);
 }
 
 TEST(AutoParserTest, Decision) {

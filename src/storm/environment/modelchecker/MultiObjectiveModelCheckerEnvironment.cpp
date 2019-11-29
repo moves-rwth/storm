@@ -5,6 +5,7 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 
+#include "storm/exceptions/IllegalArgumentException.h"
 namespace storm {
         
     MultiObjectiveModelCheckerEnvironment::MultiObjectiveModelCheckerEnvironment() {
@@ -17,9 +18,30 @@ namespace storm {
         }
         
         precision = storm::utility::convertNumber<storm::RationalNumber>(multiobjectiveSettings.getPrecision());
+        if (multiobjectiveSettings.getPrecisionAbsolute()) {
+            precisionType = PrecisionType::Absolute;
+        } else if (multiobjectiveSettings.getPrecisionRelativeToDiff()) {
+            precisionType = PrecisionType::RelativeToDiff;
+        } else {
+            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unhandled precision type.");
+        }
+        
+        if (multiobjectiveSettings.isAutoEncodingSet()) {
+            encodingType = EncodingType::Auto;
+        } else if (multiobjectiveSettings.isClassicEncodingSet()) {
+            encodingType = EncodingType::Classic;
+        } else if (multiobjectiveSettings.isFlowEncodingSet()) {
+            encodingType = EncodingType::Flow;
+        }
+        
         if (multiobjectiveSettings.isMaxStepsSet()) {
             maxSteps = multiobjectiveSettings.getMaxSteps();
         }
+        if (multiobjectiveSettings.hasSchedulerRestriction()) {
+            schedulerRestriction = multiobjectiveSettings.getSchedulerRestriction();
+        }
+        
+        printResults = multiobjectiveSettings.isPrintResultsSet();
     }
     
     MultiObjectiveModelCheckerEnvironment::~MultiObjectiveModelCheckerEnvironment() {
@@ -82,6 +104,22 @@ namespace storm {
         precision = value;
     }
     
+    typename MultiObjectiveModelCheckerEnvironment::PrecisionType const& MultiObjectiveModelCheckerEnvironment::getPrecisionType() const {
+        return precisionType;
+    }
+    
+    void MultiObjectiveModelCheckerEnvironment::setPrecisionType(PrecisionType const& value) {
+        precisionType = value;
+    }
+    
+    typename MultiObjectiveModelCheckerEnvironment::EncodingType const& MultiObjectiveModelCheckerEnvironment::getEncodingType() const {
+        return encodingType;
+    }
+    
+    void MultiObjectiveModelCheckerEnvironment::setEncodingType(EncodingType const& value) {
+        encodingType = value;
+    }
+    
     bool MultiObjectiveModelCheckerEnvironment::isMaxStepsSet() const {
         return maxSteps.is_initialized();
     }
@@ -96,5 +134,29 @@ namespace storm {
     
     void MultiObjectiveModelCheckerEnvironment::unsetMaxSteps() {
         maxSteps = boost::none;
+    }
+    
+    bool MultiObjectiveModelCheckerEnvironment::isSchedulerRestrictionSet() const {
+        return schedulerRestriction.is_initialized();
+    }
+    
+    storm::storage::SchedulerClass const& MultiObjectiveModelCheckerEnvironment::getSchedulerRestriction() const {
+        return schedulerRestriction.get();
+    }
+    
+    void MultiObjectiveModelCheckerEnvironment::setSchedulerRestriction(storm::storage::SchedulerClass const& value) {
+        schedulerRestriction = value;
+    }
+    
+    void MultiObjectiveModelCheckerEnvironment::unsetSchedulerRestriction() {
+        schedulerRestriction = boost::none;
+    }
+    
+    bool MultiObjectiveModelCheckerEnvironment::isPrintResultsSet() const {
+        return printResults;
+    }
+    
+    void MultiObjectiveModelCheckerEnvironment::setPrintResults(bool value) {
+        printResults = value;
     }
 }

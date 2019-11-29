@@ -2,7 +2,6 @@
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BuildSettings.h"
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/utility/file.h"
 #include "storm/utility/builder.h"
 
@@ -127,7 +126,7 @@ namespace storm {
             
             // Fix deadlocks (if required)
             assert(stateBehaviors.size() == numStates);
-            if (!storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet()) {
+            if (!storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet()) {
                 StateType state = 0;
                 for (auto& behavior : stateBehaviors) {
                     if (!behavior.wasExpanded()) {
