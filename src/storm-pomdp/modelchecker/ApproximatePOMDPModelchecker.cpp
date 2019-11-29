@@ -49,13 +49,9 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             std::unique_ptr<POMDPCheckResult<ValueType>>
             ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeReachabilityOTF(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                                                                             std::set<uint32_t> targetObservations, bool min, uint64_t gridResolution,
+                                                                                             std::set<uint32_t> const &targetObservations, bool min, uint64_t gridResolution,
                                                                                              bool computeRewards) {
                 STORM_PRINT("Use On-The-Fly Grid Generation" << std::endl)
-
-                if (computeRewards) {
-                    RewardModelType const &pomdpRewardModel = pomdp.getUniqueRewardModel();
-                }
 
                 bool finished = false;
                 uint64_t iteration = 0;
@@ -364,7 +360,7 @@ namespace storm {
                     }
                 }
                 overApproxTimer.stop();
-                ValueType underApprox = storm::utility::zero<ValueType>();
+                auto underApprox = storm::utility::zero<ValueType>();
                 /*
                 storm::utility::Stopwatch underApproxTimer(true);
                 ValueType underApprox = computeUnderapproximationWithMDP(pomdp, beliefList, beliefIsTarget, targetObservations, observationProbabilities, nextBelieves,
@@ -401,29 +397,27 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             std::unique_ptr<POMDPCheckResult<ValueType>>
             ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeReachabilityRewardOTF(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                                                                                   std::set<uint32_t> targetObservations, bool min, uint64_t gridResolution) {
+                                                                                                   std::set<uint32_t> const &targetObservations, bool min,
+                                                                                                   uint64_t gridResolution) {
                 return computeReachabilityOTF(pomdp, targetObservations, min, gridResolution, true);
             }
 
             template<typename ValueType, typename RewardModelType>
             std::unique_ptr<POMDPCheckResult<ValueType>>
             ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeReachabilityProbabilityOTF(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                                                                                        std::set<uint32_t> targetObservations, bool min, uint64_t gridResolution) {
+                                                                                                        std::set<uint32_t> const &targetObservations, bool min,
+                                                                                                        uint64_t gridResolution) {
                 return computeReachabilityOTF(pomdp, targetObservations, min, gridResolution, false);
             }
 
             template<typename ValueType, typename RewardModelType>
             std::unique_ptr<POMDPCheckResult<ValueType>>
             ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeReachability(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                                                                          std::set<uint32_t> targetObservations, bool min, uint64_t gridResolution,
+                                                                                          std::set<uint32_t> const &targetObservations, bool min, uint64_t gridResolution,
                                                                                           bool computeRewards) {
                 storm::utility::Stopwatch beliefGridTimer(true);
                 bool finished = false;
                 uint64_t iteration = 0;
-
-                if (computeRewards) {
-                    RewardModelType pomdpRewardModel = pomdp.getUniqueRewardModel();
-                }
 
                 std::vector<storm::pomdp::Belief<ValueType>> beliefList;
                 std::vector<bool> beliefIsTarget;
@@ -616,14 +610,15 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             std::unique_ptr<POMDPCheckResult<ValueType>>
             ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeReachabilityProbability(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                                                                                     std::set<uint32_t> targetObservations, bool min, uint64_t gridResolution) {
+                                                                                                     std::set<uint32_t> const &targetObservations, bool min,
+                                                                                                     uint64_t gridResolution) {
                 return computeReachability(pomdp, targetObservations, min, gridResolution, false);
             }
 
             template<typename ValueType, typename RewardModelType>
             std::unique_ptr<POMDPCheckResult<ValueType>>
             ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeReachabilityReward(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                                                                                std::set<uint32_t> targetObservations, bool min, uint64_t gridResolution) {
+                                                                                                std::set<uint32_t> const &targetObservations, bool min, uint64_t gridResolution) {
                 return computeReachability(pomdp, targetObservations, min, gridResolution, true);
             }
 
@@ -632,7 +627,7 @@ namespace storm {
             ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeUnderapproximation(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                                                                                                 std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
                                                                                                 std::vector<bool> &beliefIsTarget,
-                                                                                                std::set<uint32_t> &targetObservations,
+                                                                                                std::set<uint32_t> const &targetObservations,
                                                                                                 std::map<uint64_t, std::vector<std::map<uint32_t, ValueType>>> &observationProbabilities,
                                                                                                 std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
                                                                                                 std::map<uint64_t, ValueType> &result,
@@ -796,7 +791,7 @@ namespace storm {
                     storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                     std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
                     std::vector<bool> &beliefIsTarget,
-                    std::set<uint32_t> &targetObservations,
+                    std::set<uint32_t> const &targetObservations,
                     std::map<uint64_t, std::vector<std::map<uint32_t, ValueType>>> &observationProbabilities,
                     std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
                     std::map<uint64_t, ValueType> &result,
@@ -870,7 +865,7 @@ namespace storm {
                     storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                     std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
                     std::vector<bool> &beliefIsTarget,
-                    std::set<uint32_t> &targetObservations,
+                    std::set<uint32_t> const &targetObservations,
                     std::map<uint64_t, std::vector<std::map<uint32_t, ValueType>>> &observationProbabilities,
                     std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
                     std::map<uint64_t, ValueType> &result,
@@ -925,7 +920,7 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             void ApproximatePOMDPModelchecker<ValueType, RewardModelType>::constructBeliefGrid(
                     storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                    std::set<uint32_t> target_observations, uint64_t gridResolution,
+                    std::set<uint32_t> const &target_observations, uint64_t gridResolution,
                     std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
                     std::vector<storm::pomdp::Belief<ValueType>> &grid, std::vector<bool> &beliefIsKnown,
                     uint64_t nextId) {
@@ -971,9 +966,7 @@ namespace storm {
                                     storm::utility::convertNumber<ValueType>(gridResolution);
 
                             storm::pomdp::Belief<ValueType> belief = {newId, observation, distribution};
-                            STORM_LOG_TRACE(
-                                    "Add Belief " << std::to_string(newId) << " [(" << std::to_string(observation)
-                                                  << ")," << distribution << "]");
+                            STORM_LOG_TRACE("Add Belief " << std::to_string(newId) << " [(" << std::to_string(observation) << ")," << distribution << "]");
                             beliefList.push_back(belief);
                             grid.push_back(belief);
                             beliefIsKnown.push_back(isTarget);
@@ -1107,7 +1100,8 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             uint64_t ApproximatePOMDPModelchecker<ValueType, RewardModelType>::getBeliefAfterActionAndObservation(
                     storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp, std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
-                    std::vector<bool> &beliefIsTarget, std::set<uint32_t> &targetObservations, storm::pomdp::Belief<ValueType> belief, uint64_t actionIndex, uint32_t observation,
+                    std::vector<bool> &beliefIsTarget, std::set<uint32_t> const &targetObservations, storm::pomdp::Belief<ValueType> belief, uint64_t actionIndex,
+                    uint32_t observation,
                     uint64_t id) {
                 storm::utility::Stopwatch distrWatch(true);
                 std::vector<ValueType> distributionAfter(pomdp.getNumberOfStates()); //, storm::utility::zero<ValueType>());

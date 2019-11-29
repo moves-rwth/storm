@@ -27,21 +27,21 @@ namespace storm {
 
                 std::unique_ptr<POMDPCheckResult<ValueType>>
                 computeReachabilityProbabilityOTF(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                                  std::set<uint32_t> targetObservations, bool min,
+                                                  std::set<uint32_t> const &targetObservations, bool min,
                                                   uint64_t gridResolution);
 
                 std::unique_ptr<POMDPCheckResult<ValueType>>
-                computeReachabilityRewardOTF(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp, std::set<uint32_t> targetObservations, bool min,
+                computeReachabilityRewardOTF(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp, std::set<uint32_t> const &targetObservations, bool min,
                                              uint64_t gridResolution);
 
                 std::unique_ptr<POMDPCheckResult<ValueType>>
                 computeReachabilityProbability(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                               std::set<uint32_t> targetObservations, bool min,
+                                               std::set<uint32_t> const &targetObservations, bool min,
                                                uint64_t gridResolution);
 
                 std::unique_ptr<POMDPCheckResult<ValueType>>
                 computeReachabilityReward(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                          std::set<uint32_t> targetObservations, bool min,
+                                          std::set<uint32_t> const &targetObservations, bool min,
                                           uint64_t gridResolution);
 
             private:
@@ -56,7 +56,7 @@ namespace storm {
                  */
                 std::unique_ptr<POMDPCheckResult<ValueType>>
                 computeReachabilityOTF(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                       std::set<uint32_t> targetObservations, bool min,
+                                       std::set<uint32_t> const &targetObservations, bool min,
                                        uint64_t gridResolution, bool computeRewards);
 
                 /**
@@ -70,7 +70,7 @@ namespace storm {
                  */
                 std::unique_ptr<POMDPCheckResult<ValueType>>
                 computeReachability(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                    std::set<uint32_t> targetObservations, bool min,
+                                    std::set<uint32_t> const &targetObservations, bool min,
                                     uint64_t gridResolution, bool computeRewards);
 
                 /**
@@ -89,7 +89,7 @@ namespace storm {
                 std::vector<uint64_t> extractBestActions(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                                                          std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
                                                          std::vector<bool> &beliefIsTarget,
-                                                         std::set<uint32_t> &target_observations,
+                                                         std::set<uint32_t> const &target_observations,
                                                          std::map<uint64_t, std::vector<std::map<uint32_t, ValueType>>> &observationProbabilities,
                                                          std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
                                                          std::map<uint64_t, ValueType> &result,
@@ -110,14 +110,14 @@ namespace storm {
                  * @return
                  */
                 std::vector<uint64_t> extractBestAction(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                           std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
-                                           std::vector<bool> &beliefIsTarget,
-                                           std::set<uint32_t> &target_observations,
-                                           std::map<uint64_t, std::vector<std::map<uint32_t, ValueType>>> &observationProbabilities,
-                                           std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
-                                           std::map<uint64_t, ValueType> &result,
-                                           uint64_t gridResolution, uint64_t currentBeliefId, uint64_t nextId,
-                                           bool min);
+                                                        std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
+                                                        std::vector<bool> &beliefIsTarget,
+                                                        std::set<uint32_t> const &target_observations,
+                                                        std::map<uint64_t, std::vector<std::map<uint32_t, ValueType>>> &observationProbabilities,
+                                                        std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
+                                                        std::map<uint64_t, ValueType> &result,
+                                                        uint64_t gridResolution, uint64_t currentBeliefId, uint64_t nextId,
+                                                        bool min);
 
                 /**
                  * TODO
@@ -137,7 +137,7 @@ namespace storm {
                 ValueType computeUnderapproximation(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                                                     std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
                                                     std::vector<bool> &beliefIsTarget,
-                                                    std::set<uint32_t> &targetObservations,
+                                                    std::set<uint32_t> const &targetObservations,
                                                     std::map<uint64_t, std::vector<std::map<uint32_t, ValueType>>> &observationProbabilities,
                                                     std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
                                                     std::map<uint64_t, ValueType> &result,
@@ -172,7 +172,7 @@ namespace storm {
                  *
                  */
                 void constructBeliefGrid(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                         std::set<uint32_t> target_observations, uint64_t gridResolution,
+                                         std::set<uint32_t> const &target_observations, uint64_t gridResolution,
                                          std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
                                          std::vector<storm::pomdp::Belief<ValueType>> &grid,
                                          std::vector<bool> &beliefIsKnown, uint64_t nextId);
@@ -206,7 +206,7 @@ namespace storm {
                         storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                         std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
                         std::vector<bool> &beliefIsTarget,
-                        std::set<uint32_t> &targetObservations,
+                        std::set<uint32_t> const &targetObservations,
                         storm::pomdp::Belief<ValueType> belief,
                         uint64_t actionIndex, uint32_t observation, uint64_t id);
 
