@@ -232,11 +232,11 @@ namespace storm {
                 uint64_t getBeliefIdInVector(std::vector<storm::pomdp::Belief<ValueType>> const &grid, uint32_t observation,
                                              std::vector<ValueType> probabilities);
 
-                storm::storage::SparseMatrix<ValueType>
-                buildTransitionMatrix(std::vector<std::map<uint64_t, ValueType>> transitions);
-
-                storm::storage::SparseMatrix<ValueType>
-                buildTransitionMatrix(std::vector<std::vector<std::map<uint64_t, ValueType>>> transitions);
+                /**
+                 * @param transitions  data structure that contains the transition information of the form: origin-state -> action -> (successor-state -> probability)
+                 * @return sparseMatrix representing the transitions
+                 */
+                storm::storage::SparseMatrix<ValueType> buildTransitionMatrix(std::vector<std::vector<std::map<uint64_t, ValueType>>> transitions);
 
                 ValueType getRewardAfterAction(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp, uint64_t action, storm::pomdp::Belief<ValueType> belief);
 

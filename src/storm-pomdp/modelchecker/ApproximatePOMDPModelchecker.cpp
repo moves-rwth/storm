@@ -792,25 +792,6 @@ namespace storm {
             }
 
             template<typename ValueType, typename RewardModelType>
-            storm::storage::SparseMatrix<ValueType>
-            ApproximatePOMDPModelchecker<ValueType, RewardModelType>::buildTransitionMatrix(
-                    std::vector<std::map<uint64_t, ValueType>> transitions) {
-                uint_fast64_t currentRow = 0;
-                uint64_t nrEntries = 0;
-                for (auto const &map : transitions) {
-                    nrEntries += map.size();
-                }
-                storm::storage::SparseMatrixBuilder<ValueType> smb(transitions.size(), transitions.size(), nrEntries);
-                for (auto const &map : transitions) {
-                    for (auto const &transition : map) {
-                        smb.addNextValue(currentRow, transition.first, transition.second);
-                    }
-                    ++currentRow;
-                }
-                return smb.build();
-            }
-
-            template<typename ValueType, typename RewardModelType>
             std::vector<uint64_t> ApproximatePOMDPModelchecker<ValueType, RewardModelType>::extractBestActions(
                     storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                     std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
