@@ -240,6 +240,17 @@ namespace storm {
 
                 ValueType getRewardAfterAction(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp, uint64_t action, storm::pomdp::Belief<ValueType> belief);
 
+                ValueType
+                overApproximationValueIteration(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp, std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
+                                                std::vector<storm::pomdp::Belief<ValueType>> &beliefGrid, std::vector<bool> &beliefIsTarget,
+                                                std::map<uint64_t, std::vector<std::map<uint32_t, ValueType>>> &observationProbabilities,
+                                                std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
+                                                std::map<uint64_t, std::vector<ValueType>> &beliefActionRewards,
+                                                std::map<uint64_t, std::vector<std::vector<ValueType>>> &subSimplexCache,
+                                                std::map<uint64_t, std::vector<ValueType>> &lambdaCache, std::map<uint64_t, ValueType> &result,
+                                                std::map<uint64_t, std::vector<uint64_t>> &chosenActions,
+                                                uint64_t gridResolution, bool min, bool computeRewards);
+
                 storm::utility::ConstantsComparator<ValueType> cc;
                 double precision;
                 bool useMdp;
