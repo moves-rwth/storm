@@ -1377,28 +1377,36 @@ namespace storm {
         
         template<typename ValueType>
         template<typename OtherValueType, typename ResultValueType>
-        std::vector<ResultValueType> SparseMatrix<ValueType>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<OtherValueType> const& otherMatrix) const {
-            std::vector<ResultValueType> result(rowCount, storm::utility::zero<ResultValueType>());
+        ResultValueType SparseMatrix<ValueType>::getPointwiseProductRowSum(storm::storage::SparseMatrix<OtherValueType> const& otherMatrix, index_type const& row) const {
+            typename storm::storage::SparseMatrix<ValueType>::const_iterator it1 = this->begin(row);
+            typename storm::storage::SparseMatrix<ValueType>::const_iterator ite1 = this->end(row);
+            typename storm::storage::SparseMatrix<OtherValueType>::const_iterator it2 = otherMatrix.begin(row);
+            typename storm::storage::SparseMatrix<OtherValueType>::const_iterator ite2 = otherMatrix.end(row);
             
-            // Iterate over all elements of the current matrix and either continue with the next element in case the
-            // given matrix does not have a non-zero element at this column position, or multiply the two entries and
-            // add the result to the corresponding position in the vector.
-            for (index_type row = 0; row < rowCount && row < otherMatrix.getRowCount(); ++row) {
-                typename storm::storage::SparseMatrix<OtherValueType>::const_iterator it2 = otherMatrix.begin(row);
-                typename storm::storage::SparseMatrix<OtherValueType>::const_iterator ite2 = otherMatrix.end(row);
-                for (const_iterator it1 = this->begin(row), ite1 = this->end(row); it1 != ite1 && it2 != ite2; ++it1) {
-                    if (it1->getColumn() < it2->getColumn()) {
-                        continue;
-                    } else {
-                        // If the precondition of this method (i.e. that the given matrix is a submatrix
-                        // of the current one) was fulfilled, we know now that the two elements are in
-                        // the same column, so we can multiply and add them to the row sum vector.
-                        result[row] += it2->getValue() * OtherValueType(it1->getValue());
-                        ++it2;
-                    }
+            ResultValueType result = storm::utility::zero<ResultValueType>();
+            for (;it1 != ite1 && it2 != ite2; ++it1) {
+                if (it1->getColumn() < it2->getColumn()) {
+                    continue;
+                } else {
+                    // If the precondition of this method (i.e. that the given matrix is a submatrix
+                    // of the current one) was fulfilled, we know now that the two elements are in
+                    // the same column, so we can multiply and add them to the row sum vector.
+                    STORM_LOG_ASSERT(it1->getColumn() == it2->getColumn(), "The given matrix is not a submatrix of this one.");
+                    result += it2->getValue() * OtherValueType(it1->getValue());
+                    ++it2;
                 }
             }
-            
+            return result;
+        }
+        
+        template<typename ValueType>
+        template<typename OtherValueType, typename ResultValueType>
+        std::vector<ResultValueType> SparseMatrix<ValueType>::getPointwiseProductRowSumVector(storm::storage::SparseMatrix<OtherValueType> const& otherMatrix) const {
+            std::vector<ResultValueType> result;
+            result.reserve(rowCount);
+            for (index_type row = 0; row < rowCount && row < otherMatrix.getRowCount(); ++row) {
+                result.push_back(getPointwiseProductRowSum<OtherValueType, ResultValueType>(otherMatrix, row));
+            }
             return result;
         }
         

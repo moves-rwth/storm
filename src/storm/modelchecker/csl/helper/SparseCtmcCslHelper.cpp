@@ -25,6 +25,7 @@
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/FormatUnsupportedBySolverException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -370,10 +371,10 @@ namespace storm {
             }
             
             template <typename ValueType>
-            std::vector<ValueType> SparseCtmcCslHelper::computeLongRunAverageProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, storm::storage::BitVector const& psiStates, std::vector<ValueType> const* exitRateVector) {
+            std::vector<ValueType> SparseCtmcCslHelper::computeLongRunAverageProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::BitVector const& psiStates, std::vector<ValueType> const* exitRateVector) {
                 
                 // If there are no goal states, we avoid the computation and directly return zero.
-                uint_fast64_t numberOfStates = probabilityMatrix.getRowCount();
+                uint_fast64_t numberOfStates = rateMatrix.getRowCount();
                 if (psiStates.empty()) {
                     return std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
                 }
@@ -386,7 +387,7 @@ namespace storm {
                 ValueType zero = storm::utility::zero<ValueType>();
                 ValueType one = storm::utility::one<ValueType>();
                 
-                return computeLongRunAverages<ValueType>(env, std::move(goal), probabilityMatrix,
+                return computeLongRunAverages<ValueType>(env, std::move(goal), rateMatrix,
                                               [&zero, &one, &psiStates] (storm::storage::sparse::state_type const& state) -> ValueType {
                                                   if (psiStates.get(state)) {
                                                       return one;
@@ -397,16 +398,33 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseCtmcCslHelper::computeLongRunAverageRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, RewardModelType const& rewardModel, std::vector<ValueType> const* exitRateVector) {
+            std::vector<ValueType> SparseCtmcCslHelper::computeLongRunAverageRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& rateMatrix, RewardModelType const& rewardModel, std::vector<ValueType> const* exitRateVector) {
                 // Only compute the result if the model has a state-based reward model.
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
 
-                return computeLongRunAverageRewards(env, std::move(goal), probabilityMatrix, rewardModel.getTotalRewardVector(probabilityMatrix, *exitRateVector), exitRateVector);
+                return computeLongRunAverages<ValueType>(env, std::move(goal), rateMatrix,
+                        [&] (storm::storage::sparse::state_type const& state) -> ValueType {
+                            ValueType result = rewardModel.hasStateRewards() ? rewardModel.getStateReward(state) : storm::utility::zero<ValueType>();
+                            if (rewardModel.hasStateActionRewards()) {
+                                // State action rewards are multiplied with the exit rate r(s). Then, multiplying the reward with the expected time we stay at s (i.e. 1/r(s)) yields the original state reward
+                                if (exitRateVector) {
+                                    result += rewardModel.getStateActionReward(state) * (*exitRateVector)[state];
+                                } else {
+                                    result += rewardModel.getStateActionReward(state);
+                                }
+                            }
+                            if (rewardModel.hasTransitionRewards()) {
+                                // Transition rewards are already multiplied with the rates
+                                result += rateMatrix.getPointwiseProductRowSum(rewardModel.getTransitionRewardMatrix(), state);
+                            }
+                            return result;
+                        },
+                        exitRateVector);
             }
             
             template <typename ValueType>
-            std::vector<ValueType> SparseCtmcCslHelper::computeLongRunAverageRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, std::vector<ValueType> const& stateRewardVector, std::vector<ValueType> const* exitRateVector) {
-                return computeLongRunAverages<ValueType>(env, std::move(goal), probabilityMatrix,
+            std::vector<ValueType> SparseCtmcCslHelper::computeLongRunAverageRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& stateRewardVector, std::vector<ValueType> const* exitRateVector) {
+                return computeLongRunAverages<ValueType>(env, std::move(goal), rateMatrix,
                                                          [&stateRewardVector] (storm::storage::sparse::state_type const& state) -> ValueType {
                                                              return stateRewardVector[state];
                                                          },
@@ -414,183 +432,49 @@ namespace storm {
             }
             
             template <typename ValueType>
-            std::vector<ValueType> SparseCtmcCslHelper::computeLongRunAverages(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& probabilityMatrix, std::function<ValueType (storm::storage::sparse::state_type const& state)> const& valueGetter, std::vector<ValueType> const* exitRateVector){
-                uint_fast64_t numberOfStates = probabilityMatrix.getRowCount();
-
+            std::vector<ValueType> SparseCtmcCslHelper::computeLongRunAverages(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::function<ValueType (storm::storage::sparse::state_type const& state)> const& valueGetter, std::vector<ValueType> const* exitRateVector){
+                storm::storage::SparseMatrix<ValueType> probabilityMatrix;
+                if (exitRateVector) {
+                    probabilityMatrix = computeProbabilityMatrix(rateMatrix, *exitRateVector);
+                } else {
+                    probabilityMatrix = rateMatrix;
+                }
+                uint_fast64_t numberOfStates = rateMatrix.getRowCount();
+            
                 // Start by decomposing the CTMC into its BSCCs.
-                storm::storage::StronglyConnectedComponentDecomposition<ValueType> bsccDecomposition(probabilityMatrix, storm::storage::StronglyConnectedComponentDecompositionOptions().onlyBottomSccs());
+                storm::storage::StronglyConnectedComponentDecomposition<ValueType> bsccDecomposition(rateMatrix, storm::storage::StronglyConnectedComponentDecompositionOptions().onlyBottomSccs());
                 
                 STORM_LOG_DEBUG("Found " << bsccDecomposition.size() << " BSCCs.");
-                
-                // Get some data members for convenience.
-                ValueType one = storm::utility::one<ValueType>();
-                ValueType zero = storm::utility::zero<ValueType>();
-                
+
                 // Prepare the vector holding the LRA values for each of the BSCCs.
-                std::vector<ValueType> bsccLra(bsccDecomposition.size(), zero);
+                std::vector<ValueType> bsccLra;
+                bsccLra.reserve(bsccDecomposition.size());
                 
-                // First we check which states are in BSCCs.
+                // Keep track of the maximal and minimal value occuring in one of the BSCCs
+                ValueType maxValue, minValue;
                 storm::storage::BitVector statesInBsccs(numberOfStates);
-                storm::storage::BitVector firstStatesInBsccs(numberOfStates);
-                
-                for (uint_fast64_t currentBsccIndex = 0; currentBsccIndex < bsccDecomposition.size(); ++currentBsccIndex) {
-                    storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[currentBsccIndex];
-                    
-                    // Gather information for later use.
-                    bool first = true;
+                auto backwardTransitions = rateMatrix.transpose();
+                for (auto const& bscc : bsccDecomposition) {
                     for (auto const& state : bscc) {
                         statesInBsccs.set(state);
-                        if (first) {
-                            firstStatesInBsccs.set(state);
-                        }
-                        first = false;
+                    }
+                    bsccLra.push_back(computeLongRunAveragesForBscc<ValueType>(env, bscc, rateMatrix, backwardTransitions, valueGetter, exitRateVector));
+                    if (bsccLra.size() == 1) {
+                        maxValue = bsccLra.back();
+                        minValue = bsccLra.back();
+                    } else {
+                        maxValue = std::max(bsccLra.back(), maxValue);
+                        minValue = std::min(bsccLra.back(), minValue);
                     }
                 }
-                storm::storage::BitVector statesNotInBsccs = ~statesInBsccs;
                 
+                storm::storage::BitVector statesNotInBsccs = ~statesInBsccs;
                 STORM_LOG_DEBUG("Found " << statesInBsccs.getNumberOfSetBits() << " states in BSCCs.");
                 
-                // Prepare a vector holding the index within all states that are in BSCCs for every state.
-                std::vector<uint_fast64_t> indexInStatesInBsccs;
-                
-                // Prepare a vector that maps the index within the set of all states in BSCCs to the index of the containing BSCC.
-                std::vector<uint_fast64_t> stateToBsccIndexMap;
-                
-                if (!statesInBsccs.empty()) {
-                    firstStatesInBsccs = firstStatesInBsccs % statesInBsccs;
-                    
-                    // Then we construct an equation system that yields the steady state probabilities for all states in BSCCs.
-                    storm::storage::SparseMatrix<ValueType> bsccEquationSystem = probabilityMatrix.getSubmatrix(false, statesInBsccs, statesInBsccs, true);
-                    
-                    // Since in the fix point equation, we need to multiply the vector from the left, we convert this to a
-                    // multiplication from the right by transposing the system.
-                    bsccEquationSystem = bsccEquationSystem.transpose(false, true);
-                    
-                    // Create an auxiliary structure that makes it easy to look up the indices within the set of BSCC states.
-                    uint_fast64_t lastIndex = 0;
-                    uint_fast64_t currentNumberOfSetBits = 0;
-                    indexInStatesInBsccs.reserve(probabilityMatrix.getRowCount());
-                    for (auto index : statesInBsccs) {
-                        while (lastIndex <= index) {
-                            indexInStatesInBsccs.push_back(currentNumberOfSetBits);
-                            ++lastIndex;
-                        }
-                        ++currentNumberOfSetBits;
-                    }
-                    
-                    stateToBsccIndexMap.resize(statesInBsccs.getNumberOfSetBits());
-                    for (uint_fast64_t currentBsccIndex = 0; currentBsccIndex < bsccDecomposition.size(); ++currentBsccIndex) {
-                        storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[currentBsccIndex];
-                        for (auto const& state : bscc) {
-                            stateToBsccIndexMap[indexInStatesInBsccs[state]] = currentBsccIndex;
-                        }
-                    }
-                    
-                    // Build a different system depending on the problem format of the equation solver.
-                    // Check solver requirements.
-                    storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
-                    auto requirements = linearEquationSolverFactory.getRequirements(env);
-                    requirements.clearLowerBounds();
-                    requirements.clearUpperBounds();
-                    STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
-                    
-                    bool fixedPointSystem = false;
-                    if (linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::FixedPointSystem) {
-                        fixedPointSystem = true;
-                    }
-
-                    // Now build the final equation system matrix, the initial guess and the right-hand side in one go.
-                    std::vector<ValueType> bsccEquationSystemRightSide(bsccEquationSystem.getColumnCount(), zero);
-                    storm::storage::SparseMatrixBuilder<ValueType> builder;
-                    for (uint_fast64_t row = 0; row < bsccEquationSystem.getRowCount(); ++row) {
-                    
-                        // If the current row is the first one belonging to a BSCC, we substitute it by the constraint that the
-                        // values for states of this BSCC must sum to one. However, in order to have a non-zero value on the
-                        // diagonal, we add the constraint of the BSCC that produces a 1 on the diagonal.
-                        if (firstStatesInBsccs.get(row)) {
-                            uint_fast64_t requiredBscc = stateToBsccIndexMap[row];
-                            storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[requiredBscc];
-
-                            if (fixedPointSystem) {
-                                for (auto const& state : bscc) {
-                                    if (row == indexInStatesInBsccs[state]) {
-                                        builder.addNextValue(row, indexInStatesInBsccs[state], zero);
-                                    } else {
-                                        builder.addNextValue(row, indexInStatesInBsccs[state], -one);
-                                    }
-                                }
-                            } else {
-                                for (auto const& state : bscc) {
-                                    builder.addNextValue(row, indexInStatesInBsccs[state], one);
-                                }
-                            }
-                            
-                            bsccEquationSystemRightSide[row] = one;
-                        } else {
-                            // Otherwise, we copy the row, and subtract 1 from the diagonal (only for the equation solver format).
-                            for (auto& entry : bsccEquationSystem.getRow(row)) {
-                                if (fixedPointSystem || entry.getColumn() != row) {
-                                    builder.addNextValue(row, entry.getColumn(), entry.getValue());
-                                } else {
-                                    builder.addNextValue(row, entry.getColumn(), entry.getValue() - one);
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Create the initial guess for the LRAs. We take a uniform distribution over all states in a BSCC.
-                    std::vector<ValueType> bsccEquationSystemSolution(bsccEquationSystem.getColumnCount(), zero);
-                    for (uint_fast64_t bsccIndex = 0; bsccIndex < bsccDecomposition.size(); ++bsccIndex) {
-                        storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[bsccIndex];
-                        
-                        for (auto const& state : bscc) {
-                            bsccEquationSystemSolution[indexInStatesInBsccs[state]] = one / bscc.size();
-                        }
-                    }
-                    
-                    bsccEquationSystem = builder.build();
-                    {
-                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(bsccEquationSystem));
-                        solver->setLowerBound(storm::utility::zero<ValueType>());
-                        solver->setUpperBound(storm::utility::one<ValueType>());
-                        solver->solveEquations(env, bsccEquationSystemSolution, bsccEquationSystemRightSide);
-                    }
-                    
-                    // If exit rates were given, we need to 'fix' the results to also account for the timing behaviour.
-                    if (exitRateVector != nullptr) {
-                        std::vector<ValueType> bsccTotalValue(bsccDecomposition.size(), zero);
-                        for (auto stateIter = statesInBsccs.begin(); stateIter != statesInBsccs.end(); ++stateIter) {
-                            bsccTotalValue[stateToBsccIndexMap[indexInStatesInBsccs[*stateIter]]] += bsccEquationSystemSolution[indexInStatesInBsccs[*stateIter]] * (one / (*exitRateVector)[*stateIter]);
-                        }
-                        
-                        for (auto stateIter = statesInBsccs.begin(); stateIter != statesInBsccs.end(); ++stateIter) {
-                            bsccEquationSystemSolution[indexInStatesInBsccs[*stateIter]] = (bsccEquationSystemSolution[indexInStatesInBsccs[*stateIter]] * (one / (*exitRateVector)[*stateIter])) / bsccTotalValue[stateToBsccIndexMap[indexInStatesInBsccs[*stateIter]]];
-                        }
-                    }
-                                        
-                    // Calculate LRA Value for each BSCC from steady state distribution in BSCCs.
-                    for (uint_fast64_t bsccIndex = 0; bsccIndex < bsccDecomposition.size(); ++bsccIndex) {
-                        storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[bsccIndex];
-                        
-                        for (auto const& state : bscc) {
-                            bsccLra[stateToBsccIndexMap[indexInStatesInBsccs[state]]] += valueGetter(state) * bsccEquationSystemSolution[indexInStatesInBsccs[state]];
-                        }
-                    }
-                    
-                    for (uint_fast64_t bsccIndex = 0; bsccIndex < bsccDecomposition.size(); ++bsccIndex) {
-                        STORM_LOG_DEBUG("Found LRA " << bsccLra[bsccIndex] << " for BSCC " << bsccIndex << ".");
-                    }
-                } else {
-                    for (uint_fast64_t bsccIndex = 0; bsccIndex < bsccDecomposition.size(); ++bsccIndex) {
-                        storm::storage::StronglyConnectedComponent const& bscc = bsccDecomposition[bsccIndex];
-                        
-                        // At this point, all BSCCs are known to contain exactly one state, which is why we can set all values
-                        // directly (based on whether or not the contained state is a psi state).
-                        bsccLra[bsccIndex] = valueGetter(*bscc.begin());
-                    }
-                    
-                    for (uint_fast64_t bsccIndex = 0; bsccIndex < bsccDecomposition.size(); ++bsccIndex) {
-                        STORM_LOG_DEBUG("Found LRA " << bsccLra[bsccIndex] << " for BSCC " << bsccIndex << ".");
+                std::vector<uint64_t> stateToBsccMap(statesInBsccs.size(), -1);
+                for (uint64_t bsccIndex = 0; bsccIndex < bsccDecomposition.size(); ++bsccIndex) {
+                    for (auto const& state : bsccDecomposition[bsccIndex]) {
+                        stateToBsccMap[state] = bsccIndex;
                     }
                 }
                 
@@ -605,30 +489,44 @@ namespace storm {
                     rewardRightSide.reserve(statesNotInBsccs.getNumberOfSetBits());
                     
                     for (auto state : statesNotInBsccs) {
-                        ValueType reward = zero;
-                        for (auto entry : probabilityMatrix.getRow(state)) {
+                        ValueType reward = storm::utility::zero<ValueType>();
+                        for (auto entry : rateMatrix.getRow(state)) {
                             if (statesInBsccs.get(entry.getColumn())) {
-                                reward += entry.getValue() * bsccLra[stateToBsccIndexMap[indexInStatesInBsccs[entry.getColumn()]]];
+                                if (exitRateVector) {
+                                    reward += (entry.getValue() / (*exitRateVector)[state]) * bsccLra[stateToBsccMap[entry.getColumn()]];
+                                } else {
+                                    reward += entry.getValue() * bsccLra[stateToBsccMap[entry.getColumn()]];
+                                }
                             }
                         }
                         rewardRightSide.push_back(reward);
                     }
                     
-                    storm::storage::SparseMatrix<ValueType> rewardEquationSystemMatrix = probabilityMatrix.getSubmatrix(false, statesNotInBsccs, statesNotInBsccs, true);
-                    rewardEquationSystemMatrix.convertToEquationSystem();
-                    
-                    rewardSolution = std::vector<ValueType>(rewardEquationSystemMatrix.getColumnCount(), one);
-                    
-                    {
-                        storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
-                        // Check solver requirements
-                        auto requirements = linearEquationSolverFactory.getRequirements(env);
-                        STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
-                        // Check whether we have the right input format for the solver.
-                        STORM_LOG_THROW(linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem, storm::exceptions::FormatUnsupportedBySolverException, "The selected solver does not support the required format.");
-                        std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(rewardEquationSystemMatrix));
-                        solver->solveEquations(env, rewardSolution, rewardRightSide);
+                    // Compute reachability rewards
+                    storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
+                    bool isEqSysFormat = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+                    storm::storage::SparseMatrix<ValueType> rewardEquationSystemMatrix = rateMatrix.getSubmatrix(false, statesNotInBsccs, statesNotInBsccs, isEqSysFormat);
+                    if (exitRateVector) {
+                        uint64_t localRow = 0;
+                        for (auto const& globalRow : statesNotInBsccs) {
+                            for (auto& entry : rewardEquationSystemMatrix.getRow(localRow)) {
+                                entry.setValue(entry.getValue() / (*exitRateVector)[globalRow]);
+                            }
+                            ++localRow;
+                        }
                     }
+                    if (isEqSysFormat) {
+                        rewardEquationSystemMatrix.convertToEquationSystem();
+                    }
+                    rewardSolution = std::vector<ValueType>(rewardEquationSystemMatrix.getColumnCount(), (maxValue + minValue) / storm::utility::convertNumber<ValueType,uint64_t>(2));
+                   // std::cout << rewardEquationSystemMatrix << std::endl;
+                   // std::cout << storm::utility::vector::toString(rewardRightSide) << std::endl;
+                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, std::move(rewardEquationSystemMatrix));
+                    solver->setBounds(minValue, maxValue);
+                    // Check solver requirements
+                    auto requirements = solver->getRequirements(env);
+                    STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
+                    solver->solveEquations(env, rewardSolution, rewardRightSide);
                 }
                 
                 // Fill the result vector.
@@ -653,6 +551,225 @@ namespace storm {
                 return result;
             }
 
+            template <typename ValueType>
+            ValueType SparseCtmcCslHelper::computeLongRunAveragesForBscc(Environment const& env, storm::storage::StronglyConnectedComponent const& bscc, storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<ValueType (storm::storage::sparse::state_type const& state)> const& valueGetter, std::vector<ValueType> const* exitRateVector) {
+                std::cout << std::endl << "========== BSCC =======" << std::endl;
+                storm::storage::BitVector bsccStates(rateMatrix.getRowCount());
+                for (auto const& s : bscc) { bsccStates.set(s); std::cout << s << ": " << valueGetter(s) << "\t";}
+                auto subm = rateMatrix.getSubmatrix(false,bsccStates,bsccStates);
+                std::cout << std::endl << subm << std::endl;
+                
+                std::cout << std::endl << "========== EQSYS =======" << std::endl;
+
+                // Catch the trivial case for bsccs of size 1
+                if (bscc.size() == 1) {
+                    std::cout << std::endl << "========== Result = " << valueGetter(*bscc.begin()) << " =======" << std::endl;
+
+                    return valueGetter(*bscc.begin());
+                }
+                
+                return computeLongRunAveragesForBsccVi(env, bscc, rateMatrix, backwardTransitions, valueGetter, exitRateVector);
+                return computeLongRunAveragesForBsccEqSys(env, bscc, rateMatrix, backwardTransitions, valueGetter, exitRateVector);
+            }
+            
+            template <>
+            storm::RationalFunction SparseCtmcCslHelper::computeLongRunAveragesForBsccVi<storm::RationalFunction>(Environment const&, storm::storage::StronglyConnectedComponent const&, storm::storage::SparseMatrix<storm::RationalFunction> const&, storm::storage::SparseMatrix<storm::RationalFunction> const&, std::function<storm::RationalFunction (storm::storage::sparse::state_type const& state)> const&, std::vector<storm::RationalFunction> const*) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The requested Method for LRA computation is not supported for parametric models.");
+            }
+                
+            template <typename ValueType>
+            ValueType SparseCtmcCslHelper::computeLongRunAveragesForBsccVi(Environment const& env, storm::storage::StronglyConnectedComponent const& bscc, storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<ValueType (storm::storage::sparse::state_type const& state)> const& valueGetter, std::vector<ValueType> const* exitRateVector) {
+                
+                // Initialize data about the bscc
+                storm::storage::BitVector bsccStates(rateMatrix.getRowGroupCount(), false);
+                for (auto const& state : bscc) {
+                    bsccStates.set(state);
+                }
+                
+                // Get the uniformization rate
+                ValueType uniformizationRate = storm::utility::one<ValueType>();
+                if (exitRateVector) {
+                    uniformizationRate = storm::utility::vector::max_if(*exitRateVector, bsccStates);
+                }
+                // To ensure that the model is aperiodic, we need to make sure that every Markovian state gets a self loop.
+                // Hence, we increase the uniformization rate a little.
+                uniformizationRate += storm::utility::one<ValueType>(); // Todo: try other values such as *=1.01
+
+                // Get the transitions of the submodel
+                typename storm::storage::SparseMatrix<ValueType> bsccMatrix = rateMatrix.getSubmatrix(true, bsccStates, bsccStates, true);
+                
+                // Uniformize the transitions
+                uint64_t subState = 0;
+                for (auto state : bsccStates) {
+                    for (auto& entry : bsccMatrix.getRow(subState)) {
+                        if (entry.getColumn() == subState) {
+                            if (exitRateVector) {
+                                entry.setValue(storm::utility::one<ValueType>() + (entry.getValue() - (*exitRateVector)[state]) / uniformizationRate);
+                            } else {
+                                entry.setValue(storm::utility::one<ValueType>() + (entry.getValue() - storm::utility::one<ValueType>()) / uniformizationRate);
+                            }
+                        } else {
+                            entry.setValue(entry.getValue() / uniformizationRate);
+                        }
+                    }
+                    ++subState;
+                }
+
+                // Compute the rewards obtained in a single uniformization step
+                std::vector<ValueType> markovianRewards;
+                markovianRewards.reserve(bsccMatrix.getRowCount());
+                for (auto const& state : bsccStates) {
+                    ValueType stateRewardScalingFactor = storm::utility::one<ValueType>() / uniformizationRate;
+                    // ValueType actionRewardScalingFactor = exitRateVector[state] / uniformizationRate; // action rewards are currently not supported
+                    markovianRewards.push_back(valueGetter(state) * stateRewardScalingFactor);
+                }
+                
+                // start the iterations
+                ValueType precision = storm::utility::convertNumber<ValueType>(1e-6) / uniformizationRate; // TODO env.solver().minMax().getPrecision()) / uniformizationRate;
+                bool relative = true; // TODO env.solver().minMax().getRelativeTerminationCriterion();
+                std::vector<ValueType> v(bsccMatrix.getRowCount(), storm::utility::zero<ValueType>());
+                std::vector<ValueType> w = v;
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver;
+                while (true) {
+                    // Compute the values for the markovian states. We also keep track of the maximal and minimal difference between two values (for convergence checking)
+                    auto vIt = v.begin();
+                    uint64_t row = 0;
+                    ValueType newValue = markovianRewards[row] + bsccMatrix.multiplyRowWithVector(row, w);
+                    ValueType maxDiff = newValue - *vIt;
+                    ValueType minDiff = maxDiff;
+                    *vIt = newValue;
+                    for (++vIt, ++row; row < bsccMatrix.getRowCount(); ++vIt, ++row) {
+                        newValue = markovianRewards[row] + bsccMatrix.multiplyRowWithVector(row, w);
+                        ValueType diff = newValue - *vIt;
+                        maxDiff = std::max(maxDiff, diff);
+                        minDiff = std::min(minDiff, diff);
+                        *vIt = newValue;
+                    }
+
+                    // Check for convergence
+                    if ((maxDiff - minDiff) <= (relative ? (precision * (v.front() + minDiff)) : precision)) {
+                        break;
+                    }
+                    
+                    // update the rhs of the equation system
+                    ValueType referenceValue = v.front();
+                    storm::utility::vector::applyPointwise<ValueType, ValueType>(v, w, [&referenceValue] (ValueType const& v_i) -> ValueType { return v_i - referenceValue; });
+                }
+                std::cout << std::endl << "========== VI Result = " << v.front() * uniformizationRate << " =======" << std::endl;
+                return v.front() * uniformizationRate;
+            }
+            
+            template <typename ValueType>
+            ValueType SparseCtmcCslHelper::computeLongRunAveragesForBsccEqSys(Environment const& env, storm::storage::StronglyConnectedComponent const& bscc, storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::function<ValueType (storm::storage::sparse::state_type const& state)> const& valueGetter, std::vector<ValueType> const* exitRateVector) {
+                
+                // Get a mapping from global state indices to local ones.
+                std::unordered_map<uint64_t, uint64_t> toLocalIndexMap;
+                uint64_t localIndex = 0;
+                for (auto const& globalIndex : bscc) {
+                    toLocalIndexMap[globalIndex] = localIndex;
+                    ++localIndex;
+                }
+                
+                // Build the equation system matrix
+                
+                
+                // Build the equation system matrix for A[s,s] =  R(s,s) - r(s) & A[s,s'] = R(s,s') (where s != s')
+                // x_0+...+x_n=1 & x*A=0  <=>  x_0+...+x_n=1 & A^t*x=0 [ <=> 1-x_1+...+x_n=x_0 & (1-A^t)*x = x ]
+                storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
+                storm::storage::SparseMatrixBuilder<ValueType> builder(bscc.size(), bscc.size());
+                bool isEquationSystemFormat = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+                // The first row asserts that the values sum up to one
+                uint64_t row = 0;
+                if (isEquationSystemFormat) {
+                    for (uint64_t state = 0; state < bscc.size(); ++state) {
+                            builder.addNextValue(row, state, storm::utility::one<ValueType>());
+                    }
+                } else {
+                    for (uint64_t state = 1; state < bscc.size(); ++state) {
+                            builder.addNextValue(row, state, -storm::utility::one<ValueType>());
+                    }
+                }
+                ++row;
+                // Build the equation system matrix
+                // We can skip the first state to make the equation system matrix square
+                auto stateIt = bscc.begin();
+                for (++stateIt; stateIt != bscc.end(); ++stateIt) {
+                    ValueType diagonalValue = (exitRateVector == nullptr) ? -storm::utility::one<ValueType>() : -(*exitRateVector)[*stateIt];
+                    if (!isEquationSystemFormat) {
+                        diagonalValue = storm::utility::one<ValueType>() - diagonalValue;
+                    }
+                    bool insertedDiagonal = storm::utility::isZero(diagonalValue);
+                    for (auto const& backwardsEntry : backwardTransitions.getRow(*stateIt)) {
+                        auto localIndexIt = toLocalIndexMap.find(backwardsEntry.getColumn());
+                        if (localIndexIt != toLocalIndexMap.end()) {
+                            ValueType val = backwardsEntry.getValue();
+                            if (!isEquationSystemFormat) {
+                                val = -val;
+                            }
+                            uint64_t localIndex = localIndexIt->second;
+                            if (!insertedDiagonal && localIndex == row) {
+                                builder.addNextValue(row, localIndex, val + diagonalValue);
+                                insertedDiagonal = true;
+                            } else {
+                                if (!insertedDiagonal && localIndex > row) {
+                                    builder.addNextValue(row, row, diagonalValue);
+                                    insertedDiagonal = true;
+                                }
+                                builder.addNextValue(row, localIndex, val);
+                            }
+                        }
+                    }
+                    if (!insertedDiagonal) {
+                        builder.addNextValue(row, row, diagonalValue);
+                    }
+                    ++row;
+                }
+
+                // Create a linear equation solver
+                auto matrix = builder.build();
+                std::cout << matrix << std::endl;
+                auto solver = linearEquationSolverFactory.create(env, std::move(matrix));
+                solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+                // Check solver requirements.
+                auto requirements = solver->getRequirements(env);
+                STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
+                
+                std::vector<ValueType> bsccEquationSystemRightSide(bscc.size(), storm::utility::zero<ValueType>());
+                bsccEquationSystemRightSide.front() = storm::utility::one<ValueType>();
+                std::vector<ValueType> bsccEquationSystemSolution(bscc.size(), storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType, uint64_t>(bscc.size()));
+                std::cout << storm::utility::vector::toString(bsccEquationSystemRightSide) << std::endl;
+                solver->solveEquations(env, bsccEquationSystemSolution, bsccEquationSystemRightSide);
+                std::cout << storm::utility::vector::toString(bsccEquationSystemSolution) << std::endl;
+                // If exit rates were given, we need to 'fix' the results to also account for the timing behaviour.
+                if (false && exitRateVector != nullptr) {
+                    ValueType totalValue = storm::utility::zero<ValueType>();
+                    auto solIt = bsccEquationSystemSolution.begin();
+                    for (auto const& globalState : bscc) {
+                        totalValue += (*solIt) * (storm::utility::one<ValueType>() / (*exitRateVector)[globalState]);
+                        ++solIt;
+                    }
+                    assert(solIt == bsccEquationSystemSolution.end());
+                    solIt = bsccEquationSystemSolution.begin();
+                    for (auto const& globalState : bscc) {
+                        *solIt = ((*solIt) * (storm::utility::one<ValueType>() / (*exitRateVector)[globalState])) / totalValue;
+                        ++solIt;
+                    }
+                    assert(solIt == bsccEquationSystemSolution.end());
+                }
+                
+                // Calculate final LRA Value
+                ValueType result = storm::utility::zero<ValueType>();
+                auto solIt = bsccEquationSystemSolution.begin();
+                for (auto const& globalState : bscc) {
+                    result += valueGetter(globalState) * (*solIt);
+                    ++solIt;
+                }
+                assert(solIt == bsccEquationSystemSolution.end());
+                std::cout << std::endl << "========== Result = " << result << " =======" << std::endl;
+
+                return result;
+            }
+            
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
             std::vector<ValueType> SparseCtmcCslHelper::computeAllTransientProbabilities(Environment const& env, storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<ValueType> const& exitRates, double timeBound) {
 
