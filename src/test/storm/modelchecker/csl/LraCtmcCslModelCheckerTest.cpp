@@ -144,9 +144,8 @@ namespace {
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
             env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::SOR);
             env.solver().native().setSorOmega(storm::utility::convertNumber<storm::RationalNumber>(0.7)); // LRA computation fails for 0.9
-            env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-9));
-            env.solver().native().setRelativeTerminationCriterion(false);
             env.solver().lra().setDetLraMethod(storm::solver::LraMethod::GainBiasEquations);
+            env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-9));
             return env;
         }
     };

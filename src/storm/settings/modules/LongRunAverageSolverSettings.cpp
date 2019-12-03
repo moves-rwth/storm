@@ -41,7 +41,7 @@ namespace storm {
             }
             
             storm::solver::LraMethod LongRunAverageSolverSettings::getDetLraMethod() const {
-                std::string lraMethodString = this->getOption(nondetLraMethodOptionName).getArgumentByName("name").getValueAsString();
+                std::string lraMethodString = this->getOption(detLraMethodOptionName).getArgumentByName("name").getValueAsString();
                 if (lraMethodString == "gain-bias-equations" || lraMethodString == "gb") {
                     return storm::solver::LraMethod::GainBiasEquations;
                 }

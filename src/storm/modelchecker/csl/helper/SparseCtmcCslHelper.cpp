@@ -15,6 +15,7 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
+#include "storm/environment/solver/TopologicalSolverEnvironment.h"
 
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
@@ -575,13 +576,21 @@ namespace storm {
                 }
                 
                 storm::solver::LraMethod method = env.solver().lra().getDetLraMethod();
+                if (storm::NumberTraits<ValueType>::IsExact && env.solver().lra().isDetLraMethodSetFromDefault() && method == storm::solver::LraMethod::ValueIteration) {
+                    method = storm::solver::LraMethod::GainBiasEquations;
+                    STORM_LOG_INFO("Selecting " << storm::solver::toString(method) << " as the solution technique for long-run properties to guarantee exact results. If you want to override this, please explicitly specify a different LRA method.");
+                } else if (env.solver().isForceSoundness() && env.solver().lra().isDetLraMethodSetFromDefault() && method != storm::solver::LraMethod::ValueIteration) {
+                    method = storm::solver::LraMethod::ValueIteration;
+                    STORM_LOG_INFO("Selecting " << storm::solver::toString(method) << " as the solution technique for long-run properties to guarantee sound results. If you want to override this, please explicitly specify a different LRA method.");
+                }
+                STORM_LOG_TRACE("Computing LRA for BSCC of size " << bscc.size() << " using '" << storm::solver::toString(method) << "'.");
                 if (method == storm::solver::LraMethod::ValueIteration) {
                     return computeLongRunAveragesForBsccVi<ValueType>(env, bscc, rateMatrix, valueGetter, exitRateVector);
                 } else if (method == storm::solver::LraMethod::LraDistributionEquations) {
                     // We only need the first element of the pair as the lra distribution is not relevant at this point.
                     return computeLongRunAveragesForBsccLraDistr<ValueType>(env, bscc, rateMatrix, valueGetter, exitRateVector).first;
                 }
-                STORM_LOG_WARN_COND(method == storm::solver::LraMethod::GainBiasEquations, "Unsupported lra method selected. Defaulting to gain-bias-equations.");
+                STORM_LOG_WARN_COND(method == storm::solver::LraMethod::GainBiasEquations, "Unsupported lra method selected. Defaulting to " << storm::solver::toString(storm::solver::LraMethod::GainBiasEquations) << ".");
                 // We don't need the bias values
                 return computeLongRunAveragesForBsccGainBias<ValueType>(env, bscc, rateMatrix, valueGetter, exitRateVector).first;
             }
@@ -705,12 +714,20 @@ namespace storm {
                     ++localIndex;
                 }
                 
+                // Prepare an environment for the underlying equation solver
+                auto subEnv = env;
+                if (subEnv.solver().getLinearEquationSolverType() == storm::solver::EquationSolverType::Topological) {
+                    // Topological solver does not make any sense since the BSCC is connected.
+                    subEnv.solver().setLinearEquationSolverType(subEnv.solver().topological().getUnderlyingEquationSolverType());
+                }
+                subEnv.solver().setLinearEquationSolverPrecision(env.solver().lra().getPrecision(), env.solver().lra().getRelativeTerminationCriterion());
+                
                 // Build the equation system matrix and vector.
                 storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
-                bool isEquationSystemFormat = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+                bool isEquationSystemFormat = linearEquationSolverFactory.getEquationProblemFormat(subEnv) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
                 storm::storage::SparseMatrixBuilder<ValueType> builder(bscc.size(), bscc.size());
-                std::vector<ValueType> eqsysVector;
-                eqsysVector.reserve(bscc.size());
+                std::vector<ValueType> eqSysVector;
+                eqSysVector.reserve(bscc.size());
                 // The first row asserts that the weighted bias variables and the reward at s_0 sum up to the gain
                 uint64_t row = 0;
                 ValueType entryValue;
@@ -724,11 +741,15 @@ namespace storm {
                         builder.addNextValue(row, 0, -storm::utility::one<ValueType>());
                     }
                     // Compute weighted sum over successor state. As this is a BSCC, each successor state will again be in the BSCC.
-                    bool needDiagonalEntry = isEquationSystemFormat && (row > 0);
-                    ValueType diagonalValue;
-                    if (needDiagonalEntry) {
-                        diagonalValue = exitRateVector ? (*exitRateVector)[globalState] : storm::utility::one<ValueType>();
+                    auto diagonalValue = storm::utility::zero<ValueType>();
+                    if (row > 0) {
+                        if (isEquationSystemFormat) {
+                            diagonalValue = exitRateVector ? (*exitRateVector)[globalState] : storm::utility::one<ValueType>();
+                        } else {
+                            diagonalValue = storm::utility::one<ValueType>() - (exitRateVector ? (*exitRateVector)[globalState] : storm::utility::one<ValueType>());
+                        }
                     }
+                    bool needDiagonalEntry = !storm::utility::isZero(diagonalValue);
                     for (auto const& entry : rateMatrix.getRow(globalState)) {
                         uint64_t col = toLocalIndexMap[entry.getColumn()];
                         if (col == 0) {
@@ -752,23 +773,21 @@ namespace storm {
                     if (needDiagonalEntry) {
                         builder.addNextValue(row, row, diagonalValue);
                     }
-                    eqsysVector.push_back(valueGetter(globalState));
+                    eqSysVector.push_back(valueGetter(globalState));
                     ++row;
                 }
 
                 // Create a linear equation solver
-                auto subEnv = env;
-                subEnv.solver().setLinearEquationSolverPrecision(env.solver().lra().getPrecision(), env.solver().lra().getRelativeTerminationCriterion());
                 auto solver = linearEquationSolverFactory.create(subEnv, builder.build());
                 // Check solver requirements.
                 auto requirements = solver->getRequirements(subEnv);
                 STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
-                // Todo: Find bounds on the bias variable. Just inserting the maximal value from the vector probably does not work.
+                // Todo: Find bounds on the bias variables. Just inserting the maximal value from the vector probably does not work.
                 
                 std::vector<ValueType> eqSysSol(bscc.size(), storm::utility::zero<ValueType>());
                 // Take the mean of the rewards as an initial guess for the gain
-                eqSysSol.front() = std::accumulate(eqsysVector.begin(), eqsysVector.end(), storm::utility::zero<ValueType>()) / storm::utility::convertNumber<ValueType, uint64_t>(bscc.size());
-                solver->solveEquations(subEnv, eqSysSol, eqsysVector);
+                //eqSysSol.front() = std::accumulate(eqSysVector.begin(), eqSysVector.end(), storm::utility::zero<ValueType>()) / storm::utility::convertNumber<ValueType, uint64_t>(bscc.size());
+                solver->solveEquations(subEnv, eqSysSol, eqSysVector);
                 
                 ValueType gain = eqSysSol.front();
                 // insert bias value for state 0
@@ -787,8 +806,16 @@ namespace storm {
                 
                 // This method assumes that this BSCC consist of more than one state
                 if (bscc.size() == 1) {
-                    return { storm::utility::one<ValueType>(), {storm::utility::one<ValueType>()} };
+                    return { valueGetter(*bscc.begin()), {storm::utility::one<ValueType>()} };
                 }
+                
+                // Prepare an environment for the underlying linear equation solver
+                auto subEnv = env;
+                if (subEnv.solver().getLinearEquationSolverType() == storm::solver::EquationSolverType::Topological) {
+                    // Topological solver does not make any sense since the BSCC is connected.
+                    subEnv.solver().setLinearEquationSolverType(subEnv.solver().topological().getUnderlyingEquationSolverType());
+                }
+                subEnv.solver().setLinearEquationSolverPrecision(env.solver().lra().getPrecision(), env.solver().lra().getRelativeTerminationCriterion());
                 
                 // Get a mapping from global state indices to local ones as well as a bitvector containing states within the BSCC.
                 std::unordered_map<uint64_t, uint64_t> toLocalIndexMap;
@@ -823,12 +850,11 @@ namespace storm {
                 
                 // Check whether we need the fixpoint characterization
                 storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
-                bool isFixpointFormat = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::FixedPointSystem;
-                
+                bool isFixpointFormat = linearEquationSolverFactory.getEquationProblemFormat(subEnv) == storm::solver::LinearEquationSolverProblemFormat::FixedPointSystem;
                 if (isFixpointFormat) {
                     // Add a 1 on the diagonal
                     for (row = 0; row < auxMatrix.getRowCount(); ++row) {
-                        for (auto& entry : auxMatrix) {
+                        for (auto& entry : auxMatrix.getRow(row)) {
                             if (entry.getColumn() == row) {
                                 entry.setValue(storm::utility::one<ValueType>() + entry.getValue());
                             }
@@ -869,32 +895,16 @@ namespace storm {
                 bsccEquationSystemRightSide.back() = storm::utility::one<ValueType>();
                 
                 // Create a linear equation solver
-                auto subEnv = env;
-                subEnv.solver().setLinearEquationSolverPrecision(env.solver().lra().getPrecision(), env.solver().lra().getRelativeTerminationCriterion());
                 auto solver = linearEquationSolverFactory.create(subEnv,  builder.build());
                 solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
                 // Check solver requirements.
                 auto requirements = solver->getRequirements(subEnv);
+                requirements.clearLowerBounds();
+                requirements.clearUpperBounds();
                 STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
                 
                 std::vector<ValueType> lraDistr(bscc.size(), storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType, uint64_t>(bscc.size()));
                 solver->solveEquations(subEnv, lraDistr, bsccEquationSystemRightSide);
-                // If exit rates were given, we need to 'fix' the results to also account for the timing behaviour.
-                if (false && exitRateVector != nullptr) {
-                    ValueType totalValue = storm::utility::zero<ValueType>();
-                    auto solIt = lraDistr.begin();
-                    for (auto const& globalState : bscc) {
-                        totalValue += (*solIt) * (storm::utility::one<ValueType>() / (*exitRateVector)[globalState]);
-                        ++solIt;
-                    }
-                    assert(solIt == lraDistr.end());
-                    solIt = lraDistr.begin();
-                    for (auto const& globalState : bscc) {
-                        *solIt = ((*solIt) * (storm::utility::one<ValueType>() / (*exitRateVector)[globalState])) / totalValue;
-                        ++solIt;
-                    }
-                    assert(solIt == lraDistr.end());
-                }
                 
                 // Calculate final LRA Value
                 ValueType result = storm::utility::zero<ValueType>();
