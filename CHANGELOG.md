@@ -8,7 +8,8 @@ Version 1.4.x
 -------------
 
 ### Version 1.4.1 (under development)
-
+- Implemented Long run average computation for DTMCs/CTMCs via value iteration and via gain/bias equations.
+- Added several LRA related settings in a new settings module. Note that `--minmax:lramethod` has been replaced by `--lra:nondetmethod`.
 
 ### Version 1.4.0 (2019/11)
 - Added support for multi-dimensional quantile queries.
