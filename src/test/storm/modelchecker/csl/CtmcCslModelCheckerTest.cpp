@@ -368,24 +368,6 @@ namespace {
         
     }
     
-    TYPED_TEST(CtmcCslModelCheckerTest, Polling) {
-        std::string formulasString = "P=?[ F<=10 \"target\"]";
-        
-        auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ctmc/polling2.sm", formulasString);
-        auto model = std::move(modelFormulas.first);
-        auto tasks = this->getTasks(modelFormulas.second);
-        EXPECT_EQ(12ul, model->getNumberOfStates());
-        EXPECT_EQ(22ul, model->getNumberOfTransitions());
-        ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
-        auto checker = this->createModelChecker(model);
-        std::unique_ptr<storm::modelchecker::CheckResult> result;
-        
-        result = checker->check(this->env(), tasks[0]);
-        EXPECT_NEAR(this->parseNumber("1"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
-        
-        
-    }
-    
     TYPED_TEST(CtmcCslModelCheckerTest, Tandem) {
         std::string formulasString = "P=? [ F<=10 \"network_full\" ]";
         formulasString += "; P=? [ F<=10 \"first_queue_full\" ]";
