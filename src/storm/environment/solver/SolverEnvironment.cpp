@@ -1,5 +1,6 @@
 #include "storm/environment/solver/SolverEnvironment.h"
 
+#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/MultiplierEnvironment.h"
 #include "storm/environment/solver/EigenSolverEnvironment.h"
@@ -27,6 +28,14 @@ namespace storm {
     
     SolverEnvironment::~SolverEnvironment() {
         // Intentionally left empty
+    }
+    
+    LongRunAverageSolverEnvironment& SolverEnvironment::lra() {
+        return longRunAverageSolverEnvironment.get();
+    }
+    
+    LongRunAverageSolverEnvironment const& SolverEnvironment::lra() const {
+        return longRunAverageSolverEnvironment.get();
     }
     
     MinMaxSolverEnvironment& SolverEnvironment::minMax() {
