@@ -10,6 +10,7 @@
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/api/properties.h"
 #include "storm/api/export.h"
 #include "storm-parsers/api/storm-parsers.h"
@@ -548,7 +549,8 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             std::unique_ptr<POMDPCheckResult<ValueType>>
             ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeReachabilityReward(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                                                                                std::set<uint32_t> const &targetObservations, bool min, uint64_t gridResolution) {
+                                                                                                std::set<uint32_t> const &targetObservations, bool min,
+                                                                                                uint64_t gridResolution) {
                 return computeReachability(pomdp, targetObservations, min, gridResolution, true);
             }
 
@@ -1088,8 +1090,6 @@ namespace storm {
             class ApproximatePOMDPModelchecker<double>;
 
 #ifdef STORM_HAVE_CARL
-
-            //template class ApproximatePOMDPModelchecker<storm::RationalFunction>;
             template
             class ApproximatePOMDPModelchecker<storm::RationalNumber>;
 

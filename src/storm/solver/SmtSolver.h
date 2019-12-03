@@ -23,6 +23,8 @@ namespace storm {
 		public:
 			//! possible check results
 			enum class CheckResult { Sat, Unsat, Unknown };
+
+
             
             /*!
              * The base class for all model references. They are used to provide a lightweight method of accessing the
@@ -48,6 +50,8 @@ namespace storm {
                  * @return The expression manager associated with this model reference.
                  */
                 storm::expressions::ExpressionManager const& getManager() const;
+
+				virtual std::string toString() const = 0;
                 
             private:
                 // The expression manager responsible for the variables whose value can be requested via this model

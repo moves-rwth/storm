@@ -61,7 +61,7 @@ namespace storm {
                     smtSolver->add(!pathVars[state][0]);
                 }
 
-                if (surelyReachSinkStates.at(state)) {
+                if (surelyReachSinkStates.get(state)) {
                     smtSolver->add(!reachVars[state]);
                 }
                 else {
