@@ -13,6 +13,9 @@
 
 #include "storm/environment/Environment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/environment/solver/TopologicalSolverEnvironment.h"
+#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
+#include "storm/environment/solver/EigenSolverEnvironment.h"
 
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
@@ -703,7 +706,9 @@ namespace storm {
                 auto underlyingSolverEnvironment = env;
                 if (env.solver().isForceSoundness()) {
                     // For sound computations, the error in the MECS plus the error in the remaining system should be less then the user defined precsion.
-                    underlyingSolverEnvironment.solver().minMax().setPrecision(env.solver().minMax().getPrecision() / storm::utility::convertNumber<storm::RationalNumber>(2));
+                    underlyingSolverEnvironment.solver().minMax().setPrecision(env.solver().lra().getPrecision() / storm::utility::convertNumber<storm::RationalNumber>(2));
+                    underlyingSolverEnvironment.solver().minMax().setRelativeTerminationCriterion(env.solver().lra().getRelativeTerminationCriterion());
+                    underlyingSolverEnvironment.solver().lra().setPrecision(env.solver().lra().getPrecision() / storm::utility::convertNumber<storm::RationalNumber>(2));
                 }
                 
                 for (uint64_t currentMecIndex = 0; currentMecIndex < mecDecomposition.size(); ++currentMecIndex) {
@@ -877,11 +882,11 @@ namespace storm {
                 }
                 
                 // Solve MEC with the method specified in the settings
-                storm::solver::LraMethod method = env.solver().minMax().getLraMethod();
-                if (storm::NumberTraits<ValueType>::IsExact && env.solver().minMax().isLraMethodSetFromDefault() && method != storm::solver::LraMethod::LinearProgramming) {
+                storm::solver::LraMethod method = env.solver().lra().getNondetLraMethod();
+                if (storm::NumberTraits<ValueType>::IsExact && env.solver().lra().isNondetLraMethodSetFromDefault() && method != storm::solver::LraMethod::LinearProgramming) {
                     STORM_LOG_INFO("Selecting 'LP' as the solution technique for long-run properties to guarantee exact results. If you want to override this, please explicitly specify a different LRA method.");
                     method = storm::solver::LraMethod::LinearProgramming;
-                } else if (env.solver().isForceSoundness() && env.solver().minMax().isLraMethodSetFromDefault() && method != storm::solver::LraMethod::ValueIteration) {
+                } else if (env.solver().isForceSoundness() && env.solver().lra().isNondetLraMethodSetFromDefault() && method != storm::solver::LraMethod::ValueIteration) {
                     STORM_LOG_INFO("Selecting 'VI' as the solution technique for long-run properties to guarantee sound results. If you want to override this, please explicitly specify a different LRA method.");
                     method = storm::solver::LraMethod::ValueIteration;
                 }
@@ -982,7 +987,7 @@ namespace storm {
                 ValueType uniformizationRate = storm::utility::vector::max_if(exitRateVector, markovianMecStates);
                 // To ensure that the model is aperiodic, we need to make sure that every Markovian state gets a self loop.
                 // Hence, we increase the uniformization rate a little.
-                uniformizationRate += storm::utility::one<ValueType>(); // Todo: try other values such as *=1.01
+                uniformizationRate *= (storm::utility::one<ValueType>() + storm::utility::convertNumber<ValueType>(env.solver().lra().getAperiodicFactor()));
 
                 // Get the transitions of the submodel, that is
                 // * a matrix aMarkovian with all (uniformized) transitions from Markovian mec states to all Markovian mec states.
@@ -1042,24 +1047,35 @@ namespace storm {
                 
                 // start the iterations
                 
-                ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()) / uniformizationRate;
-                bool relative = env.solver().minMax().getRelativeTerminationCriterion();
+                ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().lra().getPrecision()) / uniformizationRate;
+                bool relative = env.solver().lra().getRelativeTerminationCriterion();
                 std::vector<ValueType> v(aMarkovian.getRowCount(), storm::utility::zero<ValueType>());
                 std::vector<ValueType> w = v;
                 std::vector<ValueType> x, b;
+                auto solverEnv = env;
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver;
                 if (hasProbabilisticStates) {
+                    if (env.solver().isForceSoundness()) {
+                        // To get correct results, the inner equation systems are solved exactly.
+                        // TODO investigate how an error would propagate
+                        solverEnv.solver().minMax().setMethod(storm::solver::MinMaxMethod::Topological);
+                        solverEnv.solver().topological().setUnderlyingMinMaxMethod(storm::solver::MinMaxMethod::PolicyIteration);
+                        solverEnv.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Topological);
+                        solverEnv.solver().topological().setUnderlyingEquationSolverType(storm::solver::EquationSolverType::Eigen);
+                        solverEnv.solver().eigen().setMethod(storm::solver::EigenLinearEquationSolverMethod::SparseLU);
+                    }
+                    
                     x.resize(aProbabilistic.getRowGroupCount(), storm::utility::zero<ValueType>());
                     b = probabilisticChoiceRewards;
                     
                     // Check for requirements of the solver.
                     // The solution is unique as we assume non-zeno MAs.
                     storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxLinearEquationSolverFactory;
-                    storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, true, true, dir);
+                    storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(solverEnv, true, true, dir);
                     requirements.clearLowerBounds();
                     STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
     
-                    solver = minMaxLinearEquationSolverFactory.create(env, std::move(aProbabilistic));
+                    solver = minMaxLinearEquationSolverFactory.create(solverEnv, std::move(aProbabilistic));
                     solver->setLowerBound(storm::utility::zero<ValueType>());
                     solver->setHasUniqueSolution(true);
                     solver->setHasNoEndComponents(true);
@@ -1067,10 +1083,16 @@ namespace storm {
                     solver->setCachingEnabled(true);
                 }
                 
-                while (true) {
+                uint64_t iter = 0;
+                boost::optional<uint64_t> maxIter;
+                if (env.solver().lra().isMaximalIterationCountSet()) {
+                    maxIter = env.solver().lra().getMaximalIterationCount();
+                }
+                while (!maxIter.is_initialized() || iter < maxIter.get()) {
+                    ++iter;
                     // Compute the expected total rewards for the probabilistic states
                     if (hasProbabilisticStates) {
-                        solver->solveEquations(env, dir, x, b);
+                        solver->solveEquations(solverEnv, dir, x, b);
                     }
                     // now compute the values for the markovian states. We also keep track of the maximal and minimal difference between two values (for convergence checking)
                     auto vIt = v.begin();
@@ -1106,8 +1128,12 @@ namespace storm {
                         storm::utility::vector::addVectors(b, probabilisticChoiceRewards, b);
                     }
                 }
+                if (maxIter.is_initialized() && iter == maxIter.get()) {
+                    STORM_LOG_WARN("LRA computation did not converge within " << iter << " iterations.");
+                } else {
+                    STORM_LOG_TRACE("LRA computation converged after " << iter << " iterations.");
+                }
                 return v.front() * uniformizationRate;
-            
             }
             
             template std::vector<double> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<double> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair);
