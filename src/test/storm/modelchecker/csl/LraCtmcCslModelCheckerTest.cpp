@@ -396,4 +396,21 @@ namespace {
         EXPECT_NEAR(this->parseNumber("11/15"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
     }
     
+    
+    TYPED_TEST(LraCtmcCslModelCheckerTest, kanban) {
+        std::string formulasString = "R{\"throughput\"}=? [ LRA ]";
+        
+        auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ctmc/kanban.prism", formulasString);
+        auto model = std::move(modelFormulas.first);
+        auto tasks = this->getTasks(modelFormulas.second);
+        EXPECT_EQ(160ul, model->getNumberOfStates());
+        EXPECT_EQ(616ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Ctmc);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+        
+        result = checker->check(this->env(), tasks[0]);
+        EXPECT_NEAR(this->parseNumber("113237255213395163953677015242972426399989689654967642609491830216061334090202313396984106738516704120069048184391587092670711590526535239899047608853509681914074220789038015289373871985431257486278/1223067474012215838745994023624181143448435715858923491568712969277184634645504346456117443333632535902774869182827010789201972713368729205674432492059242349591780604188152950845769793378621446766887"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+    }
+    
 }
