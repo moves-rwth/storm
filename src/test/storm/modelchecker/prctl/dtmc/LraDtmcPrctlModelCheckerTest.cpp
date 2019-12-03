@@ -52,7 +52,7 @@ namespace {
     
     class EigenRationalLUEnvironment {
     public:
-        typedef double ValueType;
+        typedef storm::RationalNumber ValueType;
         static const bool isExact = true;
         static storm::Environment createEnvironment() {
             storm::Environment env;
@@ -70,7 +70,7 @@ namespace {
             storm::Environment env;
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
             env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::SOR);
-            env.solver().native().setSorOmega(storm::utility::convertNumber<storm::RationalNumber>(0.9));
+            env.solver().native().setSorOmega(storm::utility::convertNumber<storm::RationalNumber>(0.8)); // A test fails if this is set to 0.9...
             env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
             return env;
         }

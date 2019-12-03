@@ -24,6 +24,7 @@
 #include "storm/settings/modules/GmmxxEquationSolverSettings.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
 #include "storm/settings/modules/EliminationSettings.h"
+#include "storm/settings/modules/LongRunAverageSolverSettings.h"
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
 #include "storm/settings/modules/GameSolverSettings.h"
 #include "storm/settings/modules/BisimulationSettings.h"
@@ -654,6 +655,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::EigenEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::NativeEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::EliminationSettings>();
+            storm::settings::addModule<storm::settings::modules::LongRunAverageSolverSettings>();
             storm::settings::addModule<storm::settings::modules::MinMaxEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::GameSolverSettings>();
             storm::settings::addModule<storm::settings::modules::BisimulationSettings>();
