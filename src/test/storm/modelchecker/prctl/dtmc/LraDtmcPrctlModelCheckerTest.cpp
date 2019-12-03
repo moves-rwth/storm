@@ -16,76 +16,143 @@
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/environment/solver/EigenSolverEnvironment.h"
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
+#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 
 #include "storm-parsers/parser/AutoParser.h"
 #include "storm/builder/ExplicitModelBuilder.h"
 
 namespace {
     
-    class GmmxxDoubleGmresEnvironment {
+    class GBGmmxxDoubleGmresEnvironment {
     public:
         typedef double ValueType;
         static const bool isExact = false;
         static storm::Environment createEnvironment() {
             storm::Environment env;
+            env.solver().lra().setDetLraMethod(storm::solver::LraMethod::GainBiasEquations);
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
             env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
             env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
             env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+            env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
             return env;
         }
     };
     
-    class EigenDoubleDGmresEnvironment {
+    class GBEigenDoubleDGmresEnvironment {
     public:
         typedef double ValueType;
         static const bool isExact = false;
         static storm::Environment createEnvironment() {
             storm::Environment env;
+            env.solver().lra().setDetLraMethod(storm::solver::LraMethod::GainBiasEquations);
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Eigen);
             env.solver().eigen().setMethod(storm::solver::EigenLinearEquationSolverMethod::DGmres);
             env.solver().eigen().setPreconditioner(storm::solver::EigenLinearEquationSolverPreconditioner::Ilu);
+            env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
             env.solver().eigen().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
             return env;
         }
     };
     
-    class EigenRationalLUEnvironment {
+    class GBEigenRationalLUEnvironment {
     public:
         typedef storm::RationalNumber ValueType;
         static const bool isExact = true;
         static storm::Environment createEnvironment() {
             storm::Environment env;
+            env.solver().lra().setDetLraMethod(storm::solver::LraMethod::GainBiasEquations);
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Eigen);
             env.solver().eigen().setMethod(storm::solver::EigenLinearEquationSolverMethod::SparseLU);
             return env;
         }
     };
     
-    class NativeSorEnvironment {
+    class GBNativeSorEnvironment {
     public:
         typedef double ValueType;
         static const bool isExact = false;
         static storm::Environment createEnvironment() {
             storm::Environment env;
+            env.solver().lra().setDetLraMethod(storm::solver::LraMethod::GainBiasEquations);
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
             env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::SOR);
             env.solver().native().setSorOmega(storm::utility::convertNumber<storm::RationalNumber>(0.8)); // A test fails if this is set to 0.9...
             env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+            env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
             return env;
         }
     };
     
-    class NativeWalkerChaeEnvironment {
+    class GBNativeWalkerChaeEnvironment {
     public:
         typedef double ValueType;
         static const bool isExact = false;
         static storm::Environment createEnvironment() {
             storm::Environment env;
+            env.solver().lra().setDetLraMethod(storm::solver::LraMethod::GainBiasEquations);
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
             env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::WalkerChae);
             env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+            env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
             env.solver().native().setMaximalNumberOfIterations(50000);
+            return env;
+        }
+    };
+    
+    class DistrGmmxxDoubleGmresEnvironment {
+    public:
+        typedef double ValueType;
+        static const bool isExact = false;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().lra().setDetLraMethod(storm::solver::LraMethod::LraDistributionEquations);
+            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
+            env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
+            env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
+            env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+            env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+            return env;
+        }
+    };
+    
+    class DistrEigenRationalLUEnvironment {
+    public:
+        typedef storm::RationalNumber ValueType;
+        static const bool isExact = true;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().lra().setDetLraMethod(storm::solver::LraMethod::LraDistributionEquations);
+            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Eigen);
+            env.solver().eigen().setMethod(storm::solver::EigenLinearEquationSolverMethod::SparseLU);
+            return env;
+        }
+    };
+    
+    class DistrNativeWalkerChaeEnvironment {
+    public:
+        typedef double ValueType;
+        static const bool isExact = false;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().lra().setDetLraMethod(storm::solver::LraMethod::GainBiasEquations);
+            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
+            env.solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::WalkerChae);
+            env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+            env.solver().native().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
+            env.solver().native().setMaximalNumberOfIterations(50000);
+            return env;
+        }
+    };
+    
+    class ValueIterationEnvironment {
+    public:
+        typedef double ValueType;
+        static const bool isExact = false;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().lra().setDetLraMethod(storm::solver::LraMethod::ValueIteration);
+            env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8));
             return env;
         }
     };
@@ -104,11 +171,15 @@ namespace {
     };
   
     typedef ::testing::Types<
-            GmmxxDoubleGmresEnvironment,
-            EigenDoubleDGmresEnvironment,
-            EigenRationalLUEnvironment,
-            NativeSorEnvironment,
-            NativeWalkerChaeEnvironment
+            GBGmmxxDoubleGmresEnvironment,
+            GBEigenDoubleDGmresEnvironment,
+            GBEigenRationalLUEnvironment,
+            GBNativeSorEnvironment,
+            GBNativeWalkerChaeEnvironment,
+            DistrGmmxxDoubleGmresEnvironment,
+            DistrEigenRationalLUEnvironment,
+            DistrNativeWalkerChaeEnvironment,
+            ValueIterationEnvironment
     > TestingTypes;
     
    TYPED_TEST_SUITE(LraDtmcPrctlModelCheckerTest, TestingTypes,);
