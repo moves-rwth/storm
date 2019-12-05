@@ -45,13 +45,6 @@ namespace storm {
                 // Intentionally left empty.
             }
             
-            template<storm::dd::DdType Type, typename ValueType>
-            void DeterministicModel<Type, ValueType>::reduceToStateBasedRewards() {
-                for (auto& rewardModel : this->getRewardModels()) {
-                    rewardModel.second.reduceToStateBasedRewards(this->getTransitionMatrix(), this->getRowVariables(), this->getColumnVariables(), true);
-                }
-            }
-            
             // Explicitly instantiate the template class.
             template class DeterministicModel<storm::dd::DdType::CUDD>;
             template class DeterministicModel<storm::dd::DdType::Sylvan>;
