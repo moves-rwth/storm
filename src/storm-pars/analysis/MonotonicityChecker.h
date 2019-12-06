@@ -41,7 +41,7 @@ namespace storm {
             /*!
              * Checks for model and formula as provided in constructor for monotonicity
              */
-            std::map<storm::analysis::Order*, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> checkMonotonicity();
+            std::map<storm::analysis::Order*, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> checkMonotonicity(std::ostream& outfile);
 
             /*!
              * Checks if monotonicity can be found in this order. Unordered states are not checked
@@ -113,7 +113,7 @@ namespace storm {
             }
 
         private:
-            std::map<storm::analysis::Order*, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> checkMonotonicity(std::map<storm::analysis::Order*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix);
+            std::map<storm::analysis::Order*, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> checkMonotonicity(std::ostream& outfile, std::map<storm::analysis::Order*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix);
 
             std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> analyseMonotonicity(uint_fast64_t i, Order* order, storm::storage::SparseMatrix<ValueType> matrix) ;
 
@@ -140,10 +140,6 @@ namespace storm {
             std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> resultCheckOnSamples;
 
             OrderExtender<ValueType> *extender;
-
-            std::ofstream outfile;
-
-            std::string filename = "monotonicity.txt";
 
             double precision;
 
