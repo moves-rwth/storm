@@ -141,7 +141,7 @@ namespace storm {
                                                     std::map<uint64_t, std::vector<std::map<uint32_t, ValueType>>> &observationProbabilities,
                                                     std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
                                                     std::map<uint64_t, ValueType> &result,
-                                                    std::map<uint64_t, std::vector<uint64_t>> chosenActions,
+                                                    std::map<uint64_t, std::vector<uint64_t>> &chosenActions,
                                                     uint64_t gridResolution, uint64_t initialBeliefId, bool min, bool computeReward, bool generateMdp);
 
                 /**
@@ -161,7 +161,7 @@ namespace storm {
                  * @return
                  */
                 std::pair<std::vector<std::vector<ValueType>>, std::vector<ValueType>>
-                computeSubSimplexAndLambdas(std::vector<ValueType> probabilities, uint64_t gridResolution);
+                computeSubSimplexAndLambdas(std::vector<ValueType> &probabilities, uint64_t gridResolution);
 
 
                 /**
@@ -188,7 +188,7 @@ namespace storm {
                  */
                 std::map<uint32_t, ValueType> computeObservationProbabilitiesAfterAction(
                         storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                        storm::pomdp::Belief<ValueType> belief,
+                        storm::pomdp::Belief<ValueType> &belief,
                         uint64_t actionIndex);
 
                 /**
@@ -201,13 +201,12 @@ namespace storm {
                  * @param observation the observation after the action was performed
                  * @return the resulting belief (observation and distribution)
                  */
-                uint64_t
-                getBeliefAfterActionAndObservation(
+                uint64_t getBeliefAfterActionAndObservation(
                         storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                         std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
                         std::vector<bool> &beliefIsTarget,
                         std::set<uint32_t> const &targetObservations,
-                        storm::pomdp::Belief<ValueType> belief,
+                        storm::pomdp::Belief<ValueType> &belief,
                         uint64_t actionIndex, uint32_t observation, uint64_t id);
 
                 /**
@@ -219,8 +218,8 @@ namespace storm {
                  * @return
                  */
                 storm::pomdp::Belief<ValueType>
-                getBeliefAfterAction(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                     storm::pomdp::Belief<ValueType> belief, uint64_t actionIndex, uint64_t id);
+                getBeliefAfterAction(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp, storm::pomdp::Belief<ValueType> &belief, uint64_t actionIndex,
+                                     uint64_t id);
 
                 /**
                  * Helper to get the id of a Belief stored in a given vector structure
@@ -230,15 +229,15 @@ namespace storm {
                  * @return
                  */
                 uint64_t getBeliefIdInVector(std::vector<storm::pomdp::Belief<ValueType>> const &grid, uint32_t observation,
-                                             std::vector<ValueType> probabilities);
+                                             std::vector<ValueType> &probabilities);
 
                 /**
                  * @param transitions  data structure that contains the transition information of the form: origin-state -> action -> (successor-state -> probability)
                  * @return sparseMatrix representing the transitions
                  */
-                storm::storage::SparseMatrix<ValueType> buildTransitionMatrix(std::vector<std::vector<std::map<uint64_t, ValueType>>> transitions);
+                storm::storage::SparseMatrix<ValueType> buildTransitionMatrix(std::vector<std::vector<std::map<uint64_t, ValueType>>> &transitions);
 
-                ValueType getRewardAfterAction(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp, uint64_t action, storm::pomdp::Belief<ValueType> belief);
+                ValueType getRewardAfterAction(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp, uint64_t action, storm::pomdp::Belief<ValueType> &belief);
 
                 ValueType
                 overApproximationValueIteration(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp, std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
