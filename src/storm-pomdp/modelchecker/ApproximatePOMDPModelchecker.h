@@ -253,6 +253,7 @@ namespace storm {
                 storm::utility::ConstantsComparator<ValueType> cc;
                 double precision;
                 bool useMdp;
+                bool cacheSubsimplices;
                 uint64_t maxIterations;
             };
 

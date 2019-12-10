@@ -24,6 +24,7 @@ namespace storm {
                 cc = storm::utility::ConstantsComparator<ValueType>(storm::utility::convertNumber<ValueType>(precision), false);
                 useMdp = true;
                 maxIterations = 1000;
+                cacheSubsimplices = false;
             }
 
             template<typename ValueType, typename RewardModelType>
@@ -81,6 +82,7 @@ namespace storm {
                 initPropString += "=? [F \"goal\"]";
                 std::vector<storm::jani::Property> propVector = storm::api::parseProperties(initPropString);
                 std::shared_ptr<storm::logic::Formula const> underlyingProperty = storm::api::extractFormulasFromProperties(propVector).front();
+                STORM_PRINT("Underlying MDP" << std::endl)
                 underlyingMdp.printModelInformationToStream(std::cout);
 
                 std::unique_ptr<storm::modelchecker::CheckResult> underlyingRes(
@@ -90,6 +92,7 @@ namespace storm {
                 auto mdpResultMap = underlyingRes->asExplicitQuantitativeCheckResult<ValueType>().getValueMap();
 
                 auto underApproxModel = underlyingMdp.applyScheduler(pomdpScheduler, false);
+                STORM_PRINT("Random Positional Scheduler" << std::endl)
                 underApproxModel->printModelInformationToStream(std::cout);
                 std::unique_ptr<storm::modelchecker::CheckResult> underapproxRes(
                         storm::api::verifyWithSparseEngine<ValueType>(underApproxModel, storm::api::createTask<ValueType>(underlyingProperty, false)));
@@ -138,13 +141,15 @@ namespace storm {
                 std::pair<std::vector<std::vector<ValueType>>, std::vector<ValueType>> initTemp = computeSubSimplexAndLambdas(initialBelief.probabilities, gridResolution);
                 std::vector<std::vector<ValueType>> initSubSimplex = initTemp.first;
                 std::vector<ValueType> initLambdas = initTemp.second;
-                subSimplexCache[0] = initSubSimplex;
-                lambdaCache[0] = initLambdas;
-                bool initInserted = false;
+                if(cacheSubsimplices){
+                    subSimplexCache[0] = initSubSimplex;
+                    lambdaCache[0] = initLambdas;
+                }
+
 
                 std::vector<std::map<uint64_t, ValueType>> initTransitionsInBelief;
                 std::map<uint64_t, ValueType> initTransitionInActionBelief;
-
+                bool initInserted = false;
                 for (size_t j = 0; j < initLambdas.size(); ++j) {
                     if (!cc.isEqual(initLambdas[j], storm::utility::zero<ValueType>())) {
                         uint64_t searchResult = getBeliefIdInVector(beliefList, initialBelief.observation, initSubSimplex[j]);
@@ -183,13 +188,14 @@ namespace storm {
                     mdpTransitions.push_back(initTransitionsInBelief);
                 }
 
-                //beliefsToBeExpanded.push_back(initialBelief.id); TODO I'm curious what happens if we do this instead of first triangulating. Should do nothing special if belief is on grid, otherwise it gets interesting
+                //beliefsToBeExpanded.push_back(initialBelief.id); I'm curious what happens if we do this instead of first triangulating. Should do nothing special if belief is on grid, otherwise it gets interesting
 
                 std::map<uint64_t, ValueType> weightedSumOverMap;
                 std::map<uint64_t, ValueType> weightedSumUnderMap;
 
                 // Expand the beliefs to generate the grid on-the-fly to avoid unreachable grid points
                 while (!beliefsToBeExpanded.empty()) {
+                    // TODO add direct generation of transition matrix
                     uint64_t currId = beliefsToBeExpanded.front();
                     beliefsToBeExpanded.pop_front();
                     bool isTarget = beliefIsTarget[currId];
@@ -230,8 +236,7 @@ namespace storm {
                                 //Triangulate here and put the possibly resulting belief in the grid
                                 std::vector<std::vector<ValueType>> subSimplex;
                                 std::vector<ValueType> lambdas;
-                                if (subSimplexCache.count(idNextBelief) > 0) {
-                                    // TODO is this necessary here? Think later
+                                if (cacheSubsimplices && subSimplexCache.count(idNextBelief) > 0) {
                                     subSimplex = subSimplexCache[idNextBelief];
                                     lambdas = lambdaCache[idNextBelief];
                                 } else {
@@ -239,8 +244,10 @@ namespace storm {
                                             beliefList[idNextBelief].probabilities, gridResolution);
                                     subSimplex = temp.first;
                                     lambdas = temp.second;
-                                    subSimplexCache[idNextBelief] = subSimplex;
-                                    lambdaCache[idNextBelief] = lambdas;
+                                    if(cacheSubsimplices){
+                                        subSimplexCache[idNextBelief] = subSimplex;
+                                        lambdaCache[idNextBelief] = lambdas;
+                                    }
                                 }
 
                                 for (size_t j = 0; j < lambdas.size(); ++j) {
@@ -307,6 +314,8 @@ namespace storm {
                 STORM_PRINT("#Believes in List: " << beliefList.size() << std::endl)
                 STORM_PRINT("Belief space expansion took " << expansionTimer << std::endl)
 
+                //auto overApprox = overApproximationValueIteration(pomdp, beliefList, beliefGrid, beliefIsTarget, observationProbabilities, nextBelieves, beliefActionRewards, subSimplexCache, lambdaCache,result, chosenActions, gridResolution, min, computeRewards);
+
                 storm::models::sparse::StateLabeling mdpLabeling(mdpTransitions.size());
                 mdpLabeling.addLabel("init");
                 mdpLabeling.addLabel("target");
@@ -334,29 +343,6 @@ namespace storm {
                 }
                 overApproxMdp.printModelInformationToStream(std::cout);
 
-                /*
-                storm::utility::Stopwatch overApproxTimer(true);
-                auto overApprox = overApproximationValueIteration(pomdp, beliefList, beliefGrid, beliefIsTarget, observationProbabilities, nextBelieves, beliefActionRewards,
-                                                                  subSimplexCache, lambdaCache,
-                                                                  result, chosenActions, gridResolution, min, computeRewards);
-                overApproxTimer.stop();*/
-
-                auto underApprox = storm::utility::zero<ValueType>();
-                auto overApprox = storm::utility::one<ValueType>();
-                /*
-                storm::utility::Stopwatch underApproxTimer(true);
-                ValueType underApprox = computeUnderapproximationWithMDP(pomdp, beliefList, beliefIsTarget, targetObservations, observationProbabilities, nextBelieves,
-                                                                         result, chosenActions, gridResolution, initialBelief.id, min, computeRewards);
-                underApproxTimer.stop();
-
-                STORM_PRINT("Time Overapproximation: " << overApproxTimer
-                                                       << std::endl
-                                                       << "Time Underapproximation: " << underApproxTimer
-                                                       << std::endl);
-
-                STORM_PRINT("Over-Approximation Result: " << overApprox << std::endl);
-                STORM_PRINT("Under-Approximation Result: " << underApprox << std::endl);*/
-
                 auto model = std::make_shared<storm::models::sparse::Mdp<ValueType, RewardModelType>>(overApproxMdp);
                 auto modelPtr = std::static_pointer_cast<storm::models::sparse::Model<ValueType, RewardModelType>>(model);
                 std::vector<std::string> parameterNames;
@@ -367,17 +353,26 @@ namespace storm {
                 propertyString += "=? [F \"target\"]";
                 std::vector<storm::jani::Property> propertyVector = storm::api::parseProperties(propertyString);
                 std::shared_ptr<storm::logic::Formula const> property = storm::api::extractFormulasFromProperties(propertyVector).front();
-
-
                 auto task = storm::api::createTask<ValueType>(property, true);
                 auto hint = storm::modelchecker::ExplicitModelCheckerHint<ValueType>();
                 hint.setResultHint(hintVector);
                 auto hintPtr = std::make_shared<storm::modelchecker::ExplicitModelCheckerHint<ValueType>>(hint);
                 task.setHint(hintPtr);
+                storm::utility::Stopwatch overApproxTimer(true);
                 std::unique_ptr<storm::modelchecker::CheckResult> res(storm::api::verifyWithSparseEngine<ValueType>(model, task));
+                overApproxTimer.stop();
                 STORM_LOG_ASSERT(res, "Result not exist.");
                 res->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
-                STORM_PRINT("OverApprox MDP: " << (res->asExplicitQuantitativeCheckResult<ValueType>().getValueMap().begin()->second) << std::endl);
+                auto overApprox = res->asExplicitQuantitativeCheckResult<ValueType>().getValueMap().begin()->second;
+                /* storm::utility::Stopwatch underApproxTimer(true);
+                ValueType underApprox = computeUnderapproximationWithMDP(pomdp, beliefList, beliefIsTarget, targetObservations, observationProbabilities, nextBelieves,
+                                                                         result, chosenActions, gridResolution, initialBelief.id, min, computeRewards);
+                underApproxTimer.stop();*/
+
+                STORM_PRINT("Time Overapproximation: " << overApproxTimer << std::endl)
+                auto underApprox = storm::utility::zero<ValueType>();
+                STORM_PRINT("Over-Approximation Result: " << overApprox << std::endl);
+                STORM_PRINT("Under-Approximation Result: " << underApprox << std::endl);
 
                 return std::make_unique<POMDPCheckResult<ValueType>>(POMDPCheckResult<ValueType>{overApprox, underApprox});
             }
@@ -425,7 +420,7 @@ namespace storm {
                                     // cache the values  to not always re-calculate
                                     std::vector<std::vector<ValueType>> subSimplex;
                                     std::vector<ValueType> lambdas;
-                                    if (subSimplexCache.count(nextBelief.id) > 0) {
+                                    if (cacheSubsimplices && subSimplexCache.count(nextBelief.id) > 0) {
                                         subSimplex = subSimplexCache[nextBelief.id];
                                         lambdas = lambdaCache[nextBelief.id];
                                     } else {
@@ -433,8 +428,10 @@ namespace storm {
                                                                                                                                                   gridResolution);
                                         subSimplex = temp.first;
                                         lambdas = temp.second;
-                                        subSimplexCache[nextBelief.id] = subSimplex;
-                                        lambdaCache[nextBelief.id] = lambdas;
+                                        if(cacheSubsimplices) {
+                                            subSimplexCache[nextBelief.id] = subSimplex;
+                                            lambdaCache[nextBelief.id] = lambdas;
+                                        }
                                     }
                                     auto sum = storm::utility::zero<ValueType>();
                                     for (size_t j = 0; j < lambdas.size(); ++j) {
@@ -477,11 +474,21 @@ namespace storm {
 
                 STORM_PRINT("Overapproximation took " << iteration << " iterations" << std::endl);
 
+                std::vector<ValueType> initialLambda;
+                std::vector<std::vector<ValueType>> initialSubsimplex;
+                if(cacheSubsimplices){
+                    initialLambda = lambdaCache[0];
+                    initialSubsimplex = subSimplexCache[0];
+                } else {
+                    auto temp = computeSubSimplexAndLambdas(beliefList[0].probabilities, gridResolution);
+                    initialSubsimplex= temp.first;
+                    initialLambda = temp.second;
+                }
 
                 auto overApprox = storm::utility::zero<ValueType>();
-                for (size_t j = 0; j < lambdaCache[0].size(); ++j) {
-                    if (lambdaCache[0][j] != storm::utility::zero<ValueType>()) {
-                        overApprox += lambdaCache[0][j] * result_backup[getBeliefIdInVector(beliefGrid, beliefList[0].observation, subSimplexCache[0][j])];
+                for (size_t j = 0; j < initialLambda.size(); ++j) {
+                    if (initialLambda[j] != storm::utility::zero<ValueType>()) {
+                        overApprox += initialLambda[j] * result_backup[getBeliefIdInVector(beliefGrid, beliefList[0].observation, initialSubsimplex[j])];
                     }
                 }
                 return overApprox;
@@ -541,8 +548,10 @@ namespace storm {
                 std::map<uint64_t, std::vector<ValueType>> lambdaCache;
 
                 std::pair<std::vector<std::vector<ValueType>>, std::vector<ValueType>> temp = computeSubSimplexAndLambdas(initialBelief.probabilities, gridResolution);
-                subSimplexCache[0] = temp.first;
-                lambdaCache[0] = temp.second;
+                if(cacheSubsimplices) {
+                    subSimplexCache[0] = temp.first;
+                    lambdaCache[0] = temp.second;
+                }
 
                 storm::utility::Stopwatch nextBeliefGeneration(true);
                 for (size_t i = 0; i < beliefGrid.size(); ++i) {
@@ -553,6 +562,7 @@ namespace storm {
                     } else {
                         result.emplace(std::make_pair(currentBelief.id, storm::utility::zero<ValueType>()));
                         //TODO put this in extra function
+
                         // As we need to grab some parameters which are the same for all states with the same observation, we simply select some state as the representative
                         uint64_t representativeState = pomdp.getStatesWithObservation(currentBelief.observation).front();
                         uint64_t numChoices = pomdp.getNumberOfChoices(representativeState);
