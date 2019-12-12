@@ -5,13 +5,14 @@ documentation: true
 categories: [VM]
 ---
 
-If you just want to try Storm without installing it or its dependencies, the virtual machine image we provide might be the right fit for you. We pre-installed Storm, its dependencies and other useful reference tools (like [PRISM](http://www.prismmodelchecker.org/){:target="_blank"} and [IMCA](https://github.com/buschko/imca){:target="_blank"} and the PRISM benchmark suite) on a Linux host system. You can download the latest version of the virtual machine [here](https://rwth-aachen.sciebo.de/index.php/s/nthEAQL4o49zkYp){:target="_blank"}.
+We provide an outdated VM with pre-installed Storm 0.10 for historical reasons. The VM includes dependencies and other useful reference tools (like [PRISM](http://www.prismmodelchecker.org/){:target="_blank"} and [IMCA](https://github.com/buschko/imca){:target="_blank"} and the PRISM benchmark suite) on a Linux host system. You can download the latest version of the virtual machine [here](https://rwth-aachen.sciebo.de/index.php/s/nthEAQL4o49zkYp){:target="_blank"}.
+
+{:.alert .alert-danger}
+Note that the provided virtual machine images is outdated. We recommend to use the [Docker container]({{ site.github.url }}/documentation/installation/installation.html#docker){:.alert-link} instead.
 
 {:.alert .alert-info}
 The virtual machine is hosted at [sciebo](https://www.sciebo.de/en/){:target="_blank" .alert-link}, an academic cloud hoster. We are not able to trace the identity of downloaders, so reviewers can use this link without revealing their identity.
 
-{:.alert .alert-danger}
-Note that the provided virtual machine images might not be up to date. If you need the latest release we recommend to use the [Docker container]({{ site.github.url }}/documentation/installation/installation.html#docker){:.alert-link} instead.
 
 ## Importing
 
@@ -25,7 +26,7 @@ will take you to the folders containing Storm's binaries. For more information o
 
 ## Changelog
 
-The VM is periodically updated to include bug fixes, new versions, and so on. When the image was most recently updated and what changes were made to the VM can be taken from the following changelog.
+The VM may be updated periodically to include bug fixes, new versions, and so on. When the image was most recently updated and what changes were made to the VM can be taken from the following changelog.
 
 #### Update on March 21, 2017
 
