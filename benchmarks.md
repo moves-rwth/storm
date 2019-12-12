@@ -6,19 +6,32 @@ layout: default
 
 On this page, you can find (extended) benchmark results accompanying paper submissions.
 
-### QComp 2019[^1]
+### The Probabilistic Model Checker Storm (2019)[^1]
+
+#### Setup
+The benchmarks were run on 4 cores of an Intel Xeon Platinum 8160 Processor with 12GB of memory available. The timeout was 1800 seconds.
+
+#### Benchmarks
+All benchmarks from [QComp 2019](http://qcomp.org/competition/2019/index.html) were considered, except for 4 PTA Benchmarks that were not compatible with Storm.
+
+#### Results
+<a target="_blank" href="https://moves-rwth.github.io/storm-benchmark-logs/docs/2019-12/table.html" class="btn btn-primary btn-md active" role="button">Show interactive result table</a>
+<a target="_blank" href="https://doi.org/10.5281/zenodo.3571210" class="btn btn-primary btn-md active" role="button">Download raw data and replication package</a>
+
+
+### QComp 2019[^2]
 
 Storm participated in the *2019 Comparison of Tools for the Analysis of Quantitative Formal Models (QComp 2019)*.
 Details on the competition, the participating tools and the QComp benchmark set can be found on the [competition website](http://qcomp.org/competition/2019/index.html){:target="_blank"}.
 Detailed results are available in the [interactive results table](http://qcomp.org/competition/2019/results/index.html){:target="_blank"}.
 
-### A Storm is Coming: A Modern Probabilistic Model Checker[^2]
+### A Storm is Coming: A Modern Probabilistic Model Checker (2017)[^3]
 
 #### Setup
 
 The benchmarks were conducted on a HP BL685C G7. All tools had up to eight cores with 2.0GHz and 8GB of memory available, but only the Java garbage collection of PRISM and EPMC used more than one core. The timeout was set to 1800 seconds.
 
-#### Models
+#### Benchmarks
 
 In this paper, we use all non-PTA models from the [PRISM benchmark suite](http://www.prismmodelchecker.org/benchmarks/){:target="_blank"} and the [IMCA](https://github.com/buschko/imca){:target="_blank"} benchmarks for MAs.
 
@@ -37,6 +50,8 @@ however just a displaying issue. Newer versions of Storm correctly display "inf"
 
 ### References
 
-[^1]: [E. M. Hahn, A. Hartmanns, C. Hensel, M. Klauck, J. Klein, J. Křetínský, D. Parker, T. Quatmann, E. Ruijters, M. Steinmetz: *The 2019 Comparison of Tools for the Analysis of Quantitative Formal Models*, 2019](https://doi.org/10.1007/978-3-030-17502-3_5){:target="_blank"}
+[^1]: C. Hensel, S. Junges, J.-P. Katoen, T. Quatmann, M. Volk: The Probabilistic Model Checker Storm. To appear.
 
-[^2]: [C. Dehnert, S. Junges, J.-P. Katoen, M. Volk: *A Storm is Coming: A Modern Probabilistic Model Checker*, 2017](https://arxiv.org/abs/1702.04311){:target="_blank"}
+[^2]: [E. M. Hahn, A. Hartmanns, C. Hensel, M. Klauck, J. Klein, J. Křetínský, D. Parker, T. Quatmann, E. Ruijters, M. Steinmetz: *The 2019 Comparison of Tools for the Analysis of Quantitative Formal Models*, 2019](https://doi.org/10.1007/978-3-030-17502-3_5){:target="_blank"}
+
+[^3]: [C. Dehnert, S. Junges, J.-P. Katoen, M. Volk: *A Storm is Coming: A Modern Probabilistic Model Checker*, 2017](https://arxiv.org/abs/1702.04311){:target="_blank"}
