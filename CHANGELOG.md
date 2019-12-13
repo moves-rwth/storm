@@ -7,8 +7,8 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.4.x
 -------------
 
-### Version 1.4.1 (under development)
-- Implemented Long run average computation for DTMCs/CTMCs via value iteration and via gain/bias equations.
+### Version 1.4.1 (2019/12)
+- Implemented long run average (LRA) computation for DTMCs/CTMCs via value iteration and via gain/bias equations.
 - Added several LRA related settings in a new settings module. Note that `--minmax:lramethod` has been replaced by `--lra:nondetmethod`.
 
 ### Version 1.4.0 (2019/11)
@@ -45,6 +45,7 @@ Version 1.4.x
 - Fixed compilation for macOS Mojave and higher.
 - Several bug fixes.
 
+
 Version 1.3.x
 -------------
 
@@ -79,6 +80,7 @@ Version 1.3.x
 - New binary `storm-pomdp` that  handles the translation of POMDPs to pMCs.
 - `storm-gspn` improved
 - Sound value iteration
+
 
 Version 1.2.x
 -------------
