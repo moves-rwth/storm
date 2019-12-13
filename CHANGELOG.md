@@ -7,6 +7,9 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.4.x
 -------------
 
+## Version 1.4.2 (under development)
+- n.a.
+
 ### Version 1.4.1 (2019/12)
 - Implemented long run average (LRA) computation for DTMCs/CTMCs via value iteration and via gain/bias equations.
 - Added several LRA related settings in a new settings module. Note that `--minmax:lramethod` has been replaced by `--lra:nondetmethod`.

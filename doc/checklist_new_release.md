@@ -43,3 +43,5 @@ Note that in most cases a simultaneous release of [carl](https://github.com/smtr
 8. Update [Homebrew formula](https://github.com/moves-rwth/homebrew-storm).
 
 9. Announce new storm version on [website](http://www.stormchecker.org/news.html).
+
+10. Create [Docker containers](https://hub.docker.com/r/movesrwth/storm) for new version.
