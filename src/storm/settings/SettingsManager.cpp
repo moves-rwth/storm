@@ -491,7 +491,7 @@ namespace storm {
             // In case there are optional arguments that were not set, we set them to their default value.
             for (uint_fast64_t i = argumentCache.size(); i < option->getArgumentCount(); ++i) {
                 ArgumentBase& argument = option->getArgument(i);
-                STORM_LOG_THROW(argument.getHasDefaultValue() || argument.getIsOptional(), storm::exceptions::OptionParserException, "Non-optional argument <" << argument.getName() << "> of option:\n" << *option);
+                STORM_LOG_THROW(argument.getIsOptional(), storm::exceptions::OptionParserException, "Non-optional argument <" << argument.getName() << "> of option:\n" << *option);
                 argument.setFromDefaultValue();
             }
             
