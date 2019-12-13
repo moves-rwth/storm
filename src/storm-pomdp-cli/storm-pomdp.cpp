@@ -203,7 +203,7 @@ int main(const int argc, const char** argv) {
 
                     //result = checker.refineReachabilityProbability(*pomdp, targetObservationSet,probFormula.getOptimalityType() == storm::OptimizationDirection::Minimize, pomdpSettings.getGridResolution(),1,10);
                     result = checker.computeReachabilityProbabilityOTF(*pomdp, targetObservationSet, probFormula.getOptimalityType() == storm::OptimizationDirection::Minimize,
-                                                                       pomdpSettings.getGridResolution());
+                                                                       pomdpSettings.getGridResolution(), pomdpSettings.getExplorationThreshold());
                     overRes = result->OverapproximationValue;
                     underRes = result->UnderapproximationValue;
                     if (overRes != underRes) {

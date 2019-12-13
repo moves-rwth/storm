@@ -28,7 +28,7 @@ namespace storm {
                 std::unique_ptr<POMDPCheckResult<ValueType>>
                 computeReachabilityProbabilityOTF(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                                                   std::set<uint32_t> const &targetObservations, bool min,
-                                                  uint64_t gridResolution);
+                                                  uint64_t gridResolution, double explorationThreshold);
 
                 std::unique_ptr<POMDPCheckResult<ValueType>>
                 computeReachabilityRewardOTF(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp, std::set<uint32_t> const &targetObservations, bool min,
@@ -57,7 +57,7 @@ namespace storm {
                 std::unique_ptr<POMDPCheckResult<ValueType>>
                 computeReachabilityOTF(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                                        std::set<uint32_t> const &targetObservations, bool min,
-                                       uint64_t gridResolution, bool computeRewards);
+                                       uint64_t gridResolution, bool computeRewards, double explorationThreshold);
 
                 /**
                  *
