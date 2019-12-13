@@ -28,7 +28,7 @@ namespace storm {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, entryStatesLastOptionName, true, "Sets whether the entry states are eliminated last.").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, maximalSccSizeOptionName, true, "Sets the maximal size of the SCCs for which state elimination is applied.").setIsAdvanced()
-                                .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("maxsize", "The maximal size of an SCC on which state elimination is applied.").setDefaultValueUnsignedInteger(20).setIsOptional(true).build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("maxsize", "The maximal size of an SCC on which state elimination is applied.").setDefaultValueUnsignedInteger(20).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, useDedicatedModelCheckerOptionName, true, "Sets whether to use the dedicated model elimination checker (only DTMCs).").setIsAdvanced().build());
             }
             
