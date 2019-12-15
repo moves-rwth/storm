@@ -85,6 +85,7 @@ namespace storm {
 
             std::string POMDPSettings::getMemlessSearchMethod() const {
                 return this->getOption(memlessSearchOption).getArgumentByName("method").getValueAsString();
+            }
 
             bool POMDPSettings::isLimitExplorationSet() const {
                 return this->getOption(limitBeliefExplorationOption).getHasOptionBeenSet();
