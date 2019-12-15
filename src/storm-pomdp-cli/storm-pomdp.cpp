@@ -26,9 +26,10 @@
 #include "storm/settings/modules/TopologicalEquationSolverSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
 #include "storm/settings/modules/MultiplierSettings.h"
+
+#include "storm/settings/modules/TransformationSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
-
 #include "storm/analysis/GraphConditions.h"
 
 #include "storm-cli-utilities/cli.h"
@@ -44,6 +45,7 @@
 #include "storm-pomdp/analysis/QualitativeAnalysis.h"
 #include "storm-pomdp/modelchecker/ApproximatePOMDPModelchecker.h"
 #include "storm-pomdp/analysis/MemlessStrategySearchQualitative.h"
+#include "storm-pomdp/analysis/QualitativeStrategySearchNaive.h"
 #include "storm/api/storm.h"
 
 #include <typeinfo>
@@ -59,6 +61,8 @@ void initializeSettings() {
     storm::settings::addModule<storm::settings::modules::CoreSettings>();
     storm::settings::addModule<storm::settings::modules::DebugSettings>();
     storm::settings::addModule<storm::settings::modules::BuildSettings>();
+
+    storm::settings::addModule<storm::settings::modules::TransformationSettings>();
     storm::settings::addModule<storm::settings::modules::GmmxxEquationSolverSettings>();
     storm::settings::addModule<storm::settings::modules::EigenEquationSolverSettings>();
     storm::settings::addModule<storm::settings::modules::NativeEquationSolverSettings>();
@@ -79,9 +83,9 @@ void initializeSettings() {
 }
 
 template<typename ValueType>
-bool extractTargetAndSinkObservationSets(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& pomdp, storm::logic::Formula const& subformula, std::set<uint32_t>& targetObservationSet, storm::storage::BitVector&  badStates) {
+bool extractTargetAndSinkObservationSets(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& pomdp, storm::logic::Formula const& subformula, std::set<uint32_t>& targetObservationSet, storm::storage::BitVector&  targetStates, storm::storage::BitVector&  badStates) {
     //TODO refactor (use model checker to determine the states, then transform into observations).
-
+    //TODO rename into appropriate function name.
     bool validFormula = false;
     if (subformula.isEventuallyFormula()) {
         storm::logic::EventuallyFormula const &eventuallyFormula = subformula.asEventuallyFormula();
@@ -94,6 +98,7 @@ bool extractTargetAndSinkObservationSets(std::shared_ptr<storm::models::sparse::
             for (size_t state = 0; state < pomdp->getNumberOfStates(); ++state) {
                 if (labeling.getStateHasLabel(targetLabel, state)) {
                     targetObservationSet.insert(pomdp->getObservation(state));
+                    targetStates.set(state);
                 }
             }
         } else if (subformula2.isAtomicExpressionFormula()) {
@@ -106,18 +111,19 @@ bool extractTargetAndSinkObservationSets(std::shared_ptr<storm::models::sparse::
             for (size_t state = 0; state < pomdp->getNumberOfStates(); ++state) {
                 if (labeling.getStateHasLabel(targetLabel, state)) {
                     targetObservationSet.insert(pomdp->getObservation(state));
+                    targetStates.set(state);
                 }
             }
         }
     } else if (subformula.isUntilFormula()) {
-        storm::logic::UntilFormula const &eventuallyFormula = subformula.asUntilFormula();
-        storm::logic::Formula const &subformula1 = eventuallyFormula.getLeftSubformula();
+        storm::logic::UntilFormula const &untilFormula = subformula.asUntilFormula();
+        storm::logic::Formula const &subformula1 = untilFormula.getLeftSubformula();
         if (subformula1.isAtomicLabelFormula()) {
             storm::logic::AtomicLabelFormula const &alFormula = subformula1.asAtomicLabelFormula();
             std::string targetLabel = alFormula.getLabel();
             auto labeling = pomdp->getStateLabeling();
             for (size_t state = 0; state < pomdp->getNumberOfStates(); ++state) {
-                if (labeling.getStateHasLabel(targetLabel, state)) {
+                if (!labeling.getStateHasLabel(targetLabel, state)) {
                     badStates.set(state);
                 }
             }
@@ -128,14 +134,14 @@ bool extractTargetAndSinkObservationSets(std::shared_ptr<storm::models::sparse::
             std::string targetLabel = formula3.getLabel();
             auto labeling = pomdp->getStateLabeling();
             for (size_t state = 0; state < pomdp->getNumberOfStates(); ++state) {
-                if (labeling.getStateHasLabel(targetLabel, state)) {
+                if (!labeling.getStateHasLabel(targetLabel, state)) {
                     badStates.set(state);
                 }
             }
         } else {
             return false;
         }
-        storm::logic::Formula const &subformula2 = eventuallyFormula.getRightSubformula();
+        storm::logic::Formula const &subformula2 = untilFormula.getRightSubformula();
         if (subformula2.isAtomicLabelFormula()) {
             storm::logic::AtomicLabelFormula const &alFormula = subformula2.asAtomicLabelFormula();
             validFormula = true;
@@ -144,7 +150,9 @@ bool extractTargetAndSinkObservationSets(std::shared_ptr<storm::models::sparse::
             for (size_t state = 0; state < pomdp->getNumberOfStates(); ++state) {
                 if (labeling.getStateHasLabel(targetLabel, state)) {
                     targetObservationSet.insert(pomdp->getObservation(state));
+                    targetStates.set(state);
                 }
+
             }
         } else if (subformula2.isAtomicExpressionFormula()) {
             validFormula = true;
@@ -156,7 +164,9 @@ bool extractTargetAndSinkObservationSets(std::shared_ptr<storm::models::sparse::
             for (size_t state = 0; state < pomdp->getNumberOfStates(); ++state) {
                 if (labeling.getStateHasLabel(targetLabel, state)) {
                     targetObservationSet.insert(pomdp->getObservation(state));
+                    targetStates.set(state);
                 }
+
             }
         }
     }
@@ -227,9 +237,10 @@ int main(const int argc, const char** argv) {
             if (formula->isProbabilityOperatorFormula()) {
 
                 std::set<uint32_t> targetObservationSet;
-                std::set<uint32_t> badObservationSet;
+                storm::storage::BitVector targetStates(pomdp->getNumberOfStates());
+                storm::storage::BitVector badStates(pomdp->getNumberOfStates());
 
-                bool validFormula = extractTargetAndSinkObservationSets(pomdp, subformula1, targetObservationSet, badObservationSet);
+                bool validFormula = extractTargetAndSinkObservationSets(pomdp, subformula1, targetObservationSet, targetStates, badStates);
                 STORM_LOG_THROW(validFormula, storm::exceptions::InvalidPropertyException,
                                 "The formula is not supported by the grid approximation");
                 STORM_LOG_ASSERT(!targetObservationSet.empty(), "The set of target observations is empty!");
@@ -278,11 +289,22 @@ int main(const int argc, const char** argv) {
                     }
                 }
                 if (pomdpSettings.isMemlessSearchSet()) {
+//                    std::cout << std::endl;
+//                    pomdp->writeDotToStream(std::cout);
+//                    std::cout << std::endl;
+//                    std::cout << std::endl;
                     storm::expressions::ExpressionManager expressionManager;
                     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
+                    if (pomdpSettings.getMemlessSearchMethod() == "ccd16memless") {
+                        storm::pomdp::QualitativeStrategySearchNaive<double> memlessSearch(*pomdp, targetObservationSet, targetStates, badStates, smtSolverFactory);
+                        memlessSearch.findNewStrategyForSomeState(5);
+                    } else if (pomdpSettings.getMemlessSearchMethod() == "iterative") {
+                        storm::pomdp::MemlessStrategySearchQualitative<double> memlessSearch(*pomdp, targetObservationSet, targetStates, badStates, smtSolverFactory);
+                        memlessSearch.findNewStrategyForSomeState(5);
+                    } else {
+                        STORM_LOG_ERROR("This method is not implemented.");
+                    }
 
-                    storm::pomdp::MemlessStrategySearchQualitative<double> memlessSearch(*pomdp, targetObservationSet, smtSolverFactory);
-                    memlessSearch.analyze(5);
 
                 }
             } else if (formula->isRewardOperatorFormula()) {

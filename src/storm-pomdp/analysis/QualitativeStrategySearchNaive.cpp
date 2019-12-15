@@ -1,11 +1,13 @@
-#include "storm-pomdp/analysis/MemlessStrategySearchQualitative.h"
+
+
+#include "storm-pomdp/analysis/QualitativeStrategySearchNaive.h"
 
 
 namespace storm {
     namespace pomdp {
 
         template <typename ValueType>
-        void MemlessStrategySearchQualitative<ValueType>::initialize(uint64_t k) {
+        void QualitativeStrategySearchNaive<ValueType>::initialize(uint64_t k) {
             if (maxK == std::numeric_limits<uint64_t>::max()) {
                 // not initialized at all.
                 // Create some data structures.
@@ -29,8 +31,6 @@ namespace storm {
                     statesPerObservation.at(obs).push_back(stateId++);
                 }
                 assert(pathVars.size() == pomdp.getNumberOfStates());
-                assert(reachVars.size() == pomdp.getNumberOfStates());
-                assert(reachVarExpressions.size() == pomdp.getNumberOfStates());
 
                 // Create the action selection variables.
                 uint64_t obs = 0;
@@ -100,47 +100,43 @@ namespace storm {
         }
 
         template <typename ValueType>
-        bool MemlessStrategySearchQualitative<ValueType>::analyze(uint64_t k, storm::storage::BitVector const& oneOfTheseStates, storm::storage::BitVector const& allOfTheseStates) {
+        bool QualitativeStrategySearchNaive<ValueType>::analyze(uint64_t k, storm::storage::BitVector const& oneOfTheseStates, storm::storage::BitVector const& allOfTheseStates) {
             if (k < maxK) {
                 initialize(k);
             }
 
             std::vector<storm::expressions::Expression> atLeastOneOfStates;
 
-            for (uint64_t state : oneOfTheseStates) {
-                STORM_LOG_ASSERT(reachVarExpressions.size() > state, "state id " << state << " exceeds number of states (" <<  reachVarExpressions.size() << ")" );
+            for(uint64_t state : oneOfTheseStates) {
                 atLeastOneOfStates.push_back(reachVarExpressions[state]);
             }
             assert(atLeastOneOfStates.size() > 0);
             smtSolver->add(storm::expressions::disjunction(atLeastOneOfStates));
 
-            for (uint64_t state : allOfTheseStates) {
-                assert(reachVarExpressions.size() > state);
+            for(uint64_t state : allOfTheseStates) {
                 smtSolver->add(reachVarExpressions[state]);
             }
 
+
+
             std::cout << smtSolver->getSmtLibString() << std::endl;
 
+            auto result = smtSolver->check();
+            uint64_t  i = 0;
+            smtSolver->push();
 
-            std::vector<std::set<uint64_t>> scheduler;
 
-            while (true) {
 
-                auto result = smtSolver->check();
-                uint64_t i = 0;
-
-                if (result == storm::solver::SmtSolver::CheckResult::Unknown) {
-                    STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "SMT solver yielded an unexpected result");
-                } else if (result == storm::solver::SmtSolver::CheckResult::Unsat) {
-                    std::cout << std::endl << "Unsatisfiable!" << std::endl;
-                    return false;
-                }
+            if (result == storm::solver::SmtSolver::CheckResult::Unknown) {
+                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "SMT solver yielded an unexpected result");
+            } else if(result == storm::solver::SmtSolver::CheckResult::Unsat) {
+                std::cout << std::endl << "Unsatisfiable!" << std::endl;
+                return false;
+            } else {
 
                 std::cout << std::endl << "Satisfying assignment: " << std::endl << smtSolver->getModelAsValuation().toString(true) << std::endl;
                 auto model = smtSolver->getModel();
                 std::cout << "states that are okay" << std::endl;
-
-
                 storm::storage::BitVector observations(pomdp.getNrObservations());
                 storm::storage::BitVector remainingstates(pomdp.getNumberOfStates());
                 for (auto rv : reachVars) {
@@ -153,24 +149,17 @@ namespace storm {
                     //std::cout << i << ": " << model->getBooleanValue(rv) << ", ";
                     ++i;
                 }
-
-                scheduler.clear();
-
-                std::vector<storm::expressions::Expression> schedulerSoFar;
-                uint64_t  obs = 0;
+                std::vector <std::set<uint64_t>> scheduler;
                 for (auto const &actionSelectionVarsForObs : actionSelectionVars) {
                     uint64_t act = 0;
                     scheduler.push_back(std::set<uint64_t>());
                     for (auto const &asv : actionSelectionVarsForObs) {
                         if (model->getBooleanValue(asv)) {
                             scheduler.back().insert(act);
-                            schedulerSoFar.push_back(actionSelectionVarExpressions[obs][act]);
                         }
                         act++;
                     }
-                    obs++;
                 }
-
                 std::cout << "the scheduler: " << std::endl;
                 for (uint64_t obs = 0; obs < scheduler.size(); ++obs) {
                     if (observations.get(obs)) {
@@ -184,22 +173,14 @@ namespace storm {
                 }
 
 
-                std::vector<storm::expressions::Expression> remainingExpressions;
-                for (auto index : remainingstates) {
-                    remainingExpressions.push_back(reachVarExpressions[index]);
-                }
-
-                smtSolver->push();
-                // Add scheduler
-                smtSolver->add(storm::expressions::conjunction(schedulerSoFar));
-                smtSolver->add(storm::expressions::disjunction(remainingExpressions));
-
+                return true;
             }
+
+
 
         }
 
-
-        template class MemlessStrategySearchQualitative<double>;
-        template class MemlessStrategySearchQualitative<storm::RationalNumber>;
+        template class QualitativeStrategySearchNaive<double>;
+        template class QualitativeStrategySearchNaive<storm::RationalNumber>;
     }
 }

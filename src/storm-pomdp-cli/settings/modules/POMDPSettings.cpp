@@ -27,6 +27,7 @@ namespace storm {
             const std::string transformBinaryOption = "transformbinary";
             const std::string transformSimpleOption = "transformsimple";
             const std::string memlessSearchOption = "memlesssearch";
+            std::vector<std::string> memlessSearchMethods = {"none", "ccdmemless", "ccdmemory", "iterative"};
 
             POMDPSettings::POMDPSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportAsParametricModelOption, false, "Export the parametric file.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which to write the model.").build()).build());
@@ -46,7 +47,9 @@ namespace storm {
                                 10).addValidatorUnsignedInteger(
                                 storm::settings::ArgumentValidatorFactory::createUnsignedGreaterValidator(
                                         0)).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, memlessSearchOption, false, "Search for a qualitative memoryless scheuler").build());
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, memlessSearchOption, false, "Search for a qualitative memoryless scheuler").addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "method name").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(memlessSearchMethods)).setDefaultValueString("none").build()).build());
+
             }
 
             bool POMDPSettings::isExportToParametricSet() const {
@@ -84,6 +87,10 @@ namespace storm {
 
             bool POMDPSettings::isMemlessSearchSet() const {
                 return this->getOption(memlessSearchOption).getHasOptionBeenSet();
+            }
+
+            std::string POMDPSettings::getMemlessSearchMethod() const {
+                return this->getOption(memlessSearchOption).getArgumentByName("method").getValueAsString();
             }
 
             uint64_t POMDPSettings::getMemoryBound() const {

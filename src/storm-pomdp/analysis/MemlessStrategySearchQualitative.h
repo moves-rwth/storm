@@ -3,6 +3,7 @@
 #include "storm/solver/SmtSolver.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/utility/solver.h"
+#include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
 namespace pomdp {
@@ -15,8 +16,12 @@ namespace pomdp {
     public:
         MemlessStrategySearchQualitative(storm::models::sparse::Pomdp<ValueType> const& pomdp,
                                          std::set<uint32_t> const& targetObservationSet,
+                                         storm::storage::BitVector const& targetStates,
+                                         storm::storage::BitVector const& surelyReachSinkStates,
                                          std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory) :
                 pomdp(pomdp),
+                targetStates(targetStates),
+                surelyReachSinkStates(surelyReachSinkStates),
                 targetObservations(targetObservationSet) {
             this->expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
             smtSolver = smtSolverFactory->create(*expressionManager);
@@ -27,49 +32,40 @@ namespace pomdp {
             surelyReachSinkStates = surelyReachSink;
         }
 
-        void analyze(uint64_t k) {
-            if (k < maxK) {
-                initialize(k);
-            }
-            std::cout << smtSolver->getSmtLibString() << std::endl;
-            for (uint64_t state : pomdp.getInitialStates()) {
-                smtSolver->add(reachVars[state]);
-            }
-            auto result = smtSolver->check();
-            switch(result) {
-                case storm::solver::SmtSolver::CheckResult::Sat:
-                    std::cout << std::endl << "Satisfying assignment: " << std::endl << smtSolver->getModelAsValuation().toString(true) << std::endl;
-
-                case storm::solver::SmtSolver::CheckResult::Unsat:
-                    // std::cout << std::endl << "Unsatisfiability core: {" << std::endl;
-                    // for (auto const& expr : solver->getUnsatCore()) {
-                    //    std::cout << "\t " << expr << std::endl;
-                    // }
-                    // std::cout << "}" << std::endl;
-
-                default:
-                    std::cout<< "oops." << std::endl;
-                   // STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "SMT solver yielded an unexpected result");
-            }
-            //std::cout << "get model:" << std::endl;
-            //std::cout << smtSolver->getModel().toString() << std::endl;
+        void analyzeForInitialStates(uint64_t k) {
+            analyze(k, pomdp.getInitialStates(), pomdp.getInitialStates());
         }
+
+        void findNewStrategyForSomeState(uint64_t k) {
+            std::cout << surelyReachSinkStates << std::endl;
+            std::cout << targetStates << std::endl;
+            std::cout << (~surelyReachSinkStates & ~targetStates) << std::endl;
+            analyze(k, ~surelyReachSinkStates & ~targetStates);
+
+
+        }
+
+        bool analyze(uint64_t k, storm::storage::BitVector const& oneOfTheseStates, storm::storage::BitVector const& allOfTheseStates = storm::storage::BitVector());
 
 
     private:
         void initialize(uint64_t k);
 
+
         std::unique_ptr<storm::solver::SmtSolver> smtSolver;
         storm::models::sparse::Pomdp<ValueType> const& pomdp;
         std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;
-        uint64_t maxK = -1;
+        uint64_t maxK = std::numeric_limits<uint64_t>::max();
 
         std::set<uint32_t> targetObservations;
+        storm::storage::BitVector targetStates;
         storm::storage::BitVector surelyReachSinkStates;
 
         std::vector<std::vector<uint64_t>> statesPerObservation;
-        std::vector<std::vector<storm::expressions::Expression>> actionSelectionVars; // A_{z,a}
-        std::vector<storm::expressions::Expression> reachVars;
+        std::vector<std::vector<storm::expressions::Expression>> actionSelectionVarExpressions; // A_{z,a}
+        std::vector<std::vector<storm::expressions::Variable>> actionSelectionVars;
+        std::vector<storm::expressions::Variable> reachVars;
+        std::vector<storm::expressions::Expression> reachVarExpressions;
         std::vector<std::vector<storm::expressions::Expression>> pathVars;
 
 
