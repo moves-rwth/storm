@@ -363,7 +363,9 @@ namespace storm {
                                     storm::utility::outputFixedWidth(outStream, this->getLabelsOfState(state), maxWidthLabel);
                                     outStream << "}";
                                 }
-                                
+
+                                outStream << this->additionalDotStateInfo(state);
+
                                 // If we are to include some values for the state as well, we do so now.
                                 if (firstValue != nullptr || secondValue != nullptr) {
                                     outStream << " [";
@@ -397,7 +399,12 @@ namespace storm {
                     outStream << "}" << std::endl;
                 }
             }
-            
+
+            template<typename ValueType, typename RewardModelType>
+            std::string Model<ValueType, RewardModelType>::additionalDotStateInfo(uint64_t state) const {
+                return "";
+            }
+
             template<typename ValueType, typename RewardModelType>
             std::set<std::string> Model<ValueType, RewardModelType>::getLabelsOfState(storm::storage::sparse::state_type state) const {
                 return this->stateLabeling.getLabelsOfState(state);
