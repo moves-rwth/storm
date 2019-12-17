@@ -12,8 +12,7 @@
 namespace storm {
     namespace settings {
         namespace modules {
-            class CoreSettings;
-            class IOSettings;
+            class BuildSettings;
             class ModuleSettings;
             class AbstractionSettings;
         }
@@ -27,7 +26,7 @@ namespace storm {
         class SettingsManager {
 		public:
             
-            // Explicitely delete copy constructor
+            // Explicitly delete copy constructor
             SettingsManager(SettingsManager const&) = delete;
             void operator=(SettingsManager const&) = delete;
             
@@ -305,20 +304,12 @@ namespace storm {
         }
         
         /*!
-         * Retrieves the core settings in a mutable form. This is only meant to be used for debug purposes or very
+         * Retrieves the build settings in a mutable form. This is only meant to be used for debug purposes or very
          * rare cases where it is necessary.
          *
-         * @return An object that allows accessing and modifying the core settings.
+         * @return An object that allows accessing and modifying the build settings.
          */
-        storm::settings::modules::CoreSettings& mutableCoreSettings();
-        
-        /*!
-         * Retrieves the IO settings in a mutable form. This is only meant to be used for debug purposes or very
-         * rare cases where it is necessary.
-         *
-         * @return An object that allows accessing and modifying the IO settings.
-         */
-        storm::settings::modules::IOSettings& mutableIOSettings();
+        storm::settings::modules::BuildSettings& mutableBuildSettings();
         
         /*!
          * Retrieves the abstraction settings in a mutable form. This is only meant to be used for debug purposes or very

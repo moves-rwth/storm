@@ -5,7 +5,7 @@
  *      Author: Manuel Sascha Weiand
  */
 
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 
 #include <cmath>
@@ -17,7 +17,7 @@
 
 TEST(SparseStateRewardParserTest, NonExistingFile) {
     // No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!
-    ASSERT_THROW(storm::parser::SparseStateRewardParser<>::parseSparseStateReward(42, STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::SparseStateRewardParser<>::parseSparseStateReward(42, STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
 }
 
 double round(double val, int precision) {
@@ -51,13 +51,13 @@ TEST(SparseStateRewardParserTest, Whitespaces) {
 
 TEST(SparseStateRewardParserTest, DoubledLines) {
     // There are multiple lines attributing a reward to the same state.
-    ASSERT_THROW(storm::parser::SparseStateRewardParser<>::parseSparseStateReward(11, STORM_TEST_RESOURCES_DIR "/rew/state_reward_parser_doubledLines.state.rew"), storm::exceptions::WrongFormatException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::SparseStateRewardParser<>::parseSparseStateReward(11, STORM_TEST_RESOURCES_DIR "/rew/state_reward_parser_doubledLines.state.rew"), storm::exceptions::WrongFormatException);
 
     // There is a line for a state that has been skipped.
-    ASSERT_THROW(storm::parser::SparseStateRewardParser<>::parseSparseStateReward(11, STORM_TEST_RESOURCES_DIR "/rew/state_reward_parser_doubledLinesSkipped.state.rew"), storm::exceptions::WrongFormatException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::SparseStateRewardParser<>::parseSparseStateReward(11, STORM_TEST_RESOURCES_DIR "/rew/state_reward_parser_doubledLinesSkipped.state.rew"), storm::exceptions::WrongFormatException);
 }
 
 TEST(SparseStateRewardParserTest, RewardForNonExistentState) {
     // The index of one of the state that are to be given rewards is higher than the number of states in the model.
-    ASSERT_THROW(storm::parser::SparseStateRewardParser<>::parseSparseStateReward(99, STORM_TEST_RESOURCES_DIR "/rew/state_reward_parser_basic.state.rew"), storm::exceptions::OutOfRangeException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::SparseStateRewardParser<>::parseSparseStateReward(99, STORM_TEST_RESOURCES_DIR "/rew/state_reward_parser_basic.state.rew"), storm::exceptions::OutOfRangeException);
 }

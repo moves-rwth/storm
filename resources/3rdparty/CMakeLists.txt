@@ -55,9 +55,10 @@ list(APPEND STORM_DEP_TARGETS StormEigen33)
 #############################################################
 
 # Boost Option variables
-set(Boost_USE_STATIC_LIBS        ${USE_BOOST_STATIC_LIBRARIES})
-set(Boost_USE_MULTITHREADED      ON)
-set(Boost_USE_STATIC_RUNTIME    OFF)
+set(Boost_USE_STATIC_LIBS ${USE_BOOST_STATIC_LIBRARIES})
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+set(Boost_NO_BOOST_CMAKE ON)
 
 find_package(Boost 1.61.0 QUIET REQUIRED COMPONENTS filesystem system)
 if (NOT Boost_FOUND)
@@ -205,10 +206,10 @@ if (STORM_USE_GUROBI)
             list(APPEND STORM_DEP_TARGETS Gurobi_SHARED)
         else()
             # The FindGurobi.cmake script needs to be updated every now and then as the library file contains the version number...
-            message(SEND_ERROR "Gurobi Library ${GUROBI_LIBRARY} not found. If your Gurobi Version is higher then 8.1.0, please contact the Storm developers.")
+            message(FATAL_ERROR "Gurobi Library ${GUROBI_LIBRARY} not found. If your Gurobi Version is higher then 8.1.0, please contact the Storm developers.")
         endif()
     else()
-        message(SEND_ERROR "Gurobi Library requested but was not found. Make sure that GUROBI_ROOT points to the correct directory (containing include/ and lib/ subdirectories).")
+        message(FATAL_ERROR "Gurobi Library requested but was not found. Make sure that GUROBI_ROOT points to the correct directory (containing include/ and lib/ subdirectories).")
     endif()
 else()
     set(STORM_HAVE_GUROBI OFF)
@@ -241,18 +242,18 @@ if (NOT STORM_FORCE_SHIPPED_CARL)
 endif()
 if(carl_FOUND AND NOT STORM_FORCE_SHIPPED_CARL)
     get_target_property(carlLOCATION lib_carl LOCATION)
-    if(${carlLOCATION} STREQUAL "carlLOCATION-NOTFOUND")
-        message(SEND_ERROR "Library location for carl is not found, did you build carl?")
+    if("${carlLOCATION}" STREQUAL "carlLOCATION-NOTFOUND")
+        message(FATAL_ERROR "Library location for carl is not found, did you build carl?")
     elseif(EXISTS ${carlLOCATION})
         #empty on purpose
     else()
-        message(SEND_ERROR "File ${carlLOCATION} does not exist, did you build carl?")
+        message(FATAL_ERROR "File ${carlLOCATION} does not exist, did you build carl?")
     endif()
     if("${carl_VERSION_MAJOR}" STREQUAL "${CARL_C14VERSION}")
         message(STATUS "Storm - Found carl using master14 branch.")
         # empty on purpose. Maybe put a warning here?
     elseif("${carl_VERSION_MAJOR}.${carl_VERSION_MINOR}" VERSION_LESS "${CARL_MINVERSION}")
-    	message(SEND_ERROR "Carl outdated, require ${CARL_MINVERSION}, have ${carl_VERSION}")
+        message(FATAL_ERROR "Carl outdated, require ${CARL_MINVERSION}, have ${carl_VERSION}")
     endif()
 
     set(STORM_SHIPPED_CARL OFF)
@@ -389,7 +390,9 @@ get_filename_component(GMPXX_LIB_LOCATION ${GMPXX_LIB} DIRECTORY)
 ##
 #############################################################
 
-get_target_property(CLN_INCLUDE_DIR CLN_SHARED INTERFACE_INCLUDE_DIRECTORIES)
+if(STORM_USE_CLN_RF OR STORM_USE_CLN_EA)
+	get_target_property(CLN_INCLUDE_DIR CLN_SHARED INTERFACE_INCLUDE_DIRECTORIES)
+endif()
 
 #############################################################
 ##
@@ -518,14 +521,14 @@ list(APPEND STORM_3RDPARTY_SOURCES ${STORM_3RDPARTY_SOURCE_DIR}/cpptemplate/cppt
 ##	Google Test gtest
 ##
 #############################################################
-set(GOOGLETEST_LIB_DIR ${STORM_3RDPARTY_BINARY_DIR}/gtest-1.7.0)
+set(GOOGLETEST_LIB_DIR ${STORM_3RDPARTY_BINARY_DIR}/gtest-1.10.0)
 ExternalProject_Add(
         googletest
         #For downloads (may be useful later!)
         #SVN_REPOSITORY http://googletest.googlecode.com/svn/trunk/
         #TIMEOUT 10
         DOWNLOAD_COMMAND ""
-        SOURCE_DIR "${STORM_3RDPARTY_SOURCE_DIR}/gtest-1.7.0"
+        SOURCE_DIR "${STORM_3RDPARTY_SOURCE_DIR}/gtest-1.10.0"
         # Force the same output paths for debug and release builds so that
         # we know in which place the binaries end up when using the Xcode generator
         CMAKE_ARGS  -Dgtest_force_shared_crt=ON -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER} -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG:PATH=${GOOGLETEST_LIB_DIR} -DCMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE:PATH=${GOOGLETEST_LIB_DIR}
@@ -536,15 +539,15 @@ ExternalProject_Add(
         # Wrap download, configure and build steps in a script to log output
         LOG_CONFIGURE ON
         LOG_BUILD ON
-        BUILD_BYPRODUCTS ${GOOGLETEST_LIB_DIR}/libgtest${STATIC_EXT} ${GOOGLETEST_LIB_DIR}/libgtest_main${STATIC_EXT}
+        BUILD_BYPRODUCTS ${GOOGLETEST_LIB_DIR}/lib/libgtest${STATIC_EXT} ${GOOGLETEST_LIB_DIR}/lib/libgtest_main${STATIC_EXT}
 )
 
 # Specify include dir
 ExternalProject_Get_Property(googletest source_dir)
-set(GTEST_INCLUDE_DIR ${source_dir}/include)
+set(GTEST_INCLUDE_DIR ${source_dir}/googletest/include)
 # Specify MainTest's link libraries
 ExternalProject_Get_Property(googletest binary_dir)
-set(GTEST_LIBRARIES ${binary_dir}/libgtest${STATIC_EXT} ${binary_dir}/libgtest_main${STATIC_EXT})
+set(GTEST_LIBRARIES ${binary_dir}/lib/libgtest${STATIC_EXT} ${binary_dir}/lib/libgtest_main${STATIC_EXT})
 
 add_dependencies(test-resources googletest)
 list(APPEND STORM_TEST_LINK_LIBRARIES ${GTEST_LIBRARIES})

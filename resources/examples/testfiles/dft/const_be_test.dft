@@ -1,0 +1,8 @@
+toplevel "A";
+"A" and "I" "J" "K" "L";
+"DEP1" fdep "I" "J" "K";
+
+"I" prob=1;
+"J" prob=1;
+"K" prob=1;
+"L" lambda=1.0 dorm=0.5;

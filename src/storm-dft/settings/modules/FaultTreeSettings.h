@@ -103,6 +103,13 @@ namespace storm {
                  */
                 bool isTakeFirstDependency() const;
 
+                /*!
+                 * Retrieves whether the DFT should be transformed to contain at most one constantly failed BE.
+                 *
+                 * @return True iff the option was set.
+                  */
+                bool isUniqueFailedBE() const;
+
 #ifdef STORM_HAVE_Z3
 
                 /*!
@@ -134,6 +141,7 @@ namespace storm {
                 static const std::string approximationHeuristicOptionName;
                 static const std::string maxDepthOptionName;
                 static const std::string firstDependencyOptionName;
+                static const std::string uniqueFailedBEOptionName;
 #ifdef STORM_HAVE_Z3
                 static const std::string solveWithSmtOptionName;
 #endif

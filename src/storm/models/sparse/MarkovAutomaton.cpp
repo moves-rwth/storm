@@ -1,9 +1,12 @@
+#include <queue>
+
 #include "storm/models/sparse/MarkovAutomaton.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/solver/stateelimination/StateEliminator.h"
 #include "storm/storage/FlexibleSparseMatrix.h"
+#include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/vector.h"
@@ -16,7 +19,7 @@
 namespace storm {
     namespace models {
         namespace sparse {
-            
+
             template <typename ValueType, typename RewardModelType>
             MarkovAutomaton<ValueType, RewardModelType>::MarkovAutomaton(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
                                                                          storm::models::sparse::StateLabeling const& stateLabeling,
@@ -25,7 +28,7 @@ namespace storm {
                     : MarkovAutomaton<ValueType, RewardModelType>(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>(transitionMatrix, stateLabeling, rewardModels, true, markovianStates)) {
                 // Intentionally left empty
             }
-            
+
             template <typename ValueType, typename RewardModelType>
             MarkovAutomaton<ValueType, RewardModelType>::MarkovAutomaton(storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
                                                                          storm::models::sparse::StateLabeling&& stateLabeling,
@@ -34,23 +37,23 @@ namespace storm {
                     : MarkovAutomaton<ValueType, RewardModelType>(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>(std::move(transitionMatrix), std::move(stateLabeling), std::move(rewardModels), true, std::move(markovianStates))) {
                 // Intentionally left empty
             }
-            
+
             template <typename ValueType, typename RewardModelType>
             MarkovAutomaton<ValueType, RewardModelType>::MarkovAutomaton(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components) : NondeterministicModel<ValueType, RewardModelType>(ModelType::MarkovAutomaton, components), markovianStates(components.markovianStates.get()) {
-                
+
                 if (components.exitRates) {
                     exitRates = components.exitRates.get();
                 }
-                
+
                 if (components.rateTransitions) {
                     this->turnRatesToProbabilities();
                 }
                 closed = this->checkIsClosed();
             }
-            
+
             template <typename ValueType, typename RewardModelType>
             MarkovAutomaton<ValueType, RewardModelType>::MarkovAutomaton(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components) : NondeterministicModel<ValueType, RewardModelType>(ModelType::MarkovAutomaton, std::move(components)), markovianStates(std::move(components.markovianStates.get())) {
-                
+
                 if (components.exitRates) {
                     exitRates = std::move(components.exitRates.get());
                 }
@@ -60,52 +63,61 @@ namespace storm {
                 }
                 closed = this->checkIsClosed();
             }
-            
+
             template <typename ValueType, typename RewardModelType>
             bool MarkovAutomaton<ValueType, RewardModelType>::isClosed() const {
                 return closed;
             }
-            
+
+            template <typename ValueType, typename RewardModelType>
+            bool MarkovAutomaton<ValueType, RewardModelType>::containsZenoCycle() const {
+                if (!this->hasZenoCycle.is_initialized()) {
+                    this->hasZenoCycle = this->checkContainsZenoCycle();
+                }
+                return this->hasZenoCycle.get();
+            }
+
+
             template <typename ValueType, typename RewardModelType>
             bool MarkovAutomaton<ValueType, RewardModelType>::isHybridState(storm::storage::sparse::state_type state) const {
                 return isMarkovianState(state) && (this->getTransitionMatrix().getRowGroupSize(state) > 1);
             }
-            
+
             template <typename ValueType, typename RewardModelType>
             bool MarkovAutomaton<ValueType, RewardModelType>::isMarkovianState(storm::storage::sparse::state_type state) const {
                 return this->markovianStates.get(state);
             }
-            
+
             template <typename ValueType, typename RewardModelType>
             bool MarkovAutomaton<ValueType, RewardModelType>::isProbabilisticState(storm::storage::sparse::state_type state) const {
                 return !this->markovianStates.get(state);
             }
-            
+
             template <typename ValueType, typename RewardModelType>
             std::vector<ValueType> const& MarkovAutomaton<ValueType, RewardModelType>::getExitRates() const {
                 return this->exitRates;
             }
-            
+
             template <typename ValueType, typename RewardModelType>
             std::vector<ValueType>& MarkovAutomaton<ValueType, RewardModelType>::getExitRates() {
                 return this->exitRates;
             }
-            
+
             template <typename ValueType, typename RewardModelType>
             ValueType const& MarkovAutomaton<ValueType, RewardModelType>::getExitRate(storm::storage::sparse::state_type state) const {
                 return this->exitRates[state];
             }
-            
+
             template <typename ValueType, typename RewardModelType>
             ValueType MarkovAutomaton<ValueType, RewardModelType>::getMaximalExitRate() const {
                 return storm::utility::vector::max_if(this->exitRates, this->markovianStates);
             }
-            
+
             template <typename ValueType, typename RewardModelType>
             storm::storage::BitVector const& MarkovAutomaton<ValueType, RewardModelType>::getMarkovianStates() const {
                 return this->markovianStates;
             }
-            
+
             template <typename ValueType, typename RewardModelType>
             void MarkovAutomaton<ValueType, RewardModelType>::close() {
                 if (!closed) {
@@ -120,16 +132,16 @@ namespace storm {
                             exitRates[state] = storm::utility::zero<ValueType>();
                         }
                     }
-                    
+
                     if (!keptChoices.full()) {
                         *this = std::move(*storm::transformer::buildSubsystem(*this, storm::storage::BitVector(this->getNumberOfStates(), true), keptChoices, false).model->template as<MarkovAutomaton<ValueType, RewardModelType>>());
                     }
-                    
+
                     // Mark the automaton as closed.
                     closed = true;
                 }
             }
-            
+
             template <typename ValueType, typename RewardModelType>
             void MarkovAutomaton<ValueType, RewardModelType>::turnRatesToProbabilities() {
                 bool assertRates = (this->exitRates.size() == this->getNumberOfStates());
@@ -137,7 +149,7 @@ namespace storm {
                     STORM_LOG_THROW(this->exitRates.empty(), storm::exceptions::InvalidArgumentException, "The specified exit rate vector has an unexpected size.");
                     this->exitRates.reserve(this->getNumberOfStates());
                 }
-                
+
                 storm::utility::ConstantsComparator<ValueType> comparator;
                 for (uint_fast64_t state = 0; state< this->getNumberOfStates(); ++state) {
                     uint_fast64_t row = this->getTransitionMatrix().getRowGroupIndices()[state];
@@ -163,12 +175,12 @@ namespace storm {
                     }
                 }
             }
-            
+
             template <typename ValueType, typename RewardModelType>
             bool MarkovAutomaton<ValueType, RewardModelType>::isConvertibleToCtmc() const {
                 return isClosed() && markovianStates.full();
             }
-            
+
             template <typename ValueType, typename RewardModelType>
             bool MarkovAutomaton<ValueType, RewardModelType>::hasOnlyTrivialNondeterminism() const {
                 // Check every state
@@ -185,7 +197,7 @@ namespace storm {
                 }
                 return true;
             }
-            
+
             template <typename ValueType, typename RewardModelType>
             bool MarkovAutomaton<ValueType, RewardModelType>::checkIsClosed() const {
                 for (auto state : markovianStates) {
@@ -195,7 +207,7 @@ namespace storm {
                 }
                 return true;
             }
-            
+
             template <typename ValueType, typename RewardModelType>
             std::shared_ptr<storm::models::sparse::Ctmc<ValueType, RewardModelType>> MarkovAutomaton<ValueType, RewardModelType>::convertToCtmc() const {
                 if (isClosed() && markovianStates.full()) {
@@ -265,22 +277,40 @@ namespace storm {
                 return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(rateMatrix), std::move(stateLabeling));
             }
 
-            
+            template<typename ValueType, typename RewardModelType>
+            bool MarkovAutomaton<ValueType, RewardModelType>::checkContainsZenoCycle() const {
+                if (isClosed() && markovianStates.empty()) {
+                    return true;
+                }
+
+                storm::storage::MaximalEndComponentDecomposition<ValueType> maxEnd(this->getTransitionMatrix(), this->getBackwardTransitions(),~markovianStates);
+                return !maxEnd.empty();
+            }
+
+
             template<typename ValueType, typename RewardModelType>
             void MarkovAutomaton<ValueType, RewardModelType>::printModelInformationToStream(std::ostream& out) const {
                 this->printModelInformationHeaderToStream(out);
                 out << "Choices: \t" << this->getNumberOfChoices() << std::endl;
                 out << "Markovian St.: \t" << this->getMarkovianStates().getNumberOfSetBits() << std::endl;
-                out << "Max. Rate.: \t" << this->getMaximalExitRate() << std::endl;
+                out << "Max. Rate.: \t";
+                if (this->getMarkovianStates().empty()) {
+                    out << "None";
+                } else {
+                    out << this->getMaximalExitRate();
+                }
+                out << std::endl;
                 this->printModelInformationFooterToStream(out);
             }
-            
-            
+
+
             template class MarkovAutomaton<double>;
 #ifdef STORM_HAVE_CARL
+
             template class MarkovAutomaton<storm::RationalNumber>;
-            
+
             template class MarkovAutomaton<double, storm::models::sparse::StandardRewardModel<storm::Interval>>;
+
             template class MarkovAutomaton<storm::RationalFunction>;
 #endif
         } // namespace sparse

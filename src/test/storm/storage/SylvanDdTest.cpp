@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
@@ -377,7 +377,7 @@ TEST(SylvanDd, AddGetMetaVariableTest) {
     ASSERT_NO_THROW(manager->addMetaVariable("x", 1, 9));
     EXPECT_EQ(2ul, manager->getNumberOfMetaVariables());
     
-    ASSERT_THROW(manager->addMetaVariable("x", 0, 3), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_ASSERT_THROW(manager->addMetaVariable("x", 0, 3), storm::exceptions::InvalidArgumentException);
     
     ASSERT_NO_THROW(manager->addMetaVariable("y", 0, 3));
     EXPECT_EQ(4ul, manager->getNumberOfMetaVariables());
@@ -394,8 +394,8 @@ TEST(SylvanDd, EncodingTest) {
     std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
     
     storm::dd::Bdd<storm::dd::DdType::Sylvan> encoding;
-    ASSERT_THROW(encoding = manager->getEncoding(x.first, 0), storm::exceptions::InvalidArgumentException);
-    ASSERT_THROW(encoding = manager->getEncoding(x.first, 10), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_ASSERT_THROW(encoding = manager->getEncoding(x.first, 0), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_ASSERT_THROW(encoding = manager->getEncoding(x.first, 10), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(encoding = manager->getEncoding(x.first, 4));
     EXPECT_EQ(1ul, encoding.getNonZeroCount());
     
@@ -508,8 +508,8 @@ TEST(SylvanDd, RationalFunctionEncodingTest) {
     std::pair<storm::expressions::Variable, storm::expressions::Variable> x = manager->addMetaVariable("x", 1, 9);
     
     storm::dd::Bdd<storm::dd::DdType::Sylvan> encoding;
-    ASSERT_THROW(encoding = manager->getEncoding(x.first, 0), storm::exceptions::InvalidArgumentException);
-    ASSERT_THROW(encoding = manager->getEncoding(x.first, 10), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_ASSERT_THROW(encoding = manager->getEncoding(x.first, 0), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_ASSERT_THROW(encoding = manager->getEncoding(x.first, 10), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(encoding = manager->getEncoding(x.first, 4));
     EXPECT_EQ(1ul, encoding.getNonZeroCount());
     
@@ -670,7 +670,7 @@ TEST(SylvanDd, AbstractionTest) {
     dd2 = manager->template getConstant<double>(5);
     bdd = dd1.equals(dd2);
     EXPECT_EQ(1ul, bdd.getNonZeroCount());
-    ASSERT_THROW(bdd = bdd.existsAbstract({x.second}), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_ASSERT_THROW(bdd = bdd.existsAbstract({x.second}), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(bdd = bdd.existsAbstract({x.first}));
     EXPECT_EQ(0ul, bdd.getNonZeroCount());
     EXPECT_EQ(1, bdd.template toAdd<double>().getMax());
@@ -678,27 +678,27 @@ TEST(SylvanDd, AbstractionTest) {
     dd3 = dd1.equals(dd2).template toAdd<double>();
     dd3 *= manager->template getConstant<double>(3);
     EXPECT_EQ(1ul, dd3.getNonZeroCount());
-    ASSERT_THROW(bdd = dd3.toBdd().existsAbstract({x.second}), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_ASSERT_THROW(bdd = dd3.toBdd().existsAbstract({x.second}), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(bdd = dd3.toBdd().existsAbstract({x.first}));
     EXPECT_TRUE(bdd.isOne());
     
     dd3 = dd1.equals(dd2).template toAdd<double>();
     dd3 *= manager->template getConstant<double>(3);
-    ASSERT_THROW(dd3 = dd3.sumAbstract({x.second}), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_ASSERT_THROW(dd3 = dd3.sumAbstract({x.second}), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(dd3 = dd3.sumAbstract({x.first}));
     EXPECT_EQ(0ul, dd3.getNonZeroCount());
     EXPECT_EQ(3, dd3.getMax());
     
     dd3 = dd1.equals(dd2).template toAdd<double>();
     dd3 *= manager->template getConstant<double>(3);
-    ASSERT_THROW(dd3 = dd3.minAbstract({x.second}), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_ASSERT_THROW(dd3 = dd3.minAbstract({x.second}), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(dd3 = dd3.minAbstract({x.first}));
     EXPECT_EQ(0ul, dd3.getNonZeroCount());
     EXPECT_EQ(0, dd3.getMax());
     
     dd3 = dd1.equals(dd2).template toAdd<double>();
     dd3 *= manager->template getConstant<double>(3);
-    ASSERT_THROW(dd3 = dd3.maxAbstract({x.second}), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_ASSERT_THROW(dd3 = dd3.maxAbstract({x.second}), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(dd3 = dd3.maxAbstract({x.first}));
     EXPECT_EQ(0ul, dd3.getNonZeroCount());
     EXPECT_EQ(3, dd3.getMax());
@@ -712,7 +712,7 @@ TEST(SylvanDd, SwapTest) {
     storm::dd::Add<storm::dd::DdType::Sylvan, double> dd1;
     
     dd1 = manager->template getIdentity<double>(x.first);
-    ASSERT_THROW(dd1 = dd1.swapVariables({std::make_pair(x.first, z.first)}), storm::exceptions::InvalidArgumentException);
+    STORM_SILENT_ASSERT_THROW(dd1 = dd1.swapVariables({std::make_pair(x.first, z.first)}), storm::exceptions::InvalidArgumentException);
     ASSERT_NO_THROW(dd1 = dd1.swapVariables({std::make_pair(x.first, x.second)}));
     EXPECT_TRUE(dd1 == manager->template getIdentity<double>(x.second));
 }

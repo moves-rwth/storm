@@ -164,6 +164,11 @@ namespace storm {
              */
             void moveToSecondRun();
             
+            /*!
+             * Parses the stored formula Expressions.
+             */
+            void createFormulaIdentifiers(std::vector<storm::prism::Formula> const& formulas);
+            
             // A flag that stores whether the grammar is currently doing the second run.
             bool secondRun;
 
@@ -187,7 +192,13 @@ namespace storm {
             std::string const& getFilename() const;
 
             mutable std::set<std::string> observables;
-
+            
+            // Store the expressions of formulas. They have to be parsed after the first and before the second run
+            std::vector<std::string> formulaExpressions;
+            // Stores a proper order in which formulas can be evaluated. This is necessary since formulas might depend on each other.
+            // E.g. for "formula x = y; formula y = z;" we have to swap the order of the two formulas.
+            std::vector<uint64_t> formulaOrder;
+            
             // A function used for annotating the entities with their position.
             phoenix::function<PositionAnnotation> annotate;
             
@@ -199,6 +210,11 @@ namespace storm {
             
             // Rules for model type.
             qi::rule<Iterator, storm::prism::Program::ModelType(), Skipper> modelTypeDefinition;
+
+            // Rules for parsing expressions of specific type
+            qi::rule<Iterator, storm::expressions::Expression(), Skipper> boolExpression;
+            qi::rule<Iterator, storm::expressions::Expression(), Skipper> intExpression;
+            qi::rule<Iterator, storm::expressions::Expression(), Skipper> numericalExpression;
             
             // Rules for parsing the program header.
             qi::rule<Iterator, storm::prism::Constant(), Skipper> undefinedConstantDefinition;
@@ -216,9 +232,11 @@ namespace storm {
             qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> globalIntegerVariableDefinition;
             
             // Rules for modules definition.
-            qi::rule<Iterator, std::vector<storm::prism::Module>(GlobalProgramInformation&), Skipper> moduleDefinitionList;
+            qi::rule<Iterator, std::string(), Skipper> knownModuleName;
+            qi::rule<Iterator, std::string(), Skipper> freshModuleName;
             qi::rule<Iterator, storm::prism::Module(GlobalProgramInformation&), qi::locals<std::vector<storm::prism::BooleanVariable>, std::vector<storm::prism::IntegerVariable>, std::vector<storm::prism::ClockVariable>>, Skipper> moduleDefinition;
-            qi::rule<Iterator, storm::prism::Module(GlobalProgramInformation&), qi::locals<std::map<std::string, std::string>>, Skipper> moduleRenaming;
+            qi::rule<Iterator, storm::prism::ModuleRenaming, qi::locals<std::map<std::string, std::string>>, Skipper> moduleRenaming;
+            qi::rule<Iterator, storm::prism::Module(GlobalProgramInformation&), qi::locals<std::string, storm::prism::ModuleRenaming>, Skipper> renamedModule;
             
             // Rules for variable definitions.
             qi::rule<Iterator, qi::unused_type(std::vector<storm::prism::BooleanVariable>&, std::vector<storm::prism::IntegerVariable>&, std::vector<storm::prism::ClockVariable>&), Skipper> variableDefinition;
@@ -234,10 +252,11 @@ namespace storm {
             qi::rule<Iterator, storm::prism::Assignment(), Skipper> assignmentDefinition;
             
             // Rules for reward definitions.
+            qi::rule<Iterator, std::string(), Skipper> freshRewardModelName;
             qi::rule<Iterator, storm::prism::RewardModel(GlobalProgramInformation&), qi::locals<std::string, std::vector<storm::prism::StateReward>, std::vector<storm::prism::StateActionReward>, std::vector<storm::prism::TransitionReward>>, Skipper> rewardModelDefinition;
             qi::rule<Iterator, storm::prism::StateReward(), Skipper> stateRewardDefinition;
             qi::rule<Iterator, storm::prism::StateActionReward(GlobalProgramInformation&), Skipper> stateActionRewardDefinition;
-            qi::rule<Iterator, storm::prism::TransitionReward(GlobalProgramInformation&), Skipper> transitionRewardDefinition;
+            qi::rule<Iterator, storm::prism::TransitionReward(GlobalProgramInformation&), qi::locals<std::string, storm::expressions::Expression, storm::expressions::Expression,storm::expressions::Expression>, Skipper> transitionRewardDefinition;
             
             // Rules for initial states expression.
             qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> initialStatesConstruct;
@@ -263,12 +282,15 @@ namespace storm {
 
             // Rules for label definitions.
             qi::rule<Iterator, storm::prism::Label(), Skipper> labelDefinition;
-            
+            qi::rule<Iterator, std::string(), Skipper> freshLabelName;
+
             // Rules for formula definitions.
+            qi::rule<Iterator, std::string(), Skipper> formulaDefinitionRhs;
             qi::rule<Iterator, storm::prism::Formula(), Skipper> formulaDefinition;
             
             // Rules for identifier parsing.
             qi::rule<Iterator, std::string(), Skipper> identifier;
+            qi::rule<Iterator, std::string(), Skipper> freshIdentifier;
             
             // Parsers that recognize special keywords and model types.
             storm::parser::PrismParser::keywordsStruct keywords_;
@@ -277,11 +299,19 @@ namespace storm {
             
             // Parser and manager used for recognizing expressions.
             std::shared_ptr<storm::expressions::ExpressionManager> manager;
-            // TODO shared?
             std::shared_ptr<storm::parser::ExpressionParser> expressionParser;
             
             // Helper methods used in the grammar.
             bool isValidIdentifier(std::string const& identifier);
+            bool isFreshIdentifier(std::string const& identifier);
+            bool isKnownModuleName(std::string const& moduleName);
+            bool isFreshModuleName(std::string const& moduleName);
+            bool isFreshLabelName(std::string const& moduleName);
+            bool isFreshRewardModelName(std::string const& moduleName);
+            bool isOfBoolType(storm::expressions::Expression const& expression);
+            bool isOfIntType(storm::expressions::Expression const& expression);
+            bool isOfNumericalType(storm::expressions::Expression const& expression);
+            bool isValidModuleRenaming(std::string const& oldModuleName, storm::prism::ModuleRenaming const& renaming, GlobalProgramInformation const& globalProgramInformation) const;
             bool addInitialStatesConstruct(storm::expressions::Expression const& initialStatesExpression, GlobalProgramInformation& globalProgramInformation);
             bool addSystemCompositionConstruct(std::shared_ptr<storm::prism::Composition> const& composition, GlobalProgramInformation& globalProgramInformation);
             void setModelType(GlobalProgramInformation& globalProgramInformation, storm::prism::Program::ModelType const& modelType);
@@ -299,7 +329,8 @@ namespace storm {
             storm::prism::Constant createDefinedBooleanConstant(std::string const& newConstant, storm::expressions::Expression expression) const;
             storm::prism::Constant createDefinedIntegerConstant(std::string const& newConstant, storm::expressions::Expression expression) const;
             storm::prism::Constant createDefinedDoubleConstant(std::string const& newConstant, storm::expressions::Expression expression) const;
-            storm::prism::Formula createFormula(std::string const& formulaName, storm::expressions::Expression expression);
+            storm::prism::Formula createFormulaFirstRun(std::string const& formulaName, std::string const& expression);
+            storm::prism::Formula createFormulaSecondRun(std::string const& formulaName, storm::expressions::Expression const& expression);
             storm::prism::Label createLabel(std::string const& labelName, storm::expressions::Expression expression) const;
             storm::prism::RewardModel createRewardModel(std::string const& rewardModelName, std::vector<storm::prism::StateReward> const& stateRewards, std::vector<storm::prism::StateActionReward> const& stateActionRewards, std::vector<storm::prism::TransitionReward> const& transitionRewards) const;
             storm::prism::StateReward createStateReward(storm::expressions::Expression statePredicateExpression, storm::expressions::Expression rewardValueExpression) const;
@@ -313,7 +344,8 @@ namespace storm {
             storm::prism::IntegerVariable createIntegerVariable(std::string const& variableName, storm::expressions::Expression lowerBoundExpression, storm::expressions::Expression upperBoundExpression, storm::expressions::Expression initialValueExpression) const;
             storm::prism::ClockVariable createClockVariable(std::string const& variableName) const;
             storm::prism::Module createModule(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::ClockVariable> const& clockVariables, boost::optional<storm::expressions::Expression> const& invariant, std::vector<storm::prism::Command> const& commands, GlobalProgramInformation& globalProgramInformation) const;
-            storm::prism::Module createRenamedModule(std::string const& newModuleName, std::string const& oldModuleName, std::map<std::string, std::string> const& renaming, GlobalProgramInformation& globalProgramInformation) const;
+            storm::prism::ModuleRenaming createModuleRenaming(std::map<std::string,std::string> const& renaming) const;
+            storm::prism::Module createRenamedModule(std::string const& newModuleName, std::string const& oldModuleName, storm::prism::ModuleRenaming const& renaming, GlobalProgramInformation& globalProgramInformation) const;
             storm::prism::Program createProgram(GlobalProgramInformation const& globalProgramInformation) const;
             void createObservablesList(std::vector<std::string> const& observables);
 

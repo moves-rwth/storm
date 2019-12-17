@@ -7,6 +7,9 @@
 #include "storm/storage/jani/JaniScopeChanger.h"
 #include "storm/storage/jani/JSONExporter.h"
 
+#include "storm/utility/file.h"
+#include "storm/api/properties.h"
+
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
 
@@ -15,8 +18,12 @@ namespace storm {
         
         void transformJani(storm::jani::Model& janiModel, std::vector<storm::jani::Property>& properties, storm::converter::JaniConversionOptions const& options) {
         
+            if (options.replaceUnassignedVariablesWithConstants) {
+                janiModel.replaceUnassignedVariablesWithConstants();
+            }
+            
             if (options.substituteConstants) {
-                janiModel = janiModel.substituteConstants();
+                janiModel.substituteConstantsInPlace();
             }
             
             if (options.localVars) {
@@ -79,6 +86,20 @@ namespace storm {
             
         }
         
+        void transformPrism(storm::prism::Program& prismProgram, std::vector<storm::jani::Property>& properties, bool simplify, bool flatten) {
+            if (simplify) {
+                prismProgram = prismProgram.simplify().simplify();
+                properties = storm::api::substituteConstantsInProperties(properties, prismProgram.getConstantsFormulasSubstitution());
+            }
+            if (flatten) {
+               prismProgram = prismProgram.flattenModules();
+               if (simplify) {
+                    // Let's simplify the flattened program again ... just to be sure ... twice ...
+                    prismProgram = prismProgram.simplify().simplify();
+               }
+            }
+        }
+        
         std::pair<storm::jani::Model, std::vector<storm::jani::Property>> convertPrismToJani(storm::prism::Program const& program, std::vector<storm::jani::Property> const& properties, storm::converter::PrismToJaniConverterOptions options) {
         
             // Perform conversion
@@ -104,7 +125,29 @@ namespace storm {
         void printJaniToStream(storm::jani::Model const& model, std::vector<storm::jani::Property> const& properties, std::ostream& ostream, bool compact) {
             storm::jani::JsonExporter::toStream(model, properties, ostream, true, compact);
         }
-
+        
+        void exportPrismToFile(storm::prism::Program const& program, std::vector<storm::jani::Property> const& properties, std::string const& filename) {
+            std::ofstream stream;
+            storm::utility::openFile(filename, stream);
+            stream << program << std::endl;
+            storm::utility::closeFile(stream);
+            
+            if (!properties.empty()) {
+                storm::utility::openFile(filename + ".props", stream);
+                for (auto const& prop : properties) {
+                    stream << prop.asPrismSyntax() << std::endl;
+                    STORM_LOG_WARN_COND(!prop.containsUndefinedConstants(), "A property contains undefined constants. These might not be exported correctly.");
+                }
+                storm::utility::closeFile(stream);
+            }
+        }
+        void printPrismToStream(storm::prism::Program const& program, std::vector<storm::jani::Property> const& properties, std::ostream& ostream) {
+            ostream << program << std::endl;
+            for (auto const& prop : properties) {
+                STORM_LOG_WARN_COND(!prop.containsUndefinedConstants(), "A property contains undefined constants. These might not be exported correctly.");
+                ostream << prop.asPrismSyntax() << std::endl;
+            }
+        }
         
     }
 }

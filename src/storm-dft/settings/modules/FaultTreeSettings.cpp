@@ -26,6 +26,7 @@ namespace storm {
             const std::string FaultTreeSettings::approximationHeuristicOptionName = "approximationheuristic";
             const std::string FaultTreeSettings::maxDepthOptionName = "maxdepth";
             const std::string FaultTreeSettings::firstDependencyOptionName = "firstdep";
+            const std::string FaultTreeSettings::uniqueFailedBEOptionName = "uniquefailedbe";
 #ifdef STORM_HAVE_Z3
             const std::string FaultTreeSettings::solveWithSmtOptionName = "smt";
 #endif
@@ -53,6 +54,8 @@ namespace storm {
                                                                      {"depth", "probability", "bounddifference"})).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, maxDepthOptionName, false, "Maximal depth for state space exploration.").addArgument(
                         storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("depth", "The maximal depth.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, uniqueFailedBEOptionName, false,
+                                                               "Use a unique constantly failed BE.").build());
 #ifdef STORM_HAVE_Z3
                 this->addOption(storm::settings::OptionBuilder(moduleName, solveWithSmtOptionName, true, "Solve the DFT with SMT.").build());
 #endif
@@ -113,6 +116,10 @@ namespace storm {
 
             bool FaultTreeSettings::isTakeFirstDependency() const {
                 return this->getOption(firstDependencyOptionName).getHasOptionBeenSet();
+            }
+
+            bool FaultTreeSettings::isUniqueFailedBE() const {
+                return this->getOption(uniqueFailedBEOptionName).getHasOptionBeenSet();
             }
 
 #ifdef STORM_HAVE_Z3

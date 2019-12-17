@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
@@ -7,6 +7,8 @@
 #include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/generator/JaniNextStateGenerator.h"
 #include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/Property.h"
+#include "storm-parsers/api/model_descriptions.h"
 
 
 TEST(ExplicitJaniModelBuilderTest, Dtmc) {
@@ -145,16 +147,12 @@ TEST(ExplicitJaniModelBuilderTest, FailComposition) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/system_composition.nm");
     storm::jani::Model janiModel = program.toJani().substituteConstantsFunctions();
 
-    ASSERT_THROW(storm::builder::ExplicitModelBuilder<double>(janiModel).build(), storm::exceptions::WrongFormatException);
+    STORM_SILENT_ASSERT_THROW(storm::builder::ExplicitModelBuilder<double>(janiModel).build(), storm::exceptions::WrongFormatException);
 }
 
-TEST(ExplicitJaniModelBuilderTest, IllegalSynchronizingWrites) {
-    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2-illegalSynchronizingWrite.nm");
-    storm::jani::Model janiModel = program.toJani().substituteConstantsFunctions();
-    storm::generator::NextStateGeneratorOptions options;
-    options.setExplorationChecks(true);
-    std::shared_ptr<storm::generator::NextStateGenerator<double, uint32_t>> nextStateGenerator = std::make_shared<storm::generator::JaniNextStateGenerator<double, uint32_t>>(janiModel, options);
-    
-    ASSERT_THROW(storm::builder::ExplicitModelBuilder<double>(nextStateGenerator).build(), storm::exceptions::WrongFormatException);
+TEST(ExplicitJaniModelBuilderTest, unassignedVariables) {
+    storm::jani::Model janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/mdp/unassigned-variables.jani").first;
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
+    EXPECT_EQ(25ul, model->getNumberOfStates());
+    EXPECT_EQ(81ul, model->getNumberOfTransitions());
 }
-

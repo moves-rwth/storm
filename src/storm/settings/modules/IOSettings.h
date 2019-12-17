@@ -38,6 +38,13 @@ namespace storm {
                 std::string getExportDotFilename() const;
 
                 /*!
+                 * Retrieves the maximal width for labels in the dot format.
+                 *
+                 * @return The maximal width.
+                 */
+                size_t getExportDotMaxWidth() const;
+
+                /*!
                  * Retrieves whether the export-to-dot option for jani was set.
                  *
                  * @return True if the export-to-jani-dot option was set.
@@ -290,11 +297,6 @@ namespace storm {
                  * @return The property filter.
                  */
                 std::string getPropertyFilter() const;
-                
-                /*!
-                 * Retrieves whether a DTMC/CTMC should be converted to an MDP/MA
-                 */
-                bool isToNondeterministicModelSet() const;
 
                 /*!
                  * Retrieves whether the input model is to be read from the quantitative verification benchmark set (QVBS)
@@ -330,6 +332,7 @@ namespace storm {
             private:
                 // Define the string names of the options as constants.
                 static const std::string exportDotOptionName;
+                static const std::string exportDotMaxWidthOptionName;
                 static const std::string exportJaniDotOptionName;
                 static const std::string exportExplicitOptionName;
                 static const std::string exportDdOptionName;
@@ -354,7 +357,6 @@ namespace storm {
                 static const std::string janiPropertyOptionShortName;
                 static const std::string propertyOptionName;
                 static const std::string propertyOptionShortName;
-                static const std::string toNondetOptionName;
                 static const std::string qvbsInputOptionName;
                 static const std::string qvbsInputOptionShortName;
                 static const std::string qvbsRootOptionName;

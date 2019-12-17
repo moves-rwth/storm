@@ -10,7 +10,6 @@
 
 #include "storm/storage/expressions/ExpressionManager.h"
 
-#include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/BuildSettings.h"
 
 #include "storm/builder/RewardModelBuilder.h"
@@ -163,7 +162,7 @@ namespace storm {
                 
                 // If there is no behavior, we might have to introduce a self-loop.
                 if (behavior.empty()) {
-                    if (!storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet() || !behavior.wasExpanded()) {
+                    if (!storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet() || !behavior.wasExpanded()) {
                         // If the behavior was actually expanded and yet there are no transitions, then we have a deadlock state.
                         if (behavior.wasExpanded()) {
                             this->stateStorage.deadlockStateIndices.push_back(currentIndex);
@@ -349,7 +348,7 @@ namespace storm {
                         bool foundActionSet = false;
                         std::vector<std::string> actionNames;
                         bool addedAnonymousAction = false;
-                        for (uint64 choice = modelComponents.transitionMatrix.getRowGroupIndices()[bitVectorIndexPair.second];
+                        for (uint64_t choice = modelComponents.transitionMatrix.getRowGroupIndices()[bitVectorIndexPair.second];
                              choice < modelComponents.transitionMatrix.getRowGroupIndices()[bitVectorIndexPair.second +
                                                                                             1]; ++choice) {
                             if (modelComponents.choiceLabeling.get().getLabelsOfChoice(choice).empty()) {

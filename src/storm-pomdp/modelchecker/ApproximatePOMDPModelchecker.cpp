@@ -5,6 +5,7 @@
 
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/models/sparse/Dtmc.h"
+#include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/utility/vector.h"
 #include "storm/modelchecker/results/CheckResult.h"
@@ -690,7 +691,8 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             std::unique_ptr<POMDPCheckResult<ValueType>>
             ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeReachabilityReward(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                                                                                std::set<uint32_t> const &targetObservations, bool min, uint64_t gridResolution) {
+                                                                                                std::set<uint32_t> const &targetObservations, bool min,
+                                                                                                uint64_t gridResolution) {
                 return computeReachability(pomdp, targetObservations, min, gridResolution, true);
             }
 
@@ -1226,8 +1228,6 @@ namespace storm {
             class ApproximatePOMDPModelchecker<double>;
 
 #ifdef STORM_HAVE_CARL
-
-            //template class ApproximatePOMDPModelchecker<storm::RationalFunction>;
             template
             class ApproximatePOMDPModelchecker<storm::RationalNumber>;
 

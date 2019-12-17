@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/OutOfRangeException.h"

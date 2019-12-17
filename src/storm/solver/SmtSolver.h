@@ -23,6 +23,8 @@ namespace storm {
 		public:
 			//! possible check results
 			enum class CheckResult { Sat, Unsat, Unknown };
+
+
             
             /*!
              * The base class for all model references. They are used to provide a lightweight method of accessing the
@@ -48,6 +50,8 @@ namespace storm {
                  * @return The expression manager associated with this model reference.
                  */
                 storm::expressions::ExpressionManager const& getManager() const;
+
+				virtual std::string toString() const = 0;
                 
             private:
                 // The expression manager responsible for the variables whose value can be requested via this model
@@ -73,8 +77,8 @@ namespace storm {
 			SmtSolver(SmtSolver const& other) = default;
 
 			SmtSolver(SmtSolver&& other) = default;
-			SmtSolver& operator=(SmtSolver const& other) = default;
-			SmtSolver& operator=(SmtSolver&& other) = default;
+			SmtSolver& operator=(SmtSolver const& other) = delete;
+			SmtSolver& operator=(SmtSolver&& other) = delete;
    
 			/*!
              * Pushes a backtracking point on the solver's stack. A following call to pop() deletes exactly those

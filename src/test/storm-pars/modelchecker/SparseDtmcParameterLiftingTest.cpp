@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 
 #ifdef STORM_HAVE_CARL
@@ -64,7 +64,7 @@ namespace {
             RationalPiEnvironment
     > TestingTypes;
     
-   TYPED_TEST_CASE(SparseDtmcParameterLiftingTest, TestingTypes);
+   TYPED_TEST_SUITE(SparseDtmcParameterLiftingTest, TestingTypes,);
 
     
     TYPED_TEST(SparseDtmcParameterLiftingTest, Brp_Prob) {

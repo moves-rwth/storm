@@ -1,0 +1,12 @@
+toplevel "A";
+"A" and "I" "B";
+"SEQ_dynamic" seq "I" "B";
+"B" or "J" "K";
+"DEP1_1" fdep "T1" "I";
+"DEP1_2" fdep "T1" "J";
+"DEP1_3" fdep "T1" "K";
+
+"I" lambda=0.5 dorm=0;
+"J" lambda=0.5 dorm=0;
+"K" lambda=0.5 dorm=0;
+"T1" lambda=0.5 dorm=0;

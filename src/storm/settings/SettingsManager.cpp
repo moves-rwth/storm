@@ -37,6 +37,7 @@
 #include "storm/settings/modules/JitBuilderSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/settings/modules/MultiplierSettings.h"
+#include "storm/settings/modules/TransformationSettings.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/file.h"
 #include "storm/utility/string.h"
@@ -629,12 +630,8 @@ namespace storm {
             return SettingsManager::manager();
         }
         
-        storm::settings::modules::CoreSettings& mutableCoreSettings() {
-            return dynamic_cast<storm::settings::modules::CoreSettings&>(mutableManager().getModule(storm::settings::modules::CoreSettings::moduleName));
-        }
-        
-        storm::settings::modules::IOSettings& mutableIOSettings() {
-            return dynamic_cast<storm::settings::modules::IOSettings&>(mutableManager().getModule(storm::settings::modules::IOSettings::moduleName));
+        storm::settings::modules::BuildSettings& mutableBuildSettings() {
+            return dynamic_cast<storm::settings::modules::BuildSettings&>(mutableManager().getModule(storm::settings::modules::BuildSettings::moduleName));
         }
         
         storm::settings::modules::AbstractionSettings& mutableAbstractionSettings() {
@@ -670,6 +667,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::JitBuilderSettings>();
             storm::settings::addModule<storm::settings::modules::MultiObjectiveSettings>();
             storm::settings::addModule<storm::settings::modules::MultiplierSettings>();
+            storm::settings::addModule<storm::settings::modules::TransformationSettings>();
         }
 
     }

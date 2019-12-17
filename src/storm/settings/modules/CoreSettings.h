@@ -37,37 +37,6 @@ namespace storm {
                 CoreSettings();
 
                 /*!
-                 * Retrieves whether the counterexample option was set.
-                 *
-                 * @return True if the counterexample option was set.
-                 */
-                bool isCounterexampleSet() const;
-
-                /*!
-                 * Retrieves the name of the file to which the counterexample is to be written if the counterexample
-                 * option was set.
-                 *
-                 * @return The name of the file to which the counterexample is to be written.
-                 */
-                std::string getCounterexampleFilename() const;
-
-                /*!
-                 * Retrieves whether the dont-fix-deadlocks option was set.
-                 *
-                 * @return True if the dont-fix-deadlocks option was set.
-                 */
-                bool isDontFixDeadlocksSet() const;
-
-                /*!
-                 * Overrides the option to not fix deadlocks by setting it to the specified value. As soon as the
-                 * returned memento goes out of scope, the original value is restored.
-                 *
-                 * @param stateToSet The value that is to be set for the fix-deadlocks option.
-                 * @return The memento that will eventually restore the original value.
-                 */
-                std::unique_ptr<storm::settings::SettingMemento> overrideDontFixDeadlocksSet(bool stateToSet);
-
-                /*!
                  * Retrieves the selected equation solver.
                  *
                  * @return The selected convergence criterion.
@@ -166,10 +135,6 @@ namespace storm {
                 Engine engine;
 
                 // Define the string names of the options as constants.
-                static const std::string counterexampleOptionName;
-                static const std::string counterexampleOptionShortName;
-                static const std::string dontFixDeadlockOptionName;
-                static const std::string dontFixDeadlockOptionShortName;
                 static const std::string eqSolverOptionName;
                 static const std::string lpSolverOptionName;
                 static const std::string smtSolverOptionName;

@@ -94,6 +94,13 @@ namespace storm {
             std::vector<storm::prism::Update> const& getUpdates() const;
             
             /*!
+             * Retrieves a vector of all updates associated with this command.
+             *
+             * @return A vector of updates associated with this command.
+             */
+            std::vector<storm::prism::Update>& getUpdates();
+            
+            /*!
              * Retrieves the global index of the command, that is, a unique index over all modules.
              *
              * @return The global index of the command.

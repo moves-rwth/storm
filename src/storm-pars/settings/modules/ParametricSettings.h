@@ -42,7 +42,7 @@ namespace storm {
                  */
                 bool transformContinuousModel() const;
 
-                /*
+                /*!
                  * Retrieves whether instead of model checking, only the wellformedness constraints should be obtained.
                  */
                 bool onlyObtainConstraints() const;
@@ -63,7 +63,7 @@ namespace storm {
                  * Retrieves whether samples are to be computed exactly.
                  */
                 bool isSampleExactSet() const;
-                
+
                 const static std::string moduleName;
                 
             private:

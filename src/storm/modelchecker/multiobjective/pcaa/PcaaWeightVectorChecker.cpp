@@ -12,7 +12,7 @@ namespace storm {
         namespace multiobjective {
             
             template <typename ModelType>
-            PcaaWeightVectorChecker<ModelType>::PcaaWeightVectorChecker(std::vector<Objective<ValueType>> const& objectives) : objectives(objectives) {
+            PcaaWeightVectorChecker<ModelType>::PcaaWeightVectorChecker(std::vector<Objective<ValueType>> const& objectives) : objectives(objectives), weightedPrecision(storm::utility::zero<ValueType>()) {
                 // Intentionally left empty
             }
             
@@ -53,7 +53,7 @@ namespace storm {
 
             template <typename ModelType>
             template<typename VT, typename std::enable_if<std::is_same<ModelType, storm::models::sparse::Mdp<VT>>::value, int>::type>
-            std::unique_ptr<PcaaWeightVectorChecker<ModelType>>  WeightVectorCheckerFactory<ModelType>::create(SparseMultiObjectivePreprocessorResult<ModelType> const& preprocessorResult) {
+            std::unique_ptr<PcaaWeightVectorChecker<ModelType>>  WeightVectorCheckerFactory<ModelType>::create(preprocessing::SparseMultiObjectivePreprocessorResult<ModelType> const& preprocessorResult) {
                 if (preprocessorResult.containsOnlyTrivialObjectives()) {
                     return std::make_unique<StandardMdpPcaaWeightVectorChecker<ModelType>>(preprocessorResult);
                 } else {
@@ -64,7 +64,7 @@ namespace storm {
             
             template <typename ModelType>
             template<typename VT, typename std::enable_if<std::is_same<ModelType, storm::models::sparse::MarkovAutomaton<VT>>::value, int>::type>
-            std::unique_ptr<PcaaWeightVectorChecker<ModelType>>  WeightVectorCheckerFactory<ModelType>::create(SparseMultiObjectivePreprocessorResult<ModelType> const& preprocessorResult) {
+            std::unique_ptr<PcaaWeightVectorChecker<ModelType>>  WeightVectorCheckerFactory<ModelType>::create(preprocessing::SparseMultiObjectivePreprocessorResult<ModelType> const& preprocessorResult) {
                 return std::make_unique<StandardMaPcaaWeightVectorChecker<ModelType>>(preprocessorResult);
             }
             
@@ -78,10 +78,10 @@ namespace storm {
             template class WeightVectorCheckerFactory<storm::models::sparse::MarkovAutomaton<double>>;
             template class WeightVectorCheckerFactory<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
             
-            template std::unique_ptr<PcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>>  WeightVectorCheckerFactory<storm::models::sparse::Mdp<double>>::create(SparseMultiObjectivePreprocessorResult<storm::models::sparse::Mdp<double>> const& preprocessorResult);
-            template std::unique_ptr<PcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>>  WeightVectorCheckerFactory<storm::models::sparse::Mdp<storm::RationalNumber>>::create(SparseMultiObjectivePreprocessorResult<storm::models::sparse::Mdp<storm::RationalNumber>> const& preprocessorResult);
-            template std::unique_ptr<PcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>>  WeightVectorCheckerFactory<storm::models::sparse::MarkovAutomaton<double>>::create(SparseMultiObjectivePreprocessorResult<storm::models::sparse::MarkovAutomaton<double>> const& preprocessorResult);
-            template std::unique_ptr<PcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>>  WeightVectorCheckerFactory<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::create(SparseMultiObjectivePreprocessorResult<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> const& preprocessorResult);
+            template std::unique_ptr<PcaaWeightVectorChecker<storm::models::sparse::Mdp<double>>>  WeightVectorCheckerFactory<storm::models::sparse::Mdp<double>>::create(preprocessing::SparseMultiObjectivePreprocessorResult<storm::models::sparse::Mdp<double>> const& preprocessorResult);
+            template std::unique_ptr<PcaaWeightVectorChecker<storm::models::sparse::Mdp<storm::RationalNumber>>>  WeightVectorCheckerFactory<storm::models::sparse::Mdp<storm::RationalNumber>>::create(preprocessing::SparseMultiObjectivePreprocessorResult<storm::models::sparse::Mdp<storm::RationalNumber>> const& preprocessorResult);
+            template std::unique_ptr<PcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>>  WeightVectorCheckerFactory<storm::models::sparse::MarkovAutomaton<double>>::create(preprocessing::SparseMultiObjectivePreprocessorResult<storm::models::sparse::MarkovAutomaton<double>> const& preprocessorResult);
+            template std::unique_ptr<PcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>>  WeightVectorCheckerFactory<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::create(preprocessing::SparseMultiObjectivePreprocessorResult<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>> const& preprocessorResult);
             
 
         }

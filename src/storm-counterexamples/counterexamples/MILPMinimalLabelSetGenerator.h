@@ -2,9 +2,16 @@
 
 #include <chrono>
 
+#include "storm-counterexamples/counterexamples/GuaranteedLabelSet.h"
+#include "storm-counterexamples/counterexamples/HighLevelCounterexample.h"
+#include "storm-counterexamples/settings/modules/CounterexampleGeneratorSettings.h"
+
 #include "storm/models/sparse/Mdp.h"
 #include "storm/logic/Formulas.h"
 #include "storm/storage/prism/Program.h"
+#include "storm/storage/sparse/PrismChoiceOrigins.h"
+#include "storm/storage/sparse/JaniChoiceOrigins.h"
+#include "storm/storage/BoostTypes.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -13,23 +20,12 @@
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidStateException.h"
-
 #include "storm/solver/MinMaxLinearEquationSolver.h"
-
-#include "storm-counterexamples/counterexamples/HighLevelCounterexample.h"
-
-#include "storm/utility/graph.h"
-#include "storm/utility/counterexamples.h"
-#include "storm/utility/solver.h"
 #include "storm/solver/LpSolver.h"
-
-#include "storm/storage/sparse/PrismChoiceOrigins.h"
-#include "storm/storage/sparse/JaniChoiceOrigins.h"
-#include "storm/storage/BoostTypes.h"
-
+#include "storm/utility/graph.h"
+#include "storm/utility/solver.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
-#include "storm-counterexamples/settings/modules/CounterexampleGeneratorSettings.h"
 
 namespace storm {
     
@@ -167,7 +163,7 @@ namespace storm {
                 }
 
                 // Finally, determine the set of labels that are known to be taken.
-                result.knownLabels = storm::utility::counterexamples::getGuaranteedLabelSet(mdp, labelSets, psiStates, result.allRelevantLabels);
+                result.knownLabels = storm::counterexamples::getGuaranteedLabelSet(mdp, labelSets, psiStates, result.allRelevantLabels);
                 STORM_LOG_DEBUG("Found " << result.allRelevantLabels.size() << " relevant labels and " << result.knownLabels.size() << " known labels.");
 
                 return result;

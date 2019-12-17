@@ -182,7 +182,7 @@ namespace storm {
                             first = false;
                             stream << a;
                         }
-                        stream << ",  " << a;
+                        stream << ", " << a;
                     }
                 }
                 stream << "]";

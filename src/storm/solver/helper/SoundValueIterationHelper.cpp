@@ -54,12 +54,14 @@ namespace storm {
             
             template<typename ValueType>
             void SoundValueIterationHelper<ValueType>::setLowerBound(ValueType const& value) {
+                STORM_LOG_TRACE("Set lower bound to " << value << ".");
                 hasLowerBound = true;
                 lowerBound = value;
             }
             
             template<typename ValueType>
             void SoundValueIterationHelper<ValueType>::setUpperBound(ValueType const& value) {
+                STORM_LOG_TRACE("Set upper bound to " << value << ".");
                 hasUpperBound = true;
                 upperBound = value;
             }
@@ -223,6 +225,7 @@ namespace storm {
                                 ValueType newDecisionValue = (xTmp[i] - xBest) / deltaY;
                                 if (!hasDecisionValue || better<dir>(newDecisionValue, decisionValue)) {
                                     decisionValue = std::move(newDecisionValue);
+                                    STORM_LOG_TRACE("Update decision value to " << decisionValue);
                                     hasDecisionValue = true;
                                 }
                             }
@@ -347,6 +350,7 @@ namespace storm {
                         }
                     }
                 }
+                STORM_LOG_TRACE("Phase 1 converged: all y values are < 1.");
                 convergencePhase1 = false;
                 return true;
             }
@@ -415,6 +419,7 @@ namespace storm {
                 if (!decisionValueBlocks && hasDecisionValue && better<dir>(decisionValue, getPrimaryBound<dir>())) {
                     getPrimaryBound<dir>() = decisionValue;
                     decisionValueBlocks = true;
+                    STORM_LOG_TRACE("Decision value blocks primary bound to " << decisionValue << ".");
                 }
             }
             

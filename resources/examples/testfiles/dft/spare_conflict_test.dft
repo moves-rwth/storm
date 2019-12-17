@@ -1,0 +1,12 @@
+toplevel "A";
+"A" pand "SP1" "SP2";
+"SP1" wsp "I" "J";
+"SP2" wsp "J" "K";
+"DEP1" fdep "T1" "I";
+"DEP2" fdep "T2" "K";
+
+"I" lambda=0.5 dorm=0;
+"J" lambda=0.5 dorm=0;
+"K" lambda=0.5 dorm=0;
+"T1" lambda=0.5 dorm=0;
+"T2" lambda=0.5 dorm=0;

@@ -14,7 +14,7 @@
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/BuildSettings.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/macros.h"
@@ -82,7 +82,7 @@ namespace storm {
 
             uint_fast64_t row, col, lastRow = 0;
             double val;
-            bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::CoreSettings>().isDontFixDeadlocksSet();
+            bool dontFixDeadlocks = storm::settings::getModule<storm::settings::modules::BuildSettings>().isDontFixDeadlocksSet();
             bool hadDeadlocks = false;
 
             // Read all transitions from file. Note that we assume that the
@@ -133,7 +133,7 @@ namespace storm {
                             hadDeadlocks = true;
                             if (!dontFixDeadlocks) {
                                 resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::one<ValueType>());
-                                STORM_LOG_WARN("Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
+                                STORM_LOG_INFO("Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
                             } else {
                                 STORM_LOG_ERROR("Error while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions.");
                                 // Before throwing the appropriate exception we will give notice of all deadlock states.

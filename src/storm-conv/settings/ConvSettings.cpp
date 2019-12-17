@@ -4,6 +4,7 @@
 #include "storm-conv/settings/modules/ConversionInputSettings.h"
 #include "storm-conv/settings/modules/ConversionOutputSettings.h"
 #include "storm-conv/settings/modules/JaniExportSettings.h"
+#include "storm-conv/settings/modules/PrismExportSettings.h"
 
 #include "storm/settings/SettingsManager.h"
 
@@ -18,6 +19,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::ConversionInputSettings>();
             storm::settings::addModule<storm::settings::modules::ConversionOutputSettings>();
             storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
+            storm::settings::addModule<storm::settings::modules::PrismExportSettings>();
         }
     
     }

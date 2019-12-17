@@ -44,7 +44,18 @@ namespace storm {
 			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
 #endif
 		}
-        
+
+		std::string Z3SmtSolver::Z3ModelReference::toString() const {
+#ifdef STORM_HAVE_Z3
+			std::stringstream sstr;
+			sstr << model;
+			return sstr.str();
+#else
+			STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Z3 support.");
+#endif
+		}
+
+
 		Z3SmtSolver::Z3SmtSolver(storm::expressions::ExpressionManager& manager) : SmtSolver(manager)
 #ifdef STORM_HAVE_Z3
         , context(nullptr), solver(nullptr), expressionAdapter(nullptr), lastCheckAssumptions(false), lastResult(CheckResult::Unknown)

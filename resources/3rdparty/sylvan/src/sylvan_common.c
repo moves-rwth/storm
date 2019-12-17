@@ -276,7 +276,7 @@ static size_t table_min = 0, table_max = 0, cache_min = 0, cache_max = 0;
 static int
 is_power_of_two(size_t size)
 {
-    return __builtin_popcount(size) == 1 ? 1 : 0;
+    return (size != 0) && ((size & (size-1)) == 0);
 }
 
 void

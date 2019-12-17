@@ -49,8 +49,8 @@ namespace storm {
             ExpressionParser(storm::expressions::ExpressionManager const& manager, qi::symbols<char, uint_fast64_t> const& invalidIdentifiers_ = qi::symbols<char, uint_fast64_t>(), bool enableErrorHandling = true, bool allowBacktracking = false);
             ~ExpressionParser();
             
-            ExpressionParser(ExpressionParser const& other) = default;
-            ExpressionParser& operator=(ExpressionParser const& other) = default;
+            ExpressionParser(ExpressionParser const& other) = delete;
+            ExpressionParser& operator=(ExpressionParser const& other) = delete;
             
             /*!
              * Sets an identifier mapping that is used to determine valid variables in the expression. The mapped-to
@@ -83,7 +83,11 @@ namespace storm {
              */
             void setAcceptDoubleLiterals(bool flag);
 
-            storm::expressions::Expression parseFromString(std::string const& expressionString) const;
+            /*!
+             * Parses an expression from the given string.
+             * @param ignoreError If set, no exception is thrown upon a parser error. The returned expression will be uninitialized.
+             */
+            storm::expressions::Expression parseFromString(std::string const& expressionString, bool ignoreError = false) const;
 
         private:
             struct orOperatorStruct : qi::symbols<char, storm::expressions::OperatorType> {
