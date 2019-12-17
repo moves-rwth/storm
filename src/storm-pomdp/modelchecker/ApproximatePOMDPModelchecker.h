@@ -3,12 +3,15 @@
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/utility/logging.h"
 #include "storm-pomdp/storage/Belief.h"
+#include <boost/bimap.hpp>
 
 #include "storm/storage/jani/Property.h"
 
 namespace storm {
     namespace pomdp {
         namespace modelchecker {
+            typedef boost::bimap<uint64_t, uint64_t> bsmap_type;
+
             template<class ValueType>
             struct POMDPCheckResult {
                 ValueType overApproxValue;
@@ -73,7 +76,7 @@ namespace storm {
                  * @return
                  */
                 std::unique_ptr<RefinementComponents<ValueType>>
-                computeRefinementFirstStep(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
+                computeFirstRefinementStep(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                                            std::set<uint32_t> const &targetObservations, bool min, std::vector<uint64_t> &observationResolutionVector,
                                            bool computeRewards, double explorationThreshold, boost::optional<std::map<uint64_t, ValueType>> overApproximationMap = boost::none,
                                            boost::optional<std::map<uint64_t, ValueType>> underApproximationMap = boost::none);
