@@ -11,8 +11,24 @@ namespace storm {
         namespace modelchecker {
             template<class ValueType>
             struct POMDPCheckResult {
-                ValueType OverapproximationValue;
-                ValueType UnderapproximationValue;
+                ValueType overApproxValue;
+                ValueType underApproxValue;
+            };
+
+            /**
+             *  Struct containing information which is supposed to be persistent over multiple refinement steps
+             *
+             */
+            template<class ValueType, typename RewardModelType = models::sparse::StandardRewardModel<ValueType>>
+            struct RefinementComponents {
+                std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> overApproxModelPtr;
+                ValueType overApproxValue;
+                ValueType underApproxValue;
+                std::map<uint64_t, ValueType> &overApproxMap;
+                std::map<uint64_t, ValueType> &underApproxMap;
+                std::vector<storm::pomdp::Belief<ValueType>> &beliefList;
+                std::vector<bool> &beliefIsTarget;
+                std::map<uint64_t, uint64_t> &beliefStateMap;
             };
 
             template<class ValueType, typename RewardModelType = models::sparse::StandardRewardModel<ValueType>>
@@ -21,9 +37,8 @@ namespace storm {
                 explicit ApproximatePOMDPModelchecker();
 
                 std::unique_ptr<POMDPCheckResult<ValueType>>
-                refineReachabilityProbability(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                               std::set<uint32_t> const &targetObservations, bool min,
-                                               uint64_t startingResolution, uint64_t stepSize, uint64_t maxNrOfRefinements);
+                refineReachabilityProbability(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp, std::set<uint32_t> const &targetObservations, bool min,
+                                              uint64_t gridResolution, double explorationThreshold);
 
                 std::unique_ptr<POMDPCheckResult<ValueType>>
                 computeReachabilityProbabilityOTF(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
@@ -50,6 +65,24 @@ namespace storm {
                  * @param pomdp
                  * @param targetObservations
                  * @param min
+                 * @param observationResolutionVector
+                 * @param computeRewards
+                 * @param explorationThreshold
+                 * @param overApproximationMap
+                 * @param underApproximationMap
+                 * @return
+                 */
+                std::unique_ptr<RefinementComponents<ValueType>>
+                computeRefinementFirstStep(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
+                                           std::set<uint32_t> const &targetObservations, bool min, std::vector<uint64_t> &observationResolutionVector,
+                                           bool computeRewards, double explorationThreshold, boost::optional<std::map<uint64_t, ValueType>> overApproximationMap = boost::none,
+                                           boost::optional<std::map<uint64_t, ValueType>> underApproximationMap = boost::none);
+
+                /**
+                 *
+                 * @param pomdp
+                 * @param targetObservations
+                 * @param min
                  * @param gridResolution
                  * @param computeRewards
                  * @return
@@ -57,7 +90,9 @@ namespace storm {
                 std::unique_ptr<POMDPCheckResult<ValueType>>
                 computeReachabilityOTF(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                                        std::set<uint32_t> const &targetObservations, bool min,
-                                       uint64_t gridResolution, bool computeRewards, double explorationThreshold);
+                                       std::vector<uint64_t> &observationResolutionVector, bool computeRewards, double explorationThreshold,
+                                       boost::optional<std::map<uint64_t, ValueType>> overApproximationMap = boost::none,
+                                       boost::optional<std::map<uint64_t, ValueType>> underApproximationMap = boost::none);
 
                 /**
                  *

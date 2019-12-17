@@ -197,15 +197,15 @@ int main(const int argc, const char** argv) {
                     STORM_LOG_ASSERT(!targetObservationSet.empty(), "The set of target observations is empty!");
 
                     storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<double> checker = storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<double>();
-                    double overRes = storm::utility::one<double>();
-                    double underRes = storm::utility::zero<double>();
+                    auto overRes = storm::utility::one<double>();
+                    auto underRes = storm::utility::zero<double>();
                     std::unique_ptr<storm::pomdp::modelchecker::POMDPCheckResult<double>> result;
 
-                    //result = checker.refineReachabilityProbability(*pomdp, targetObservationSet,probFormula.getOptimalityType() == storm::OptimizationDirection::Minimize, pomdpSettings.getGridResolution(),1,10);
-                    result = checker.computeReachabilityProbabilityOTF(*pomdp, targetObservationSet, probFormula.getOptimalityType() == storm::OptimizationDirection::Minimize,
-                                                                       pomdpSettings.getGridResolution(), pomdpSettings.getExplorationThreshold());
-                    overRes = result->OverapproximationValue;
-                    underRes = result->UnderapproximationValue;
+                    result = checker.refineReachabilityProbability(*pomdp, targetObservationSet, probFormula.getOptimalityType() == storm::OptimizationDirection::Minimize,
+                                                                   pomdpSettings.getGridResolution(), pomdpSettings.getExplorationThreshold());
+                    //result = checker.computeReachabilityProbabilityOTF(*pomdp, targetObservationSet, probFormula.getOptimalityType() == storm::OptimizationDirection::Minimize, pomdpSettings.getGridResolution(), pomdpSettings.getExplorationThreshold());
+                    overRes = result->overApproxValue;
+                    underRes = result->underApproxValue;
                     if (overRes != underRes) {
                         STORM_PRINT("Overapproximation Result: " << overRes << std::endl)
                         STORM_PRINT("Underapproximation Result: " << underRes << std::endl)
@@ -264,15 +264,15 @@ int main(const int argc, const char** argv) {
                     STORM_LOG_ASSERT(!targetObservationSet.empty(), "The set of target observations is empty!");
 
                     storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<double> checker = storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<double>();
-                    double overRes = storm::utility::one<double>();
-                    double underRes = storm::utility::zero<double>();
+                    auto overRes = storm::utility::one<double>();
+                    auto underRes = storm::utility::zero<double>();
                     std::unique_ptr<storm::pomdp::modelchecker::POMDPCheckResult<double>> result;
                     result = checker.computeReachabilityReward(*pomdp, targetObservationSet,
                                                                rewFormula.getOptimalityType() ==
                                                                storm::OptimizationDirection::Minimize,
                                                                pomdpSettings.getGridResolution());
-                    overRes = result->OverapproximationValue;
-                    underRes = result->UnderapproximationValue;
+                    overRes = result->overApproxValue;
+                    underRes = result->underApproxValue;
                 }
 
             }

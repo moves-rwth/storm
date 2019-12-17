@@ -30,31 +30,12 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             std::unique_ptr<POMDPCheckResult<ValueType>>
             ApproximatePOMDPModelchecker<ValueType, RewardModelType>::refineReachabilityProbability(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                                                                                    std::set<uint32_t> const &targetObservations, bool min,
-                                                                                                    uint64_t startingResolution, uint64_t stepSize, uint64_t maxNrOfRefinements) {
-                uint64_t currentResolution = startingResolution;
-                uint64_t currentRefinement = 0;
-                std::unique_ptr<POMDPCheckResult<ValueType>> res = std::make_unique<POMDPCheckResult<ValueType>>(
-                        POMDPCheckResult<ValueType>{storm::utility::one<ValueType>(), storm::utility::zero<ValueType>()});
-                while (currentRefinement < maxNrOfRefinements && !cc.isEqual(storm::utility::zero<ValueType>(), res->OverapproximationValue - res->UnderapproximationValue)) {
-                    STORM_PRINT("--------------------------------------------------------------" << std::endl)
-                    STORM_PRINT("Refinement Step " << currentRefinement + 1 << " - Resolution " << currentResolution << std::endl)
-                    STORM_PRINT("--------------------------------------------------------------" << std::endl)
-                    res = computeReachabilityProbability(pomdp, targetObservations, min, currentResolution);
-                    currentResolution += stepSize;
-                    ++currentRefinement;
-                }
-                STORM_PRINT("Procedure took " << currentRefinement << " refinement steps" << std::endl)
-                return res;
-            }
-
-            template<typename ValueType, typename RewardModelType>
-            std::unique_ptr<POMDPCheckResult<ValueType>>
-            ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeReachabilityOTF(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                                                                             std::set<uint32_t> const &targetObservations, bool min, uint64_t gridResolution,
-                                                                                             bool computeRewards, double explorationThreshold) {
-                //TODO For the prototypical implementation, I put the refinement loop here. I'll change this later on
+                                                                                                    std::set<uint32_t> const &targetObservations, bool min, uint64_t gridResolution,
+                                                                                                    double explorationThreshold) {
+                std::srand(time(NULL));
+                // Compute easy upper and lower bounds
                 storm::utility::Stopwatch underlyingWatch(true);
+                // Compute the results on the underlying MDP as a basic overapproximation
                 storm::models::sparse::StateLabeling underlyingMdpLabeling(pomdp.getStateLabeling());
                 underlyingMdpLabeling.addLabel("goal");
                 std::vector<uint64_t> goalStates;
@@ -66,8 +47,7 @@ namespace storm {
                 storm::models::sparse::Mdp<ValueType, RewardModelType> underlyingMdp(pomdp.getTransitionMatrix(), underlyingMdpLabeling, pomdp.getRewardModels());
                 auto underlyingModel = std::static_pointer_cast<storm::models::sparse::Model<ValueType, RewardModelType>>(
                         std::make_shared<storm::models::sparse::Mdp<ValueType, RewardModelType>>(underlyingMdp));
-                std::string initPropString = computeRewards ? "R" : "P";
-                initPropString += min ? "min" : "max";
+                std::string initPropString = min ? "Pmin" : "Pmax";
                 initPropString += "=? [F \"goal\"]";
                 std::vector<storm::jani::Property> propVector = storm::api::parseProperties(initPropString);
                 std::shared_ptr<storm::logic::Formula const> underlyingProperty = storm::api::extractFormulasFromProperties(propVector).front();
@@ -76,11 +56,11 @@ namespace storm {
                 std::unique_ptr<storm::modelchecker::CheckResult> underlyingRes(storm::api::verifyWithSparseEngine<ValueType>(underlyingModel, storm::api::createTask<ValueType>(underlyingProperty, false)));
                 STORM_LOG_ASSERT(underlyingRes, "Result not exist.");
                 underlyingRes->filter(storm::modelchecker::ExplicitQualitativeCheckResult(storm::storage::BitVector(underlyingMdp.getNumberOfStates(), true)));
-                auto mdpResultMap = underlyingRes->asExplicitQuantitativeCheckResult<ValueType>().getValueMap();
+                auto overApproxMap = underlyingRes->asExplicitQuantitativeCheckResult<ValueType>().getValueMap();
                 underlyingWatch.stop();
 
                 storm::utility::Stopwatch positionalWatch(true);
-                // we define some positional scheduler for the POMDP as an experimental lower bound
+                // we define some positional scheduler for the POMDP as a basic lower bound
                 storm::storage::Scheduler<ValueType> pomdpScheduler(pomdp.getNumberOfStates());
                 for (uint32_t obs = 0; obs < pomdp.getNrObservations(); ++obs) {
                     auto obsStates = pomdp.getStatesWithObservation(obs);
@@ -97,20 +77,62 @@ namespace storm {
                         storm::api::verifyWithSparseEngine<ValueType>(underApproxModel, storm::api::createTask<ValueType>(underlyingProperty, false)));
                 STORM_LOG_ASSERT(underapproxRes, "Result not exist.");
                 underapproxRes->filter(storm::modelchecker::ExplicitQualitativeCheckResult(storm::storage::BitVector(underApproxModel->getNumberOfStates(), true)));
-                auto mdpUnderapproxResultMap = underapproxRes->asExplicitQuantitativeCheckResult<ValueType>().getValueMap();
+                auto underApproxMap = underapproxRes->asExplicitQuantitativeCheckResult<ValueType>().getValueMap();
                 positionalWatch.stop();
 
                 STORM_PRINT("Preprocessing Times: " << underlyingWatch << " / " << positionalWatch << std::endl)
 
+                // Initialize the resolution mapping. For now, we always give all beliefs with the same observation the same resolution.
+                // This can probably be improved (i.e. resolutions for single belief states)
+                STORM_PRINT("Initial Resolution: " << gridResolution << std::endl)
+                std::vector<uint64_t> observationResolutionVector(pomdp.getNrObservations(), gridResolution);
+                auto overRes = storm::utility::one<ValueType>();
+                auto underRes = storm::utility::zero<ValueType>();
+                uint64_t refinementCounter = 1;
+                std::unique_ptr<POMDPCheckResult<ValueType>> res = computeReachabilityOTF(pomdp, targetObservations, min, observationResolutionVector, false, explorationThreshold,
+                                                                                          overApproxMap, underApproxMap);
+                // TODO the actual refinement
+                return res;
+            }
+
+            template<typename ValueType, typename RewardModelType>
+            std::unique_ptr<POMDPCheckResult<ValueType>>
+            ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeReachabilityOTF(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
+                                                                                             std::set<uint32_t> const &targetObservations, bool min,
+                                                                                             std::vector<uint64_t> &observationResolutionVector,
+                                                                                             bool computeRewards, double explorationThreshold,
+                                                                                             boost::optional<std::map<uint64_t, ValueType>> overApproximationMap,
+                                                                                             boost::optional<std::map<uint64_t, ValueType>> underApproximationMap) {
                 STORM_PRINT("Use On-The-Fly Grid Generation" << std::endl)
+                auto result = computeRefinementFirstStep(pomdp, targetObservations, min, observationResolutionVector, computeRewards, explorationThreshold, overApproximationMap,
+                                                         underApproximationMap);
+                return std::make_unique<POMDPCheckResult<ValueType>>(POMDPCheckResult<ValueType>{result->overApproxValue, result->underApproxValue});
+            }
+
+
+            template<typename ValueType, typename RewardModelType>
+            std::unique_ptr<RefinementComponents<ValueType>>
+            ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeRefinementFirstStep(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
+                                                                                                 std::set<uint32_t> const &targetObservations, bool min,
+                                                                                                 std::vector<uint64_t> &observationResolutionVector,
+                                                                                                 bool computeRewards, double explorationThreshold,
+                                                                                                 boost::optional<std::map<uint64_t, ValueType>> overApproximationMap,
+                                                                                                 boost::optional<std::map<uint64_t, ValueType>> underApproximationMap) {
+                bool boundMapsSet = overApproximationMap && underApproximationMap;
+                std::map<uint64_t, ValueType> overMap;
+                std::map<uint64_t, ValueType> underMap;
+                if (boundMapsSet) {
+                    overMap = overApproximationMap.value();
+                    underMap = underApproximationMap.value();
+                }
+
                 std::vector<storm::pomdp::Belief<ValueType>> beliefList;
                 std::vector<bool> beliefIsTarget;
                 std::vector<storm::pomdp::Belief<ValueType>> beliefGrid;
-                std::map<uint64_t, ValueType> result;
                 //Use caching to avoid multiple computation of the subsimplices and lambdas
                 std::map<uint64_t, std::vector<std::vector<ValueType>>> subSimplexCache;
                 std::map<uint64_t, std::vector<ValueType>> lambdaCache;
-                std::map<uint64_t, std::vector<uint64_t>> chosenActions;
+                std::map<uint64_t, uint64_t> beliefStateMap;
 
                 std::deque<uint64_t> beliefsToBeExpanded;
 
@@ -128,10 +150,11 @@ namespace storm {
                 beliefList.push_back(initialBelief);
                 beliefIsTarget.push_back(targetObservations.find(initialBelief.observation) != targetObservations.end());
 
-                // These are the components to build the MDP from the grid TODO make a better stucture to allow for fast reverse lookups (state-->belief) as it is a bijective function (boost:bimap?)
-                std::map<uint64_t, uint64_t> beliefStateMap;
+                // These are the components to build the MDP from the grid TODO make a better structure to allow for fast reverse lookups (state-->belief) as it is a bijective function (boost:bimap?)
+
                 // Reserve states 0 and 1 as always sink/goal states
-                std::vector<std::vector<std::map<uint64_t, ValueType>>> mdpTransitions = {{{{0, storm::utility::one<ValueType>()}}},{{{1, storm::utility::one<ValueType>()}}}};
+                std::vector<std::vector<std::map<uint64_t, ValueType>>> mdpTransitions = {{{{0, storm::utility::one<ValueType>()}}},
+                                                                                          {{{1, storm::utility::one<ValueType>()}}}};
                 // Hint vector for the MDP modelchecker (initialize with constant sink/goal values)
                 std::vector<ValueType> hintVector = {storm::utility::zero<ValueType>(), storm::utility::one<ValueType>()};
                 std::vector<uint64_t> targetStates = {1};
@@ -145,7 +168,8 @@ namespace storm {
                 std::map<uint64_t, ValueType> weightedSumUnderMap;
 
                 // for the initial belief, add the triangulated initial states
-                std::pair<std::vector<std::vector<ValueType>>, std::vector<ValueType>> initTemp = computeSubSimplexAndLambdas(initialBelief.probabilities, gridResolution);
+                std::pair<std::vector<std::vector<ValueType>>, std::vector<ValueType>> initTemp = computeSubSimplexAndLambdas(initialBelief.probabilities,
+                                                                                                                              observationResolutionVector[initialBelief.observation]);
                 std::vector<std::vector<ValueType>> initSubSimplex = initTemp.first;
                 std::vector<ValueType> initLambdas = initTemp.second;
                 if(cacheSubsimplices){
@@ -161,15 +185,16 @@ namespace storm {
                         if (searchResult == uint64_t(-1) || (searchResult == 0 && !initInserted)) {
                             if (searchResult == 0) {
                                 // the initial belief is on the grid itself
-                                auto tempWeightedSumOver = storm::utility::zero<ValueType>();
-                                auto tempWeightedSumUnder = storm::utility::zero<ValueType>();
-                                for (uint64_t i = 0; i < initSubSimplex[j].size(); ++i) {
-                                    tempWeightedSumOver += initSubSimplex[j][i] * storm::utility::convertNumber<ValueType>(mdpResultMap[i]);
-                                    tempWeightedSumUnder += initSubSimplex[j][i] * storm::utility::convertNumber<ValueType>(mdpUnderapproxResultMap[i]);
+                                if (boundMapsSet) {
+                                    auto tempWeightedSumOver = storm::utility::zero<ValueType>();
+                                    auto tempWeightedSumUnder = storm::utility::zero<ValueType>();
+                                    for (uint64_t i = 0; i < initSubSimplex[j].size(); ++i) {
+                                        tempWeightedSumOver += initSubSimplex[j][i] * storm::utility::convertNumber<ValueType>(overMap[i]);
+                                        tempWeightedSumUnder += initSubSimplex[j][i] * storm::utility::convertNumber<ValueType>(underMap[i]);
+                                    }
+                                    weightedSumOverMap[initialBelief.id] = tempWeightedSumOver;
+                                    weightedSumUnderMap[initialBelief.id] = tempWeightedSumUnder;
                                 }
-                                weightedSumOverMap[initialBelief.id] = tempWeightedSumOver;
-                                weightedSumUnderMap[initialBelief.id] = tempWeightedSumUnder;
-
                                 initInserted = true;
                                 beliefGrid.push_back(initialBelief);
                                 beliefsToBeExpanded.push_back(0);
@@ -177,16 +202,17 @@ namespace storm {
                                                                                                                                     : storm::utility::zero<ValueType>());
                             } else {
                                 // if the triangulated belief was not found in the list, we place it in the grid and add it to the work list
+                                if (boundMapsSet) {
+                                    auto tempWeightedSumOver = storm::utility::zero<ValueType>();
+                                    auto tempWeightedSumUnder = storm::utility::zero<ValueType>();
+                                    for (uint64_t i = 0; i < initSubSimplex[j].size(); ++i) {
+                                        tempWeightedSumOver += initSubSimplex[j][i] * storm::utility::convertNumber<ValueType>(overMap[i]);
+                                        tempWeightedSumUnder += initSubSimplex[j][i] * storm::utility::convertNumber<ValueType>(underMap[i]);
+                                    }
 
-                                auto tempWeightedSumOver = storm::utility::zero<ValueType>();
-                                auto tempWeightedSumUnder = storm::utility::zero<ValueType>();
-                                for (uint64_t i = 0; i < initSubSimplex[j].size(); ++i) {
-                                    tempWeightedSumOver += initSubSimplex[j][i] * storm::utility::convertNumber<ValueType>(mdpResultMap[i]);
-                                    tempWeightedSumUnder += initSubSimplex[j][i] * storm::utility::convertNumber<ValueType>(mdpUnderapproxResultMap[i]);
+                                    weightedSumOverMap[nextId] = tempWeightedSumOver;
+                                    weightedSumUnderMap[nextId] = tempWeightedSumUnder;
                                 }
-
-                                weightedSumOverMap[nextId] = tempWeightedSumOver;
-                                weightedSumUnderMap[nextId] = tempWeightedSumUnder;
 
                                 storm::pomdp::Belief<ValueType> gridBelief = {nextId, initialBelief.observation, initSubSimplex[j]};
                                 beliefList.push_back(gridBelief);
@@ -225,16 +251,13 @@ namespace storm {
                     beliefsToBeExpanded.pop_front();
                     bool isTarget = beliefIsTarget[currId];
 
-                    if(cc.isLess(weightedSumOverMap[currId] - weightedSumUnderMap[currId], storm::utility::convertNumber<ValueType>(explorationThreshold))){
-                        result.emplace(std::make_pair(currId, computeRewards ? storm::utility::zero<ValueType>() : weightedSumOverMap[currId]));
-                        mdpTransitions.push_back({{{1, weightedSumOverMap[currId]},{0, storm::utility::one<ValueType>() - weightedSumOverMap[currId]}}});
+                    if (boundMapsSet && cc.isLess(weightedSumOverMap[currId] - weightedSumUnderMap[currId], storm::utility::convertNumber<ValueType>(explorationThreshold))) {
+                        mdpTransitions.push_back({{{1, weightedSumOverMap[currId]}, {0, storm::utility::one<ValueType>() - weightedSumOverMap[currId]}}});
                         continue;
                     }
 
                     if (isTarget) {
                         // Depending on whether we compute rewards, we select the right initial result
-                        result.emplace(std::make_pair(currId, computeRewards ? storm::utility::zero<ValueType>() : storm::utility::one<ValueType>()));
-
                         // MDP stuff
                         std::vector<std::map<uint64_t, ValueType>> transitionsInBelief;
                         targetStates.push_back(beliefStateMap[currId]);
@@ -243,8 +266,6 @@ namespace storm {
                         transitionsInBelief.push_back(transitionInActionBelief);
                         mdpTransitions.push_back(transitionsInBelief);
                     } else {
-                        result.emplace(std::make_pair(currId, storm::utility::zero<ValueType>()));
-
                         uint64_t representativeState = pomdp.getStatesWithObservation(beliefList[currId].observation).front();
                         uint64_t numChoices = pomdp.getNumberOfChoices(representativeState);
                         std::vector<std::map<uint32_t, ValueType>> observationProbabilitiesInAction(numChoices);
@@ -271,7 +292,8 @@ namespace storm {
                                     subSimplex = subSimplexCache[idNextBelief];
                                     lambdas = lambdaCache[idNextBelief];
                                 } else {
-                                    std::pair<std::vector<std::vector<ValueType>>, std::vector<ValueType>> temp = computeSubSimplexAndLambdas(beliefList[idNextBelief].probabilities, gridResolution);
+                                    std::pair<std::vector<std::vector<ValueType>>, std::vector<ValueType>> temp = computeSubSimplexAndLambdas(
+                                            beliefList[idNextBelief].probabilities, observationResolutionVector[beliefList[idNextBelief].observation]);
                                     subSimplex = temp.first;
                                     lambdas = temp.second;
                                     if(cacheSubsimplices){
@@ -287,25 +309,28 @@ namespace storm {
                                             storm::pomdp::Belief<ValueType> gridBelief = {nextId, observation, subSimplex[j]};
                                             beliefList.push_back(gridBelief);
                                             beliefGrid.push_back(gridBelief);
-                                            // compute overapproximate value using MDP result map
-                                            auto tempWeightedSumOver = storm::utility::zero<ValueType>();
-                                            auto tempWeightedSumUnder = storm::utility::zero<ValueType>();
-                                            for (uint64_t i = 0; i < subSimplex[j].size(); ++i) {
-                                                tempWeightedSumOver += subSimplex[j][i] * storm::utility::convertNumber<ValueType>(mdpResultMap[i]);
-                                                tempWeightedSumUnder += subSimplex[j][i] * storm::utility::convertNumber<ValueType>(mdpUnderapproxResultMap[i]);
-                                            }
                                             beliefIsTarget.push_back(targetObservations.find(observation) != targetObservations.end());
-
-                                            if (cc.isEqual(tempWeightedSumOver, tempWeightedSumUnder)) {
-                                                hintVector.push_back(tempWeightedSumOver);
+                                            // compute overapproximate value using MDP result map
+                                            if (boundMapsSet) {
+                                                auto tempWeightedSumOver = storm::utility::zero<ValueType>();
+                                                auto tempWeightedSumUnder = storm::utility::zero<ValueType>();
+                                                for (uint64_t i = 0; i < subSimplex[j].size(); ++i) {
+                                                    tempWeightedSumOver += subSimplex[j][i] * storm::utility::convertNumber<ValueType>(overMap[i]);
+                                                    tempWeightedSumUnder += subSimplex[j][i] * storm::utility::convertNumber<ValueType>(underMap[i]);
+                                                }
+                                                if (cc.isEqual(tempWeightedSumOver, tempWeightedSumUnder)) {
+                                                    hintVector.push_back(tempWeightedSumOver);
+                                                } else {
+                                                    hintVector.push_back(targetObservations.find(observation) != targetObservations.end() ? storm::utility::one<ValueType>()
+                                                                                                                                          : storm::utility::zero<ValueType>());
+                                                }
+                                                weightedSumOverMap[nextId] = tempWeightedSumOver;
+                                                weightedSumUnderMap[nextId] = tempWeightedSumUnder;
                                             } else {
-                                                hintVector.push_back(storm::utility::zero<ValueType>());
+                                                hintVector.push_back(targetObservations.find(observation) != targetObservations.end() ? storm::utility::one<ValueType>()
+                                                                                                                                      : storm::utility::zero<ValueType>());
                                             }
-
                                             beliefsToBeExpanded.push_back(nextId);
-                                            weightedSumOverMap[nextId] = tempWeightedSumOver;
-                                            weightedSumUnderMap[nextId] = tempWeightedSumUnder;
-
                                             beliefStateMap[nextId] = mdpStateId;
                                             transitionInActionBelief[mdpStateId] = iter->second * lambdas[j];
                                             ++nextId;
@@ -343,10 +368,7 @@ namespace storm {
                 }
                 expansionTimer.stop();
                 STORM_PRINT("Grid size: " << beliefGrid.size() << std::endl)
-                STORM_PRINT("#Believes in List: " << beliefList.size() << std::endl)
                 STORM_PRINT("Belief space expansion took " << expansionTimer << std::endl)
-
-                //auto overApprox = overApproximationValueIteration(pomdp, beliefList, beliefGrid, beliefIsTarget, observationProbabilities, nextBelieves, beliefActionRewards, subSimplexCache, lambdaCache,result, chosenActions, gridResolution, min, computeRewards);
 
                 storm::models::sparse::StateLabeling mdpLabeling(mdpTransitions.size());
                 mdpLabeling.addLabel("init");
@@ -376,9 +398,6 @@ namespace storm {
 
                 auto model = std::make_shared<storm::models::sparse::Mdp<ValueType, RewardModelType>>(overApproxMdp);
                 auto modelPtr = std::static_pointer_cast<storm::models::sparse::Model<ValueType, RewardModelType>>(model);
-                std::vector<std::string> parameterNames;
-                storm::api::exportSparseModelAsDrn(modelPtr, "rewardTest", parameterNames);
-
                 std::string propertyString = computeRewards ? "R" : "P";
                 propertyString += min ? "min" : "max";
                 propertyString += "=? [F \"target\"]";
@@ -394,24 +413,22 @@ namespace storm {
                 overApproxTimer.stop();
                 STORM_LOG_ASSERT(res, "Result not exist.");
                 res->filter(storm::modelchecker::ExplicitQualitativeCheckResult(storm::storage::BitVector(overApproxMdp.getNumberOfStates(), true)));
-                auto resultMap = res->asExplicitQuantitativeCheckResult<ValueType>().getValueMap();
-                auto overApprox = resultMap[beliefStateMap[initialBelief.id]];
-                /* storm::utility::Stopwatch underApproxTimer(true);
-                ValueType underApprox = computeUnderapproximationWithMDP(pomdp, beliefList, beliefIsTarget, targetObservations, observationProbabilities, nextBelieves,
-                                                                         result, chosenActions, gridResolution, initialBelief.id, min, computeRewards);
-                underApproxTimer.stop();*/
+                auto overApproxResultMap = res->asExplicitQuantitativeCheckResult<ValueType>().getValueMap();
+                auto overApprox = overApproxResultMap[beliefStateMap[initialBelief.id]];
 
                 STORM_PRINT("Time Overapproximation: " << overApproxTimer << std::endl)
-                auto underApprox = storm::utility::zero<ValueType>();
+                auto underApprox = weightedSumUnderMap[initialBelief.id];
                 STORM_PRINT("Over-Approximation Result: " << overApprox << std::endl);
                 STORM_PRINT("Under-Approximation Result: " << underApprox << std::endl);
 
-                std::map<uint64_t, ValueType> differences;
-                for(auto const &entry : weightedSumUnderMap){
-                    differences[beliefStateMap[entry.first]] = resultMap[beliefStateMap[entry.first]] - weightedSumUnderMap[entry.first];
+                // Transfer the underapproximation results from the belief id space to the MDP id space
+                std::map<uint64_t, ValueType> underApproxResultMap;
+                for (auto const &belief : beliefGrid) {
+                    underApproxResultMap[beliefStateMap[belief.id]] = weightedSumUnderMap[belief.id];
                 }
 
-                return std::make_unique<POMDPCheckResult<ValueType>>(POMDPCheckResult<ValueType>{overApprox, underApprox});
+                return std::make_unique<RefinementComponents<ValueType>>(
+                        RefinementComponents<ValueType>{modelPtr, overApprox, underApprox, overApproxResultMap, underApproxResultMap, beliefList, beliefIsTarget, beliefStateMap});
             }
 
             template<typename ValueType, typename RewardModelType>
@@ -536,7 +553,8 @@ namespace storm {
             ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeReachabilityRewardOTF(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                                                                                                    std::set<uint32_t> const &targetObservations, bool min,
                                                                                                    uint64_t gridResolution) {
-                return computeReachabilityOTF(pomdp, targetObservations, min, gridResolution, true, 0);
+                std::vector<uint64_t> observationResolutionVector(pomdp.getNrObservations(), gridResolution);
+                return computeReachabilityOTF(pomdp, targetObservations, min, observationResolutionVector, true, 0);
             }
 
             template<typename ValueType, typename RewardModelType>
@@ -544,7 +562,8 @@ namespace storm {
             ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeReachabilityProbabilityOTF(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                                                                                                         std::set<uint32_t> const &targetObservations, bool min,
                                                                                                         uint64_t gridResolution, double explorationThreshold) {
-                return computeReachabilityOTF(pomdp, targetObservations, min, gridResolution, false, explorationThreshold);
+                std::vector<uint64_t> observationResolutionVector(pomdp.getNrObservations(), gridResolution);
+                return computeReachabilityOTF(pomdp, targetObservations, min, observationResolutionVector, false, explorationThreshold);
             }
 
             template<typename ValueType, typename RewardModelType>
