@@ -82,7 +82,7 @@ All engines so far have the requirement that a representation of the model needs
 All other engines are not suited for models with an infinite state space. The approach of the abstraction-refinement engine is to start with a coarse over-approximation of the concrete model. This *abstract model* is then analyzed. Based on the result, one of two things happen: either the result carries over to the concrete model and and an answer can be returned or the abstraction needs to be refined. In the latter case, the abstraction is analyzed again and the loop is repeated until a conclusive answer can be given.
 
 {:.alert .alert-danger}
-This engine relies heavily on SMT solving (more concretely an enumeration of all satisfying assignments of a formula) and Craig interpolation. Therefore, this engine needs [MathSAT](http://mathsat.fbk.eu/){:target="_blank" .alert-link} and Storm has to be built with MathSAT support, which requires a [manual setup]({{ site.github.url }}/documentation/installation/manual-configuration.html#mathsat){:.alert-link}.
+This engine relies heavily on SMT solving (more concretely an enumeration of all satisfying assignments of a formula) and Craig interpolation. Therefore, this engine needs [MathSAT](http://mathsat.fbk.eu/){:target="_blank" .alert-link} and Storm has to be built with MathSAT support, which requires a [manual setup]({{ site.github.url }}/documentation/obtain-storm/manual-configuration.html#mathsat){:.alert-link}.
 
 **Select**: `--engine abs` or `-e abs`
 

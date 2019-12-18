@@ -10,7 +10,7 @@ categories: [Use Storm]
 
 ## Storm's executables
 
-Storm takes [many languages](languages.html) as input. For some of these formats, domain-specific information is available and domain-specific properties are of key importance. Others are generic and require more flexibility in terms of options. As a result, there are several binaries that are each dedicated to a specific portion of the input languages. The following table gives an overview of the available executables, the targets that need to be built when compiling [Storm from source]({{ site.github.url }}/documentation/installation/installation.html#build-step) and the documentation for each executable.
+Storm takes [many languages](languages.html) as input. For some of these formats, domain-specific information is available and domain-specific properties are of key importance. Others are generic and require more flexibility in terms of options. As a result, there are several binaries that are each dedicated to a specific portion of the input languages. The following table gives an overview of the available executables, the targets that need to be built when compiling [Storm from source]({{ site.github.url }}/documentation/obtain-storm/build.html#build-step) and the documentation for each executable.
 
 <table class="table table-striped table-hover">
   <thead>
@@ -56,7 +56,7 @@ Consequently, our guide on how to run Storm is structured accordingly. For every
 
 Many of Storm's executables have many options, only a fraction of which are covered in this guide. If you want to explore these options, invoke the executable with the `--help [hint]` option. If a hint is given, only those options are shown that match it.
 
-Before we get started, let us check whether everything is set up properly. In all command-line examples we assume that the executables are in your PATH and can therefore be invoked without prefixing them with their path. If you installed Storm via [Homebrew]({{ site.github.url }}/documentation/installation/installation.html#homebrew), this is automatically the case; if you built Storm yourself, you have to [manually add it to your PATH]({{ site.github.url }}/documentation/installation/installation.html#adding-storm-to-your-path-optional). Typing
+Before we get started, let us check whether everything is set up properly. In all command-line examples we assume that the executables are in your PATH and can therefore be invoked without prefixing them with their path. If you installed Storm via [Homebrew]({{ site.github.url }}/documentation/obtain-storm/homebrew.html), this is automatically the case; if you built Storm yourself, you have to [manually add it to your PATH]({{ site.github.url }}/documentation/obtain-storm/build.html#adding-storm-to-your-path-optional). Typing
 
 ```console
 $ storm

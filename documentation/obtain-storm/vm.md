@@ -12,7 +12,7 @@ categories: [Obtain Storm]
 We provide an outdated VM with pre-installed Storm 0.10 for historical reasons. The VM includes dependencies and other useful reference tools (like [PRISM](http://www.prismmodelchecker.org/){:target="_blank"} and [IMCA](https://github.com/buschko/imca){:target="_blank"} and the PRISM benchmark suite) on a Linux host system. You can download the virtual machine [here](https://rwth-aachen.sciebo.de/index.php/s/nthEAQL4o49zkYp){:target="_blank"}.
 
 {:.alert .alert-danger}
-Note that the provided virtual machine images is outdated. We recommend to use the [Docker container]({{ site.github.url }}/documentation/installation/installation.html#docker){:.alert-link} instead.
+Note that the provided virtual machine images is outdated. We recommend to use the [Docker container](docker.html){:.alert-link} instead.
 
 {:.alert .alert-info}
 The virtual machine is hosted at [sciebo](https://www.sciebo.de/en/){:target="_blank" .alert-link}, an academic cloud hoster.
