@@ -3,7 +3,7 @@ title: Running Storm
 layout: default
 documentation: true
 category_weight: 4
-categories: [Usage]
+categories: [Use Storm]
 ---
 
 {% include includes/toc.html %}

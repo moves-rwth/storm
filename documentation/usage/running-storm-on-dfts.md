@@ -3,7 +3,7 @@ title: Running Storm on DFTs
 layout: default
 documentation: true
 category_weight: 6
-categories: [Usage]
+categories: [Use Storm]
 ---
 
 {% include includes/toc.html %}
