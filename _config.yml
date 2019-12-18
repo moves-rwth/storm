@@ -53,7 +53,7 @@ verbose:  true
 defaults: []
 
 # Content
-category-list: [Installation, Usage, VM]
+category-list: [Obtain Storm, Usage]
 
 liquid:
   error_mode: warn

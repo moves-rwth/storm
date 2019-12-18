@@ -1,20 +1,23 @@
 ---
-title: VM
+title: Use Virtual Machine
 layout: default
 documentation: true
-categories: [VM]
+category_weight: 4
+categories: [Obtain Storm]
 ---
 
-We provide an outdated VM with pre-installed Storm 0.10 for historical reasons. The VM includes dependencies and other useful reference tools (like [PRISM](http://www.prismmodelchecker.org/){:target="_blank"} and [IMCA](https://github.com/buschko/imca){:target="_blank"} and the PRISM benchmark suite) on a Linux host system. You can download the latest version of the virtual machine [here](https://rwth-aachen.sciebo.de/index.php/s/nthEAQL4o49zkYp){:target="_blank"}.
+# Use a Virtual Machine
+
+## Storm 0.10 
+We provide an outdated VM with pre-installed Storm 0.10 for historical reasons. The VM includes dependencies and other useful reference tools (like [PRISM](http://www.prismmodelchecker.org/){:target="_blank"} and [IMCA](https://github.com/buschko/imca){:target="_blank"} and the PRISM benchmark suite) on a Linux host system. You can download the virtual machine [here](https://rwth-aachen.sciebo.de/index.php/s/nthEAQL4o49zkYp){:target="_blank"}.
 
 {:.alert .alert-danger}
 Note that the provided virtual machine images is outdated. We recommend to use the [Docker container]({{ site.github.url }}/documentation/installation/installation.html#docker){:.alert-link} instead.
 
 {:.alert .alert-info}
-The virtual machine is hosted at [sciebo](https://www.sciebo.de/en/){:target="_blank" .alert-link}, an academic cloud hoster. We are not able to trace the identity of downloaders, so reviewers can use this link without revealing their identity.
+The virtual machine is hosted at [sciebo](https://www.sciebo.de/en/){:target="_blank" .alert-link}, an academic cloud hoster.
 
-
-## Importing
+### Importing
 
 When you have downloaded the OVA image, you can import it into, for example, [VirtualBox](https://www.virtualbox.org){:target="_blank"}. Before the first run, you should review the hardware resources allocated to the VM. E.g., for VirtualBox open *Settings → System* and adjust the memory size and CPU count under *Motherboard* and *Processor*, respectively.
 
@@ -24,13 +27,13 @@ $ cd $STORM_DIR
 ```
 will take you to the folders containing Storm's binaries. For more information on how to run Storm, please read our [guide]({{ site.github.url }}/documentation/usage/running-storm.html).
 
-## Changelog
+### Changelog
 
 The VM may be updated periodically to include bug fixes, new versions, and so on. When the image was most recently updated and what changes were made to the VM can be taken from the following changelog.
 
 #### Update on March 21, 2017
 
-- added scripts to re-run all benchmarks from paper submission "A Storm is Coming: A Modern Probabilistic Model Checker"
+- added scripts to re-run all benchmarks from the paper "[A Storm is Coming: A Modern Probabilistic Model Checker](http://doi.org/10.1007/978-3-319-63390-9_31)"
 - added description to README how to use the scripts
 
 #### Update on Feb 1, 2017
