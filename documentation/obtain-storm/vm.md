@@ -56,7 +56,7 @@ make check
 ```
 
 {:.alert .alert-danger}
-If any problems occurr during this process (in particular when using a standard Ubuntu version) please [let us know](troubleshooting.html#file-an-issue).
+If any problems occurr during this process (in particular when using a standard Ubuntu version) please [let us know](troubleshooting.html#file-an-issue){:.alert-link}.
 
 ## Storm 1.4.1 (2019/12)
 A VM running Ubuntu 19.10 and Storm 1.4.1 can be found [here (coming soon)](http://www.stormchecker.org). The root password is *storm*.
