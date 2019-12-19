@@ -50,7 +50,8 @@ or download a zip archive with the latest stable release:
 $ wget https://github.com/moves-rwth/storm/archive/stable.zip
 $ unzip stable.zip
 ```
-
+or obtain one of the archived versions available at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1181896.svg)](https://doi.org/10.5281/zenodo.1181896)
+ 
 {:.alert .alert-info}
 If you want the most recent version of Storm rather than the stable version, you can replace the `-b stable` with `-b master` when cloning the repository or use the archive [https://github.com/moves-rwth/storm/archive/master.zip](https://github.com/moves-rwth/storm/archive/master.zip){:.alert-link}, respectively.
 

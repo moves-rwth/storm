@@ -84,7 +84,7 @@ $ sudo apt-get install libz3-dev libxerces-c-dev libeigen3-dev
 ```
 
 ### <i class="icon-ubuntu"></i> Ubuntu 16.10 "Yakkety Yak" and higher
-
+<!-- If these are changed, also change them in `vm.md` -->
 - Required:
 ``` console
 $ sudo apt-get install git cmake libboost-all-dev libcln-dev libgmp-dev libginac-dev automake libglpk-dev libhwloc-dev
