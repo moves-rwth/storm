@@ -3,7 +3,7 @@ title: Properties
 layout: default
 documentation: true
 category_weight: 3
-categories: [Use Storm]
+categories: [Background]
 ---
 
 {% include includes/toc.html %}

@@ -53,7 +53,7 @@ verbose:  true
 defaults: []
 
 # Content
-category-list: [Obtain Storm, Use Storm, Develop with Storm]
+category-list: [Obtain Storm, Background, Use Storm, Develop with Storm]
 
 liquid:
   error_mode: warn
