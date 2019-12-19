@@ -59,7 +59,7 @@ make check
 If any problems occurr during this process (in particular when using a standard Ubuntu version) please [let us know](troubleshooting.html#file-an-issue).
 
 ## Storm 1.4.1 (2019/12)
-A VM running Ubuntu 19.10 and Storm 1.4.1 can be found [here (coming soon)](http://stormchecker.org). The root password is *storm*.
+A VM running Ubuntu 19.10 and Storm 1.4.1 can be found [here (coming soon)](http://www.stormchecker.org). The root password is *storm*.
 
 Storm is located at `/home/storm/storm` and the binaries can be found in `/home/storm/storm/build/bin`. For your convenience, the path containing the binaries is added to the `PATH`, meaning that you can run the Storm binaries from any location in the terminal. Moreover, the benchmarks from the [Quantitative Verification Benchmark Set](http://qcomp.org/benchmarks/) are included such that you can run, for example,
 ```console

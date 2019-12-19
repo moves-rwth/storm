@@ -16,8 +16,8 @@ There are various tools whose functionality overlaps or is closely related with 
 - [IscasMC](http://iscasmc.ios.ac.cn/){:target="_blank"}
 - [Modest](http://www.modestchecker.net/){:target="_blank"}
 - [MRMC](http://mrmc-tool.org/){:target="_blank"}
-- [PARAM](https://depend.cs.uni-sb.de/tools/param/){:target="_blank"}
-- [PASS](https://depend.cs.uni-sb.de/tools/pass/){:target="_blank"}
+- [PARAM](https://depend.cs.uni-saarland.de/tools/param/){:target="_blank"}
+- [PASS](https://depend.cs.uni-saarland.de/tools/pass/){:target="_blank"}
 - [PAT](https://www.comp.nus.edu.sg/~pat/){:target="_blank"}
 - [PRISM](http://www.prismmodelchecker.org/){:target="_blank"}
 - [Uppaal SMC](http://people.cs.aau.dk/~adavid/smc/){:target="_blank"}
@@ -50,7 +50,7 @@ This website (including the website for [Stormpy](https://moves-rwth.github.io/s
 - [BootstrapCDN](https://www.bootstrapcdn.com/){:target="_blank"}
 - [DataTables](https://datatables.net){:target="_blank"}
 - [Flatly Theme](https://bootswatch.com/flatly/){:target="_blank"}
-- [Font awesome](https://fontawesome.io){:target="_blank"}
+- [Font awesome](https://fontawesome.com){:target="_blank"}
 - [Font mfizz](http://fizzed.com/oss/font-mfizz){:target="_blank"}
 - [Jekyll](https://jekyllrb.com){:target="_blank"}
 - [Sphinx Doc](http://www.sphinx-doc.org/en/stable/){:target="_blank"}

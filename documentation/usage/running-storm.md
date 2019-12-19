@@ -75,7 +75,7 @@ Of course your version may differ, but the general picture should be the same. I
 
 ## Running Storm on PRISM, JANI or explicit input
 
-These input languages can be treated by Storm's main executable `storm`. Storm supports various [properties]({{ site.github.url }}/documentation/background/properties.html). They can be passed to Storm by providing the `--prop <properties> <selection>` switch. The `<properties>` argument can be either a property as a string or the path to a file containing the properties. The `<selection>` argument is optional. If set, it can be used to indicate that only certain properties of the provided ones are to be checked. More specifically, this argument is either "all" or a comma-separated list of [names of properties](properties.html#naming-properties) and/or property indices. Note that named properties cannot be indexed by name, but need to be referred to by their name.
+These input languages can be treated by Storm's main executable `storm`. Storm supports various [properties]({{ site.github.url }}/documentation/background/properties.html). They can be passed to Storm by providing the `--prop <properties> <selection>` switch. The `<properties>` argument can be either a property as a string or the path to a file containing the properties. The `<selection>` argument is optional. If set, it can be used to indicate that only certain properties of the provided ones are to be checked. More specifically, this argument is either "all" or a comma-separated list of [names of properties]({{ site.github.url }}/documentation/background/properties.html#naming-properties) and/or property indices. Note that named properties cannot be indexed by name, but need to be referred to by their name.
 
 ### Running Storm on PRISM input
 
@@ -163,7 +163,7 @@ $ storm --prism leader4.nm --prop "P=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"
 
 {% include includes/show_output.html class="prism_async_leader_mdp_bounded_eventually_elected_error" path="prism/async_leader_bounded_eventually_elected_error.out" %}
 
-Likely, Storm will tell you that there is an error and that for nondeterministic models you need to specify whether minimal or maximal probabilities are to be computed. Why is that? Since the model is a [Markov Decision Process](models.html#discrete-time-markov-decision-processes-mdps), there are (potentially) nondeterministic choices in the model that need to be resolved. Storm doesn't know how to resolve them unless you tell it to either minimize or maximize (w.r.t. the probability of the objective) whenever there is a nondeterministic choice.
+Likely, Storm will tell you that there is an error and that for nondeterministic models you need to specify whether minimal or maximal probabilities are to be computed. Why is that? Since the model is a [Markov Decision Process]({{ site.github.url }}/documentation/background/models.html#discrete-time-markov-decision-processes-mdps), there are (potentially) nondeterministic choices in the model that need to be resolved. Storm doesn't know how to resolve them unless you tell it to either minimize or maximize (w.r.t. the probability of the objective) whenever there is a nondeterministic choice.
 
 ```console
 $ storm --prism leader4.nm --prop "Pmin=? [F<=40 (s1=4 | s2=4 | s3=4 | s4=4) ]"

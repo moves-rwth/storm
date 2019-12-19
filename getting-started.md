@@ -25,7 +25,7 @@ If your model indeed does, then the next thing is to have the model available in
 
 However, the input model is only "half" of the input you need to provide, the other "half" being the property you want to verify. Please consult our [guide to properties](documentation/background/properties.html) for details on how to specify them.
 
-An extensive list of example models and properties is available at the [Quantitative Verification Benchmark Set](https://qcomp.org/benchmarks).
+An extensive list of example models and properties is available at the [Quantitative Verification Benchmark Set](http://qcomp.org/benchmarks).
 
 
 ## 3. Run Storm
