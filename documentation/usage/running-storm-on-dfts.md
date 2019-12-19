@@ -2,7 +2,7 @@
 title: Running Storm on DFTs
 layout: default
 documentation: true
-category_weight: 6
+category_weight: 2
 categories: [Use Storm]
 ---
 

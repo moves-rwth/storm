@@ -2,7 +2,7 @@
 title: Running Storm
 layout: default
 documentation: true
-category_weight: 4
+category_weight: 1
 categories: [Use Storm]
 ---
 
