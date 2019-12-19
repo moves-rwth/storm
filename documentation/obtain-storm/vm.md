@@ -26,16 +26,20 @@ Since the VMs on this page might be outdated, we also provide the steps to creat
 {:.alert .alert-danger}
 Make sure to assign enough resources to the VM. Since the build process is quite memory-intensive, we recommend to set the memory limit to more than 4 GB.
 
-* Once the operating system inside the VM is ready, open a terminal and (assuming Ubuntu) execute the following set of commands to install Storm and its dependencies from source (you can just copy paste the whole thing).
+* Once the operating system inside the VM is ready, open a terminal and (assuming Ubuntu) execute the following command to install the dependencies of Storm:
 ```console
 sudo apt-get install git cmake libboost-all-dev libcln-dev libgmp-dev libginac-dev automake libglpk-dev libhwloc-dev libz3-dev libxerces-c-dev libeigen3-dev
+```
+
+* We are now ready to download and compile the source code by executing:
+``` console
 git clone https://github.com/moves-rwth/storm.git
 cd storm
 git checkout stable
 mkdir build
 cd build
 ../resources/examples/download_qvbs.sh qcomp
-cmake .. -DSTORM_QVBS_ROOT=$(realpath qcomp)
+cmake .. -DSTORM_QVBS_ROOT=$(realpath qcomp/benchmarks)
 make binaries
 echo "export PATH=\$PATH:$(realpath bin)" >> ~/.bashrc
 source ~/.bashrc
@@ -59,7 +63,8 @@ make check
 If any problems occurr during this process (in particular when using a standard Ubuntu version) please [let us know](troubleshooting.html#file-an-issue).
 
 ## Storm 1.4.1 (2019/12)
-A VM running Ubuntu 19.10 and Storm 1.4.1 can be found [here (coming soon)](http://stormchecker.org). The root password is *storm*.
+
+A VM running Ubuntu 19.10 and Storm 1.4.1 can be found at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3585795.svg)](https://doi.org/10.5281/zenodo.3585795). The root password is *storm*.
 
 Storm is located at `/home/storm/storm` and the binaries can be found in `/home/storm/storm/build/bin`. For your convenience, the path containing the binaries is added to the `PATH`, meaning that you can run the Storm binaries from any location in the terminal. Moreover, the benchmarks from the [Quantitative Verification Benchmark Set](http://qcomp.org/benchmarks/) are included such that you can run, for example,
 ```console
