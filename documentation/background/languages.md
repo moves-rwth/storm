@@ -3,14 +3,14 @@ title: Languages
 layout: default
 documentation: true
 category_weight: 2
-categories: [Use Storm]
+categories: [Background]
 ---
 
 {% include includes/toc.html %}
 
 ## PRISM
 
-The PRISM language can be used to specify [DTMCs, CTMCs and MDPs]({{ site.github.url }}/documentation/usage/models.html). Conceptually, it is a guarded command language using reactive modules. Storm supports (almost) the full PRISM language and extends it (in a straightforward way) to [Markov Automata]({{ site.github.url }}/documentation/usage/models.html#markov-automata-mas).
+The PRISM language can be used to specify [DTMCs, CTMCs and MDPs]({{ site.github.url }}/documentation/background/models.html). Conceptually, it is a guarded command language using reactive modules. Storm supports (almost) the full PRISM language and extends it (in a straightforward way) to [Markov Automata]({{ site.github.url }}/documentation/background/models.html#markov-automata-mas).
 
 For more information, please read the [PRISM manual](http://www.prismmodelchecker.org/manual/ThePRISMLanguage/Introduction){:target="_blank"}. A rich collection of examples is available at the [PRISM benchmark suite](http://www.prismmodelchecker.org/benchmarks/){:target="_blank"}.
 
@@ -88,4 +88,4 @@ This creates three distinct labels, called ```one```, ```two``` and ```goal```. 
 
 ## References
 
-[^1]: [Jifeng He, K. Seidel, A. McIver: *Probabilistic models for the guarded command language*, 1997](http://www.sciencedirect.com/science/article/pii/S0167642396000196){:target="_blank"}
+[^1]: [Jifeng He, K. Seidel, A. McIver: *Probabilistic models for the guarded command language*, 1997](https://www.sciencedirect.com/science/article/pii/S0167642396000196){:target="_blank"}

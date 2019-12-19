@@ -2,7 +2,7 @@
 title: Running Storm on DFTs
 layout: default
 documentation: true
-category_weight: 6
+category_weight: 2
 categories: [Use Storm]
 ---
 
@@ -11,7 +11,7 @@ categories: [Use Storm]
 
 ## Running Storm on DFTs
 
-The support for fault tree analysis is bundled in the `storm-dft` binary which should be created during the [build]({{ site.github.url }}/documentation/obtain-storm/build.html#building-storm-from-source). The input of Dynamic fault trees (DFTs) is given in the [Galileo format](languages.html#dfts).
+The support for fault tree analysis is bundled in the `storm-dft` binary which should be created during the [build]({{ site.github.url }}/documentation/obtain-storm/build.html#build-step). The input of Dynamic fault trees (DFTs) is given in the [Galileo format]({{ site.github.url }}/documentation/background/languages.html#dfts).
 
 #### Example 1 (Fault tree analysis of a motorbike)
 
