@@ -59,8 +59,8 @@ Storm tries to mitigate this problem by offering support for several major input
 While Storm tries to make it easy to include new functionality, a developer still has to somewhat understand its architecture to make appropriate additions or changes. However, suppose a user just wants to combine functionality that is already there to create new algorithms. Optimally, he/she could abstract from some of C++'s intricacies and focus on the actual algorithm. This process is supported by [Stormpy](https://moves-rwth.github.io/stormpy/){:target="_blank"}, which provides a python API for an ever growing part of Storm's code base. These bindings not only allow to utilize the high-performance routines of Storm in combination with the ease of python, but also make it possible to intertwine calls to Storm with calls to other useful libraries available in python, for example (but not limited to):
 
 - simple IO,
-- plotting (e.g. [matplotlib](http://matplotlib.org/){:target="_blank"}),
-- calling solvers such as [Z3](https://github.com/Z3Prover/z3){:target="_blank"} or [CPLEX](https://www-01.ibm.com/software/commerce/optimization/cplex-optimizer/){:target="_blank"},
+- plotting (e.g. [matplotlib](https://matplotlib.org/){:target="_blank"}),
+- calling solvers such as [Z3](https://github.com/Z3Prover/z3){:target="_blank"} or [CPLEX](https://www.ibm.com/analytics/cplex-optimizer){:target="_blank"},
 - libraries from the area of artificial intelligence and machine learning,
 - rational function manipulation (via [pycarl](https://github.com/moves-rwth/pycarl){:target="_blank"}).
 

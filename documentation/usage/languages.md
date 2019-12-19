@@ -88,4 +88,4 @@ This creates three distinct labels, called ```one```, ```two``` and ```goal```. 
 
 ## References
 
-[^1]: [Jifeng He, K. Seidel, A. McIver: *Probabilistic models for the guarded command language*, 1997](http://www.sciencedirect.com/science/article/pii/S0167642396000196){:target="_blank"}
+[^1]: [Jifeng He, K. Seidel, A. McIver: *Probabilistic models for the guarded command language*, 1997](https://www.sciencedirect.com/science/article/pii/S0167642396000196){:target="_blank"}

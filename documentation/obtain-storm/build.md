@@ -37,7 +37,7 @@ Note that in particular <i class="icon-ubuntu"></i>Ubuntu 16.04 "Xenial Xerus" i
 
 We are going to assume that all necessary [dependencies](dependencies.html) have been installed on the machine in default locations so they can be found by our build machinery.
  
-If you just want to run Storm and you want to run it natively on your machine, then we recommend installing it via a package manager or using the [Docker container](#docker). However, if you want or need to make changes to the Storm code base, you have to obtain the source code and [build it](#building-storm-from-source) yourself. While this is not always a breeze (depending on your operating system), we spent some effort on making this process as easy as possible.
+If you just want to run Storm and you want to run it natively on your machine, then we recommend installing it via a package manager or using the [Docker container](docker.html). However, if you want or need to make changes to the Storm code base, you have to obtain the source code and build it yourself. While this is not always a breeze (depending on your operating system), we spent some effort on making this process as easy as possible.
 
 ## Obtaining the Source Code
 
