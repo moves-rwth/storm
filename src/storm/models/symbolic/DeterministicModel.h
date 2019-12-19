@@ -81,7 +81,6 @@ namespace storm {
                                    std::map<std::string, storm::dd::Bdd<Type>> labelToBddMap = std::map<std::string, storm::dd::Bdd<Type>>(),
                                    std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>());
                 
-                virtual void reduceToStateBasedRewards() override;
             };
             
         } // namespace symbolic

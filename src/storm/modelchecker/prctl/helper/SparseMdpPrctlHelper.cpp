@@ -38,6 +38,7 @@
 #include "storm/transformer/EndComponentEliminator.h"
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
@@ -1251,8 +1252,10 @@ namespace storm {
                 
                 auto underlyingSolverEnvironment = env;
                 if (env.solver().isForceSoundness()) {
-                    // For sound computations, the error in the MECS plus the error in the remaining system should be less then the user defined precsion.
-                    underlyingSolverEnvironment.solver().minMax().setPrecision(env.solver().minMax().getPrecision() / storm::utility::convertNumber<storm::RationalNumber>(2));
+                    // For sound computations, the error in the MECS plus the error in the remaining system should be less than the user defined precsion.
+                    underlyingSolverEnvironment.solver().lra().setPrecision(env.solver().lra().getPrecision() / storm::utility::convertNumber<storm::RationalNumber>(2));
+                    underlyingSolverEnvironment.solver().minMax().setPrecision(env.solver().lra().getPrecision() / storm::utility::convertNumber<storm::RationalNumber>(2));
+                    underlyingSolverEnvironment.solver().minMax().setRelativeTerminationCriterion(env.solver().lra().getRelativeTerminationCriterion());
                 }
                 
                 for (uint_fast64_t currentMecIndex = 0; currentMecIndex < mecDecomposition.size(); ++currentMecIndex) {
@@ -1473,11 +1476,11 @@ namespace storm {
                 }
                 
                 // Solve MEC with the method specified in the settings
-                storm::solver::LraMethod method = env.solver().minMax().getLraMethod();
-                if (storm::NumberTraits<ValueType>::IsExact && env.solver().minMax().isLraMethodSetFromDefault() && method != storm::solver::LraMethod::LinearProgramming) {
+                storm::solver::LraMethod method = env.solver().lra().getNondetLraMethod();
+                if (storm::NumberTraits<ValueType>::IsExact && env.solver().lra().isNondetLraMethodSetFromDefault() && method != storm::solver::LraMethod::LinearProgramming) {
                     STORM_LOG_INFO("Selecting 'LP' as the solution technique for long-run properties to guarantee exact results. If you want to override this, please explicitly specify a different LRA method.");
                     method = storm::solver::LraMethod::LinearProgramming;
-                } else if (env.solver().isForceSoundness() && env.solver().minMax().isLraMethodSetFromDefault() && method != storm::solver::LraMethod::ValueIteration) {
+                } else if (env.solver().isForceSoundness() && env.solver().lra().isNondetLraMethodSetFromDefault() && method != storm::solver::LraMethod::ValueIteration) {
                     STORM_LOG_INFO("Selecting 'VI' as the solution technique for long-run properties to guarantee sound results. If you want to override this, please explicitly specify a different LRA method.");
                     method = storm::solver::LraMethod::ValueIteration;
                 }
@@ -1518,7 +1521,7 @@ namespace storm {
                 std::vector<ValueType> choiceRewards;
                 choiceRewards.reserve(mecChoices.getNumberOfSetBits());
                 uint64_t currRow = 0;
-                ValueType selfLoopProb = storm::utility::convertNumber<ValueType>(0.1); // todo try other values
+                ValueType selfLoopProb = storm::utility::convertNumber<ValueType>(env.solver().lra().getAperiodicFactor());
                 ValueType scalingFactor = storm::utility::one<ValueType>() - selfLoopProb;
                 for (auto const& mecState : mecStates) {
                     mecTransitionBuilder.newRowGroup(currRow);
@@ -1553,14 +1556,21 @@ namespace storm {
                 STORM_LOG_ASSERT(mecTransitions.isProbabilistic(), "The MEC-Matrix is not probabilistic.");
                 
                 // start the iterations
-                ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()) / scalingFactor;
-                bool relative = env.solver().minMax().getRelativeTerminationCriterion();
+                ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().lra().getPrecision()) / scalingFactor;
+                bool relative = env.solver().lra().getRelativeTerminationCriterion();
                 std::vector<ValueType> x(mecTransitions.getRowGroupCount(), storm::utility::zero<ValueType>());
                 std::vector<ValueType> xPrime = x;
                 
                 auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, mecTransitions);
                 ValueType maxDiff, minDiff;
-                while (true) {
+                
+                uint64_t iter = 0;
+                boost::optional<uint64_t> maxIter;
+                if (env.solver().lra().isMaximalIterationCountSet()) {
+                    maxIter = env.solver().lra().getMaximalIterationCount();
+                }
+                while (!maxIter.is_initialized() || iter < maxIter.get()) {
+                    ++iter;
                     // Compute the obtained rewards for the next step
                     multiplier->multiplyAndReduce(env, dir, x, &choiceRewards, x);
                     
@@ -1584,6 +1594,11 @@ namespace storm {
                     if ((maxDiff - minDiff) <= (relative ? (precision * minDiff) : precision)) {
                         break;
                     }
+                }
+                if (maxIter.is_initialized() && iter == maxIter.get()) {
+                    STORM_LOG_WARN("LRA computation did not converge within " << iter << " iterations.");
+                } else {
+                    STORM_LOG_TRACE("LRA computation converged after " << iter << " iterations.");
                 }
                 
                 if (scheduler) {

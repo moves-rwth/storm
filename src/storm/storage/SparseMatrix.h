@@ -820,6 +820,19 @@ namespace storm {
             std::pair<storm::storage::SparseMatrix<value_type>, std::vector<value_type>> getJacobiDecomposition() const;
             
             /*!
+             * Performs a pointwise multiplication of the entries in the given row of this matrix and the entries of
+             * the given row of the other matrix and returns the sum.
+             *
+             * @param otherMatrix A reference to the matrix with which to perform the pointwise multiplication. This
+             * matrix must be a submatrix of the current matrix in the sense that it may not have entries at indices
+             * where there is no entry in the current matrix.
+             * @return the sum of the product of the entries in the given row.
+             */
+            template<typename OtherValueType, typename ResultValueType = OtherValueType>
+            ResultValueType getPointwiseProductRowSum(storm::storage::SparseMatrix<OtherValueType> const& otherMatrix, index_type const& row) const;
+            
+            
+            /*!
              * Performs a pointwise matrix multiplication of the matrix with the given matrix and returns a vector
              * containing the sum of the entries in each row of the resulting matrix.
              *

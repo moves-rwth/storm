@@ -744,7 +744,14 @@ namespace storm {
 
                 STORM_LOG_THROW(regions.size() <= 1, storm::exceptions::InvalidArgumentException, "Monotonicity analysis only allowed on single region");
                 storm::analysis::MonotonicityChecker<ValueType> monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType>(model, formulas, regions, monSettings.isValidateAssumptionsSet(), monSettings.getNumberOfSamples(), monSettings.getMonotonicityAnalysisPrecision());
-                monotonicityChecker.checkMonotonicity();
+                if (ioSettings.isExportMonotonicitySet()) {
+                    std::ofstream outfile;
+                    utility::openFile(ioSettings.getExportMonotonicityFilename(), outfile);
+                    monotonicityChecker.checkMonotonicity(outfile);
+                    utility::closeFile(outfile);
+                } else {
+                    monotonicityChecker.checkMonotonicity(std::cout);
+                }
                 monotonicityWatch.stop();
                 STORM_PRINT(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl
                                     << std::endl);

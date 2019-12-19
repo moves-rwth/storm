@@ -77,6 +77,8 @@ namespace storm {
                      std::map<std::string, storm::dd::Bdd<Type>> labelToBddMap = std::map<std::string, storm::dd::Bdd<Type>>(),
                      std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>());
                 
+                virtual void reduceToStateBasedRewards() override;
+
                 template<typename NewValueType>
                 std::shared_ptr<Dtmc<Type, NewValueType>> toValueType() const;
 

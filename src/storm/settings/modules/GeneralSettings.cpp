@@ -35,7 +35,7 @@ namespace storm {
 
             GeneralSettings::GeneralSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, helpOptionName, false, "Shows available options, arguments and descriptions.").setShortName(helpOptionShortName)
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "'frequent' for frequently used options, 'all' for the complete help, or a regular expression to show help for all matching entities.").setDefaultValueString("frequent").build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "'frequent' for frequently used options, 'all' for the complete help, or a regular expression to show help for all matching entities.").setDefaultValueString("frequent").makeOptional().build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, versionOptionName, false, "Prints the version information.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, verboseOptionName, false, "Enables more verbose output.").setShortName(verboseOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, showProgressOptionName, false, "Sets when additional information (if available) about the progress is printed.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("delay", "The delay to wait (in seconds) between emitting information (0 means never print progress).").setDefaultValueUnsignedInteger(5).build()).build());

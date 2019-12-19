@@ -22,7 +22,7 @@
 
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
 #include "storm-parsers/parser/AutoParser.h"
-#include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 
 namespace {
     
@@ -34,8 +34,8 @@ namespace {
         typedef storm::models::sparse::Mdp<ValueType> ModelType;
         static storm::Environment createEnvironment() {
             storm::Environment env;
-            env.solver().minMax().setLraMethod(storm::solver::LraMethod::ValueIteration);
-            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+            env.solver().lra().setNondetLraMethod(storm::solver::LraMethod::ValueIteration);
+            env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
             return env;
         }
     };
@@ -47,8 +47,8 @@ namespace {
         typedef storm::models::sparse::Mdp<ValueType> ModelType;
         static storm::Environment createEnvironment() {
             storm::Environment env;
-            env.solver().minMax().setLraMethod(storm::solver::LraMethod::LinearProgramming);
-            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+            env.solver().lra().setNondetLraMethod(storm::solver::LraMethod::LinearProgramming);
+            env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
             return env;
         }
     };
@@ -60,7 +60,7 @@ namespace {
         typedef storm::models::sparse::Mdp<ValueType> ModelType;
         static storm::Environment createEnvironment() {
             storm::Environment env;
-            env.solver().minMax().setLraMethod(storm::solver::LraMethod::LinearProgramming);
+            env.solver().lra().setNondetLraMethod(storm::solver::LraMethod::LinearProgramming);
             return env;
         }
     };

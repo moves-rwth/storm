@@ -141,6 +141,8 @@ namespace storm {
                  */
                 storm::dd::Add<Type, ValueType> const& getExitRateVector() const;
                 
+                virtual void reduceToStateBasedRewards() override;
+
                 template<typename NewValueType>
                 std::shared_ptr<Ctmc<Type, NewValueType>> toValueType() const;
                 

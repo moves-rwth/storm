@@ -89,13 +89,12 @@ namespace storm {
             }
             
             /*!
-             * Sets whether the argument is to be optional.
+             * Make the argument optional.
              *
-             * @param isOptional A flag that indicates whether the argument is to be optional.
              * @return A reference to the argument builder.
              */
-            ArgumentBuilder& setIsOptional(bool isOptional) {
-                this->isOptional = isOptional;
+            ArgumentBuilder& makeOptional() {
+                this->isOptional = true;
                 STORM_LOG_THROW(this->hasDefaultValue, storm::exceptions::IllegalFunctionCallException, "Unable to make argument '" << this->name << "' optional without default value.");
                 return *this;
             }
