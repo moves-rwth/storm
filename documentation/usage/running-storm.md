@@ -177,7 +177,7 @@ Storm should tell you that this probability is 0.3828125. So what does it mean? 
 For [nondeterministic models (MDPs and MAs)]({{ site.github.url }}/documentation/background/models.html#models-with-nondeterminism){:.alert-link}, you will have to specify in which direction the nondeterminism is going to be resolved.
 
 
-### Multi-objective Model Checking of a Markov Automaton
+### Multi-objective Model Checking of MDPs and Markov Automata
 
 Storm supports multi-objective model checking: In nondeterministic models, different objectives might require different choices of actions in order to satisfy the property.
 This induces trade-offs between different strategies. Multi-objective model checking reveals such trade-offs by computing the Pareto curve. An example is given below.
@@ -208,6 +208,7 @@ Notice that for Markov automata, the algorithm necessarily can only approximate 
 ### Running Storm on JANI input
 
 [JANI]({{ site.github.url }}/documentation/background/languages.html#jani) models can be provided with the `--jani <path/to/jani-file>` option.
+In case you also want to read the properties from the jani file, the option `--janiproperty` needs to be added.
 
 #### Example 4 (Analysis of a rejection-sampling algorithm to approximate $$\pi$$)
 
@@ -235,6 +236,26 @@ $ storm --jani approx_pi_00100_010_full.jani --engine hybrid --prop "Rmax=? [F \
 {% include includes/show_output.html class="jani_approxpi_jani_output_expected_hits" path="jani/approxpi_expected_hits.out" %}
 
 Plugging this value in our formula yields $$\pi \approx 4 \frac{hits}{100} = 4 \frac{72.60088512}{100} \approx 2.90404$$. Of course, this is a crude approximation, but it can be refined by adjusting the size of the circle and the number of samples (see the other instances of this model in the [JANI models repository](https://github.com/ahartmanns/jani-models/tree/master/ApproxPi/NaiveRejectionSampling){:target="_blank"}).
+
+### Running Storm on Benchmarks from the Quantitative Verification Benchmark Set
+
+To run Storm on a benchmark from the [Quantitative Verification Benchmark Set (QVBS)](http://qcomp.org/benchmarks){:target="_blank"} (say, for example, the model [jobs](http://qcomp.org/benchmarks/index.html#jobs){:target="_blank"}, type:
+
+```console
+$ storm --qvbsroot QCOMP_DIR/benchmarks --qvbs jobs
+```
+{% include includes/show_output.html class="qvbs_jobs" path="qvbs/jobs.out" %}
+
+Here, we assume that the [QComp git repository](https://github.com/ahartmanns/qcomp){:target="_blank"} has been cloned into the directory `QCOMP_DIR`. If you built Storm from [source]({ site.github.url }}/documentation/obtaion-storm/build.html), you can also set the [cmake option]({{ site.github.url }}/documentation/obtain-storm/manual-configuration) `-DSTORM_QVBS_ROOT=QCOMP_DIR/benchmarks` which allows you to omit the `--qvbsroot QCOMP_DIR/benchmarks` command line option. Make sure to replace `QCOMP_DIR` by the actual location of the QComp repository.
+
+The above command checks all available properties for the first instance of the model [jobs](http://qcomp/org/benchmarks/index.html#jobs){:target="_blank"}.
+The model checking call is equivalent to invoking Storm on the respective JANI file.
+The output also indicates the other available instances and the available properties. You can append an instance index and a comma seperated list of property names to the command above:
+
+```console
+$ storm --qvbsroot QCOMP_DIR/benchmarks --qvbs jobs 2 completiontime,avgtime
+```
+{% include includes/show_output.html class="qvbs_jobs_1_completiontime_avgtime" path="qvbs/jobs_1_completiontime_avgtime.out" %}
 
 ### Running Storm on explicit input
 

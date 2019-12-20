@@ -1,0 +1,65 @@
+Storm 1.4.1 (dev)
+
+Command line arguments: --qvbsroot QCOMP_DIR/benchmarks --qvbs jobs
+Current working directory: ~
+
+--------------------------------------------------------------
+QVBS ma-Benchmark: Stochastic Job Scheduling (jobs) v1
+3 instances:
+	*0	jobs.5-2.jani 	 	(117 states)
+	 1	jobs.10-3.jani 	 	(16439 states)
+	 2	jobs.15-3.jani 	 	(1896568 states)
+3 properties:
+	*completiontime 	(exp-time)
+	*avgtime 	(exp-reward)
+	*prhalfdone 	(prob-reach-time-bounded)
+--------------------------------------------------------------
+Time for model input parsing: 0.004s.
+
+Time for model construction: 0.031s.
+
+-------------------------------------------------------------- 
+Model type: 	Markov Automaton (sparse)
+States: 	117
+Transitions: 	251
+Choices: 	171
+Markovian St.: 	86
+Max. Rate.: 	6
+Reward Models:  avg_waiting_time
+State Labels: 	4 labels
+   * init -> 1 item(s)
+   * half_of_jobs_finished -> 20 item(s)
+   * deadlock -> 1 item(s)
+   * all_jobs_finished -> 1 item(s)
+Choice Labels: 	none
+-------------------------------------------------------------- 
+
+Time for model preprocessing: 0.000s.
+
+-------------------------------------------------------------- 
+Model type: 	Markov Automaton (sparse)
+States: 	117
+Transitions: 	251
+Choices: 	171
+Markovian St.: 	86
+Max. Rate.: 	6
+Reward Models:  avg_waiting_time
+State Labels: 	4 labels
+   * init -> 1 item(s)
+   * half_of_jobs_finished -> 20 item(s)
+   * deadlock -> 1 item(s)
+   * all_jobs_finished -> 1 item(s)
+Choice Labels: 	none
+-------------------------------------------------------------- 
+
+Model checking property "completiontime": T[exp]min=? [F "all_jobs_finished"] ...
+Result (for initial states): 1.6
+Time for model checking: 0.000s.
+
+Model checking property "avgtime": R[exp]{"avg_waiting_time"}max=? [F "all_jobs_finished"] ...
+Result (for initial states): 0.9
+Time for model checking: 0.000s.
+
+Model checking property "prhalfdone": Pmax=? [true U<=(5 / 8) "half_of_jobs_finished"] ...
+Result (for initial states): 0.6099104835
+Time for model checking: 0.000s.

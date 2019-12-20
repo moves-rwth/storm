@@ -1,0 +1,59 @@
+Storm 1.4.1 (dev)
+
+Command line arguments: --qvbsroot QCOMP_DIR/benchmarks --qvbs jobs 1 'completiontime,avgtime'
+Current working directory: ~
+
+--------------------------------------------------------------
+QVBS ma-Benchmark: Stochastic Job Scheduling (jobs) v1
+3 instances:
+	 0	jobs.5-2.jani 	 	(117 states)
+	*1	jobs.10-3.jani 	 	(16439 states)
+	 2	jobs.15-3.jani 	 	(1896568 states)
+3 properties:
+	*completiontime 	(exp-time)
+	*avgtime 	(exp-reward)
+	 prhalfdone 	(prob-reach-time-bounded)
+--------------------------------------------------------------
+Time for model input parsing: 0.038s.
+
+Time for model construction: 0.735s.
+
+-------------------------------------------------------------- 
+Model type: 	Markov Automaton (sparse)
+States: 	16439
+Transitions: 	61596
+Choices: 	30831
+Markovian St.: 	15416
+Max. Rate.: 	9
+Reward Models:  avg_waiting_time
+State Labels: 	3 labels
+   * init -> 1 item(s)
+   * deadlock -> 1 item(s)
+   * all_jobs_finished -> 1 item(s)
+Choice Labels: 	none
+-------------------------------------------------------------- 
+
+Time for model preprocessing: 0.002s.
+
+-------------------------------------------------------------- 
+Model type: 	Markov Automaton (sparse)
+States: 	16439
+Transitions: 	61596
+Choices: 	30831
+Markovian St.: 	15416
+Max. Rate.: 	9
+Reward Models:  avg_waiting_time
+State Labels: 	3 labels
+   * init -> 1 item(s)
+   * deadlock -> 1 item(s)
+   * all_jobs_finished -> 1 item(s)
+Choice Labels: 	none
+-------------------------------------------------------------- 
+
+Model checking property "completiontime": T[exp]min=? [F "all_jobs_finished"] ...
+Result (for initial states): 2.45620076
+Time for model checking: 0.018s.
+
+Model checking property "avgtime": R[exp]{"avg_waiting_time"}max=? [F "all_jobs_finished"] ...
+Result (for initial states): 1.285765668
+Time for model checking: 0.011s.
