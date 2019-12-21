@@ -1,4 +1,5 @@
 #include <vector>
+#include <sstream>
 #include "storm/storage/expressions/Expressions.h"
 #include "storm/solver/SmtSolver.h"
 #include "storm/models/sparse/Pomdp.h"
@@ -22,10 +23,28 @@ namespace pomdp {
         }
 
         bool isExportSATSet() const {
-            return exportSATcalls == "";
+            return exportSATcalls != "";
         }
+
+        void setDebugLevel(uint64_t level = 1) {
+            debugLevel = level;
+        }
+
+        bool computeInfoOutput() const {
+            return debugLevel > 0;
+        }
+
+        bool computeDebugOutput() const {
+            return debugLevel > 1;
+        }
+
+        bool computeTraceOutput() const {
+            return debugLevel > 2;
+        }
+
     private:
         std::string exportSATcalls = "";
+        uint64_t debugLevel = 0;
 
     };
 
@@ -47,18 +66,19 @@ namespace pomdp {
         void printForObservations(storm::storage::BitVector const& observations, storm::storage::BitVector const& observationsAfterSwitch) const {
             for (uint64_t obs = 0; obs < observations.size(); ++obs) {
                 if (observations.get(obs)) {
-                    std::cout << "observation: " << obs << std::endl;
-                    std::cout << "actions:";
+                    STORM_LOG_INFO("For observation: " << obs);
+                    std::stringstream ss;
+                    ss << "actions:";
                     for (auto act : actions[obs]) {
-                        std::cout << " " << act;
+                        ss << " " << act;
                     }
                     if (switchObservations.get(obs)) {
-                        std::cout << " and switch.";
+                       ss << " and switch.";
                     }
-                    std::cout << std::endl;
+                    STORM_LOG_INFO(ss.str());
                 }
                 if (observationsAfterSwitch.get(obs)) {
-                    std::cout << "scheduler ref: " << schedulerRef[obs] << std::endl;
+                    STORM_LOG_INFO("scheduler ref: " << schedulerRef[obs]);
                 }
 
             }
@@ -74,7 +94,8 @@ namespace pomdp {
                                          std::set<uint32_t> const& targetObservationSet,
                                          storm::storage::BitVector const& targetStates,
                                          storm::storage::BitVector const& surelyReachSinkStates,
-                                         std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory);
+                                         std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory,
+                                         MemlessSearchOptions const& options);
 
         void analyzeForInitialStates(uint64_t k) {
             analyze(k, pomdp.getInitialStates(), pomdp.getInitialStates());
@@ -94,6 +115,7 @@ namespace pomdp {
         storm::expressions::Expression const& getDoneActionExpression(uint64_t obs) const;
 
         void printScheduler(std::vector<InternalObservationScheduler> const& );
+        void printCoveredStates(storm::storage::BitVector const& remaining) const;
 
         void initialize(uint64_t k);
 
@@ -125,6 +147,8 @@ namespace pomdp {
         std::vector<InternalObservationScheduler> finalSchedulers;
         std::vector<std::vector<uint64_t>> schedulerForObs;
         WinningRegion winningRegion;
+
+        MemlessSearchOptions options;
 
 
 

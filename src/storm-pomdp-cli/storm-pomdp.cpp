@@ -305,12 +305,29 @@ int main(const int argc, const char** argv) {
 
                     storm::pomdp::MemlessSearchOptions options;
 
+                    uint64_t loglevel = 0;
+                    // TODO a big ugly, but we have our own loglevels.
+                    if(storm::utility::getLogLevel() == l3pp::LogLevel::INFO) {
+                        loglevel = 1;
+                    }
+                    else if(storm::utility::getLogLevel() == l3pp::LogLevel::DEBUG) {
+                        loglevel = 2;
+                    }
+                    else if(storm::utility::getLogLevel() == l3pp::LogLevel::TRACE) {
+                        loglevel = 3;
+                    }
+                    options.setDebugLevel(loglevel);
+
+                    if (pomdpQualSettings.isExportSATCallsSet()) {
+                        options.setExportSATCalls(pomdpQualSettings.getExportSATCallsPath());
+                    }
+
 
                     if (pomdpSettings.getMemlessSearchMethod() == "ccd16memless") {
                         storm::pomdp::QualitativeStrategySearchNaive<double> memlessSearch(*pomdp, targetObservationSet, targetStates, badStates, smtSolverFactory);
                         memlessSearch.findNewStrategyForSomeState(lookahead);
                     } else if (pomdpSettings.getMemlessSearchMethod() == "iterative") {
-                        storm::pomdp::MemlessStrategySearchQualitative<double> memlessSearch(*pomdp, targetObservationSet, targetStates, badStates, smtSolverFactory);
+                        storm::pomdp::MemlessStrategySearchQualitative<double> memlessSearch(*pomdp, targetObservationSet, targetStates, badStates, smtSolverFactory, options);
                         memlessSearch.findNewStrategyForSomeState(lookahead);
                     } else {
                         STORM_LOG_ERROR("This method is not implemented.");
