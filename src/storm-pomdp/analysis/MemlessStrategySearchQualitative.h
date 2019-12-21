@@ -5,6 +5,8 @@
 #include "storm/utility/solver.h"
 #include "storm/exceptions/UnexpectedException.h"
 
+#include "storm-pomdp/analysis/WinningRegion.h"
+
 namespace storm {
 namespace pomdp {
 
@@ -67,25 +69,12 @@ namespace pomdp {
     class MemlessStrategySearchQualitative {
     // Implements an extension to the Chatterjee, Chmelik, Davies (AAAI-16) paper.
 
-
     public:
         MemlessStrategySearchQualitative(storm::models::sparse::Pomdp<ValueType> const& pomdp,
                                          std::set<uint32_t> const& targetObservationSet,
                                          storm::storage::BitVector const& targetStates,
                                          storm::storage::BitVector const& surelyReachSinkStates,
-                                         std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory) :
-                pomdp(pomdp),
-                targetStates(targetStates),
-                surelyReachSinkStates(surelyReachSinkStates),
-                targetObservations(targetObservationSet) {
-            this->expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
-            smtSolver = smtSolverFactory->create(*expressionManager);
-
-        }
-
-        void setSurelyReachSinkStates(storm::storage::BitVector const& surelyReachSink) {
-            surelyReachSinkStates = surelyReachSink;
-        }
+                                         std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory);
 
         void analyzeForInitialStates(uint64_t k) {
             analyze(k, pomdp.getInitialStates(), pomdp.getInitialStates());
@@ -96,8 +85,6 @@ namespace pomdp {
             std::cout << targetStates << std::endl;
             std::cout << (~surelyReachSinkStates & ~targetStates) << std::endl;
             analyze(k, ~surelyReachSinkStates & ~targetStates);
-
-
         }
 
         bool analyze(uint64_t k, storm::storage::BitVector const& oneOfTheseStates, storm::storage::BitVector const& allOfTheseStates = storm::storage::BitVector());
@@ -137,6 +124,7 @@ namespace pomdp {
 
         std::vector<InternalObservationScheduler> finalSchedulers;
         std::vector<std::vector<uint64_t>> schedulerForObs;
+        WinningRegion winningRegion;
 
 
 

@@ -5,6 +5,35 @@ namespace storm {
     namespace pomdp {
 
         template <typename ValueType>
+        MemlessStrategySearchQualitative<ValueType>::MemlessStrategySearchQualitative(storm::models::sparse::Pomdp<ValueType> const& pomdp,
+            std::set<uint32_t> const& targetObservationSet,
+                    storm::storage::BitVector const& targetStates,
+            storm::storage::BitVector const& surelyReachSinkStates,
+                    std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory) :
+            pomdp(pomdp),
+            targetStates(targetStates),
+            surelyReachSinkStates(surelyReachSinkStates),
+            targetObservations(targetObservationSet)
+        {
+            this->expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
+            smtSolver = smtSolverFactory->create(*expressionManager);
+            // Initialize states per observation.
+            for (uint64_t obs = 0; obs < pomdp.getNrObservations(); ++obs) {
+                statesPerObservation.push_back(std::vector<uint64_t>()); // Consider using bitvectors instead.
+            }
+            uint64_t state = 0;
+            for (auto obs : pomdp.getObservations()) {
+                statesPerObservation.at(obs).push_back(state++);
+            }
+            // Initialize winning region
+            std::vector<uint64_t> nrStatesPerObservation;
+            for (auto const &states : statesPerObservation) {
+                nrStatesPerObservation.push_back(states.size());
+            }
+            winningRegion = WinningRegion(nrStatesPerObservation);
+        }
+
+        template <typename ValueType>
         void MemlessStrategySearchQualitative<ValueType>::initialize(uint64_t k) {
             if (maxK == std::numeric_limits<uint64_t>::max()) {
                 // not initialized at all.
@@ -12,14 +41,13 @@ namespace storm {
                 for(uint64_t obs = 0; obs < pomdp.getNrObservations(); ++obs) {
                     actionSelectionVars.push_back(std::vector<storm::expressions::Variable>());
                     actionSelectionVarExpressions.push_back(std::vector<storm::expressions::Expression>());
-                    statesPerObservation.push_back(std::vector<uint64_t>()); // Consider using bitvectors instead.
                 }
 
                 // Fill the states-per-observation mapping,
                 // declare the reachability variables,
                 // declare the path variables.
                 uint64_t stateId = 0;
-                for(auto obs : pomdp.getObservations()) {
+                for(uint64_t stateId = 0; stateId < pomdp.getNumberOfStates(); ++stateId) {
                     pathVars.push_back(std::vector<storm::expressions::Expression>());
                     for (uint64_t i = 0; i < k; ++i) {
                         pathVars.back().push_back(expressionManager->declareBooleanVariable("P-"+std::to_string(stateId)+"-"+std::to_string(i)).getExpression());
@@ -28,7 +56,6 @@ namespace storm {
                     reachVarExpressions.push_back(reachVars.back().getExpression());
                     continuationVars.push_back(expressionManager->declareBooleanVariable("D-" + std::to_string(stateId)));
                     continuationVarExpressions.push_back(continuationVars.back().getExpression());
-                    statesPerObservation.at(obs).push_back(stateId++);
                 }
                 assert(pathVars.size() == pomdp.getNumberOfStates());
                 assert(reachVars.size() == pomdp.getNumberOfStates());
@@ -115,14 +142,6 @@ namespace storm {
 
                     for (uint64_t action = 0; action < pomdp.getNumberOfChoices(state); ++action) {
                         std::vector<storm::expressions::Expression> subexprreach;
-
-//                        subexprreach.push_back(!reachVarExpressions.at(state));
-//                        subexprreach.push_back(!actionSelectionVarExpressions.at(pomdp.getObservation(state)).at(action));
-//                        subexprreach.push_back(!switchVarExpressions[pomdp.getObservation(state)]);
-//                        for (auto const &entries : pomdp.getTransitionMatrix().getRow(rowindex)) {
-//                            subexprreach.push_back(reachVarExpressions.at(entries.getColumn()));
-//                        }
-//                        smtSolver->add(storm::expressions::disjunction(subexprreach));
                         for (auto const &entries : pomdp.getTransitionMatrix().getRow(rowindex)) {
                             for (uint64_t j = 1; j < k; ++j) {
                                 pathsubsubexprs[j - 1][action].push_back(pathVars[entries.getColumn()][j - 1]);
@@ -152,14 +171,7 @@ namespace storm {
                 ++obs;
             }
 
-            // These constraints ensure that the right solver is used.
-//            obs = 0;
-//            for(auto const& statesForObservation : statesPerObservation) {
-//                smtSolver->add(schedulerVariableExpressions[obs] >= schedulerForObs.size());
-//                ++obs;
-//            }
-
-            // TODO updateFoundSchedulers();
+            // TODO: Update found schedulers if k is increased.
         }
 
         template <typename ValueType>
@@ -204,7 +216,6 @@ namespace storm {
             uint64_t iterations  = 0;
             while(true) {
                 scheduler.clear();
-
                 observations.clear();
                 observationsAfterSwitch.clear();
                 remainingstates.clear();
@@ -262,10 +273,10 @@ namespace storm {
                         }
                     }
 
+                    // TODO do not repush everyting to the solver.
                     std::vector<storm::expressions::Expression> schedulerSoFar;
                     uint64_t obs = 0;
                     for (auto const &actionSelectionVarsForObs : actionSelectionVars) {
-                        uint64_t act = 0;
                         scheduler.actions.push_back(std::set<uint64_t>());
                         if (observations.get(obs)) {
                             for (uint64_t act = 0; act < actionSelectionVarsForObs.size(); ++act) {
@@ -324,6 +335,18 @@ namespace storm {
                 std::vector<storm::expressions::Expression> remainingExpressions;
                 for (auto index : remainingstates) {
                     remainingExpressions.push_back(reachVarExpressions[index]);
+                }
+
+                for (uint64_t observation = 0; observation < pomdp.getNrObservations(); ++observation) {
+                    storm::storage::BitVector update = storm::storage::BitVector(statesPerObservation[observation].size());
+                    uint64_t i = 0;
+                    for (uint64_t state : statesPerObservation[observation]) {
+                        if (!remainingstates.get(state)) {
+                            update.set(i);
+                        }
+                    }
+                    winningRegion.update(observation, update);
+                    ++i;
                 }
 
                 smtSolver->add(storm::expressions::disjunction(remainingExpressions));
