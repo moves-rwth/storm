@@ -8,6 +8,42 @@
 namespace storm {
 namespace pomdp {
 
+    struct InternalObservationScheduler {
+        std::vector<std::set<uint64_t>> actions;
+        std::vector<uint64_t> schedulerRef;
+        storm::storage::BitVector switchObservations;
+
+        void clear() {
+            actions.clear();
+            schedulerRef.clear();
+            switchObservations.clear();
+        }
+
+        bool empty() const {
+            return actions.empty();
+        }
+
+        void printForObservations(storm::storage::BitVector const& observations, storm::storage::BitVector const& observationsAfterSwitch) const {
+            for (uint64_t obs = 0; obs < observations.size(); ++obs) {
+                if (observations.get(obs)) {
+                    std::cout << "observation: " << obs << std::endl;
+                    std::cout << "actions:";
+                    for (auto act : actions[obs]) {
+                        std::cout << " " << act;
+                    }
+                    if (switchObservations.get(obs)) {
+                        std::cout << " and switch.";
+                    }
+                    std::cout << std::endl;
+                }
+                if (observationsAfterSwitch.get(obs)) {
+                    std::cout << "scheduler ref: " << schedulerRef[obs] << std::endl;
+                }
+
+            }
+        }
+    };
+
     template<typename ValueType>
     class MemlessStrategySearchQualitative {
     // Implements an extension to the Chatterjee, Chmelik, Davies (AAAI-16) paper.
@@ -49,6 +85,10 @@ namespace pomdp {
 
 
     private:
+        storm::expressions::Expression const& getDoneActionExpression(uint64_t obs) const;
+
+        void printScheduler(std::vector<InternalObservationScheduler> const& );
+
         void initialize(uint64_t k);
 
 
@@ -61,12 +101,23 @@ namespace pomdp {
         storm::storage::BitVector targetStates;
         storm::storage::BitVector surelyReachSinkStates;
 
+        std::vector<storm::expressions::Variable> schedulerVariables;
+        std::vector<storm::expressions::Expression> schedulerVariableExpressions;
         std::vector<std::vector<uint64_t>> statesPerObservation;
         std::vector<std::vector<storm::expressions::Expression>> actionSelectionVarExpressions; // A_{z,a}
         std::vector<std::vector<storm::expressions::Variable>> actionSelectionVars;
+
         std::vector<storm::expressions::Variable> reachVars;
         std::vector<storm::expressions::Expression> reachVarExpressions;
+
+        std::vector<storm::expressions::Variable> switchVars;
+        std::vector<storm::expressions::Expression> switchVarExpressions;
+        std::vector<storm::expressions::Variable> continuationVars;
+        std::vector<storm::expressions::Expression> continuationVarExpressions;
         std::vector<std::vector<storm::expressions::Expression>> pathVars;
+
+        std::vector<InternalObservationScheduler> finalSchedulers;
+        std::vector<std::vector<uint64_t>> schedulerForObs;
 
 
 
