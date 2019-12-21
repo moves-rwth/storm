@@ -26,10 +26,11 @@
 #include "storm/settings/modules/TopologicalEquationSolverSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
 #include "storm/settings/modules/MultiplierSettings.h"
-
 #include "storm/settings/modules/TransformationSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
+#include "storm-pomdp-cli/settings/modules/QualitativePOMDPAnalysisSettings.h"
+
 #include "storm/analysis/GraphConditions.h"
 
 #include "storm-cli-utilities/cli.h"
@@ -78,8 +79,8 @@ void initializeSettings() {
     storm::settings::addModule<storm::settings::modules::ModelCheckerSettings>();
     storm::settings::addModule<storm::settings::modules::MultiplierSettings>();
 
-
     storm::settings::addModule<storm::settings::modules::POMDPSettings>();
+    storm::settings::addModule<storm::settings::modules::QualitativePOMDPAnalysisSettings>();
 }
 
 template<typename ValueType>
@@ -196,6 +197,7 @@ int main(const int argc, const char** argv) {
         auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
         auto const &general = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
         auto const &debug = storm::settings::getModule<storm::settings::modules::DebugSettings>();
+        auto const& pomdpQualSettings = storm::settings::getModule<storm::settings::modules::QualitativePOMDPAnalysisSettings>();
 
         if (general.isVerboseSet()) {
             storm::utility::setLogLevel(l3pp::LogLevel::INFO);
@@ -295,12 +297,21 @@ int main(const int argc, const char** argv) {
 //                    std::cout << std::endl;
                     storm::expressions::ExpressionManager expressionManager;
                     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
+
+                    uint64_t lookahead = pomdpQualSettings.getLookahead();
+                    if (lookahead == 0) {
+                        lookahead = pomdp->getNumberOfStates();
+                    }
+
+                    storm::pomdp::MemlessSearchOptions options;
+
+
                     if (pomdpSettings.getMemlessSearchMethod() == "ccd16memless") {
                         storm::pomdp::QualitativeStrategySearchNaive<double> memlessSearch(*pomdp, targetObservationSet, targetStates, badStates, smtSolverFactory);
-                        memlessSearch.findNewStrategyForSomeState(5);
+                        memlessSearch.findNewStrategyForSomeState(lookahead);
                     } else if (pomdpSettings.getMemlessSearchMethod() == "iterative") {
                         storm::pomdp::MemlessStrategySearchQualitative<double> memlessSearch(*pomdp, targetObservationSet, targetStates, badStates, smtSolverFactory);
-                        memlessSearch.findNewStrategyForSomeState(5);
+                        memlessSearch.findNewStrategyForSomeState(lookahead);
                     } else {
                         STORM_LOG_ERROR("This method is not implemented.");
                     }

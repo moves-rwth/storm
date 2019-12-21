@@ -8,6 +8,25 @@
 namespace storm {
 namespace pomdp {
 
+    class MemlessSearchOptions {
+
+    public:
+        void setExportSATCalls(std::string const& path) {
+            exportSATcalls = path;
+        }
+
+        std::string const& getExportSATCallsPath() const {
+            return exportSATcalls;
+        }
+
+        bool isExportSATSet() const {
+            return exportSATcalls == "";
+        }
+    private:
+        std::string exportSATcalls = "";
+
+    };
+
     struct InternalObservationScheduler {
         std::vector<std::set<uint64_t>> actions;
         std::vector<uint64_t> schedulerRef;
