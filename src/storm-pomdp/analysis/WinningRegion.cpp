@@ -1,4 +1,6 @@
 #include <iostream>
+#include "storm/storage/expressions/Expression.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm-pomdp/analysis/WinningRegion.h"
 
 namespace storm {
@@ -10,13 +12,13 @@ namespace pomdp {
         }
     }
 
-    void WinningRegion::update(uint64_t observation, storm::storage::BitVector const& winning) {
+    bool WinningRegion::update(uint64_t observation, storm::storage::BitVector const& winning) {
         std::vector<storm::storage::BitVector> newWinningSupport = std::vector<storm::storage::BitVector>();
         bool changed = false;
         for (auto const& support : winningRegion[observation]) {
             if (winning.isSubsetOf(support)) {
                 // This new winning support is already covered.
-                return;
+                return false;
             }
             if(support.isSubsetOf(winning)) {
                 // This new winning support extends the previous support, thus the previous support is now spurious
@@ -33,6 +35,7 @@ namespace pomdp {
         } else {
             winningRegion[observation].push_back(winning);
         }
+        return true;
 
     }
 
@@ -43,6 +46,34 @@ namespace pomdp {
             }
         }
         return false;
+    }
+
+    storm::expressions::Expression WinningRegion::extensionExpression(uint64_t observation, std::vector<storm::expressions::Expression>& varsForStates) const {
+        std::vector<storm::expressions::Expression> expressionForEntry;
+
+        for(auto const& winningForObservation : winningRegion[observation]) {
+            if (winningForObservation.full()) {
+                assert(winningRegion[observation].size() == 1);
+                return varsForStates.front().getManager().boolean(false);
+            }
+            std::vector<storm::expressions::Expression> subexpr;
+            std::vector<storm::expressions::Expression> leftHandSides;
+            assert(varsForStates.size() == winningForObservation.size());
+            for(uint64_t i = 0; i < varsForStates.size(); ++i) {
+                if (winningForObservation.get(i)) {
+                    leftHandSides.push_back(varsForStates[i]);
+                } else {
+                    subexpr.push_back(varsForStates[i]);
+                }
+            }
+            storm::expressions::Expression rightHandSide = storm::expressions::disjunction(subexpr);
+            for(auto const& lhs : leftHandSides) {
+                expressionForEntry.push_back(storm::expressions::implies(lhs,rightHandSide));
+            }
+            expressionForEntry.push_back(storm::expressions::disjunction(varsForStates));
+
+        }
+        return storm::expressions::conjunction(expressionForEntry);
     }
 
     /**
@@ -62,6 +93,7 @@ namespace pomdp {
                 std::cout << " " << support;
             }
             std::cout << std::endl;
+            observation++;
         }
     }
 

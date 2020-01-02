@@ -23,6 +23,7 @@ namespace storm {
                 uint64_t getLookahead() const;
                 bool isExportSATCallsSet() const;
                 std::string getExportSATCallsPath() const;
+                bool isOnlyDeterministicSet() const;
 
 
                 virtual ~QualitativePOMDPAnalysisSettings() = default;

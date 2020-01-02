@@ -4,6 +4,7 @@
 #include "storm/solver/SmtSolver.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/utility/solver.h"
+#include "storm/utility/Stopwatch.h"
 #include "storm/exceptions/UnexpectedException.h"
 
 #include "storm-pomdp/analysis/WinningRegion.h"
@@ -42,20 +43,24 @@ namespace pomdp {
             return debugLevel > 2;
         }
 
+        bool onlyDeterministicStrategies = false;
+        bool lookaheadRequired = true;
+
     private:
         std::string exportSATcalls = "";
         uint64_t debugLevel = 0;
 
+
     };
 
     struct InternalObservationScheduler {
-        std::vector<std::set<uint64_t>> actions;
+        std::vector<storm::storage::BitVector> actions;
         std::vector<uint64_t> schedulerRef;
         storm::storage::BitVector switchObservations;
 
-        void clear() {
-            actions.clear();
-            schedulerRef.clear();
+        void reset(uint64_t nrObservations, uint64_t nrActions) {
+            actions = std::vector<storm::storage::BitVector>(nrObservations, storm::storage::BitVector(nrActions));
+            schedulerRef = std::vector<uint64_t>(nrObservations, 0);
             switchObservations.clear();
         }
 
@@ -65,8 +70,10 @@ namespace pomdp {
 
         void printForObservations(storm::storage::BitVector const& observations, storm::storage::BitVector const& observationsAfterSwitch) const {
             for (uint64_t obs = 0; obs < observations.size(); ++obs) {
-                if (observations.get(obs)) {
+                if (observations.get(obs) || observationsAfterSwitch.get(obs)) {
                     STORM_LOG_INFO("For observation: " << obs);
+                }
+                if (observations.get(obs)) {
                     std::stringstream ss;
                     ss << "actions:";
                     for (auto act : actions[obs]) {
@@ -90,6 +97,31 @@ namespace pomdp {
     // Implements an extension to the Chatterjee, Chmelik, Davies (AAAI-16) paper.
 
     public:
+        class Statistics {
+            public:
+                Statistics() = default;
+                void print() const;
+
+                storm::utility::Stopwatch totalTimer;
+                storm::utility::Stopwatch smtCheckTimer;
+                storm::utility::Stopwatch initializeSolverTimer;
+                storm::utility::Stopwatch updateExtensionSolverTime;
+                storm::utility::Stopwatch updateNewStrategySolverTime;
+
+                storm::utility::Stopwatch winningRegionUpdatesTimer;
+
+                void incrementOuterIterations() {
+                    outerIterations++;
+                }
+
+            void incrementSmtChecks() {
+                satCalls++;
+            }
+        private:
+                uint64_t satCalls = 0;
+                uint64_t outerIterations = 0;
+        };
+
         MemlessStrategySearchQualitative(storm::models::sparse::Pomdp<ValueType> const& pomdp,
                                          std::set<uint32_t> const& targetObservationSet,
                                          storm::storage::BitVector const& targetStates,
@@ -98,19 +130,24 @@ namespace pomdp {
                                          MemlessSearchOptions const& options);
 
         void analyzeForInitialStates(uint64_t k) {
+            stats.totalTimer.start();
             analyze(k, pomdp.getInitialStates(), pomdp.getInitialStates());
+            stats.totalTimer.stop();
         }
 
         void findNewStrategyForSomeState(uint64_t k) {
             std::cout << surelyReachSinkStates << std::endl;
             std::cout << targetStates << std::endl;
             std::cout << (~surelyReachSinkStates & ~targetStates) << std::endl;
+            stats.totalTimer.start();
             analyze(k, ~surelyReachSinkStates & ~targetStates);
+            stats.totalTimer.stop();
         }
 
         bool analyze(uint64_t k, storm::storage::BitVector const& oneOfTheseStates, storm::storage::BitVector const& allOfTheseStates = storm::storage::BitVector());
 
-
+        Statistics const& getStatistics() const;
+        void finalizeStatistics();
     private:
         storm::expressions::Expression const& getDoneActionExpression(uint64_t obs) const;
 
@@ -119,24 +156,30 @@ namespace pomdp {
 
         void initialize(uint64_t k);
 
+        bool smtCheck(uint64_t iteration);
+
 
         std::unique_ptr<storm::solver::SmtSolver> smtSolver;
         storm::models::sparse::Pomdp<ValueType> const& pomdp;
         std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;
         uint64_t maxK = std::numeric_limits<uint64_t>::max();
 
+        storm::storage::BitVector surelyReachSinkStates;
         std::set<uint32_t> targetObservations;
         storm::storage::BitVector targetStates;
-        storm::storage::BitVector surelyReachSinkStates;
+        std::vector<std::vector<uint64_t>> statesPerObservation;
 
         std::vector<storm::expressions::Variable> schedulerVariables;
         std::vector<storm::expressions::Expression> schedulerVariableExpressions;
-        std::vector<std::vector<uint64_t>> statesPerObservation;
         std::vector<std::vector<storm::expressions::Expression>> actionSelectionVarExpressions; // A_{z,a}
-        std::vector<std::vector<storm::expressions::Variable>> actionSelectionVars;
+        std::vector<std::vector<storm::expressions::Variable>> actionSelectionVars; // A_{z,a}
 
         std::vector<storm::expressions::Variable> reachVars;
         std::vector<storm::expressions::Expression> reachVarExpressions;
+        std::vector<std::vector<storm::expressions::Expression>> reachVarExpressionsPerObservation;
+
+        std::vector<storm::expressions::Variable> observationUpdatedVariables;
+        std::vector<storm::expressions::Expression> observationUpdatedExpressions;
 
         std::vector<storm::expressions::Variable> switchVars;
         std::vector<storm::expressions::Expression> switchVarExpressions;
@@ -149,7 +192,7 @@ namespace pomdp {
         WinningRegion winningRegion;
 
         MemlessSearchOptions options;
-
+        Statistics stats;
 
 
     };

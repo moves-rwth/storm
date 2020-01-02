@@ -174,6 +174,15 @@ bool extractTargetAndSinkObservationSets(std::shared_ptr<storm::models::sparse::
     return validFormula;
 }
 
+template<typename ValueType>
+std::set<uint32_t> extractObservations(storm::models::sparse::Pomdp<ValueType> const& pomdp, storm::storage::BitVector const& states) {
+    std::set<uint32_t> observations;
+    for(auto state : states) {
+        observations.insert(pomdp.getObservation(state));
+    }
+    return observations;
+}
+
 /*!
  * Entry point for the pomdp backend.
  *
@@ -195,6 +204,7 @@ int main(const int argc, const char** argv) {
 
         auto const& coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
         auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
+        auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
         auto const &general = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
         auto const &debug = storm::settings::getModule<storm::settings::modules::DebugSettings>();
         auto const& pomdpQualSettings = storm::settings::getModule<storm::settings::modules::QualitativePOMDPAnalysisSettings>();
@@ -207,6 +217,9 @@ int main(const int argc, const char** argv) {
         }
         if (debug.isTraceSet()) {
             storm::utility::setLogLevel(l3pp::LogLevel::TRACE);
+        }
+        if (debug.isLogfileSet()) {
+            storm::utility::initializeFileLogging();
         }
 
         // For several engines, no model building step is performed, but the verification is started right away.
@@ -237,17 +250,6 @@ int main(const int argc, const char** argv) {
 
 
             if (formula->isProbabilityOperatorFormula()) {
-
-                std::set<uint32_t> targetObservationSet;
-                storm::storage::BitVector targetStates(pomdp->getNumberOfStates());
-                storm::storage::BitVector badStates(pomdp->getNumberOfStates());
-
-                bool validFormula = extractTargetAndSinkObservationSets(pomdp, subformula1, targetObservationSet, targetStates, badStates);
-                STORM_LOG_THROW(validFormula, storm::exceptions::InvalidPropertyException,
-                                "The formula is not supported by the grid approximation");
-                STORM_LOG_ASSERT(!targetObservationSet.empty(), "The set of target observations is empty!");
-
-
                 boost::optional<storm::storage::BitVector> prob1States;
                 boost::optional<storm::storage::BitVector> prob0States;
                 if (pomdpSettings.isSelfloopReductionSet() && !storm::solver::minimize(formula->asProbabilityOperatorFormula().getOptimalityType())) {
@@ -271,7 +273,28 @@ int main(const int argc, const char** argv) {
                     storm::pomdp::transformer::KnownProbabilityTransformer<double> kpt = storm::pomdp::transformer::KnownProbabilityTransformer<double>();
                     pomdp = kpt.transform(*pomdp, *prob0States, *prob1States);
                 }
+
+                if (ioSettings.isExportDotSet()) {
+                    std::shared_ptr<storm::models::sparse::Model<double>> sparseModel = pomdp;
+                    storm::api::exportSparseModelAsDot(sparseModel, ioSettings.getExportDotFilename(), ioSettings.getExportDotMaxWidth());
+                }
+                if (ioSettings.isExportExplicitSet()) {
+                    std::shared_ptr<storm::models::sparse::Model<double>> sparseModel = pomdp;
+                    storm::api::exportSparseModelAsDrn(sparseModel, ioSettings.getExportExplicitFilename());
+                }
+
+
+
                 if (pomdpSettings.isGridApproximationSet()) {
+
+                    std::set<uint32_t> targetObservationSet;
+                    storm::storage::BitVector targetStates(pomdp->getNumberOfStates());
+                    storm::storage::BitVector badStates(pomdp->getNumberOfStates());
+
+                    bool validFormula = extractTargetAndSinkObservationSets(pomdp, subformula1, targetObservationSet, targetStates, badStates);
+                    STORM_LOG_THROW(validFormula, storm::exceptions::InvalidPropertyException,
+                                    "The formula is not supported by the grid approximation");
+                    STORM_LOG_ASSERT(!targetObservationSet.empty(), "The set of target observations is empty!");
 
                     storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<double> checker = storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<double>();
                     double overRes = storm::utility::one<double>();
@@ -291,10 +314,12 @@ int main(const int argc, const char** argv) {
                     }
                 }
                 if (pomdpSettings.isMemlessSearchSet()) {
-//                    std::cout << std::endl;
-//                    pomdp->writeDotToStream(std::cout);
-//                    std::cout << std::endl;
-//                    std::cout << std::endl;
+                    storm::analysis::QualitativeAnalysis<double> qualitativeAnalysis(*pomdp);
+                    // After preprocessing, this might be done cheaper.
+                    storm::storage::BitVector targetStates = qualitativeAnalysis.analyseProb1(formula->asProbabilityOperatorFormula());
+                    storm::storage::BitVector surelyNotAlmostSurelyReachTarget = qualitativeAnalysis.analyseProbSmaller1(formula->asProbabilityOperatorFormula());
+                    std::set<uint32_t> targetObservationSet = extractObservations(*pomdp, targetStates);
+
                     storm::expressions::ExpressionManager expressionManager;
                     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
 
@@ -302,9 +327,9 @@ int main(const int argc, const char** argv) {
                     if (lookahead == 0) {
                         lookahead = pomdp->getNumberOfStates();
                     }
-
                     storm::pomdp::MemlessSearchOptions options;
 
+                    options.onlyDeterministicStrategies = pomdpQualSettings.isOnlyDeterministicSet();
                     uint64_t loglevel = 0;
                     // TODO a big ugly, but we have our own loglevels.
                     if(storm::utility::getLogLevel() == l3pp::LogLevel::INFO) {
@@ -322,13 +347,23 @@ int main(const int argc, const char** argv) {
                         options.setExportSATCalls(pomdpQualSettings.getExportSATCallsPath());
                     }
 
+                    if (storm::utility::graph::checkIfECWithChoiceExists(pomdp->getTransitionMatrix(), pomdp->getBackwardTransitions(), ~targetStates & ~surelyNotAlmostSurelyReachTarget, storm::storage::BitVector(pomdp->getNumberOfChoices(), true))) {
+                        options.lookaheadRequired = true;
+                        STORM_LOG_DEBUG("Lookahead required.");
+                    } else {
+                        options.lookaheadRequired = false;
+                        STORM_LOG_DEBUG("No lookahead required.");
+                    }
+
 
                     if (pomdpSettings.getMemlessSearchMethod() == "ccd16memless") {
-                        storm::pomdp::QualitativeStrategySearchNaive<double> memlessSearch(*pomdp, targetObservationSet, targetStates, badStates, smtSolverFactory);
+                        storm::pomdp::QualitativeStrategySearchNaive<double> memlessSearch(*pomdp, targetObservationSet, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory);
                         memlessSearch.findNewStrategyForSomeState(lookahead);
                     } else if (pomdpSettings.getMemlessSearchMethod() == "iterative") {
-                        storm::pomdp::MemlessStrategySearchQualitative<double> memlessSearch(*pomdp, targetObservationSet, targetStates, badStates, smtSolverFactory, options);
+                        storm::pomdp::MemlessStrategySearchQualitative<double> memlessSearch(*pomdp, targetObservationSet, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory, options);
                         memlessSearch.findNewStrategyForSomeState(lookahead);
+                        memlessSearch.finalizeStatistics();
+                        memlessSearch.getStatistics().print();
                     } else {
                         STORM_LOG_ERROR("This method is not implemented.");
                     }

@@ -15,11 +15,13 @@ namespace storm {
             const std::string QualitativePOMDPAnalysisSettings::moduleName = "pomdpQualitative";
             const std::string exportSATCallsOption = "exportSATCallsPath";
             const std::string lookaheadHorizonOption = "lookaheadHorizon";
+            const std::string onlyDeterministicOption = "onlyDeterministic";
 
 
             QualitativePOMDPAnalysisSettings::QualitativePOMDPAnalysisSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportSATCallsOption, false, "Export the SAT calls?.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("path", "The name of the file to which to write the model.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, lookaheadHorizonOption, false, "In reachability in combination with a discrete ranking function, a lookahead is necessary.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("bound", "The lookahead. Use 0 for the number of states.").setDefaultValueUnsignedInteger(0).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, onlyDeterministicOption, false, "Search only for deterministic schedulers").build());
             }
 
             uint64_t QualitativePOMDPAnalysisSettings::getLookahead() const {
@@ -33,6 +35,9 @@ namespace storm {
                 return this->getOption(exportSATCallsOption).getArgumentByName("path").getValueAsString();
             }
 
+            bool QualitativePOMDPAnalysisSettings::isOnlyDeterministicSet() const {
+                return this->getOption(onlyDeterministicOption).getHasOptionBeenSet();
+            }
 
 
             void QualitativePOMDPAnalysisSettings::finalize() {

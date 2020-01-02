@@ -10,7 +10,7 @@ namespace storm {
             QualitativeAnalysis(storm::models::sparse::Pomdp<ValueType> const& pomdp);
             storm::storage::BitVector analyseProb0(storm::logic::ProbabilityOperatorFormula const& formula) const;
             storm::storage::BitVector analyseProb1(storm::logic::ProbabilityOperatorFormula const& formula) const;
-            
+            storm::storage::BitVector analyseProbSmaller1(storm::logic::ProbabilityOperatorFormula const& formula) const;
         private:
             storm::storage::BitVector analyseProb0or1(storm::logic::ProbabilityOperatorFormula const& formula, bool prob0) const;
             storm::storage::BitVector analyseProb0Max(storm::logic::UntilFormula const& formula) const;

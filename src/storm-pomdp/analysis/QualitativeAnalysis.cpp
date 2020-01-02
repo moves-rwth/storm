@@ -26,6 +26,23 @@ namespace storm {
         storm::storage::BitVector QualitativeAnalysis<ValueType>::analyseProb1(storm::logic::ProbabilityOperatorFormula const& formula) const {
             return analyseProb0or1(formula, false);
         }
+
+        template<typename ValueType>
+        storm::storage::BitVector QualitativeAnalysis<ValueType>::analyseProbSmaller1(storm::logic::ProbabilityOperatorFormula const &formula) const {
+            STORM_LOG_THROW(formula.hasOptimalityType() || formula.hasBound(), storm::exceptions::InvalidPropertyException, "The formula " << formula << " does not specify whether to minimize or maximize.");
+            bool minimizes = (formula.hasOptimalityType() && storm::solver::minimize(formula.getOptimalityType())) || (formula.hasBound() && storm::logic::isLowerBound(formula.getBound().comparisonType));
+            STORM_LOG_THROW(!minimizes,storm::exceptions::NotImplementedException, "This operation is only supported when maximizing");
+            std::shared_ptr<storm::logic::Formula const> subformula = formula.getSubformula().asSharedPointer();
+            std::shared_ptr<storm::logic::UntilFormula> untilSubformula;
+            // If necessary, convert the subformula to a more general case
+            if (subformula->isEventuallyFormula()) {
+                untilSubformula = std::make_shared<storm::logic::UntilFormula>(storm::logic::Formula::getTrueFormula(), subformula->asEventuallyFormula().getSubformula().asSharedPointer());
+            } else if(subformula->isUntilFormula()) {
+                untilSubformula = std::make_shared<storm::logic::UntilFormula>(subformula->asUntilFormula());
+            }
+            // The vector is sound, but not necessarily complete!
+            return ~storm::utility::graph::performProb1E(pomdp.getTransitionMatrix(), pomdp.getTransitionMatrix().getRowGroupIndices(), pomdp.getBackwardTransitions(), checkPropositionalFormula(untilSubformula->getLeftSubformula()), checkPropositionalFormula(untilSubformula->getRightSubformula()));
+        }
         
         template<typename ValueType>
         storm::storage::BitVector QualitativeAnalysis<ValueType>::analyseProb0or1(storm::logic::ProbabilityOperatorFormula const& formula, bool prob0) const {
