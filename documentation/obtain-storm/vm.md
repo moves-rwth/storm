@@ -10,6 +10,9 @@ categories: [Obtain Storm]
 
 {% include includes/toc.html %}
 
+{:.alert .alert-danger}
+To reduce the virtualization overhead, it should be considered to use a [Docker container](docker.html){:.alert-link} instead of a VM.
+
 On this page we provide virtual machine images containing pre-installed versions of Storm.
 
 When you have downloaded an OVA image, you can import it into, for example, [VirtualBox](https://www.virtualbox.org){:target="_blank"}. Before the first run, you should review the hardware resources allocated to the VM. E.g., for VirtualBox open *Settings → System* and adjust the memory size and CPU count under *Motherboard* and *Processor*, respectively.
@@ -76,9 +79,6 @@ to check an instance of the [Crowds protocol](http://qcomp.org/benchmarks/index.
 
 We provide an outdated VM with pre-installed Storm 0.10 for historical reasons. The VM includes dependencies and other useful reference tools (like [PRISM](http://www.prismmodelchecker.org/){:target="_blank"} and [IMCA](https://github.com/buschko/imca){:target="_blank"} and the PRISM benchmark suite) on a Linux host system. You can download the virtual machine [here](https://rwth-aachen.sciebo.de/index.php/s/nthEAQL4o49zkYp){:target="_blank"}.
 The root password is *storm*.
-
-{:.alert .alert-danger}
-Note that the provided virtual machine images is outdated. We recommend to use a [Docker container](docker.html){:.alert-link} instead.
 
 {:.alert .alert-info}
 The virtual machine is hosted at [sciebo](https://www.sciebo.de/en/){:target="_blank" .alert-link}, an academic cloud hoster.
