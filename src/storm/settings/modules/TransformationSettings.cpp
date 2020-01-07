@@ -28,7 +28,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, labelBehaviorOptionName, false,
                                                                "Sets the behavior of labels for all non-Markovian states. Some options may cause wrong results.").setIsAdvanced().addArgument(
                         storm::settings::ArgumentBuilder::createStringArgument("behavior",
-                                                                               "The behavior how the transformer handles labels of non-Markovian states").setDefaultValueString(
+                                                                               "The behavior how the transformer handles labels of non-Markovian states. 'keep' does not eliminate states with different labels, 'merge' builds the union of labels of all eliminated states, 'delete' only keeps the labels of the last state.").setDefaultValueString(
                                 "keep").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(labelBehavior)).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, toNondetOptionName, false, "If set, DTMCs/CTMCs are converted to MDPs/MAs (without actual nondeterminism) before model checking.").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, toDiscreteTimeOptionName, false, "If set, CTMCs/MAs are converted to DTMCs/MDPs (which might or might not preserve the provided properties).").setIsAdvanced().build());
