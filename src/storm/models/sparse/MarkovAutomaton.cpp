@@ -6,6 +6,7 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/solver/stateelimination/StateEliminator.h"
 #include "storm/storage/FlexibleSparseMatrix.h"
+#include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/vector.h"
@@ -67,6 +68,15 @@ namespace storm {
             bool MarkovAutomaton<ValueType, RewardModelType>::isClosed() const {
                 return closed;
             }
+
+            template <typename ValueType, typename RewardModelType>
+            bool MarkovAutomaton<ValueType, RewardModelType>::containsZenoCycle() const {
+                if (!this->hasZenoCycle.is_initialized()) {
+                    this->hasZenoCycle = this->checkContainsZenoCycle();
+                }
+                return this->hasZenoCycle.get();
+            }
+
 
             template <typename ValueType, typename RewardModelType>
             bool MarkovAutomaton<ValueType, RewardModelType>::isHybridState(storm::storage::sparse::state_type state) const {
@@ -267,13 +277,29 @@ namespace storm {
                 return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(rateMatrix), std::move(stateLabeling));
             }
 
+            template<typename ValueType, typename RewardModelType>
+            bool MarkovAutomaton<ValueType, RewardModelType>::checkContainsZenoCycle() const {
+                if (isClosed() && markovianStates.empty()) {
+                    return true;
+                }
+
+                storm::storage::MaximalEndComponentDecomposition<ValueType> maxEnd(this->getTransitionMatrix(), this->getBackwardTransitions(),~markovianStates);
+                return !maxEnd.empty();
+            }
+
 
             template<typename ValueType, typename RewardModelType>
             void MarkovAutomaton<ValueType, RewardModelType>::printModelInformationToStream(std::ostream& out) const {
                 this->printModelInformationHeaderToStream(out);
                 out << "Choices: \t" << this->getNumberOfChoices() << std::endl;
                 out << "Markovian St.: \t" << this->getMarkovianStates().getNumberOfSetBits() << std::endl;
-                out << "Max. Rate.: \t" << this->getMaximalExitRate() << std::endl;
+                out << "Max. Rate.: \t";
+                if (this->getMarkovianStates().empty()) {
+                    out << "None";
+                } else {
+                    out << this->getMaximalExitRate();
+                }
+                out << std::endl;
                 this->printModelInformationFooterToStream(out);
             }
 

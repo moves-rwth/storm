@@ -19,6 +19,8 @@ namespace storm {
              * Constructor.
              */
             ValueParser() : manager(new storm::expressions::ExpressionManager()), parser(*manager), evaluator(*manager) {
+                // Set empty mapping to enable expression creation even without parameters
+                parser.setIdentifierMapping(identifierMapping);
             }
 
             /*!

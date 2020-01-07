@@ -18,8 +18,12 @@ namespace storm {
         
         void transformJani(storm::jani::Model& janiModel, std::vector<storm::jani::Property>& properties, storm::converter::JaniConversionOptions const& options) {
         
+            if (options.replaceUnassignedVariablesWithConstants) {
+                janiModel.replaceUnassignedVariablesWithConstants();
+            }
+            
             if (options.substituteConstants) {
-                janiModel = janiModel.substituteConstants();
+                janiModel.substituteConstantsInPlace();
             }
             
             if (options.localVars) {

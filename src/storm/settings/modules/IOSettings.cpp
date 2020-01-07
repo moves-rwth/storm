@@ -25,6 +25,7 @@ namespace storm {
             const std::string IOSettings::exportCdfOptionName = "exportcdf";
             const std::string IOSettings::exportCdfOptionShortName = "cdf";
             const std::string IOSettings::exportSchedulerOptionName = "exportscheduler";
+            const std::string IOSettings::exportMonotonicityName = "exportmonotonicity";
             const std::string IOSettings::explicitOptionName = "explicit";
             const std::string IOSettings::explicitOptionShortName = "exp";
             const std::string IOSettings::explicitDrnOptionName = "explicit-drn";
@@ -59,6 +60,7 @@ namespace storm {
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportCdfOptionName, false, "Exports the cumulative density function for reward bounded properties into a .csv file.").setIsAdvanced().setShortName(exportCdfOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("directory", "A path to an existing directory where the cdf files will be stored.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportSchedulerOptionName, false, "Exports the choices of an optimal scheduler to the given file (if supported by engine).").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The output file.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportMonotonicityName, false, "Exports the result of monotonicity checking to the given file.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The output file.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportExplicitOptionName, "", "If given, the loaded model will be written to the specified file in the drn format.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the file to which the model is to be writen.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportDdOptionName, "", "If given, the loaded model will be written to the specified file in the drdd format.")
@@ -79,7 +81,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, prismToJaniOptionName, false, "If set, the input PRISM model is transformed to JANI.").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, propertyOptionName, false, "Specifies the properties to be checked on the model.").setShortName(propertyOptionShortName)
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("property or filename", "The formula or the file containing the formulas.").build())
-                                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "The names of the properties to check.").setDefaultValueString("all").build())
+                                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "The names of the properties to check.").setDefaultValueString("all").makeOptional().build())
                                         .build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, transitionRewardsOptionName, false, "If given, the transition rewards are read from this file and added to the explicit model. Note that this requires the model to be given as an explicit model (i.e., via --" + explicitOptionName + ").")
@@ -91,7 +93,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, constantsOptionName, false, "Specifies the constant replacements to use in symbolic models. Note that this requires the model to be given as an symbolic model (i.e., via --" + prismInputOptionName + " or --" + janiInputOptionName + ").").setShortName(constantsOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of constants and their value, e.g. a=1,b=2,c=3.").setDefaultValueString("").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, janiPropertyOptionName, false, "Specifies the properties from the jani model (given by --" + janiInputOptionName + ") to be checked.").setShortName(janiPropertyOptionShortName)
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of properties to be checked").setDefaultValueString("").build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of properties to be checked").setDefaultValueString("").makeOptional().build()).build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, qvbsInputOptionName, false, "Selects a model from the Quantitative Verification Benchmark Set.").setShortName(qvbsInputOptionShortName)
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("model", "The short model name as in the benchmark set.").build())
@@ -161,6 +163,14 @@ namespace storm {
             
             std::string IOSettings::getExportSchedulerFilename() const {
                 return this->getOption(exportSchedulerOptionName).getArgumentByName("filename").getValueAsString();
+            }
+
+            bool IOSettings::isExportMonotonicitySet() const {
+                return this->getOption(exportMonotonicityName).getHasOptionBeenSet();
+            }
+
+            std::string IOSettings::getExportMonotonicityFilename() const {
+                return this->getOption(exportMonotonicityName).getArgumentByName("filename").getValueAsString();
             }
             
             bool IOSettings::isExplicitSet() const {

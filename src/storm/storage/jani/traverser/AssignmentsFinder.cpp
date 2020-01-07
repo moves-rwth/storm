@@ -8,6 +8,10 @@ namespace storm {
         AssignmentsFinder::ResultType AssignmentsFinder::find(Model const& model, storm::jani::Variable const& variable) {
             return find(model, variable.getExpressionVariable());
         }
+        
+        AssignmentsFinder::ResultType AssignmentsFinder::find(Automaton const& automaton, storm::jani::Variable const& variable) {
+            return find(automaton, variable.getExpressionVariable());
+        }
 
         AssignmentsFinder::ResultType AssignmentsFinder::find(Model const& model, storm::expressions::Variable const& variable) {
             ResultType res;
@@ -15,6 +19,15 @@ namespace storm {
             res.hasEdgeAssignment = false;
             res.hasEdgeDestinationAssignment = false;
             ConstJaniTraverser::traverse(model, std::make_pair(&variable, &res));
+            return res;
+        }
+        
+        AssignmentsFinder::ResultType AssignmentsFinder::find(Automaton const& automaton, storm::expressions::Variable const& variable) {
+            ResultType res;
+            res.hasLocationAssignment = false;
+            res.hasEdgeAssignment = false;
+            res.hasEdgeDestinationAssignment = false;
+            ConstJaniTraverser::traverse(automaton, std::make_pair(&variable, &res));
             return res;
         }
         

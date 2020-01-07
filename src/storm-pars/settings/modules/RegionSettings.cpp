@@ -35,12 +35,12 @@ namespace storm {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, refineOptionName, false, "Enables region refinement.")
                                 .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("coverage-threshold", "Refinement converges if the fraction of unknown area falls below this threshold.").setDefaultValueDouble(0.05).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0.0,1.0)).build())
-                                .addArgument(storm::settings::ArgumentBuilder::createIntegerArgument("depth-limit", "If given, limits the number of times a region is refined.").setDefaultValueInteger(-1).build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createIntegerArgument("depth-limit", "If given, limits the number of times a region is refined.").setDefaultValueInteger(-1).makeOptional().build()).build());
                 
                 std::vector<std::string> directions = {"min", "max"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, extremumOptionName, false, "Computes the extremum within the region.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("direction", "The optimization direction").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator(directions)).build())
-                                .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("precision", "The desired precision").setDefaultValueDouble(0.05).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0.0,1.0)).build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("precision", "The desired precision").setDefaultValueDouble(0.05).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0.0,1.0)).build()).build());
                 
                 std::vector<std::string> engines = {"pl", "exactpl", "validatingpl"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, checkEngineOptionName, true, "Sets which engine is used for analyzing regions.")

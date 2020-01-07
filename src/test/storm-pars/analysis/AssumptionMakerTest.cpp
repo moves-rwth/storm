@@ -3,7 +3,7 @@
 //
 
 // TODO: cleanup includes
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 

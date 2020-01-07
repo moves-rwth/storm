@@ -133,7 +133,7 @@ namespace storm {
                             hadDeadlocks = true;
                             if (!dontFixDeadlocks) {
                                 resultMatrix.addNextValue(skippedRow, skippedRow, storm::utility::one<ValueType>());
-                                STORM_LOG_WARN("Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
+                                STORM_LOG_INFO("Warning while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions. A self-loop was inserted.");
                             } else {
                                 STORM_LOG_ERROR("Error while parsing " << filename << ": state " << skippedRow << " has no outgoing transitions.");
                                 // Before throwing the appropriate exception we will give notice of all deadlock states.

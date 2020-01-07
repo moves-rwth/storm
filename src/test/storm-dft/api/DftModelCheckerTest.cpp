@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 
 #include "storm-dft/api/storm-dft.h"
@@ -117,7 +117,7 @@ namespace {
             AllOptimizationsConfig
         > TestingTypes;
 
-    TYPED_TEST_CASE(DftModelCheckerTest, TestingTypes);
+    TYPED_TEST_SUITE(DftModelCheckerTest, TestingTypes,);
 
     TYPED_TEST(DftModelCheckerTest, AndMTTF) {
         double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/and.dft");
@@ -152,15 +152,15 @@ namespace {
 
     TYPED_TEST(DftModelCheckerTest, FdepMTTF) {
         if (this->getConfig().useMod) {
-            EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep.dft"), storm::exceptions::NotSupportedException);
-EXPECT_THROW(this->
+            STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep.dft"), storm::exceptions::NotSupportedException);
+STORM_SILENT_EXPECT_THROW(this->
 analyzeMTTF(STORM_TEST_RESOURCES_DIR
 "/dft/fdep2.dft"), storm::exceptions::NotSupportedException);
-EXPECT_THROW(this->
+STORM_SILENT_EXPECT_THROW(this->
 analyzeMTTF(STORM_TEST_RESOURCES_DIR
 "/dft/fdep3.dft"), storm::exceptions::NotSupportedException);
-            EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep4.dft"), storm::exceptions::NotSupportedException);
-            EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep5.dft"), storm::exceptions::NotSupportedException);
+            STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep4.dft"), storm::exceptions::NotSupportedException);
+            STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/fdep5.dft"), storm::exceptions::NotSupportedException);
         } else {
 double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR
 "/dft/fdep.dft");
@@ -185,13 +185,13 @@ EXPECT_FLOAT_EQ(result,
         EXPECT_FLOAT_EQ(result, 8 / 3.0);
 
         if (this->getConfig().useMod) {
-EXPECT_THROW(this->
+STORM_SILENT_EXPECT_THROW(this->
 analyzeMTTF(STORM_TEST_RESOURCES_DIR
 "/dft/pdep2.dft"), storm::exceptions::NotSupportedException);
-EXPECT_THROW(this->
+STORM_SILENT_EXPECT_THROW(this->
 analyzeMTTF(STORM_TEST_RESOURCES_DIR
 "/dft/pdep3.dft"), storm::exceptions::NotSupportedException);
-            EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep4.dft"), storm::exceptions::NotSupportedException);
+            STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep4.dft"), storm::exceptions::NotSupportedException);
         } else {
 result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR
 "/dft/pdep2.dft");
@@ -248,7 +248,7 @@ if (this->
 getConfig()
 
 .useMod){
-EXPECT_THROW(this->
+STORM_SILENT_EXPECT_THROW(this->
 analyzeMTTF(STORM_TEST_RESOURCES_DIR
 "/dft/seq6.dft"), storm::exceptions::NotSupportedException);
 }

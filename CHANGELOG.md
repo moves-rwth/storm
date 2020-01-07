@@ -4,10 +4,17 @@ Changelog
 This changelog lists only the most important changes. Smaller (bug)fixes as well as non-mature features are not part of the changelog.
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
-Version 1.3.x
+Version 1.4.x
 -------------
 
-### Version 1.3.1 (under development)
+## Version 1.4.2 (under development)
+- n.a.
+
+### Version 1.4.1 (2019/12)
+- Implemented long run average (LRA) computation for DTMCs/CTMCs via value iteration and via gain/bias equations.
+- Added several LRA related settings in a new settings module. Note that `--minmax:lramethod` has been replaced by `--lra:nondetmethod`.
+
+### Version 1.4.0 (2019/11)
 - Added support for multi-dimensional quantile queries.
 - Added support for multi-objective model checking under pure (deterministic) schedulers with bounded memory using `--purescheds`.
 - Allow to quickly check a benchmark from the [Quantitative Verification Benchmark Set](http://qcomp.org/benchmarks/) using the `--qvbs` option.
@@ -16,8 +23,8 @@ Version 1.3.x
 - Flagged several options as 'advanced' to clean up the `--help`-message. Use `--help all` to display a complete list of options.
 - Support for parsing of exact time bounds for properties, e.g., `P=? [F=27 "goal"]`.
 - Export of optimal schedulers when checking MDPs with the sparse engine (experimental). Use  `--exportscheduler <filename>`.
-- PRISM language: Support for the new `round` operator.	
-- PRISM language: Improved error messages of the parser.	
+- PRISM language: Support for the new `round` operator.
+- PRISM language: Improved error messages of the parser.
 - JANI: Allow bounded types for constants.
 - JANI: Support for non-trivial reward accumulations.
 - JANI: Fixed support for reward expressions over non-transient variables.
@@ -30,13 +37,20 @@ Version 1.3.x
 - Support for eliminating chains of Non-Markovian states in MAs via `--eliminate-chains`.
 - Export to dot format allows for maximal line width in states (argument `--dot-maxwidth <width>`)
 - `storm-conv` can now apply transformations on a prism file.
+- `storm-pars`: Enabled building, bisimulation and analysis of symbolic models.
 - `storm-dft`: Support partial-order for state space generation.
 - `storm-dft`: Compute lower and upper bounds for number of BE failures via SMT.
+- `storm-dft`: Allow to set relevant events which are not set to Don't Care.
 - `storm-dft`: Support for constant failed BEs. Use flag `--uniquefailedbe` to create a unique constant failed BE.
 - `storm-dft`: Support for probabilistic BEs via PDEPs.
 - Fixed linking with Mathsat on macOS.
+- Fixed linking with IntelTBB for GCC.
 - Fixed compilation for macOS Mojave and higher.
 - Several bug fixes.
+
+
+Version 1.3.x
+-------------
 
 ## Version 1.3.0 (2018/12)
 - Slightly improved scheduler extraction
@@ -69,6 +83,7 @@ Version 1.3.x
 - New binary `storm-pomdp` that  handles the translation of POMDPs to pMCs.
 - `storm-gspn` improved
 - Sound value iteration
+
 
 Version 1.2.x
 -------------

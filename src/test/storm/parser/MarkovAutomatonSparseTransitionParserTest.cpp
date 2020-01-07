@@ -5,7 +5,7 @@
  *      Author: Manuel Sascha Weiand
  */
 
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/BuildSettings.h"
@@ -25,7 +25,7 @@
 TEST(MarkovAutomatonSparseTransitionParserTest, NonExistingFile) {
 
     // No matter what happens, please do NOT create a file with the name "nonExistingFile.not"!
-    ASSERT_THROW(storm::parser::MarkovAutomatonSparseTransitionParser<>::parseMarkovAutomatonTransitions(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::MarkovAutomatonSparseTransitionParser<>::parseMarkovAutomatonTransitions(STORM_TEST_RESOURCES_DIR "/nonExistingFile.not"), storm::exceptions::FileIoException);
 }
 
 TEST(MarkovAutomatonSparseTransitionParserTest, BasicParsing) {
@@ -208,5 +208,5 @@ TEST(MarkovAutomatonSparseTransitionParserTest, DontFixDeadlocks) {
     // Try to parse a Markov Automaton transition file containing a deadlock state with the fixDeadlocksFlag unset. This should throw an exception.
     std::unique_ptr<storm::settings::SettingMemento> dontFixDeadlocks = storm::settings::mutableBuildSettings().overrideDontFixDeadlocksSet(true);
 
-    ASSERT_THROW(storm::parser::MarkovAutomatonSparseTransitionParser<>::parseMarkovAutomatonTransitions(STORM_TEST_RESOURCES_DIR "/tra/ma_deadlock.tra"), storm::exceptions::WrongFormatException);
+    STORM_SILENT_ASSERT_THROW(storm::parser::MarkovAutomatonSparseTransitionParser<>::parseMarkovAutomatonTransitions(STORM_TEST_RESOURCES_DIR "/tra/ma_deadlock.tra"), storm::exceptions::WrongFormatException);
 }

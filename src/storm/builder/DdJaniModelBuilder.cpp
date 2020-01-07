@@ -288,7 +288,7 @@ namespace storm {
             
             boost::any visit(storm::jani::AutomatonComposition const& composition, boost::any const&) override {
                 auto it = automata.find(composition.getAutomatonName());
-                STORM_LOG_THROW(it == automata.end(), storm::exceptions::InvalidArgumentException, "Cannot build symbolic model from JANI model whose system composition that refers to the automaton '" << composition.getAutomatonName() << "' multiple times.");
+                STORM_LOG_THROW(it == automata.end(), storm::exceptions::InvalidArgumentException, "Cannot build symbolic model from JANI model whose system composition refers to the automaton '" << composition.getAutomatonName() << "' multiple times.");
                 automata.insert(it, composition.getAutomatonName());
                 return boost::none;
             }
@@ -1393,7 +1393,7 @@ namespace storm {
                     
                     return EdgeDd(isMarkovian, guard, transitions, transientEdgeAssignments, globalVariablesInSomeDestination);
                 } else {
-                    return EdgeDd(false, rangedGuard, rangedGuard.template toAdd<ValueType>(), std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>>(), std::set<storm::expressions::Variable>());
+                    return EdgeDd(edge.hasRate(), rangedGuard, rangedGuard.template toAdd<ValueType>(), std::map<storm::expressions::Variable, storm::dd::Add<Type, ValueType>>(), std::set<storm::expressions::Variable>());
                 }
             }
             

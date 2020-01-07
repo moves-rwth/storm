@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
@@ -48,7 +48,7 @@ namespace {
             GmmxxEnvironment
     > TestingTypes;
     
-    TYPED_TEST_CASE(MultiplierTest, TestingTypes);
+    TYPED_TEST_SUITE(MultiplierTest, TestingTypes,);
     
     TYPED_TEST(MultiplierTest, repeatedMultiplyTest) {
         typedef typename TestFixture::ValueType ValueType;

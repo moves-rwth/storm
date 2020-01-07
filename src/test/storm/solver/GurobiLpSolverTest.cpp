@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 
 #ifdef STORM_HAVE_GUROBI
@@ -163,13 +163,13 @@ TEST(GurobiLpSolver, LPInfeasible) {
     ASSERT_FALSE(solver.isUnbounded());
     ASSERT_TRUE(solver.isInfeasible());
     double xValue = 0;
-    ASSERT_THROW(xValue = solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(xValue = solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
     double yValue = 0;
-    ASSERT_THROW(yValue = solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(yValue = solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
     double zValue = 0;
-    ASSERT_THROW(zValue = solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(zValue = solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
     double objectiveValue = 0;
-    ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
 TEST(GurobiLpSolver, MILPInfeasible) {
@@ -193,13 +193,13 @@ TEST(GurobiLpSolver, MILPInfeasible) {
     ASSERT_FALSE(solver.isUnbounded());
     ASSERT_TRUE(solver.isInfeasible());
     double xValue = 0;
-    ASSERT_THROW(xValue = solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(xValue = solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
     double yValue = 0;
-    ASSERT_THROW(yValue = solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(yValue = solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
     double zValue = 0;
-    ASSERT_THROW(zValue = solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(zValue = solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
     double objectiveValue = 0;
-    ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
 TEST(GurobiLpSolver, LPUnbounded) {
@@ -221,13 +221,13 @@ TEST(GurobiLpSolver, LPUnbounded) {
     ASSERT_TRUE(solver.isUnbounded());
     ASSERT_FALSE(solver.isInfeasible());
     double xValue = 0;
-    ASSERT_THROW(xValue = solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(xValue = solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
     double yValue = 0;
-    ASSERT_THROW(yValue = solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(yValue = solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
     double zValue = 0;
-    ASSERT_THROW(zValue = solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(zValue = solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
     double objectiveValue = 0;
-    ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
 TEST(GurobiLpSolver, MILPUnbounded) {
@@ -249,13 +249,13 @@ TEST(GurobiLpSolver, MILPUnbounded) {
     ASSERT_TRUE(solver.isUnbounded());
     ASSERT_FALSE(solver.isInfeasible());
     bool xValue = false;
-    ASSERT_THROW(xValue = solver.getBinaryValue(x), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(xValue = solver.getBinaryValue(x), storm::exceptions::InvalidAccessException);
     int_fast64_t yValue = 0;
-    ASSERT_THROW(yValue = solver.getIntegerValue(y), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(yValue = solver.getIntegerValue(y), storm::exceptions::InvalidAccessException);
     double zValue = 0;
-    ASSERT_THROW(zValue = solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(zValue = solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
     double objectiveValue = 0;
-    ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(objectiveValue = solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
 TEST(GurobiLpSolver, Incremental) {

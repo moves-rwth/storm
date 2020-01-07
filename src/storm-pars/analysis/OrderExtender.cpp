@@ -196,7 +196,18 @@ namespace storm {
                                 order->addBetween(max, order->getTop(), order->getNode(min));
                             }
                             assert (order->compare(max, min) == Order::ABOVE);
-                            order->addBetween(state, max, min);
+                            if (order->contains(state)) {
+                                if (order->compare(max, state) == Order::UNKNOWN) {
+                                    order->addRelation(max, state);
+                                }
+                                if (order->compare(state, min) == Order::UNKNOWN) {
+                                    order->addRelation(state, min);
+                                }
+                            } else {
+                                order->addBetween(state, max, min);
+                            }
+                            assert (order->compare(max, state) == Order::ABOVE);
+                            assert (order->compare(state, min) == Order::ABOVE);
                         }
                     }
                 }

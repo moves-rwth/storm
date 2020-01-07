@@ -9,7 +9,7 @@ namespace storm {
         ExtendEnumsWithSelectionField(MinMaxMethod, PolicyIteration, ValueIteration, LinearProgramming, Topological, RationalSearch, IntervalIteration, SoundValueIteration, TopologicalCuda, ViToPi)
         ExtendEnumsWithSelectionField(MultiplierType, Native, Gmmxx)
         ExtendEnumsWithSelectionField(GameMethod, PolicyIteration, ValueIteration)
-        ExtendEnumsWithSelectionField(LraMethod, LinearProgramming, ValueIteration)
+        ExtendEnumsWithSelectionField(LraMethod, LinearProgramming, ValueIteration, GainBiasEquations, LraDistributionEquations)
 
         ExtendEnumsWithSelectionField(LpSolverType, Gurobi, Glpk, Z3)
         ExtendEnumsWithSelectionField(EquationSolverType, Native, Gmmxx, Eigen, Elimination, Topological)

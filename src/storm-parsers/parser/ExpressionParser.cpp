@@ -81,7 +81,7 @@ namespace storm {
             literalExpression = qi::lit("true")[qi::_val = phoenix::bind(&ExpressionCreator::createBooleanLiteralExpression, phoenix::ref(*expressionCreator), true, qi::_pass)]
                 | qi::lit("false")[qi::_val = phoenix::bind(&ExpressionCreator::createBooleanLiteralExpression, phoenix::ref(*expressionCreator), false, qi::_pass)]
                 | rationalLiteral_[qi::_val = phoenix::bind(&ExpressionCreator::createRationalLiteralExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_pass)]
-                | qi::int_[qi::_val = phoenix::bind(&ExpressionCreator::createIntegerLiteralExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_pass)];
+                | qi::long_long[qi::_val = phoenix::bind(&ExpressionCreator::createIntegerLiteralExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_pass)];
             literalExpression.name("literal expression");
             
             atomicExpression = floorCeilExpression | roundExpression | prefixPowerModuloExpression | minMaxExpression | (qi::lit("(") >> expression >> qi::lit(")")) | identifierExpression | literalExpression;

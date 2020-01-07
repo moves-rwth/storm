@@ -24,6 +24,7 @@
 #include "storm/settings/modules/GmmxxEquationSolverSettings.h"
 #include "storm/settings/modules/NativeEquationSolverSettings.h"
 #include "storm/settings/modules/EliminationSettings.h"
+#include "storm/settings/modules/LongRunAverageSolverSettings.h"
 #include "storm/settings/modules/MinMaxEquationSolverSettings.h"
 #include "storm/settings/modules/GameSolverSettings.h"
 #include "storm/settings/modules/BisimulationSettings.h"
@@ -490,7 +491,7 @@ namespace storm {
             // In case there are optional arguments that were not set, we set them to their default value.
             for (uint_fast64_t i = argumentCache.size(); i < option->getArgumentCount(); ++i) {
                 ArgumentBase& argument = option->getArgument(i);
-                STORM_LOG_THROW(argument.getHasDefaultValue() || argument.getIsOptional(), storm::exceptions::OptionParserException, "Non-optional argument <" << argument.getName() << "> of option:\n" << *option);
+                STORM_LOG_THROW(argument.getIsOptional(), storm::exceptions::OptionParserException, "Non-optional argument <" << argument.getName() << "> of option:\n" << *option);
                 argument.setFromDefaultValue();
             }
             
@@ -654,6 +655,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::EigenEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::NativeEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::EliminationSettings>();
+            storm::settings::addModule<storm::settings::modules::LongRunAverageSolverSettings>();
             storm::settings::addModule<storm::settings::modules::MinMaxEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::GameSolverSettings>();
             storm::settings::addModule<storm::settings::modules::BisimulationSettings>();

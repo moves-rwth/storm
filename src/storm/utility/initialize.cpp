@@ -33,6 +33,10 @@ namespace storm {
         void cleanUp() {
             // Intentionally left empty.
         }
+        
+        l3pp::LogLevel getLogLevel() {
+            return l3pp::Logger::getRootLogger()->getLevel();
+        }
 
         void setLogLevel(l3pp::LogLevel level) {
             l3pp::Logger::getRootLogger()->setLevel(level);
@@ -42,7 +46,7 @@ namespace storm {
 #endif
             }
         }
-
+        
         void initializeFileLogging() {
             if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isLogfileSet()) {
                 std::string logFileName = storm::settings::getModule<storm::settings::modules::DebugSettings>().getLogfilename();

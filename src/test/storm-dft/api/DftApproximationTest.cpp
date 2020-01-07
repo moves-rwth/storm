@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 
 #include "storm-dft/api/storm-dft.h"
@@ -83,7 +83,7 @@ namespace {
             ApproxBoundDifferenceConfig
         > TestingTypes;
 
-    TYPED_TEST_CASE(DftApproximationTest, TestingTypes);
+    TYPED_TEST_SUITE(DftApproximationTest, TestingTypes,);
 
     TYPED_TEST(DftApproximationTest, HecsMTTF) {
         double errorBound = 2;

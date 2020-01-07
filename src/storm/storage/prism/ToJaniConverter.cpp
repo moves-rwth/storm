@@ -166,6 +166,7 @@ namespace storm {
                 for (auto const& command : module.getCommands()) {
                     command.getGuardExpression().getBaseExpression().gatherVariables(variables);
                     for (auto const& update : command.getUpdates()) {
+                        update.getLikelihoodExpression().gatherVariables(variables);
                         for (auto const& assignment : update.getAssignments()) {
                             assignment.getExpression().getBaseExpression().gatherVariables(variables);
                             variables.insert(assignment.getVariable());

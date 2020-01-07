@@ -87,18 +87,6 @@ namespace storm {
                 ConvergenceCriterion getConvergenceCriterion() const;
                 
                 /*!
-                 * Retrieves the selected long run average method.
-                 *
-                 * @return The selected long run average method.
-                 */
-                storm::solver::LraMethod getLraMethod() const;
-                
-                /*!
-                 * Retrieves whether the LraMethod was set from a default value.
-                 */
-                bool isLraMethodSetFromDefaultValue() const;
-                
-                /*!
                  * Retrieves the method to be used for bounded reachability on MAs.
                  *
                  * @return The selected method.
@@ -126,7 +114,6 @@ namespace storm {
                 static const std::string maximalIterationsOptionShortName;
                 static const std::string precisionOptionName;
                 static const std::string absoluteOptionName;
-                static const std::string lraMethodOptionName;
                 static const std::string markovAutomatonBoundedReachabilityMethodOptionName;
                 static const std::string valueIterationMultiplicationStyleOptionName;
                 static const std::string intervalIterationSymmetricUpdatesOptionName;

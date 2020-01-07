@@ -1,5 +1,5 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm-parsers/parser/FormulaParser.h"

@@ -20,6 +20,11 @@ namespace storm {
         void cleanUp();
 
         /*!
+         * Gets the global log level
+         */
+        l3pp::LogLevel getLogLevel();
+
+        /*!
          * Set the global log level
          */
         void setLogLevel(l3pp::LogLevel level);

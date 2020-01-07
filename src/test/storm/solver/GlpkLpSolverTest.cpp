@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+#include "test/storm_gtest.h"
 #include "storm-config.h"
 
 #ifdef STORM_HAVE_GLPK
@@ -167,10 +167,10 @@ TEST(GlpkLpSolver, LPInfeasible) {
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());
     ASSERT_TRUE(solver.isInfeasible());
-    ASSERT_THROW(solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
 TEST(GlpkLpSolver, MILPInfeasible) {
@@ -193,10 +193,10 @@ TEST(GlpkLpSolver, MILPInfeasible) {
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_FALSE(solver.isUnbounded());
     ASSERT_TRUE(solver.isInfeasible());
-    ASSERT_THROW(solver.getBinaryValue(x), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getIntegerValue(y), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getBinaryValue(x), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getIntegerValue(y), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
 TEST(GlpkLpSolver, LPUnbounded) {
@@ -217,10 +217,10 @@ TEST(GlpkLpSolver, LPUnbounded) {
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_TRUE(solver.isUnbounded());
     ASSERT_FALSE(solver.isInfeasible());
-    ASSERT_THROW(solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getContinuousValue(x), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getContinuousValue(y), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
 TEST(GlpkLpSolver, MILPUnbounded) {
@@ -241,10 +241,10 @@ TEST(GlpkLpSolver, MILPUnbounded) {
     ASSERT_FALSE(solver.isOptimal());
     ASSERT_TRUE(solver.isUnbounded());
     ASSERT_FALSE(solver.isInfeasible());
-    ASSERT_THROW(solver.getBinaryValue(x), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getIntegerValue(y), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
-    ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getBinaryValue(x), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getIntegerValue(y), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getContinuousValue(z), storm::exceptions::InvalidAccessException);
+    STORM_SILENT_ASSERT_THROW(solver.getObjectiveValue(), storm::exceptions::InvalidAccessException);
 }
 
 TEST(GlpkLpSolver, Incremental) {

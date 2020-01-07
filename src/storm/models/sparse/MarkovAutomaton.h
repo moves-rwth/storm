@@ -68,6 +68,14 @@ namespace storm {
                  * @return True iff the Markov automaton is closed.
                  */
                 bool isClosed() const;
+
+                /*!
+                 * Retrieves whether the Markov automaton contains Zeno cycles.
+                 * A Zeno cyle contains only non-Markovian states and allows to visit infinitely many states in finite time.
+                 *
+                 * @return True iff the Markov automaton contains Zeno cycles.
+                 */
+                bool containsZenoCycle() const;
                 
                 /*!
                  * Retrieves whether the given state is a hybrid state, i.e. Markovian and probabilistic.
@@ -148,7 +156,6 @@ namespace storm {
                  */
                 std::shared_ptr<storm::models::sparse::Ctmc<ValueType, RewardModelType>> convertToCtmc() const;
 
-                
                 virtual void printModelInformationToStream(std::ostream& out) const override;
                 
             private:
@@ -164,6 +171,13 @@ namespace storm {
                  * Checks whether the automaton is closed by actually looking at the transition information.
                  */
                 bool checkIsClosed() const;
+
+                /*!
+                 * Checks whether a Zeno cycle is present.
+                 *
+                 * @return True iff a Zeno cycle is present.
+                 */
+                bool checkContainsZenoCycle() const;
                 
                 // A bit vector representing the set of Markovian states.
                 storm::storage::BitVector markovianStates;
@@ -171,9 +185,11 @@ namespace storm {
                 // A vector storing the exit rates of all states of the model.
                 std::vector<ValueType> exitRates;
                 
-                // A flag indicating whether the Markov automaton has been closed, which is typically a prerequisite
-                // for model checking.
+                // A flag indicating whether the Markov automaton has been closed, which is typically a prerequisite for model checking.
                 bool closed;
+
+                // A flag indicating whether the Markov automaton contains Zeno cycles.
+                mutable boost::optional<bool> hasZenoCycle;
             };
             
         } // namespace sparse

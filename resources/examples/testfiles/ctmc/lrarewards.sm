@@ -1,0 +1,11 @@
+ctmc
+
+module main
+	s : [0..3];
+	[] s < 3 -> 3/2: (s'=s+1);
+	[] s > 0 -> 3: (s'=s-1);
+endmodule
+
+rewards
+	true: s;
+endrewards
