@@ -205,7 +205,7 @@ namespace storm {
             storm::storage::SparseMatrixBuilder<ValueType> matrixBuilder = storm::storage::SparseMatrixBuilder<ValueType>(
                     0, 0, 0, false, true, 0);
 
-            for (auto const &label : ma->getStateLabeling()) {
+            for (auto const &label : ma->getStateLabeling().getLabels()) {
                 if (!newStateLabeling.containsLabel(label)) {
                     newStateLabeling.addLabel(label);
                 }
