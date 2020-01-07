@@ -262,7 +262,9 @@ namespace storm {
                     }
 
                 }
-                //composedModel->printModelInformationToStream(std::cout);
+                if (printInfo) {
+                    composedModel->printModelInformationToStream(std::cout);
+                }
                 return composedModel;
             } else {
                 // No composition was possible
@@ -283,7 +285,9 @@ namespace storm {
                                                                            allowDCForRelevantEvents);
                 builder.buildModel(0, 0.0);
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
-                //model->printModelInformationToStream(std::cout);
+                if (printInfo) {
+                    model->printModelInformationToStream(std::cout);
+                }
                 explorationTimer.stop();
                 STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Ctmc),
                                 storm::exceptions::NotSupportedException,
@@ -351,8 +355,17 @@ namespace storm {
                     STORM_LOG_DEBUG("Getting model for lower bound...");
                     model = builder.getModelApproximation(true, !probabilityFormula);
                     // We only output the info from the lower bound as the info for the upper bound is the same
-                    //model->printModelInformationToStream(std::cout);
+                    if (printInfo) {
+                        model->printModelInformationToStream(std::cout);
+                    }
                     buildingTimer.stop();
+
+                    auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+                    if (ioSettings.isExportExplicitSet()) {
+                        std::vector<std::string> parameterNames;
+                        // TODO fill parameter names
+                        storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), parameterNames);
+                    }
 
                     // Check lower bounds
                     newResult = checkModel(model, {property});
@@ -381,7 +394,7 @@ namespace storm {
                                      "Under-approximation " << approxResult.first
                                                             << " is greater than over-approximation "
                                                             << approxResult.second);
-                    //STORM_LOG_INFO("Result after iteration " << iteration << ": (" << std::setprecision(10) << approxResult.first << ", " << approxResult.second << ")");
+                    STORM_LOG_DEBUG("Result after iteration " << iteration << ": (" << std::setprecision(10) << approxResult.first << ", " << approxResult.second << ")");
                     totalTimer.stop();
                     printTimings();
                     totalTimer.start();
