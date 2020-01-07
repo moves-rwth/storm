@@ -50,7 +50,7 @@ namespace storm {
                                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("endtime", "The timebound to end with.")
                                                              .addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0)).build())
                                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("inc", "The value to increment with to get the next timepoint.")
-                                                             .addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0)).build())
+                                                             .addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0)).setDefaultValueDouble(1.0).makeOptional().build())
                                         .build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, minValueOptionName, false, "Compute minimal value in case of non-determinism.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, maxValueOptionName, false, "Compute maximal value in case of non-determinism.").build());

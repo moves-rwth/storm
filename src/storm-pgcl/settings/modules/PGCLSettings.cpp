@@ -32,7 +32,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, programVariableRestrictionsOptionName, false, "Restrictions of program variables").setShortName(programVariableRestrictionShortOptionName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("description", "description of the variable restrictions").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, propertyOptionName, false, "Specifies the properties to be checked on the model.").setShortName(propertyOptionShortName)
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("property or filename", "The formula or the file containing the formulas.").build())
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "The names of the properties to check.").setDefaultValueString("all").build())
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "The names of the properties to check.").setDefaultValueString("all").makeOptional().build())
                         .build());
             }
             

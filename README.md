@@ -1,6 +1,9 @@
 Storm - A Modern Probabilistic Model Checker
 ============================================
 [![Build Status](https://travis-ci.org/moves-rwth/storm.svg?branch=master)](https://travis-ci.org/moves-rwth/storm)
+[![GitHub release](https://img.shields.io/github/release/moves-rwth/storm.svg)](https://github.com/moves-rwth/storm/releases/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3574502.svg)](https://doi.org/10.5281/zenodo.3574502)
+
 
 For more instructions, check out the documentation found in [Getting Started](http://www.stormchecker.org/getting-started.html).
 

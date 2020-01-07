@@ -67,19 +67,18 @@ namespace storm {
         }
 
         template <typename ValueType>
-        std::map<storm::analysis::Order*, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> MonotonicityChecker<ValueType>::checkMonotonicity() {
+        std::map<storm::analysis::Order*, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> MonotonicityChecker<ValueType>::checkMonotonicity(std::ostream& outfile) {
             auto map = createOrder();
             std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
             auto matrix = sparseModel->getTransitionMatrix();
-            return checkMonotonicity(map, matrix);
+            return checkMonotonicity(outfile, map, matrix);
         }
 
         template <typename ValueType>
-        std::map<storm::analysis::Order*, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> MonotonicityChecker<ValueType>::checkMonotonicity(std::map<storm::analysis::Order*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix) {
+        std::map<storm::analysis::Order*, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> MonotonicityChecker<ValueType>::checkMonotonicity(std::ostream& outfile, std::map<storm::analysis::Order*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix) {
             storm::utility::Stopwatch monotonicityCheckWatch(true);
             std::map<storm::analysis::Order *, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> result;
 
-            outfile.open(filename, std::ios_base::app);
 
             if (map.size() == 0) {
                 // Nothing is known
@@ -166,7 +165,6 @@ namespace storm {
             outfile << ", ";
 
             monotonicityCheckWatch.stop();
-            outfile.close();
             return result;
         }
 

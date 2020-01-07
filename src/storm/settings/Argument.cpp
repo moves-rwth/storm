@@ -171,20 +171,28 @@ namespace storm {
             out << std::setw(0) << std::left << "<" << this->getName() << ">";
             if (!this->validators.empty() || this->hasDefaultValue) {
                 out << " (";
+                bool previousEntry = false;
+                if (this->getIsOptional()) {
+                    out << "optional";
+                    previousEntry = true;
+                }
                 if (!this->validators.empty()) {
+                    if (previousEntry) {
+                        out << "; ";
+                    }
                     for (uint64_t i = 0; i < this->validators.size(); ++i) {
                         out << this->validators[i]->toString();
                         if (i + 1 < this->validators.size()) {
                             out << ", ";
                         }
                     }
-                    
-                    if (this->hasDefaultValue) {
-                        out << "; ";
-                    }
+                    previousEntry = true;
                 }
                 
                 if (this->hasDefaultValue) {
+                    if (previousEntry) {
+                        out << "; ";
+                    }
                     out << "default: ";
                     printValue(out, defaultValue);
                 }

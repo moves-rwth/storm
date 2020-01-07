@@ -44,6 +44,13 @@ namespace storm {
             }
             
             template<storm::dd::DdType Type, typename ValueType>
+            void Dtmc<Type, ValueType>::reduceToStateBasedRewards() {
+                for (auto& rewardModel : this->getRewardModels()) {
+                    rewardModel.second.reduceToStateBasedRewards(this->getTransitionMatrix(), this->getRowVariables(), this->getColumnVariables(), true);
+                }
+            }
+            
+            template<storm::dd::DdType Type, typename ValueType>
             template<typename NewValueType>
             std::shared_ptr<Dtmc<Type, NewValueType>> Dtmc<Type, ValueType>::toValueType() const {
                 typedef typename DeterministicModel<Type, NewValueType>::RewardModelType NewRewardModelType;

@@ -466,13 +466,17 @@ namespace storm {
                 singleModelCheckingTimer.start();
                 //STORM_PRINT_AND_LOG("Model checking property " << *property << " ..." << std::endl);
                 std::unique_ptr<storm::modelchecker::CheckResult> result(
-                        storm::api::verifyWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(property,
-                                                                                                               true)));
-                STORM_LOG_ASSERT(result, "Result does not exist.");
-                result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
-                ValueType resultValue = result->asExplicitQuantitativeCheckResult<ValueType>().getValueMap().begin()->second;
+                        storm::api::verifyWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(property,true)));
+
+                if (result) {
+                    result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
+                    ValueType resultValue = result->asExplicitQuantitativeCheckResult<ValueType>().getValueMap().begin()->second;
+                    results.push_back(resultValue);
+                } else {
+                    STORM_LOG_WARN("The property '" << *property << "' could not be checked with the current settings.");
+                    results.push_back(-storm::utility::one<ValueType>());
+                }
                 //STORM_PRINT_AND_LOG("Result (initial states): " << resultValue << std::endl);
-                results.push_back(resultValue);
                 singleModelCheckingTimer.stop();
                 //STORM_PRINT_AND_LOG("Time for model checking: " << singleModelCheckingTimer << "." << std::endl);
             }

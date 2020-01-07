@@ -49,9 +49,13 @@ namespace storm {
         std::string toString(LraMethod m) {
             switch(m) {
                 case LraMethod::LinearProgramming:
-                    return "linearprogramming";
+                    return "linear-programming";
                 case LraMethod::ValueIteration:
-                    return "valueiteration";
+                    return "value-iteration";
+                case LraMethod::LraDistributionEquations:
+                    return "lra-distribution-equations";
+                case LraMethod::GainBiasEquations:
+                    return "gain-bias-equations";
             }
             return "invalid";
         }
