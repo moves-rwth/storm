@@ -206,10 +206,11 @@ if (STORM_USE_GUROBI)
             list(APPEND STORM_DEP_TARGETS Gurobi_SHARED)
         else()
             # The FindGurobi.cmake script needs to be updated every now and then as the library file contains the version number...
-            message(FATAL_ERROR "Gurobi Library ${GUROBI_LIBRARY} not found. If your Gurobi Version is higher then 8.1.0, please contact the Storm developers.")
+            message(FATAL_ERROR "Gurobi Library ${GUROBI_LIBRARY} not found. If your Gurobi Version is higher then 9.0.0, please contact the Storm developers.")
         endif()
     else()
-        message(FATAL_ERROR "Gurobi Library requested but was not found. Make sure that GUROBI_ROOT points to the correct directory (containing include/ and lib/ subdirectories).")
+    	# The FindGurobi.cmake script needs to be updated every now and then as the library file contains the version number ...
+        message(FATAL_ERROR "Gurobi Library requested but was not found. Make sure that GUROBI_ROOT points to the correct directory (containing include/ and lib/ subdirectories). If your Gurobi Version is higher then 9.0.0, please contact the Storm developers.")
     endif()
 else()
     set(STORM_HAVE_GUROBI OFF)
