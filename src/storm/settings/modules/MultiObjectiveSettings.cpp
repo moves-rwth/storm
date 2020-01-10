@@ -33,7 +33,7 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("value", "the threshold for the number of refinement steps to be performed.").build()).build());
                 std::vector<std::string> memoryPatterns = {"positional", "goalmemory", "arbitrary", "counter"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, schedulerRestrictionOptionName, false, "Restricts the class of considered schedulers to non-randomized schedulers with the provided memory pattern.").setIsAdvanced()
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("memorypattern", "The pattern of the memory.").setDefaultValueString("positional").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(memoryPatterns)).build())
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("memorypattern", "The pattern of the memory.").setDefaultValueString("positional").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(memoryPatterns)).makeOptional().build())
                                 .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("memorystates", "The Number of memory states (only if supported by the pattern).").setDefaultValueUnsignedInteger(0).makeOptional().build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, printResultsOptionName, true, "Prints intermediate results of the computation to standard output.").setIsAdvanced().build());
                 std::vector<std::string> encodingTypes = {"auto", "classic", "flow"};
