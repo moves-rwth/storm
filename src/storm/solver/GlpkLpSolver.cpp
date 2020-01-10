@@ -250,38 +250,58 @@ namespace storm {
             if (this->modelContainsIntegerVariables) {
                 glp_iocp* parameters = new glp_iocp();
                 glp_init_iocp(parameters);
-                parameters->presolve = GLP_ON;
                 parameters->tol_int = storm::settings::getModule<storm::settings::modules::GlpkSettings>().getIntegerTolerance();
-                
-                // Check whether we allow sub-optimal solutions via a non-zero MIP gap.
-                // parameters->mip_gap = this->maxMILPGap; (only works for relative values. Also, we need to obtain the actual gap anyway.
-                std::pair<double, bool> mipgap(this->maxMILPGap, this->maxMILPGapRelative);
-                if (!storm::utility::isZero(this->maxMILPGap)) {
-                    parameters->cb_func = &callback;
-                    parameters->cb_info = &mipgap;
+                this->isInfeasibleFlag = false;
+                if (storm::settings::getModule<storm::settings::modules::GlpkSettings>().isMILPPresolverEnabled()) {
+                    parameters->presolve = GLP_ON;
+                } else {
+                    // Without presolving, we solve the relaxed model first. This is required because
+                    // glp_intopt requires that either presolving is enabled or an optimal initial basis is provided.
+                    error = glp_simplex(this->lp, nullptr);
+                    STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to optimize relaxed glpk model (" << error << ").");
+                    // If the relaxed model is already not feasible, we don't have to solve the actual model.
+                    if (glp_get_status(this->lp) == GLP_INFEAS || glp_get_status(this->lp) == GLP_NOFEAS) {
+                        this->isInfeasibleFlag = true;
+                    }
+                    // If the relaxed model is unbounded, there could still be no feasible integer solution.
+                    // However, since we can not provide an optimal initial basis, we will need to enable presolving
+                    if (glp_get_status(this->lp) == GLP_UNBND) {
+                        parameters->presolve = GLP_ON;
+                    } else {
+                        parameters->presolve = GLP_OFF;
+                    }
                 }
-                
-                // Invoke mip solving
-                error = glp_intopt(this->lp, parameters);
-                int status = glp_mip_status(this->lp);
-                delete parameters;
-                
-                // mipgap.first has been set to the achieved mipgap (either within the callback function or because it has been set to this->maxMILPGap)
-                this->actualRelativeMILPGap = mipgap.first;
-                
-                // In case the error is caused by an infeasible problem, we do not want to view this as an error and
-                // reset the error code.
-                if (error == GLP_ENOPFS || status == GLP_NOFEAS) {
-                    this->isInfeasibleFlag = true;
-                    error = 0;
-                } else if (error == GLP_ENODFS) {
-                    this->isUnboundedFlag = true;
-                    error = 0;
-                } else if (error == GLP_ESTOP) {
-                    // Early termination due to achieved MIP Gap. That's fine.
-                    error = 0;
-                } else if (error == GLP_EBOUND) {
-                    throw storm::exceptions::InvalidStateException() << "The bounds of some variables are illegal. Note that glpk only accepts integer bounds for integer variables.";
+                if (!this->isInfeasibleFlag) {
+                    // Check whether we allow sub-optimal solutions via a non-zero MIP gap.
+                    // parameters->mip_gap = this->maxMILPGap; (only works for relative values. Also, we need to obtain the actual gap anyway.
+                    std::pair<double, bool> mipgap(this->maxMILPGap, this->maxMILPGapRelative);
+                    if (!storm::utility::isZero(this->maxMILPGap)) {
+                        parameters->cb_func = &callback;
+                        parameters->cb_info = &mipgap;
+                    }
+                    
+                    // Invoke mip solving
+                    error = glp_intopt(this->lp, parameters);
+                    int status = glp_mip_status(this->lp);
+                    delete parameters;
+                    
+                    // mipgap.first has been set to the achieved mipgap (either within the callback function or because it has been set to this->maxMILPGap)
+                    this->actualRelativeMILPGap = mipgap.first;
+                    
+                    // In case the error is caused by an infeasible problem, we do not want to view this as an error and
+                    // reset the error code.
+                    if (error == GLP_ENOPFS || status == GLP_NOFEAS) {
+                        this->isInfeasibleFlag = true;
+                        error = 0;
+                    } else if (error == GLP_ENODFS) {
+                        this->isUnboundedFlag = true;
+                        error = 0;
+                    } else if (error == GLP_ESTOP) {
+                        // Early termination due to achieved MIP Gap. That's fine.
+                        error = 0;
+                    } else if (error == GLP_EBOUND) {
+                        throw storm::exceptions::InvalidStateException() << "The bounds of some variables are illegal. Note that glpk only accepts integer bounds for integer variables.";
+                    }
                 }
             } else {
                 error = glp_simplex(this->lp, nullptr);
@@ -484,11 +504,8 @@ namespace storm {
         
         template<typename ValueType>
         void GlpkLpSolver<ValueType>::setMaximalMILPGap(ValueType const& gap, bool relative) {
-            if (relative) {
-                this->maxMILPGap = storm::utility::convertNumber<double>(gap);
-            } else {
-                this->maxMILPGap = storm::utility::convertNumber<double>(gap);
-            }
+            this->maxMILPGap = storm::utility::convertNumber<double>(gap);
+            this->maxMILPGapRelative = relative;
         }
         
         template<typename ValueType>

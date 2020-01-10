@@ -25,6 +25,11 @@ namespace storm {
                 bool isOutputSet() const;
                 
                 /*!
+                 * Retrieves whether the MILP Presolver should be used.
+                 */
+                bool isMILPPresolverEnabled() const;
+                
+                /*!
                  * Retrieves whether the integer tolerance has been set.
                  *
                  * @return True iff the integer tolerance has been set.
@@ -47,6 +52,7 @@ namespace storm {
                 // Define the string names of the options as constants.
                 static const std::string integerToleranceOption;
                 static const std::string outputOptionName;
+                static const std::string milpPresolverOptionName;
             };
             
         } // namespace modules
