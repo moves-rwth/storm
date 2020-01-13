@@ -52,7 +52,7 @@ namespace storm {
                 // Define the string names of the options as constants.
                 static const std::string integerToleranceOption;
                 static const std::string outputOptionName;
-                static const std::string milpPresolverOptionName;
+                static const std::string noMilpPresolverOptionName;
             };
             
         } // namespace modules

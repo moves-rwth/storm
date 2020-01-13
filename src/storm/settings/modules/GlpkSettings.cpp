@@ -15,11 +15,11 @@ namespace storm {
             const std::string GlpkSettings::moduleName = "glpk";
             const std::string GlpkSettings::integerToleranceOption = "inttol";
             const std::string GlpkSettings::outputOptionName = "output";
-            const std::string GlpkSettings::milpPresolverOptionName = "milppresolver";
+            const std::string GlpkSettings::noMilpPresolverOptionName = "nomilppresolver";
             
             GlpkSettings::GlpkSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, outputOptionName, true, "If set, the glpk output will be printed to the command line.").setIsAdvanced().build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, milpPresolverOptionName, true, "Enables glpk's built-in MILP presolver.").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, noMilpPresolverOptionName, true, "Disables glpk's built-in MILP presolver.").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, integerToleranceOption, true, "Sets glpk's precision for integer variables.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
             }
             
@@ -28,7 +28,7 @@ namespace storm {
             }
             
             bool GlpkSettings::isMILPPresolverEnabled() const {
-                return this->getOption(milpPresolverOptionName).getHasOptionBeenSet();
+                return !this->getOption(noMilpPresolverOptionName).getHasOptionBeenSet();
             }
             
             bool GlpkSettings::isIntegerToleranceSet() const {
