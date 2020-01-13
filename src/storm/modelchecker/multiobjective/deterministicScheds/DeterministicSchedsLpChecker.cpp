@@ -603,41 +603,92 @@ namespace storm {
                 
                 if (polytopeTree.getChildren().empty()) {
                     // At leaf nodes we need to perform the actual check.
-                    STORM_LOG_TRACE("\tSolving MILP...");
-                    swCheckAreas.start();
-                    lpModel->optimize();
-                    swCheckAreas.stop();
-                    ++numLpQueries;
-                    STORM_LOG_TRACE("\tDone solving MILP...");
 
-                    // STORM_PRINT_AND_LOG("Writing model to file '" << polytopeTree.toId() << ".lp'" << std::endl;);
-                    // lpModel->writeModelToFile(polytopeTree.toId() + ".lp");
-                    
-                    if (lpModel->isInfeasible()) {
-                        infeasableAreas.push_back(polytopeTree.getPolytope());
-                        polytopeTree.clear();
-                    } else {
-                        STORM_LOG_ASSERT(!lpModel->isUnbounded(), "LP result is unbounded.");
-                        swValidate.start();
-                        Point newPoint = validateCurrentModel(env);
-                        swValidate.stop();
-                        GeometryValueType offset = storm::utility::convertNumber<GeometryValueType>(lpModel->getObjectiveValue());
-                        // Get the gap between the found solution and the known bound.
-                        offset += storm::utility::convertNumber<GeometryValueType>(lpModel->getMILPGap(false));
-                        // we might want to shift the halfspace to guarantee that our point is included.
-                        offset = std::max(offset, storm::utility::vector::dotProduct(currentWeightVector, newPoint));
-                        auto halfspace = storm::storage::geometry::Halfspace<GeometryValueType>(currentWeightVector, offset).invert();
-                        infeasableAreas.push_back(polytopeTree.getPolytope()->intersection(halfspace));
-                        if (infeasableAreas.back()->isEmpty()) {
-                            infeasableAreas.pop_back();
-                        }
-                        polytopeTree.setMinus(storm::storage::geometry::Polytope<GeometryValueType>::create({halfspace}));
-                        foundPoints.push_back(newPoint);
-                        polytopeTree.substractDownwardClosure(newPoint, eps);
-                        if (!polytopeTree.isEmpty()) {
-                            checkRecursive(env, polytopeTree, eps, foundPoints, infeasableAreas, depth);
+                    // Numerical instabilities might yield a point that is not actually inside the nodeConstraints.
+                    // If the downward closure is disjoint from this tree node, we will not make further progress.
+                    // In this case, we sharpen the violating constraints just a little bit.
+                    // This way, valid solutions might be excluded, so technically, this can yield false negatives.
+                    // However, since we apparently are dealing with numerical algorithms, we can't be sure about correctness anyway.
+                    uint64_t num_sharpen = 0;
+                    auto halfspaces = polytopeTree.getPolytope()->getHalfspaces();
+                    while (true) {
+                        STORM_LOG_TRACE("\tSolving MILP...");
+                        swCheckAreas.start();
+                        lpModel->optimize();
+                        swCheckAreas.stop();
+                        ++numLpQueries;
+                        STORM_LOG_TRACE("\tDone solving MILP...");
+    
+                        // STORM_PRINT_AND_LOG("Writing model to file '" << polytopeTree.toId() << ".lp'" << std::endl;);
+                        // lpModel->writeModelToFile(polytopeTree.toId() + ".lp");
+
+                        if (lpModel->isInfeasible()) {
+                            infeasableAreas.push_back(polytopeTree.getPolytope());
+                            polytopeTree.clear();
+                            break;
+                        } else {
+                            STORM_LOG_ASSERT(!lpModel->isUnbounded(), "LP result is unbounded.");
+                            swValidate.start();
+                            Point newPoint = validateCurrentModel(env);
+                            swValidate.stop();
+                            // Check whether this new point yields any progress.
+                            // There is no progress if (due to numerical inaccuracies) the downwardclosure (including points that are epsilon close to it) contained in this polytope.
+                            // We multiply eps by 0.999 so that points that lie on the boundary of polytope and downw. do not count in the intersection.
+                            Point newPointPlusEps = newPoint;
+                            storm::utility::vector::addScaledVector(newPointPlusEps, eps, storm::utility::convertNumber<GeometryValueType>(0.999));
+                            if (polytopeTree.getPolytope()->contains(newPoint) || !polytopeTree.getPolytope()->intersection(storm::storage::geometry::Polytope<GeometryValueType>::createDownwardClosure({newPointPlusEps}))->isEmpty()) {
+                                GeometryValueType offset = storm::utility::convertNumber<GeometryValueType>(lpModel->getObjectiveValue());
+                                // Get the gap between the found solution and the known bound.
+                                offset += storm::utility::convertNumber<GeometryValueType>(lpModel->getMILPGap(false));
+                                // we might want to shift the halfspace to guarantee that our point is included.
+                                offset = std::max(offset, storm::utility::vector::dotProduct(currentWeightVector, newPoint));
+                                auto halfspace = storm::storage::geometry::Halfspace<GeometryValueType>(currentWeightVector, offset).invert();
+                                infeasableAreas.push_back(polytopeTree.getPolytope()->intersection(halfspace));
+                                if (infeasableAreas.back()->isEmpty()) {
+                                    infeasableAreas.pop_back();
+                                }
+                                polytopeTree.setMinus(storm::storage::geometry::Polytope<GeometryValueType>::create({halfspace}));
+                                foundPoints.push_back(newPoint);
+                                polytopeTree.substractDownwardClosure(newPoint, eps);
+                                if (!polytopeTree.isEmpty()) {
+                                    checkRecursive(env, polytopeTree, eps, foundPoints, infeasableAreas, depth);
+                                }
+                                break;
+                            } else {
+                                // If we end up here, we have to sharpen the violated constraints for this polytope
+                                for (auto& h : halfspaces) {
+                                    GeometryValueType distance = h.distance(newPoint);
+                                    // Check if the found point is outside of this halfspace
+                                    if (!storm::utility::isZero(distance)) {
+                                        // The issue has to be for some normal vector with a negative entry. Otherwise, the intersection with the downward closure wouldn't be empty
+                                        bool normalVectorContainsNegative = false;
+                                        for (auto const& hi : h.normalVector()) {
+                                            if (hi < storm::utility::zero<ValueType>()) {
+                                                normalVectorContainsNegative = true;
+                                                break;
+                                            }
+                                        }
+                                        if (normalVectorContainsNegative) {
+                                            h.offset() -= distance / storm::utility::convertNumber<GeometryValueType, uint64_t>(2);
+                                            if (num_sharpen == 0) {
+                                                lpModel->push();
+                                            }
+                                            lpModel->addConstraint("", h.toExpression(lpModel->getManager(), currentObjectiveVariables));
+                                            ++num_sharpen;
+                                            break;
+                                        }
+                                    }
+                                }
+                                STORM_LOG_TRACE("\tSharpened LP");
+                            }
                         }
                     }
+                    if (num_sharpen > 0) {
+                        STORM_LOG_WARN("Numerical instabilities detected: LP Solver found an achievable point outside of the search area. The search area had to be sharpened " << num_sharpen << " times.");
+                        // pop sharpened constraints
+                        lpModel->pop();
+                    }
+                    
                 } else {
                     // Traverse all the non-empty children.
                     for (uint64_t childId = 0; childId < polytopeTree.getChildren().size(); ++childId) {
