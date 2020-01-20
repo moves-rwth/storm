@@ -258,12 +258,8 @@ namespace storm {
                     if (isTarget) {
                         // Depending on whether we compute rewards, we select the right initial result
                         // MDP stuff
-                        std::vector<std::map<uint64_t, ValueType>> transitionsInBelief;
                         targetStates.push_back(beliefStateMap.left.at(currId));
-                        std::map<uint64_t, ValueType> transitionInActionBelief;
-                        transitionInActionBelief[beliefStateMap.left.at(currId)] = storm::utility::one<ValueType>();
-                        transitionsInBelief.push_back(transitionInActionBelief);
-                        mdpTransitions.push_back(transitionsInBelief);
+                        mdpTransitions.push_back({{{beliefStateMap.left.at(currId), storm::utility::one<ValueType>()}}});
                     } else {
                         uint64_t representativeState = pomdp.getStatesWithObservation(beliefList[currId].observation).front();
                         uint64_t numChoices = pomdp.getNumberOfChoices(representativeState);
@@ -417,6 +413,182 @@ namespace storm {
                 auto overApprox = overApproxResultMap[beliefStateMap.left.at(initialBelief.id)];
 
                 STORM_PRINT("Time Overapproximation: " << overApproxTimer << std::endl)
+
+                // Prototypical implementation of the underapproximation - WRONG
+                /*
+                // The map has the following form: (beliefId, action) --> stateId
+                uamap_type uaStateMap;
+                // Reserve states 0 and 1 as always sink/goal states
+                std::map<uint64_t, std::vector<std::map<uint64_t, ValueType>>> uaTransitions = {{0,{{{0, storm::utility::one<ValueType>()}}}},
+                                                                                                {1,{{{1, storm::utility::one<ValueType>()}}}}};
+                // Hint vector for the MDP modelchecker (initialize with constant sink/goal values)
+                std::vector<uint64_t> uaTargetStates = {1};
+                uint64_t uaStateId = 2;
+
+                // for beliefs which are both in the actual belief support and the grid, we use the max value for the action to indicate the support belief
+                uaStateMap.insert(uamap_type::value_type(std::make_pair(initialBelief.id, std::numeric_limits<uint64_t>::max()), uaStateId));
+                ++uaStateId;
+                beliefsToBeExpanded.push_back(initialBelief.id);
+                while(!beliefsToBeExpanded.empty()){
+                    uint64_t currId = beliefsToBeExpanded.front();
+                    beliefsToBeExpanded.pop_front();
+                    bool isTarget = beliefIsTarget[currId];
+
+                    if(isTarget){
+                        // For target states we add a self-loop
+                        uaTargetStates.push_back(uaStateMap.left.at(std::make_pair(currId, std::numeric_limits<uint64_t>::max())));
+                        uaTransitions[uaStateMap.left.at(std::make_pair(currId, std::numeric_limits<uint64_t>::max()))] = {{{uaStateMap.left.at(std::make_pair(currId, std::numeric_limits<uint64_t>::max())), storm::utility::one<ValueType>()}}};
+                    } else {
+                        uint64_t numChoices = pomdp.getNumberOfChoices(pomdp.getStatesWithObservation(beliefList[currId].observation).front());
+                        //Triangulate the current belief to determine its approximation bases
+                        std::vector<std::vector<ValueType>> subSimplex;
+                        std::vector<ValueType> lambdas;
+                        if (cacheSubsimplices && subSimplexCache.count(currId) > 0) {
+                            subSimplex = subSimplexCache[currId];
+                            lambdas = lambdaCache[currId];
+                        } else {
+                            std::pair<std::vector<std::vector<ValueType>>, std::vector<ValueType>> temp = computeSubSimplexAndLambdas(
+                                    beliefList[currId].probabilities, observationResolutionVector[beliefList[currId].observation]);
+                            subSimplex = temp.first;
+                            lambdas = temp.second;
+                            if(cacheSubsimplices){
+                                subSimplexCache[currId] = subSimplex;
+                                lambdaCache[currId] = lambdas;
+                            }
+                        }
+                        std::deque<std::pair<uint64_t,uint64_t>> approxToExpand;
+                        std::vector<std::map<uint64_t, ValueType>> approxActionTransitions(numChoices);
+                        for (size_t j = 0; j < lambdas.size(); ++j) {
+                            if (!cc.isEqual(lambdas[j], storm::utility::zero<ValueType>())){
+                                uint64_t approxId = getBeliefIdInVector(beliefGrid, beliefList[currId].observation, subSimplex[j]);
+                                //STORM_PRINT("ApproxId " << approxId << std::endl)
+                                if (approxId == uint64_t(-1)) {
+                                    // If the approximation base is not yet in the grid, we add it and it has to be expanded
+                                    storm::pomdp::Belief<ValueType> gridBelief = {nextId, beliefList[currId].observation, subSimplex[j]};
+                                    beliefList.push_back(gridBelief);
+                                    beliefGrid.push_back(gridBelief);
+                                    beliefIsTarget.push_back(targetObservations.find(beliefList[currId].observation) != targetObservations.end());
+                                    for(uint64_t action=0; action < numChoices; ++action) {
+                                        approxToExpand.push_back(std::make_pair(nextId, action));
+                                        uaStateMap.insert(uamap_type::value_type(std::make_pair(nextId, action), uaStateId));
+                                        approxActionTransitions[action][uaStateId] = lambdas[j];
+                                        ++uaStateId;
+                                    }
+                                    ++nextId;
+                                } else if(uaStateMap.left.find(std::pair<uint64_t,uint64_t>(approxId,0)) != uaStateMap.left.end()){
+                                    // we can check only for (approxId,0) as that always exists if the grid state is mapped
+                                    for(uint64_t action=0; action < numChoices; ++action) {
+                                        approxActionTransitions[action][uaStateMap.left.at(std::make_pair(approxId,action))] = lambdas[j];
+                                    }
+                                } else {
+                                    for(uint64_t action=0; action < numChoices; ++action) {
+                                        approxToExpand.push_back(std::make_pair(approxId, action));
+                                        uaStateMap.insert(uamap_type::value_type(std::make_pair(approxId, action), uaStateId));
+                                        approxActionTransitions[action][uaStateId] = lambdas[j];
+                                        ++uaStateId;
+                                    }
+                                }
+                            }
+                        }
+                        uaTransitions[uaStateMap.left.at(std::make_pair(currId,std::numeric_limits<uint64_t>::max()))] = approxActionTransitions;
+                        // Now expand all approximation bases
+                        while(!approxToExpand.empty()){
+                            uint64_t approxId = approxToExpand.front().first;
+                            uint64_t approxAction = approxToExpand.front().second;
+                            approxToExpand.pop_front();
+
+                            // Iterate over all actions and determine the successor states
+                            std::map<uint64_t, ValueType> transitionsInAction;
+                            std::map<uint32_t, ValueType> actionObservationProbabilities = computeObservationProbabilitiesAfterAction(pomdp, beliefList[approxId], approxAction);
+                            for (auto iter = actionObservationProbabilities.begin(); iter != actionObservationProbabilities.end(); ++iter) {
+                                uint32_t observation = iter->first;
+                                uint64_t idNextBelief = getBeliefAfterActionAndObservation(pomdp, beliefList, beliefIsTarget, targetObservations, beliefList[approxId], approxAction,
+                                                                                           observation, nextId);
+                                nextId = beliefList.size();
+                                if(uaStateMap.left.find(std::make_pair(idNextBelief, std::numeric_limits<uint64_t>::max())) == uaStateMap.left.end()){
+                                    // add state to the mapping and set it t be expanded
+                                    uaStateMap.insert(uamap_type::value_type(std::make_pair(idNextBelief,std::numeric_limits<uint64_t>::max()), uaStateId));
+                                    ++uaStateId;
+                                    beliefsToBeExpanded.push_back(idNextBelief);
+                                }
+                                transitionsInAction[uaStateMap.left.at(std::make_pair(idNextBelief,std::numeric_limits<uint64_t>::max()))] = iter->second;
+                            }
+                            uaTransitions[uaStateMap.left.at(std::make_pair(approxId,approxAction))] = {transitionsInAction};
+                        }
+                    }
+                }
+
+
+                std::vector<std::vector<std::map<uint64_t, ValueType>>> uaTransitionVector;
+                for(auto iter = uaTransitions.begin(); iter != uaTransitions.end(); ++iter){
+                    uaTransitionVector.push_back(iter->second);
+                }
+                STORM_PRINT(uaTransitions.size() << std::endl)
+
+                storm::models::sparse::StateLabeling uaLabeling(uaTransitions.size());
+                uaLabeling.addLabel("init");
+                uaLabeling.addLabel("target");
+                uaLabeling.addLabel("belief");
+                uaLabeling.addLabel("grid");
+                uaLabeling.addLabelToState("init", uaStateMap.left.at(std::make_pair(initialBelief.id,std::numeric_limits<uint64_t>::max())));
+                for (auto targetState : uaTargetStates) {
+                    uaLabeling.addLabelToState("target", targetState);
+                }
+                for (auto &iter : uaStateMap.right) {
+                    std::stringstream mapEntryStr;
+                    mapEntryStr << std::to_string(iter.first);
+                    mapEntryStr << " --> ";
+                    mapEntryStr << "[{" + std::to_string(beliefList[iter.second.first].observation) << "} | " ;
+                    for(uint64_t state = 0; state < beliefList[iter.second.first].probabilities.size(); ++state){
+                        if(beliefList[iter.second.first].probabilities[state] > storm::utility::zero<ValueType>()){
+                            mapEntryStr << std::to_string(state) << " : " << beliefList[iter.second.first].probabilities[state] << ", ";
+                        }
+                    }
+                    mapEntryStr << "]" << std::endl;
+                    STORM_PRINT(mapEntryStr.str());
+                    if(!uaLabeling.containsLabel(mapEntryStr.str())){
+                        uaLabeling.addLabel(mapEntryStr.str());
+                    }
+                    if(iter.second.second == std::numeric_limits<uint64_t>::max()){
+                        uaLabeling.addLabelToState("belief", iter.first);
+                    } else {
+                        uaLabeling.addLabelToState("grid", iter.first);
+                    }
+                    uaLabeling.addLabelToState(mapEntryStr.str(), iter.first);
+                }
+
+                //STORM_PRINT(buildTransitionMatrix(uaTransitionVector))
+                storm::storage::sparse::ModelComponents<ValueType, RewardModelType> uaModelComponents(buildTransitionMatrix(uaTransitionVector), uaLabeling);
+                storm::models::sparse::Mdp<ValueType, RewardModelType> underApproxMdp(uaModelComponents);
+                if (computeRewards) {
+                    storm::models::sparse::StandardRewardModel<ValueType> uaMdpRewardModel(boost::none, std::vector<ValueType>(uaModelComponents.transitionMatrix.getRowCount()));
+                    for (auto const &iter : uaStateMap.left) {
+                        auto currentBelief = beliefList[iter.first.first];
+                        auto representativeState = pomdp.getStatesWithObservation(currentBelief.observation).front();
+                        for (uint64_t action = 0; action < underApproxMdp.getNumberOfChoices(iter.second); ++action) {
+                            // Add the reward
+                            uaMdpRewardModel.setStateActionReward(overApproxMdp.getChoiceIndex(storm::storage::StateActionPair(iter.second, action)),
+                                                                getRewardAfterAction(pomdp, pomdp.getChoiceIndex(storm::storage::StateActionPair(representativeState, action)),
+                                                                                     currentBelief));
+                        }
+                    }
+                    underApproxMdp.addRewardModel("std", uaMdpRewardModel);
+                    underApproxMdp.restrictRewardModels(std::set<std::string>({"std"}));
+                }
+                underApproxMdp.printModelInformationToStream(std::cout);
+
+                auto uaModel = std::make_shared<storm::models::sparse::Mdp<ValueType, RewardModelType>>(underApproxMdp);
+                auto uaModelPtr = std::static_pointer_cast<storm::models::sparse::Model<ValueType, RewardModelType>>(uaModel);
+                storm::api::exportSparseModelAsDot(uaModelPtr, "ua_model.dot");
+                auto uaTask = storm::api::createTask<ValueType>(property, false);
+                storm::utility::Stopwatch underApproxTimer(true);
+                std::unique_ptr<storm::modelchecker::CheckResult> uaRes(storm::api::verifyWithSparseEngine<ValueType>(uaModelPtr, uaTask));
+                underApproxTimer.stop();
+                STORM_LOG_ASSERT(uaRes, "Result not exist.");
+                uaRes->filter(storm::modelchecker::ExplicitQualitativeCheckResult(storm::storage::BitVector(underApproxMdp.getNumberOfStates(), true)));
+                auto underApproxResultMap = uaRes->asExplicitQuantitativeCheckResult<ValueType>().getValueMap();
+                auto underApprox = underApproxResultMap[uaStateMap.left.at(std::make_pair(initialBelief.id, std::numeric_limits<uint64_t>::max()))];
+                */
                 auto underApprox = weightedSumUnderMap[initialBelief.id];
                 STORM_PRINT("Over-Approximation Result: " << overApprox << std::endl);
                 STORM_PRINT("Under-Approximation Result: " << underApprox << std::endl);

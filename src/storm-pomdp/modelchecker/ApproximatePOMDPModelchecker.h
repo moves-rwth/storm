@@ -11,6 +11,7 @@ namespace storm {
     namespace pomdp {
         namespace modelchecker {
             typedef boost::bimap<uint64_t, uint64_t> bsmap_type;
+            typedef boost::bimap<std::pair<uint64_t, uint64_t>, uint64_t> uamap_type;
 
             template<class ValueType>
             struct POMDPCheckResult {
@@ -31,7 +32,7 @@ namespace storm {
                 std::map<uint64_t, ValueType> &underApproxMap;
                 std::vector<storm::pomdp::Belief<ValueType>> &beliefList;
                 std::vector<bool> &beliefIsTarget;
-                std::map<uint64_t, uint64_t> &beliefStateMap;
+                bsmap_type &beliefStateMap;
             };
 
             template<class ValueType, typename RewardModelType = models::sparse::StandardRewardModel<ValueType>>
