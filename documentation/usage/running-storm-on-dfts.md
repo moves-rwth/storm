@@ -57,7 +57,7 @@ In this example we consider the *Hypothetical Example Computer System (HECS)* fr
 We compute the MTTF again.
 
 ```console
-$ storm-dft -dft motorbike.dft -mttf
+$ storm-dft -dft hecs.dft -mttf
 ```
 
 {% include includes/show_output.html class="dft_hecs_mttf" path="dft/hecs_mttf.out" %}
@@ -65,7 +65,7 @@ $ storm-dft -dft motorbike.dft -mttf
 As the system is larger, it makes sense to use *symmetry reduction* as an optimization via `-symred`.
 
 ```console
-$ storm-dft -dft motorbike.dft -mttf -symred
+$ storm-dft -dft hecs.dft -mttf -symred
 ```
 
 {% include includes/show_output.html class="dft_hecs_mttf_symred" path="dft/hecs_mttf_symred.out" %}
@@ -75,7 +75,7 @@ This reduces the model size drastically and improves the analysis time.
 For reliability another optimization can be enabled: *modularisation* via `--modularisation`.
 
 ```console
-$ storm-dft -dft motorbike.dft --timebound 500 -symred --modularisation
+$ storm-dft -dft hecs.dft --timebound 500 -symred --modularisation
 ```
 
 {% include includes/show_output.html class="dft_hecs_timebound_mod" path="dft/hecs_timebound_mod.out" %}
