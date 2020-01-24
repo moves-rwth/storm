@@ -1170,6 +1170,16 @@ namespace storm {
                 return result;
             }
 
+            template<typename T>
+            std::vector<T> applyInversePermutation(std::vector<uint64_t> const& inversePermutation, std::vector<T> const& source) {
+                std::vector<T> result;
+                result.reserve(source.size());
+                for (uint64_t sourceIndex : inversePermutation) {
+                    result.push_back(source[sourceIndex]);
+                }
+                return result;
+            }
+
             /*!
              * Output vector as string.
              *
