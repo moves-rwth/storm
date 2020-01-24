@@ -274,8 +274,13 @@ namespace storm {
                 if (counterexampleGeneratorSettings.isCounterexampleSet()) {
                     buildChoiceOrigins = counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet();
                 }
+                options.setBuildChoiceOrigins(buildChoiceOrigins);
             }
-            options.setBuildChoiceOrigins(buildChoiceOrigins);
+            if (input.model->getModelType() == storm::storage::SymbolicModelDescription::ModelType::POMDP) {
+                options.setBuildChoiceOrigins(true);
+                options.setBuildChoiceLabels(true);
+            }
+
             options.setAddOutOfBoundsState(buildSettings.isBuildOutOfBoundsStateSet());
             if (buildSettings.isBuildFullModelSet()) {
                 options.clearTerminalStates();
