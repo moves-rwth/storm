@@ -238,9 +238,15 @@ namespace storm {
             
             freshLabelName = (identifier[qi::_val = qi::_1])[qi::_pass = phoenix::bind(&PrismParser::isFreshLabelName, phoenix::ref(*this), qi::_1)];
             freshLabelName.name("fresh label name");
-            
+
             labelDefinition = (qi::lit("label") > -qi::lit("\"") > freshLabelName > -qi::lit("\"") > qi::lit("=") > boolExpression > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createLabel, phoenix::ref(*this), qi::_1, qi::_2)];
             labelDefinition.name("label definition");
+
+            freshObservationLabelName = (identifier[qi::_val = qi::_1])[qi::_pass = phoenix::bind(&PrismParser::isFreshObservationLabelName, phoenix::ref(*this), qi::_1)];
+            freshObservationLabelName.name("fresh observable name");
+
+            observableDefinition = (qi::lit("observable") > -qi::lit("\"") > freshObservationLabelName > -qi::lit("\"") > qi::lit("=") > (intExpression | boolExpression) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createObservationLabel, phoenix::ref(*this), qi::_1, qi::_2)];
+            observableDefinition.name("observable definition");
             
             assignmentDefinition = ((qi::lit("(") >> identifier >> qi::lit("'")) > qi::lit("=") > expression_ > qi::lit(")"))[qi::_val = phoenix::bind(&PrismParser::createAssignment, phoenix::ref(*this), qi::_1, qi::_2)];
             assignmentDefinition.name("assignment");
@@ -287,7 +293,8 @@ namespace storm {
                          | initialStatesConstruct(phoenix::ref(globalProgramInformation))
                          | rewardModelDefinition(phoenix::ref(globalProgramInformation))[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::rewardModels, phoenix::ref(globalProgramInformation)), qi::_1)]
                          | labelDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::labels, phoenix::ref(globalProgramInformation)), qi::_1)]
-                         | formulaDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::formulas, phoenix::ref(globalProgramInformation)), qi::_1)]
+                           | observableDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::observationLabels, phoenix::ref(globalProgramInformation)), qi::_1)]
+                           | formulaDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::formulas, phoenix::ref(globalProgramInformation)), qi::_1)]
                      )
                      > -(systemCompositionConstruct(phoenix::ref(globalProgramInformation))) > qi::eoi)[qi::_val = phoenix::bind(&PrismParser::createProgram, phoenix::ref(*this), phoenix::ref(globalProgramInformation))];
             start.name("probabilistic program");
@@ -309,6 +316,7 @@ namespace storm {
             qi::on_success(formulaDefinition, setLocationInfoFunction);
             qi::on_success(rewardModelDefinition, setLocationInfoFunction);
             qi::on_success(labelDefinition, setLocationInfoFunction);
+            qi::on_success(observableDefinition, setLocationInfoFunction);
             qi::on_success(commandDefinition, setLocationInfoFunction);
             qi::on_success(updateDefinition, setLocationInfoFunction);
             qi::on_success(assignmentDefinition, setLocationInfoFunction);
@@ -434,6 +442,18 @@ namespace storm {
                 for (auto const& existingLabel : this->globalProgramInformation.labels) {
                     if (labelName == existingLabel.getName()) {
                         STORM_LOG_ERROR("Parsing error in " << this->getFilename() << ": Duplicate label name '" << identifier << "'.");
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        bool PrismParser::isFreshObservationLabelName(std::string const& labelName) {
+            if (!this->secondRun) {
+                for (auto const& existingLabel : this->globalProgramInformation.observationLabels) {
+                    if (labelName == existingLabel.getName()) {
+                        STORM_LOG_ERROR("Parsing error in " << this->getFilename() << ": Duplicate observable name '" << identifier << "'.");
                         return false;
                     }
                 }
@@ -598,6 +618,10 @@ namespace storm {
         
         storm::prism::Label PrismParser::createLabel(std::string const& labelName, storm::expressions::Expression expression) const {
             return storm::prism::Label(labelName, expression, this->getFilename());
+        }
+
+        storm::prism::ObservationLabel PrismParser::createObservationLabel(std::string const& labelName, storm::expressions::Expression expression) const {
+            return storm::prism::ObservationLabel(labelName, expression, this->getFilename());
         }
         
         storm::prism::RewardModel PrismParser::createRewardModel(std::string const& rewardModelName, std::vector<storm::prism::StateReward> const& stateRewards, std::vector<storm::prism::StateActionReward> const& stateActionRewards, std::vector<storm::prism::TransitionReward> const& transitionRewards) const {
@@ -945,7 +969,7 @@ namespace storm {
                 }
             }
 
-            return storm::prism::Program(manager, finalModelType, globalProgramInformation.constants, globalProgramInformation.globalBooleanVariables, globalProgramInformation.globalIntegerVariables, orderedFormulas, globalProgramInformation.modules, globalProgramInformation.actionIndices, globalProgramInformation.rewardModels, globalProgramInformation.labels, secondRun && !globalProgramInformation.hasInitialConstruct ? boost::none : boost::make_optional(globalProgramInformation.initialConstruct), globalProgramInformation.systemCompositionConstruct, prismCompatibility, this->getFilename(), 1, this->secondRun);
+            return storm::prism::Program(manager, finalModelType, globalProgramInformation.constants, globalProgramInformation.globalBooleanVariables, globalProgramInformation.globalIntegerVariables, orderedFormulas, globalProgramInformation.modules, globalProgramInformation.actionIndices, globalProgramInformation.rewardModels, globalProgramInformation.labels, globalProgramInformation.observationLabels, secondRun && !globalProgramInformation.hasInitialConstruct ? boost::none : boost::make_optional(globalProgramInformation.initialConstruct), globalProgramInformation.systemCompositionConstruct, prismCompatibility, this->getFilename(), 1, this->secondRun);
         }
         
         void PrismParser::removeInitialConstruct(GlobalProgramInformation& globalProgramInformation) const {
