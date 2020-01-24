@@ -113,8 +113,8 @@ namespace storm {
                  */
                 std::size_t getNumberOfItems() const;
 
-                
 
+                void permuteItems(std::vector<uint64_t> const& inversePermutation);
                 /*!
                  * Prints information about the labeling to the specified stream.
                  *
