@@ -433,6 +433,16 @@ namespace storm {
             return true;
         }
 
+        BitVector BitVector::permute(std::vector<uint64_t> const& inversePermutation) const {
+            BitVector result(this->size());
+            for (uint64_t i = 0; i < this->size(); ++i) {
+                if(this->get(inversePermutation[i])) {
+                    result.set(i, true);
+                }
+            }
+            return result;
+        }
+
         void BitVector::set(uint_fast64_t bitIndex, BitVector const& other) {
             STORM_LOG_ASSERT((bitIndex & mod64mask) == 0, "Bit index must be a multiple of 64.");
             STORM_LOG_ASSERT(other.size() <= this->size() - bitIndex, "Bit vector argument is too long.");

@@ -372,6 +372,14 @@ namespace storm {
              * @param other The bit vector whose pattern to set.
              */
             void set(uint_fast64_t bitIndex, BitVector const& other);
+
+            /*!
+             * Apply a permutation of entries. That is, in row i, write the entry of row inversePermutation[i].
+             * @param inversePermutation.
+             * @return
+             * TODO this operation is slow.
+             */
+            BitVector permute(std::vector<uint64_t> const& inversePermutation) const;
             
             /*!
              * Retrieves the content of the current bit vector at the given index for the given number of bits as a new

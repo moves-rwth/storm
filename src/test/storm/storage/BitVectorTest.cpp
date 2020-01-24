@@ -398,6 +398,15 @@ TEST(BitVectorTest, Increment) {
     EXPECT_TRUE(vector1.empty());
 }
 
+TEST(BitVectorTest, permute) {
+    storm::storage::BitVector vector1(9, {3, 5});
+    std::vector<uint64_t> inversePermutation = {0, 1, 3, 2, 4, 6, 5, 8, 7};
+    storm::storage::BitVector vector2 = vector1.permute(inversePermutation);
+    EXPECT_EQ(vector1.getNumberOfSetBits(), vector2.getNumberOfSetBits());
+    EXPECT_TRUE(vector2.get(2));
+    EXPECT_TRUE(vector2.get(6));
+}
+
 TEST(BitVectorTest, Implies) {
     storm::storage::BitVector vector1(32);
 	storm::storage::BitVector vector2(32, true);
