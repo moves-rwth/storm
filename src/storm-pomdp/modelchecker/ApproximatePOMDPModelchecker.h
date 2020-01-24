@@ -80,7 +80,7 @@ namespace storm {
                 computeFirstRefinementStep(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                                            std::set<uint32_t> const &targetObservations, bool min, std::vector<uint64_t> &observationResolutionVector,
                                            bool computeRewards, double explorationThreshold, boost::optional<std::map<uint64_t, ValueType>> overApproximationMap = boost::none,
-                                           boost::optional<std::map<uint64_t, ValueType>> underApproximationMap = boost::none);
+                                           boost::optional<std::map<uint64_t, ValueType>> underApproximationMap = boost::none, uint64_t maxUaModelSize = 200);
 
                 /**
                  *
@@ -96,7 +96,7 @@ namespace storm {
                                        std::set<uint32_t> const &targetObservations, bool min,
                                        std::vector<uint64_t> &observationResolutionVector, bool computeRewards, double explorationThreshold,
                                        boost::optional<std::map<uint64_t, ValueType>> overApproximationMap = boost::none,
-                                       boost::optional<std::map<uint64_t, ValueType>> underApproximationMap = boost::none);
+                                       boost::optional<std::map<uint64_t, ValueType>> underApproximationMap = boost::none, uint64_t maxUaModelSize = 200);
 
                 /**
                  *
@@ -164,24 +164,17 @@ namespace storm {
                  * @param beliefList
                  * @param beliefIsTarget
                  * @param targetObservations
-                 * @param observationProbabilities
-                 * @param nextBelieves
-                 * @param result
-                 * @param chosenActions
-                 * @param gridResolution
                  * @param initialBeliefId
                  * @param min
+                 * @param computeReward
+                 * @param maxModelSize
                  * @return
                  */
                 ValueType computeUnderapproximation(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                                                     std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
                                                     std::vector<bool> &beliefIsTarget,
                                                     std::set<uint32_t> const &targetObservations,
-                                                    std::map<uint64_t, std::vector<std::map<uint32_t, ValueType>>> &observationProbabilities,
-                                                    std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
-                                                    std::map<uint64_t, ValueType> &result,
-                                                    std::map<uint64_t, std::vector<uint64_t>> &chosenActions,
-                                                    uint64_t gridResolution, uint64_t initialBeliefId, bool min, bool computeReward, bool generateMdp);
+                                                    uint64_t initialBeliefId, bool min, bool computeReward, uint64_t maxModelSize);
 
                 /**
                  *
