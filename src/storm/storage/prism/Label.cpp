@@ -23,5 +23,13 @@ namespace storm {
             stream << "label \"" << label.getName() << "\" = " << label.getStatePredicateExpression() << ";";
             return stream;
         }
+
+        ObservationLabel::ObservationLabel(std::string const& name, storm::expressions::Expression const& statePredicateExpression, std::string const& filename, uint_fast64_t lineNumber) : Label(name, statePredicateExpression, filename, lineNumber) {
+            // Intentionally left empty.
+        }
+
+        ObservationLabel ObservationLabel::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
+            return ObservationLabel(this->getName(), this->getStatePredicateExpression().substitute(substitution), this->getFilename(), this->getLineNumber());
+        }
     } // namespace prism
 } // namespace storm
