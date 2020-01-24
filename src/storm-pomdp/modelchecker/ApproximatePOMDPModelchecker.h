@@ -11,7 +11,6 @@ namespace storm {
     namespace pomdp {
         namespace modelchecker {
             typedef boost::bimap<uint64_t, uint64_t> bsmap_type;
-            typedef boost::bimap<std::pair<uint64_t, uint64_t>, uint64_t> uamap_type;
 
             template<class ValueType>
             struct POMDPCheckResult {
@@ -28,11 +27,19 @@ namespace storm {
                 std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> overApproxModelPtr;
                 ValueType overApproxValue;
                 ValueType underApproxValue;
-                std::map<uint64_t, ValueType> &overApproxMap;
-                std::map<uint64_t, ValueType> &underApproxMap;
-                std::vector<storm::pomdp::Belief<ValueType>> &beliefList;
-                std::vector<bool> &beliefIsTarget;
-                bsmap_type &beliefStateMap;
+                std::map<uint64_t, ValueType> overApproxMap;
+                std::map<uint64_t, ValueType> underApproxMap;
+                std::vector<storm::pomdp::Belief<ValueType>> beliefList;
+                std::vector<bool> beliefIsTarget;
+                bsmap_type overApproxBeliefStateMap;
+                bsmap_type underApproxBeliefStateMap;
+            };
+
+            template<class ValueType, typename RewardModelType = models::sparse::StandardRewardModel<ValueType>>
+            struct UnderApproxComponents {
+                ValueType underApproxValue;
+                std::map<uint64_t, ValueType> underApproxMap;
+                bsmap_type underApproxBeliefStateMap;
             };
 
             template<class ValueType, typename RewardModelType = models::sparse::StandardRewardModel<ValueType>>
@@ -170,11 +177,12 @@ namespace storm {
                  * @param maxModelSize
                  * @return
                  */
-                ValueType computeUnderapproximation(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                                    std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
-                                                    std::vector<bool> &beliefIsTarget,
-                                                    std::set<uint32_t> const &targetObservations,
-                                                    uint64_t initialBeliefId, bool min, bool computeReward, uint64_t maxModelSize);
+                std::unique_ptr<UnderApproxComponents<ValueType, RewardModelType>> computeUnderapproximation(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
+                                                                                                             std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
+                                                                                                             std::vector<bool> &beliefIsTarget,
+                                                                                                             std::set<uint32_t> const &targetObservations,
+                                                                                                             uint64_t initialBeliefId, bool min, bool computeReward,
+                                                                                                             uint64_t maxModelSize);
 
                 /**
                  *
