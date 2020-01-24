@@ -19,7 +19,7 @@ namespace storm {
         void exportJaniModelAsDot(storm::jani::Model const& model, std::string const& filename);
 
         template <typename ValueType>
-        void exportSparseModelAsDrn(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::string const& filename, std::vector<std::string> const& parameterNames) {
+        void exportSparseModelAsDrn(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::string const& filename, std::vector<std::string> const& parameterNames = {}) {
             std::ofstream stream;
             storm::utility::openFile(filename, stream);
             storm::exporter::explicitExportSparseModel(stream, model, parameterNames);
