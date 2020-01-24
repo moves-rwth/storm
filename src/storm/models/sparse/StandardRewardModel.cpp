@@ -138,6 +138,20 @@ namespace storm {
                 }
                 return StandardRewardModel(std::move(newStateRewardVector), std::move(newStateActionRewardVector), std::move(newTransitionRewardMatrix));
             }
+
+            template<typename ValueType>
+            StandardRewardModel<ValueType> StandardRewardModel<ValueType>::permuteActions(std::vector<uint64_t> const& inversePermutation) const {
+                boost::optional<std::vector<ValueType>> newStateRewardVector(this->getOptionalStateRewardVector());
+                boost::optional<std::vector<ValueType>> newStateActionRewardVector;
+                if (this->hasStateActionRewards()) {
+                    newStateActionRewardVector = storm::utility::vector::applyInversePermutation(inversePermutation, this->getStateActionRewardVector());
+                }
+                boost::optional<storm::storage::SparseMatrix<ValueType>> newTransitionRewardMatrix;
+                if (this->hasTransitionRewards()) {
+                    newTransitionRewardMatrix = this->getTransitionRewardMatrix().permuteRows(inversePermutation);
+                }
+                return StandardRewardModel(std::move(newStateRewardVector), std::move(newStateActionRewardVector), std::move(newTransitionRewardMatrix));
+            }
             
             template<typename ValueType>
             template<typename MatrixValueType>
