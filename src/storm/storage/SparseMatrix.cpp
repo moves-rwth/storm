@@ -1144,7 +1144,7 @@ namespace storm {
             // Finalize created matrix and return result.
             return matrixBuilder.build();
         }
-        
+
         template<typename ValueType>
         SparseMatrix<ValueType> SparseMatrix<ValueType>::selectRowsFromRowIndexSequence(std::vector<index_type> const& rowIndexSequence, bool insertDiagonalEntries) const{
             // First, we need to count how many non-zero entries the resulting matrix will have and reserve space for
@@ -1162,10 +1162,10 @@ namespace storm {
                     ++newEntries;
                 }
             }
-            
+
             // Now create the matrix to be returned with the appropriate size.
             SparseMatrixBuilder<ValueType> matrixBuilder(rowIndexSequence.size(), columnCount, newEntries);
-            
+
             // Copy over the selected rows from the source matrix.
             for(index_type row = 0, rowEnd = rowIndexSequence.size(); row < rowEnd; ++row) {
                 bool insertedDiagonalElement = false;
@@ -1182,9 +1182,31 @@ namespace storm {
                     matrixBuilder.addNextValue(row, row, storm::utility::zero<ValueType>());
                 }
             }
-            
+
             // Finally create matrix and return result.
             return matrixBuilder.build();
+        }
+
+        template<typename ValueType>
+        SparseMatrix<ValueType> SparseMatrix<ValueType>::permuteRows(std::vector<index_type> const& inversePermutation) const {
+
+            // Now create the matrix to be returned with the appropriate size.
+            // The entry size is only adequate if this is indeed a permutation.
+            SparseMatrixBuilder<ValueType> matrixBuilder(inversePermutation.size(), columnCount, entryCount);
+
+            // Copy over the selected rows from the source matrix.
+
+            for (index_type writeTo = 0; writeTo < inversePermutation.size(); ++writeTo) {
+                index_type const &readFrom = inversePermutation[writeTo];
+                auto row = this->getRow(readFrom);
+                for (auto const& entry : row) {
+                    matrixBuilder.addNextValue(writeTo, entry.getColumn(), entry.getValue());
+                }
+            }
+            // Finally create matrix and return result.
+            auto result = matrixBuilder.build();
+            result.setRowGroupIndices(this->rowGroupIndices.get());
+            return result;
         }
         
         template <typename ValueType>
