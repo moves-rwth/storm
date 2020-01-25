@@ -183,8 +183,7 @@ namespace storm {
             if (this->mask.size() == 0) {
                 this->mask = computeObservabilityMask(variableInformation);
             }
-
-            return unpackStateToObservabilityClass(state, observabilityMap, mask);
+            return unpackStateToObservabilityClass(state, evaluateObservationLabels(state), observabilityMap, mask);
         }
 
         template<typename ValueType, typename StateType>
