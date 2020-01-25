@@ -328,7 +328,7 @@ namespace storm {
         void PrismParser::moveToSecondRun() {
             // In the second run, we actually need to parse the commands instead of just skipping them,
             // so we adapt the rule for parsing commands.
-            STORM_LOG_THROW(observables.empty(), storm::exceptions::WrongFormatException, "Some variables marked as observable, but never declared");
+            STORM_LOG_THROW(observables.empty(), storm::exceptions::WrongFormatException, "Some variables marked as observable, but never declared, e.g. " <<  *observables.begin());
             
             commandDefinition = (((qi::lit("[") > -identifier > qi::lit("]"))
                                  |
