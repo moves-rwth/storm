@@ -63,6 +63,8 @@ void initializeSettings() {
     storm::settings::addModule<storm::settings::modules::ResourceSettings>();
     storm::settings::addModule<storm::settings::modules::JitBuilderSettings>();
 
+    storm::settings::addModule<storm::settings::modules::TransformationSettings>();
+
 
 
     storm::settings::addModule<storm::settings::modules::POMDPSettings>();
