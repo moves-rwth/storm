@@ -36,6 +36,7 @@
 #include "storm-pomdp/transformer/GlobalPomdpMecChoiceEliminator.h"
 #include "storm-pomdp/transformer/PomdpMemoryUnfolder.h"
 #include "storm-pomdp/transformer/BinaryPomdpTransformer.h"
+#include "storm-pomdp/transformer/MakePOMDPCanonic.h"
 #include "storm-pomdp/analysis/UniqueObservationStates.h"
 #include "storm-pomdp/analysis/QualitativeAnalysis.h"
 #include "storm/api/storm.h"
@@ -100,6 +101,8 @@ int main(const int argc, const char** argv) {
         auto model = storm::cli::buildPreprocessExportModelWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalNumber>(symbolicInput, engine);
         STORM_LOG_THROW(model && model->getType() == storm::models::ModelType::Pomdp, storm::exceptions::WrongFormatException, "Expected a POMDP.");
         std::shared_ptr<storm::models::sparse::Pomdp<storm::RationalNumber>> pomdp = model->template as<storm::models::sparse::Pomdp<storm::RationalNumber>>();
+        storm::transformer::MakePOMDPCanonic<storm::RationalNumber> makeCanonic(*pomdp);
+        pomdp = makeCanonic.transform();
         
         std::shared_ptr<storm::logic::Formula const> formula;
         if (!symbolicInput.properties.empty()) {
