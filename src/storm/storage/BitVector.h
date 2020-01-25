@@ -233,6 +233,19 @@ namespace storm {
              * @param init The truth value to which to initialize newly created bits.
              */
             void resize(uint_fast64_t newLength, bool init = false);
+
+            /*!
+             * Concatenate this bitvector with another bitvector. The result is stored in this bitvector.
+             * During the operation, the bitvector is extended to match the size of the sum of the two bitvectors
+             * The current implementation expects this->size() to be a multiple of 64. This can be ensured by a call to
+             * expandSize
+             */
+            void concat(BitVector const& extension);
+
+            /*
+             * Expands the size to a multiple of 64.
+             */
+            void expandSize(bool init = false);
             
             /*!
              * Enlarges the bit vector such that it holds at least the given number of bits (but possibly more).
@@ -424,7 +437,7 @@ namespace storm {
             bool empty() const;
             
             /*!
-             * Retrievs whether all bits are set in this bit vector.
+             * Retrieves whether all bits are set in this bit vector.
              * If the bit vector has size 0, this method always returns true.
              *
              * @return True iff all bits in the bit vector are set.

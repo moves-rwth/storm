@@ -214,7 +214,6 @@ TEST(BitVectorTest, OperatorAnd) {
     vector2.set(31);
     
 	storm::storage::BitVector andResult = vector1 & vector2;
-    
 	for (uint_fast64_t i = 0; i < 31; ++i) {
 		ASSERT_FALSE(andResult.get(i));
 	}
@@ -572,4 +571,28 @@ TEST(BitVectorTest, CompareAndSwap) {
     
     result = vector.compareAndSwap(68, 0, 68);
     ASSERT_TRUE(result);
+}
+
+TEST(BitVectorTest, Concat) {
+    storm::storage::BitVector vector1(64, {3, 5});
+    storm::storage::BitVector vector2(65, {10, 12});
+
+    vector1.concat(vector2);
+    ASSERT_EQ(129ul, vector1.size());
+    ASSERT_TRUE(vector1.get(3));
+    ASSERT_TRUE(vector1.get(5));
+    ASSERT_TRUE(vector1.get(10 + 64));
+    ASSERT_TRUE(vector1.get(12 + 64));
+    ASSERT_EQ(4ul, vector1.getNumberOfSetBits());
+}
+
+TEST(BitVectorTest, Expand) {
+    storm::storage::BitVector vector1(64, {3, 5});
+    vector1.expandSize();
+    ASSERT_EQ(64ul, vector1.size());
+    ASSERT_EQ(2ul, vector1.getNumberOfSetBits());
+    storm::storage::BitVector vector2(65, {10, 12});
+    vector2.expandSize();
+    ASSERT_EQ(128ul, vector2.size());
+    ASSERT_EQ(2ul, vector2.getNumberOfSetBits());
 }
