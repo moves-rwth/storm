@@ -51,13 +51,19 @@ namespace storm {
                  */
                 bool operator==(ItemLabeling const& other) const;
 
-
                 /*!
                  * Adds a new label to the labelings. Initially, no item is labeled with this label.
                  *
                  * @param label The name of the new label.
                  */
                 void addLabel(std::string const& label);
+
+                /*!
+                 * Removes a label from the labelings.
+                 *
+                 * @param label The name of the label to remove.
+                 */
+                void removeLabel(std::string const& label);
 
                 /*!
                  * Retrieves the set of labels contained in this labeling.
@@ -190,6 +196,14 @@ namespace storm {
                 * @param item The index of the item to label.
                 */
                 virtual void addLabelToItem(std::string const& label, uint64_t item);
+
+                /*!
+                * Removes a label from a given item.
+                *
+                * @param label The name of the label to remove.
+                * @param item The index of the item.
+                */
+                virtual void removeLabelFromItem(std::string const& label, uint64_t item);
 
 
 

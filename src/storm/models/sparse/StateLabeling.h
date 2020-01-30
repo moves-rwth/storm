@@ -65,6 +65,14 @@ namespace storm {
                  * @param state The index of the state to label.
                  */
                 void addLabelToState(std::string const& label, storm::storage::sparse::state_type state);
+
+                /*!
+                 * Removes a label from a given state.
+                 *
+                 * @param label The name of the label to remove.
+                 * @param state The index of the state.
+                 */
+                void removeLabelFromState(std::string const& label, storm::storage::sparse::state_type state);
                 
                 /*!
                  * Checks whether a given state is labeled with the given label.
