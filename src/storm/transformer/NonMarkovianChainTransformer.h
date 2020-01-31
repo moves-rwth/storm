@@ -21,13 +21,10 @@ namespace storm {
              * If no non-determinism occurs, a CTMC is generated.
              *
              * @param ma The input Markov Automaton.
-             * @param preserveLabels If set, the procedure considers the labels of non-Markovian states when eliminating states.
+             * @param labelBehavior How the labels of non-Markovian states should be treated when eliminating states.
              * @return A reference to the new model after eliminating non-Markovian states.
              */
-            static std::shared_ptr<models::sparse::Model<ValueType, RewardModelType>> eliminateNonmarkovianStates(
-            std::shared_ptr<models::sparse::MarkovAutomaton < ValueType, RewardModelType>> ma,
-            EliminationLabelBehavior labelBehavior = EliminationLabelBehavior::KeepLabels
-            );
+            static std::shared_ptr<models::sparse::Model<ValueType, RewardModelType>> eliminateNonmarkovianStates(std::shared_ptr<models::sparse::MarkovAutomaton<ValueType, RewardModelType>> ma, EliminationLabelBehavior labelBehavior = EliminationLabelBehavior::KeepLabels);
 
             /**
              * Check if the property specified by the given formula is preserved by the transformation.
