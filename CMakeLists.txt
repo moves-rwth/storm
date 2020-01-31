@@ -493,7 +493,7 @@ include(CTest)
 # Compiles all tests
 add_custom_target(tests)
 # Compiles and runs all tests
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure)
 set(CMAKE_CTEST_COMMAND_VERBOSE ${CMAKE_CTEST_COMMAND} -V)
 add_custom_target(check-verbose COMMAND ${CMAKE_CTEST_COMMAND_VERBOSE})
 add_dependencies(check tests)
