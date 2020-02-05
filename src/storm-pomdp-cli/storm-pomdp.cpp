@@ -88,6 +88,8 @@ int main(const int argc, const char** argv) {
         if (!optionsCorrect) {
             return -1;
         }
+        storm::cli::setUrgentOptions();
+
 
 
         auto const& coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
