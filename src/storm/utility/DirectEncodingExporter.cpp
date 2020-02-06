@@ -126,6 +126,9 @@ namespace storm {
                     if (sparseModel->hasChoiceLabeling()) {
                         os << "\taction ";
                         bool lfirst = true;
+                        if (sparseModel->getChoiceLabeling().getLabelsOfChoice(row).empty()) {
+                            os << "__NOLABEL__";
+                        }
                         for (auto const& label : sparseModel->getChoiceLabeling().getLabelsOfChoice(row)) {
                             if (!lfirst) {
                                 os << "_";
