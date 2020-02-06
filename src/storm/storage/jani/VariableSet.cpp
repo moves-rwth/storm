@@ -321,7 +321,16 @@ namespace storm {
         bool VariableSet::empty() const {
             return !(containsBooleanVariable() || containsBoundedIntegerVariable() || containsUnboundedIntegerVariables() || containsRealVariables() || containsArrayVariables() || containsClockVariables());
         }
-        
+
+        uint64_t VariableSet::getNumberOfVariables() const {
+            return variables.size();
+        }
+
+
+        uint64_t VariableSet::getNumberOfNontransientVariables() const {
+            return getNumberOfVariables() - getNumberOfTransientVariables();
+        }
+
         uint_fast64_t VariableSet::getNumberOfTransientVariables() const {
             uint_fast64_t result = 0;
             for (auto const& variable : variables) {
