@@ -63,6 +63,7 @@ namespace storm {
             }
             os << std::endl;
             os << "@nr_states" << std::endl << sparseModel->getNumberOfStates() << std::endl;
+            os << "@nr_choices" << std::endl << sparseModel->getNumberOfChoices() << std::endl;
             os << "@model" << std::endl;
 
             storm::storage::SparseMatrix<ValueType> const& matrix = sparseModel->getTransitionMatrix();
