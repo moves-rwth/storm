@@ -13,7 +13,7 @@ namespace storm {
 
                 NondeterministicModelStateEliminator(storm::storage::FlexibleSparseMatrix<ValueType>& transitionMatrix, storm::storage::FlexibleSparseMatrix<ValueType>& backwardTransitions,  std::vector<ValueType>& rowValues);
 
-                // Instantiaton of virtual methods.
+                // Instantiation of virtual methods.
                 virtual void updateValue(storm::storage::sparse::state_type const& row, ValueType const& loopProbability) override;
                 virtual void updatePredecessor(storm::storage::sparse::state_type const& predecessorRow, ValueType const& probability, storm::storage::sparse::state_type const& row) override;
                 

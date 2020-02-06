@@ -8,6 +8,7 @@ Version 1.4.x
 -------------
 
 ## Version 1.4.2 (under development)
+- DRN: support import of choice labelling
 - `storm-pomdp`: Only accept POMDPs that are canonical
 - `storm-pomdp`: Prism language extended with observable expressions
 - `storm-pomdp`: Various fixes that prevented usage.

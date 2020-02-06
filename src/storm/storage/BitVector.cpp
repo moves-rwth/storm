@@ -1,17 +1,14 @@
 #include <iostream>
 #include <algorithm>
+#include <bitset>
 
 #include "storm/storage/BitVector.h"
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/OutOfRangeException.h"
 
 #include "storm/storage/BoostTypes.h"
-
 #include "storm/utility/OsDetection.h"
 #include "storm/utility/Hash.h"
 #include "storm/utility/macros.h"
 
-#include <bitset>
 
 #ifdef STORM_DEV
 #define ASSERT_BITVECTOR
