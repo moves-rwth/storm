@@ -137,7 +137,7 @@ namespace storm {
                                                                                false, boost::none);
             modelcomponents.observabilityClasses = pomdp.getObservations();
             //modelcomponents.choiceLabeling = pomdp.getChoiceLabeling();
-            return std::make_shared<storm::models::sparse::Pomdp<ValueType>>(modelcomponents);
+            return std::make_shared<storm::models::sparse::Pomdp<ValueType>>(modelcomponents, true);
         }
 
 

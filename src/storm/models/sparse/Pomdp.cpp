@@ -15,12 +15,12 @@ namespace storm {
             }
 
             template <typename ValueType, typename RewardModelType>
-            Pomdp<ValueType, RewardModelType>::Pomdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const &components) : Mdp<ValueType, RewardModelType>(components, storm::models::ModelType::Pomdp), observations(components.observabilityClasses.get()) {
+            Pomdp<ValueType, RewardModelType>::Pomdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const &components, bool canonicFlag) : Mdp<ValueType, RewardModelType>(components, storm::models::ModelType::Pomdp), observations(components.observabilityClasses.get()), canonicFlag(canonicFlag)  {
                 computeNrObservations();
             }
 
             template <typename ValueType, typename RewardModelType>
-            Pomdp<ValueType, RewardModelType>::Pomdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> &&components): Mdp<ValueType, RewardModelType>(components, storm::models::ModelType::Pomdp), observations(components.observabilityClasses.get()) {
+            Pomdp<ValueType, RewardModelType>::Pomdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> &&components, bool canonicFlag): Mdp<ValueType, RewardModelType>(components, storm::models::ModelType::Pomdp), observations(components.observabilityClasses.get()), canonicFlag(canonicFlag) {
                 computeNrObservations();
             }
 
@@ -58,6 +58,12 @@ namespace storm {
             std::vector<uint32_t> const& Pomdp<ValueType, RewardModelType>::getObservations() const {
                 return observations;
             }
+
+            template<typename ValueType, typename RewardModelType>
+            bool Pomdp<ValueType, RewardModelType>::isCanonic() const {
+                return canonicFlag;
+            };
+
 
 
 
