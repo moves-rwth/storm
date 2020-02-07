@@ -117,8 +117,7 @@ namespace storm {
 
         template<typename ValueType>
         std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> MakePOMDPCanonic<ValueType>::transform() const {
-            STORM_LOG_THROW(pomdp.hasChoiceOrigins(), storm::exceptions::InvalidArgumentException, "Model must have been built with choice origins");
-            STORM_LOG_THROW(pomdp.hasChoiceLabeling(), storm::exceptions::InvalidArgumentException, "Model must have been built with choice labels");
+            STORM_LOG_THROW(pomdp.hasChoiceLabeling(), storm::exceptions::InvalidArgumentException, "Model must have been built with choice labels (--buildchoicelab for command line users)");
             std::vector<uint64_t> permutation = computeCanonicalPermutation();
             return applyPermutationOnPomdp(permutation);
         }
@@ -162,7 +161,7 @@ namespace storm {
             uint64_t nrObservations = pomdp.getNrObservations();
             storm::storage::BitVector oneActionObservations(nrObservations);
             storm::storage::BitVector moreActionObservations(nrObservations);
-
+            uint64_t freshChoiceOriginId = 0; // Only used if no choice origins are available.
 
             for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
                 uint64_t rowIndexFrom = pomdp.getTransitionMatrix().getRowGroupIndices()[state];
@@ -207,7 +206,11 @@ namespace storm {
 
                     detail::ActionIdentifier ai;
                     ai.choiceLabelId = labelId;
-                    ai.choiceOriginId = pomdp.getChoiceOrigins()->getIdentifier(actionIndex);
+                    if (pomdp.hasChoiceOrigins()) {
+                        ai.choiceOriginId = pomdp.getChoiceOrigins()->getIdentifier(actionIndex);
+                    } else {
+                        ai.choiceOriginId = freshChoiceOriginId++;
+                    }
                     STORM_LOG_ASSERT(actionIdentifiers.count(ai) == 0, "Action with this identifier already exists for this state");
                     actionIdentifiers.emplace(ai,actionIndex);
                 }
