@@ -1205,7 +1205,9 @@ namespace storm {
             }
             // Finally create matrix and return result.
             auto result = matrixBuilder.build();
-            result.setRowGroupIndices(this->rowGroupIndices.get());
+            if (this->rowGroupIndices) {
+                result.setRowGroupIndices(this->rowGroupIndices.get());
+            }
             return result;
         }
         
