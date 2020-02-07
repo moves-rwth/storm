@@ -24,6 +24,8 @@
 #include "storm/settings/modules/BuildSettings.h"
 #include "storm/settings/modules/JitBuilderSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
+
+#include "storm/settings/modules/HintSettings.h"
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
 
 #include "storm/analysis/GraphConditions.h"
@@ -65,6 +67,7 @@ void initializeSettings() {
     storm::settings::addModule<storm::settings::modules::JitBuilderSettings>();
 
     storm::settings::addModule<storm::settings::modules::TransformationSettings>();
+    storm::settings::addModule<storm::settings::modules::HintSettings>();
 
 
 
