@@ -424,6 +424,7 @@ namespace storm {
             auto oldValueIt = oldValues.begin();
             for (auto value : relevantValues) {
                 result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allValues[value] - *oldValueIt));
+                ++oldValueIt;
             }
             return result;
         }
