@@ -200,8 +200,8 @@ namespace storm {
                  * @param gridResolution
                  * @return
                  */
-                std::pair<std::vector<std::vector<ValueType>>, std::vector<ValueType>>
-                computeSubSimplexAndLambdas(std::vector<ValueType> &probabilities, uint64_t gridResolution);
+                std::pair<std::vector<std::map<uint64_t, ValueType>>, std::vector<ValueType>>
+                computeSubSimplexAndLambdas(std::map<uint64_t, ValueType> &probabilities, uint64_t gridResolution, uint64_t nrStates);
 
 
                 /**
@@ -269,7 +269,7 @@ namespace storm {
                  * @return
                  */
                 uint64_t getBeliefIdInVector(std::vector<storm::pomdp::Belief<ValueType>> const &grid, uint32_t observation,
-                                             std::vector<ValueType> &probabilities);
+                                             std::map<uint64_t, ValueType> &probabilities);
 
                 /**
                  * @param transitions  data structure that contains the transition information of the form: origin-state -> action -> (successor-state -> probability)
@@ -285,7 +285,7 @@ namespace storm {
                                                 std::map<uint64_t, std::vector<std::map<uint32_t, ValueType>>> &observationProbabilities,
                                                 std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
                                                 std::map<uint64_t, std::vector<ValueType>> &beliefActionRewards,
-                                                std::map<uint64_t, std::vector<std::vector<ValueType>>> &subSimplexCache,
+                                                std::map<uint64_t, std::vector<std::map<uint64_t, ValueType>>> &subSimplexCache,
                                                 std::map<uint64_t, std::vector<ValueType>> &lambdaCache, std::map<uint64_t, ValueType> &result,
                                                 std::map<uint64_t, std::vector<uint64_t>> &chosenActions,
                                                 uint64_t gridResolution, bool min, bool computeRewards);

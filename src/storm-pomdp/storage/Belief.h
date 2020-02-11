@@ -6,7 +6,7 @@ namespace storm {
             uint64_t id;
             uint32_t observation;
             //TODO make this sparse?
-            std::vector<ValueType> probabilities;
+            std::map<uint64_t, ValueType> probabilities;
         };
     }
 }
