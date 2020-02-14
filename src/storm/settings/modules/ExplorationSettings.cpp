@@ -7,6 +7,7 @@
 #include "storm/settings/SettingsManager.h"
 
 #include "storm/utility/macros.h"
+#include "storm/utility/Engine.h"
 #include "storm/exceptions/IllegalArgumentValueException.h"
 
 namespace storm {
@@ -91,7 +92,7 @@ namespace storm {
                                     this->getOption(numberOfExplorationStepsUntilPrecomputationOptionName).getHasOptionBeenSet() ||
                                     this->getOption(numberOfSampledPathsUntilPrecomputationOptionName).getHasOptionBeenSet() ||
                                     this->getOption(nextStateHeuristicOptionName).getHasOptionBeenSet();
-                STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::settings::modules::CoreSettings::Engine::Exploration || !optionsSet, "Exploration engine is not selected, so setting options for it has no effect.");
+                STORM_LOG_WARN_COND(storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::utility::Engine::Exploration || !optionsSet, "Exploration engine is not selected, so setting options for it has no effect.");
                 return true;
             }
         } // namespace modules

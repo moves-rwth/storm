@@ -35,8 +35,7 @@ namespace storm {
             return std::make_pair(std::move(parsedResult.first), std::move(propertyMap));
         }
         
-        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseJaniModel(std::string const& filename, storm::jani::ModelFeatures const& allowedFeatures, boost::optional<std::vector<std::string>> const& propertyFilter) {
-            
+        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseJaniModel(std::string const& filename, boost::optional<std::vector<std::string>> const& propertyFilter) {
             bool parseProperties = !propertyFilter.is_initialized() || !propertyFilter.get().empty();
             std::pair<storm::jani::Model, std::vector<storm::jani::Property>> modelAndFormulae = storm::parser::JaniParser::parse(filename, parseProperties);
             
@@ -57,13 +56,20 @@ namespace storm {
                 }
                 modelAndFormulae.second = std::move(newProperties);
             }
-            
             modelAndFormulae.first.checkValid();
-            auto nonEliminatedFeatures = modelAndFormulae.first.restrictToFeatures(allowedFeatures, modelAndFormulae.second);
-            STORM_LOG_THROW(nonEliminatedFeatures.empty(), storm::exceptions::NotSupportedException, "The used model feature(s) " << nonEliminatedFeatures.toString() << " is/are not in the list of allowed features.");
             return modelAndFormulae;
         }
         
+        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseJaniModel(std::string const& filename, storm::jani::ModelFeatures const& supportedFeatures, boost::optional<std::vector<std::string>> const& propertyFilter) {
+            auto modelAndFormulae = parseJaniModel(filename, propertyFilter);
+            simplifyJaniModel(modelAndFormulae.first, modelAndFormulae.second, supportedFeatures);
+            return modelAndFormulae;
+        }
+        
+        void simplifyJaniModel(storm::jani::Model& model, std::vector<storm::jani::Property>& properties , storm::jani::ModelFeatures const& supportedFeatures) {
+            auto nonEliminatedFeatures = model.restrictToFeatures(supportedFeatures, properties);
+            STORM_LOG_THROW(nonEliminatedFeatures.empty(), storm::exceptions::NotSupportedException, "The used model feature(s) " << nonEliminatedFeatures.toString() << " is/are not in the list of supported features.");
+        }
         
     }
 }

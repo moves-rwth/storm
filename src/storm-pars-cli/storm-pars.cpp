@@ -39,6 +39,7 @@
 #include "storm/utility/initialize.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/Engine.h"
 
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
@@ -207,7 +208,7 @@ namespace storm {
 
             PreprocessResult result(model, false);
 
-            if (coreSettings.getEngine() == storm::settings::modules::CoreSettings::Engine::Hybrid) {
+            if (coreSettings.getEngine() == storm::utility::Engine::Hybrid) {
                 // Currently, hybrid engine for parametric models just refers to building the model symbolically.
                 STORM_LOG_INFO("Translating symbolic model to sparse model...");
                 result.model = storm::api::transformSymbolicToSparseModel(model);
@@ -219,7 +220,7 @@ namespace storm {
                     result.formulas = sparsePreprocessingResult.formulas;
                 }
             } else {
-                STORM_LOG_ASSERT(coreSettings.getEngine() == storm::settings::modules::CoreSettings::Engine::Dd, "Expected Dd engine.");
+                STORM_LOG_ASSERT(coreSettings.getEngine() == storm::utility::Engine::Dd, "Expected Dd engine.");
                 if (generalSettings.isBisimulationSet()) {
                     result.model = storm::cli::preprocessDdModelBisimulation(result.model->template as<storm::models::symbolic::Model<DdType, ValueType>>(), input, bisimulationSettings);
                     result.changed = true;
@@ -576,7 +577,7 @@ namespace storm {
             auto monSettings = storm::settings::getModule<storm::settings::modules::MonotonicitySettings>();
 
             auto engine = coreSettings.getEngine();
-            STORM_LOG_THROW(engine == storm::settings::modules::CoreSettings::Engine::Sparse || engine == storm::settings::modules::CoreSettings::Engine::Hybrid || engine == storm::settings::modules::CoreSettings::Engine::Dd, storm::exceptions::InvalidSettingsException, "The selected engine is not supported for parametric models.");
+            STORM_LOG_THROW(engine == storm::utility::Engine::Sparse || engine == storm::utility::Engine::Hybrid || engine == storm::utility::Engine::Dd, storm::exceptions::InvalidSettingsException, "The selected engine is not supported for parametric models.");
 
             std::shared_ptr<storm::models::ModelBase> model;
             if (!buildSettings.isNoBuildModelSet()) {
@@ -783,13 +784,13 @@ namespace storm {
         void processOptions() {
             // Start by setting some urgent options (log levels, resources, etc.)
             storm::cli::setUrgentOptions();
-
-            // Parse and preprocess symbolic input (PRISM, JANI, properties, etc.)
-            SymbolicInput symbolicInput = storm::cli::parseAndPreprocessSymbolicInput();
-
+            
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
             auto engine = coreSettings.getEngine();
-            STORM_LOG_WARN_COND(engine != storm::settings::modules::CoreSettings::Engine::Dd || engine != storm::settings::modules::CoreSettings::Engine::Hybrid || coreSettings.getDdLibraryType() == storm::dd::DdType::Sylvan, "The selected DD library does not support parametric models. Switching to Sylvan...");
+            STORM_LOG_WARN_COND(engine != storm::utility::Engine::Dd || engine != storm::utility::Engine::Hybrid || coreSettings.getDdLibraryType() == storm::dd::DdType::Sylvan, "The selected DD library does not support parametric models. Switching to Sylvan...");
+            
+            // Parse and preprocess symbolic input (PRISM, JANI, properties, etc.)
+            SymbolicInput symbolicInput = storm::cli::parseAndPreprocessSymbolicInput(engine);
 
             processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalFunction>(symbolicInput);
         }

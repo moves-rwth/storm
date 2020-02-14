@@ -242,8 +242,20 @@ namespace storm {
             // Start by setting some urgent options (log levels, resources, etc.)
             setUrgentOptions();
             
-            // Parse and preprocess symbolic input (PRISM, JANI, properties, etc.)
-            SymbolicInput symbolicInput = parseAndPreprocessSymbolicInput();
+            // Parse symbolic input (PRISM, JANI, properties, etc.)
+            SymbolicInput symbolicInput = parseSymbolicInput();
+            
+            // Get the engine to use
+            // TODO: Create a new method that gets the used engine and the used environment (using portfolio engine)
+            auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
+            auto engine = coreSettings.getEngine();
+            auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
+            auto builderType = getBuilderType(engine, buildSettings.isJitSet());
+            // TODO: (end of method)
+            
+            symbolicInput = preprocessSymbolicInput(symbolicInput, builderType);
+            exportSymbolicInput(symbolicInput);
+
             
             auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
             if (generalSettings.isParametricSet()) {

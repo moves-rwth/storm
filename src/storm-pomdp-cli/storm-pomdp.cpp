@@ -99,9 +99,9 @@ int main(const int argc, const char** argv) {
         auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
 
         // For several engines, no model building step is performed, but the verification is started right away.
-        storm::settings::modules::CoreSettings::Engine engine = coreSettings.getEngine();
+        storm::utility::Engine engine = coreSettings.getEngine();
 
-        storm::cli::SymbolicInput symbolicInput = storm::cli::parseAndPreprocessSymbolicInput();
+        storm::cli::SymbolicInput symbolicInput = storm::cli::parseAndPreprocessSymbolicInput(engine);
         // We should not export here if we are going to do some processing first.
         auto model = storm::cli::buildPreprocessExportModelWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalNumber>(symbolicInput, engine);
         STORM_LOG_THROW(model && model->getType() == storm::models::ModelType::Pomdp, storm::exceptions::WrongFormatException, "Expected a POMDP.");
