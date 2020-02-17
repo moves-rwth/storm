@@ -152,7 +152,7 @@ namespace storm {
                 return false;
             }
             // Check whether the model builder can handle the model description
-            return storm::builder::canHandle(getBuilderType(engine), modelDescription);
+            return storm::builder::canHandle<ValueType>(getBuilderType(engine), modelDescription);
         }
         
         // explicit template instantiations.

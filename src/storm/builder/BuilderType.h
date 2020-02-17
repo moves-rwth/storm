@@ -16,6 +16,7 @@ namespace storm {
         
         storm::jani::ModelFeatures getSupportedJaniFeatures(BuilderType const& builderType);
         
+        template <typename ValueType>
         bool canHandle(BuilderType const& builderType, storm::storage::SymbolicModelDescription const& modelDescription);
     }
 }
