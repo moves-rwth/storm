@@ -1,9 +1,5 @@
 #include "storm/utility/Engine.h"
 
-#include "storm/utility/macros.h"
-
-#include "storm/models/ModelType.h"
-
 #include "storm/modelchecker/prctl/SparseDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "storm/modelchecker/csl/SparseCtmcCslModelChecker.h"
@@ -96,74 +92,73 @@ namespace storm {
             }
         }
 
-        template <storm::dd::DdType ddType, typename ValueType>
-        bool canHandle(storm::utility::Engine const& engine, storm::models::ModelType const& modelType, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
+        template <typename ValueType>
+        bool canHandle(storm::utility::Engine const& engine, storm::storage::SymbolicModelDescription::ModelType const& modelType, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
             // Define types to improve readability
-            typedef storm::models::ModelType ModelType;
-#ifdef TODO_IMPLEMENT_CAN_HANDLE_STATIC
+            typedef storm::storage::SymbolicModelDescription::ModelType ModelType;
+            // The Dd library does not make much of a difference (in case of exact or parametric models we will switch to sylvan anyway).
+            // Therefore, we always use sylvan here
+            storm::dd::DdType const ddType = storm::dd::DdType::Sylvan;
             switch (engine) {
                 case Engine::Sparse:
                 case Engine::DdSparse:
                     switch (modelType) {
-                        case ModelType::Dtmc:
+                        case ModelType::DTMC:
                             return storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>>::canHandleStatic(checkTask);
-                        case ModelType::Mdp:
+                        case ModelType::MDP:
                             return storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>>::canHandleStatic(checkTask);
-                        case ModelType::Ctmc:
+                        case ModelType::CTMC:
                             return storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<ValueType>>::canHandleStatic(checkTask);
-                        case ModelType::MarkovAutomaton:
+                        case ModelType::MA:
                             return storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>>::canHandleStatic(checkTask);
-                        case ModelType::S2pg:
-                        case ModelType::Pomdp:
+                        case ModelType::POMDP:
                             return false;
                     }
-                    break;
                 case Engine::Hybrid:
                     switch (modelType) {
-                        case ModelType::Dtmc:
+                        case ModelType::DTMC:
                             return storm::modelchecker::HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<ddType, ValueType>>::canHandleStatic(checkTask);
-                        case ModelType::Mdp:
+                        case ModelType::MDP:
                             return storm::modelchecker::HybridMdpPrctlModelChecker<storm::models::symbolic::Mdp<ddType, ValueType>>::canHandleStatic(checkTask);
-                        case ModelType::Ctmc:
+                        case ModelType::CTMC:
                             return storm::modelchecker::HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<ddType, ValueType>>::canHandleStatic(checkTask);
-                        case ModelType::MarkovAutomaton:
-                        case ModelType::S2pg:
-                        case ModelType::Pomdp:
+                        case ModelType::MA:
+                        case ModelType::POMDP:
                             return false;
                     }
-                    break;
                 case Engine::Dd:
                     switch (modelType) {
-                        case ModelType::Dtmc:
+                        case ModelType::DTMC:
                             return storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<ddType, ValueType>>::canHandleStatic(checkTask);
-                        case ModelType::Mdp:
+                        case ModelType::MDP:
                             return storm::modelchecker::SymbolicMdpPrctlModelChecker<storm::models::symbolic::Mdp<ddType, ValueType>>::canHandleStatic(checkTask);
-                        case ModelType::Ctmc:
-                        case ModelType::MarkovAutomaton:
-                        case ModelType::S2pg:
-                        case ModelType::Pomdp:
+                        case ModelType::CTMC:
+                        case ModelType::MA:
+                        case ModelType::POMDP:
                             return false;
                     }
-                    break;
                 default:
                     STORM_LOG_ERROR("The selected engine" << engine << " is not considered.");
             }
-#endif
             STORM_LOG_ERROR("The selected combination of engine (" << engine << ") and model type (" << modelType << ") does not seem to be supported for this value type.");
             return false;
         }
+
         
-        template <storm::dd::DdType ddType, typename ValueType>
+        template <typename ValueType>
         bool canHandle(storm::utility::Engine const& engine, storm::storage::SymbolicModelDescription const& modelDescription, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
             // Check handability based on model type
             if (!canHandle(engine, modelDescription.getModelType(), checkTask)) {
                 return false;
             }
-            // TODO
-            return true;
+            // Check whether the model builder can handle the model description
+            return storm::builder::canHandle(getBuilderType(engine), modelDescription);
         }
         
-
+        // explicit template instantiations.
+        template bool canHandle<double>(storm::utility::Engine const&, storm::storage::SymbolicModelDescription const&, storm::modelchecker::CheckTask<storm::logic::Formula, double> const&);
+        template bool canHandle<storm::RationalNumber>(storm::utility::Engine const&, storm::storage::SymbolicModelDescription const&, storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber> const&);
+        
         
     }
 }

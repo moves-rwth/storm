@@ -56,21 +56,12 @@ namespace storm {
         storm::builder::BuilderType getBuilderType(storm::utility::Engine const& engine);
         
         /*!
-         * Returns false if the given model type and checkTask can certainly not be handled by the given engine.
-         * Notice that the set of handable model checking queries is only overapproximated, i.e. if this returns true,
-         * the query could still be not supported by the engine. This behavior is due to the fact that we sometimes need
-         * to actually build the model in order to decide whether it is supported.
-         */
-        template <storm::dd::DdType ddType, typename ValueType>
-        bool canHandle(storm::utility::Engine const& engine, storm::models::ModelType const& modelType, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask);
-        
-        /*!
          * Returns false if the given model description and checkTask can certainly not be handled by the given engine.
          * Notice that the set of handable model checking queries is only overapproximated, i.e. if this returns true,
          * the query could still be not supported by the engine. This behavior is due to the fact that we sometimes need
          * to actually build the model in order to decide whether it is supported.
          */
-        template <storm::dd::DdType ddType, typename ValueType>
+        template <typename ValueType>
         bool canHandle(storm::utility::Engine const& engine, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask, storm::storage::SymbolicModelDescription const& modelDescription);
     }
 }
