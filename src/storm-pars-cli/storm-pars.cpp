@@ -23,7 +23,6 @@
 
 #include "storm/exceptions/BaseException.h"
 #include "storm/exceptions/InvalidSettingsException.h"
-#include "storm/exceptions/InvalidSettingsException.h"
 #include "storm/exceptions/NotSupportedException.h"
 
 #include "storm/models/ModelBase.h"
