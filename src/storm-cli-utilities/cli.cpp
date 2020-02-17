@@ -250,28 +250,27 @@ namespace storm {
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
             auto engine = coreSettings.getEngine();
             auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
-            auto builderType = getBuilderType(engine, buildSettings.isJitSet());
             // TODO: (end of method)
             
-            symbolicInput = preprocessSymbolicInput(symbolicInput, builderType);
+            symbolicInput = preprocessSymbolicInput(symbolicInput, storm::utility::getBuilderType(engine));
             exportSymbolicInput(symbolicInput);
 
             
             auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
             if (generalSettings.isParametricSet()) {
 #ifdef STORM_HAVE_CARL
-                processInputWithValueType<storm::RationalFunction>(symbolicInput);
+                processInputWithValueType<storm::RationalFunction>(symbolicInput, engine);
 #else
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No parameters are supported in this build.");
 #endif
             } else if (generalSettings.isExactSet()) {
 #ifdef STORM_HAVE_CARL
-                processInputWithValueType<storm::RationalNumber>(symbolicInput);
+                processInputWithValueType<storm::RationalNumber>(symbolicInput, engine);
 #else
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No exact numbers are supported in this build.");
 #endif
             } else {
-                processInputWithValueType<double>(symbolicInput);
+                processInputWithValueType<double>(symbolicInput, engine);
             }
         }
 

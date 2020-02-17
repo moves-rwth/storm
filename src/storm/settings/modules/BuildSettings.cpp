@@ -18,7 +18,6 @@ namespace storm {
 
             const std::string BuildSettings::moduleName = "build";
 
-            const std::string jitOptionName = "jit";
             const std::string explorationOrderOptionName = "explorder";
             const std::string explorationOrderOptionShortName = "eo";
             const std::string explorationChecksOptionName = "explchecks";
@@ -38,7 +37,6 @@ namespace storm {
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, prismCompatibilityOptionName, false, "Enables PRISM compatibility. This may be necessary to process some PRISM models.").setShortName(prismCompatibilityOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, dontFixDeadlockOptionName, false, "If the model contains deadlock states, they need to be fixed by setting this option.").setShortName(dontFixDeadlockOptionShortName).setIsAdvanced().build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, jitOptionName, false, "If set, the model is built using the JIT model builder.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, fullModelBuildOptionName, false, "If set, include all rewards and labels.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, buildChoiceLabelOptionName, false, "If set, also build the choice labels").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, buildStateValuationsOptionName, false, "If set, also build the state valuations").setIsAdvanced().build());
@@ -51,10 +49,6 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, buildOutOfBoundsStateOptionName, false, "If set, a state for out-of-bounds valuations is added").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, bitsForUnboundedVariablesOptionName, false, "Sets the number of bits that is used for unbounded integer variables.").setIsAdvanced()
                                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("number", "The number of bits.").addValidatorUnsignedInteger(ArgumentValidatorFactory::createUnsignedRangeValidatorExcluding(0,63)).setDefaultValueUnsignedInteger(32).build()).build());
-            }
-
-            bool BuildSettings::isJitSet() const {
-                return this->getOption(jitOptionName).getHasOptionBeenSet();
             }
 
             bool BuildSettings::isExplorationOrderSet() const {

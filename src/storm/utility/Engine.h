@@ -5,6 +5,7 @@
 
 #include "storm/models/ModelType.h"
 #include "storm/storage/dd/DdType.h"
+#include "storm/builder/BuilderType.h"
 
 namespace storm {
     
@@ -25,7 +26,7 @@ namespace storm {
         /// An enumeration of all engines.
         enum class Engine {
             // The last one should always be 'Unknown' to make sure that the getEngines() method below works.
-            Sparse, Hybrid, Dd, DdSparse, Exploration, AbstractionRefinement, Unknown
+            Sparse, Hybrid, Dd, DdSparse, Jit, Exploration, AbstractionRefinement, Unknown
         };
         
         /*!
@@ -50,6 +51,11 @@ namespace storm {
         Engine engineFromString(std::string const& engineStr);
 
         /*!
+         * Returns the builder type used for the given engine.
+         */
+        storm::builder::BuilderType getBuilderType(storm::utility::Engine const& engine);
+        
+        /*!
          * Returns false if the given model type and checkTask can certainly not be handled by the given engine.
          * Notice that the set of handable model checking queries is only overapproximated, i.e. if this returns true,
          * the query could still be not supported by the engine. This behavior is due to the fact that we sometimes need
@@ -66,6 +72,5 @@ namespace storm {
          */
         template <storm::dd::DdType ddType, typename ValueType>
         bool canHandle(storm::utility::Engine const& engine, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask, storm::storage::SymbolicModelDescription const& modelDescription);
-        
     }
 }

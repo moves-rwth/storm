@@ -19,6 +19,10 @@
 
 #include "storm/storage/SymbolicModelDescription.h"
 
+#include "storm/utility/macros.h"
+
+#include "storm/exceptions/InvalidArgumentException.h"
+
 namespace storm {
     namespace utility {
         
@@ -41,6 +45,8 @@ namespace storm {
                     return "dd";
                 case Engine::DdSparse:
                     return "dd-to-sparse";
+                case Engine::Jit:
+                    return "jit";
                 case Engine::Exploration:
                     return "expl";
                 case Engine::AbstractionRefinement:
@@ -66,6 +72,28 @@ namespace storm {
             }
             STORM_LOG_ERROR("The engine '" << engineStr << "' was not found.");
             return Engine::Unknown;
+        }
+        
+        storm::builder::BuilderType getBuilderType(Engine const& engine) {
+            switch (engine) {
+                case Engine::Sparse:
+                    return storm::builder::BuilderType::Explicit;
+                case Engine::Hybrid:
+                    return storm::builder::BuilderType::Dd;
+                case Engine::Dd:
+                    return storm::builder::BuilderType::Dd;
+                case Engine::DdSparse:
+                    return storm::builder::BuilderType::Dd;
+                case Engine::Jit:
+                    return storm::builder::BuilderType::Jit;
+                case Engine::Exploration:
+                return storm::builder::BuilderType::Explicit;
+                case Engine::AbstractionRefinement:
+                    return storm::builder::BuilderType::Dd;
+                default:
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given engine has no builder type to it.");
+                    return storm::builder::BuilderType::Explicit;
+            }
         }
 
         template <storm::dd::DdType ddType, typename ValueType>

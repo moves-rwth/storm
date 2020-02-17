@@ -218,25 +218,10 @@ namespace storm {
             }
         }
         
-        storm::builder::BuilderType getBuilderType(storm::utility::Engine const& engine, bool useJit) {
-            if (engine == storm::utility::Engine::Dd || engine == storm::utility::Engine::Hybrid || engine == storm::utility::Engine::DdSparse || engine == storm::utility::Engine::AbstractionRefinement) {
-                return storm::builder::BuilderType::Dd;
-            } else if (engine == storm::utility::Engine::Sparse) {
-                if (useJit) {
-                    return storm::builder::BuilderType::Jit;
-                } else {
-                    return storm::builder::BuilderType::Explicit;
-                }
-            } else if (engine == storm::utility::Engine::Exploration) {
-                return storm::builder::BuilderType::Explicit;
-            }
-            STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unable to determine the model builder type.");
-        }
-        
         SymbolicInput parseAndPreprocessSymbolicInput(storm::utility::Engine const& engine) {
             // Get the used builder type to handle cases where preprocessing depends on it
             auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
-            auto builderType = getBuilderType(engine, buildSettings.isJitSet());
+            auto builderType = storm::utility::getBuilderType(engine);
             
             SymbolicInput input = parseSymbolicInput();
             input = preprocessSymbolicInput(input, builderType);
@@ -262,7 +247,7 @@ namespace storm {
         }
         
         template <typename ValueType>
-        std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::settings::modules::BuildSettings const& buildSettings) {
+        std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::settings::modules::BuildSettings const& buildSettings, bool useJit) {
             storm::builder::BuilderOptions options(createFormulasToRespect(input.properties), input.model.get());
             options.setBuildChoiceLabels(buildSettings.isBuildChoiceLabelsSet());
             options.setBuildStateValuations(buildSettings.isBuildStateValuationsSet());
@@ -286,7 +271,7 @@ namespace storm {
                 options.setBuildAllLabels(true);
                 options.setBuildAllRewardModels(true);
             }
-            return storm::api::buildSparseModel<ValueType>(input.model.get(), options, buildSettings.isJitSet(), storm::settings::getModule<storm::settings::modules::JitBuilderSettings>().isDoctorSet());
+            return storm::api::buildSparseModel<ValueType>(input.model.get(), options, useJit, storm::settings::getModule<storm::settings::modules::JitBuilderSettings>().isDoctorSet());
         }
         
         template <typename ValueType>
@@ -312,11 +297,11 @@ namespace storm {
             auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
             std::shared_ptr<storm::models::ModelBase> result;
             if (input.model) {
-                auto builderType = getBuilderType(engine, buildSettings.isJitSet());
+                auto builderType = storm::utility::getBuilderType(engine);
                 if (builderType == storm::builder::BuilderType::Dd) {
                     result = buildModelDd<DdType, ValueType>(input);
                 } else if (builderType == storm::builder::BuilderType::Explicit || builderType == storm::builder::BuilderType::Jit) {
-                    result = buildModelSparse<ValueType>(input, buildSettings);
+                    result = buildModelSparse<ValueType>(input, buildSettings, builderType == storm::builder::BuilderType::Jit);
                 }
             } else if (ioSettings.isExplicitSet() || ioSettings.isExplicitDRNSet() || ioSettings.isExplicitIMCASet()) {
                 STORM_LOG_THROW(engine == storm::utility::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Can only use sparse engine with explicit input.");
