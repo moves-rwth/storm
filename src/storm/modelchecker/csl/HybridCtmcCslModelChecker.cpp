@@ -24,22 +24,17 @@ namespace storm {
         }
         
         template <typename ModelType>
+        bool HybridCtmcCslModelChecker<ModelType>::canHandleStatic(CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
+            auto fragment = storm::logic::csrl().setGloballyFormulasAllowed(false).setLongRunAverageRewardFormulasAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setTimeAllowed(true).setTimeOperatorsAllowed(true).setRewardAccumulationAllowed(true);
+            if (!storm::NumberTraits<ValueType>::SupportsExponential) {
+                fragment.setBoundedUntilFormulasAllowed(false).setCumulativeRewardFormulasAllowed(false).setInstantaneousFormulasAllowed(false);
+            }
+            return checkTask.getFormula().isInFragment(fragment);
+        }
+        
+        template <typename ModelType>
         bool HybridCtmcCslModelChecker<ModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
-            return HybridCtmcCslModelChecker<ModelType>::canHandleImplementation<ValueType>(checkTask);
-        }
-        
-        template <typename ModelType>
-        template<typename CValueType, typename std::enable_if<storm::NumberTraits<CValueType>::SupportsExponential, int>::type>
-        bool HybridCtmcCslModelChecker<ModelType>::canHandleImplementation(CheckTask<storm::logic::Formula, CValueType> const& checkTask) const {
-            storm::logic::Formula const& formula = checkTask.getFormula();
-            return formula.isInFragment(storm::logic::csrl().setGloballyFormulasAllowed(false).setLongRunAverageRewardFormulasAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setTimeAllowed(true).setTimeOperatorsAllowed(true).setRewardAccumulationAllowed(true));
-        }
-        
-        template <typename ModelType>
-        template<typename CValueType, typename std::enable_if<!storm::NumberTraits<CValueType>::SupportsExponential, int>::type>
-        bool HybridCtmcCslModelChecker<ModelType>::canHandleImplementation(CheckTask<storm::logic::Formula, CValueType> const& checkTask) const {
-            storm::logic::Formula const& formula = checkTask.getFormula();
-            return formula.isInFragment(storm::logic::csrl().setGloballyFormulasAllowed(false).setLongRunAverageRewardFormulasAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setTimeAllowed(true).setTimeOperatorsAllowed(true).setBoundedUntilFormulasAllowed(false).setCumulativeRewardFormulasAllowed(false).setInstantaneousFormulasAllowed(false));
+            return canHandleStatic(checkTask);
         }
         
         template<typename ModelType>

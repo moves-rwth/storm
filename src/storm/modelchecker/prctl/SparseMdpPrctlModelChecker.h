@@ -18,6 +18,12 @@ namespace storm {
             
             explicit SparseMdpPrctlModelChecker(SparseMdpModelType const& model);
             
+            /*!
+             * Returns false, if this task can certainly not be handled by this model checker (independent of the concrete model).
+             * @param requiresSingleInitialState if not nullptr, this flag is set to true iff checking this formula requires a model with a single initial state
+             */
+            static bool canHandleStatic(CheckTask<storm::logic::Formula, ValueType> const& checkTask, bool* requiresSingleInitialState = nullptr);
+            
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const override;
             virtual std::unique_ptr<CheckResult> computeBoundedUntilProbabilities(Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask) override;
