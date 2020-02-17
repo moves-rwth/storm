@@ -22,19 +22,6 @@ namespace storm {
             return program;
         }
 
-        std::pair<storm::jani::Model, std::map<std::string, storm::jani::Property>> parseJaniModel(std::string const& filename) {
-            storm::jani::ModelFeatures features;
-            // Add derived-operators and state-exit-rewards as these can be handled by all model builders
-            features.add(storm::jani::ModelFeature::DerivedOperators);
-            features.add(storm::jani::ModelFeature::StateExitRewards);
-            auto parsedResult = parseJaniModel(filename, features);
-            std::map<std::string, storm::jani::Property> propertyMap;
-            for (auto const& property : parsedResult.second) {
-                propertyMap.emplace(property.getName(), property);
-            }
-            return std::make_pair(std::move(parsedResult.first), std::move(propertyMap));
-        }
-        
         std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseJaniModel(std::string const& filename, boost::optional<std::vector<std::string>> const& propertyFilter) {
             bool parseProperties = !propertyFilter.is_initialized() || !propertyFilter.get().empty();
             std::pair<storm::jani::Model, std::vector<storm::jani::Property>> modelAndFormulae = storm::parser::JaniParser::parse(filename, parseProperties);
