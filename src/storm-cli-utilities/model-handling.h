@@ -443,7 +443,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType, typename ValueType, typename ExportValueType = ValueType>
-        std::pair<std::shared_ptr<storm::models::ModelBase>, bool> preprocessDdModel(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, SymbolicInput const& input) {
+        std::pair<std::shared_ptr<storm::models::ModelBase>, bool> preprocessDdModel(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, SymbolicInput const& input, storm::utility::Engine const& engine) {
             auto bisimulationSettings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
             auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
             std::pair<std::shared_ptr<storm::models::Model<ValueType>>, bool> intermediateResult = std::make_pair(model, false);
@@ -462,7 +462,7 @@ namespace storm {
                 result = std::make_unique<std::pair<std::shared_ptr<storm::models::Model<ExportValueType>>, bool>>(symbolicModel->template toValueType<ExportValueType>(), !std::is_same<ValueType, ExportValueType>::value);
             }
             
-            if (result && result->first->isSymbolicModel() && storm::settings::getModule<storm::settings::modules::CoreSettings>().getEngine() == storm::utility::Engine::DdSparse) {
+            if (result && result->first->isSymbolicModel() && engine == storm::utility::Engine::DdSparse) {
                 // Mark as changed.
                 result->second = true;
                 
@@ -479,7 +479,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType, typename BuildValueType, typename ExportValueType = BuildValueType>
-        std::pair<std::shared_ptr<storm::models::ModelBase>, bool> preprocessModel(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input) {
+        std::pair<std::shared_ptr<storm::models::ModelBase>, bool> preprocessModel(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input, storm::utility::Engine const& engine) {
             storm::utility::Stopwatch preprocessingWatch(true);
             
             std::pair<std::shared_ptr<storm::models::ModelBase>, bool> result = std::make_pair(model, false);
@@ -487,7 +487,7 @@ namespace storm {
                 result = preprocessSparseModel<BuildValueType>(result.first->as<storm::models::sparse::Model<BuildValueType>>(), input);
             } else {
                 STORM_LOG_ASSERT(model->isSymbolicModel(), "Unexpected model type.");
-                result = preprocessDdModel<DdType, BuildValueType, ExportValueType>(result.first->as<storm::models::symbolic::Model<DdType, BuildValueType>>(), input);
+                result = preprocessDdModel<DdType, BuildValueType, ExportValueType>(result.first->as<storm::models::symbolic::Model<DdType, BuildValueType>>(), input, engine);
             }
             
             preprocessingWatch.stop();
@@ -885,8 +885,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
-        typename std::enable_if<DdType != storm::dd::DdType::CUDD || std::is_same<ValueType, double>::value, void>::type verifySymbolicModel(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input, storm::settings::modules::CoreSettings const& coreSettings) {
-            storm::utility::Engine engine = coreSettings.getEngine();;
+        typename std::enable_if<DdType != storm::dd::DdType::CUDD || std::is_same<ValueType, double>::value, void>::type verifySymbolicModel(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input, storm::utility::Engine const& engine) {
             if (engine == storm::utility::Engine::Hybrid) {
                 verifyWithHybridEngine<DdType, ValueType>(model, input);
             } else if (engine == storm::utility::Engine::Dd) {
@@ -897,17 +896,17 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
-        typename std::enable_if<DdType == storm::dd::DdType::CUDD && !std::is_same<ValueType, double>::value, void>::type verifySymbolicModel(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input, storm::settings::modules::CoreSettings const& coreSettings) {
+        typename std::enable_if<DdType == storm::dd::DdType::CUDD && !std::is_same<ValueType, double>::value, void>::type verifySymbolicModel(std::shared_ptr<storm::models::ModelBase> const&, SymbolicInput const& , storm::utility::Engine const&) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "CUDD does not support the selected data-type.");
         }
         
         template <storm::dd::DdType DdType, typename ValueType>
-        void verifyModel(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input, storm::settings::modules::CoreSettings const& coreSettings) {
+        void verifyModel(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input, storm::utility::Engine const& engine) {
             if (model->isSparseModel()) {
                 verifyWithSparseEngine<ValueType>(model, input);
             } else {
                 STORM_LOG_ASSERT(model->isSymbolicModel(), "Unexpected model type.");
-                verifySymbolicModel<DdType, ValueType>(model, input, coreSettings);
+                verifySymbolicModel<DdType, ValueType>(model, input, engine);
             }
         }
         
@@ -927,7 +926,7 @@ namespace storm {
             STORM_LOG_THROW(model || input.properties.empty(), storm::exceptions::InvalidSettingsException, "No input model.");
             
             if (model) {
-                auto preprocessingResult = preprocessModel<DdType, BuildValueType, VerificationValueType>(model, input);
+                auto preprocessingResult = preprocessModel<DdType, BuildValueType, VerificationValueType>(model, input, engine);
                 if (preprocessingResult.second) {
                     model = preprocessingResult.first;
                     model->printModelInformationToStream(std::cout);
@@ -938,48 +937,44 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType, typename BuildValueType, typename VerificationValueType = BuildValueType>
-        void processInputWithValueTypeAndDdlib(SymbolicInput const& input) {
-            auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
+        void processInputWithValueTypeAndDdlib(SymbolicInput const& input, storm::utility::Engine const& engine) {
             auto abstractionSettings = storm::settings::getModule<storm::settings::modules::AbstractionSettings>();
             auto counterexampleSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
 
             // For several engines, no model building step is performed, but the verification is started right away.
-            storm::utility::Engine engine = coreSettings.getEngine();
-            
             if (engine == storm::utility::Engine::AbstractionRefinement && abstractionSettings.getAbstractionRefinementMethod() == storm::settings::modules::AbstractionSettings::Method::Games) {
                 verifyWithAbstractionRefinementEngine<DdType, VerificationValueType>(input);
             } else if (engine == storm::utility::Engine::Exploration) {
                 verifyWithExplorationEngine<VerificationValueType>(input);
             } else {
                 std::shared_ptr<storm::models::ModelBase> model = buildPreprocessExportModelWithValueTypeAndDdlib<DdType, BuildValueType, VerificationValueType>(input, engine);
-
                 if (model) {
                     if (counterexampleSettings.isCounterexampleSet()) {
                         generateCounterexamples<VerificationValueType>(model, input);
                     } else {
-                        verifyModel<DdType, VerificationValueType>(model, input, coreSettings);
+                        verifyModel<DdType, VerificationValueType>(model, input, engine);
                     }
                 }
             }
         }
         
         template <typename ValueType>
-        void processInputWithValueType(SymbolicInput const& input) {
+        void processInputWithValueType(SymbolicInput const& input, storm::utility::Engine const& engine) {
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
             auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
             auto bisimulationSettings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
             
             if (coreSettings.getDdLibraryType() == storm::dd::DdType::CUDD && coreSettings.isDdLibraryTypeSetFromDefaultValue() && generalSettings.isExactSet()) {
                 STORM_LOG_INFO("Switching to DD library sylvan to allow for rational arithmetic.");
-                processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalNumber>(input);
+                processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalNumber>(input, engine);
             } else if (coreSettings.getDdLibraryType() == storm::dd::DdType::CUDD && coreSettings.isDdLibraryTypeSetFromDefaultValue() && std::is_same<ValueType, double>::value && generalSettings.isBisimulationSet() && bisimulationSettings.useExactArithmeticInDdBisimulation()) {
                 STORM_LOG_INFO("Switching to DD library sylvan to allow for rational arithmetic.");
-                processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalNumber, double>(input);
+                processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalNumber, double>(input, engine);
             } else if (coreSettings.getDdLibraryType() == storm::dd::DdType::CUDD) {
-                processInputWithValueTypeAndDdlib<storm::dd::DdType::CUDD, double>(input);
+                processInputWithValueTypeAndDdlib<storm::dd::DdType::CUDD, double>(input, engine);
             } else {
                 STORM_LOG_ASSERT(coreSettings.getDdLibraryType() == storm::dd::DdType::Sylvan, "Unknown DD library.");
-                processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, ValueType>(input);
+                processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, ValueType>(input, engine);
             }
         }
         

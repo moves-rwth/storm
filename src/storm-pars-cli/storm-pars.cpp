@@ -200,14 +200,13 @@ namespace storm {
         }
 
         template <storm::dd::DdType DdType, typename ValueType>
-        PreprocessResult preprocessDdModel(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, SymbolicInput const& input) {
-            auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
+        PreprocessResult preprocessDdModel(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, SymbolicInput const& input, storm::utility::Engine const& engine) {
             auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
             auto bisimulationSettings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
-
+            
             PreprocessResult result(model, false);
 
-            if (coreSettings.getEngine() == storm::utility::Engine::Hybrid) {
+            if (engine == storm::utility::Engine::Hybrid) {
                 // Currently, hybrid engine for parametric models just refers to building the model symbolically.
                 STORM_LOG_INFO("Translating symbolic model to sparse model...");
                 result.model = storm::api::transformSymbolicToSparseModel(model);
@@ -219,7 +218,7 @@ namespace storm {
                     result.formulas = sparsePreprocessingResult.formulas;
                 }
             } else {
-                STORM_LOG_ASSERT(coreSettings.getEngine() == storm::utility::Engine::Dd, "Expected Dd engine.");
+                STORM_LOG_ASSERT(engine == storm::utility::Engine::Dd, "Expected Dd engine.");
                 if (generalSettings.isBisimulationSet()) {
                     result.model = storm::cli::preprocessDdModelBisimulation(result.model->template as<storm::models::symbolic::Model<DdType, ValueType>>(), input, bisimulationSettings);
                     result.changed = true;
@@ -229,7 +228,7 @@ namespace storm {
         }
 
         template <storm::dd::DdType DdType, typename ValueType>
-        PreprocessResult preprocessModel(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input) {
+        PreprocessResult preprocessModel(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input, storm::utility::Engine const& engine) {
             storm::utility::Stopwatch preprocessingWatch(true);
 
             PreprocessResult result(model, false);
@@ -237,7 +236,7 @@ namespace storm {
                 result = storm::pars::preprocessSparseModel<ValueType>(result.model->as<storm::models::sparse::Model<ValueType>>(), input);
             } else {
                 STORM_LOG_ASSERT(model->isSymbolicModel(), "Unexpected model type.");
-                result = storm::pars::preprocessDdModel<DdType, ValueType>(result.model->as<storm::models::symbolic::Model<DdType, ValueType>>(), input);
+                result = storm::pars::preprocessDdModel<DdType, ValueType>(result.model->as<storm::models::symbolic::Model<DdType, ValueType>>(), input, engine);
             }
 
             if (result.changed) {
@@ -565,17 +564,13 @@ namespace storm {
             }
         }
 
-
         template <storm::dd::DdType DdType, typename ValueType>
-        void processInputWithValueTypeAndDdlib(SymbolicInput& input) {
-            auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
+        void processInputWithValueTypeAndDdlib(SymbolicInput& input, storm::utility::Engine const& engine) {
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-
             auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
             auto parSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
             auto monSettings = storm::settings::getModule<storm::settings::modules::MonotonicitySettings>();
 
-            auto engine = coreSettings.getEngine();
             STORM_LOG_THROW(engine == storm::utility::Engine::Sparse || engine == storm::utility::Engine::Hybrid || engine == storm::utility::Engine::Dd, storm::exceptions::InvalidSettingsException, "The selected engine is not supported for parametric models.");
 
             std::shared_ptr<storm::models::ModelBase> model;
@@ -592,7 +587,7 @@ namespace storm {
 
 
             if (model) {
-                auto preprocessingResult = storm::pars::preprocessModel<DdType, ValueType>(model, input);
+                auto preprocessingResult = storm::pars::preprocessModel<DdType, ValueType>(model, input, engine);
                 if (preprocessingResult.changed) {
                     model = preprocessingResult.model;
 
@@ -646,7 +641,7 @@ namespace storm {
             }
 
             if (model) {
-                auto preprocessingResult = storm::pars::preprocessModel<DdType, ValueType>(model, input);
+                auto preprocessingResult = storm::pars::preprocessModel<DdType, ValueType>(model, input, engine);
                 if (preprocessingResult.changed) {
                     model = preprocessingResult.model;
 
@@ -791,7 +786,7 @@ namespace storm {
             // Parse and preprocess symbolic input (PRISM, JANI, properties, etc.)
             SymbolicInput symbolicInput = storm::cli::parseAndPreprocessSymbolicInput(engine);
 
-            processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalFunction>(symbolicInput);
+            processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalFunction>(symbolicInput, engine);
         }
 
     }
