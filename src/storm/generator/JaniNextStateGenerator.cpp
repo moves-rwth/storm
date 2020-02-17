@@ -115,6 +115,33 @@ namespace storm {
                 }
             }
         }
+
+        template<typename ValueType, typename StateType>
+        storm::jani::ModelFeatures JaniNextStateGenerator<ValueType, StateType>::getSupportedJaniFeatures() {
+            storm::jani::ModelFeatures features;
+            features.add(storm::jani::ModelFeature::DerivedOperators);
+            features.add(storm::jani::ModelFeature::StateExitRewards);
+            features.add(storm::jani::ModelFeature::Arrays);
+            // We do not add Functions as these should ideally be substituted before creating this generator.
+            // This is because functions may also occur in properties and the user of this class should take care of that.
+            return features;
+        }
+        
+        template<typename ValueType, typename StateType>
+        bool JaniNextStateGenerator<ValueType, StateType>::canHandle(storm::jani::Model const& model) {
+            auto features = model.getModelFeatures();
+            features.remove(storm::jani::ModelFeature::Arrays);
+            features.remove(storm::jani::ModelFeature::DerivedOperators);
+            features.remove(storm::jani::ModelFeature::Functions); // can be substituted
+            features.remove(storm::jani::ModelFeature::StateExitRewards);
+            if (!features.empty()) {
+                return false;
+            }
+            // There probably are more cases where the model is unsupported. However, checking these is more involved.
+            // As this method is supposed to be a quick check, we just return true at this point.
+            return true;
+        }
+        
         
         template<typename ValueType, typename StateType>
         ModelType JaniNextStateGenerator<ValueType, StateType>::getModelType() const {

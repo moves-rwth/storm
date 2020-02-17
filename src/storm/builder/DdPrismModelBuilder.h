@@ -31,6 +31,13 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType = double>
         class DdPrismModelBuilder {
         public:
+            /*!
+             * A quick check to detect whether the given model is not supported.
+             * This method only over-approximates the set of models that can be handled, i.e., if this
+             * returns true, the model might still be unsupported.
+             */
+            static bool canHandle(storm::prism::Program const& program);
+            
             struct Options {
                 /*!
                  * Creates an object representing the default building options.

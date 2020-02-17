@@ -540,6 +540,11 @@ namespace storm {
         };
         
         template <storm::dd::DdType Type, typename ValueType>
+        bool DdPrismModelBuilder<Type, ValueType>::canHandle(storm::prism::Program const& program) {
+            return program.getModelType() != storm::prism::Program::ModelType::PTA;
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
         DdPrismModelBuilder<Type, ValueType>::Options::Options() : buildAllRewardModels(false), rewardModelsToBuild(), buildAllLabels(false), labelsToBuild(), terminalStates(), negatedTerminalStates() {
             // Intentionally left empty.
         }
