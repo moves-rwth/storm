@@ -32,7 +32,7 @@ namespace storm {
         }
         
         template <typename ValueType>
-        bool canHandle(BuilderType const& builderType, storm::storage::SymbolicModelDescription const& modelDescription) {
+        bool canHandle(BuilderType const& builderType, storm::storage::SymbolicModelDescription const& modelDescription, boost::optional<std::vector<storm::jani::Property>> const& properties) {
             storm::dd::DdType const ddType = storm::dd::DdType::Sylvan;
             if (!modelDescription.hasModel()) {
                 // If there is no model to be build, we assume that the task of obtaining a model is either not required or can be accomplished somehow.
@@ -50,7 +50,7 @@ namespace storm {
                     if (modelDescription.isPrismProgram()) {
                         return storm::builder::DdPrismModelBuilder<ddType, ValueType>::canHandle(modelDescription.asPrismProgram());
                     } else {
-                        return storm::builder::DdJaniModelBuilder<ddType, ValueType>::canHandle(modelDescription.asJaniModel());
+                        return storm::builder::DdJaniModelBuilder<ddType, ValueType>::canHandle(modelDescription.asJaniModel(), properties);
                     }
                 case BuilderType::Jit:
                     return storm::builder::jit::ExplicitJitJaniModelBuilder<ValueType>::canHandle(modelDescription.asJaniModel());
@@ -59,8 +59,9 @@ namespace storm {
         
 
         
-        template bool canHandle<double>(BuilderType const& builderType, storm::storage::SymbolicModelDescription const& modelDescription);
-        template bool canHandle<storm::RationalNumber>(BuilderType const& builderType, storm::storage::SymbolicModelDescription const& modelDescription);
+        template bool canHandle<double>(BuilderType const& builderType, storm::storage::SymbolicModelDescription const& modelDescription, boost::optional<std::vector<storm::jani::Property>> const& properties);
+        template bool canHandle<storm::RationalNumber>(BuilderType const& builderType, storm::storage::SymbolicModelDescription const& modelDescription, boost::optional<std::vector<storm::jani::Property>> const& properties);
+        template bool canHandle<storm::RationalFunction>(BuilderType const& builderType, storm::storage::SymbolicModelDescription const& modelDescription, boost::optional<std::vector<storm::jani::Property>> const& properties);
         
     }
 }

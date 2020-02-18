@@ -14,6 +14,7 @@
 #include "storm/modelchecker/CheckTask.h"
 
 #include "storm/storage/SymbolicModelDescription.h"
+#include "storm/storage/jani/Property.h"
 
 #include "storm/utility/macros.h"
 
@@ -144,21 +145,74 @@ namespace storm {
             return false;
         }
 
+        template <>
+        bool canHandle<storm::RationalFunction>(storm::utility::Engine const& engine, storm::storage::SymbolicModelDescription::ModelType const& modelType, storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalFunction> const& checkTask) {
+            // Define types to improve readability
+            typedef storm::storage::SymbolicModelDescription::ModelType ModelType;
+            // The Dd library does not make much of a difference (in case of exact or parametric models we will switch to sylvan anyway).
+            // Therefore, we always use sylvan here
+            storm::dd::DdType const ddType = storm::dd::DdType::Sylvan;
+            switch (engine) {
+                case Engine::Sparse:
+                case Engine::DdSparse:
+                    switch (modelType) {
+                        case ModelType::DTMC:
+                            return storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>>::canHandleStatic(checkTask);
+                        case ModelType::CTMC:
+                            return storm::modelchecker::SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<storm::RationalFunction>>::canHandleStatic(checkTask);
+                        case ModelType::MDP:
+                        case ModelType::MA:
+                        case ModelType::POMDP:
+                            return false;
+                    }
+                case Engine::Hybrid:
+                    switch (modelType) {
+                        case ModelType::DTMC:
+                            return storm::modelchecker::HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<ddType, storm::RationalFunction>>::canHandleStatic(checkTask);
+                        case ModelType::CTMC:
+                            return storm::modelchecker::HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<ddType, storm::RationalFunction>>::canHandleStatic(checkTask);
+                        case ModelType::MDP:
+                        case ModelType::MA:
+                        case ModelType::POMDP:
+                            return false;
+                    }
+                case Engine::Dd:
+                    switch (modelType) {
+                        case ModelType::DTMC:
+                            return storm::modelchecker::SymbolicDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<ddType, storm::RationalFunction>>::canHandleStatic(checkTask);
+                        case ModelType::MDP:
+                        case ModelType::CTMC:
+                        case ModelType::MA:
+                        case ModelType::POMDP:
+                            return false;
+                    }
+                default:
+                    STORM_LOG_ERROR("The selected engine" << engine << " is not considered.");
+            }
+            STORM_LOG_ERROR("The selected combination of engine (" << engine << ") and model type (" << modelType << ") does not seem to be supported for this value type.");
+            return false;
+        }
         
         template <typename ValueType>
-        bool canHandle(storm::utility::Engine const& engine, storm::storage::SymbolicModelDescription const& modelDescription, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
-            // Check handability based on model type
-            if (!canHandle(engine, modelDescription.getModelType(), checkTask)) {
-                return false;
+        bool canHandle(storm::utility::Engine const& engine, std::vector<storm::jani::Property> const& properties, storm::storage::SymbolicModelDescription const& modelDescription) {
+            // Check handability of properties based on model type
+            for (auto const& p : properties) {
+                for (auto const& f : {p.getRawFormula(), p.getFilter().getStatesFormula()}) {
+                    auto task = storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*f, true);
+                    if (!canHandle(engine, modelDescription.getModelType(), task)) {
+                        STORM_LOG_INFO("Engine " << engine << " can not handle formula '" << *f << "'.");
+                        return false;
+                    }
+                }
             }
             // Check whether the model builder can handle the model description
-            return storm::builder::canHandle<ValueType>(getBuilderType(engine), modelDescription);
+            return storm::builder::canHandle<ValueType>(getBuilderType(engine), modelDescription, properties);
         }
         
         // explicit template instantiations.
-        template bool canHandle<double>(storm::utility::Engine const&, storm::storage::SymbolicModelDescription const&, storm::modelchecker::CheckTask<storm::logic::Formula, double> const&);
-        template bool canHandle<storm::RationalNumber>(storm::utility::Engine const&, storm::storage::SymbolicModelDescription const&, storm::modelchecker::CheckTask<storm::logic::Formula, storm::RationalNumber> const&);
-        
-        
+        template bool canHandle<double>(storm::utility::Engine const&, std::vector<storm::jani::Property> const&, storm::storage::SymbolicModelDescription const&);
+        template bool canHandle<storm::RationalNumber>(storm::utility::Engine const&, std::vector<storm::jani::Property> const&, storm::storage::SymbolicModelDescription const&);
+        template bool canHandle<storm::RationalFunction>(storm::utility::Engine const&, std::vector<storm::jani::Property> const&, storm::storage::SymbolicModelDescription const&);
+
     }
 }

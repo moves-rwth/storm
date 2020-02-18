@@ -10,6 +10,10 @@
 namespace storm {
     
     // Forward Declarations
+    namespace jani {
+        class Property;
+    }
+    
     namespace logic {
         class Formula;
     }
@@ -56,12 +60,12 @@ namespace storm {
         storm::builder::BuilderType getBuilderType(storm::utility::Engine const& engine);
         
         /*!
-         * Returns false if the given model description and checkTask can certainly not be handled by the given engine.
+         * Returns false if the given model description and one of the given properties can certainly not be handled by the given engine.
          * Notice that the set of handable model checking queries is only overapproximated, i.e. if this returns true,
          * the query could still be not supported by the engine. This behavior is due to the fact that we sometimes need
          * to actually build the model in order to decide whether it is supported.
          */
         template <typename ValueType>
-        bool canHandle(storm::utility::Engine const& engine, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& checkTask, storm::storage::SymbolicModelDescription const& modelDescription);
+        bool canHandle(storm::utility::Engine const& engine, std::vector<storm::jani::Property> const& properties, storm::storage::SymbolicModelDescription const& modelDescription);
     }
 }
