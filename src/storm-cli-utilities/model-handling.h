@@ -194,6 +194,7 @@ namespace storm {
             if (pf.enableExact() && mpi.verificationValueType == ModelProcessingInformation::ValueType::FinitePrecision) {
                 mpi.verificationValueType = ModelProcessingInformation::ValueType::Exact;
             }
+            STORM_PRINT_AND_LOG( "Portfolio engine picked the following settings: " << std::endl << "\tengine=" << mpi.engine << "\t bisimulation=" << mpi.applyBisimulation << "\t exact=" << (mpi.verificationValueType != ModelProcessingInformation::ValueType::FinitePrecision) << std::endl)
         }
         
         ModelProcessingInformation getModelProcessingInformation(SymbolicInput const& input) {
@@ -229,11 +230,14 @@ namespace storm {
             if (input.model) {
                 switch (mpi.verificationValueType) {
                     case ModelProcessingInformation::ValueType::Parametric:
-                        incompatibleSettings = storm::utility::canHandle<storm::RationalFunction>(mpi.engine, input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties, input.model.get());
+                        incompatibleSettings = !storm::utility::canHandle<storm::RationalFunction>(mpi.engine, input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties, input.model.get());
+                        break;
                     case ModelProcessingInformation::ValueType::Exact:
-                        incompatibleSettings = storm::utility::canHandle<storm::RationalNumber>(mpi.engine, input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties, input.model.get());
+                        incompatibleSettings = !storm::utility::canHandle<storm::RationalNumber>(mpi.engine, input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties, input.model.get());
+                        break;
                     case ModelProcessingInformation::ValueType::FinitePrecision:
-                        incompatibleSettings = storm::utility::canHandle<double>(mpi.engine, input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties, input.model.get());
+                        incompatibleSettings = !storm::utility::canHandle<double>(mpi.engine, input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties, input.model.get());
+                        break;
                 }
             }
             if (incompatibleSettings) {
