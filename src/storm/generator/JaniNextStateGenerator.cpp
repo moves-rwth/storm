@@ -135,6 +135,7 @@ namespace storm {
             features.remove(storm::jani::ModelFeature::Functions); // can be substituted
             features.remove(storm::jani::ModelFeature::StateExitRewards);
             if (!features.empty()) {
+                STORM_LOG_INFO("The model can not be build as it contains these unsupported features: " << features.toString());
                 return false;
             }
             // There probably are more cases where the model is unsupported. However, checking these is more involved.

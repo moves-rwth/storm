@@ -95,7 +95,7 @@ namespace storm {
             auto compositionInfo = storm::jani::CompositionInformationVisitor(model, model.getSystemComposition()).getInformation();
             
             // Every automaton has to occur exactly once.
-            if (compositionInfo.getAutomatonToMultiplicityMap().size() == model.getNumberOfAutomata()) {
+            if (compositionInfo.getAutomatonToMultiplicityMap().size() != model.getNumberOfAutomata()) {
                 STORM_LOG_INFO("Symbolic engine can not build Jani model since the system composition does not list each automaton exactly once.");
                 return false;
             }
