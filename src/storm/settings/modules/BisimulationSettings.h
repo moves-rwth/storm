@@ -4,6 +4,7 @@
 #include "storm/settings/modules/ModuleSettings.h"
 
 #include "storm/storage/dd/bisimulation/SignatureMode.h"
+#include "storm/storage/dd/bisimulation/QuotientFormat.h"
 
 namespace storm {
     namespace settings {
@@ -16,8 +17,6 @@ namespace storm {
             public:
                 // An enumeration of all available bisimulation types.
                 enum class BisimulationType { Strong, Weak };
-                
-                enum class QuotientFormat { Sparse, Dd };
                 
                 enum class ReuseMode { None, BlockNumbers };
                 
@@ -48,7 +47,7 @@ namespace storm {
                  * Retrieves the format in which the quotient is to be extracted.
                  * NOTE: only applies to DD-based bisimulation.
                  */
-                QuotientFormat getQuotientFormat() const;
+                storm::dd::bisimulation::QuotientFormat getQuotientFormat() const;
                 
                 /*!
                  * Retrieves whether representatives for blocks are to be used instead of the block numbers.

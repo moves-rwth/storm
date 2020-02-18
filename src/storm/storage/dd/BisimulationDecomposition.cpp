@@ -129,18 +129,18 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
-        std::shared_ptr<storm::models::Model<ExportValueType>> BisimulationDecomposition<DdType, ValueType, ExportValueType>::getQuotient() const {
+        std::shared_ptr<storm::models::Model<ExportValueType>> BisimulationDecomposition<DdType, ValueType, ExportValueType>::getQuotient(storm::dd::bisimulation::QuotientFormat const& quotientFormat) const {
             std::shared_ptr<storm::models::Model<ExportValueType>> quotient;
             if (this->refiner->getStatus() == Status::FixedPoint) {
                 STORM_LOG_INFO("Starting full quotient extraction.");
-                QuotientExtractor<DdType, ValueType, ExportValueType> extractor;
+                QuotientExtractor<DdType, ValueType, ExportValueType> extractor(quotientFormat);
                 quotient = extractor.extract(model, refiner->getStatePartition(), preservationInformation);
             } else {
                 STORM_LOG_THROW(model.getType() == storm::models::ModelType::Dtmc || model.getType() == storm::models::ModelType::Mdp, storm::exceptions::InvalidOperationException, "Can only extract partial quotient for discrete-time models.");
                 
                 STORM_LOG_INFO("Starting partial quotient extraction.");
                 if (!partialQuotientExtractor) {
-                    partialQuotientExtractor = std::make_unique<bisimulation::PartialQuotientExtractor<DdType, ValueType, ExportValueType>>(model);
+                    partialQuotientExtractor = std::make_unique<bisimulation::PartialQuotientExtractor<DdType, ValueType, ExportValueType>>(model, quotientFormat);
                 }
 
                 quotient = partialQuotientExtractor->extract(refiner->getStatePartition(), preservationInformation);

@@ -35,7 +35,7 @@ TEST(SymbolicModelBisimulationDecomposition, Die_Cudd) {
     
     storm::dd::BisimulationDecomposition<storm::dd::DdType::CUDD, double> decomposition(*model, storm::storage::BisimulationType::Strong);
     decomposition.compute();
-    std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient();
+    std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     
     EXPECT_EQ(11ul, quotient->getNumberOfStates());
     EXPECT_EQ(17ul, quotient->getNumberOfTransitions());
@@ -50,7 +50,7 @@ TEST(SymbolicModelBisimulationDecomposition, Die_Cudd) {
     
     storm::dd::BisimulationDecomposition<storm::dd::DdType::CUDD, double> decomposition2(*model, formulas, storm::storage::BisimulationType::Strong);
     decomposition2.compute();
-    quotient = decomposition2.getQuotient();
+    quotient = decomposition2.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     
     EXPECT_EQ(5ul, quotient->getNumberOfStates());
     EXPECT_EQ(8ul, quotient->getNumberOfTransitions());
@@ -65,7 +65,7 @@ TEST(SymbolicModelBisimulationDecomposition, DiePartialQuotient_Cudd) {
     
     storm::dd::BisimulationDecomposition<storm::dd::DdType::CUDD, double> decomposition(*model, storm::storage::BisimulationType::Strong);
 
-    std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient();
+    std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     ASSERT_EQ(storm::models::ModelType::Mdp, quotient->getType());
     ASSERT_TRUE(quotient->isSymbolicModel());
 
@@ -92,7 +92,7 @@ TEST(SymbolicModelBisimulationDecomposition, DiePartialQuotient_Cudd) {
     // Perform only one step.
     decomposition.compute(1);
     
-    quotient = decomposition.getQuotient();
+    quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     ASSERT_EQ(storm::models::ModelType::Mdp, quotient->getType());
     ASSERT_TRUE(quotient->isSymbolicModel());
     quotientMdp = quotient->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>();
@@ -112,7 +112,7 @@ TEST(SymbolicModelBisimulationDecomposition, DiePartialQuotient_Cudd) {
     // Perform only one step.
     decomposition.compute(1);
     
-    quotient = decomposition.getQuotient();
+    quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     ASSERT_EQ(storm::models::ModelType::Mdp, quotient->getType());
     ASSERT_TRUE(quotient->isSymbolicModel());
     quotientMdp = quotient->as<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>();
@@ -132,7 +132,7 @@ TEST(SymbolicModelBisimulationDecomposition, DiePartialQuotient_Cudd) {
     
     decomposition.compute(1);
 
-    quotient = decomposition.getQuotient();
+    quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     ASSERT_EQ(storm::models::ModelType::Dtmc, quotient->getType());
     ASSERT_TRUE(quotient->isSymbolicModel());
     std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>> quotientDtmc = quotient->as<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>>();
@@ -155,7 +155,7 @@ TEST(SymbolicModelBisimulationDecomposition, Die_Sylvan) {
     
     storm::dd::BisimulationDecomposition<storm::dd::DdType::Sylvan, double> decomposition(*model, storm::storage::BisimulationType::Strong);
     decomposition.compute();
-    std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient();
+    std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     
     EXPECT_EQ(11ul, quotient->getNumberOfStates());
     EXPECT_EQ(17ul, quotient->getNumberOfTransitions());
@@ -170,7 +170,7 @@ TEST(SymbolicModelBisimulationDecomposition, Die_Sylvan) {
     
     storm::dd::BisimulationDecomposition<storm::dd::DdType::Sylvan, double> decomposition2(*model, formulas, storm::storage::BisimulationType::Strong);
     decomposition2.compute();
-    quotient = decomposition2.getQuotient();
+    quotient = decomposition2.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     
     EXPECT_EQ(5ul, quotient->getNumberOfStates());
     EXPECT_EQ(8ul, quotient->getNumberOfTransitions());
@@ -185,7 +185,7 @@ TEST(SymbolicModelBisimulationDecomposition, DiePartialQuotient_Sylvan) {
     
     storm::dd::BisimulationDecomposition<storm::dd::DdType::Sylvan, double> decomposition(*model, storm::storage::BisimulationType::Strong);
     
-    std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient();
+    std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     ASSERT_EQ(storm::models::ModelType::Mdp, quotient->getType());
     ASSERT_TRUE(quotient->isSymbolicModel());
     
@@ -212,7 +212,7 @@ TEST(SymbolicModelBisimulationDecomposition, DiePartialQuotient_Sylvan) {
     // Perform only one step.
     decomposition.compute(1);
     
-    quotient = decomposition.getQuotient();
+    quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     ASSERT_EQ(storm::models::ModelType::Mdp, quotient->getType());
     ASSERT_TRUE(quotient->isSymbolicModel());
     quotientMdp = quotient->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>();
@@ -232,7 +232,7 @@ TEST(SymbolicModelBisimulationDecomposition, DiePartialQuotient_Sylvan) {
     // Perform only one step.
     decomposition.compute(1);
     
-    quotient = decomposition.getQuotient();
+    quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     ASSERT_EQ(storm::models::ModelType::Mdp, quotient->getType());
     ASSERT_TRUE(quotient->isSymbolicModel());
     quotientMdp = quotient->as<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>();
@@ -252,7 +252,7 @@ TEST(SymbolicModelBisimulationDecomposition, DiePartialQuotient_Sylvan) {
     
     decomposition.compute(1);
     
-    quotient = decomposition.getQuotient();
+    quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     ASSERT_EQ(storm::models::ModelType::Dtmc, quotient->getType());
     ASSERT_TRUE(quotient->isSymbolicModel());
     std::shared_ptr<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>> quotientDtmc = quotient->as<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>>();
@@ -278,7 +278,7 @@ TEST(SymbolicModelBisimulationDecomposition, Crowds_Cudd) {
     
     storm::dd::BisimulationDecomposition<storm::dd::DdType::CUDD, double> decomposition(*model, storm::storage::BisimulationType::Strong);
     decomposition.compute();
-    std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient();
+    std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     
     EXPECT_EQ(2007ul, quotient->getNumberOfStates());
     EXPECT_EQ(3738ul, quotient->getNumberOfTransitions());
@@ -293,7 +293,7 @@ TEST(SymbolicModelBisimulationDecomposition, Crowds_Cudd) {
     
     storm::dd::BisimulationDecomposition<storm::dd::DdType::CUDD, double> decomposition2(*model, formulas, storm::storage::BisimulationType::Strong);
     decomposition2.compute();
-    quotient = decomposition2.getQuotient();
+    quotient = decomposition2.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     
     EXPECT_EQ(65ul, quotient->getNumberOfStates());
     EXPECT_EQ(105ul, quotient->getNumberOfTransitions());
@@ -311,7 +311,7 @@ TEST(SymbolicModelBisimulationDecomposition, Crowds_Sylvan) {
     
     storm::dd::BisimulationDecomposition<storm::dd::DdType::Sylvan, double> decomposition(*model, storm::storage::BisimulationType::Strong);
     decomposition.compute();
-    std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient();
+    std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     
     EXPECT_EQ(2007ul, quotient->getNumberOfStates());
     EXPECT_EQ(3738ul, quotient->getNumberOfTransitions());
@@ -326,7 +326,7 @@ TEST(SymbolicModelBisimulationDecomposition, Crowds_Sylvan) {
     
     storm::dd::BisimulationDecomposition<storm::dd::DdType::Sylvan, double> decomposition2(*model, formulas, storm::storage::BisimulationType::Strong);
     decomposition2.compute();
-    quotient = decomposition2.getQuotient();
+    quotient = decomposition2.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     
     EXPECT_EQ(65ul, quotient->getNumberOfStates());
     EXPECT_EQ(105ul, quotient->getNumberOfTransitions());
@@ -341,7 +341,7 @@ TEST(SymbolicModelBisimulationDecomposition, TwoDice_Cudd) {
     
     storm::dd::BisimulationDecomposition<storm::dd::DdType::CUDD, double> decomposition(*model, storm::storage::BisimulationType::Strong);
     decomposition.compute();
-    std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient();
+    std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
 
     EXPECT_EQ(77ul, quotient->getNumberOfStates());
     EXPECT_EQ(210ul, quotient->getNumberOfTransitions());
@@ -357,7 +357,7 @@ TEST(SymbolicModelBisimulationDecomposition, TwoDice_Cudd) {
     
     storm::dd::BisimulationDecomposition<storm::dd::DdType::CUDD, double> decomposition2(*model, formulas, storm::storage::BisimulationType::Strong);
     decomposition2.compute();
-    quotient = decomposition2.getQuotient();
+    quotient = decomposition2.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     
     EXPECT_EQ(11ul, quotient->getNumberOfStates());
     EXPECT_EQ(34ul, quotient->getNumberOfTransitions());
@@ -373,7 +373,7 @@ TEST(SymbolicModelBisimulationDecomposition, TwoDice_Sylvan) {
     
     storm::dd::BisimulationDecomposition<storm::dd::DdType::Sylvan, double> decomposition(*model, storm::storage::BisimulationType::Strong);
     decomposition.compute();
-    std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient();
+    std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     
     EXPECT_EQ(77ul, quotient->getNumberOfStates());
     EXPECT_EQ(210ul, quotient->getNumberOfTransitions());
@@ -389,7 +389,7 @@ TEST(SymbolicModelBisimulationDecomposition, TwoDice_Sylvan) {
     
     storm::dd::BisimulationDecomposition<storm::dd::DdType::Sylvan, double> decomposition2(*model, formulas, storm::storage::BisimulationType::Strong);
     decomposition2.compute();
-    quotient = decomposition2.getQuotient();
+    quotient = decomposition2.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     
     EXPECT_EQ(11ul, quotient->getNumberOfStates());
     EXPECT_EQ(34ul, quotient->getNumberOfTransitions());
@@ -411,7 +411,7 @@ TEST(SymbolicModelBisimulationDecomposition, AsynchronousLeader_Cudd) {
     
     storm::dd::BisimulationDecomposition<storm::dd::DdType::CUDD, double> decomposition(*model, storm::storage::BisimulationType::Strong);
     decomposition.compute();
-    std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient();
+    std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     
     EXPECT_EQ(252ul, quotient->getNumberOfStates());
     EXPECT_EQ(624ul, quotient->getNumberOfTransitions());
@@ -424,7 +424,7 @@ TEST(SymbolicModelBisimulationDecomposition, AsynchronousLeader_Cudd) {
     
     storm::dd::BisimulationDecomposition<storm::dd::DdType::CUDD, double> decomposition2(*model, formulas, storm::storage::BisimulationType::Strong);
     decomposition2.compute();
-    quotient = decomposition2.getQuotient();
+    quotient = decomposition2.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     
     EXPECT_EQ(1107ul, quotient->getNumberOfStates());
     EXPECT_EQ(2684ul, quotient->getNumberOfTransitions());
@@ -446,7 +446,7 @@ TEST(SymbolicModelBisimulationDecomposition, AsynchronousLeader_Sylvan) {
     
     storm::dd::BisimulationDecomposition<storm::dd::DdType::Sylvan, double> decomposition(*model, storm::storage::BisimulationType::Strong);
     decomposition.compute();
-    std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient();
+    std::shared_ptr<storm::models::Model<double>> quotient = decomposition.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     
     EXPECT_EQ(252ul, quotient->getNumberOfStates());
     EXPECT_EQ(624ul, quotient->getNumberOfTransitions());
@@ -459,7 +459,7 @@ TEST(SymbolicModelBisimulationDecomposition, AsynchronousLeader_Sylvan) {
     
     storm::dd::BisimulationDecomposition<storm::dd::DdType::Sylvan, double> decomposition2(*model, formulas, storm::storage::BisimulationType::Strong);
     decomposition2.compute();
-    quotient = decomposition2.getQuotient();
+    quotient = decomposition2.getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
     
     EXPECT_EQ(1107ul, quotient->getNumberOfStates());
     EXPECT_EQ(2684ul, quotient->getNumberOfTransitions());
