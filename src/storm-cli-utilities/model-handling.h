@@ -510,7 +510,10 @@ namespace storm {
             STORM_LOG_WARN_COND(!bisimulationSettings.isWeakBisimulationSet(), "Weak bisimulation is currently not supported on DDs. Falling back to strong bisimulation.");
             
             auto quotientFormat = bisimulationSettings.getQuotientFormat();
-
+            if (mpi.engine == storm::utility::Engine::DdSparse && quotientFormat != storm::dd::bisimulation::QuotientFormat::Sparse && bisimulationSettings.isQuotientFormatSetFromDefaultValue()) {
+                STORM_LOG_INFO("Setting bisimulation quotient format to 'sparse'.");
+                quotientFormat = storm::dd::bisimulation::QuotientFormat::Sparse;
+            }
             STORM_LOG_INFO("Performing bisimulation minimization...");
             return storm::api::performBisimulationMinimization<DdType, ValueType, ExportValueType>(model, createFormulasToRespect(input.properties), storm::storage::BisimulationType::Strong, bisimulationSettings.getSignatureMode(), quotientFormat);
         }

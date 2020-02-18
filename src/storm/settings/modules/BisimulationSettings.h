@@ -44,6 +44,13 @@ namespace storm {
                 bool isWeakBisimulationSet() const;
 
                 /*!
+                 * Retrieves whether the format in which the quotient is to be extracted has been set from its default value.
+                 *
+                 * @return True iff it has been set from its default value.
+                 */
+                bool isQuotientFormatSetFromDefaultValue() const;
+                
+                /*!
                  * Retrieves the format in which the quotient is to be extracted.
                  * NOTE: only applies to DD-based bisimulation.
                  */

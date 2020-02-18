@@ -70,6 +70,10 @@ namespace storm {
                 return false;
             }
             
+            bool BisimulationSettings::isQuotientFormatSetFromDefaultValue() const {
+                return !this->getOption(quotientFormatOptionName).getHasOptionBeenSet() || this->getOption(quotientFormatOptionName).getArgumentByName("format").wasSetFromDefaultValue();
+            }
+            
             storm::dd::bisimulation::QuotientFormat BisimulationSettings::getQuotientFormat() const {
                 std::string quotientFormatAsString = this->getOption(quotientFormatOptionName).getArgumentByName("format").getValueAsString();
                 if (quotientFormatAsString == "sparse") {
