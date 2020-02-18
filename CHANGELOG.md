@@ -8,6 +8,9 @@ Version 1.4.x
 -------------
 
 ## Version 1.4.2 (under development)
+- Added portfolio engine which picks a good engine (among other settings) based on features of the symbolic input
+- Setting `--engine dd-to-sparse --bisimulation` now triggers extracting the sparse bisimulation quotiont
+- JIT model building is now invoked via `--engine jit` (instead of `--jit`)
 - DRN: support import of choice labelling
 - `storm-pomdp`: Only accept POMDPs that are canonical
 - `storm-pomdp`: Prism language extended with observable expressions
