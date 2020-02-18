@@ -34,9 +34,17 @@ namespace storm {
             bool enableExact() const;
             
         private:
+            
+            // some popular configs
+            void sparse();
+            void hybrid();
+            void dd();
+            void exact();
+            void ddbisim();
+            
             storm::utility::Engine engine;
-            bool bisimulation;
-            bool exact;
+            bool useBisimulation;
+            bool useExact;
             
             
             
