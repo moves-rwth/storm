@@ -48,6 +48,8 @@ namespace storm {
                     return "expl";
                 case Engine::AbstractionRefinement:
                     return "abs";
+                case Engine::Portfolio:
+                    return "portfolio";
                 case Engine::Unknown:
                     return "UNKNOWN";
                 default:

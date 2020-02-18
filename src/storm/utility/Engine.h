@@ -30,7 +30,7 @@ namespace storm {
         /// An enumeration of all engines.
         enum class Engine {
             // The last one should always be 'Unknown' to make sure that the getEngines() method below works.
-            Sparse, Hybrid, Dd, DdSparse, Jit, Exploration, AbstractionRefinement, Unknown
+            Sparse, Hybrid, Dd, DdSparse, Jit, Exploration, AbstractionRefinement, Portfolio, Unknown
         };
         
         /*!

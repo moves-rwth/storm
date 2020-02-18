@@ -11,6 +11,7 @@
 #include "storm/utility/macros.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/Engine.h"
+#include "storm/utility/Portfolio.h"
 
 #include "storm/utility/initialize.h"
 #include "storm/utility/Stopwatch.h"
@@ -46,6 +47,7 @@
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
+#include "storm/settings/modules/HintSettings.h"
 #include "storm/storage/Qvbs.h"
 
 #include "storm/utility/Stopwatch.h"
@@ -147,6 +149,7 @@ namespace storm {
         }
         
         struct ModelProcessingInformation {
+            
             // The engine to use
             storm::utility::Engine engine;
             
@@ -169,6 +172,30 @@ namespace storm {
             storm::Environment env;
         };
         
+        void getModelProcessingInformationPortfolio(SymbolicInput const& input, ModelProcessingInformation& mpi) {
+            auto hints = storm::settings::getModule<storm::settings::modules::HintSettings>();
+            
+            STORM_LOG_THROW(input.model.is_initialized(), storm::exceptions::InvalidArgumentException, "Portfolio engine requires a symbolic model (PRISM or JANI.");
+            std::vector<storm::jani::Property> const& properties = input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties;
+            STORM_LOG_THROW(!properties.empty(), storm::exceptions::InvalidArgumentException, "Portfolio engine requires a property.");
+            STORM_LOG_WARN_COND(properties.size() == 1, "Portfolio engine does not support decisions based on multiple properties. Only the first property will be considered.");
+            
+            storm::utility::Portfolio pf;
+            if (hints.isNumberStatesSet()) {
+                pf.predict(input.model.get(), properties.front(), hints.getNumberStates());
+            } else {
+                pf.predict(input.model.get(), properties.front());
+            }
+            
+            mpi.engine = pf.getEngine();
+            if (pf.enableBisimulation()) {
+                mpi.applyBisimulation = true;
+            }
+            if (pf.enableExact() && mpi.verificationValueType == ModelProcessingInformation::ValueType::FinitePrecision) {
+                mpi.verificationValueType = ModelProcessingInformation::ValueType::Exact;
+            }
+        }
+        
         ModelProcessingInformation getModelProcessingInformation(SymbolicInput const& input) {
             ModelProcessingInformation mpi;
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
@@ -190,8 +217,36 @@ namespace storm {
                 mpi.verificationValueType = ModelProcessingInformation::ValueType::FinitePrecision;
             }
             
-            // Since the remaining settings could depend on the ones above, we need to invoke the portfolio decision tree now.
-            // TODO: portfolio treatment here
+            // Since the remaining settings could depend on the ones above, we need apply the portfolio engine now.
+            bool usePortfolio = mpi.engine == storm::utility::Engine::Portfolio;
+            if (usePortfolio) {
+                // This can potentially overwrite the settings above, but will not overwrite settings that were explicitly set by the user (e.g. we will not disable bisimulation or disable exact arithmetic)
+                getModelProcessingInformationPortfolio(input, mpi);
+            }
+            
+            // Check whether these settings are compatible with the provided input.
+            bool incompatibleSettings = false;
+            if (input.model) {
+                switch (mpi.verificationValueType) {
+                    case ModelProcessingInformation::ValueType::Parametric:
+                        incompatibleSettings = storm::utility::canHandle<storm::RationalFunction>(mpi.engine, input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties, input.model.get());
+                    case ModelProcessingInformation::ValueType::Exact:
+                        incompatibleSettings = storm::utility::canHandle<storm::RationalNumber>(mpi.engine, input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties, input.model.get());
+                    case ModelProcessingInformation::ValueType::FinitePrecision:
+                        incompatibleSettings = storm::utility::canHandle<double>(mpi.engine, input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties, input.model.get());
+                }
+            }
+            if (incompatibleSettings) {
+                if (usePortfolio) {
+                    STORM_LOG_WARN("The settings picked by the portfolio engine (engine=" << mpi.engine << ", bisim=" << mpi.applyBisimulation << ", exact=" << (mpi.verificationValueType != ModelProcessingInformation::ValueType::FinitePrecision) << ") are incompatible with this model. Falling back to sparse engine without bisimulation and floating point arithmetic.");
+                    mpi.engine = storm::utility::Engine::Sparse;
+                    mpi.applyBisimulation = false;
+                    mpi.verificationValueType = ModelProcessingInformation::ValueType::FinitePrecision;
+                } else {
+                    STORM_LOG_WARN("The model checking query does not seem to be supported for the selected engine. Storm will try to solve the query, but you will most likely get an error for at least one of the provided properties.");
+                }
+            }
+
             
             // Set the Valuetype used during model building
             mpi.buildValueType = mpi.verificationValueType;
