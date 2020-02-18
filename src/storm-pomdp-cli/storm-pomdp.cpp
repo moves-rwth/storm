@@ -98,12 +98,12 @@ int main(const int argc, const char** argv) {
         auto const& coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
         auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
 
-        // For several engines, no model building step is performed, but the verification is started right away.
-        storm::utility::Engine engine = coreSettings.getEngine();
-
-        storm::cli::SymbolicInput symbolicInput = storm::cli::parseAndPreprocessSymbolicInput(engine);
+        auto symbolicInput = storm::cli::parseSymbolicInput();
+        auto mpi = storm::cli::getModelProcessingInformation(symbolicInput);
+        symbolicInput = storm::cli::preprocessSymbolicInput(symbolicInput, mpi.engine);
+        
         // We should not export here if we are going to do some processing first.
-        auto model = storm::cli::buildPreprocessExportModelWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalNumber>(symbolicInput, engine);
+        auto model = storm::cli::buildPreprocessExportModelWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalNumber>(symbolicInput, mpi);
         STORM_LOG_THROW(model && model->getType() == storm::models::ModelType::Pomdp, storm::exceptions::WrongFormatException, "Expected a POMDP.");
         std::shared_ptr<storm::models::sparse::Pomdp<storm::RationalNumber>> pomdp = model->template as<storm::models::sparse::Pomdp<storm::RationalNumber>>();
         storm::transformer::MakePOMDPCanonic<storm::RationalNumber> makeCanonic(*pomdp);
