@@ -60,8 +60,8 @@ Furthermore, we recommend the usage of [Homebrew](https://brew.sh){:target="_bla
 - Required:
 ``` console
 $ brew install cln ginac automake cmake
-$ brew install boost --c++11
-$ brew install gmp --c++11
+$ brew install boost
+$ brew install gmp
 $ brew install glpk
 $ brew install hwloc
 ```
