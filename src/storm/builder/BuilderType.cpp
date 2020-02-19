@@ -55,6 +55,8 @@ namespace storm {
                 case BuilderType::Jit:
                     return storm::builder::jit::ExplicitJitJaniModelBuilder<ValueType>::canHandle(modelDescription.asJaniModel());
             }
+            STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled builderType.");
+            return false;
         }
         
 
