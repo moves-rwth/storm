@@ -5,6 +5,7 @@
 #include "storm/storage/dd/DdType.h"
 
 #include "storm/logic/Formula.h"
+#include "storm/builder/TerminalStatesGetter.h"
 
 
 namespace storm {
@@ -96,13 +97,10 @@ namespace storm {
                 // An optional mapping that, if given, contains defining expressions for undefined constants.
                 boost::optional<std::map<storm::expressions::Variable, storm::expressions::Expression>> constantDefinitions;
                 
-                // An optional expression or label that (a subset of) characterizes the terminal states of the model.
+                // An optional set of expression or labels that characterizes (a subset of) the terminal states of the model.
                 // If this is set, the outgoing transitions of these states are replaced with a self-loop.
-                boost::optional<storm::expressions::Expression> terminalStates;
+                storm::builder::TerminalStates terminalStates;
                 
-                // An optional expression or label whose negation characterizes (a subset of) the terminal states of the
-                // model. If this is set, the outgoing transitions of these states are replaced with a self-loop.
-                boost::optional<storm::expressions::Expression> negatedTerminalStates;
             };
                         
             /*!

@@ -46,18 +46,18 @@ namespace storm {
     namespace builder {
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdJaniModelBuilder<Type, ValueType>::Options::Options(bool buildAllLabels, bool buildAllRewardModels) : buildAllLabels(buildAllLabels), buildAllRewardModels(buildAllRewardModels), rewardModelsToBuild(), constantDefinitions(), terminalStates(), negatedTerminalStates() {
+        DdJaniModelBuilder<Type, ValueType>::Options::Options(bool buildAllLabels, bool buildAllRewardModels) : buildAllLabels(buildAllLabels), buildAllRewardModels(buildAllRewardModels), rewardModelsToBuild(), constantDefinitions() {
             // Intentionally left empty.
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdJaniModelBuilder<Type, ValueType>::Options::Options(storm::logic::Formula const& formula) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), terminalStates(), negatedTerminalStates() {
+        DdJaniModelBuilder<Type, ValueType>::Options::Options(storm::logic::Formula const& formula) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions() {
             this->preserveFormula(formula);
             this->setTerminalStatesFromFormula(formula);
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdJaniModelBuilder<Type, ValueType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) : buildAllLabels(false), buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), terminalStates(), negatedTerminalStates() {
+        DdJaniModelBuilder<Type, ValueType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) : buildAllLabels(false), buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions() {
             if (!formulas.empty()) {
                 for (auto const& formula : formulas) {
                     this->preserveFormula(*formula);
@@ -71,12 +71,7 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType>
         void DdJaniModelBuilder<Type, ValueType>::Options::preserveFormula(storm::logic::Formula const& formula) {
             // If we already had terminal states, we need to erase them.
-            if (terminalStates) {
-                terminalStates.reset();
-            }
-            if (negatedTerminalStates) {
-                negatedTerminalStates.reset();
-            }
+            terminalStates = storm::builder::TerminalStates();
             
             // If we are not required to build all reward models, we determine the reward models we need to build.
             if (!buildAllRewardModels) {
@@ -93,28 +88,7 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         void DdJaniModelBuilder<Type, ValueType>::Options::setTerminalStatesFromFormula(storm::logic::Formula const& formula) {
-            if (formula.isAtomicExpressionFormula()) {
-                terminalStates = formula.asAtomicExpressionFormula().getExpression();
-            } else if (formula.isEventuallyFormula()) {
-                storm::logic::Formula const& sub = formula.asEventuallyFormula().getSubformula();
-                if (sub.isAtomicExpressionFormula() || sub.isAtomicLabelFormula()) {
-                    this->setTerminalStatesFromFormula(sub);
-                }
-            } else if (formula.isUntilFormula()) {
-                storm::logic::Formula const& right = formula.asUntilFormula().getRightSubformula();
-                if (right.isAtomicExpressionFormula() || right.isAtomicLabelFormula()) {
-                    this->setTerminalStatesFromFormula(right);
-                }
-                storm::logic::Formula const& left = formula.asUntilFormula().getLeftSubformula();
-                if (left.isAtomicExpressionFormula()) {
-                    negatedTerminalStates = left.asAtomicExpressionFormula().getExpression();
-                }
-            } else if (formula.isProbabilityOperatorFormula()) {
-                storm::logic::Formula const& sub = formula.asProbabilityOperatorFormula().getSubformula();
-                if (sub.isEventuallyFormula() || sub.isUntilFormula()) {
-                    this->setTerminalStatesFromFormula(sub);
-                }
-            }
+            terminalStates = getTerminalStatesFromFormula(formula);
         }
         
         template <storm::dd::DdType Type, typename ValueType>
@@ -939,13 +913,14 @@ namespace storm {
                             boost::optional<uint64_t> previousActionPosition = synchVector.getPositionOfPrecedingParticipatingAction(subcompositionIndex);
                             STORM_LOG_ASSERT(previousActionPosition, "Inconsistent information about synchronization vector.");
                             AutomatonDd const& previousAutomatonDd = subautomata[previousActionPosition.get()];
-                            auto precedingActionIt = previousAutomatonDd.actions.find(ActionIdentification(actionInformation.getActionIndex(synchVector.getInput(previousActionPosition.get())), synchronizationVectorIndex, isCtmc));
+                            auto precedingActionIndex = actionInformation.getActionIndex(synchVector.getInput(previousActionPosition.get()));
+                            auto precedingActionIt = previousAutomatonDd.actions.find(ActionIdentification(precedingActionIndex, synchronizationVectorIndex, isCtmc));
 
                             uint64_t highestLocalNondeterminismVariable = 0;
                             if (precedingActionIt != previousAutomatonDd.actions.end()) {
                                 highestLocalNondeterminismVariable = precedingActionIt->second.getHighestLocalNondeterminismVariable();
                             } else {
-                                STORM_LOG_WARN("Subcomposition does not have action that is mentioned in parallel composition.");
+                                STORM_LOG_WARN("Subcomposition does not have action" << actionInformation.getActionName(precedingActionIndex) << " that is mentioned in parallel composition.");
                             }
                             actionInstantiations[actionIndex].emplace_back(actionIndex, synchronizationVectorIndex, highestLocalNondeterminismVariable, isCtmc);
                         }
@@ -1870,7 +1845,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        storm::dd::Bdd<Type> postprocessSystem(storm::jani::Model const& model, ComposerResult<Type, ValueType>& system, CompositionVariables<Type, ValueType> const& variables, typename DdJaniModelBuilder<Type, ValueType>::Options const& options) {
+        storm::dd::Bdd<Type> postprocessSystem(storm::jani::Model const& model, ComposerResult<Type, ValueType>& system, CompositionVariables<Type, ValueType> const& variables, typename DdJaniModelBuilder<Type, ValueType>::Options const& options, std::map<std::string, storm::expressions::Expression> const& labelsToExpressionMap) {
             // For DTMCs, we normalize each row to 1 (to account for non-determinism).
             if (model.getModelType() == storm::jani::ModelType::DTMC) {
                 storm::dd::Add<Type, ValueType> stateToNumberOfChoices = system.transitions.sumAbstract(variables.columnMetaVariables);
@@ -1883,25 +1858,23 @@ namespace storm {
             }
             
             // If we were asked to treat some states as terminal states, we cut away their transitions now.
-            if (options.terminalStates || options.negatedTerminalStates) {
-                std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution = model.getConstantsSubstitution();
-                
-                storm::dd::Bdd<Type> terminalStatesBdd = variables.manager->getBddZero();
-                if (options.terminalStates) {
-                    storm::expressions::Expression terminalExpression = options.terminalStates.get().substitute(constantsSubstitution);
-                    STORM_LOG_TRACE("Making the states satisfying " << terminalExpression << " terminal.");
-                    terminalStatesBdd = variables.rowExpressionAdapter->translateExpression(terminalExpression).toBdd();
-                }
-                if (options.negatedTerminalStates) {
-                    storm::expressions::Expression negatedTerminalExpression = options.negatedTerminalStates.get().substitute(constantsSubstitution);
-                    STORM_LOG_TRACE("Making the states *not* satisfying " << negatedTerminalExpression << " terminal.");
-                    terminalStatesBdd |= !variables.rowExpressionAdapter->translateExpression(negatedTerminalExpression).toBdd();
-                }
-                
+            storm::dd::Bdd<Type> terminalStatesBdd = variables.manager->getBddZero();
+            if (!options.terminalStates.empty()) {
+                storm::expressions::Expression terminalExpression = options.terminalStates.asExpression([&model, &labelsToExpressionMap](std::string const& labelName) {
+                        auto exprIt = labelsToExpressionMap.find(labelName);
+                        if (exprIt != labelsToExpressionMap.end()) {
+                            return exprIt->second;
+                        } else {
+                            STORM_LOG_THROW(labelName == "init" || labelName == "deadlock", storm::exceptions::InvalidArgumentException, "Terminal states refer to illegal label '" << labelName << "'.");
+                            // If the label name is "init" we can abort 'exploration' directly at the initial state. If it is deadlock, we do not have to abort.
+                            return model.getExpressionManager().boolean(labelName == "init");
+                        }
+                });
+                terminalExpression = terminalExpression.substitute(model.getConstantsSubstitution());
+                terminalStatesBdd = variables.rowExpressionAdapter->translateExpression(terminalExpression).toBdd();
                 system.transitions *= (!terminalStatesBdd).template toAdd<ValueType>();
-                return terminalStatesBdd;
             }
-            return variables.manager->getBddZero();
+            return terminalStatesBdd;
         }
         
         template <storm::dd::DdType Type, typename ValueType>
@@ -2095,11 +2068,17 @@ namespace storm {
             // Postprocess the variables in place.
             postprocessVariables(preparedModel.getModelType(), system, variables);
 
+            // Build the label to expressions mapping.
+            auto labelsToExpressionMap = buildLabelExpressions(preparedModel, variables, options);
+            
             // Postprocess the system in place and get the states that were terminal (i.e. whose transitions were cut off).
-            storm::dd::Bdd<Type> terminalStates = postprocessSystem(preparedModel, system, variables, options);
+            storm::dd::Bdd<Type> terminalStates = postprocessSystem(preparedModel, system, variables, options, labelsToExpressionMap);
             
             // Start creating the model components.
             ModelComponents<Type, ValueType> modelComponents;
+            
+            // Set the label expressions
+            modelComponents.labelToExpressionMap = std::move(labelsToExpressionMap);
             
             // Build initial states.
             modelComponents.initialStates = computeInitialStates(preparedModel, variables);
@@ -2127,9 +2106,6 @@ namespace storm {
             
             // Build the reward models.
             modelComponents.rewardModels = buildRewardModels(reachableStatesAdd, modelComponents.transitionMatrix, preparedModel.getModelType(), variables, system, rewardVariables);
-            
-            // Build the label to expressions mapping.
-            modelComponents.labelToExpressionMap = buildLabelExpressions(preparedModel, variables, options);
             
             // Finally, create the model.
             return createModel(preparedModel.getModelType(), variables, modelComponents);
