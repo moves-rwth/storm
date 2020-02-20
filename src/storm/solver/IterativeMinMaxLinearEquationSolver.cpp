@@ -379,16 +379,20 @@ namespace storm {
             // Allow aliased multiplications.
             storm::solver::MultiplicationStyle multiplicationStyle = env.solver().minMax().getMultiplicationStyle();
             bool useGaussSeidelMultiplication = multiplicationStyle == storm::solver::MultiplicationStyle::GaussSeidel;
+            // Relative errors
+            bool relative = env.solver().minMax().getRelativeTerminationCriterion();
 
             std::vector<ValueType> *newX = auxiliaryRowGroupVector.get();
             std::vector<ValueType> *currentX = &x;
             std::vector<ValueType> newUpperBound;
-            std::vector<ValueType> currentUpperBound;
+            std::vector<ValueType> currentUpperBound(currentX->size());
             std::vector<ValueType> ubDiffV(newX->size());
             std::vector<ValueType> boundsDiffV(currentX->size());
 
-            ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision());
             ValueType two = storm::utility::convertNumber<ValueType>(2.0);
+            ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision());
+            ValueType doublePrecision = precision * two;
+            ValueType terminationPrecision = doublePrecision;
             ValueType iterationPrecision = precision;
 
             SolverStatus status = SolverStatus::InProgress;
@@ -398,7 +402,7 @@ namespace storm {
 
                 // Perform value iteration until convergence
                 ++valueIterationInvocations;
-                ValueIterationResult result = performValueIteration(env, dir, currentX, newX, b, iterationPrecision, env.solver().minMax().getRelativeTerminationCriterion(), guarantee, overallIterations, env.solver().minMax().getMaximalNumberOfIterations(), multiplicationStyle);
+                ValueIterationResult result = performValueIteration(env, dir, currentX, newX, b, iterationPrecision, relative, guarantee, overallIterations, env.solver().minMax().getMaximalNumberOfIterations(), multiplicationStyle);
 
                 lastValueIterationIterations = result.iterations;
                 overallIterations += result.iterations;
@@ -408,7 +412,8 @@ namespace storm {
                 } else {
                     currentVerificationIterations = 0;
 
-                    currentUpperBound = guessUpperBound(*currentX, precision);
+                    currentUpperBound = *currentX;
+                    guessUpperBound(*currentX, currentUpperBound, precision, relative);
                     newUpperBound = currentUpperBound;
 
                     // TODO: More efficient check for verification iterations
@@ -455,12 +460,21 @@ namespace storm {
                             break;
                         }
 
+
                         // All values moved down or stayed the same and we have a maximum difference of twice the requested precision
                         // We can safely use twice the requested precision, as we calculate the center of both vectors
-                        if (!storm::utility::vector::hasNegativeEntry(ubDiffV) && storm::utility::vector::max_if(boundsDiffV, this->getRelevantValues()) < two * precision) {
-                            // Calculate the center of both vectors and store it in currentX
-                            storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(*currentX, currentUpperBound, *currentX, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
-                            status = SolverStatus::Converged;
+                        // We can use max_if instead of computeMaxAbsDiff, as x is definitely a lower bound and ub is larger in all elements
+                        if (!storm::utility::vector::hasNegativeEntry(ubDiffV)) {
+                            // Recalculate relativeTerminationDiff if relative error requested
+                            // TODO: Is here min or max required?
+                            if (relative) {
+                                terminationPrecision = doublePrecision * storm::utility::vector::min_if(*currentX, this->getRelevantValues());
+                            }
+                            if (storm::utility::vector::max_if(boundsDiffV, this->getRelevantValues()) < terminationPrecision) {
+                                // Calculate the center of both vectors and store it in currentX
+                                storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(*currentX, currentUpperBound, *currentX, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
+                                status = SolverStatus::Converged;
+                            }
                         }
 
                         ++overallIterations;
@@ -481,8 +495,8 @@ namespace storm {
             // If requested, we store the scheduler for retrieval.
             if (this->isTrackSchedulerSet()) {
                 this->schedulerChoices = std::vector<uint_fast64_t>(this->A->getRowGroupCount());
-                this->multiplierA->multiplyAndReduce(env, dir, x, &b, *auxiliaryRowGroupVector.get(),
-                                                     &this->schedulerChoices.get());
+                this->multiplierA->multiplyAndReduce(env, dir, x, &b, *auxiliaryRowGroupVector.get(), &this->schedulerChoices.get());
+                this->multiplierA->multiplyAndReduce(env, dir, x, &b, *auxiliaryRowGroupVector.get(), &this->schedulerChoices.get());
             }
 
             if (!this->isCachingEnabled()) {
@@ -493,8 +507,12 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::vector<ValueType> IterativeMinMaxLinearEquationSolver<ValueType>::guessUpperBound(std::vector<ValueType> &x, ValueType const& precision) const {
-            storm::utility::vector::applyPointwise<ValueType, ValueType>(x, x, [&] (ValueType const& argument) -> ValueType { return argument + precision; });
+        void IterativeMinMaxLinearEquationSolver<ValueType>::guessUpperBound(std::vector<ValueType> &x, std::vector<ValueType> &target, ValueType const& precision, bool const& relative) const {
+            if (relative) {
+                storm::utility::vector::applyPointwise<ValueType, ValueType>(x, target, [&] (ValueType const& argument) -> ValueType { return argument * precision; });
+            } else {
+                storm::utility::vector::applyPointwise<ValueType, ValueType>(x, target, [&] (ValueType const& argument) -> ValueType { return argument + precision; });
+            }
         }
 
         template<typename ValueType>
