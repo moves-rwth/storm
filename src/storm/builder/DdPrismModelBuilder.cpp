@@ -550,13 +550,13 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdPrismModelBuilder<Type, ValueType>::Options::Options(storm::logic::Formula const& formula) : buildAllRewardModels(false), rewardModelsToBuild(), buildAllLabels(false), labelsToBuild(std::set<std::string>()), terminalStates(), negatedTerminalStates() {
+        DdPrismModelBuilder<Type, ValueType>::Options::Options(storm::logic::Formula const& formula) : buildAllRewardModels(false), rewardModelsToBuild(), buildAllLabels(false), labelsToBuild(std::set<std::string>()) {
             this->preserveFormula(formula);
             this->setTerminalStatesFromFormula(formula);
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdPrismModelBuilder<Type, ValueType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) : buildAllRewardModels(false), rewardModelsToBuild(), buildAllLabels(false), labelsToBuild(), terminalStates(), negatedTerminalStates() {
+        DdPrismModelBuilder<Type, ValueType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) : buildAllRewardModels(false), rewardModelsToBuild(), buildAllLabels(false), labelsToBuild() {
             for (auto const& formula : formulas) {
                 this->preserveFormula(*formula);
             }
@@ -568,12 +568,7 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType>
         void DdPrismModelBuilder<Type, ValueType>::Options::preserveFormula(storm::logic::Formula const& formula) {
             // If we already had terminal states, we need to erase them.
-            if (terminalStates) {
-                terminalStates.reset();
-            }
-            if (negatedTerminalStates) {
-                negatedTerminalStates.reset();
-            }
+            terminalStates.clear();
             
             // If we are not required to build all reward models, we determine the reward models we need to build.
             if (!buildAllRewardModels) {
@@ -593,32 +588,7 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         void DdPrismModelBuilder<Type, ValueType>::Options::setTerminalStatesFromFormula(storm::logic::Formula const& formula) {
-            if (formula.isAtomicExpressionFormula()) {
-                terminalStates = formula.asAtomicExpressionFormula().getExpression();
-            } else if (formula.isAtomicLabelFormula()) {
-                terminalStates = formula.asAtomicLabelFormula().getLabel();
-            } else if (formula.isEventuallyFormula()) {
-                storm::logic::Formula const& sub = formula.asEventuallyFormula().getSubformula();
-                if (sub.isAtomicExpressionFormula() || sub.isAtomicLabelFormula()) {
-                    this->setTerminalStatesFromFormula(sub);
-                }
-            } else if (formula.isUntilFormula()) {
-                storm::logic::Formula const& right = formula.asUntilFormula().getRightSubformula();
-                if (right.isAtomicExpressionFormula() || right.isAtomicLabelFormula()) {
-                    this->setTerminalStatesFromFormula(right);
-                }
-                storm::logic::Formula const& left = formula.asUntilFormula().getLeftSubformula();
-                if (left.isAtomicExpressionFormula()) {
-                    negatedTerminalStates = left.asAtomicExpressionFormula().getExpression();
-                } else if (left.isAtomicLabelFormula()) {
-                    negatedTerminalStates = left.asAtomicLabelFormula().getLabel();
-                }
-            } else if (formula.isProbabilityOperatorFormula()) {
-                storm::logic::Formula const& sub = formula.asProbabilityOperatorFormula().getSubformula();
-                if (sub.isEventuallyFormula() || sub.isUntilFormula()) {
-                    this->setTerminalStatesFromFormula(sub);
-                }
-            }
+            terminalStates = getTerminalStatesFromFormula(formula);
         }
         
         template <storm::dd::DdType Type, typename ValueType>
@@ -1356,52 +1326,18 @@ namespace storm {
             
             // If we were asked to treat some states as terminal states, we cut away their transitions now.
             storm::dd::Bdd<Type> terminalStatesBdd = generationInfo.manager->getBddZero();
-            if (options.terminalStates || options.negatedTerminalStates) {
-                std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution = program.getConstantsSubstitution();
-                
-                if (options.terminalStates) {
-                    storm::expressions::Expression terminalExpression;
-                    if (options.terminalStates.get().type() == typeid(storm::expressions::Expression)) {
-                        terminalExpression = boost::get<storm::expressions::Expression>(options.terminalStates.get());
-                    } else {
-                        std::string const& labelName = boost::get<std::string>(options.terminalStates.get());
+            if (!options.terminalStates.empty()) {
+                storm::expressions::Expression terminalExpression = options.terminalStates.asExpression([&program](std::string const& labelName) {
                         if (program.hasLabel(labelName)) {
-                            terminalExpression = program.getLabelExpression(labelName);
+                            return program.getLabelExpression(labelName);
                         } else {
                             STORM_LOG_THROW(labelName == "init" || labelName == "deadlock", storm::exceptions::InvalidArgumentException, "Terminal states refer to illegal label '" << labelName << "'.");
+                            // If the label name is "init" we can abort 'exploration' directly at the initial state. If it is deadlock, we do not have to abort.
+                            return program.getManager().boolean(labelName == "init");
                         }
-                    }
-                    
-                    if (terminalExpression.isInitialized()) {
-                        // If the expression refers to constants of the model, we need to substitute them.
-                        terminalExpression = terminalExpression.substitute(constantsSubstitution);
-                        
-                        STORM_LOG_TRACE("Making the states satisfying " << terminalExpression << " terminal.");
-                        terminalStatesBdd = generationInfo.rowExpressionAdapter->translateExpression(terminalExpression).toBdd();
-                    }
-                }
-                if (options.negatedTerminalStates) {
-                    storm::expressions::Expression negatedTerminalExpression;
-                    if (options.negatedTerminalStates.get().type() == typeid(storm::expressions::Expression)) {
-                        negatedTerminalExpression = boost::get<storm::expressions::Expression>(options.negatedTerminalStates.get());
-                    } else {
-                        std::string const& labelName = boost::get<std::string>(options.negatedTerminalStates.get());
-                        if (program.hasLabel(labelName)) {
-                            negatedTerminalExpression = program.getLabelExpression(labelName);
-                        } else {
-                            STORM_LOG_THROW(labelName == "init" || labelName == "deadlock", storm::exceptions::InvalidArgumentException, "Terminal states refer to illegal label '" << labelName << "'.");
-                        }
-                    }
-                    
-                    if (negatedTerminalExpression.isInitialized()) {
-                        // If the expression refers to constants of the model, we need to substitute them.
-                        negatedTerminalExpression = negatedTerminalExpression.substitute(constantsSubstitution);
-                        
-                        STORM_LOG_TRACE("Making the states *not* satisfying " << negatedTerminalExpression << " terminal.");
-                        terminalStatesBdd |= !generationInfo.rowExpressionAdapter->translateExpression(negatedTerminalExpression).toBdd();
-                    }
-                }
-                
+                });
+                terminalExpression = terminalExpression.substitute(program.getConstantsSubstitution());
+                terminalStatesBdd = generationInfo.rowExpressionAdapter->translateExpression(terminalExpression).toBdd();
                 transitionMatrix *= (!terminalStatesBdd).template toAdd<ValueType>();
             }
             

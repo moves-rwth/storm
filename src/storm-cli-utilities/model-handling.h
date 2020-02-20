@@ -374,7 +374,8 @@ namespace storm {
         
         template <storm::dd::DdType DdType, typename ValueType>
         std::shared_ptr<storm::models::ModelBase> buildModelDd(SymbolicInput const& input) {
-            return storm::api::buildSymbolicModel<DdType, ValueType>(input.model.get(), createFormulasToRespect(input.properties), storm::settings::getModule<storm::settings::modules::BuildSettings>().isBuildFullModelSet());
+            auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
+            return storm::api::buildSymbolicModel<DdType, ValueType>(input.model.get(), createFormulasToRespect(input.properties), buildSettings.isBuildFullModelSet(), !buildSettings.isApplyNoMaximumProgressAssumptionSet());
         }
         
         template <typename ValueType>
@@ -382,19 +383,23 @@ namespace storm {
             storm::builder::BuilderOptions options(createFormulasToRespect(input.properties), input.model.get());
             options.setBuildChoiceLabels(buildSettings.isBuildChoiceLabelsSet());
             options.setBuildStateValuations(buildSettings.isBuildStateValuationsSet());
-            bool buildChoiceOrigins = false;
+            bool buildChoiceOrigins = buildSettings.isBuildChoiceOriginsSet();
             if (storm::settings::manager().hasModule(storm::settings::modules::CounterexampleGeneratorSettings::moduleName)) {
                 auto counterexampleGeneratorSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
                 if (counterexampleGeneratorSettings.isCounterexampleSet()) {
-                    buildChoiceOrigins = counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet();
+                    buildChoiceOrigins |= counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet();
                 }
-                options.setBuildChoiceOrigins(buildChoiceOrigins);
             }
+            options.setBuildChoiceOrigins(buildChoiceOrigins);
             if (input.model->getModelType() == storm::storage::SymbolicModelDescription::ModelType::POMDP) {
                 options.setBuildChoiceOrigins(true);
                 options.setBuildChoiceLabels(true);
             }
 
+            if (buildSettings.isApplyNoMaximumProgressAssumptionSet()) {
+                options.setApplyMaximalProgressAssumption(false);
+            }
+            
             options.setAddOutOfBoundsState(buildSettings.isBuildOutOfBoundsStateSet());
             if (buildSettings.isBuildFullModelSet()) {
                 options.clearTerminalStates();

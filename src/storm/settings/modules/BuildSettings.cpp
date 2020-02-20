@@ -28,7 +28,9 @@ namespace storm {
             const std::string dontFixDeadlockOptionShortName = "ndl";
             const std::string noBuildOptionName = "nobuild";
             const std::string fullModelBuildOptionName = "buildfull";
+            const std::string applyNoMaxProgAssumptionOptionName = "nomaxprog";
             const std::string buildChoiceLabelOptionName = "buildchoicelab";
+            const std::string buildChoiceOriginsOptionName = "buildchoiceorig";
             const std::string buildStateValuationsOptionName = "buildstateval";
             const std::string buildOutOfBoundsStateOptionName = "buildoutofboundsstate";
             const std::string bitsForUnboundedVariablesOptionName = "int-bits";
@@ -38,7 +40,9 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, prismCompatibilityOptionName, false, "Enables PRISM compatibility. This may be necessary to process some PRISM models.").setShortName(prismCompatibilityOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, dontFixDeadlockOptionName, false, "If the model contains deadlock states, they need to be fixed by setting this option.").setShortName(dontFixDeadlockOptionShortName).setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, fullModelBuildOptionName, false, "If set, include all rewards and labels.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, applyNoMaxProgAssumptionOptionName, false, "If set, the maximum progress assumption is not applied while building the model (relevant for MAs)").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, buildChoiceLabelOptionName, false, "If set, also build the choice labels").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, buildChoiceOriginsOptionName, false, "If set, also build information that for each choice indicates the part(s) of the input that yielded the choice.").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, buildStateValuationsOptionName, false, "If set, also build the state valuations").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, noBuildOptionName, false, "If set, do not build the model.").setIsAdvanced().build());
 
@@ -75,8 +79,16 @@ namespace storm {
                 return this->getOption(noBuildOptionName).getHasOptionBeenSet();
             }
 
+            bool BuildSettings::isApplyNoMaximumProgressAssumptionSet() const {
+                return this->getOption(applyNoMaxProgAssumptionOptionName).getHasOptionBeenSet();
+            }
+
             bool BuildSettings::isBuildChoiceLabelsSet() const {
                 return this->getOption(buildChoiceLabelOptionName).getHasOptionBeenSet();
+            }
+            
+            bool BuildSettings::isBuildChoiceOriginsSet() const {
+                return this->getOption(buildChoiceOriginsOptionName).getHasOptionBeenSet();
             }
 
             bool BuildSettings::isBuildStateValuationsSet() const {

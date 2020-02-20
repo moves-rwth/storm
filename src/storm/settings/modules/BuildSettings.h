@@ -72,12 +72,21 @@ namespace storm {
                  * @return true iff the full model should be build.
                  */
                 bool isBuildFullModelSet() const;
-
+                
+                /*!
+                 * Retrieves whether the maximum progress assumption is to be applied when building the model
+                 */
+                bool isApplyNoMaximumProgressAssumptionSet() const;
+                
                 /*!
                  * Retrieves whether the choice labels should be build
-                 * @return
                  */
                 bool isBuildChoiceLabelsSet() const;
+                
+                /*!
+                 * Retrieves whether the choice origins should be build
+                 */
+                bool isBuildChoiceOriginsSet() const;
 
                 /*!
                  * Retrieves whether the choice labels should be build
