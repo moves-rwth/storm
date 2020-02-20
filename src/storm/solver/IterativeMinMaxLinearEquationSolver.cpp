@@ -388,6 +388,7 @@ namespace storm {
             std::vector<ValueType> boundsDiffV(currentX->size());
 
             ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision());
+            ValueType two = storm::utility::convertNumber<ValueType>(2.0);
             ValueType iterationPrecision = precision;
 
             SolverStatus status = SolverStatus::InProgress;
@@ -407,7 +408,7 @@ namespace storm {
                 } else {
                     currentVerificationIterations = 0;
 
-                    currentUpperBound = guessUpperBound(env, *currentX, precision);
+                    currentUpperBound = guessUpperBound(*currentX, precision);
                     newUpperBound = currentUpperBound;
 
                     // TODO: More efficient check for verification iterations
@@ -456,14 +457,9 @@ namespace storm {
 
                         // All values moved down or stayed the same and we have a maximum difference of twice the requested precision
                         // We can safely use twice the requested precision, as we calculate the center of both vectors
-                        if (!storm::utility::vector::hasNegativeEntry(ubDiffV) && storm::utility::vector::max_if(boundsDiffV, this->getRelevantValues()) < storm::utility::convertNumber<ValueType>(2.0) * precision) {
+                        if (!storm::utility::vector::hasNegativeEntry(ubDiffV) && storm::utility::vector::max_if(boundsDiffV, this->getRelevantValues()) < two * precision) {
                             // Calculate the center of both vectors and store it in currentX
-                            // TODO: Do calculations in-place on currentX
-                            // center = (1 / 2) * u + v
-                            std::vector<ValueType> centerV = *currentX;
-                            storm::utility::vector::addVectors(*currentX, currentUpperBound, centerV);
-                            storm::utility::vector::scaleVectorInPlace(centerV, storm::utility::convertNumber<ValueType>(0.5));
-                            std::swap(centerV, *currentX);
+                            storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(*currentX, currentUpperBound, *currentX, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
                             status = SolverStatus::Converged;
                         }
 
@@ -472,7 +468,7 @@ namespace storm {
                     }
                 }
 
-                iterationPrecision = iterationPrecision / storm::utility::convertNumber<ValueType>(2.0);
+                iterationPrecision = iterationPrecision / two;
             }
 
             // Swap the result into the output x.
@@ -497,10 +493,8 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::vector<ValueType> IterativeMinMaxLinearEquationSolver<ValueType>::guessUpperBound(Environment const& env, std::vector<ValueType> const& x, ValueType const& precision) const {
-            std::vector<ValueType> ub = x;
-            storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(ub, storm::utility::one<ValueType>() + precision);
-            return ub;
+        std::vector<ValueType> IterativeMinMaxLinearEquationSolver<ValueType>::guessUpperBound(std::vector<ValueType> &x, ValueType const& precision) const {
+            storm::utility::vector::applyPointwise<ValueType, ValueType>(x, x, [&] (ValueType const& argument) -> ValueType { return argument + precision; });
         }
 
         template<typename ValueType>
