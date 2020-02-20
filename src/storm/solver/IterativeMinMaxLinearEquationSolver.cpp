@@ -439,7 +439,7 @@ namespace storm {
                         // Update current upper bound
                         std::swap(newUpperBound, currentUpperBound);
 
-                        if (storm::utility::vector::hasPositiveEntry(ubDiffV)) {
+                        if (!storm::utility::vector::hasPositiveEntry(ubDiffV)) {
                             // Not all values moved up or stayed the same
                             // If we have a single fixed point, we can safely set the new lower bound, to the wrongly guessed upper bound
                             if (this->hasUniqueSolution()) {
