@@ -57,6 +57,8 @@ namespace storm {
                     return storm::solver::MinMaxMethod::IntervalIteration;
                 } else if (minMaxEquationSolvingTechnique == "sound-value-iteration" || minMaxEquationSolvingTechnique == "svi") {
                     return storm::solver::MinMaxMethod::SoundValueIteration;
+                } else if (minMaxEquationSolvingTechnique == "optimistic-value-iteration" || minMaxEquationSolvingTechnique == "ovi") {
+                    return storm::solver::MinMaxMethod::OptimisticValueIteration;
                 } else if (minMaxEquationSolvingTechnique == "topological") {
                     return storm::solver::MinMaxMethod::Topological;
                 } else if (minMaxEquationSolvingTechnique == "vi-to-pi") {
