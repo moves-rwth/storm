@@ -436,8 +436,9 @@ namespace storm {
                         storm::utility::vector::subtractVectors<ValueType>(newUpperBound, *newX, boundsDiffV);
                         // Calculate difference vector of new and old upper bound
                         storm::utility::vector::subtractVectors<ValueType>(currentUpperBound, newUpperBound, ubDiffV);
-                        // Update current upper bound
-                        std::swap(newUpperBound, currentUpperBound);
+                        // Update bounds
+                        std::swap(currentX, newX);
+                        std::swap(currentUpperBound, newUpperBound);
 
                         if (!storm::utility::vector::hasPositiveEntry(ubDiffV)) {
                             // Not all values moved up or stayed the same
