@@ -49,7 +49,7 @@ namespace storm {
                 } else {
                     STORM_LOG_WARN("The selected solution method " << toString(method) << " does not guarantee exact results.");
                 }
-            } else if (env.solver().isForceSoundness() && method != MinMaxMethod::SoundValueIteration && method != MinMaxMethod::IntervalIteration && method != MinMaxMethod::PolicyIteration && method != MinMaxMethod::RationalSearch) {
+            } else if (env.solver().isForceSoundness() && method != MinMaxMethod::SoundValueIteration && method != MinMaxMethod::IntervalIteration && method != MinMaxMethod::PolicyIteration && method != MinMaxMethod::RationalSearch && method != MinMaxMethod::OptimisticValueIteration) {
                 if (env.solver().minMax().isMethodSetFromDefault()) {
                     STORM_LOG_INFO("Selecting 'sound value iteration' as the solution technique to guarantee sound results. If you want to override this, please explicitly specify a different method.");
                     method = MinMaxMethod::SoundValueIteration;
@@ -57,7 +57,7 @@ namespace storm {
                     STORM_LOG_WARN("The selected solution method does not guarantee sound results.");
                 }
             }
-            STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch || method == MinMaxMethod::SoundValueIteration || method == MinMaxMethod::IntervalIteration || method == MinMaxMethod::ViToPi, storm::exceptions::InvalidEnvironmentException, "This solver does not support the selected method.");
+            STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch || method == MinMaxMethod::SoundValueIteration || method == MinMaxMethod::IntervalIteration || method == MinMaxMethod::OptimisticValueIteration || method == MinMaxMethod::ViToPi, storm::exceptions::InvalidEnvironmentException, "This solver does not support the selected method.");
             return method;
         }
         
