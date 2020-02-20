@@ -356,7 +356,12 @@ namespace storm {
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsOptimisticValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
 
+            // TODO: Differentiate between relative and absolute precision
+            // TODO: Updating solver status when iterations exceed
+
             uint64_t overallIterations = 0;
+            uint64_t lastValueIterationIterations = 0;
+            uint64_t currentVerificationIterations = 0;
             uint64_t valueIterationInvocations = 0;
 
             if (!this->multiplierA) {
@@ -369,12 +374,16 @@ namespace storm {
 
             // By default, we can not provide any guarantee
             SolverGuarantee guarantee = SolverGuarantee::None;
-
             // Get handle to multiplier.
             storm::solver::Multiplier<ValueType> const &multiplier = *this->multiplierA;
+            // Allow aliased multiplications.
+            storm::solver::MultiplicationStyle multiplicationStyle = env.solver().minMax().getMultiplicationStyle();
+            bool useGaussSeidelMultiplication = multiplicationStyle == storm::solver::MultiplicationStyle::GaussSeidel;
 
             std::vector<ValueType> *newX = auxiliaryRowGroupVector.get();
             std::vector<ValueType> *currentX = &x;
+            std::vector<ValueType> newUpperBound;
+            std::vector<ValueType> currentUpperBound;
             std::vector<ValueType> ubDiffV(newX->size());
             std::vector<ValueType> boundsDiffV(currentX->size());
 
@@ -384,77 +393,81 @@ namespace storm {
             SolverStatus status = SolverStatus::InProgress;
             this->startMeasureProgress();
 
-            while (status == SolverStatus::InProgress &&
-                   overallIterations < env.solver().minMax().getMaximalNumberOfIterations()) {
-
-                storm::solver::MultiplicationStyle multiplicationStyle = env.solver().minMax().getMultiplicationStyle();
+            while (status == SolverStatus::InProgress && overallIterations < env.solver().minMax().getMaximalNumberOfIterations()) {
 
                 // Perform value iteration until convergence
                 ++valueIterationInvocations;
-                ValueIterationResult result = performValueIteration(env, dir, currentX, newX, b, iterationPrecision,
-                                                                    env.solver().minMax().getRelativeTerminationCriterion(),
-                                                                    guarantee, overallIterations,
-                                                                    env.solver().minMax().getMaximalNumberOfIterations(),
-                                                                    multiplicationStyle);
+                ValueIterationResult result = performValueIteration(env, dir, currentX, newX, b, iterationPrecision, env.solver().minMax().getRelativeTerminationCriterion(), guarantee, overallIterations, env.solver().minMax().getMaximalNumberOfIterations(), multiplicationStyle);
 
+                lastValueIterationIterations = result.iterations;
                 overallIterations += result.iterations;
 
                 if (result.status != SolverStatus::Converged) {
                     status = result.status;
                 } else {
-                    std::vector<ValueType> upperBound = guessUpperBound(env, *currentX, precision);
-                    std::vector<ValueType> newUpperBound;
-                    while (status == SolverStatus::InProgress &&
-                           overallIterations < env.solver().minMax().getMaximalNumberOfIterations()) {
-                        // Perform value iteration stepwise for lower bound and guessed upper bound
+                    currentVerificationIterations = 0;
 
-                        // Allow aliased multiplications.
-                        bool useGaussSeidelMultiplication = multiplicationStyle == storm::solver::MultiplicationStyle::GaussSeidel;
+                    currentUpperBound = guessUpperBound(env, *currentX, precision);
+                    newUpperBound = currentUpperBound;
+
+                    // TODO: More efficient check for verification iterations
+                    while (status == SolverStatus::InProgress && overallIterations < env.solver().minMax().getMaximalNumberOfIterations() && (currentVerificationIterations / 10) < lastValueIterationIterations) {
+                        // Perform value iteration stepwise for lower bound and guessed upper bound
 
                         // Lower and upper bound iteration
                         // Compute x' = min/max(A*x + b).
                         if (useGaussSeidelMultiplication) {
                             // Copy over the current vectors so we can modify them in-place.
                             *newX = *currentX;
-                            newUpperBound = upperBound;
+                            newUpperBound = currentUpperBound;
                             // Do the calculation
                             multiplier.multiplyAndReduceGaussSeidel(env, dir, *newX, &b);
                             multiplier.multiplyAndReduceGaussSeidel(env, dir, newUpperBound, &b);
                         } else {
                             multiplier.multiplyAndReduce(env, dir, *currentX, &b, *newX);
-                            multiplier.multiplyAndReduce(env, dir, upperBound, &b, newUpperBound);
+                            multiplier.multiplyAndReduce(env, dir, currentUpperBound, &b, newUpperBound);
                         }
 
                         // Set iteration precision beforehand
                         // Calculate the maximum difference between the old and new iteration
-                        // This method adapts utility::vector::equalModuloPrecision from performValueIteration()
                         iterationPrecision = computeMaxAbsDiff(*newX, *currentX, this->getRelevantValues());
-
-                        bool up, down = true;
-                        bool cross = false;
-
-                        // Calculate difference vector of new and old upper bound
-                        storm::utility::vector::subtractVectors<ValueType>(upperBound, newUpperBound, ubDiffV);
-                        if (storm::utility::vector::hasPositiveEntry(ubDiffV)) {
-                            // up = false (Not all values moved up)
-                            // TODO: Optimisation (if(this->hasUniqueSolution()) ?)
-                            up = false;
-                            break;
-                        }
-                        if (storm::utility::vector::hasNegativeEntry(ubDiffV)) {
-                            down = false;
-                        }
 
                         // Calculate difference vector of upper bound and x
                         storm::utility::vector::subtractVectors<ValueType>(newUpperBound, *newX, boundsDiffV);
-                        if (storm::utility::vector::hasNegativeEntry(boundsDiffV)) {
-                            cross = true;
+                        // Calculate difference vector of new and old upper bound
+                        storm::utility::vector::subtractVectors<ValueType>(currentUpperBound, newUpperBound, ubDiffV);
+                        // Update current upper bound
+                        std::swap(newUpperBound, currentUpperBound);
+
+                        if (storm::utility::vector::hasPositiveEntry(ubDiffV)) {
+                            // Not all values moved up or stayed the same
+                            // If we have a single fixed point, we can safely set the new lower bound, to the wrongly guessed upper bound
+                            if (this->hasUniqueSolution()) {
+                                *currentX = currentUpperBound;
+                            }
                             break;
                         }
 
-                        // TODO: else if down und s_i precision okay, calculate middle of both vectors
+                        if (storm::utility::vector::hasNegativeEntry(boundsDiffV)) {
+                            // Values crossed
+                            break;
+                        }
+
+                        // All values moved down or stayed the same and we have a maximum difference of twice the requested precision
+                        // We can safely use twice the requested precision, as we calculate the center of both vectors
+                        if (!storm::utility::vector::hasNegativeEntry(ubDiffV) && storm::utility::vector::max_if(boundsDiffV, this->getRelevantValues()) < storm::utility::convertNumber<ValueType>(2.0) * precision) {
+                            // Calculate the center of both vectors and store it in currentX
+                            // TODO: Do calculations in-place on currentX
+                            // center = (1 / 2) * u + v
+                            std::vector<ValueType> centerV = *currentX;
+                            storm::utility::vector::addVectors(*currentX, currentUpperBound, centerV);
+                            storm::utility::vector::scaleVectorInPlace(centerV, storm::utility::convertNumber<ValueType>(0.5));
+                            std::swap(centerV, *currentX);
+                            status = SolverStatus::Converged;
+                        }
 
                         ++overallIterations;
+                        ++currentVerificationIterations;
                     }
                 }
 
