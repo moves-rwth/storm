@@ -257,6 +257,8 @@ namespace storm {
                         }
                     }
                 }
+            } else if (method == MinMaxMethod::OptimisticValueIteration) {
+                // OptimisticValueIteration does not have any requirements
             } else if (method == MinMaxMethod::IntervalIteration) {
                 // Interval iteration requires a unique solution and lower+upper bounds
                 if (!this->hasUniqueSolution()) {
