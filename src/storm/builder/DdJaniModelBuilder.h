@@ -28,7 +28,7 @@ namespace storm {
                 /*!
                  * Creates an object representing the default building options.
                  */
-                Options(bool buildAllLabels = false, bool buildAllRewardModels = false);
+                Options(bool buildAllLabels = false, bool buildAllRewardModels = false, bool applyMaximumProgressAssumption = true);
                 
                 /*! Creates an object representing the suggested building options assuming that the given formula is the
                  * only one to check. Additional formulas may be preserved by calling <code>preserveFormula</code>.
@@ -79,9 +79,6 @@ namespace storm {
 
                 /// A flag that indicates whether all labels are to be built. In this case, the label names are to be ignored.
                 bool buildAllLabels;
-                
-                /// A set of labels to build.
-                std::set<std::string> labelNames;
 
                 /*!
                  * Retrieves whether the flag to build all reward models is set.
@@ -90,6 +87,12 @@ namespace storm {
                 
                 // A flag that indicates whether or not all reward models are to be build.
                 bool buildAllRewardModels;
+                
+                /// A flag that indicates whether the maximum progress assumption should be applied.
+                bool applyMaximumProgressAssumption;
+                
+                /// A set of labels to build.
+                std::set<std::string> labelNames;
                 
                 // A list of reward models to be build in case not all reward models are to be build.
                 std::set<std::string> rewardModelsToBuild;

@@ -10,6 +10,7 @@ Version 1.4.x
 ## Version 1.4.2 (under development)
 - DRN: support import of choice labelling
 - Added option `--build:buildchoiceorig` to build a model (PRISM or JANI) with choice origins (which are exported with, e.g. `--exportscheduler`).
+- Apply the maximum progress assumption while building a Markov automata with the Dd engine.
 - Added option `--build:nomaxprog` to disable applying the maximum progress assumption during model building (for Markov Automata)
 - `storm-pomdp`: Only accept POMDPs that are canonical
 - `storm-pomdp`: Prism language extended with observable expressions

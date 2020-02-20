@@ -563,7 +563,7 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType>
         void DdPrismModelBuilder<Type, ValueType>::Options::preserveFormula(storm::logic::Formula const& formula) {
             // If we already had terminal states, we need to erase them.
-            terminalStates = storm::builder::TerminalStates();
+            terminalStates.clear();
             
             // If we are not required to build all reward models, we determine the reward models we need to build.
             if (!buildAllRewardModels) {

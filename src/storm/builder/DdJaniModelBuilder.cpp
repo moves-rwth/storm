@@ -46,7 +46,7 @@ namespace storm {
     namespace builder {
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdJaniModelBuilder<Type, ValueType>::Options::Options(bool buildAllLabels, bool buildAllRewardModels) : buildAllLabels(buildAllLabels), buildAllRewardModels(buildAllRewardModels), rewardModelsToBuild(), constantDefinitions() {
+        DdJaniModelBuilder<Type, ValueType>::Options::Options(bool buildAllLabels, bool buildAllRewardModels, bool applyMaximumProgressAssumption) : buildAllLabels(buildAllLabels), buildAllRewardModels(buildAllRewardModels), applyMaximumProgressAssumption(applyMaximumProgressAssumption), rewardModelsToBuild(), constantDefinitions() {
             // Intentionally left empty.
         }
         
@@ -71,7 +71,7 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType>
         void DdJaniModelBuilder<Type, ValueType>::Options::preserveFormula(storm::logic::Formula const& formula) {
             // If we already had terminal states, we need to erase them.
-            terminalStates = storm::builder::TerminalStates();
+            terminalStates.clear();
             
             // If we are not required to build all reward models, we determine the reward models we need to build.
             if (!buildAllRewardModels) {
@@ -662,6 +662,19 @@ namespace storm {
                     return ActionDd(newGuard, newTransitions, newTransientEdgeAssignments, newLocalNondeterminismVariables, newVariableToWritingFragment, newIllegalFragment);
                 }
 
+                /*!
+                 * Conjuncts the guard of the action with the provided condition, i.e., this action is only enabled if the provided condition is true.
+                 */
+                void conjunctGuardWith(storm::dd::Bdd<Type> const& condition) {
+                    guard &= condition;
+                    storm::dd::Add<Type, ValueType> conditionAdd = condition.template toAdd<ValueType>();
+                    transitions *= conditionAdd;
+                    for (auto& t : transientEdgeAssignments) {
+                        t.second *= conditionAdd;
+                    }
+                    illegalFragment &= condition;
+                }
+                
                 bool isInputEnabled() const {
                     return inputEnabled;
                 }
@@ -670,10 +683,10 @@ namespace storm {
                     inputEnabled = true;
                 }
                 
-                // A DD that represents all states that have this edge enabled.
+                // A DD that represents all states that have this action enabled.
                 storm::dd::Bdd<Type> guard;
                 
-                // A DD that represents the transitions of this edge.
+                // A DD that represents the transitions of this action.
                 storm::dd::Add<Type, ValueType> transitions;
                 
                 // A mapping from transient variables to their assignments.
@@ -787,11 +800,12 @@ namespace storm {
                 std::pair<uint64_t, uint64_t> localNondeterminismVariables;
             };
             
-            CombinedEdgesSystemComposer(storm::jani::Model const& model, storm::jani::CompositionInformation const& actionInformation, CompositionVariables<Type, ValueType> const& variables, std::vector<storm::expressions::Variable> const& transientVariables) : SystemComposer<Type, ValueType>(model, variables, transientVariables), actionInformation(actionInformation) {
+            CombinedEdgesSystemComposer(storm::jani::Model const& model, storm::jani::CompositionInformation const& actionInformation, CompositionVariables<Type, ValueType> const& variables, std::vector<storm::expressions::Variable> const& transientVariables, bool applyMaximumProgress) : SystemComposer<Type, ValueType>(model, variables, transientVariables), actionInformation(actionInformation), applyMaximumProgress(applyMaximumProgress) {
                 // Intentionally left empty.
             }
         
             storm::jani::CompositionInformation const& actionInformation;
+            bool applyMaximumProgress;
 
             ComposerResult<Type, ValueType> compose() override {
                 STORM_LOG_THROW(this->model.hasStandardCompliantComposition(), storm::exceptions::WrongFormatException, "Model builder only supports non-nested parallel compositions.");
@@ -936,6 +950,9 @@ namespace storm {
             AutomatonDd composeInParallel(std::vector<AutomatonDd> const& subautomata, std::vector<storm::jani::SynchronizationVector> const& synchronizationVectors) {
                 AutomatonDd result(this->variables.manager->template getAddOne<ValueType>());
                 
+                // Disjunction of all guards of non-markovian actions (only required for maximum progress assumption.
+                storm::dd::Bdd<Type> nonMarkovianActionGuards = this->variables.manager->getBddZero();
+                
                 // Build the results of the synchronization vectors.
                 std::unordered_map<ActionIdentification, std::vector<ActionDd>, ActionIdentificationHash> actions;
                 for (uint64_t synchronizationVectorIndex = 0; synchronizationVectorIndex < synchronizationVectors.size(); ++synchronizationVectorIndex) {
@@ -943,6 +960,11 @@ namespace storm {
                     
                     boost::optional<ActionDd> synchronizingAction = combineSynchronizingActions(subautomata, synchVector, synchronizationVectorIndex);
                     if (synchronizingAction) {
+                        if (applyMaximumProgress) {
+                            STORM_LOG_ASSERT(this->model.getModelType() == storm::jani::ModelType::MA, "Maximum progress assumption enabled for unexpected model type.");
+                            // By the JANI standard, we can assume that synchronizing actions of MAs are always non-Markovian.
+                            nonMarkovianActionGuards |= synchronizingAction->guard;
+                        }
                         actions[ActionIdentification(actionInformation.getActionIndex(synchVector.getOutput()), this->model.getModelType() == storm::jani::ModelType::CTMC)].emplace_back(synchronizingAction.get());
                     }
                 }
@@ -986,9 +1008,26 @@ namespace storm {
                     auto& allSilentActionDds = actions[silentActionIdentification];
                     allSilentActionDds.insert(allSilentActionDds.end(), silentActionDds.begin(), silentActionDds.end());
                 }
+                
+                // Add guards of non-markovian actions
+                if (applyMaximumProgress) {
+                    auto allSilentActionDdsIt = actions.find(silentActionIdentification);
+                    if (allSilentActionDdsIt != actions.end()) {
+                        for (ActionDd const& silentActionDd : allSilentActionDdsIt->second) {
+                            nonMarkovianActionGuards |= silentActionDd.guard;
+                        }
+                    }
+                }
+                
                 if (!silentMarkovianActionDds.empty()) {
                     auto& allMarkovianSilentActionDds = actions[silentMarkovianActionIdentification];
                     allMarkovianSilentActionDds.insert(allMarkovianSilentActionDds.end(), silentMarkovianActionDds.begin(), silentMarkovianActionDds.end());
+                    if (applyMaximumProgress && !nonMarkovianActionGuards.isZero()) {
+                        auto invertedNonMarkovianGuards = !nonMarkovianActionGuards;
+                        for (ActionDd& markovianActionDd : allMarkovianSilentActionDds) {
+                            markovianActionDd.conjunctGuardWith(invertedNonMarkovianGuards);
+                        }
+                    }
                 }
 
                 // Finally, combine (potentially) multiple action DDs.
@@ -2062,7 +2101,8 @@ namespace storm {
             std::vector<storm::expressions::Variable> rewardVariables = selectRewardVariables<Type, ValueType>(preparedModel, options);
             
             // Create a builder to compose and build the model.
-            CombinedEdgesSystemComposer<Type, ValueType> composer(preparedModel, actionInformation, variables, rewardVariables);
+            bool applyMaximumProgress = options.applyMaximumProgressAssumption && model.getModelType() == storm::jani::ModelType::MA;
+            CombinedEdgesSystemComposer<Type, ValueType> composer(preparedModel, actionInformation, variables, rewardVariables, applyMaximumProgress);
             ComposerResult<Type, ValueType> system = composer.compose();
 
             // Postprocess the variables in place.
