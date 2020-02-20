@@ -43,7 +43,7 @@ namespace storm {
         }
         
         template<storm::dd::DdType LibraryType, typename ValueType>
-        std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool buildFullModel = false) {
+        std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool buildFullModel = false, bool applyMaximumProgress = true) {
             if (model.isPrismProgram()) {
                 typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options options;
                 options = typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options(formulas);
@@ -51,6 +51,7 @@ namespace storm {
                 if (buildFullModel) {
                     options.buildAllLabels = true;
                     options.buildAllRewardModels = true;
+                    options.terminalStates.clear();
                 }
                 
                 storm::builder::DdPrismModelBuilder<LibraryType, ValueType> builder;
@@ -63,6 +64,7 @@ namespace storm {
                 if (buildFullModel) {
                     options.buildAllLabels = true;
                     options.buildAllRewardModels = true;
+                    options.terminalStates.clear();
                 }
                 
                 storm::builder::DdJaniModelBuilder<LibraryType, ValueType> builder;

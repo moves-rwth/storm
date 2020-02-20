@@ -60,6 +60,13 @@ namespace storm {
             }
         }
         
+        void TerminalStates::clear() {
+            terminalExpressions.clear();
+            negatedTerminalExpressions.clear();
+            terminalLabels.clear();
+            negatedTerminalLabels.clear();
+        }
+        
         bool TerminalStates::empty() const {
             return terminalExpressions.empty() && negatedTerminalExpressions.empty() && terminalLabels.empty() && negatedTerminalLabels.empty();
         }

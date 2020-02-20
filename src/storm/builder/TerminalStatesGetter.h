@@ -32,6 +32,11 @@ namespace storm {
             std::vector<std::string> negatedTerminalLabels; // if a state does not have all of these labels, we can stop exploration
             
             /*!
+             * Clears all terminal states. After calling this, empty() holds.
+             */
+            void clear();
+            
+            /*!
              * True if no terminal states are specified
              */
             bool empty() const;
