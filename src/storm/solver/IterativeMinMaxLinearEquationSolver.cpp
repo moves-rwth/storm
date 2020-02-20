@@ -499,7 +499,7 @@ namespace storm {
         std::vector<ValueType> IterativeMinMaxLinearEquationSolver<ValueType>::guessUpperBound(Environment const& env, std::vector<ValueType> const& x, ValueType const& precision) const {
             std::vector<ValueType> ub = x;
             storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(ub, storm::utility::one<ValueType>() + precision);
-            return x;
+            return ub;
         }
 
         template<typename ValueType>
