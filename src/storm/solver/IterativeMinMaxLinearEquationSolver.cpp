@@ -229,8 +229,6 @@ namespace storm {
             }
         }
 
-
-
         template<typename ValueType>
         MinMaxLinearEquationSolverRequirements IterativeMinMaxLinearEquationSolver<ValueType>::getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction, bool const& hasInitialScheduler) const {
             auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact);

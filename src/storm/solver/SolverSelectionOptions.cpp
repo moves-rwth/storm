@@ -18,6 +18,8 @@ namespace storm {
                     return "intervaliteration";
                 case MinMaxMethod::SoundValueIteration:
                     return "soundvalueiteration";
+                case MinMaxMethod::OptimisticValueIteration:
+                    return "optimisticvalueiteration";
                 case MinMaxMethod::TopologicalCuda:
                     return "topologicalcuda";
                 case MinMaxMethod::ViToPi:
