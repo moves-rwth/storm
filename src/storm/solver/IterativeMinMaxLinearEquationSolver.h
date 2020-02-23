@@ -45,7 +45,7 @@ namespace storm {
             bool solveEquationsSoundValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             bool solveEquationsViToPi(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
 
-            void guessUpperBound(std::vector<ValueType> &x, std::vector<ValueType> &target, ValueType const& precision, bool const& relative) const;
+            void guessUpperBound(std::vector<ValueType> &x, std::vector<ValueType> &target, ValueType const& precision, bool const& relative, ValueType const& one) const;
 
             bool solveEquationsRationalSearch(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const;
             

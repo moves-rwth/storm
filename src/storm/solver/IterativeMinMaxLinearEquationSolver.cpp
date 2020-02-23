@@ -389,6 +389,7 @@ namespace storm {
             std::vector<ValueType> ubDiffV(newX->size());
             std::vector<ValueType> boundsDiffV(currentX->size());
 
+            ValueType one = storm::utility::one<ValueType>();
             ValueType two = storm::utility::convertNumber<ValueType>(2.0);
             ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision());
             ValueType doublePrecision = precision * two;
@@ -413,7 +414,7 @@ namespace storm {
                     currentVerificationIterations = 0;
 
                     currentUpperBound = *currentX;
-                    guessUpperBound(*currentX, currentUpperBound, precision, relative);
+                    guessUpperBound(*currentX, currentUpperBound, precision, relative, one);
                     newUpperBound = currentUpperBound;
 
                     // TODO: More efficient check for verification iterations
@@ -465,7 +466,7 @@ namespace storm {
                         // We can safely use twice the requested precision, as we calculate the center of both vectors
                         // We can use max_if instead of computeMaxAbsDiff, as x is definitely a lower bound and ub is larger in all elements
                         if (!storm::utility::vector::hasNegativeEntry(ubDiffV)) {
-                            // Recalculate relativeTerminationDiff if relative error requested
+                            // Recalculate terminationPrecision if relative error requested
                             // TODO: Is here min or max required?
                             if (relative) {
                                 terminationPrecision = doublePrecision * storm::utility::vector::min_if(*currentX, this->getRelevantValues());
@@ -507,11 +508,11 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void IterativeMinMaxLinearEquationSolver<ValueType>::guessUpperBound(std::vector<ValueType> &x, std::vector<ValueType> &target, ValueType const& precision, bool const& relative) const {
+        void IterativeMinMaxLinearEquationSolver<ValueType>::guessUpperBound(std::vector<ValueType> &x, std::vector<ValueType> &target, ValueType const& precision, bool const& relative, ValueType const& one) const {
             if (relative) {
-                storm::utility::vector::applyPointwise<ValueType, ValueType>(x, target, [&] (ValueType const& argument) -> ValueType { return argument * precision; });
+                storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(target, (one + precision));
             } else {
-                storm::utility::vector::applyPointwise<ValueType, ValueType>(x, target, [&] (ValueType const& argument) -> ValueType { return argument + precision; });
+                storm::utility::vector::applyPointwise<ValueType, ValueType>(x, target, [&precision] (ValueType const& argument) -> ValueType { return argument + precision; });
             }
         }
 
