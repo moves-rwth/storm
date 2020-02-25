@@ -356,10 +356,8 @@ namespace storm {
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsOptimisticValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
 
-            // TODO: Differentiate between relative and absolute precision
-            // TODO: Updating solver status when iterations exceed
-
             uint64_t overallIterations = 0;
+            uint64_t maxOverallIterations = env.solver().minMax().getMaximalNumberOfIterations();
             uint64_t lastValueIterationIterations = 0;
             uint64_t currentVerificationIterations = 0;
             uint64_t valueIterationInvocations = 0;
@@ -382,10 +380,10 @@ namespace storm {
             // Relative errors
             bool relative = env.solver().minMax().getRelativeTerminationCriterion();
 
-            std::vector<ValueType> *newX = auxiliaryRowGroupVector.get();
             std::vector<ValueType> *currentX = &x;
-            std::vector<ValueType> newUpperBound;
+            std::vector<ValueType> *newX = auxiliaryRowGroupVector.get();
             std::vector<ValueType> currentUpperBound(currentX->size());
+            std::vector<ValueType> newUpperBound;
             std::vector<ValueType> ubDiffV(newX->size());
             std::vector<ValueType> boundsDiffV(currentX->size());
 
@@ -399,7 +397,7 @@ namespace storm {
             SolverStatus status = SolverStatus::InProgress;
             this->startMeasureProgress();
 
-            while (status == SolverStatus::InProgress && overallIterations < env.solver().minMax().getMaximalNumberOfIterations()) {
+            while (status == SolverStatus::InProgress && overallIterations <= maxOverallIterations) {
 
                 // Perform value iteration until convergence
                 ++valueIterationInvocations;
@@ -423,7 +421,7 @@ namespace storm {
                     newUpperBound = currentUpperBound;
 
                     // TODO: More efficient check for verification iterations
-                    while (status == SolverStatus::InProgress && overallIterations < env.solver().minMax().getMaximalNumberOfIterations() && (currentVerificationIterations / 10) < lastValueIterationIterations) {
+                    while (status == SolverStatus::InProgress && overallIterations <= maxOverallIterations && (currentVerificationIterations / 10) < lastValueIterationIterations) {
                         // Perform value iteration stepwise for lower bound and guessed upper bound
 
                         // Lower and upper bound iteration
@@ -489,6 +487,10 @@ namespace storm {
                 }
 
                 iterationPrecision = iterationPrecision / two;
+            }
+
+            if (overallIterations > maxOverallIterations) {
+                status = SolverStatus::MaximalIterationsExceeded;
             }
 
             // Swap the result into the output x.
