@@ -6,6 +6,7 @@
 #include "storm/utility/ConstantsComparator.h"
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/environment/solver/OviSolverEnvironment.h"
 
 #include "storm/utility/KwekMehlhorn.h"
 #include "storm/utility/NumberTraits.h"
@@ -366,6 +367,19 @@ namespace storm {
             }
             return result;
         }
+        
+        template<typename ValueType>
+        ValueType computeMaxRelDiff(std::vector<ValueType> const& allOldValues, std::vector<ValueType> const& allNewValues, storm::storage::BitVector const& relevantValues) {
+            ValueType result = storm::utility::zero<ValueType>();
+            for (auto const& i : relevantValues) {
+                STORM_LOG_ASSERT(!storm::utility::isZero(allNewValues[i]) || storm::utility::isZero(allOldValues[i]), "Unexpected entry in iteration vector.");
+                if (!storm::utility::isZero(allNewValues[i])) {
+                    result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allNewValues[i] - allOldValues[i]) / allNewValues[i]);
+                }
+            }
+            return result;
+        }
+        
         template<typename ValueType>
         ValueType computeMaxRelDiff(std::vector<ValueType> const& allOldValues, std::vector<ValueType> const& allNewValues) {
             ValueType result = storm::utility::zero<ValueType>();
@@ -379,11 +393,13 @@ namespace storm {
         }
 
         template<typename ValueType>
-        ValueType updateIterationPrecision(std::vector<ValueType> const& currentX, std::vector<ValueType> const& newX, bool const& relative) {
+        ValueType updateIterationPrecision(storm::Environment const& env, std::vector<ValueType> const& currentX, std::vector<ValueType> const& newX, bool const& relative, boost::optional<storm::storage::BitVector> const& relevantValues) {
+            auto factor = storm::utility::convertNumber<ValueType>(env.solver().ovi().getPrecisionUpdateFactor());
+            bool useRelevant = relevantValues.is_initialized() && env.solver().ovi().useRelevantValuesForPrecisionUpdate();
             if (relative) {
-                return computeMaxRelDiff(newX, currentX) / storm::utility::convertNumber<ValueType>(2);
+                return (useRelevant ? computeMaxRelDiff(newX, currentX, relevantValues.get()) : computeMaxRelDiff(newX, currentX)) * factor;
             } else {
-                return computeMaxAbsDiff(newX, currentX) / storm::utility::convertNumber<ValueType>(2);
+                return (useRelevant ? computeMaxAbsDiff(newX, currentX, relevantValues.get()) : computeMaxAbsDiff(newX, currentX)) * factor;
             }
         }
 
@@ -424,6 +440,11 @@ namespace storm {
             // Relative errors
             bool relative = env.solver().minMax().getRelativeTerminationCriterion();
 
+            boost::optional<storm::storage::BitVector> relevantValues;
+            if (this->hasRelevantValues()) {
+                relevantValues = this->getRelevantValues();
+            }
+            
             // x has to start with a lower bound.
             this->createLowerBoundsVector(x);
 
@@ -502,7 +523,7 @@ namespace storm {
                         std::swap(currentUpperBound, newUpperBound);
 
                         if (newUpperBoundAlwaysHigher) {
-                            iterationPrecision = updateIterationPrecision(*currentX, *newX, relative);
+                            iterationPrecision = updateIterationPrecision(env, *currentX, *newX, relative, relevantValues);
                             // Not all values moved up or stayed the same
                             // If we have a single fixed point, we can safely set the new lower bound, to the wrongly guessed upper bound
                             if (this->hasUniqueSolution()) {
@@ -510,7 +531,7 @@ namespace storm {
                             }
                             break;
                         } else if (valuesCrossed) {
-                            iterationPrecision = updateIterationPrecision(*currentX, *newX, relative);
+                            iterationPrecision = updateIterationPrecision(env, *currentX, *newX, relative, relevantValues);
                             break;
                         } else if (newUpperBoundAlwaysLowerEqual) {
                             // All values moved down or stayed the same and we have a maximum difference of twice the requested precision
@@ -518,7 +539,7 @@ namespace storm {
                             // We can use max_if instead of computeMaxAbsDiff, as x is definitely a lower bound and ub is larger in all elements
                             // Recalculate terminationPrecision if relative error requested
                             bool reachedPrecision = true;
-                            for (auto const& valueIndex : this->hasRelevantValues() ? this->getRelevantValues() : storm::storage::BitVector(x.size(), true)) {
+                            for (auto const& valueIndex : relevantValues ? relevantValues.get() : storm::storage::BitVector(x.size(), true)) {
                                 ValueType absDiff = currentUpperBound[valueIndex] - (*currentX)[valueIndex];
                                 if (relative) {
                                     if (absDiff > doublePrecision * (*currentX)[valueIndex]) {
@@ -539,9 +560,10 @@ namespace storm {
                             }
                         }
                         
-                        if ((currentVerificationIterations / 10) >= lastValueIterationIterations) {
+                        ValueType scaledIterationCount = storm::utility::convertNumber<ValueType>(currentVerificationIterations) * storm::utility::convertNumber<ValueType>(env.solver().ovi().getMaxVerificationIterationFactor());
+                        if (scaledIterationCount >= storm::utility::convertNumber<ValueType>(lastValueIterationIterations)) {
                             cancelGuess = true;
-                            iterationPrecision = updateIterationPrecision(*currentX, *newX, relative);
+                            iterationPrecision = updateIterationPrecision(env, *currentX, *newX, relative, relevantValues);
                         }
                         
                         ++overallIterations;

@@ -40,6 +40,7 @@
 #include "storm/settings/modules/MultiplierSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
 #include "storm/settings/modules/HintSettings.h"
+#include "storm/settings/modules/OviSolverSettings.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/file.h"
 #include "storm/utility/string.h"
@@ -672,6 +673,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::MultiplierSettings>();
             storm::settings::addModule<storm::settings::modules::TransformationSettings>();
             storm::settings::addModule<storm::settings::modules::HintSettings>();
+            storm::settings::addModule<storm::settings::modules::OviSolverSettings>();
         }
 
     }

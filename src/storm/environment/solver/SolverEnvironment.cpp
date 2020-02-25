@@ -8,6 +8,7 @@
 #include "storm/environment/solver/NativeSolverEnvironment.h"
 #include "storm/environment/solver/GameSolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
+#include "storm/environment/solver/OviSolverEnvironment.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
@@ -92,6 +93,14 @@ namespace storm {
     
     TopologicalSolverEnvironment const& SolverEnvironment::topological() const {
         return topologicalSolverEnvironment.get();
+    }
+
+    OviSolverEnvironment& SolverEnvironment::ovi() {
+        return oviSolverEnvironment.get();
+    }
+    
+    OviSolverEnvironment const& SolverEnvironment::ovi() const {
+        return oviSolverEnvironment.get();
     }
 
     bool SolverEnvironment::isForceSoundness() const {

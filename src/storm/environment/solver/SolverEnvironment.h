@@ -19,6 +19,7 @@ namespace storm {
     class MultiplierEnvironment;
     class GameSolverEnvironment;
     class TopologicalSolverEnvironment;
+    class OviSolverEnvironment;
     
     class SolverEnvironment {
     public:
@@ -38,6 +39,8 @@ namespace storm {
         MinMaxSolverEnvironment const& minMax() const;
         MultiplierEnvironment& multiplier();
         MultiplierEnvironment const& multiplier() const;
+        OviSolverEnvironment const& ovi() const;
+        OviSolverEnvironment& ovi();
         GameSolverEnvironment& game();
         GameSolverEnvironment const& game() const;
         TopologicalSolverEnvironment& topological();
@@ -62,6 +65,7 @@ namespace storm {
         SubEnvironment<LongRunAverageSolverEnvironment> longRunAverageSolverEnvironment;
         SubEnvironment<MinMaxSolverEnvironment> minMaxSolverEnvironment;
         SubEnvironment<MultiplierEnvironment> multiplierEnvironment;
+        SubEnvironment<OviSolverEnvironment> oviSolverEnvironment;
       
         storm::solver::EquationSolverType linearEquationSolverType;
         bool linearEquationSolverTypeSetFromDefault;
