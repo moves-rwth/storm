@@ -4,6 +4,7 @@
 
 #include "storm/modelchecker/csl/helper/SparseMarkovAutomatonCslHelper.h"
 #include "storm/modelchecker/csl/helper/HybridMarkovAutomatonCslHelper.h"
+#include "storm/modelchecker/prctl/helper/HybridMdpPrctlHelper.h"
 
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
@@ -26,7 +27,7 @@ namespace storm {
         
         template <typename ModelType>
         bool HybridMarkovAutomatonCslModelChecker<ModelType>::canHandleStatic(CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
-            auto singleObjectiveFragment = storm::logic::csl().setGloballyFormulasAllowed(false).setNextFormulasAllowed(false).setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setTotalRewardFormulasAllowed(true).setTimeAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setLongRunAverageRewardFormulasAllowed(true).setRewardAccumulationAllowed(true).setInstantaneousFormulasAllowed(false).setCumulativeRewardFormulasAllowed(false);
+            auto singleObjectiveFragment = storm::logic::csl().setGloballyFormulasAllowed(false).setNextFormulasAllowed(false).setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setTotalRewardFormulasAllowed(false).setTimeAllowed(true).setLongRunAverageProbabilitiesAllowed(false).setLongRunAverageRewardFormulasAllowed(false).setRewardAccumulationAllowed(true).setInstantaneousFormulasAllowed(false).setCumulativeRewardFormulasAllowed(false);
             if (!storm::NumberTraits<ValueType>::SupportsExponential) {
                 singleObjectiveFragment.setBoundedUntilFormulasAllowed(false);
             }
@@ -38,17 +39,18 @@ namespace storm {
             return canHandleStatic(checkTask);
         }
         
-/*        template<typename ModelType>
+        template<typename ModelType>
         std::unique_ptr<CheckResult> HybridMarkovAutomatonCslModelChecker<ModelType>::computeUntilProbabilities(Environment const& env, CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) {
+            STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             storm::logic::UntilFormula const& pathFormula = checkTask.getFormula();
             std::unique_ptr<CheckResult> leftResultPointer = this->check(env, pathFormula.getLeftSubformula());
             std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
             SymbolicQualitativeCheckResult<DdType> const& leftResult = leftResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             SymbolicQualitativeCheckResult<DdType> const& rightResult = rightResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             
-            return storm::modelchecker::helper::HybridMarkovAutomatonCslHelper::computeUntilProbabilities<DdType, ValueType>(env, this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getMarkovianStates(), this->getModel().getExitRateVector(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), checkTask.isQualitativeSet());
+            return storm::modelchecker::helper::HybridMdpPrctlHelper<DdType, ValueType>::computeUntilProbabilities(env, checkTask.getOptimizationDirection(), this->getModel(), this->getModel().getTransitionMatrix(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), checkTask.isQualitativeSet());
         }
- */
+
         template<typename ModelType>
         std::unique_ptr<CheckResult> HybridMarkovAutomatonCslModelChecker<ModelType>::computeReachabilityRewards(Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
             STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
@@ -59,24 +61,26 @@ namespace storm {
             return storm::modelchecker::helper::HybridMarkovAutomatonCslHelper::computeReachabilityRewards<DdType, ValueType>(env, checkTask.getOptimizationDirection(), this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getMarkovianStates(), this->getModel().getExitRateVector(), rewardModel.get(), subResult.getTruthValuesVector(), checkTask.isQualitativeSet());
         }
         
-  /*      template<typename ModelType>
+        template<typename ModelType>
         std::unique_ptr<CheckResult> HybridMarkovAutomatonCslModelChecker<ModelType>::computeReachabilityTimes(Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) {
+            STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
+            
             storm::logic::EventuallyFormula const& eventuallyFormula = checkTask.getFormula();
             std::unique_ptr<CheckResult> subResultPointer = this->check(env, eventuallyFormula.getSubformula());
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
 
             storm::models::symbolic::StandardRewardModel<DdType, ValueType> timeRewardModel(this->getModel().getManager().getConstant(storm::utility::one<ValueType>()), boost::none, boost::none);
-            return storm::modelchecker::helper::HybridMarkovAutomatonCslHelper::computeReachabilityRewards<DdType, ValueType>(env, this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getMarkovianStates(), this->getModel().getExitRateVector(), timeRewardModel, subResult.getTruthValuesVector(), checkTask.isQualitativeSet());
+            return storm::modelchecker::helper::HybridMarkovAutomatonCslHelper::computeReachabilityRewards<DdType, ValueType>(env, checkTask.getOptimizationDirection(), this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getMarkovianStates(), this->getModel().getExitRateVector(), timeRewardModel, subResult.getTruthValuesVector(), checkTask.isQualitativeSet());
         }
         
         template<typename ModelType>
         std::unique_ptr<CheckResult> HybridMarkovAutomatonCslModelChecker<ModelType>::computeBoundedUntilProbabilities(Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask) {
             storm::logic::BoundedUntilFormula const& pathFormula = checkTask.getFormula();
-            std::unique_ptr<CheckResult> leftResultPointer = this->check(env, pathFormula.getLeftSubformula());
+            STORM_LOG_THROW(pathFormula.getLeftSubformula().isTrueFormula(), storm::exceptions::NotImplementedException, "Only bounded properties of the form 'true U[t1, t2] phi' are currently supported.");
             std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
-            SymbolicQualitativeCheckResult<DdType> const& leftResult = leftResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             SymbolicQualitativeCheckResult<DdType> const& rightResult = rightResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             
+            STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             STORM_LOG_THROW(pathFormula.getTimeBoundReference().isTimeBound(), storm::exceptions::NotImplementedException, "Currently step-bounded and reward-bounded properties on MarkovAutomatons are not supported.");
             double lowerBound = 0;
             double upperBound = 0;
@@ -89,24 +93,9 @@ namespace storm {
                 upperBound = storm::utility::infinity<double>();
             }
             
-            return storm::modelchecker::helper::HybridMarkovAutomatonCslHelper::computeBoundedUntilProbabilities<DdType, ValueType>(env, this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getMarkovianStates(), this->getModel().getExitRateVector(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), checkTask.isQualitativeSet(), lowerBound, upperBound);
+            return storm::modelchecker::helper::HybridMarkovAutomatonCslHelper::computeBoundedUntilProbabilities<DdType, ValueType>(env, checkTask.getOptimizationDirection(), this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getMarkovianStates(), this->getModel().getExitRateVector(), rightResult.getTruthValuesVector(), checkTask.isQualitativeSet(), lowerBound, upperBound);
         }
         
-        template<typename ModelType>
-        std::unique_ptr<CheckResult> HybridMarkovAutomatonCslModelChecker<ModelType>::computeLongRunAverageProbabilities(Environment const& env, CheckTask<storm::logic::StateFormula, ValueType> const& checkTask) {
-            storm::logic::StateFormula const& stateFormula = checkTask.getFormula();
-            std::unique_ptr<CheckResult> subResultPointer = this->check(env, stateFormula);
-            SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
-            
-            return storm::modelchecker::helper::HybridMarkovAutomatonCslHelper::computeLongRunAverageProbabilities<DdType, ValueType>(env, this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getMarkovianStates(), this->getModel().getExitRateVector(), subResult.getTruthValuesVector());
-        }
-        
-        template<typename ModelType>
-        std::unique_ptr<CheckResult> HybridMarkovAutomatonCslModelChecker<ModelType>::computeLongRunAverageRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
-            auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
-            return storm::modelchecker::helper::HybridMarkovAutomatonCslHelper::computeLongRunAverageRewards<DdType, ValueType>(env, this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getMarkovianStates(), this->getModel().getExitRateVector(), rewardModel.get());
-        }
-    */
         // Explicitly instantiate the model checker.
         template class HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::CUDD, double>>;
         template class HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::Sylvan, double>>;
