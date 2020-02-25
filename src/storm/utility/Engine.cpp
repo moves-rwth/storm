@@ -10,6 +10,7 @@
 #include "storm/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
 #include "storm/modelchecker/csl/HybridCtmcCslModelChecker.h"
+#include "storm/modelchecker/csl/HybridMarkovAutomatonCslModelChecker.h"
 
 #include "storm/modelchecker/prctl/SymbolicDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
@@ -128,6 +129,7 @@ namespace storm {
                         case ModelType::CTMC:
                             return storm::modelchecker::HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<ddType, ValueType>>::canHandleStatic(checkTask);
                         case ModelType::MA:
+                            return storm::modelchecker::HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::Ctmc<ddType, ValueType>>::canHandleStatic(checkTask);
                         case ModelType::POMDP:
                             return false;
                     }

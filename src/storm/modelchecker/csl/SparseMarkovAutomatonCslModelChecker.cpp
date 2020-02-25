@@ -29,11 +29,11 @@ namespace storm {
         
         template <typename ModelType>
         bool SparseMarkovAutomatonCslModelChecker<ModelType>::canHandleStatic(CheckTask<storm::logic::Formula, ValueType> const& checkTask, bool* requiresSingleInitialState) {
-            auto singleObjectiveFragment = storm::logic::csl().setGloballyFormulasAllowed(false).setNextFormulasAllowed(false).setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setTotalRewardFormulasAllowed(true).setTimeAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setLongRunAverageRewardFormulasAllowed(true).setRewardAccumulationAllowed(true);
+            auto singleObjectiveFragment = storm::logic::csl().setGloballyFormulasAllowed(false).setNextFormulasAllowed(false).setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setTotalRewardFormulasAllowed(true).setTimeAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setLongRunAverageRewardFormulasAllowed(true).setRewardAccumulationAllowed(true).setInstantaneousFormulasAllowed(false);
             auto multiObjectiveFragment = storm::logic::multiObjective().setTimeAllowed(true).setTimeBoundedUntilFormulasAllowed(true);
             if (!storm::NumberTraits<ValueType>::SupportsExponential) {
-                singleObjectiveFragment.setBoundedUntilFormulasAllowed(false).setCumulativeRewardFormulasAllowed(false).setInstantaneousFormulasAllowed(false);
-                multiObjectiveFragment.setTimeBoundedUntilFormulasAllowed(false).setCumulativeRewardFormulasAllowed(false).setInstantaneousFormulasAllowed(false);
+                singleObjectiveFragment.setBoundedUntilFormulasAllowed(false).setCumulativeRewardFormulasAllowed(false);
+                multiObjectiveFragment.setTimeBoundedUntilFormulasAllowed(false).setCumulativeRewardFormulasAllowed(false);
             }
             if (checkTask.getFormula().isInFragment(singleObjectiveFragment)) {
                 return true;
