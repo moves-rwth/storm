@@ -129,7 +129,7 @@ namespace storm {
                         case ModelType::CTMC:
                             return storm::modelchecker::HybridCtmcCslModelChecker<storm::models::symbolic::Ctmc<ddType, ValueType>>::canHandleStatic(checkTask);
                         case ModelType::MA:
-                            return storm::modelchecker::HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::Ctmc<ddType, ValueType>>::canHandleStatic(checkTask);
+                            return storm::modelchecker::HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<ddType, ValueType>>::canHandleStatic(checkTask);
                         case ModelType::POMDP:
                             return false;
                     }
