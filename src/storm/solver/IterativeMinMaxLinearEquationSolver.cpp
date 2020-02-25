@@ -256,7 +256,12 @@ namespace storm {
                     }
                 }
             } else if (method == MinMaxMethod::OptimisticValueIteration) {
-                // OptimisticValueIteration does not have any requirements
+                // OptimisticValueIteration always requires lower bounds and a unique solution.
+                if (!this->hasUniqueSolution()) {
+                    requirements.requireUniqueSolution();
+                }
+                requirements.requireLowerBounds();
+                
             } else if (method == MinMaxMethod::IntervalIteration) {
                 // Interval iteration requires a unique solution and lower+upper bounds
                 if (!this->hasUniqueSolution()) {
@@ -354,6 +359,45 @@ namespace storm {
         }
 
         template<typename ValueType>
+        ValueType computeMaxAbsDiff(std::vector<ValueType> const& allOldValues, std::vector<ValueType> const& allNewValues) {
+            ValueType result = storm::utility::zero<ValueType>();
+            for (uint64_t i = 0; i < allOldValues.size(); ++i) {
+                result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allNewValues[i] - allOldValues[i]));
+            }
+            return result;
+        }
+        template<typename ValueType>
+        ValueType computeMaxRelDiff(std::vector<ValueType> const& allOldValues, std::vector<ValueType> const& allNewValues) {
+            ValueType result = storm::utility::zero<ValueType>();
+            for (uint64_t i = 0; i < allOldValues.size(); ++i) {
+                STORM_LOG_ASSERT(!storm::utility::isZero(allNewValues[i]) || storm::utility::isZero(allOldValues[i]), "Unexpected entry in iteration vector.");
+                if (!storm::utility::isZero(allNewValues[i])) {
+                    result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allNewValues[i] - allOldValues[i]) / allNewValues[i]);
+                }
+            }
+            return result;
+        }
+
+        template<typename ValueType>
+        ValueType updateIterationPrecision(std::vector<ValueType> const& currentX, std::vector<ValueType> const& newX, bool const& relative) {
+            if (relative) {
+                return computeMaxRelDiff(newX, currentX) / storm::utility::convertNumber<ValueType>(2);
+            } else {
+                return computeMaxAbsDiff(newX, currentX) / storm::utility::convertNumber<ValueType>(2);
+            }
+        }
+
+        template<typename ValueType>
+        void guessUpperBoundRelative(std::vector<ValueType> const& x, std::vector<ValueType> &target, ValueType const& relativeBoundGuessingScaler) {
+            storm::utility::vector::applyPointwise<ValueType, ValueType>(x, target, [&relativeBoundGuessingScaler] (ValueType const& argument) -> ValueType { return argument * relativeBoundGuessingScaler; });
+        }
+
+        template<typename ValueType>
+        void guessUpperBoundAbsolute(std::vector<ValueType> const& x, std::vector<ValueType> &target, ValueType const& precision) {
+            storm::utility::vector::applyPointwise<ValueType, ValueType>(x, target, [&precision] (ValueType const& argument) -> ValueType { return argument + precision; });
+        }
+        
+        template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsOptimisticValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
 
             uint64_t overallIterations = 0;
@@ -380,29 +424,28 @@ namespace storm {
             // Relative errors
             bool relative = env.solver().minMax().getRelativeTerminationCriterion();
 
+            // x has to start with a lower bound.
+            this->createLowerBoundsVector(x);
+
             std::vector<ValueType> *currentX = &x;
             std::vector<ValueType> *newX = auxiliaryRowGroupVector.get();
             std::vector<ValueType> currentUpperBound(currentX->size());
-            std::vector<ValueType> newUpperBound;
-            std::vector<ValueType> ubDiffV(newX->size());
-            std::vector<ValueType> boundsDiffV(currentX->size());
+            std::vector<ValueType> newUpperBound(x.size());
 
             ValueType two = storm::utility::convertNumber<ValueType>(2.0);
             ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision());
             ValueType relativeBoundGuessingScaler = (storm::utility::one<ValueType>() + precision);
             ValueType doublePrecision = precision * two;
-            ValueType terminationPrecision = doublePrecision;
             ValueType iterationPrecision = precision;
 
             SolverStatus status = SolverStatus::InProgress;
             this->startMeasureProgress();
 
-            while (status == SolverStatus::InProgress && overallIterations <= maxOverallIterations) {
+            while (status == SolverStatus::InProgress && overallIterations < maxOverallIterations) {
 
                 // Perform value iteration until convergence
                 ++valueIterationInvocations;
                 ValueIterationResult result = performValueIteration(env, dir, currentX, newX, b, iterationPrecision, relative, guarantee, overallIterations, env.solver().minMax().getMaximalNumberOfIterations(), multiplicationStyle);
-
                 lastValueIterationIterations = result.iterations;
                 overallIterations += result.iterations;
 
@@ -411,23 +454,21 @@ namespace storm {
                 } else {
                     currentVerificationIterations = 0;
 
-                    currentUpperBound = *currentX;
                     if (relative) {
                         guessUpperBoundRelative(*currentX, currentUpperBound, relativeBoundGuessingScaler);
                     } else {
                         guessUpperBoundAbsolute(*currentX, currentUpperBound, precision);
                     }
 
-                    newUpperBound = currentUpperBound;
-
-                    // TODO: More efficient check for verification iterations
-                    while (status == SolverStatus::InProgress && overallIterations <= maxOverallIterations && (currentVerificationIterations / 10) < lastValueIterationIterations) {
+                    bool cancelGuess = false;
+                    while (status == SolverStatus::InProgress && overallIterations < maxOverallIterations && !cancelGuess) {
                         // Perform value iteration stepwise for lower bound and guessed upper bound
 
                         // Lower and upper bound iteration
                         // Compute x' = min/max(A*x + b).
                         if (useGaussSeidelMultiplication) {
                             // Copy over the current vectors so we can modify them in-place.
+                            // This is necessary as we want to compare the new values with the current ones.
                             *newX = *currentX;
                             newUpperBound = currentUpperBound;
                             // Do the calculation
@@ -438,55 +479,75 @@ namespace storm {
                             multiplier.multiplyAndReduce(env, dir, currentUpperBound, &b, newUpperBound);
                         }
 
-                        // Set iteration precision beforehand
-                        // Calculate the maximum difference between the old and new iteration
-                        iterationPrecision = computeMaxAbsDiff(*newX, *currentX, this->getRelevantValues());
-
-                        // Calculate difference vector of upper bound and x
-                        storm::utility::vector::subtractVectors<ValueType>(newUpperBound, *newX, boundsDiffV);
-                        // Calculate difference vector of new and old upper bound
-                        storm::utility::vector::subtractVectors<ValueType>(currentUpperBound, newUpperBound, ubDiffV);
+                        bool newUpperBoundAlwaysHigher = true;
+                        bool newUpperBoundAlwaysLowerEqual = true;
+                        bool valuesCrossed = false;
+                        ValueType maxBoundDiff = storm::utility::zero<ValueType>();
+                        for (uint64_t i = 0; i < x.size(); ++i) {
+                            if (newUpperBound[i] < currentUpperBound[i]) {
+                                newUpperBoundAlwaysHigher = false;
+                            } else if (newUpperBound[i] != currentUpperBound[i]) {
+                                newUpperBoundAlwaysLowerEqual = false;
+                            }
+                            if (newUpperBound[i] < (*newX)[i]) {
+                                valuesCrossed = true;
+                                break;
+                            } else {
+                                maxBoundDiff = std::max<ValueType>(maxBoundDiff, newUpperBound[i] - (*newX)[i]);
+                            }
+                        }
+                        
                         // Update bounds
                         std::swap(currentX, newX);
                         std::swap(currentUpperBound, newUpperBound);
 
-                        if (!storm::utility::vector::hasPositiveEntry(ubDiffV)) {
+                        if (newUpperBoundAlwaysHigher) {
+                            iterationPrecision = updateIterationPrecision(*currentX, *newX, relative);
                             // Not all values moved up or stayed the same
                             // If we have a single fixed point, we can safely set the new lower bound, to the wrongly guessed upper bound
                             if (this->hasUniqueSolution()) {
                                 *currentX = currentUpperBound;
                             }
                             break;
-                        }
-
-                        if (storm::utility::vector::hasNegativeEntry(boundsDiffV)) {
-                            // Values crossed
+                        } else if (valuesCrossed) {
+                            iterationPrecision = updateIterationPrecision(*currentX, *newX, relative);
                             break;
-                        }
-
-
-                        // All values moved down or stayed the same and we have a maximum difference of twice the requested precision
-                        // We can safely use twice the requested precision, as we calculate the center of both vectors
-                        // We can use max_if instead of computeMaxAbsDiff, as x is definitely a lower bound and ub is larger in all elements
-                        if (!storm::utility::vector::hasNegativeEntry(ubDiffV)) {
+                        } else if (newUpperBoundAlwaysLowerEqual) {
+                            // All values moved down or stayed the same and we have a maximum difference of twice the requested precision
+                            // We can safely use twice the requested precision, as we calculate the center of both vectors
+                            // We can use max_if instead of computeMaxAbsDiff, as x is definitely a lower bound and ub is larger in all elements
                             // Recalculate terminationPrecision if relative error requested
-                            // TODO: Is here min or max required?
-                            if (relative) {
-                                terminationPrecision = doublePrecision * storm::utility::vector::min_if(*currentX, this->getRelevantValues());
+                            bool reachedPrecision = true;
+                            for (auto const& valueIndex : this->hasRelevantValues() ? this->getRelevantValues() : storm::storage::BitVector(x.size(), true)) {
+                                ValueType absDiff = currentUpperBound[valueIndex] - (*currentX)[valueIndex];
+                                if (relative) {
+                                    if (absDiff > doublePrecision * (*currentX)[valueIndex]) {
+                                        reachedPrecision = false;
+                                        break;
+                                    }
+                                } else {
+                                    if (absDiff > doublePrecision) {
+                                        reachedPrecision = false;
+                                        break;
+                                    }
+                                }
                             }
-                            if (storm::utility::vector::max_if(boundsDiffV, this->getRelevantValues()) < terminationPrecision) {
+                            if (reachedPrecision) {
                                 // Calculate the center of both vectors and store it in currentX
                                 storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(*currentX, currentUpperBound, *currentX, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
                                 status = SolverStatus::Converged;
                             }
                         }
-
+                        
+                        if ((currentVerificationIterations / 10) >= lastValueIterationIterations) {
+                            cancelGuess = true;
+                            iterationPrecision = updateIterationPrecision(*currentX, *newX, relative);
+                        }
+                        
                         ++overallIterations;
                         ++currentVerificationIterations;
                     }
                 }
-
-                iterationPrecision = iterationPrecision / two;
             }
 
             if (overallIterations > maxOverallIterations) {
@@ -512,16 +573,6 @@ namespace storm {
             }
 
             return status == SolverStatus::Converged || status == SolverStatus::TerminatedEarly;
-        }
-
-        template<typename ValueType>
-        void IterativeMinMaxLinearEquationSolver<ValueType>::guessUpperBoundRelative(std::vector<ValueType> &x, std::vector<ValueType> &target, ValueType const& relativeBoundGuessingScaler) const {
-            storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(target, relativeBoundGuessingScaler);
-        }
-
-        template<typename ValueType>
-        void IterativeMinMaxLinearEquationSolver<ValueType>::guessUpperBoundAbsolute(std::vector<ValueType> &x, std::vector<ValueType> &target, ValueType const& precision) const {
-            storm::utility::vector::applyPointwise<ValueType, ValueType>(x, target, [&precision] (ValueType const& argument) -> ValueType { return argument + precision; });
         }
 
         template<typename ValueType>
