@@ -596,8 +596,8 @@ namespace storm {
                 splitIntoGroupsRec(dd, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
                 splitIntoGroupsRec(dd, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
             } else {
-                splitIntoGroupsRec(Cudd_E(dd), groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
                 splitIntoGroupsRec(Cudd_T(dd), groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                splitIntoGroupsRec(Cudd_E(dd), groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
             }
         }
         

@@ -1007,8 +1007,8 @@ namespace storm {
                 bool elseComplemented = mtbdd_hascomp(elseDdNode) ^ negated;
                 bool thenComplemented = mtbdd_hascomp(thenDdNode) ^ negated;
                 
-                splitIntoGroupsRec(mtbdd_regular(elseDdNode), elseComplemented, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
                 splitIntoGroupsRec(mtbdd_regular(thenDdNode), thenComplemented, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                splitIntoGroupsRec(mtbdd_regular(elseDdNode), elseComplemented, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
             }
         }
 
