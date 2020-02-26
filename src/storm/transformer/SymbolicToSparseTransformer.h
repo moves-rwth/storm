@@ -7,6 +7,8 @@
 #include "storm/models/symbolic/Mdp.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/symbolic/Ctmc.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/symbolic/MarkovAutomaton.h"
 
 #include "storm/storage/dd/Odd.h"
 
@@ -33,6 +35,12 @@ namespace storm {
         class SymbolicCtmcToSparseCtmcTransformer {
         public:
             static std::shared_ptr<storm::models::sparse::Ctmc<ValueType>> translate(storm::models::symbolic::Ctmc<Type, ValueType> const& symbolicCtmc, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas = std::vector<std::shared_ptr<storm::logic::Formula const>>());
+        };
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        class SymbolicMaToSparseMaTransformer {
+        public:
+            static std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> translate(storm::models::symbolic::MarkovAutomaton<Type, ValueType> const& symbolicMa, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas = std::vector<std::shared_ptr<storm::logic::Formula const>>());
         };
     }
 }
