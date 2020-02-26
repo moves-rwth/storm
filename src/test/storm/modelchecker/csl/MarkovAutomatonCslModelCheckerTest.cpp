@@ -13,9 +13,11 @@
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
+#include "storm/modelchecker/csl/HybridMarkovAutomatonCslModelChecker.h"
 #include "storm/modelchecker/results/QuantitativeCheckResult.h"
 #include "storm/modelchecker/results/QualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/settings/modules/CoreSettings.h"
@@ -25,7 +27,7 @@
 
 namespace {
     
-    enum class MaEngine {PrismSparse, JaniSparse, JitSparse};
+    enum class MaEngine {PrismSparse, JaniSparse, JitSparse, JaniHybrid};
 
     
     class SparseDoubleValueIterationEnvironment {
@@ -63,6 +65,20 @@ namespace {
         static const bool isExact = false;
         typedef double ValueType;
         typedef storm::models::sparse::MarkovAutomaton<ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
+            return env;
+        }
+    };
+    class JaniHybridDoubleValueIterationEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan;
+        static const MaEngine engine = MaEngine::JaniHybrid;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::symbolic::MarkovAutomaton<ddType, ValueType> ModelType;
         static storm::Environment createEnvironment() {
             storm::Environment env;
             env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
@@ -150,8 +166,9 @@ namespace {
             std::pair<std::shared_ptr<MT>, std::vector<std::shared_ptr<storm::logic::Formula const>>> result;
             storm::prism::Program program = storm::api::parseProgram(pathToPrismFile);
             program = storm::utility::prism::preprocess(program, constantDefinitionString);
-            result.second = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
-            result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(program, result.second)->template as<MT>();
+            auto janiData = storm::api::convertPrismToJani(program, storm::api::parsePropertiesForPrismProgram(formulasAsString, program));
+            result.second = storm::api::extractFormulasFromProperties(janiData.second);
+            result.first = storm::api::buildSymbolicModel<TestType::ddType, ValueType>(janiData.first, result.second)->template as<MT>();
             return result;
         }
         
@@ -169,16 +186,18 @@ namespace {
             if (TestType::engine == MaEngine::PrismSparse || TestType::engine == MaEngine::JaniSparse || TestType::engine == MaEngine::JitSparse) {
                 return std::make_shared<storm::modelchecker::SparseMarkovAutomatonCslModelChecker<SparseModelType>>(*model);
             }
+            return nullptr;
         }
         
         template <typename MT = typename TestType::ModelType>
         typename std::enable_if<std::is_same<MT, SymbolicModelType>::value, std::shared_ptr<storm::modelchecker::AbstractModelChecker<MT>>>::type
         createModelChecker(std::shared_ptr<MT> const& model) const {
-//            if (TestType::engine == MaEngine::Hybrid) {
-//              return std::make_shared<storm::modelchecker::HybridMarkovAutomatonCslModelChecker<SymbolicModelType>>(*model);
+            if (TestType::engine == MaEngine::JaniHybrid) {
+                return std::make_shared<storm::modelchecker::HybridMarkovAutomatonCslModelChecker<SymbolicModelType>>(*model);
 //            } else if (TestType::engine == MaEngine::Dd) {
 //                return std::make_shared<storm::modelchecker::SymbolicMarkovAutomatonCslModelChecker<SymbolicModelType>>(*model);
-//            }
+            }
+            return nullptr;
         }
         
         bool getQualitativeResultAtInitialState(std::shared_ptr<storm::models::Model<ValueType>> const& model, std::unique_ptr<storm::modelchecker::CheckResult>& result) {
@@ -200,8 +219,7 @@ namespace {
             if (isSparseModel()) {
                 return std::make_unique<storm::modelchecker::ExplicitQualitativeCheckResult>(model->template as<SparseModelType>()->getInitialStates());
             } else {
-            //    return std::make_unique<storm::modelchecker::SymbolicQualitativeCheckResult<TestType::ddType>>(model->template as<SymbolicModelType>()->getReachableStates(), model->template as<SymbolicModelType>()->getInitialStates());
-                return nullptr;
+                return std::make_unique<storm::modelchecker::SymbolicQualitativeCheckResult<TestType::ddType>>(model->template as<SymbolicModelType>()->getReachableStates(), model->template as<SymbolicModelType>()->getInitialStates());
             }
         }
     };
@@ -210,6 +228,7 @@ namespace {
             SparseDoubleValueIterationEnvironment,
             JaniSparseDoubleValueIterationEnvironment,
             JitSparseDoubleValueIterationEnvironment,
+            JaniHybridDoubleValueIterationEnvironment,
             SparseDoubleIntervalIterationEnvironment,
             SparseRationalPolicyIterationEnvironment,
             SparseRationalRationalSearchEnvironment
@@ -275,6 +294,9 @@ namespace {
                     formulasString += "; R{\"rew2\"}max=? [C]";
                     formulasString += "; R{\"rew2\"}min=? [C]";
                     formulasString += "; R{\"rew3\"}min=? [C]";
+                    formulasString += "; LRAmin=? [s=0 | s=3]"; // 0
+                    formulasString += "; R{\"rew3\"}max=?[ LRA ]"; // 407
+                    formulasString += "; R{\"rew3\"}min=?[ LRA ]"; // 27
         
         auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/ma/simple2.ma", formulasString);
         auto model = std::move(modelFormulas.first);
@@ -285,26 +307,39 @@ namespace {
         auto checker = this->createModelChecker(model);
         std::unique_ptr<storm::modelchecker::CheckResult> result;
 
-        result = checker->check(this->env(), tasks[0]);
-        EXPECT_NEAR(this->parseNumber("2"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
- 
-        result = checker->check(this->env(), tasks[1]);
+        if (TypeParam::engine != MaEngine::JaniHybrid) {
+            // Total Reward Formulas are not supported in the hybrid engine (for now).
+            
+            result = checker->check(this->env(), tasks[0]);
+            EXPECT_NEAR(this->parseNumber("2"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+     
+            result = checker->check(this->env(), tasks[1]);
+            EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+     
+            result = checker->check(this->env(), tasks[2]);
+            EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
+     
+            result = checker->check(this->env(), tasks[3]);
+            EXPECT_NEAR(this->parseNumber("7/8"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+     
+            result = checker->check(this->env(), tasks[4]);
+            EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
+     
+            result = checker->check(this->env(), tasks[5]);
+            EXPECT_NEAR(this->parseNumber("7/8"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+     
+            result = checker->check(this->env(), tasks[6]);
+            EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
+        }
+        
+        result = checker->check(this->env(), tasks[7]);
         EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
  
-        result = checker->check(this->env(), tasks[2]);
-        EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
+        result = checker->check(this->env(), tasks[8]);
+        EXPECT_NEAR(this->parseNumber("407"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
  
-        result = checker->check(this->env(), tasks[3]);
-        EXPECT_NEAR(this->parseNumber("7/8"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
- 
-        result = checker->check(this->env(), tasks[4]);
-        EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
- 
-        result = checker->check(this->env(), tasks[5]);
-        EXPECT_NEAR(this->parseNumber("7/8"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
- 
-        result = checker->check(this->env(), tasks[6]);
-        EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
+        result = checker->check(this->env(), tasks[9]);
+        EXPECT_NEAR(this->parseNumber("27"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
  
     }
 }
