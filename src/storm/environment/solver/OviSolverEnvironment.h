@@ -15,11 +15,13 @@ namespace storm {
         storm::RationalNumber getPrecisionUpdateFactor() const;
         storm::RationalNumber getMaxVerificationIterationFactor() const;
         bool useRelevantValuesForPrecisionUpdate() const;
+        storm::RationalNumber getUpperBoundGuessingFactor() const;
         
     private:
         storm::RationalNumber precisionUpdateFactor;
         storm::RationalNumber maxVerificationIterationFactor;
         bool relevantValuesForPrecisionUpdate;
+        storm::RationalNumber upperBoundGuessingFactor;
     };
 }
 

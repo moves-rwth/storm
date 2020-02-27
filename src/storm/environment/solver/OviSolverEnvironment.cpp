@@ -12,7 +12,8 @@ namespace storm {
         precisionUpdateFactor = storm::utility::convertNumber<storm::RationalNumber>(oviSettings.getPrecisionUpdateFactor());
         maxVerificationIterationFactor = storm::utility::convertNumber<storm::RationalNumber>(oviSettings.getMaxVerificationIterationFactor());
         relevantValuesForPrecisionUpdate = oviSettings.useRelevantValuesForPrecisionUpdate();
-    };
+        upperBoundGuessingFactor = storm::utility::convertNumber<storm::RationalNumber>(oviSettings.getUpperBoundGuessingFactor());
+    }
     
     OviSolverEnvironment::~OviSolverEnvironment() {
         // Intentionally left empty
@@ -28,6 +29,10 @@ namespace storm {
     
     bool OviSolverEnvironment::useRelevantValuesForPrecisionUpdate() const {
         return relevantValuesForPrecisionUpdate;
+    }
+
+    storm::RationalNumber OviSolverEnvironment::getUpperBoundGuessingFactor() const {
+        return maxVerificationIterationFactor;
     }
     
 }
