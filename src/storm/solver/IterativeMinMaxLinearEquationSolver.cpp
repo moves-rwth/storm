@@ -507,13 +507,13 @@ namespace storm {
                             multiplier.multiplyAndReduce(env, dir, currentUpperBound, &b, newUpperBound);
                         }
 
-                        bool newUpperBoundAlwaysHigher = true;
+                        bool newUpperBoundAlwaysHigherEqual = true;
                         bool newUpperBoundAlwaysLowerEqual = true;
                         bool valuesCrossed = false;
                         ValueType maxBoundDiff = storm::utility::zero<ValueType>();
                         for (uint64_t i = 0; i < x.size(); ++i) {
                             if (newUpperBound[i] < currentUpperBound[i]) {
-                                newUpperBoundAlwaysHigher = false;
+                                newUpperBoundAlwaysHigherEqual = false;
                             } else if (newUpperBound[i] != currentUpperBound[i]) {
                                 newUpperBoundAlwaysLowerEqual = false;
                             }
@@ -529,7 +529,7 @@ namespace storm {
                         std::swap(currentX, newX);
                         std::swap(currentUpperBound, newUpperBound);
 
-                        if (newUpperBoundAlwaysHigher) {
+                        if (newUpperBoundAlwaysHigherEqual & ! newUpperBoundAlwaysLowerEqual) {
                             ++up_occur;
                             iterationPrecision = updateIterationPrecision(env, *currentX, *newX, relative, relevantValues);
                             // Not all values moved up or stayed the same
