@@ -204,6 +204,9 @@ namespace storm {
             if (resources.isTimeoutSet()) {
                 storm::utility::resources::setCPULimit(resources.getTimeoutInSeconds());
             }
+
+            // register signal handler to handle aborts
+            storm::utility::resources::installSignalHandler();
         }
         
         void setLogLevel() {
