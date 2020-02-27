@@ -666,7 +666,7 @@ namespace storm {
             if (result) {
                 std::stringstream ss;
                 ss << "'" << *property.getFilter().getStatesFormula() << "'";
-                STORM_PRINT("Result (for " << (property.getFilter().getStatesFormula()->isInitialFormula() ? "initial" : ss.str()) << " states): ");
+                STORM_PRINT((storm::utility::resources::isTerminate() ? "Result till abort" : "Result") << " (for " << (property.getFilter().getStatesFormula()->isInitialFormula() ? "initial" : ss.str()) << " states): ");
                 printFilteredResult<ValueType>(result, property.getFilter().getFilterType());
                 if (watch) {
                     STORM_PRINT("Time for model checking: " << *watch << "." << std::endl);
