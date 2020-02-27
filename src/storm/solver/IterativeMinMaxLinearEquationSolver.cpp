@@ -462,7 +462,7 @@ namespace storm {
 
             ValueType two = storm::utility::convertNumber<ValueType>(2.0);
             ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision());
-            ValueType relativeBoundGuessingScaler = (storm::utility::one<ValueType>() + precision);
+            ValueType relativeBoundGuessingScaler = (storm::utility::one<ValueType>() + storm::utility::convertNumber<ValueType>(env.solver().ovi().getPrecisionUpdateFactor()) * precision);
             ValueType doublePrecision = precision * two;
             ValueType iterationPrecision = precision;
 
