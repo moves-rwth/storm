@@ -422,6 +422,12 @@ namespace storm {
             uint64_t currentVerificationIterations = 0;
             uint64_t valueIterationInvocations = 0;
 
+            //DEBUG
+            uint64_t up_occur = 0;
+            uint64_t cross_occur = 0;
+            uint64_t down_occur = 0;
+            //DEBUG END
+
             if (!this->multiplierA) {
                 this->multiplierA = storm::solver::MultiplierFactory<ValueType>().create(env, *this->A);
             }
@@ -523,6 +529,7 @@ namespace storm {
                         std::swap(currentUpperBound, newUpperBound);
 
                         if (newUpperBoundAlwaysHigher) {
+                            ++up_occur;
                             iterationPrecision = updateIterationPrecision(env, *currentX, *newX, relative, relevantValues);
                             // Not all values moved up or stayed the same
                             // If we have a single fixed point, we can safely set the new lower bound, to the wrongly guessed upper bound
@@ -531,9 +538,11 @@ namespace storm {
                             }
                             break;
                         } else if (valuesCrossed) {
+                            ++cross_occur;
                             iterationPrecision = updateIterationPrecision(env, *currentX, *newX, relative, relevantValues);
                             break;
                         } else if (newUpperBoundAlwaysLowerEqual) {
+                            ++down_occur;
                             // All values moved down or stayed the same and we have a maximum difference of twice the requested precision
                             // We can safely use twice the requested precision, as we calculate the center of both vectors
                             // We can use max_if instead of computeMaxAbsDiff, as x is definitely a lower bound and ub is larger in all elements
@@ -580,6 +589,10 @@ namespace storm {
             if (currentX == auxiliaryRowGroupVector.get()) {
                 std::swap(x, *currentX);
             }
+
+            // DEBUG
+            std::cout << "Up mov: " << up_occur << ", Cross: " << cross_occur << ", Down mov: " << down_occur;
+            // DEBUG END
 
             reportStatus(status, overallIterations);
 
