@@ -413,6 +413,13 @@ namespace storm {
             Composition const& getSystemComposition() const;
             
             /*!
+             * Attempts to simplify the composition.
+             * Right now, this only means that automata that occur  multiple times in the composition will be
+             * duplicated su that each automata occurs at most once.
+             */
+            void simplifyComposition();
+            
+            /*!
              * Retrieves the set of action names.
              */
             std::set<std::string> getActionNames(bool includeSilent = true) const;

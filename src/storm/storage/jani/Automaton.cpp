@@ -38,6 +38,7 @@ namespace storm {
             }
             result.variables.substituteExpressionVariables(oldToNewVarMap);
             result.substitute(oldToNewVarMap);
+            return result;
         }
         
         std::string const& Automaton::getName() const {

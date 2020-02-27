@@ -91,20 +91,6 @@ namespace storm {
                     return false;
                 }
             }
-            // Check system composition
-            auto compositionInfo = storm::jani::CompositionInformationVisitor(model, model.getSystemComposition()).getInformation();
-            
-            // Every automaton has to occur exactly once.
-            if (compositionInfo.getAutomatonToMultiplicityMap().size() != model.getNumberOfAutomata()) {
-                STORM_LOG_INFO("Symbolic engine can not build Jani model since the system composition does not list each automaton exactly once.");
-                return false;
-            }
-            for (auto automatonMultiplicity : compositionInfo.getAutomatonToMultiplicityMap()) {
-                if (automatonMultiplicity.second > 1) {
-                    STORM_LOG_INFO("Symbolic engine can not build Jani model since the system composition does not list each automaton exactly once.");
-                    return false;
-                }
-            }
             
             // There probably are more cases where the model is unsupported. However, checking these is often more involved.
             // As this method is supposed to be a quick check, we just return true at this point.
@@ -2155,6 +2141,7 @@ namespace storm {
             features.remove(storm::jani::ModelFeature::StateExitRewards);
 
             storm::jani::Model preparedModel = model;
+            preparedModel.simplifyComposition();
             if (features.hasArrays()) {
                 STORM_LOG_ERROR("The jani model still considers arrays. These should have been eliminated before calling the dd builder. The arrays are eliminated now, but occurrences in properties will not be handled properly.");
                 preparedModel.eliminateArrays();

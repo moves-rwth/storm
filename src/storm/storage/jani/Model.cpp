@@ -955,6 +955,69 @@ namespace storm {
             return *composition;
         }
         
+        class CompositionSimplificationVisitor : public CompositionVisitor {
+        public:
+            CompositionSimplificationVisitor(std::unordered_map<std::string, std::vector<std::string>> const& automatonToCopiesMap) : automatonToCopiesMap(automatonToCopiesMap) {}
+            
+            std::shared_ptr<Composition> simplify(Composition const& oldComposition) {
+                return boost::any_cast<std::shared_ptr<Composition>>(oldComposition.accept(*this, boost::any()));
+            }
+            
+            virtual boost::any visit(AutomatonComposition const& composition, boost::any const& data) override {
+                std::string name = composition.getAutomatonName();
+                if (automatonToCopiesMap.count(name) != 0) {
+                    auto& copies = automatonToCopiesMap[name];
+                    STORM_LOG_ASSERT(!copies.empty(), "Not enough copies of automaton " << name << ".");
+                    name = copies.back();
+                    copies.pop_back();
+                }
+                return std::shared_ptr<Composition>(new AutomatonComposition(name, composition.getInputEnabledActions()));
+            }
+            
+            virtual boost::any visit(ParallelComposition const& composition, boost::any const& data) override {
+                std::vector<std::shared_ptr<Composition>> subcomposition;
+                for (auto const& p : composition.getSubcompositions()) {
+                    subcomposition.push_back(boost::any_cast<std::shared_ptr<Composition>>(p->accept(*this, data)));
+                }
+                return std::shared_ptr<Composition>(new ParallelComposition(subcomposition, composition.getSynchronizationVectors()));
+            }
+            
+        private:
+            std::unordered_map<std::string, std::vector<std::string>> automatonToCopiesMap;
+        };
+        
+        void Model::simplifyComposition() {
+            CompositionInformationVisitor visitor(*this, this->getSystemComposition());
+            CompositionInformation info = visitor.getInformation();
+            if (info.containsNestedParallelComposition()) {
+                STORM_LOG_WARN("Unable to simplify non-standard compliant system composition.");
+            }
+            
+            // Check whether we need to copy certain automata
+            std::unordered_map<std::string, std::vector<std::string>> automatonToCopiesMap;
+            for (auto const& automatonMultiplicity : info.getAutomatonToMultiplicityMap()) {
+                if (automatonMultiplicity.second > 1) {
+                    std::vector<std::string> copies = {automatonMultiplicity.first};
+                    // We need to copy this automaton n-1 times.
+                    for (uint64_t copyIndex = 1; copyIndex < automatonMultiplicity.second; ++copyIndex) {
+                        std::string copyPrefix = "Copy__" + std::to_string(copyIndex) + "_Of";
+                        std::string copyAutName = copyPrefix + automatonMultiplicity.first;
+                        this->addAutomaton(this->getAutomaton(automatonMultiplicity.first).clone(getManager(), copyAutName, copyPrefix));
+                        copies.push_back(copyAutName);
+                    }
+                    // For esthetic reasons we reverse the list of copies so that the ones with the lowest index will be pop_back'ed first
+                    std::reverse(copies.begin(), copies.end());
+                    // We insert the copies in reversed order as they will be popped in reversed order, as well.
+                    automatonToCopiesMap[automatonMultiplicity.first] = std::move(copies);
+                }
+            }
+            
+            // Traverse the system composition and exchange automata by their copy
+            auto newComposition = CompositionSimplificationVisitor(automatonToCopiesMap).simplify(getSystemComposition());
+            this->setSystemComposition(newComposition);
+            
+        }
+        
         void Model::setSystemComposition(std::shared_ptr<Composition> const& composition) {
             this->composition = composition;
         }
