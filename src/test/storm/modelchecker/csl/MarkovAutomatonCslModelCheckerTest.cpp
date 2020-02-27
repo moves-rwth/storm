@@ -12,6 +12,7 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
 #include "storm/modelchecker/csl/HybridMarkovAutomatonCslModelChecker.h"
 #include "storm/modelchecker/results/QuantitativeCheckResult.h"
