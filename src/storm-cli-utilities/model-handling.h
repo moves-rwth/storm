@@ -455,11 +455,12 @@ namespace storm {
         template <typename ValueType>
         std::shared_ptr<storm::models::sparse::Model<ValueType>> preprocessSparseMarkovAutomaton(std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> const& model) {
             auto transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
-
+            auto debugSettings = storm::settings::getModule<storm::settings::modules::DebugSettings>();
+            
             std::shared_ptr<storm::models::sparse::Model<ValueType>> result = model;
             model->close();
-            STORM_LOG_WARN_COND(!model->containsZenoCycle(), "MA contains a Zeno cycle. Model checking results cannot be trusted.");
-
+            STORM_LOG_WARN_COND(!debugSettings.isAdditionalChecksSet() || !model->containsZenoCycle(), "MA contains a Zeno cycle. Model checking results cannot be trusted.");
+            
             if (model->isConvertibleToCtmc()) {
                 STORM_LOG_WARN_COND(false, "MA is convertible to a CTMC, consider using a CTMC instead.");
                 result = model->convertToCtmc();
