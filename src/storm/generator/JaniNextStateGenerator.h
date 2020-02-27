@@ -136,7 +136,7 @@ namespace storm {
             typedef std::pair<uint64_t, EdgeSetWithIndices> AutomatonAndEdgeSet;
             typedef std::vector<AutomatonAndEdgeSet> AutomataEdgeSets;
             
-            std::vector<Choice<ValueType>> expandSynchronizingEdgeCombination(AutomataEdgeSets const& edgeCombination, uint64_t outputActionIndex, CompressedState const& state, StateToIdCallback stateToIdCallback);
+            void expandSynchronizingEdgeCombination(AutomataEdgeSets const& edgeCombination, uint64_t outputActionIndex, CompressedState const& state, StateToIdCallback stateToIdCallback, std::vector<Choice<ValueType>>& newChoices);
             void generateSynchronizedDistribution(storm::storage::BitVector const& state, AutomataEdgeSets const& edgeCombination, std::vector<EdgeSetWithIndices::const_iterator> const& iteratorList, storm::builder::jit::Distribution<StateType, ValueType>& distribution, std::vector<ValueType>& stateActionRewards, EdgeIndexSet& edgeIndices, StateToIdCallback stateToIdCallback);
 
             /*!

@@ -775,8 +775,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::expandSynchronizingEdgeCombination(AutomataEdgeSets const& edgeCombination, uint64_t outputActionIndex, CompressedState const& state, StateToIdCallback stateToIdCallback) {
-            std::vector<Choice<ValueType>> result;
+        void JaniNextStateGenerator<ValueType, StateType>::expandSynchronizingEdgeCombination(AutomataEdgeSets const& edgeCombination, uint64_t outputActionIndex, CompressedState const& state, StateToIdCallback stateToIdCallback, std::vector<Choice<ValueType>>& newChoices) {
             
             if (this->options.isExplorationChecksSet()) {
                 // Check whether a global variable is written multiple times in any combination.
@@ -806,10 +805,10 @@ namespace storm {
                 // At this point, we applied all commands of the current command combination and newTargetStates
                 // contains all target states and their respective probabilities. That means we are now ready to
                 // add the choice to the list of transitions.
-                result.emplace_back(outputActionIndex);
+                newChoices.emplace_back(outputActionIndex);
                 
                 // Now create the actual distribution.
-                Choice<ValueType>& choice = result.back();
+                Choice<ValueType>& choice = newChoices.back();
                 
                 // Add the edge indices if requested.
                 if (this->getOptions().isBuildChoiceOriginsSet()) {
@@ -848,8 +847,6 @@ namespace storm {
                 
                 done = !movedIterator;
             }
-            
-            return result;
         }
         
         template<typename ValueType, typename StateType>
@@ -876,13 +873,12 @@ namespace storm {
                                 continue;
                             }
                         
-                            Choice<ValueType> choice = expandNonSynchronizingEdge(*indexAndEdge.second, outputAndEdges.first ? outputAndEdges.first.get() : indexAndEdge.second->getActionIndex(), automatonIndex, state, stateToIdCallback);
+                            result.push_back(expandNonSynchronizingEdge(*indexAndEdge.second, outputAndEdges.first ? outputAndEdges.first.get() : indexAndEdge.second->getActionIndex(), automatonIndex, state, stateToIdCallback));
 
                             if (this->getOptions().isBuildChoiceOriginsSet()) {
                                 EdgeIndexSet edgeIndex { model.encodeAutomatonAndEdgeIndices(automatonIndex, indexAndEdge.first) };
-                                choice.addOriginData(boost::any(std::move(edgeIndex)));
+                                result.back().addOriginData(boost::any(std::move(edgeIndex)));
                             }
-                            result.emplace_back(std::move(choice));
                         }
                     }
                 } else {
@@ -893,9 +889,9 @@ namespace storm {
                     uint64_t outputActionIndex = outputAndEdges.first.get();
                     
                     bool productiveCombination = true;
+                    EdgeSetWithIndices enabledEdgesOfAutomaton;
                     for (auto const& automatonAndEdges : outputAndEdges.second) {
                         uint64_t automatonIndex = automatonAndEdges.first;
-                        EdgeSetWithIndices enabledEdgesOfAutomaton;
                         
                         bool atLeastOneEdge = false;
                         auto edgesIt = automatonAndEdges.second.find(locations[automatonIndex]);
@@ -918,19 +914,18 @@ namespace storm {
 
                         // If there is no enabled edge of this automaton, the whole combination is not productive.
                         if (!atLeastOneEdge) {
+                            STORM_LOG_ASSERT(enabledEdgesOfAutomaton.empty(), "enabledEdgesOfAutomaton should be empty at this point.");
                             productiveCombination = false;
                             break;
                         }
                         
-                        automataEdgeSets.emplace_back(std::make_pair(automatonIndex, std::move(enabledEdgesOfAutomaton)));
+                        automataEdgeSets.emplace_back(std::move(automatonIndex), std::move(enabledEdgesOfAutomaton));
+                        enabledEdgesOfAutomaton.clear();
                     }
                     
                     if (productiveCombination) {
-                        std::vector<Choice<ValueType>> choices = expandSynchronizingEdgeCombination(automataEdgeSets, outputActionIndex, state, stateToIdCallback);
-                        
-                        for (auto const& choice : choices) {
-                            result.emplace_back(std::move(choice));
-                        }
+                        // insert choices in the result vector.
+                        expandSynchronizingEdgeCombination(automataEdgeSets, outputActionIndex, state, stateToIdCallback, result);
                     }
                  }
             }
