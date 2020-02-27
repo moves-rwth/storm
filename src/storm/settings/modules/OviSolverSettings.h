@@ -22,6 +22,8 @@ namespace storm {
                 bool useRelevantValuesForPrecisionUpdate() const;
 
                 double getUpperBoundGuessingFactor() const;
+
+                uint64_t getUpperBoundOnlyIterations() const;
                 
                 
                 // The name of the module.
@@ -32,6 +34,7 @@ namespace storm {
                 static const std::string maxVerificationIterationFactorOptionName;
                 static const std::string useRelevantValuesForPrecisionUpdateOptionName;
                 static const std::string upperBoundGuessingFactorOptionName;
+                static const std::string upperBoundOnlyIterationsOptionName;
             };
             
         }

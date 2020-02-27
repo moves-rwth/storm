@@ -16,6 +16,7 @@ namespace storm {
             const std::string OviSolverSettings::maxVerificationIterationFactorOptionName = "max-verification-iter-factor";
             const std::string OviSolverSettings::useRelevantValuesForPrecisionUpdateOptionName = "use-relevant-values";
             const std::string OviSolverSettings::upperBoundGuessingFactorOptionName = "upper-bound-factor";
+            const std::string OviSolverSettings::upperBoundOnlyIterationsOptionName = "check-upper-only-iter";
             
             OviSolverSettings::OviSolverSettings() : ModuleSettings(moduleName) {
                 
@@ -26,6 +27,8 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, maxVerificationIterationFactorOptionName, false, "Controls how many verification iterations are performed before guessing a new upper bound.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor", "The factor.").setDefaultValueDouble(0.1).addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterValidator(0.0)).build()).build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, upperBoundGuessingFactorOptionName, false, "Sets with which factor the precision is multiplied to guess the upper bound.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor", "The factor.").setDefaultValueDouble(1.0).addValidatorDouble(ArgumentValidatorFactory::createDoubleGreaterValidator(0.0)).build()).build());
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, upperBoundOnlyIterationsOptionName, false, "Sets the max. iterations OVI will only iterate over the upper bound.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createIntegerArgument("iter", "The iterations.").setDefaultValueInteger(20000).addValidatorInteger(ArgumentValidatorFactory::createIntegerGreaterValidator(0)).build()).build());
             }
             
             double OviSolverSettings::getPrecisionUpdateFactor() const {
@@ -42,6 +45,10 @@ namespace storm {
 
             double OviSolverSettings::getUpperBoundGuessingFactor() const {
                 return this->getOption(upperBoundGuessingFactorOptionName).getArgumentByName("factor").getValueAsDouble();
+            }
+
+            uint64_t OviSolverSettings::getUpperBoundOnlyIterations() const {
+                return this->getOption(upperBoundOnlyIterationsOptionName).getArgumentByName("iter").getValueAsInteger();
             }
            
         }

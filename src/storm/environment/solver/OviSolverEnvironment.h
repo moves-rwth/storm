@@ -16,12 +16,14 @@ namespace storm {
         storm::RationalNumber getMaxVerificationIterationFactor() const;
         bool useRelevantValuesForPrecisionUpdate() const;
         storm::RationalNumber getUpperBoundGuessingFactor() const;
+        uint64_t getUpperBoundOnlyIterations() const;
         
     private:
         storm::RationalNumber precisionUpdateFactor;
         storm::RationalNumber maxVerificationIterationFactor;
         bool relevantValuesForPrecisionUpdate;
         storm::RationalNumber upperBoundGuessingFactor;
+        uint64_t upperBoundOnlyIterations;
     };
 }
 
