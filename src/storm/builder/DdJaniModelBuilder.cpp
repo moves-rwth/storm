@@ -953,7 +953,7 @@ namespace storm {
                     inputEnabledActionIndices.insert(actionInformation.getActionIndex(actionName));
                 }
                 
-                return buildAutomatonDd(composition.getAutomatonName(), data.empty() ? actionInstantiations : boost::any_cast<ActionInstantiations const&>(data), inputEnabledActionIndices);
+                return buildAutomatonDd(composition.getAutomatonName(), data.empty() ? actionInstantiations : boost::any_cast<ActionInstantiations const&>(data), inputEnabledActionIndices, data.empty());
             }
             
             boost::any visit(storm::jani::ParallelComposition const& composition, boost::any const& data) override {
@@ -1773,9 +1773,12 @@ namespace storm {
                 }
             }
             
-            AutomatonDd buildAutomatonDd(std::string const& automatonName, ActionInstantiations const& actionInstantiations, std::set<uint64_t> const& inputEnabledActionIndices) {
+            AutomatonDd buildAutomatonDd(std::string const& automatonName, ActionInstantiations const& actionInstantiations, std::set<uint64_t> const& inputEnabledActionIndices, bool isTopLevelAutomaton) {
                 STORM_LOG_TRACE("Building DD for automaton '" << automatonName << "'.");
                 AutomatonDd result(this->variables.automatonToIdentityMap.at(automatonName));
+                
+                // Disjunction of all guards of non-markovian actions (only required for maximum progress assumption).
+                storm::dd::Bdd<Type> nonMarkovianActionGuards = this->variables.manager->getBddZero();
                 
                 storm::jani::Automaton const& automaton = this->model.getAutomaton(automatonName);
                 for (auto const& actionInstantiation : actionInstantiations) {
@@ -1793,12 +1796,20 @@ namespace storm {
                         if (inputEnabled) {
                             actionDd.setIsInputEnabled();
                         }
+                        if (applyMaximumProgress && isTopLevelAutomaton && !instantiation.isMarkovian()) {
+                            nonMarkovianActionGuards |= actionDd.guard;
+                        }
                         STORM_LOG_TRACE("Used local nondeterminism variables are " << actionDd.getLowestLocalNondeterminismVariable() << " to " << actionDd.getHighestLocalNondeterminismVariable() << ".");
                         result.actions[ActionIdentification(actionIndex, instantiation.synchronizationVectorIndex, instantiation.isMarkovian())] = actionDd;
                         result.extendLocalNondeterminismVariables(actionDd.getLocalNondeterminismVariables());
                     }
                 }
                 
+                if (applyMaximumProgress && isTopLevelAutomaton) {
+                    ActionIdentification silentMarkovianActionIdentification(storm::jani::Model::SILENT_ACTION_INDEX, true);
+                    result.actions[silentMarkovianActionIdentification].conjunctGuardWith(!nonMarkovianActionGuards);
+                }
+
                 for (uint64_t locationIndex = 0; locationIndex < automaton.getNumberOfLocations(); ++locationIndex) {
                     auto const& location = automaton.getLocation(locationIndex);
                     performTransientAssignments(location.getAssignments().getTransientAssignments(), [this,&automatonName,locationIndex,&result] (storm::jani::Assignment const& assignment) {
