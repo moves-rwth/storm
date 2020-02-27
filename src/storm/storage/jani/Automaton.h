@@ -40,6 +40,8 @@ namespace storm {
             Automaton(Automaton&& other) = default;
             Automaton& operator=(Automaton&& other) = default;
             
+            Automaton clone(storm::expressions::ExpressionManager& manager, std::string const& nameOfClone, std::string const& variablePrefix) const;
+            
             /*!
              * Retrieves the name of the automaton.
              */

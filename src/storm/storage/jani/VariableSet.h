@@ -282,6 +282,14 @@ namespace storm {
              */
             void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
             
+            /*!
+             * Substitutes the actual variables according to the given substitution.
+             * @param substitution The substitution. Assumed to only map variables to VariableExpressions.
+             * @note does not substitute variables in initial expressions, variable bounds, ...
+             */
+            void substituteExpressionVariables(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+            
+            
         private:
             /// The vector of all variables.
             std::vector<std::shared_ptr<Variable>> variables;

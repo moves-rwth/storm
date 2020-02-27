@@ -42,6 +42,11 @@ namespace storm {
             storm::expressions::Variable const& getExpressionVariable() const;
             
             /*!
+             * Sets the associated expression variable.
+             */
+            void setExpressionVariable(storm::expressions::Variable const& newVariable);
+            
+            /*!
              * Retrieves the name of the variable.
              */
             std::string const& getName() const;
