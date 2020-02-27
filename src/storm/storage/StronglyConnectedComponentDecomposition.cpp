@@ -69,7 +69,7 @@ namespace storm {
             // The forceTopologicalSort flag can be ignored as this method always generates a topological sort.
             
             // Prepare the stack used for turning the recursive procedure into an iterative one.
-            STORM_LOG_ASSERT(recursionStateStack.empty(), "Expected an empty recursion stack.")
+            STORM_LOG_ASSERT(recursionStateStack.empty(), "Expected an empty recursion stack.");
             recursionStateStack.push_back(startState);
 
             while (!recursionStateStack.empty()) {
