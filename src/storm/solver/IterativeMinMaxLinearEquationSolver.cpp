@@ -426,6 +426,7 @@ namespace storm {
             uint64_t up_occur = 0;
             uint64_t cross_occur = 0;
             uint64_t down_occur = 0;
+            uint64_t no_case_occur = 0;
             //DEBUG END
 
             if (!this->multiplierA) {
@@ -539,6 +540,7 @@ namespace storm {
                             break;
                         } else if (valuesCrossed) {
                             ++cross_occur;
+                            STORM_LOG_ASSERT(false, "Cross case occurred.");
                             iterationPrecision = updateIterationPrecision(env, *currentX, *newX, relative, relevantValues);
                             break;
                         } else if (newUpperBoundAlwaysLowerEqual) {
@@ -568,6 +570,9 @@ namespace storm {
                                 status = SolverStatus::Converged;
                             }
                         }
+                        else {
+                            ++no_case_occur;
+                        }
                         
                         ValueType scaledIterationCount = storm::utility::convertNumber<ValueType>(currentVerificationIterations) * storm::utility::convertNumber<ValueType>(env.solver().ovi().getMaxVerificationIterationFactor());
                         if (scaledIterationCount >= storm::utility::convertNumber<ValueType>(lastValueIterationIterations)) {
@@ -591,7 +596,7 @@ namespace storm {
             }
 
             // DEBUG
-            std::cout << "Up mov: " << up_occur << ", Cross: " << cross_occur << ", Down mov: " << down_occur;
+            std::cout << "Up mov: " << up_occur << ", Cross: " << cross_occur << ", Down mov: " << down_occur << ", None: " << no_case_occur << std::endl;
             // DEBUG END
 
             reportStatus(status, overallIterations);
