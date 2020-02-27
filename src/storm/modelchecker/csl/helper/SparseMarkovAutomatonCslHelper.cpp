@@ -29,6 +29,8 @@
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/LpSolver.h"
 
+#include "storm/utility/resources.h"
+
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
 #include "storm/exceptions/InvalidOperationException.h"
@@ -403,6 +405,10 @@ namespace storm {
                                 unifVectors.resUpper[state] += foxGlynnResult.weights[index - foxGlynnResult.left] * unifVectors.wUpperNew[state];
                             }
                         }
+
+                        if (storm::utility::resources::isTerminate()) {
+                            break;
+                        }
                         progressSteps.updateProgress(N-k);
                     }
 
@@ -416,6 +422,9 @@ namespace storm {
                     // (6) Double lambda.
                     lambda *= 2;
                     STORM_LOG_DEBUG("Increased lambda to " << lambda << ", max diff is " << maxNorm << ".");
+                    if (storm::utility::resources::isTerminate()) {
+                        break;
+                    }
                     progressIterations.updateProgress(++iteration);
                 } while (maxNorm > epsilon * (1 - kappa));
 
