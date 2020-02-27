@@ -446,6 +446,8 @@ namespace storm {
             bool useGaussSeidelMultiplication = multiplicationStyle == storm::solver::MultiplicationStyle::GaussSeidel;
             // Relative errors
             bool relative = env.solver().minMax().getRelativeTerminationCriterion();
+            // Upper bound only iterations
+            uint64_t upperBoundOnlyIterations = env.solver().ovi().getUpperBoundOnlyIterations();
 
             boost::optional<storm::storage::BitVector> relevantValues;
             if (this->hasRelevantValues()) {
@@ -480,6 +482,7 @@ namespace storm {
                 if (result.status != SolverStatus::Converged) {
                     status = result.status;
                 } else {
+                    bool intervalIterationNeeded = false;
                     currentVerificationIterations = 0;
 
                     if (relative) {
@@ -497,31 +500,39 @@ namespace storm {
                         if (useGaussSeidelMultiplication) {
                             // Copy over the current vectors so we can modify them in-place.
                             // This is necessary as we want to compare the new values with the current ones.
-                            *newX = *currentX;
                             newUpperBound = currentUpperBound;
-                            // Do the calculation
-                            multiplier.multiplyAndReduceGaussSeidel(env, dir, *newX, &b);
+                            // Do the calculation.
                             multiplier.multiplyAndReduceGaussSeidel(env, dir, newUpperBound, &b);
+                            if (intervalIterationNeeded || currentVerificationIterations > upperBoundOnlyIterations) {
+                                // Now do interval iteration.
+                                *newX = *currentX;
+                                multiplier.multiplyAndReduceGaussSeidel(env, dir, *newX, &b);
+                            }
                         } else {
-                            multiplier.multiplyAndReduce(env, dir, *currentX, &b, *newX);
                             multiplier.multiplyAndReduce(env, dir, currentUpperBound, &b, newUpperBound);
+                            if (intervalIterationNeeded || currentVerificationIterations > upperBoundOnlyIterations) {
+                                // Now do interval iteration.
+                                multiplier.multiplyAndReduce(env, dir, *currentX, &b, *newX);
+                            }
                         }
 
                         bool newUpperBoundAlwaysHigherEqual = true;
                         bool newUpperBoundAlwaysLowerEqual = true;
                         bool valuesCrossed = false;
-                        ValueType maxBoundDiff = storm::utility::zero<ValueType>();
                         for (uint64_t i = 0; i < x.size(); ++i) {
                             if (newUpperBound[i] < currentUpperBound[i]) {
                                 newUpperBoundAlwaysHigherEqual = false;
                             } else if (newUpperBound[i] != currentUpperBound[i]) {
                                 newUpperBoundAlwaysLowerEqual = false;
                             }
-                            if (newUpperBound[i] < (*newX)[i]) {
-                                valuesCrossed = true;
-                                break;
-                            } else {
-                                maxBoundDiff = std::max<ValueType>(maxBoundDiff, newUpperBound[i] - (*newX)[i]);
+                        }
+
+                        if (intervalIterationNeeded || currentVerificationIterations > upperBoundOnlyIterations) {
+                            for (uint64_t i = 0; i < x.size(); ++i) {
+                                if (newUpperBound[i] < (*newX)[i]) {
+                                    valuesCrossed = true;
+                                    break;
+                                }
                             }
                         }
                         
@@ -568,6 +579,9 @@ namespace storm {
                                 // Calculate the center of both vectors and store it in currentX
                                 storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(*currentX, currentUpperBound, *currentX, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
                                 status = SolverStatus::Converged;
+                            }
+                            else {
+                                intervalIterationNeeded = true;
                             }
                         }
                         else {
