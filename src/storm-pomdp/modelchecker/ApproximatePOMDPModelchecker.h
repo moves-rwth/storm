@@ -215,7 +215,7 @@ namespace storm {
                                          std::set<uint32_t> const &target_observations, uint64_t gridResolution,
                                          std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
                                          std::vector<storm::pomdp::Belief<ValueType>> &grid,
-                                         std::vector<bool> &beliefIsKnown, uint64_t nextId);
+                                         std::vector<bool> &beliefIsTarget, uint64_t nextId);
 
 
                 /**
