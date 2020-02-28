@@ -180,52 +180,6 @@ namespace storm {
                                     uint64_t gridResolution, bool computeRewards);
 
                 /**
-                 * TODO
-                 * @param pomdp
-                 * @param beliefList
-                 * @param observationProbabilities
-                 * @param nextBelieves
-                 * @param result
-                 * @param gridResolution
-                 * @param currentBeliefId
-                 * @param nextId
-                 * @param min
-                 * @return
-                 */
-                std::vector<uint64_t> extractBestActions(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                                         std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
-                                                         std::vector<bool> &beliefIsTarget,
-                                                         std::set<uint32_t> const &target_observations,
-                                                         std::map<uint64_t, std::vector<std::map<uint32_t, ValueType>>> &observationProbabilities,
-                                                         std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
-                                                         std::map<uint64_t, ValueType> &result,
-                                                         uint64_t gridResolution, uint64_t currentBeliefId, uint64_t nextId,
-                                                         bool min);
-
-                /**
-                 * TODO
-                 * @param pomdp
-                 * @param beliefList
-                 * @param observationProbabilities
-                 * @param nextBelieves
-                 * @param result
-                 * @param gridResolution
-                 * @param currentBeliefId
-                 * @param nextId
-                 * @param min
-                 * @return
-                 */
-                std::vector<uint64_t> extractBestAction(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                                        std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
-                                                        std::vector<bool> &beliefIsTarget,
-                                                        std::set<uint32_t> const &target_observations,
-                                                        std::map<uint64_t, std::vector<std::map<uint32_t, ValueType>>> &observationProbabilities,
-                                                        std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
-                                                        std::map<uint64_t, ValueType> &result,
-                                                        uint64_t gridResolution, uint64_t currentBeliefId, uint64_t nextId,
-                                                        bool min);
-
-                /**
                  * Helper to compute an underapproximation of the reachability property.
                  * The implemented method unrolls the belief support of the given POMDP up to a given number of belief states.
                  *
