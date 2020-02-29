@@ -737,7 +737,12 @@ namespace storm {
                 std::pair<storm::storage::BitVector, storm::storage::BitVector> result;
                 
                 result.first = performProb0A(backwardTransitions, phiStates, psiStates);
-                result.second = performProb1E(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, phiStates, psiStates);
+                
+                // result.second = performProb1E(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, phiStates, psiStates);
+                // Instead of calling performProb1E, we call the (more easier) performProb0E on the Prob0A states.
+                // This is valid because, when maximizing probabilities, states that have prob1 cannot reach a state with prob 0 (and will eventually reach a psiState).
+                // States that do not have prob1 will eventually reach a state with prob0.
+                result.second = performProb0E(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, ~psiStates, result.first);
                 return result;
             }
             
@@ -964,7 +969,10 @@ namespace storm {
             std::pair<storm::storage::BitVector, storm::storage::BitVector> performProb01Min(storm::storage::SparseMatrix<T> const& transitionMatrix, std::vector<uint_fast64_t> const& nondeterministicChoiceIndices, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) {
                 std::pair<storm::storage::BitVector, storm::storage::BitVector> result;
                 result.first = performProb0E(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, phiStates, psiStates);
-                result.second = performProb1A(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, phiStates, psiStates);
+                // Instead of calling performProb1A, we call the (more easier) performProb0A on the Prob0E states.
+                // This is valid because, when minimizing probabilities, states that have prob1 cannot reach a state with prob 0 (and will eventually reach a psiState).
+                // States that do not have prob1 will eventually reach a state with prob0.
+                result.second = performProb0A(backwardTransitions, ~psiStates, result.first);
                 return result;
             }
             
