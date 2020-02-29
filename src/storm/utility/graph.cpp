@@ -887,46 +887,36 @@ namespace storm {
                 size_t numberOfStates = phiStates.size();
                 
                 // Initialize the environment for the iterative algorithm.
-                storm::storage::BitVector bv1, bv2;
-                storm::storage::BitVector* currentStates = &bv1;
-                *currentStates = phiStates;
-                storm::storage::BitVector* nextStates = &bv2;
-                *nextStates = psiStates;
+                storm::storage::BitVector currentStates(numberOfStates, true);
                 std::vector<uint_fast64_t> stack;
                 stack.reserve(numberOfStates);
-                
-                // Simplify comparison between next and current states by keeping track of the number of set bits
-                uint64_t currentStatesSetBits = numberOfStates;
-                uint64_t numPsiStates = psiStates.getNumberOfSetBits();
-                uint64_t nextStatesSetBits = numPsiStates;
                 
                 // Perform the loop as long as the set of states gets smaller.
                 bool done = false;
                 uint_fast64_t currentState;
                 while (!done) {
                     stack.clear();
+                    storm::storage::BitVector nextStates(psiStates);
                     stack.insert(stack.end(), psiStates.begin(), psiStates.end());
                     
                     while (!stack.empty()) {
                         currentState = stack.back();
                         stack.pop_back();
                         
-                        for(auto const& predecessor : backwardTransitions.getRow(currentState)) {
-                            auto predecessorState = predecessor.getColumn();
-                            if (phiStates.get(predecessorState) && !nextStates->get(predecessorState)) {
+                        for(typename storm::storage::SparseMatrix<T>::const_iterator predecessorEntryIt = backwardTransitions.begin(currentState), predecessorEntryIte = backwardTransitions.end(currentState); predecessorEntryIt != predecessorEntryIte; ++predecessorEntryIt) {
+                            if (phiStates.get(predecessorEntryIt->getColumn()) && !nextStates.get(predecessorEntryIt->getColumn())) {
                                 // Check whether the predecessor has only successors in the current state set for all of the
                                 // nondeterminstic choices and that for each choice there exists a successor that is already
                                 // in the next states.
                                 bool addToStatesWithProbability1 = true;
-                                for (uint_fast64_t row = nondeterministicChoiceIndices[predecessorState]; row < nondeterministicChoiceIndices[predecessorState + 1]; ++row) {
+                                for (uint_fast64_t row = nondeterministicChoiceIndices[predecessorEntryIt->getColumn()]; row < nondeterministicChoiceIndices[predecessorEntryIt->getColumn() + 1]; ++row) {
                                     bool hasAtLeastOneSuccessorWithProbability1 = false;
-                                    for (auto const& successor : transitionMatrix.getRow(row)) {
-                                        auto successorState = successor.getColumn();
-                                        if (!currentStates->get(successorState)) {
+                                    for (typename storm::storage::SparseMatrix<T>::const_iterator successorEntryIt = transitionMatrix.begin(row), successorEntryIte = transitionMatrix.end(row); successorEntryIt != successorEntryIte; ++successorEntryIt) {
+                                        if (!currentStates.get(successorEntryIt->getColumn())) {
                                             addToStatesWithProbability1 = false;
                                             goto afterCheckLoop;
                                         }
-                                        if (!hasAtLeastOneSuccessorWithProbability1 && nextStates->get(successorState)) {
+                                        if (nextStates.get(successorEntryIt->getColumn())) {
                                             hasAtLeastOneSuccessorWithProbability1 = true;
                                         }
                                     }
@@ -942,27 +932,21 @@ namespace storm {
                                 // add it to the set of states for the next iteration and perform a backward search from
                                 // that state.
                                 if (addToStatesWithProbability1) {
-                                    ++nextStatesSetBits;
-                                    nextStates->set(predecessorState, true);
-                                    stack.push_back(predecessorState);
+                                    nextStates.set(predecessorEntryIt->getColumn(), true);
+                                    stack.push_back(predecessorEntryIt->getColumn());
                                 }
                             }
                         }
                     }
+                    
                     // Check whether we need to perform an additional iteration.
-                    if (currentStatesSetBits == nextStatesSetBits && *currentStates == *nextStates) {
+                    if (currentStates == nextStates) {
                         done = true;
                     } else {
-                        // Prepare next iteration.
-                        // The nextStates become the new currentStates.
-                        std::swap(currentStates, nextStates);
-                        currentStatesSetBits = nextStatesSetBits;
-                        *nextStates = psiStates;
-                        nextStatesSetBits = numPsiStates;
-                        
+                        currentStates = std::move(nextStates);
                     }
                 }
-                return *currentStates;
+                return currentStates;
             }
             
             template <typename T>
