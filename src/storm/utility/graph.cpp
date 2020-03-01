@@ -738,11 +738,7 @@ namespace storm {
                 
                 result.first = performProb0A(backwardTransitions, phiStates, psiStates);
                 
-                // result.second = performProb1E(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, phiStates, psiStates);
-                // Instead of calling performProb1E, we call the (more easier) performProb0E on the Prob0A states.
-                // This is valid because, when maximizing probabilities, states that have prob1 cannot reach a state with prob 0 (and will eventually reach a psiState).
-                // States that do not have prob1 will eventually reach a state with prob0.
-                result.second = performProb0E(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, ~psiStates, result.first);
+                result.second = performProb1E(transitionMatrix, nondeterministicChoiceIndices, backwardTransitions, phiStates, psiStates);
                 return result;
             }
             
