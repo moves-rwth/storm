@@ -32,6 +32,11 @@ namespace storm {
             Distribution(Distribution&& other) = default;
             Distribution& operator=(Distribution&& other) = default;
             
+            /*
+             * If the size of this distribution is known before adding probabilities,, this method can be used to reserve enough space.
+             */
+            void reserve(uint64_t size);
+            
             /*!
              * Adds the given distribution to the current one.
              */

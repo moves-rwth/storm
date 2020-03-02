@@ -820,6 +820,7 @@ namespace storm {
                 
                 // Add the probabilities/rates to the newly created choice.
                 ValueType probabilitySum = storm::utility::zero<ValueType>();
+                choice.reserve(std::distance(distribution.begin(), distribution.end()));
                 for (auto const& stateProbability : distribution) {
                     choice.addProbability(stateProbability.getState(), stateProbability.getValue());
                     
@@ -853,7 +854,13 @@ namespace storm {
         std::vector<Choice<ValueType>> JaniNextStateGenerator<ValueType, StateType>::getActionChoices(std::vector<uint64_t> const& locations, CompressedState const& state, StateToIdCallback stateToIdCallback, EdgeFilter const& edgeFilter) {
             std::vector<Choice<ValueType>> result;
             
-            for (auto const& outputAndEdges : edges) {
+            // To avoid reallocations, we declare some memory here here.
+            // This vector will store for each automaton the set of edges with the current output and the current source location
+            std::vector<EdgeSetWithIndices const*> edgeSetsMemory;
+            // This vector will store the 'first' combination of edges that is productive.
+            std::vector<typename EdgeSetWithIndices::const_iterator> edgeIteratorMemory;
+            
+            for (OutputAndEdges const& outputAndEdges : edges) {
                 auto const& edges = outputAndEdges.second;
                 if (edges.size() == 1) {
                     // If the synch consists of just one element, it's non-synchronizing.
@@ -885,45 +892,92 @@ namespace storm {
                     // If the element has more than one set of edges, we need to perform a synchronization.
                     STORM_LOG_ASSERT(outputAndEdges.first, "Need output action index for synchronization.");
                     
-                    AutomataEdgeSets automataEdgeSets;
                     uint64_t outputActionIndex = outputAndEdges.first.get();
                     
+                    // Find out whether this combination is productive
                     bool productiveCombination = true;
-                    EdgeSetWithIndices enabledEdgesOfAutomaton;
+                    // First check, whether each automaton has at least one edge with the current output and the current source location
+                    // We will also store the edges of each automaton with the current outputAction
+                    edgeSetsMemory.clear();
                     for (auto const& automatonAndEdges : outputAndEdges.second) {
                         uint64_t automatonIndex = automatonAndEdges.first;
-                        
-                        bool atLeastOneEdge = false;
-                        auto edgesIt = automatonAndEdges.second.find(locations[automatonIndex]);
-                        if (edgesIt != automatonAndEdges.second.end()) {
-                            for (auto const& indexAndEdge : edgesIt->second) {
-                                if (edgeFilter != EdgeFilter::All) {
-                                    STORM_LOG_ASSERT(edgeFilter == EdgeFilter::WithRate || edgeFilter == EdgeFilter::WithoutRate, "Unexpected edge filter.");
-                                    if ((edgeFilter == EdgeFilter::WithRate) != indexAndEdge.second->hasRate()) {
-                                        continue;
-                                    }
-                                }
-                                if (!this->evaluator->asBool(indexAndEdge.second->getGuard())) {
-                                    continue;
-                                }
-                            
-                                atLeastOneEdge = true;
-                                enabledEdgesOfAutomaton.emplace_back(indexAndEdge);
-                            }
-                        }
-
-                        // If there is no enabled edge of this automaton, the whole combination is not productive.
-                        if (!atLeastOneEdge) {
-                            STORM_LOG_ASSERT(enabledEdgesOfAutomaton.empty(), "enabledEdgesOfAutomaton should be empty at this point.");
+                        LocationsAndEdges const& locationsAndEdges = automatonAndEdges.second;
+                        auto edgesIt = locationsAndEdges.find(locations[automatonIndex]);
+                        if (edgesIt == locationsAndEdges.end()) {
                             productiveCombination = false;
                             break;
                         }
-                        
-                        automataEdgeSets.emplace_back(std::move(automatonIndex), std::move(enabledEdgesOfAutomaton));
-                        enabledEdgesOfAutomaton.clear();
+                        edgeSetsMemory.push_back(&edgesIt->second);
                     }
                     
                     if (productiveCombination) {
+                        // second, check whether each automaton has at least one enabled action
+                        edgeIteratorMemory.clear(); // Store the first enabled edge in each automaton.
+                        for (auto const& edgesIt : edgeSetsMemory) {
+                            bool atLeastOneEdge = false;
+                            EdgeSetWithIndices const& edgeSetWithIndices = *edgesIt;
+                            for (auto indexAndEdgeIt = edgeSetWithIndices.begin(), indexAndEdgeIte = edgeSetWithIndices.end(); indexAndEdgeIt != indexAndEdgeIte; ++indexAndEdgeIt) {
+                                // check whether we do not consider this edge
+                                if (edgeFilter != EdgeFilter::All) {
+                                    STORM_LOG_ASSERT(edgeFilter == EdgeFilter::WithRate || edgeFilter == EdgeFilter::WithoutRate, "Unexpected edge filter.");
+                                    if ((edgeFilter == EdgeFilter::WithRate) != indexAndEdgeIt->second->hasRate()) {
+                                        continue;
+                                    }
+                                }
+                            
+                                if (!this->evaluator->asBool(indexAndEdgeIt->second->getGuard())) {
+                                    continue;
+                                }
+                            
+                                // If we reach this point, the edge is considered enabled.
+                                atLeastOneEdge = true;
+                                edgeIteratorMemory.push_back(indexAndEdgeIt);
+                                break;
+                            }
+                            
+                            // If there is no enabled edge of this automaton, the whole combination is not productive.
+                            if (!atLeastOneEdge) {
+                                productiveCombination = false;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // produce the combination
+                    if (productiveCombination) {
+                        AutomataEdgeSets automataEdgeSets;
+                        automataEdgeSets.reserve(outputAndEdges.second.size());
+                        STORM_LOG_ASSERT(edgeSetsMemory.size() == outputAndEdges.second.size(), "Unexpected number of edge sets stored.");
+                        STORM_LOG_ASSERT(edgeIteratorMemory.size() == outputAndEdges.second.size(), "Unexpected number of edge iterators stored.");
+                        auto edgeSetIt = edgeSetsMemory.begin();
+                        auto edgeIteratorIt = edgeIteratorMemory.begin();
+                        for (auto const& automatonAndEdges : outputAndEdges.second) {
+                            EdgeSetWithIndices enabledEdgesOfAutomaton;
+                            uint64_t automatonIndex = automatonAndEdges.first;
+                            EdgeSetWithIndices const& edgeSetWithIndices = **edgeSetIt;
+                            auto indexAndEdgeIt = *edgeIteratorIt;
+                            // The first edge where the edgeIterator points to is always enabled.
+                            enabledEdgesOfAutomaton.emplace_back(*indexAndEdgeIt);
+                            auto indexAndEdgeIte = edgeSetWithIndices.end();
+                            for (++indexAndEdgeIt; indexAndEdgeIt != indexAndEdgeIte; ++indexAndEdgeIt) {
+                                // check whether we do not consider this edge
+                                if (edgeFilter != EdgeFilter::All) {
+                                    STORM_LOG_ASSERT(edgeFilter == EdgeFilter::WithRate || edgeFilter == EdgeFilter::WithoutRate, "Unexpected edge filter.");
+                                    if ((edgeFilter == EdgeFilter::WithRate) != indexAndEdgeIt->second->hasRate()) {
+                                        continue;
+                                    }
+                                }
+                                
+                                if (!this->evaluator->asBool(indexAndEdgeIt->second->getGuard())) {
+                                    continue;
+                                }
+                                // If we reach this point, the edge is considered enabled.
+                                enabledEdgesOfAutomaton.emplace_back(*indexAndEdgeIt);
+                            }
+                            automataEdgeSets.emplace_back(std::move(automatonIndex), std::move(enabledEdgesOfAutomaton));
+                            ++edgeSetIt;
+                            ++edgeIteratorIt;
+                        }
                         // insert choices in the result vector.
                         expandSynchronizingEdgeCombination(automataEdgeSets, outputActionIndex, state, stateToIdCallback, result);
                     }
