@@ -21,6 +21,7 @@
 #include "storm/utility/vector.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/NumberTraits.h"
+#include "storm/utility/SignalHandler.h"
 
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/expressions/Expression.h"
@@ -28,8 +29,6 @@
 
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/LpSolver.h"
-
-#include "storm/utility/resources.h"
 
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidPropertyException.h"

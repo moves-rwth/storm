@@ -5,8 +5,8 @@
 #include "storm/utility/file.h"
 #include "storm/utility/storm-version.h"
 #include "storm/utility/macros.h"
-
 #include "storm/utility/initialize.h"
+#include "storm/utility/SignalHandler.h"
 #include "storm/utility/Stopwatch.h"
 
 #include <type_traits>
