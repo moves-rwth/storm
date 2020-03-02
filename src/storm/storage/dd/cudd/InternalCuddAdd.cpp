@@ -596,6 +596,8 @@ namespace storm {
                 splitIntoGroupsRec(dd, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
                 splitIntoGroupsRec(dd, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
             } else {
+                // FIXME: We first traverse the else successor (unlike other variants of this method).
+                // Otherwise, the GameBasedMdpModelCheckerTest would not terminate. See github issue #64
                 splitIntoGroupsRec(Cudd_E(dd), groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
                 splitIntoGroupsRec(Cudd_T(dd), groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
             }

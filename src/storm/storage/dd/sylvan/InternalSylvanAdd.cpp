@@ -1007,6 +1007,8 @@ namespace storm {
                 bool elseComplemented = mtbdd_hascomp(elseDdNode) ^ negated;
                 bool thenComplemented = mtbdd_hascomp(thenDdNode) ^ negated;
                 
+                // FIXME: We first traverse the else successor (unlike other variants of this method).
+                // Otherwise, the GameBasedMdpModelCheckerTest would not terminate. See github issue #64
                 splitIntoGroupsRec(mtbdd_regular(elseDdNode), elseComplemented, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
                 splitIntoGroupsRec(mtbdd_regular(thenDdNode), thenComplemented, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
             }
