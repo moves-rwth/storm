@@ -1,20 +1,22 @@
 #include "ExplicitDFTModelBuilder.h"
 
 #include <map>
-#include <storm/exceptions/IllegalArgumentException.h>
 
-#include "storm/models/sparse/MarkovAutomaton.h"
-#include "storm/models/sparse/Ctmc.h"
-#include "storm/utility/constants.h"
-#include "storm/utility/vector.h"
-#include "storm/utility/bitoperations.h"
-#include "storm/utility/ProgressMeasurement.h"
+#include <storm/exceptions/IllegalArgumentException.h>
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/UnexpectedException.h"
-#include "storm/settings/SettingsManager.h"
 #include "storm/logic/AtomicLabelFormula.h"
-#include "storm-dft/settings/modules/FaultTreeSettings.h"
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/Ctmc.h"
+#include "storm/utility/bitoperations.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/ProgressMeasurement.h"
+#include "storm/utility/SignalHandler.h"
+#include "storm/utility/vector.h"
+#include "storm/settings/SettingsManager.h"
 #include "storm/transformer/NonMarkovianChainTransformer.h"
+
+#include "storm-dft/settings/modules/FaultTreeSettings.h"
 
 
 namespace storm {
@@ -476,6 +478,9 @@ namespace storm {
                         }
                         matrixBuilder.finishRow();
                     }
+                }
+                if (storm::utility::resources::isTerminate()) {
+                    break;
                 }
                 // Output number of currently explored states
                 if (nrExpandedStates % 100 == 0) {
