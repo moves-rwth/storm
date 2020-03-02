@@ -581,8 +581,10 @@ namespace storm {
             /*!
              * Converts the ADD to a row-grouped vector while respecting the row group sizes of the provided matrix.
              * That is, if the vector has a zero entry for some row in a row group for which the matrix has a non-zero
-             * row, the value at the vector will be correctly set to zero. Note: this function assumes that the meta
-             * variables used to distinguish different row groups are at the very top of the ADD.
+             * row, the value at the vector will be correctly set to zero.
+             * @note: This function assumes that the meta variables used to distinguish different row groups
+             *        are at the very top of the ADD.
+             * @note: The order of the rows within the groups could be inconsistent with the order obtained by other toMatrix/toVector methods.
              *
              * @param matrix The symbolic matrix whose row group sizes to respect.
              * @param rowGroupIndices A vector specifying the sizes of the row groups.
@@ -631,6 +633,7 @@ namespace storm {
              * Converts the ADD to a row-grouped (sparse) matrix. The given offset-labeled DDs are used to
              * determine the correct row and column, respectively, for each entry. Note: this function assumes that
              * the meta variables used to distinguish different row groups are at the very top of the ADD.
+             * @note: The order of the rows within the groups could be inconsistent with the order obtained by other toMatrix/toVector methods.
              *
              * @param groupMetaVariables The meta variables that are used to distinguish different row groups.
              * @param rowOdd The ODD used for determining the correct row.
@@ -644,6 +647,7 @@ namespace storm {
              * correct row and column, respectively, for each entry. If requested, it builds a labeling of the rows
              * that is derived from the group variable encodings. Note: this function assumes that the meta variables
              * used to distinguish different row groups are at the very top of the ADD.
+             * @note: The order of the rows within the groups could be inconsistent with the order obtained by other toMatrix/toVector methods.
              *
              * @param rowMetaVariables The meta variables that encode the rows of the matrix.
              * @param columnMetaVariables The meta variables that encode the columns of the matrix.
@@ -676,6 +680,7 @@ namespace storm {
              * The given offset-labeled DDs are used to determine the correct row and column, respectively, for each
              * entry. Note: this function assumes that the meta variables used to distinguish different row groups are
              * at the very top of the ADD.
+             * @note: The order of the rows within the groups could be inconsistent with the order obtained by other toMatrix/toVector methods.
              *
              * @param vector The symbolic vector to convert.
              * @param groupMetaVariables The meta variables that are used to distinguish different row groups.
@@ -691,6 +696,7 @@ namespace storm {
              * The given offset-labeled DDs are used to determine the correct row and column, respectively, for each
              * entry. Note: this function assumes that the meta variables used to distinguish different row groups are
              * at the very top of the ADD.
+             * @note: The order of the rows within the groups could be inconsistent with the order obtained by other toMatrix/toVector methods.
              *
              * @param vectors The symbolic vectors to convert.
              * @param groupMetaVariables The meta variables that are used to distinguish different row groups.
