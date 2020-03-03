@@ -1,6 +1,7 @@
 #include "storm/environment/solver/SolverEnvironment.h"
 
 #include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
+#include "storm/environment/solver/TimeBoundedSolverEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/MultiplierEnvironment.h"
 #include "storm/environment/solver/EigenSolverEnvironment.h"
@@ -36,6 +37,14 @@ namespace storm {
     
     LongRunAverageSolverEnvironment const& SolverEnvironment::lra() const {
         return longRunAverageSolverEnvironment.get();
+    }
+    
+    TimeBoundedSolverEnvironment& SolverEnvironment::timeBounded() {
+        return timeBoundedSolverEnvironment.get();
+    }
+    
+    TimeBoundedSolverEnvironment const& SolverEnvironment::timeBounded() const {
+        return timeBoundedSolverEnvironment.get();
     }
     
     MinMaxSolverEnvironment& SolverEnvironment::minMax() {

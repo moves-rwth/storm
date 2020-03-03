@@ -60,6 +60,16 @@ namespace storm {
             return "invalid";
         }
         
+        std::string toString(MaBoundedReachabilityMethod m) {
+            switch(m) {
+                case MaBoundedReachabilityMethod::Imca:
+                    return "imca";
+                case MaBoundedReachabilityMethod::UnifPlus:
+                    return "unifplus";
+            }
+            return "invalid";
+        }
+        
         std::string toString(LpSolverType t) {
             switch(t) {
                 case LpSolverType::Gurobi:
