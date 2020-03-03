@@ -54,6 +54,8 @@ namespace storm {
                     storm::storage::BitVector maybeStates = ~(getProb0States(dir, phiStates, psiStates) | psiStates);
                     storm::storage::BitVector markovianMaybeStates = markovianStates & maybeStates;
                     storm::storage::BitVector probabilisticMaybeStates = ~markovianStates & maybeStates;
+                    storm::storage::BitVector markovianStatesModMaybeStates = markovianMaybeStates % maybeStates;
+                    storm::storage::BitVector probabilisticStatesModMaybeStates = probabilisticMaybeStates % maybeStates;
                     
                     // Catch the case where this is query can be solved by solving the untimed variant instead.
                     // This is the case if there is no Markovian maybe state (e.g. if the initial state is already a psi state) of if the time bound is infinity.
@@ -161,8 +163,8 @@ namespace storm {
                                 
                                 // Create the new values for the maybestates
                                 // Fuse the results together
-                                storm::utility::vector::setVectorValues(maybeStatesValues, markovianMaybeStates, nextMarkovianStateValues);
-                                storm::utility::vector::setVectorValues(maybeStatesValues, probabilisticMaybeStates, nextProbabilisticStateValues);
+                                storm::utility::vector::setVectorValues(maybeStatesValues, markovianStatesModMaybeStates, nextMarkovianStateValues);
+                                storm::utility::vector::setVectorValues(maybeStatesValues, probabilisticStatesModMaybeStates, nextProbabilisticStateValues);
                                 if (!computeLowerBound) {
                                     // Add the scaled values to the actual result vector
                                     uint64_t i = N-1-k;
