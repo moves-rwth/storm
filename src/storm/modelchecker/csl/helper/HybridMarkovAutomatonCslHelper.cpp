@@ -10,6 +10,7 @@
 #include "storm/utility/macros.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/constants.h"
+#include "storm/solver/SolveGoal.h"
 
 #include "storm/models/symbolic/StandardRewardModel.h"
 
@@ -66,7 +67,7 @@ namespace storm {
                 conversionWatch.stop();
                 STORM_LOG_INFO("Converting symbolic matrix to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
                 
-                auto explicitResult = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(env, dir, explicitTransitionMatrix, explicitExitRateVector, markovianStates.toVector(odd), phiStates.toVector(odd), psiStates.toVector(odd), {lowerBound, upperBound});
+                auto explicitResult = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(env, storm::solver::SolveGoal<ValueType>(dir), explicitTransitionMatrix, explicitExitRateVector, markovianStates.toVector(odd), phiStates.toVector(odd), psiStates.toVector(odd), {lowerBound, upperBound});
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(explicitResult)));
             }
             
