@@ -76,7 +76,9 @@ namespace storm {
         template<typename ModelType>
         std::unique_ptr<CheckResult> HybridMarkovAutomatonCslModelChecker<ModelType>::computeBoundedUntilProbabilities(Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask) {
             storm::logic::BoundedUntilFormula const& pathFormula = checkTask.getFormula();
-            STORM_LOG_THROW(pathFormula.getLeftSubformula().isTrueFormula(), storm::exceptions::NotImplementedException, "Only bounded properties of the form 'true U[t1, t2] phi' are currently supported.");
+            std::unique_ptr<CheckResult> leftResultPointer = this->check(env, pathFormula.getLeftSubformula());
+            SymbolicQualitativeCheckResult<DdType> const& leftResult = leftResultPointer->asSymbolicQualitativeCheckResult<DdType>();
+            
             std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
             SymbolicQualitativeCheckResult<DdType> const& rightResult = rightResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             
@@ -93,7 +95,7 @@ namespace storm {
                 upperBound = storm::utility::infinity<double>();
             }
             
-            return storm::modelchecker::helper::HybridMarkovAutomatonCslHelper::computeBoundedUntilProbabilities<DdType, ValueType>(env, checkTask.getOptimizationDirection(), this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getMarkovianStates(), this->getModel().getExitRateVector(), rightResult.getTruthValuesVector(), checkTask.isQualitativeSet(), lowerBound, upperBound);
+            return storm::modelchecker::helper::HybridMarkovAutomatonCslHelper::computeBoundedUntilProbabilities<DdType, ValueType>(env, checkTask.getOptimizationDirection(), this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getMarkovianStates(), this->getModel().getExitRateVector(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), checkTask.isQualitativeSet(), lowerBound, upperBound);
         }
         
         template<typename ModelType>

@@ -17,7 +17,6 @@ namespace storm {
             const std::string MinMaxEquationSolverSettings::maximalIterationsOptionShortName = "i";
             const std::string MinMaxEquationSolverSettings::precisionOptionName = "precision";
             const std::string MinMaxEquationSolverSettings::absoluteOptionName = "absolute";
-            const std::string MinMaxEquationSolverSettings::markovAutomatonBoundedReachabilityMethodOptionName = "mamethod";
             const std::string MinMaxEquationSolverSettings::valueIterationMultiplicationStyleOptionName = "vimult";
             const std::string MinMaxEquationSolverSettings::intervalIterationSymmetricUpdatesOptionName = "symmetricupdates";
 
@@ -32,9 +31,6 @@ namespace storm {
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, absoluteOptionName, false, "Sets whether the relative or the absolute error is considered for detecting convergence.").setIsAdvanced().build());
 
-                std::vector<std::string> maMethods = {"imca", "unifplus"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, markovAutomatonBoundedReachabilityMethodOptionName, false, "The method to use to solve bounded reachability queries on MAs.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(maMethods)).setDefaultValueString("unifplus").build()).build());
-                
                 std::vector<std::string> multiplicationStyles = {"gaussseidel", "regular", "gs", "r"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, valueIterationMultiplicationStyleOptionName, false, "Sets which method multiplication style to prefer for value iteration.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of a multiplication style.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(multiplicationStyles)).setDefaultValueString("gaussseidel").build()).build());
@@ -98,14 +94,6 @@ namespace storm {
                 return this->getOption(absoluteOptionName).getHasOptionBeenSet() ? MinMaxEquationSolverSettings::ConvergenceCriterion::Absolute : MinMaxEquationSolverSettings::ConvergenceCriterion::Relative;
             }
             
-            MinMaxEquationSolverSettings::MarkovAutomatonBoundedReachabilityMethod MinMaxEquationSolverSettings::getMarkovAutomatonBoundedReachabilityMethod() const {
-                std::string techniqueAsString = this->getOption(markovAutomatonBoundedReachabilityMethodOptionName).getArgumentByName("name").getValueAsString();
-                if (techniqueAsString == "imca") {
-                    return MinMaxEquationSolverSettings::MarkovAutomatonBoundedReachabilityMethod::Imca;
-                }
-                return MinMaxEquationSolverSettings::MarkovAutomatonBoundedReachabilityMethod::UnifPlus;
-            }
-
             storm::solver::MultiplicationStyle MinMaxEquationSolverSettings::getValueIterationMultiplicationStyle() const {
                 std::string multiplicationStyleString = this->getOption(valueIterationMultiplicationStyleOptionName).getArgumentByName("name").getValueAsString();
                 if (multiplicationStyleString == "gaussseidel" || multiplicationStyleString == "gs") {
