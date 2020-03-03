@@ -574,6 +574,11 @@ namespace storm {
             index_type getSizeOfLargestRowGroup() const;
             
             /*!
+             * Returns the total number of rows that are in one of the specified row groups.
+             */
+            index_type getNumRowsInRowGroups(storm::storage::BitVector const& groupConstraint) const;
+            
+            /*!
              * Returns the grouping of rows of this matrix.
              *
              * @return The grouping of rows of this matrix.
