@@ -40,7 +40,7 @@ namespace {
         typedef storm::models::sparse::MarkovAutomaton<ValueType> ModelType;
         static storm::Environment createEnvironment() {
             storm::Environment env;
-            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration, true);
             env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
             return env;
         }
@@ -54,7 +54,7 @@ namespace {
         typedef storm::models::sparse::MarkovAutomaton<ValueType> ModelType;
         static storm::Environment createEnvironment() {
             storm::Environment env;
-            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration, true);
             env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
             return env;
         }
@@ -68,7 +68,7 @@ namespace {
         typedef storm::models::sparse::MarkovAutomaton<ValueType> ModelType;
         static storm::Environment createEnvironment() {
             storm::Environment env;
-            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration, true);
             env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
             return env;
         }
@@ -82,7 +82,7 @@ namespace {
         typedef storm::models::symbolic::MarkovAutomaton<ddType, ValueType> ModelType;
         static storm::Environment createEnvironment() {
             storm::Environment env;
-            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration, true);
             env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-10));
             return env;
         }
@@ -97,7 +97,7 @@ namespace {
         static storm::Environment createEnvironment() {
             storm::Environment env;
             env.solver().setForceSoundness(true);
-            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::IntervalIteration);
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::IntervalIteration, true);
             env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
             env.solver().minMax().setRelativeTerminationCriterion(false);
             return env;
@@ -112,7 +112,7 @@ namespace {
         typedef storm::models::sparse::MarkovAutomaton<ValueType> ModelType;
         static storm::Environment createEnvironment() {
             storm::Environment env;
-            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::PolicyIteration);
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::PolicyIteration, true);
             return env;
         }
     };
@@ -125,7 +125,7 @@ namespace {
         typedef storm::models::sparse::MarkovAutomaton<ValueType> ModelType;
         static storm::Environment createEnvironment() {
             storm::Environment env;
-            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::RationalSearch);
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::RationalSearch, true);
             return env;
         }
     };
