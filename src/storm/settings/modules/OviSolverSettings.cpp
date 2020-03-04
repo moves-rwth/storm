@@ -20,7 +20,7 @@ namespace storm {
             
             OviSolverSettings::OviSolverSettings() : ModuleSettings(moduleName) {
                 
-                this->addOption(storm::settings::OptionBuilder(moduleName, precisionUpdateFactorOptionName, false, "Sets with which factor the precision of the inner value iteration is updated.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor", "The factor.").setDefaultValueDouble(0.5).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, precisionUpdateFactorOptionName, false, "Sets with which factor the precision of the inner value iteration is updated.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor", "The factor.").setDefaultValueDouble(0.4).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, useRelevantValuesForPrecisionUpdateOptionName, false, "Sets whether the precision of the inner value iteration is only based on the relevant values (i.e. initial states).").setIsAdvanced().build());
 
