@@ -133,7 +133,7 @@ namespace storm {
                     }
 
                     for (uint64_t i = 0; i < obsAccumulator.size(); ++i) {
-                        obsAccumulator[i] /= beliefCount[i];
+                        obsAccumulator[i] /= storm::utility::convertNumber<ValueType>(beliefCount[i]);
                     }
 
                     //TODO think about some other scoring methods
