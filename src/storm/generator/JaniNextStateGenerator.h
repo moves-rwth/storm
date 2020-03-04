@@ -91,7 +91,16 @@ namespace storm {
              * @return The resulting state.
              */
             void applyTransientUpdate(TransientVariableValuation<ValueType>& transientValuation, storm::jani::detail::ConstAssignments const& transientAssignments, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator);
-            
+
+            /**
+             * Required method to overload, but currently throws an error as POMDPs are not yet specified in JANI.
+             * Furthermore, it might be that these observation labels will not be used and that one uses transient variables instead.
+             *
+             * @param state
+             * @return
+             */
+            virtual storm::storage::BitVector evaluateObservationLabels(CompressedState const& state) const override;
+
             /*!
              * Retrieves all choices possible from the given state.
              *

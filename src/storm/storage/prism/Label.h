@@ -68,6 +68,38 @@ namespace storm {
             // A predicate that needs to be satisfied by states for the label to be attached.
             storm::expressions::Expression statePredicateExpression;
         };
+
+        class ObservationLabel : public Label {
+        public:
+            /*!
+             * Creates a label with the given name and state predicate expression.
+             *
+             * @param name The name of the label.
+             * @param statePredicateExpression The predicate that needs to hold before taking a transition with the previously
+             * specified name in order to obtain the reward.
+             * @param filename The filename in which the transition reward is defined.
+             * @param lineNumber The line number in which the transition reward is defined.
+             */
+            ObservationLabel(std::string const& name, storm::expressions::Expression const& statePredicateExpression, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+
+            // Create default implementations of constructors/assignment.
+            ObservationLabel() = default;
+            ObservationLabel(ObservationLabel const& other) = default;
+            ObservationLabel& operator=(ObservationLabel const& other)= default;
+            ObservationLabel(ObservationLabel&& other) = default;
+            ObservationLabel& operator=(ObservationLabel&& other) = default;
+
+            /*!
+            * Substitutes all identifiers in the expression of the label according to the given map.
+            *
+            * @param substitution The substitution to perform.
+            * @return The resulting label.
+            */
+            ObservationLabel substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
+
+        };
+
+
     } // namespace prism
 } // namespace storm
 

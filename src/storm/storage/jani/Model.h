@@ -384,7 +384,13 @@ namespace storm {
              *  Retrieves the total number of edges in this model.
              */
             std::size_t getNumberOfEdges() const;
-            
+
+            /*!
+             * Number of global and local variables.
+             */
+            std::size_t getTotalNumberOfNonTransientVariables() const;
+
+
             /*!
              * Sets the system composition expression of the JANI model.
              */
@@ -547,7 +553,7 @@ namespace storm {
              * Determines whether this model is a discrete-time model.
              */
             bool isDiscreteTimeModel() const;
-            
+
             /*!
              * Retrieves a list of expressions that characterize the legal values of the variables in this model.
              *

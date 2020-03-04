@@ -92,7 +92,13 @@ namespace storm {
              * @return The labeled choices of the state.
              */
             std::vector<Choice<ValueType>> getLabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter = CommandFilter::All);
-            
+
+
+            /*!
+             * Evaluate observation labels
+             */
+            storm::storage::BitVector evaluateObservationLabels(CompressedState const& state) const override;
+
             /*!
              * A recursive helper function to generate a synchronziing distribution.
              */

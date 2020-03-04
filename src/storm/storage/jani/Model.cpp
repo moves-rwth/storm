@@ -676,6 +676,14 @@ namespace storm {
             return res;
         }
 
+        std::size_t Model::getTotalNumberOfNonTransientVariables() const {
+            std::size_t res = globalVariables.getNumberOfNontransientVariables();
+            for (auto const& aut : getAutomata()) {
+                res += aut.getVariables().getNumberOfNontransientVariables();
+            }
+            return res;
+        }
+
         Variable const& Model::addVariable(Variable const& variable) {
             if (variable.isBooleanVariable()) {
                 return addVariable(variable.asBooleanVariable());

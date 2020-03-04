@@ -57,7 +57,7 @@ namespace storm {
              * @param lineNumber The line number in which the program is defined.
              * @param finalModel If set to true, the program is checked for input-validity, as well as some post-processing.
              */
-            Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, std::vector<Label> const& labels, boost::optional<InitialConstruct> const& initialConstruct, boost::optional<SystemCompositionConstruct> const& compositionConstruct, bool prismCompatibility, std::string const& filename = "", uint_fast64_t lineNumber = 0, bool finalModel = true);
+            Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, std::vector<Label> const& labels, std::vector<ObservationLabel> const& observationLabels, boost::optional<InitialConstruct> const& initialConstruct, boost::optional<SystemCompositionConstruct> const& compositionConstruct, bool prismCompatibility, std::string const& filename = "", uint_fast64_t lineNumber = 0, bool finalModel = true);
             
             // Provide default implementations for constructors and assignments.
             Program() = default;
@@ -522,7 +522,7 @@ namespace storm {
              * @return A set of labels that are defined in the program.
              */
             std::vector<Label> const& getLabels() const;
-            
+
             /*!
              * Retrieves all guards appearing in the program.
              *
@@ -574,6 +574,20 @@ namespace storm {
              * @param labelSet The label set that is to be kept.
              */
             void filterLabels(std::set<std::string> const& labelSet);
+
+            /*!
+             * Retrieves all observation labels that are defined by this program
+             *
+             * @return A set of observation labels
+             */
+            std::vector<ObservationLabel> const& getObservationLabels() const;
+
+            /*!
+             * Retrieves the number of observation labels in the program.
+             *
+             * @return The number of labels in the program.
+             */
+            std::size_t getNumberOfObservationLabels() const;
             
             /*!
              * Creates a new program that drops all commands whose indices are not in the given set.
@@ -737,6 +751,9 @@ namespace storm {
             
             // A mapping from labels to their indices.
             std::map<std::string, uint_fast64_t> labelToIndexMap;
+
+            // Observation labels
+            std::vector<ObservationLabel> observationLabels;
             
             // A mapping from action names to their indices.
             std::map<std::string, uint_fast64_t> actionToIndexMap;

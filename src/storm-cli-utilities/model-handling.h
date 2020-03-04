@@ -274,8 +274,13 @@ namespace storm {
                 if (counterexampleGeneratorSettings.isCounterexampleSet()) {
                     buildChoiceOrigins = counterexampleGeneratorSettings.isMinimalCommandSetGenerationSet();
                 }
+                options.setBuildChoiceOrigins(buildChoiceOrigins);
             }
-            options.setBuildChoiceOrigins(buildChoiceOrigins);
+            if (input.model->getModelType() == storm::storage::SymbolicModelDescription::ModelType::POMDP) {
+                options.setBuildChoiceOrigins(true);
+                options.setBuildChoiceLabels(true);
+            }
+
             options.setAddOutOfBoundsState(buildSettings.isBuildOutOfBoundsStateSet());
             if (buildSettings.isBuildFullModelSet()) {
                 options.clearTerminalStates();
@@ -287,12 +292,14 @@ namespace storm {
         }
         
         template <typename ValueType>
-        std::shared_ptr<storm::models::ModelBase> buildModelExplicit(storm::settings::modules::IOSettings const& ioSettings) {
+        std::shared_ptr<storm::models::ModelBase> buildModelExplicit(storm::settings::modules::IOSettings const& ioSettings, storm::settings::modules::BuildSettings const& buildSettings) {
             std::shared_ptr<storm::models::ModelBase> result;
             if (ioSettings.isExplicitSet()) {
                 result = storm::api::buildExplicitModel<ValueType>(ioSettings.getTransitionFilename(), ioSettings.getLabelingFilename(), ioSettings.isStateRewardsSet() ? boost::optional<std::string>(ioSettings.getStateRewardsFilename()) : boost::none, ioSettings.isTransitionRewardsSet() ? boost::optional<std::string>(ioSettings.getTransitionRewardsFilename()) : boost::none, ioSettings.isChoiceLabelingSet() ? boost::optional<std::string>(ioSettings.getChoiceLabelingFilename()) : boost::none);
             } else if (ioSettings.isExplicitDRNSet()) {
-                result = storm::api::buildExplicitDRNModel<ValueType>(ioSettings.getExplicitDRNFilename());
+                storm::parser::DirectEncodingParserOptions options;
+                options.buildChoiceLabeling = buildSettings.isBuildChoiceLabelsSet();
+                result = storm::api::buildExplicitDRNModel<ValueType>(ioSettings.getExplicitDRNFilename(), options);
             } else {
                 STORM_LOG_THROW(ioSettings.isExplicitIMCASet(), storm::exceptions::InvalidSettingsException, "Unexpected explicit model input type.");
                 result = storm::api::buildExplicitIMCAModel<ValueType>(ioSettings.getExplicitIMCAFilename());
@@ -315,7 +322,7 @@ namespace storm {
                 }
             } else if (ioSettings.isExplicitSet() || ioSettings.isExplicitDRNSet() || ioSettings.isExplicitIMCASet()) {
                 STORM_LOG_THROW(engine == storm::settings::modules::CoreSettings::Engine::Sparse, storm::exceptions::InvalidSettingsException, "Can only use sparse engine with explicit input.");
-                result = buildModelExplicit<ValueType>(ioSettings);
+                result = buildModelExplicit<ValueType>(ioSettings, buildSettings);
             }
             
             modelBuildingWatch.stop();
@@ -341,7 +348,7 @@ namespace storm {
 
             if (transformationSettings.isChainEliminationSet() && result->isOfType(storm::models::ModelType::MarkovAutomaton)) {
                 result = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(
-                        result->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(), !transformationSettings.isIgnoreLabelingSet());
+                        result->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(), transformationSettings.getLabelBehavior());
             }
 
             return result;

@@ -144,8 +144,8 @@ namespace storm {
         }
         
         template<typename ValueType>
-        std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitDRNModel(std::string const& drnFile) {
-            return storm::parser::DirectEncodingParser<ValueType>::parseModel(drnFile);
+        std::shared_ptr<storm::models::sparse::Model<ValueType>> buildExplicitDRNModel(std::string const& drnFile, storm::parser::DirectEncodingParserOptions const& options = storm::parser::DirectEncodingParserOptions()) {
+            return storm::parser::DirectEncodingParser<ValueType>::parseModel(drnFile, options);
         }
         
         template<typename ValueType>

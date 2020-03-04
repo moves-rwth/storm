@@ -187,6 +187,13 @@ namespace storm {
                  * @return The restricted reward model.
                  */
                 StandardRewardModel<ValueType> restrictActions(storm::storage::BitVector const& enabledActions) const;
+
+                /*!
+                 * Creates a new reward model by permuting the actions.
+                 * That is, in row i, write the action reward of row inversePermutation[i].
+                 *
+                 */
+                StandardRewardModel<ValueType> permuteActions(std::vector<uint64_t> const& inversePermutation) const;
                 
                 /*!
                  * Reduces the transition-based rewards to state-action rewards by taking the average of each row. If

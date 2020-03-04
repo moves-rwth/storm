@@ -672,7 +672,7 @@ namespace storm {
                     maComponents.exitRates = std::move(modelComponents.exitRates);
                     ma = std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(maComponents));
                 }
-                if (ma->isConvertibleToCtmc()) {
+                if (ma->hasOnlyTrivialNondeterminism()) {
                     model = ma->convertToCtmc();
                 } else {
                     model = ma;

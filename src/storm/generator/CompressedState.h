@@ -50,7 +50,7 @@ namespace storm {
          * @param mask
          * @return
          */
-        uint32_t unpackStateToObservabilityClass(CompressedState const& state, std::unordered_map<storm::storage::BitVector,uint32_t>& observabilityMap, storm::storage::BitVector const& mask);
+        uint32_t unpackStateToObservabilityClass(CompressedState const& state,  storm::storage::BitVector const& observationVector, std::unordered_map<storm::storage::BitVector,uint32_t>& observabilityMap, storm::storage::BitVector const& mask);
         /*!
          *
          * @param varInfo

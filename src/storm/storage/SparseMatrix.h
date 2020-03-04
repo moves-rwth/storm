@@ -716,7 +716,15 @@ namespace storm {
              *
              */
             SparseMatrix restrictRows(storm::storage::BitVector const& rowsToKeep, bool allowEmptyRowGroups = false) const;
-            
+
+            /*
+             * Permute rows of the matrix according to the vector.
+             * That is, in row i, write the entry of row inversePermutation[i].
+             * Consequently, a single row might actually be written into multiple other rows, and the function application is not necessarily a permutation.
+             * Notice that this method does *not* touch column entries, nor the row grouping.
+             */
+            SparseMatrix permuteRows(std::vector<index_type> const& inversePermutation) const;
+
             /*!
              * Returns a copy of this matrix that only considers entries in the selected rows.
              * Non-selected rows will not have any entries
