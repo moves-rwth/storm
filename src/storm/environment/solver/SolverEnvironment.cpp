@@ -23,6 +23,7 @@ namespace storm {
     
     SolverEnvironment::SolverEnvironment() {
         forceSoundness = storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet();
+        forceExact = storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet();
         linearEquationSolverType = storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver();
         linearEquationSolverTypeSetFromDefault = storm::settings::getModule<storm::settings::modules::CoreSettings>().isEquationSolverSetFromDefaultValue();
     }
@@ -109,6 +110,14 @@ namespace storm {
     
     void SolverEnvironment::setForceSoundness(bool value) {
         SolverEnvironment::forceSoundness = value;
+    }
+    
+    bool SolverEnvironment::isForceExact() const {
+        return forceExact;
+    }
+    
+    void SolverEnvironment::setForceExact(bool value) {
+        SolverEnvironment::forceExact = value;
     }
     
     storm::solver::EquationSolverType const& SolverEnvironment::getLinearEquationSolverType() const {

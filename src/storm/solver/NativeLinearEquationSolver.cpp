@@ -922,7 +922,7 @@ namespace storm {
         
         template<typename ValueType>
         bool NativeLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
-            switch(getMethod(env, storm::NumberTraits<ValueType>::IsExact)) {
+            switch(getMethod(env, storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact())) {
                 case NativeLinearEquationSolverMethod::SOR:
                     return this->solveEquationsSOR(env, x, b, storm::utility::convertNumber<ValueType>(env.solver().native().getSorOmega()));
                 case NativeLinearEquationSolverMethod::GaussSeidel:
@@ -946,7 +946,7 @@ namespace storm {
         
         template<typename ValueType>
         LinearEquationSolverProblemFormat NativeLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const& env) const {
-            auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact);
+            auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact());
             if (method == NativeLinearEquationSolverMethod::Power || method == NativeLinearEquationSolverMethod::SoundValueIteration || method == NativeLinearEquationSolverMethod::RationalSearch || method == NativeLinearEquationSolverMethod::IntervalIteration) {
                 return LinearEquationSolverProblemFormat::FixedPointSystem;
             } else {
@@ -957,7 +957,7 @@ namespace storm {
         template<typename ValueType>
         LinearEquationSolverRequirements NativeLinearEquationSolver<ValueType>::getRequirements(Environment const& env) const {
             LinearEquationSolverRequirements requirements;
-            auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact);
+            auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact());
             if (method == NativeLinearEquationSolverMethod::IntervalIteration) {
                 requirements.requireBounds();
             } else if (method == NativeLinearEquationSolverMethod::RationalSearch) {

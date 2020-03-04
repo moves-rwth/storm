@@ -576,7 +576,7 @@ namespace storm {
                 }
                 
                 storm::solver::LraMethod method = env.solver().lra().getDetLraMethod();
-                if (storm::NumberTraits<ValueType>::IsExact && env.solver().lra().isDetLraMethodSetFromDefault() && method == storm::solver::LraMethod::ValueIteration) {
+                if ((storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact()) && env.solver().lra().isDetLraMethodSetFromDefault() && method == storm::solver::LraMethod::ValueIteration) {
                     method = storm::solver::LraMethod::GainBiasEquations;
                     STORM_LOG_INFO("Selecting " << storm::solver::toString(method) << " as the solution technique for long-run properties to guarantee exact results. If you want to override this, please explicitly specify a different LRA method.");
                 } else if (env.solver().isForceSoundness() && env.solver().lra().isDetLraMethodSetFromDefault() && method != storm::solver::LraMethod::ValueIteration) {

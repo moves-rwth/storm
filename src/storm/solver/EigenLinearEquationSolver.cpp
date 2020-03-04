@@ -107,7 +107,7 @@ namespace storm {
             auto eigenX = StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1>::Map(x.data(), x.size());
             auto eigenB = StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1>::Map(b.data(), b.size());
 
-            auto solutionMethod = getMethod(env, false);
+            auto solutionMethod = getMethod(env, env.solver().isForceExact());
             if (solutionMethod == EigenLinearEquationSolverMethod::SparseLU) {
                 STORM_LOG_INFO("Solving linear equation system (" << x.size() << " rows) with sparse LU factorization (Eigen library).");
                 StormEigen::SparseLU<StormEigen::SparseMatrix<ValueType>, StormEigen::COLAMDOrdering<int>> solver;

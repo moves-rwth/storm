@@ -48,6 +48,8 @@ namespace storm {
 
         bool isForceSoundness() const;
         void setForceSoundness(bool value);
+        bool isForceExact() const;
+        void setForceExact(bool value);
         
         storm::solver::EquationSolverType const& getLinearEquationSolverType() const;
         void setLinearEquationSolverType(storm::solver::EquationSolverType const& value, bool isSetFromDefault = false);
@@ -70,6 +72,7 @@ namespace storm {
         storm::solver::EquationSolverType linearEquationSolverType;
         bool linearEquationSolverTypeSetFromDefault;
         bool forceSoundness;
+        bool forceExact;
     };
 }
 
