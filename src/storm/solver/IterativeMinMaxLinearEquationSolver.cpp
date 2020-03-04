@@ -429,6 +429,9 @@ namespace storm {
             if (!auxiliaryRowGroupVector) {
                 auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
             }
+            if (!auxiliaryRowGroupVector2) {
+                auxiliaryRowGroupVector2 = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
+            }
 
             // By default, we can not provide any guarantee
             SolverGuarantee guarantee = SolverGuarantee::None;
@@ -452,7 +455,7 @@ namespace storm {
 
             std::vector<ValueType> *currentX = &x;
             std::vector<ValueType> *newX = auxiliaryRowGroupVector.get();
-            std::vector<ValueType> currentUpperBound(currentX->size());
+            std::vector<ValueType> *currentUpperBound = auxiliaryRowGroupVector2.get();
             std::vector<ValueType> newUpperBound(x.size());
 
             ValueType two = storm::utility::convertNumber<ValueType>(2.0);
@@ -479,9 +482,9 @@ namespace storm {
                     currentVerificationIterations = 0;
 
                     if (relative) {
-                        guessUpperBoundRelative(*currentX, currentUpperBound, relativeBoundGuessingScaler);
+                        guessUpperBoundRelative(*currentX, *currentUpperBound, relativeBoundGuessingScaler);
                     } else {
-                        guessUpperBoundAbsolute(*currentX, currentUpperBound, precision);
+                        guessUpperBoundAbsolute(*currentX, *currentUpperBound, precision);
                     }
 
                     bool cancelGuess = false;
@@ -493,7 +496,7 @@ namespace storm {
                         if (useGaussSeidelMultiplication) {
                             // Copy over the current vectors so we can modify them in-place.
                             // This is necessary as we want to compare the new values with the current ones.
-                            newUpperBound = currentUpperBound;
+                            newUpperBound = *currentUpperBound;
                             // Do the calculation.
                             multiplier.multiplyAndReduceGaussSeidel(env, dir, newUpperBound, &b);
                             if (intervalIterationNeeded || currentVerificationIterations > upperBoundOnlyIterations) {
@@ -502,7 +505,7 @@ namespace storm {
                                 multiplier.multiplyAndReduceGaussSeidel(env, dir, *newX, &b);
                             }
                         } else {
-                            multiplier.multiplyAndReduce(env, dir, currentUpperBound, &b, newUpperBound);
+                            multiplier.multiplyAndReduce(env, dir, *currentUpperBound, &b, newUpperBound);
                             if (intervalIterationNeeded || currentVerificationIterations > upperBoundOnlyIterations) {
                                 // Now do interval iteration.
                                 multiplier.multiplyAndReduce(env, dir, *currentX, &b, *newX);
@@ -513,9 +516,9 @@ namespace storm {
                         bool newUpperBoundAlwaysLowerEqual = true;
                         bool valuesCrossed = false;
                         for (uint64_t i = 0; i < x.size(); ++i) {
-                            if (newUpperBound[i] < currentUpperBound[i]) {
+                            if (newUpperBound[i] < (*currentUpperBound)[i]) {
                                 newUpperBoundAlwaysHigherEqual = false;
-                            } else if (newUpperBound[i] != currentUpperBound[i]) {
+                            } else if (newUpperBound[i] != (*currentUpperBound)[i]) {
                                 newUpperBoundAlwaysLowerEqual = false;
                             }
                         }
@@ -531,14 +534,14 @@ namespace storm {
                         
                         // Update bounds
                         std::swap(currentX, newX);
-                        std::swap(currentUpperBound, newUpperBound);
+                        std::swap(*currentUpperBound, newUpperBound);
 
                         if (newUpperBoundAlwaysHigherEqual & ! newUpperBoundAlwaysLowerEqual) {
                             iterationPrecision = updateIterationPrecision(env, *currentX, *newX, relative, relevantValues);
                             // Not all values moved up or stayed the same
                             // If we have a single fixed point, we can safely set the new lower bound, to the wrongly guessed upper bound
                             if (this->hasUniqueSolution()) {
-                                *currentX = currentUpperBound;
+                                *currentX = *currentUpperBound;
                             }
                             break;
                         } else if (valuesCrossed) {
@@ -552,7 +555,7 @@ namespace storm {
                             // Recalculate terminationPrecision if relative error requested
                             bool reachedPrecision = true;
                             for (auto const& valueIndex : relevantValues ? relevantValues.get() : storm::storage::BitVector(x.size(), true)) {
-                                ValueType absDiff = currentUpperBound[valueIndex] - (*currentX)[valueIndex];
+                                ValueType absDiff = (*currentUpperBound)[valueIndex] - (*currentX)[valueIndex];
                                 if (relative) {
                                     if (absDiff > doublePrecision * (*currentX)[valueIndex]) {
                                         reachedPrecision = false;
@@ -567,7 +570,7 @@ namespace storm {
                             }
                             if (reachedPrecision) {
                                 // Calculate the center of both vectors and store it in currentX
-                                storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(*currentX, currentUpperBound, *currentX, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
+                                storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(*currentX, *currentUpperBound, *currentX, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
                                 status = SolverStatus::Converged;
                             }
                             else {
