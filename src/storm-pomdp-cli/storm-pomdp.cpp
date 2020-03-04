@@ -28,6 +28,8 @@
 #include "storm/settings/modules/MultiplierSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
+
+#include "storm/settings/modules/HintSettings.h"
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
 #include "storm-pomdp-cli/settings/modules/QualitativePOMDPAnalysisSettings.h"
 
@@ -42,6 +44,7 @@
 #include "storm-pomdp/transformer/GlobalPomdpMecChoiceEliminator.h"
 #include "storm-pomdp/transformer/PomdpMemoryUnfolder.h"
 #include "storm-pomdp/transformer/BinaryPomdpTransformer.h"
+#include "storm-pomdp/transformer/MakePOMDPCanonic.h"
 #include "storm-pomdp/analysis/UniqueObservationStates.h"
 #include "storm-pomdp/analysis/QualitativeAnalysis.h"
 #include "storm-pomdp/modelchecker/ApproximatePOMDPModelchecker.h"
@@ -81,6 +84,8 @@ void initializeSettings() {
 
     storm::settings::addModule<storm::settings::modules::POMDPSettings>();
     storm::settings::addModule<storm::settings::modules::QualitativePOMDPAnalysisSettings>();
+    storm::settings::addModule<storm::settings::modules::TransformationSettings>();
+    storm::settings::addModule<storm::settings::modules::HintSettings>();
 }
 
 template<typename ValueType>
@@ -200,7 +205,7 @@ int main(const int argc, const char** argv) {
         if (!optionsCorrect) {
             return -1;
         }
-
+        storm::cli::setUrgentOptions();
 
         auto const& coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
         auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
@@ -229,7 +234,9 @@ int main(const int argc, const char** argv) {
         // We should not export here if we are going to do some processing first.
         auto model = storm::cli::buildPreprocessExportModelWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, double>(symbolicInput, engine);
         STORM_LOG_THROW(model && model->getType() == storm::models::ModelType::Pomdp, storm::exceptions::WrongFormatException, "Expected a POMDP.");
-        std::shared_ptr<storm::models::sparse::Pomdp<double>> pomdp = model->template as<storm::models::sparse::Pomdp<double>>();
+        std::shared_ptr<storm::models::sparse::Pomdp<storm::RationalNumber>> pomdp = model->template as<storm::models::sparse::Pomdp<storm::RationalNumber>>();
+        storm::transformer::MakePOMDPCanonic<storm::RationalNumber> makeCanonic(*pomdp);
+        pomdp = makeCanonic.transform();
 
         std::shared_ptr<storm::logic::Formula const> formula;
         if (!symbolicInput.properties.empty()) {

@@ -8,7 +8,10 @@ Version 1.4.x
 -------------
 
 ## Version 1.4.2 (under development)
-- n.a.
+- DRN: support import of choice labelling
+- `storm-pomdp`: Only accept POMDPs that are canonical
+- `storm-pomdp`: Prism language extended with observable expressions
+- `storm-pomdp`: Various fixes that prevented usage.
 
 ### Version 1.4.1 (2019/12)
 - Implemented long run average (LRA) computation for DTMCs/CTMCs via value iteration and via gain/bias equations.

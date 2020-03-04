@@ -63,21 +63,19 @@ namespace storm {
                 // stores for each choice from which parts of the input model description it originates
                 boost::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> choiceOrigins;
 
+                // POMDP specific components
+                // The POMDP observations
                 boost::optional<std::vector<uint32_t>> observabilityClasses;
+
                 // Continuous time specific components (CTMCs, Markov Automata):
-                
                 // True iff the transition values (for Markovian choices) are interpreted as rates.
                 bool rateTransitions;
-                
                 // The exit rate for each state. Must be given for CTMCs and MAs, if rateTransitions is false. Otherwise, it is optional.
                 boost::optional<std::vector<ValueType>> exitRates;
-
                 // A vector that stores which states are markovian (only for Markov Automata).
                 boost::optional<storm::storage::BitVector> markovianStates;
 
-                
                 // Stochastic two player game specific components:
-                
                 // The matrix of player 1 choices (needed for stochastic two player games
                 boost::optional<storm::storage::SparseMatrix<storm::storage::sparse::state_type>> player1Matrix;
             };

@@ -244,7 +244,7 @@ void processOptions() {
         }
         storm::api::analyzeDFT<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), relevantEvents,
                                           faultTreeSettings.isAllowDCForRelevantEvents(), approximationError, faultTreeSettings.getApproximationHeuristic(),
-                                          transformationSettings.isChainEliminationSet(), transformationSettings.isIgnoreLabelingSet(), true);
+                                          transformationSettings.isChainEliminationSet(), transformationSettings.getLabelBehavior(), true);
     }
 }
 

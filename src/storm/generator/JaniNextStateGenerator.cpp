@@ -1119,7 +1119,14 @@ namespace storm {
             
             return std::make_shared<storm::storage::sparse::JaniChoiceOrigins>(std::make_shared<storm::jani::Model>(model), std::move(identifiers), std::move(identifierToEdgeIndexSetMapping));
         }
-        
+
+        template<typename ValueType, typename StateType>
+        storm::storage::BitVector JaniNextStateGenerator<ValueType, StateType>::evaluateObservationLabels(CompressedState const& state) const {
+            STORM_LOG_WARN("There are no observation labels in JANI currenty");
+            return storm::storage::BitVector(0);
+        };
+
+
         template<typename ValueType, typename StateType>
         void JaniNextStateGenerator<ValueType, StateType>::checkValid() const {
             // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.

@@ -31,3 +31,13 @@ TEST(VectorTest, min_if) {
     ASSERT_EQ(16.0, storm::utility::vector::min_if(a, f1));
     ASSERT_EQ(8.0, storm::utility::vector::min_if(a, f2));
 }
+
+TEST(VectorTest, permute) {
+    std::vector<double> a = {1.0, 2.0, 3.0, 4.0};
+    std::vector<uint64_t> inversePermutation = {0, 3, 1, 2};
+    std::vector<double> aperm = storm::utility::vector::applyInversePermutation(inversePermutation, a);
+    EXPECT_EQ(aperm[0], a[0]);
+    EXPECT_EQ(aperm[1], a[3]);
+    EXPECT_EQ(aperm[2], a[1]);
+    EXPECT_EQ(aperm[3], a[2]);
+}

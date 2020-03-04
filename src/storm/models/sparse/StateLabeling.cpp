@@ -52,6 +52,10 @@ namespace storm {
             void StateLabeling::addLabelToState(std::string const& label, storm::storage::sparse::state_type state) {
                 ItemLabeling::addLabelToItem(label, state);
             }
+
+            void StateLabeling::removeLabelFromState(std::string const& label, storm::storage::sparse::state_type state) {
+                ItemLabeling::removeLabelFromItem(label, state);
+            }
             
             bool StateLabeling::getStateHasLabel(std::string const& label, storm::storage::sparse::state_type state) const {
                 return ItemLabeling::getItemHasLabel(label, state);

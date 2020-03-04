@@ -1,17 +1,14 @@
 #include <iostream>
 #include <algorithm>
+#include <bitset>
 
 #include "storm/storage/BitVector.h"
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/OutOfRangeException.h"
 
 #include "storm/storage/BoostTypes.h"
-
 #include "storm/utility/OsDetection.h"
 #include "storm/utility/Hash.h"
 #include "storm/utility/macros.h"
 
-#include <bitset>
 
 #ifdef STORM_DEV
 #define ASSERT_BITVECTOR
@@ -261,6 +258,23 @@ namespace storm {
                 truncateLastBucket();
             }
         }
+
+        void BitVector::concat(BitVector const& other) {
+            STORM_LOG_ASSERT(size() % 64 == 0, "We expect the length of the left bitvector to be a multiple of 64.");
+            // TODO this assumption is due to the implementation of BitVector::set().
+            BitVector tmp(size() + other.size());
+            tmp.set(size(), other);
+            resize(size() + other.size(), false);
+            *this |= tmp;
+        }
+
+        void BitVector::expandSize(bool init) {
+            //size_t oldBitCount = bitCount;
+            bitCount = bucketCount() * 64;
+            if (init) {
+                STORM_LOG_ASSERT(false, "Not implemented as we do not foresee any need");
+            }
+        }
         
         void BitVector::grow(uint_fast64_t minimumLength, bool init) {
             if (minimumLength > bitCount) {
@@ -431,6 +445,16 @@ namespace storm {
                 }
             }
             return true;
+        }
+
+        BitVector BitVector::permute(std::vector<uint64_t> const& inversePermutation) const {
+            BitVector result(this->size());
+            for (uint64_t i = 0; i < this->size(); ++i) {
+                if(this->get(inversePermutation[i])) {
+                    result.set(i, true);
+                }
+            }
+            return result;
         }
 
         void BitVector::set(uint_fast64_t bitIndex, BitVector const& other) {

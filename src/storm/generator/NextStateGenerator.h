@@ -68,6 +68,8 @@ namespace storm {
             virtual storm::models::sparse::StateLabeling label(storm::storage::sparse::StateStorage<StateType> const& stateStorage, std::vector<StateType> const& initialStateIndices = {}, std::vector<StateType> const& deadlockStateIndices = {}) = 0;
 
             NextStateGeneratorOptions const& getOptions() const;
+
+
             
             virtual std::shared_ptr<storm::storage::sparse::ChoiceOrigins> generateChoiceOrigins(std::vector<boost::any>& dataForChoiceOrigins) const;
 
@@ -83,7 +85,9 @@ namespace storm {
              * Creates the state labeling for the given states using the provided labels and expressions.
              */
             storm::models::sparse::StateLabeling label(storm::storage::sparse::StateStorage<StateType> const& stateStorage, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices, std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions);
-            
+
+            virtual storm::storage::BitVector evaluateObservationLabels(CompressedState const& state) const =0;
+
             void postprocess(StateBehavior<ValueType, StateType>& result);
             
             /// The options to be used for next-state generation.

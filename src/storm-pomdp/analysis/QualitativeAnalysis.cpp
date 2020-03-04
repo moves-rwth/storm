@@ -47,6 +47,7 @@ namespace storm {
         template<typename ValueType>
         storm::storage::BitVector QualitativeAnalysis<ValueType>::analyseProb0or1(storm::logic::ProbabilityOperatorFormula const& formula, bool prob0) const {
             // check whether the property is minimizing or maximizing
+            STORM_LOG_THROW(pomdp.isCanonic(), storm::exceptions::IllegalArgumentException, "POMDP needs to be canonic");
             STORM_LOG_THROW(formula.hasOptimalityType() || formula.hasBound(), storm::exceptions::InvalidPropertyException, "The formula " << formula << " does not specify whether to minimize or maximize.");
             bool minimizes = (formula.hasOptimalityType() && storm::solver::minimize(formula.getOptimalityType())) || (formula.hasBound() && storm::logic::isLowerBound(formula.getBound().comparisonType));
             

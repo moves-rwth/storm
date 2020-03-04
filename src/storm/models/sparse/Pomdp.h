@@ -41,9 +41,9 @@ namespace storm {
                  *
                  * @param components The components for this model.
                  */
-                Pomdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const &components);
+                Pomdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const &components, bool canonicFlag = false);
 
-                Pomdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> &&components);
+                Pomdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> &&components, bool canonicFlag = false );
 
                 Pomdp(Pomdp <ValueType, RewardModelType> const &other) = default;
 
@@ -63,6 +63,8 @@ namespace storm {
 
                 std::vector<uint64_t> getStatesWithObservation(uint32_t observation) const;
 
+                bool isCanonic() const;
+
             protected:
                 /*!
                  * Return a string that is additonally added to the state information in the dot stream.
@@ -75,6 +77,8 @@ namespace storm {
                 std::vector<uint32_t> observations;
 
                 uint64_t nrObservations;
+
+                bool canonicFlag = false;
 
                 void computeNrObservations();
             };

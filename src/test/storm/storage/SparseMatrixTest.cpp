@@ -694,3 +694,28 @@ TEST(SparseMatrix, IsSubmatrix) {
     ASSERT_FALSE(matrix3.isSubmatrixOf(matrix));
     ASSERT_FALSE(matrix3.isSubmatrixOf(matrix2));
 }
+
+TEST(SparseMatrix, Permute) {
+    storm::storage::SparseMatrixBuilder<double> matrixBuilder(5, 4, 8);
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 1, 1.0));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(0, 2, 1.2));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(1, 0, 0.5));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(1, 1, 0.7));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(3, 2, 1.1));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(4, 0, 0.1));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(4, 1, 0.2));
+    ASSERT_NO_THROW(matrixBuilder.addNextValue(4, 3, 0.3));
+    storm::storage::SparseMatrix<double> matrix;
+    ASSERT_NO_THROW(matrix = matrixBuilder.build());
+
+    std::vector<uint64_t> inversePermutation = {1,4,0,3,2};
+    storm::storage::SparseMatrix<double> matrixperm = matrix.permuteRows(inversePermutation);
+    EXPECT_EQ(5, matrixperm.getRowCount());
+    EXPECT_EQ(4, matrixperm.getColumnCount());
+    EXPECT_EQ(8, matrixperm.getEntryCount());
+    EXPECT_EQ(matrix.getRowSum(1), matrixperm.getRowSum(0));
+    EXPECT_EQ(matrix.getRowSum(4), matrixperm.getRowSum(1));
+    EXPECT_EQ(matrix.getRowSum(0), matrixperm.getRowSum(2));
+    EXPECT_EQ(matrix.getRowSum(3), matrixperm.getRowSum(3));
+    EXPECT_EQ(matrix.getRowSum(2), matrixperm.getRowSum(4));
+}

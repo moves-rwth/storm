@@ -1,5 +1,6 @@
 #### Taken from http://www.openflipper.org/svnrepo/CoMISo/trunk/CoMISo/cmake/FindGUROBI.cmake
-
+#### This file needs to be updated regularly to include new Gurobi releases.
+#### Also update the error message in the Gurobi section of ../resources/CMakeLists.txt
 
 # - Try to find GUROBI
 # Once done this will define
@@ -27,6 +28,7 @@ find_path(GUROBI_INCLUDE_DIR
                     "/Library/gurobi702/mac64/include"
                     "/Library/gurobi801/mac64/include"
                     "/Library/gurobi810/mac64/include"
+                    "/Library/gurobi900/mac64/include"
                     "${GUROBI_ROOT}/include"
           )
 
@@ -45,6 +47,7 @@ find_library( GUROBI_LIBRARY
         gurobi75
         gurobi80
         gurobi81
+        gurobi90
               PATHS "$ENV{GUROBI_HOME}/lib"
                     "/Library/gurobi502/mac64/lib"
                     "/Library/gurobi602/mac64/lib"
@@ -57,6 +60,7 @@ find_library( GUROBI_LIBRARY
                     "/Library/gurobi801/mac64/lib"
                     "/Library/gurobi810/mac64/lib"
                     "/Library/gurobi811/mac64/lib"
+                    "/Library/gurobi900/mac64/lib"
                     "${GUROBI_ROOT}/lib"
               )
 
@@ -73,7 +77,7 @@ find_library( GUROBI_CXX_LIBRARY
                     "/Library/gurobi702/mac64/lib"
                     "/Library/gurobi801/mac64/lib"
                     "/Library/gurobi810/mac64/lib"
-                    "/Library/gurobi811/mac64/lib"
+                    "/Library/gurobi900/mac64/lib"
                     "${GUROBI_ROOT}/lib"
               )
 

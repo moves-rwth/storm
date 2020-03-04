@@ -120,8 +120,14 @@ namespace storm {
             Choice<ValueType, StateType> choice(0, !exploreDependencies);
 
             // Let BE fail
+            bool isFirst = true;
             while (!state->getFailableElements().isEnd()) {
                 //TODO outside
+                if (takeFirstDependency && exploreDependencies && !isFirst) {
+                    // We discard further exploration as we already chose one dependent event
+                    break;
+                }
+                isFirst = false;
 
                 // Construct new state as copy from original one
                 DFTStatePointer newState = state->copy();
