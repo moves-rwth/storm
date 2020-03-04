@@ -3,11 +3,11 @@
 
 namespace storm {
     namespace expressions {
-        Variable::Variable() {
+        Variable::Variable() : manager(nullptr) {
             // Intentionally left empty.
         }
         
-        Variable::Variable(std::shared_ptr<ExpressionManager const> const& manager, uint_fast64_t index) : manager(manager), index(index) {
+        Variable::Variable(std::shared_ptr<ExpressionManager const> const& manager, uint_fast64_t index) : manager(manager.get()), index(index) {
             // Intentionally left empty.
         }
         
@@ -52,7 +52,8 @@ namespace storm {
         }
         
         ExpressionManager const& Variable::getManager() const {
-            return *manager.lock();
+            STORM_LOG_ASSERT(manager != nullptr, "The variable does not have a manager.");
+            return *manager;
         }
 
         bool Variable::hasBooleanType() const {

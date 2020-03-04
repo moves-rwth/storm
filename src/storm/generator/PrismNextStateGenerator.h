@@ -24,7 +24,14 @@ namespace storm {
             enum class CommandFilter {All, Markovian, Probabilistic};
 
             PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options = NextStateGeneratorOptions());
-
+            
+            /*!
+             * A quick check to detect whether the given model is not supported.
+             * This method only over-approximates the set of models that can be handled, i.e., if this
+             * returns true, the model might still be unsupported.
+             */
+            static bool canHandle(storm::prism::Program const& program);
+            
             virtual ModelType getModelType() const override;
             virtual bool isDeterministicModel() const override;
             virtual bool isDiscreteTimeModel() const override;

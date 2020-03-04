@@ -105,6 +105,8 @@ namespace storm {
                     return storm::transformer::SymbolicMdpToSparseMdpTransformer<Type, ValueType>::translate(*symbolicModel->template as<storm::models::symbolic::Mdp<Type, ValueType>>(), formulas);
                 case storm::models::ModelType::Ctmc:
                     return storm::transformer::SymbolicCtmcToSparseCtmcTransformer<Type, ValueType>::translate(*symbolicModel->template as<storm::models::symbolic::Ctmc<Type, ValueType>>(), formulas);
+                case storm::models::ModelType::MarkovAutomaton:
+                    return storm::transformer::SymbolicMaToSparseMaTransformer<Type, ValueType>::translate(*symbolicModel->template as<storm::models::symbolic::MarkovAutomaton<Type, ValueType>>(), formulas);
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Transformation of symbolic " << symbolicModel->getType() << " to sparse model is not supported.");
             }

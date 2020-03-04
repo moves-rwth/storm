@@ -65,7 +65,7 @@ namespace storm {
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             bool result = false;
-            switch (getMethod(env, storm::NumberTraits<ValueType>::IsExact)) {
+            switch (getMethod(env, storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact())) {
                 case MinMaxMethod::ValueIteration:
                     result = solveEquationsValueIteration(env, dir, x, b);
                     break;
@@ -232,7 +232,7 @@ namespace storm {
 
         template<typename ValueType>
         MinMaxLinearEquationSolverRequirements IterativeMinMaxLinearEquationSolver<ValueType>::getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction, bool const& hasInitialScheduler) const {
-            auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact);
+            auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact());
             
             // Check whether a linear equation solver is needed and potentially start with its requirements
             bool needsLinEqSolver = false;

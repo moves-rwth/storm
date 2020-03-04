@@ -72,7 +72,7 @@ namespace storm {
         
         template<typename ValueType>
         bool StandardGameSolver<ValueType>::solveGame(Environment const& env, OptimizationDirection player1Dir, OptimizationDirection player2Dir, std::vector<ValueType>& x, std::vector<ValueType> const& b, std::vector<uint64_t>* player1Choices, std::vector<uint64_t>* player2Choices) const {
-            auto method = getMethod(env, std::is_same<ValueType, storm::RationalNumber>::value);
+            auto method = getMethod(env, std::is_same<ValueType, storm::RationalNumber>::value || env.solver().isForceExact());
             STORM_LOG_INFO("Solving stochastic two player game over " << x.size() << " states using " << toString(method) << ".");
             switch (method) {
                 case GameMethod::ValueIteration:

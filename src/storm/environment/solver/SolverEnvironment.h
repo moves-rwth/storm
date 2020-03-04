@@ -15,6 +15,7 @@ namespace storm {
     class GmmxxSolverEnvironment;
     class NativeSolverEnvironment;
     class LongRunAverageSolverEnvironment;
+    class TimeBoundedSolverEnvironment;
     class MinMaxSolverEnvironment;
     class MultiplierEnvironment;
     class GameSolverEnvironment;
@@ -35,6 +36,8 @@ namespace storm {
         NativeSolverEnvironment const& native() const;
         LongRunAverageSolverEnvironment& lra();
         LongRunAverageSolverEnvironment const& lra() const;
+        TimeBoundedSolverEnvironment& timeBounded();
+        TimeBoundedSolverEnvironment const& timeBounded() const;
         MinMaxSolverEnvironment& minMax();
         MinMaxSolverEnvironment const& minMax() const;
         MultiplierEnvironment& multiplier();
@@ -48,6 +51,8 @@ namespace storm {
 
         bool isForceSoundness() const;
         void setForceSoundness(bool value);
+        bool isForceExact() const;
+        void setForceExact(bool value);
         
         storm::solver::EquationSolverType const& getLinearEquationSolverType() const;
         void setLinearEquationSolverType(storm::solver::EquationSolverType const& value, bool isSetFromDefault = false);
@@ -63,6 +68,7 @@ namespace storm {
         SubEnvironment<GameSolverEnvironment> gameSolverEnvironment;
         SubEnvironment<TopologicalSolverEnvironment> topologicalSolverEnvironment;
         SubEnvironment<LongRunAverageSolverEnvironment> longRunAverageSolverEnvironment;
+        SubEnvironment<TimeBoundedSolverEnvironment> timeBoundedSolverEnvironment;
         SubEnvironment<MinMaxSolverEnvironment> minMaxSolverEnvironment;
         SubEnvironment<MultiplierEnvironment> multiplierEnvironment;
         SubEnvironment<OviSolverEnvironment> oviSolverEnvironment;
@@ -70,6 +76,7 @@ namespace storm {
         storm::solver::EquationSolverType linearEquationSolverType;
         bool linearEquationSolverTypeSetFromDefault;
         bool forceSoundness;
+        bool forceExact;
     };
 }
 

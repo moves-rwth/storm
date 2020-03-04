@@ -70,12 +70,17 @@ namespace storm {
                 return false;
             }
             
-            BisimulationSettings::QuotientFormat BisimulationSettings::getQuotientFormat() const {
+            bool BisimulationSettings::isQuotientFormatSetFromDefaultValue() const {
+                return !this->getOption(quotientFormatOptionName).getHasOptionBeenSet() || this->getOption(quotientFormatOptionName).getArgumentByName("format").wasSetFromDefaultValue();
+            }
+            
+            storm::dd::bisimulation::QuotientFormat BisimulationSettings::getQuotientFormat() const {
                 std::string quotientFormatAsString = this->getOption(quotientFormatOptionName).getArgumentByName("format").getValueAsString();
                 if (quotientFormatAsString == "sparse") {
-                    return BisimulationSettings::QuotientFormat::Sparse;
+                    return storm::dd::bisimulation::QuotientFormat::Sparse;
                 }
-                return BisimulationSettings::QuotientFormat::Dd;
+                STORM_LOG_ASSERT(quotientFormatAsString == "dd", "Invalid bisimulation quotient format: " << quotientFormatAsString << ".");
+                return storm::dd::bisimulation::QuotientFormat::Dd;
             }
             
             bool BisimulationSettings::isUseRepresentativesSet() const {

@@ -21,6 +21,9 @@ namespace storm {
             
             explicit SparseCtmcCslModelChecker(SparseCtmcModelType const& model);
             
+            // Returns false, if this task can certainly not be handled by this model checker (independent of the concrete model).
+            static bool canHandleStatic(CheckTask<storm::logic::Formula, ValueType> const& checkTask);
+            
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const override;
             virtual std::unique_ptr<CheckResult> computeBoundedUntilProbabilities(Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask) override;
@@ -39,13 +42,6 @@ namespace storm {
              * Compute transient probabilities for all states.
              */
             std::vector<ValueType> computeAllTransientProbabilities(Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask);
-
-        private:
-            template<typename CValueType = ValueType, typename std::enable_if<storm::NumberTraits<CValueType>::SupportsExponential, int>::type = 0>
-            bool canHandleImplementation(CheckTask<storm::logic::Formula, CValueType> const& checkTask) const;
-
-            template<typename CValueType = ValueType, typename std::enable_if<!storm::NumberTraits<CValueType>::SupportsExponential, int>::type = 0>
-            bool canHandleImplementation(CheckTask<storm::logic::Formula, CValueType> const& checkTask) const;
 
         };
         

@@ -78,11 +78,16 @@ namespace storm {
         }
         
         boost::any FormulaInformationVisitor::visit(LongRunAverageOperatorFormula const& f, boost::any const& data) const {
-            return f.getSubformula().accept(*this, data);
+            FormulaInformation result;
+            result.setContainsLongRunFormula(true);
+            result.join(boost::any_cast<FormulaInformation>(f.getSubformula().accept(*this, data)));
+            return result;
         }
         
         boost::any FormulaInformationVisitor::visit(LongRunAverageRewardFormula const&, boost::any const&) const {
-            return FormulaInformation();
+            FormulaInformation result;
+            result.setContainsLongRunFormula(true);
+            return result;
         }
         
         boost::any FormulaInformationVisitor::visit(MultiObjectiveFormula const& f, boost::any const& data) const {

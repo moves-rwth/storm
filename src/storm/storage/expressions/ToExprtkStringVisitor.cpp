@@ -29,14 +29,14 @@ namespace storm {
                 case BinaryBooleanFunctionExpression::OperatorType::And:
                     stream << "(";
                     expression.getFirstOperand()->accept(*this, data);
-                    stream << " and ";
+                    stream << " & ";
                     expression.getSecondOperand()->accept(*this, data);
                     stream << ")";
                     break;
                 case BinaryBooleanFunctionExpression::OperatorType::Or:
                     stream << "(";
                     expression.getFirstOperand()->accept(*this, data);
-                    stream << " or ";
+                    stream << " | ";
                     expression.getSecondOperand()->accept(*this, data);
                     stream << ")";
                     break;
@@ -50,7 +50,7 @@ namespace storm {
                 case BinaryBooleanFunctionExpression::OperatorType::Implies:
                     stream << "(not(";
                     expression.getFirstOperand()->accept(*this, data);
-                    stream << ") or ";
+                    stream << ") | ";
                     expression.getSecondOperand()->accept(*this, data);
                     stream << ")";
                     break;

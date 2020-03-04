@@ -46,6 +46,7 @@ namespace storm {
         template<typename ValueType>
         GmmxxLinearEquationSolverMethod GmmxxLinearEquationSolver<ValueType>::getMethod(Environment const& env) const {
             STORM_LOG_ERROR_COND(!env.solver().isForceSoundness(), "This linear equation solver does not support sound computations. Using unsound methods now...");
+            STORM_LOG_ERROR_COND(!env.solver().isForceExact(), "This linear equation solver does not support exact computations. Using unsound methods now...");
             return env.solver().gmmxx().getMethod();
         }
         

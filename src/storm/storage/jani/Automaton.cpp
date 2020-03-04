@@ -4,6 +4,7 @@
 #include "storm/storage/jani/TemplateEdge.h"
 #include "storm/storage/jani/Location.h"
 #include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/WrongFormatException.h"
@@ -19,6 +20,25 @@ namespace storm {
         Automaton::Automaton(std::string const& name, storm::expressions::Variable const& locationExpressionVariable) : name(name), locationExpressionVariable(locationExpressionVariable) {
             // Add a sentinel element to the mapping from locations to starting indices.
             locationToStartingIndex.push_back(0);
+        }
+        
+        storm::expressions::Variable cloneVariable(storm::expressions::ExpressionManager& manager, storm::expressions::Variable const& var, std::string const& variablePrefix) {
+            STORM_LOG_ASSERT(var.getManager() == manager, "expected same manager.");
+            return manager.declareVariable(variablePrefix + var.getName(), var.getType());
+        }
+        
+        Automaton Automaton::clone(storm::expressions::ExpressionManager& manager, std::string const& nameOfClone, std::string const& variablePrefix) const {
+            Automaton result(*this);
+            result.name = nameOfClone;
+            result.locationExpressionVariable = cloneVariable(manager, result.locationExpressionVariable, variablePrefix);
+            auto allVars = result.getAllExpressionVariables();
+            std::map<storm::expressions::Variable, storm::expressions::Expression> oldToNewVarMap;
+            for (auto const& v : allVars) {
+                oldToNewVarMap[v] = cloneVariable(manager, v, variablePrefix).getExpression();
+            }
+            result.variables.substituteExpressionVariables(oldToNewVarMap);
+            result.substitute(oldToNewVarMap);
+            return result;
         }
         
         std::string const& Automaton::getName() const {
