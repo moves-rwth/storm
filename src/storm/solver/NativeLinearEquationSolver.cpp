@@ -10,6 +10,7 @@
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 #include "storm/solver/helper/SoundValueIterationHelper.h"
+#include "storm/solver/helper/OptimisticValueIterationHelper.h"
 #include "storm/solver/Multiplier.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidEnvironmentException.h"
@@ -624,6 +625,69 @@ namespace storm {
         }
         
         template<typename ValueType>
+        bool NativeLinearEquationSolver<ValueType>::solveEquationsOptimisticValueIteration(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+
+            if (!this->multiplier) {
+                this->multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, *this->A);
+            }
+
+            if (!this->cachedRowVector) {
+                this->cachedRowVector = std::make_unique<std::vector<ValueType>>(this->A->getRowCount());
+            }
+            if (!this->cachedRowVector2) {
+                this->cachedRowVector2 = std::make_unique<std::vector<ValueType>>(this->A->getRowCount());
+            }
+
+            // By default, we can not provide any guarantee
+            SolverGuarantee guarantee = SolverGuarantee::None;
+            // Get handle to multiplier.
+            storm::solver::Multiplier<ValueType> const &multiplier = *this->multiplier;
+            // Allow aliased multiplications.
+            storm::solver::MultiplicationStyle multiplicationStyle = env.solver().native().getPowerMethodMultiplicationStyle();
+            bool useGaussSeidelMultiplication = multiplicationStyle == storm::solver::MultiplicationStyle::GaussSeidel;
+
+            boost::optional<storm::storage::BitVector> relevantValues;
+            if (this->hasRelevantValues()) {
+                relevantValues = this->getRelevantValues();
+            }
+            
+            // x has to start with a lower bound.
+            this->createLowerBoundsVector(x);
+
+            std::vector<ValueType>* lowerX = &x;
+            std::vector<ValueType>* upperX = this->cachedRowVector.get();
+            std::vector<ValueType>* auxVector = this->cachedRowVector2.get();
+
+            this->startMeasureProgress();
+            
+            auto statusIters = storm::solver::helper::solveEquationsOptimisticValueIteration(env, lowerX, upperX, auxVector,
+                    [&] (std::vector<ValueType>*& y, std::vector<ValueType>*& yPrime, ValueType const& precision, bool const& relative, uint64_t const& i, uint64_t const& maxI) {
+                        this->showProgressIterative(i);
+                        return performPowerIteration(env, y, yPrime, b, precision, relative, guarantee, i, maxI, multiplicationStyle);
+                    },
+                    [&] (std::vector<ValueType>* y, std::vector<ValueType>* yPrime, uint64_t const& i) {
+                        this->showProgressIterative(i);
+                        if (useGaussSeidelMultiplication) {
+                            // Copy over the current vectors so we can modify them in-place.
+                            // This is necessary as we want to compare the new values with the current ones.
+                            *yPrime = *y;
+                            multiplier.multiplyGaussSeidel(env, *y, &b);
+                        } else {
+                            multiplier.multiply(env, *y, &b, *yPrime);
+                            std::swap(y, yPrime);
+                        }
+                    }, relevantValues);
+            auto two = storm::utility::convertNumber<ValueType>(2.0);
+            storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(*lowerX, *upperX, x, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
+            this->logIterations(statusIters.first == SolverStatus::Converged, statusIters.first == SolverStatus::TerminatedEarly, statusIters.second);
+
+            if (!this->isCachingEnabled()) {
+                clearCache();
+            }
+            return statusIters.first == SolverStatus::Converged || statusIters.first == SolverStatus::TerminatedEarly;
+        }
+
+        template<typename ValueType>
         bool NativeLinearEquationSolver<ValueType>::solveEquationsRationalSearch(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             return solveEquationsRationalSearchHelper<double>(env, x, b);
         }
@@ -908,7 +972,7 @@ namespace storm {
                 } else {
                     STORM_LOG_WARN("The selected solution method does not guarantee exact results.");
                 }
-            } else if (env.solver().isForceSoundness() && method != NativeLinearEquationSolverMethod::SoundValueIteration && method != NativeLinearEquationSolverMethod::IntervalIteration && method != NativeLinearEquationSolverMethod::RationalSearch) {
+            } else if (env.solver().isForceSoundness() && method != NativeLinearEquationSolverMethod::SoundValueIteration && method != NativeLinearEquationSolverMethod::OptimisticValueIteration && method != NativeLinearEquationSolverMethod::IntervalIteration && method != NativeLinearEquationSolverMethod::RationalSearch) {
                 if (env.solver().native().isMethodSetFromDefault()) {
                     method = NativeLinearEquationSolverMethod::SoundValueIteration;
                     STORM_LOG_INFO("Selecting '" + toString(method) + "' as the solution technique to guarantee sound results. If you want to override this, please explicitly specify a different method.");
@@ -935,6 +999,8 @@ namespace storm {
                     return this->solveEquationsPower(env, x, b);
                 case NativeLinearEquationSolverMethod::SoundValueIteration:
                     return this->solveEquationsSoundValueIteration(env, x, b);
+                case NativeLinearEquationSolverMethod::OptimisticValueIteration:
+                    return this->solveEquationsOptimisticValueIteration(env, x, b);
                 case NativeLinearEquationSolverMethod::IntervalIteration:
                     return this->solveEquationsIntervalIteration(env, x, b);
                 case NativeLinearEquationSolverMethod::RationalSearch:
@@ -947,7 +1013,7 @@ namespace storm {
         template<typename ValueType>
         LinearEquationSolverProblemFormat NativeLinearEquationSolver<ValueType>::getEquationProblemFormat(Environment const& env) const {
             auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact());
-            if (method == NativeLinearEquationSolverMethod::Power || method == NativeLinearEquationSolverMethod::SoundValueIteration || method == NativeLinearEquationSolverMethod::RationalSearch || method == NativeLinearEquationSolverMethod::IntervalIteration) {
+            if (method == NativeLinearEquationSolverMethod::Power || method == NativeLinearEquationSolverMethod::SoundValueIteration || method == NativeLinearEquationSolverMethod::OptimisticValueIteration || method == NativeLinearEquationSolverMethod::RationalSearch || method == NativeLinearEquationSolverMethod::IntervalIteration) {
                 return LinearEquationSolverProblemFormat::FixedPointSystem;
             } else {
                 return LinearEquationSolverProblemFormat::EquationSystem;
@@ -960,7 +1026,7 @@ namespace storm {
             auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact());
             if (method == NativeLinearEquationSolverMethod::IntervalIteration) {
                 requirements.requireBounds();
-            } else if (method == NativeLinearEquationSolverMethod::RationalSearch) {
+            } else if (method == NativeLinearEquationSolverMethod::RationalSearch || method == NativeLinearEquationSolverMethod::OptimisticValueIteration) {
                 requirements.requireLowerBounds();
             } else if (method == NativeLinearEquationSolverMethod::SoundValueIteration) {
                 requirements.requireBounds(false);

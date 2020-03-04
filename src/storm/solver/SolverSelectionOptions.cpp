@@ -124,6 +124,8 @@ namespace storm {
                     return "Power";
                 case NativeLinearEquationSolverMethod::SoundValueIteration:
                     return "SoundValueIteration";
+                case NativeLinearEquationSolverMethod::OptimisticValueIteration:
+                    return "optimisticvalueiteration";
                 case NativeLinearEquationSolverMethod::IntervalIteration:
                     return "IntervalIteration";
                 case NativeLinearEquationSolverMethod::RationalSearch:
