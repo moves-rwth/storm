@@ -7,6 +7,7 @@
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/KwekMehlhorn.h"
 #include "storm/utility/NumberTraits.h"
+#include "storm/utility/SignalHandler.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 #include "storm/solver/helper/SoundValueIterationHelper.h"
@@ -309,10 +310,9 @@ namespace storm {
 
             bool useGaussSeidelMultiplication = multiplicationStyle == storm::solver::MultiplicationStyle::GaussSeidel;
             
-            bool converged = false;
-            bool terminate = this->terminateNow(*currentX, guarantee);
             uint64_t iterations = currentIterations;
-            while (!converged && !terminate && iterations < maxIterations) {
+            SolverStatus status = this->terminateNow(*currentX, guarantee) ? SolverStatus::TerminatedEarly : SolverStatus::InProgress;
+            while (status == SolverStatus::InProgress && iterations < maxIterations) {
                 if (useGaussSeidelMultiplication) {
                     *newX = *currentX;
                     this->multiplier->multiplyGaussSeidel(env, *newX, &b);
@@ -321,18 +321,28 @@ namespace storm {
                 }
                 
                 // Check for convergence.
-                converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, precision, relative);
+                if (storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *newX, precision, relative)) {
+                    status = SolverStatus::Converged;
+                }
 
                 // Check for termination.
                 std::swap(currentX, newX);
                 ++iterations;
-                terminate = this->terminateNow(*currentX, guarantee);
-                
+                if (this->terminateNow(*currentX, guarantee)) {
+                    status = SolverStatus::TerminatedEarly;
+                }
+
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
+                if (storm::utility::resources::isTerminate()) {
+                    status = SolverStatus::Aborted;
+                }
             }
-            
-            return PowerIterationResult(iterations - currentIterations, converged ? SolverStatus::Converged : (terminate ? SolverStatus::TerminatedEarly : SolverStatus::MaximalIterationsExceeded));
+            if (status == SolverStatus::InProgress && iterations == maxIterations) {
+                status = SolverStatus::MaximalIterationsExceeded;
+            }
+
+            return PowerIterationResult(iterations - currentIterations, status);
         }
         
         template<typename ValueType>
@@ -772,6 +782,9 @@ namespace storm {
                 } else {
                     // Increase the precision.
                     precision = precision / 10;
+                }
+                if (storm::utility::resources::isTerminate()) {
+                    status = SolverStatus::Aborted;
                 }
             }
             

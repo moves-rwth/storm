@@ -4,21 +4,18 @@
 #include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
 #include "storm/solver/helper/OptimisticValueIterationHelper.h"
 
-#include "storm/utility/ConstantsComparator.h"
-
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/OviSolverEnvironment.h"
 
+#include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/KwekMehlhorn.h"
 #include "storm/utility/NumberTraits.h"
-
-#include "storm/utility/Stopwatch.h"
-#include "storm/utility/vector.h"
+#include "storm/utility/SignalHandler.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/vector.h"
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/UnmetRequirementException.h"
-#include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/PrecisionExceededException.h"
 
 namespace storm {
@@ -206,6 +203,9 @@ namespace storm {
 
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
+                if (storm::utility::resources::isTerminate()) {
+                    status = SolverStatus::Aborted;
+                }
             } while (status == SolverStatus::InProgress);
             
             reportStatus(status, iterations);
@@ -749,6 +749,9 @@ namespace storm {
                 
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
+                if (storm::utility::resources::isTerminate()) {
+                    status = SolverStatus::Aborted;
+                }
             }
             this->soundValueIterationHelper->setSolutionVector();
             
@@ -1047,6 +1050,9 @@ namespace storm {
                     // Increase the precision.
                     precision /= storm::utility::convertNumber<ValueType>(static_cast<uint64_t>(10));
                 }
+                if (storm::utility::resources::isTerminate()) {
+                    status = SolverStatus::Aborted;
+                }
             }
             
             // Swap the two vectors if the current result is not in the original x.
@@ -1105,6 +1111,8 @@ namespace storm {
                     status = SolverStatus::TerminatedEarly;
                 } else if (iterations >= maximalNumberOfIterations) {
                     status = SolverStatus::MaximalIterationsExceeded;
+                } else if (storm::utility::resources::isTerminate()) {
+                    status = SolverStatus::Aborted;
                 }
             }
             return status;
@@ -1116,6 +1124,7 @@ namespace storm {
                 case SolverStatus::Converged: STORM_LOG_TRACE("Iterative solver converged after " << iterations << " iterations."); break;
                 case SolverStatus::TerminatedEarly: STORM_LOG_TRACE("Iterative solver terminated early after " << iterations << " iterations."); break;
                 case SolverStatus::MaximalIterationsExceeded: STORM_LOG_WARN("Iterative solver did not converge after " << iterations << " iterations."); break;
+                case SolverStatus::Aborted: STORM_LOG_WARN("Iterative solver was aborted."); break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Iterative solver terminated unexpectedly.");
             }

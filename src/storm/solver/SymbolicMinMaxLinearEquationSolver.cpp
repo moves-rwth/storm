@@ -11,6 +11,7 @@
 
 #include "storm/utility/dd.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/SignalHandler.h"
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/PrecisionExceededException.h"
 
@@ -98,9 +99,12 @@ namespace storm {
                 // Set up next iteration.
                 localX = tmp;
                 ++iterations;
+                if (storm::utility::resources::isTerminate()) {
+                    status = SolverStatus::Aborted;
+                }
             }
             
-            if (status != SolverStatus::Converged) {
+            if (status == SolverStatus::InProgress && iterations < maximalIterations) {
                 status = SolverStatus::MaximalIterationsExceeded;
             }
             
@@ -177,9 +181,12 @@ namespace storm {
                     currentX = viResult.values;
                     precision /= storm::utility::convertNumber<ValueType, uint64_t>(10);
                 }
+                if (storm::utility::resources::isTerminate()) {
+                    status = SolverStatus::Aborted;
+                }
             }
             
-            if (status == SolverStatus::InProgress) {
+            if (status == SolverStatus::InProgress && overallIterations < maxIter) {
                 status = SolverStatus::MaximalIterationsExceeded;
             }
             

@@ -7,6 +7,7 @@
 #include "storm/solver/SolverStatus.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/ProgressMeasurement.h"
+#include "storm/utility/SignalHandler.h"
 #include "storm/storage/BitVector.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/OviSolverEnvironment.h"
@@ -230,8 +231,11 @@ namespace storm {
                                 }
                             }
                         }
+                        if (storm::utility::resources::isTerminate()) {
+                            status = SolverStatus::Aborted;
+                        }
                     }
-                }
+                } // end while
                 
                 // Swap the results into the output vectors.
                 if (initLowerX == lowerX) {

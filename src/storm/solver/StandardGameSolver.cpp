@@ -12,6 +12,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/utility/ConstantsComparator.h"
+#include "storm/utility/SignalHandler.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/macros.h"
@@ -566,6 +567,8 @@ namespace storm {
                     status = SolverStatus::TerminatedEarly;
                 } else if (iterations >= maximalNumberOfIterations) {
                     status = SolverStatus::MaximalIterationsExceeded;
+                } else if (storm::utility::resources::isTerminate()) {
+                    status = SolverStatus::Aborted;
                 }
             }
             return status;
@@ -577,6 +580,7 @@ namespace storm {
                 case SolverStatus::Converged: STORM_LOG_INFO("Iterative solver converged after " << iterations << " iterations."); break;
                 case SolverStatus::TerminatedEarly: STORM_LOG_INFO("Iterative solver terminated early after " << iterations << " iterations."); break;
                 case SolverStatus::MaximalIterationsExceeded: STORM_LOG_WARN("Iterative solver did not converge after " << iterations << " iterations."); break;
+                case SolverStatus::Aborted: STORM_LOG_WARN("Iterative solver was aborted."); break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Iterative solver terminated unexpectedly.");
             }
