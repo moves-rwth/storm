@@ -194,7 +194,12 @@ namespace storm {
             if (pf.enableExact() && mpi.verificationValueType == ModelProcessingInformation::ValueType::FinitePrecision) {
                 mpi.verificationValueType = ModelProcessingInformation::ValueType::Exact;
             }
-            STORM_PRINT_AND_LOG( "Portfolio engine picked the following settings: " << std::endl << "\tengine=" << mpi.engine << "\t bisimulation=" << mpi.applyBisimulation << "\t exact=" << (mpi.verificationValueType != ModelProcessingInformation::ValueType::FinitePrecision) << std::endl)
+            STORM_PRINT_AND_LOG( "Portfolio engine picked the following settings: " << std::endl
+                << "\tengine=" << mpi.engine
+                << std::boolalpha
+                << "\t bisimulation=" << mpi.applyBisimulation
+                << "\t exact=" << (mpi.verificationValueType != ModelProcessingInformation::ValueType::FinitePrecision)
+                << std::noboolalpha << std::endl);
         }
         
         ModelProcessingInformation getModelProcessingInformation(SymbolicInput const& input) {
