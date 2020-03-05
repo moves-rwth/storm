@@ -1,41 +1,32 @@
 #include "storm/modelchecker/csl/helper/SparseMarkovAutomatonCslHelper.h"
 
-#include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
-
-#include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
-#include "storm/storage/MaximalEndComponentDecomposition.h"
-
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
-#include "storm/settings/modules/MinMaxEquationSolverSettings.h"
-
 #include "storm/environment/Environment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 #include "storm/environment/solver/EigenSolverEnvironment.h"
 #include "storm/environment/solver/TimeBoundedSolverEnvironment.h"
-
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
+#include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/MinMaxEquationSolverSettings.h"
+#include "storm/solver/Multiplier.h"
+#include "storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/solver/LpSolver.h"
+#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/MaximalEndComponentDecomposition.h"
+#include "storm/storage/expressions/Variable.h"
+#include "storm/storage/expressions/Expression.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/SignalHandler.h"
 
-#include "storm/storage/expressions/Variable.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 
-#include "storm/solver/Multiplier.h"
-#include "storm/solver/MinMaxLinearEquationSolver.h"
-#include "storm/solver/LpSolver.h"
-
-#include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/UncheckedRequirementException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -203,6 +194,9 @@ namespace storm {
                                 }
 
                                 progressSteps.updateProgress(N-k);
+                                if (storm::utility::resources::isTerminate()) {
+                                    break;
+                                }
                             }
                             if (computeLowerBound) {
                                 storm::utility::vector::scaleVectorInPlace(maybeStatesValuesLower, storm::utility::one<ValueType>() / foxGlynnResult.totalWeight);
@@ -213,6 +207,9 @@ namespace storm {
                             // Check if the lower and upper bound are sufficiently close to each other
                             converged = checkConvergence(maybeStatesValuesLower, maybeStatesValuesUpper, relevantMaybeStates, epsilon, relativePrecision, kappa);
                             if (converged) {
+                                break;
+                            }
+                            if (storm::utility::resources::isTerminate()) {
                                 break;
                             }
                         }
@@ -240,6 +237,9 @@ namespace storm {
                             std::fill(maybeStatesValuesUpper.begin(), maybeStatesValuesUpper.end(), storm::utility::zero<ValueType>());
                         }
                         progressIterations.updateProgress(++iteration);
+                        if (storm::utility::resources::isTerminate()) {
+                            break;
+                        }
                     }
                     
                     // We take the average of the lower and upper bounds
@@ -528,6 +528,9 @@ namespace storm {
                         storm::utility::vector::addVectors(markovianNonGoalValues, bMarkovian, markovianNonGoalValues);
                     } else {
                         storm::utility::vector::addVectors(markovianNonGoalValues, bMarkovianFixed, markovianNonGoalValues);
+                    }
+                    if (storm::utility::resources::isTerminate()) {
+                        break;
                     }
                 }
                 
