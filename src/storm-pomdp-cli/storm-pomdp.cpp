@@ -65,6 +65,8 @@ void initializeSettings() {
     storm::settings::addModule<storm::settings::modules::DebugSettings>();
     storm::settings::addModule<storm::settings::modules::BuildSettings>();
 
+    storm::settings::addModule<storm::settings::modules::POMDPSettings>();
+
     storm::settings::addModule<storm::settings::modules::TransformationSettings>();
     storm::settings::addModule<storm::settings::modules::GmmxxEquationSolverSettings>();
     storm::settings::addModule<storm::settings::modules::EigenEquationSolverSettings>();
@@ -80,11 +82,7 @@ void initializeSettings() {
     storm::settings::addModule<storm::settings::modules::TopologicalEquationSolverSettings>();
     storm::settings::addModule<storm::settings::modules::ModelCheckerSettings>();
     storm::settings::addModule<storm::settings::modules::MultiplierSettings>();
-
-    storm::settings::addModule<storm::settings::modules::TransformationSettings>();
     storm::settings::addModule<storm::settings::modules::HintSettings>();
-
-    storm::settings::addModule<storm::settings::modules::POMDPSettings>();
 }
 
 template<typename ValueType>
