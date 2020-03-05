@@ -70,5 +70,28 @@ namespace storm {
             return filestream.good();
         }
 
+        /*!
+         * Overloaded getline function which handles different types of newline (\n and \r).
+         * @param input Input stream.
+         * @param str Output string.
+         * @return Remaining stream.
+         */
+        template<class CharT, class Traits, class Allocator>
+        inline std::basic_istream<CharT, Traits>& getline(std::basic_istream<CharT, Traits>& input, std::basic_string<CharT, Traits, Allocator>& str) {
+            auto& res = std::getline(input, str);
+            // Remove linebreaks
+            std::string::reverse_iterator rit = str.rbegin();
+            while (rit != str.rend()) {
+                if (*rit == '\r' || *rit == '\n') {
+                    ++rit;
+                    str.pop_back();
+                } else {
+                    break;
+                }
+            }
+            return res;
+        }
+
+
     }
 }

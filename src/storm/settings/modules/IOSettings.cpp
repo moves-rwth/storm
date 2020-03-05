@@ -97,8 +97,8 @@ namespace storm {
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, qvbsInputOptionName, false, "Selects a model from the Quantitative Verification Benchmark Set.").setShortName(qvbsInputOptionShortName)
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("model", "The short model name as in the benchmark set.").build())
-                        .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("instance-index", "The selected instance of this model.").setDefaultValueUnsignedInteger(0).build())
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "The comma separated list of property names to check. Omit to check all, \"\" to check none.").setDefaultValueString("").build())
+                        .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("instance-index", "The selected instance of this model.").setDefaultValueUnsignedInteger(0).makeOptional().build())
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "The comma separated list of property names to check. Omit to check all, \"\" to check none.").setDefaultValueString("").makeOptional().build())
                         .build());
 #ifdef STORM_HAVE_QVBS
                 std::string qvbsRootDefault = STORM_QVBS_ROOT;

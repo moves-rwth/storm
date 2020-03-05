@@ -7,6 +7,8 @@
 
 #include "storm/storage/prism/Program.h"
 
+#include "storm/builder/TerminalStatesGetter.h"
+
 #include "storm/logic/Formulas.h"
 #include "storm/adapters/AddExpressionAdapter.h"
 #include "storm/utility/macros.h"
@@ -81,13 +83,9 @@ namespace storm {
                 // An optional set of labels that, if given, restricts the labels that are built.
                 boost::optional<std::set<std::string>> labelsToBuild;
                 
-                // An optional expression or label that (a subset of) characterizes the terminal states of the model.
+                // An optional set of expression or labels that characterizes (a subset of) the terminal states of the model.
                 // If this is set, the outgoing transitions of these states are replaced with a self-loop.
-                boost::optional<boost::variant<storm::expressions::Expression, std::string>> terminalStates;
-                
-                // An optional expression or label whose negation characterizes (a subset of) the terminal states of the
-                // model. If this is set, the outgoing transitions of these states are replaced with a self-loop.
-                boost::optional<boost::variant<storm::expressions::Expression, std::string>> negatedTerminalStates;
+                storm::builder::TerminalStates terminalStates;
             };
             
             /*!

@@ -48,7 +48,7 @@ namespace storm {
             std::string toplevelId = "";
             bool comment = false; // Indicates whether the current line is part of a multiline comment
             try {
-                while (std::getline(file, line)) {
+                while (storm::utility::getline(file, line)) {
                     ++lineNo;
                     // First consider comments
                     if (comment) {
