@@ -62,7 +62,7 @@ namespace storm {
             }
 
             bool FaultTreeSettings::useSymmetryReduction() const {
-                return !this->getOption(symmetryReductionOptionName).getHasOptionBeenSet();
+                return !this->getOption(noSymmetryReductionOptionName).getHasOptionBeenSet();
             }
 
             bool FaultTreeSettings::useModularisation() const {
