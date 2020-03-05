@@ -95,10 +95,11 @@ namespace storm {
             /*!
              * Retrieves all labeled choices possible from the given state.
              *
+             * @param choices The new choices are inserted in this vector
              * @param state The state for which to retrieve the unlabeled choices.
              * @return The labeled choices of the state.
              */
-            std::vector<Choice<ValueType>> getLabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter = CommandFilter::All);
+            void addLabeledChoices(std::vector<Choice<ValueType>>& choices, CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter = CommandFilter::All);
 
 
             /*!
