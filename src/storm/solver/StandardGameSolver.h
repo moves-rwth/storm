@@ -3,6 +3,7 @@
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/Multiplier.h"
 #include "storm/solver/GameSolver.h"
+#include "storm/solver/SolverStatus.h"
 #include "SolverSelectionOptions.h"
 
 namespace storm {
@@ -47,10 +48,6 @@ namespace storm {
             std::vector<uint64_t> const& getPlayer1Grouping() const;
             uint64_t getNumberOfPlayer1States() const;
             uint64_t getNumberOfPlayer2States() const;
-
-            enum class Status {
-                Converged, TerminatedEarly, MaximalIterationsExceeded, InProgress
-            };
             
             // possibly cached data
             mutable std::unique_ptr<storm::solver::Multiplier<ValueType>> multiplierPlayer2Matrix;
@@ -58,8 +55,8 @@ namespace storm {
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryP2RowGroupVector; // player2Matrix.rowGroupCount() entries
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryP1RowGroupVector; // player1Matrix.rowGroupCount() entries
 
-            Status updateStatusIfNotConverged(Status status, std::vector<ValueType> const& x, uint64_t iterations, uint64_t maximalNumberOfIterations) const;
-            void reportStatus(Status status, uint64_t iterations) const;
+            SolverStatus updateStatusIfNotConverged(SolverStatus status, std::vector<ValueType> const& x, uint64_t iterations, uint64_t maximalNumberOfIterations) const;
+            void reportStatus(SolverStatus status, uint64_t iterations) const;
             
             /// The factory used to obtain linear equation solvers.
             std::unique_ptr<LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
