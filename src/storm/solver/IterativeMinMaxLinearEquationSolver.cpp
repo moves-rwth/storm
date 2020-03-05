@@ -53,8 +53,8 @@ namespace storm {
                 }
             } else if (env.solver().isForceSoundness() && method != MinMaxMethod::SoundValueIteration && method != MinMaxMethod::IntervalIteration && method != MinMaxMethod::PolicyIteration && method != MinMaxMethod::RationalSearch && method != MinMaxMethod::OptimisticValueIteration) {
                 if (env.solver().minMax().isMethodSetFromDefault()) {
-                    STORM_LOG_INFO("Selecting 'sound value iteration' as the solution technique to guarantee sound results. If you want to override this, please explicitly specify a different method.");
-                    method = MinMaxMethod::SoundValueIteration;
+                    method = MinMaxMethod::OptimisticValueIteration;
+                    STORM_LOG_INFO("Selecting '" << toString(method) << "' as the solution technique to guarantee sound results. If you want to override this, please explicitly specify a different method.");
                 } else {
                     STORM_LOG_WARN("The selected solution method does not guarantee sound results.");
                 }
