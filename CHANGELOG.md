@@ -15,6 +15,7 @@ Version 1.4.x
 - Added option `--build:buildchoiceorig` to build a model (PRISM or JANI) with choice origins (which are exported with, e.g. `--exportscheduler`).
 - Apply the maximum progress assumption while building a Markov automata with the Dd engine.
 - Added option `--build:nomaxprog` to disable applying the maximum progress assumption during model building (for Markov Automata)
+- `storm-dft`: Symmetry reduction is now enabled by default and can be disabled via `--nosymmetryreduction`
 - `storm-pomdp`: Only accept POMDPs that are canonical
 - `storm-pomdp`: Prism language extended with observable expressions
 - `storm-pomdp`: Various fixes that prevented usage.
