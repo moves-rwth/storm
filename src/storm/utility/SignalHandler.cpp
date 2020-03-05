@@ -3,12 +3,15 @@
 #include <csignal>
 #include <iostream>
 
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/ResourceSettings.h"
+
 namespace storm {
     namespace utility {
         namespace resources {
 
             // Maximal waiting time after abort signal before terminating
-            const int maxWaitTime = 3;
+            int maxWaitTime = 0;
 
             SignalInformation::SignalInformation() : terminate(false), lastSignal(0) {
             }
@@ -57,6 +60,9 @@ namespace storm {
             }
 
             void installSignalHandler() {
+                // Set the waiting time
+                maxWaitTime = storm::settings::getModule<storm::settings::modules::ResourceSettings>().getSignalWaitingTimeInSeconds();
+
                 // We use the newer sigaction instead of signal
                 struct sigaction sa;
                 sa.sa_handler = signalHandler;
