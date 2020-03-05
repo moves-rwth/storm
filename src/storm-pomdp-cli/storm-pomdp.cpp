@@ -197,12 +197,13 @@ int main(const int argc, const char** argv) {
         }
         storm::cli::setUrgentOptions();
 
-
+        typedef double VT;
 
         auto const& coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
         auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
         auto const &general = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
         auto const &debug = storm::settings::getModule<storm::settings::modules::DebugSettings>();
+
 
         if (general.isVerboseSet()) {
             storm::utility::setLogLevel(l3pp::LogLevel::INFO);
@@ -222,8 +223,8 @@ int main(const int argc, const char** argv) {
         auto model = storm::cli::buildPreprocessExportModelWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, double>(symbolicInput, engine);
         STORM_LOG_THROW(model && model->getType() == storm::models::ModelType::Pomdp, storm::exceptions::WrongFormatException, "Expected a POMDP.");
 
-        std::shared_ptr<storm::models::sparse::Pomdp<storm::RationalNumber>> pomdp = model->template as<storm::models::sparse::Pomdp<storm::RationalNumber>>();
-        storm::transformer::MakePOMDPCanonic<storm::RationalNumber> makeCanonic(*pomdp);
+        std::shared_ptr<storm::models::sparse::Pomdp<VT>> pomdp = model->template as<storm::models::sparse::Pomdp<VT>>();
+        storm::transformer::MakePOMDPCanonic<VT> makeCanonic(*pomdp);
         pomdp = makeCanonic.transform();
         
         std::shared_ptr<storm::logic::Formula const> formula;
@@ -235,7 +236,7 @@ int main(const int argc, const char** argv) {
 
         if (pomdpSettings.isAnalyzeUniqueObservationsSet()) {
             STORM_PRINT_AND_LOG("Analyzing states with unique observation ..." << std::endl);
-            storm::analysis::UniqueObservationStates<double> uniqueAnalysis(*pomdp);
+            storm::analysis::UniqueObservationStates<VT> uniqueAnalysis(*pomdp);
             std::cout << uniqueAnalysis.analyse() << std::endl;
         }
 
@@ -261,12 +262,12 @@ int main(const int argc, const char** argv) {
                 if (pomdpSettings.isSelfloopReductionSet() && !storm::solver::minimize(formula->asProbabilityOperatorFormula().getOptimalityType())) {
                     STORM_PRINT_AND_LOG("Eliminating self-loop choices ...");
                     uint64_t oldChoiceCount = pomdp->getNumberOfChoices();
-                    storm::transformer::GlobalPOMDPSelfLoopEliminator<double> selfLoopEliminator(*pomdp);
+                    storm::transformer::GlobalPOMDPSelfLoopEliminator<VT> selfLoopEliminator(*pomdp);
                     pomdp = selfLoopEliminator.transform();
                     STORM_PRINT_AND_LOG(oldChoiceCount - pomdp->getNumberOfChoices() << " choices eliminated through self-loop elimination." << std::endl);
                 }
                 if (pomdpSettings.isQualitativeReductionSet()) {
-                    storm::analysis::QualitativeAnalysis<double> qualitativeAnalysis(*pomdp);
+                    storm::analysis::QualitativeAnalysis<VT> qualitativeAnalysis(*pomdp);
                     STORM_PRINT_AND_LOG("Computing states with probability 0 ...");
                     prob0States = qualitativeAnalysis.analyseProb0(formula->asProbabilityOperatorFormula());
                     std::cout << *prob0States << std::endl;
@@ -276,15 +277,15 @@ int main(const int argc, const char** argv) {
                     std::cout << *prob1States << std::endl;
                     STORM_PRINT_AND_LOG(" done." << std::endl);
                     //std::cout << "actual reduction not yet implemented..." << std::endl;
-                    storm::pomdp::transformer::KnownProbabilityTransformer<double> kpt = storm::pomdp::transformer::KnownProbabilityTransformer<double>();
+                    storm::pomdp::transformer::KnownProbabilityTransformer<VT> kpt = storm::pomdp::transformer::KnownProbabilityTransformer<double>();
                     pomdp = kpt.transform(*pomdp, *prob0States, *prob1States);
                 }
                 if (pomdpSettings.isGridApproximationSet()) {
 
-                    storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<double> checker = storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<double>();
-                    auto overRes = storm::utility::one<double>();
-                    auto underRes = storm::utility::zero<double>();
-                    std::unique_ptr<storm::pomdp::modelchecker::POMDPCheckResult<double>> result;
+                    storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<VT> checker = storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<double>();
+                    auto overRes = storm::utility::one<VT>();
+                    auto underRes = storm::utility::zero<VT>();
+                    std::unique_ptr<storm::pomdp::modelchecker::POMDPCheckResult<VT>> result;
 
                     result = checker.refineReachabilityProbability(*pomdp, targetObservationSet, probFormula.getOptimalityType() == storm::OptimizationDirection::Minimize,
                                                                    pomdpSettings.getGridResolution(), pomdpSettings.getExplorationThreshold());
@@ -306,10 +307,10 @@ int main(const int argc, const char** argv) {
                     storm::expressions::ExpressionManager expressionManager;
                     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
                     if (pomdpSettings.getMemlessSearchMethod() == "ccd16memless") {
-                        storm::pomdp::QualitativeStrategySearchNaive<double> memlessSearch(*pomdp, targetObservationSet, targetStates, badStates, smtSolverFactory);
+                        storm::pomdp::QualitativeStrategySearchNaive<VT> memlessSearch(*pomdp, targetObservationSet, targetStates, badStates, smtSolverFactory);
                         memlessSearch.findNewStrategyForSomeState(5);
                     } else if (pomdpSettings.getMemlessSearchMethod() == "iterative") {
-                        storm::pomdp::MemlessStrategySearchQualitative<double> memlessSearch(*pomdp, targetObservationSet, targetStates, badStates, smtSolverFactory);
+                        storm::pomdp::MemlessStrategySearchQualitative<VT> memlessSearch(*pomdp, targetObservationSet, targetStates, badStates, smtSolverFactory);
                         memlessSearch.findNewStrategyForSomeState(5);
                     } else {
                         STORM_LOG_ERROR("This method is not implemented.");
@@ -321,7 +322,7 @@ int main(const int argc, const char** argv) {
                 if (pomdpSettings.isSelfloopReductionSet() && storm::solver::minimize(formula->asRewardOperatorFormula().getOptimalityType())) {
                     STORM_PRINT_AND_LOG("Eliminating self-loop choices ...");
                     uint64_t oldChoiceCount = pomdp->getNumberOfChoices();
-                    storm::transformer::GlobalPOMDPSelfLoopEliminator<double> selfLoopEliminator(*pomdp);
+                    storm::transformer::GlobalPOMDPSelfLoopEliminator<VT> selfLoopEliminator(*pomdp);
                     pomdp = selfLoopEliminator.transform();
                     STORM_PRINT_AND_LOG(oldChoiceCount - pomdp->getNumberOfChoices() << " choices eliminated through self-loop elimination." << std::endl);
                 }
@@ -367,10 +368,10 @@ int main(const int argc, const char** argv) {
                                     "The formula is not supported by the grid approximation");
                     STORM_LOG_ASSERT(!targetObservationSet.empty(), "The set of target observations is empty!");
 
-                    storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<double> checker = storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<double>();
-                    auto overRes = storm::utility::one<double>();
-                    auto underRes = storm::utility::zero<double>();
-                    std::unique_ptr<storm::pomdp::modelchecker::POMDPCheckResult<double>> result;
+                    storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<VT> checker = storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<double>();
+                    auto overRes = storm::utility::one<VT>();
+                    auto underRes = storm::utility::zero<VT>();
+                    std::unique_ptr<storm::pomdp::modelchecker::POMDPCheckResult<VT>> result;
                     result = checker.computeReachabilityReward(*pomdp, targetObservationSet,
                                                                rewFormula.getOptimalityType() ==
                                                                storm::OptimizationDirection::Minimize,
@@ -384,7 +385,7 @@ int main(const int argc, const char** argv) {
                 STORM_PRINT_AND_LOG("Computing the unfolding for memory bound " << pomdpSettings.getMemoryBound() << " and memory pattern '" << storm::storage::toString(pomdpSettings.getMemoryPattern()) << "' ...");
                 storm::storage::PomdpMemory memory = storm::storage::PomdpMemoryBuilder().build(pomdpSettings.getMemoryPattern(), pomdpSettings.getMemoryBound());
                 std::cout << memory.toString() << std::endl;
-                storm::transformer::PomdpMemoryUnfolder<double> memoryUnfolder(*pomdp, memory);
+                storm::transformer::PomdpMemoryUnfolder<VT> memoryUnfolder(*pomdp, memory);
                 pomdp = memoryUnfolder.transform();
                 STORM_PRINT_AND_LOG(" done." << std::endl);
                 pomdp->printModelInformationToStream(std::cout);
@@ -398,7 +399,7 @@ int main(const int argc, const char** argv) {
                 STORM_PRINT_AND_LOG("Eliminating mec choices ...");
                 // Note: Elimination of mec choices only preserves memoryless schedulers.
                 uint64_t oldChoiceCount = pomdp->getNumberOfChoices();
-                storm::transformer::GlobalPomdpMecChoiceEliminator<double> mecChoiceEliminator(*pomdp);
+                storm::transformer::GlobalPomdpMecChoiceEliminator<VT> mecChoiceEliminator(*pomdp);
                 pomdp = mecChoiceEliminator.transform(*formula);
                 STORM_PRINT_AND_LOG(" done." << std::endl);
                 STORM_PRINT_AND_LOG(oldChoiceCount - pomdp->getNumberOfChoices() << " choices eliminated through MEC choice elimination." << std::endl);
@@ -408,10 +409,10 @@ int main(const int argc, const char** argv) {
             if (pomdpSettings.isTransformBinarySet() || pomdpSettings.isTransformSimpleSet()) {
                 if (pomdpSettings.isTransformSimpleSet()) {
                     STORM_PRINT_AND_LOG("Transforming the POMDP to a simple POMDP.");
-                    pomdp = storm::transformer::BinaryPomdpTransformer<double>().transform(*pomdp, true);
+                    pomdp = storm::transformer::BinaryPomdpTransformer<VT>().transform(*pomdp, true);
                 } else {
                     STORM_PRINT_AND_LOG("Transforming the POMDP to a binary POMDP.");
-                    pomdp = storm::transformer::BinaryPomdpTransformer<double>().transform(*pomdp, false);
+                    pomdp = storm::transformer::BinaryPomdpTransformer<VT>().transform(*pomdp, false);
                 }
                 pomdp->printModelInformationToStream(std::cout);
                 STORM_PRINT_AND_LOG(" done." << std::endl);
@@ -420,7 +421,7 @@ int main(const int argc, const char** argv) {
 
             if (pomdpSettings.isExportToParametricSet()) {
                 STORM_PRINT_AND_LOG("Transforming memoryless POMDP to pMC...");
-                storm::transformer::ApplyFiniteSchedulerToPomdp<double> toPMCTransformer(*pomdp);
+                storm::transformer::ApplyFiniteSchedulerToPomdp<VT> toPMCTransformer(*pomdp);
                 std::string transformMode = pomdpSettings.getFscApplicationTypeString();
                 auto pmc = toPMCTransformer.transform(storm::transformer::parsePomdpFscApplicationMode(transformMode));
                 STORM_PRINT_AND_LOG(" done." << std::endl);
