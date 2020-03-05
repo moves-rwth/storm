@@ -2,14 +2,15 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
-
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/InvalidStateException.h"
+#include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
-
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
-#include "storm/exceptions/UnmetRequirementException.h"
-#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/utility/SignalHandler.h"
+
 
 namespace storm {
     namespace solver {
@@ -271,6 +272,62 @@ namespace storm {
                 }
                 this->progressMeasurement->updateProgress(iteration);
             }
+        }
+
+
+        template<typename ValueType>
+        void AbstractEquationSolver<ValueType>::reportStatus(SolverStatus status, boost::optional<uint64_t> const& iterations) const {
+            if (iterations) {
+                switch (status) {
+                    case SolverStatus::Converged:
+                        STORM_LOG_TRACE("Iterative solver converged after " << iterations.get() << " iterations.");
+                        break;
+                    case SolverStatus::TerminatedEarly:
+                        STORM_LOG_TRACE("Iterative solver terminated early after " << iterations.get() << " iterations.");
+                        break;
+                    case SolverStatus::MaximalIterationsExceeded:
+                        STORM_LOG_WARN("Iterative solver did not converge after " << iterations.get() << " iterations.");
+                        break;
+                    case SolverStatus::Aborted:
+                        STORM_LOG_WARN("Iterative solver was aborted.");
+                        break;
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Iterative solver terminated unexpectedly.");
+                }
+            } else {
+                switch (status) {
+                    case SolverStatus::Converged:
+                        STORM_LOG_TRACE("Solver converged.");
+                        break;
+                    case SolverStatus::TerminatedEarly:
+                        STORM_LOG_TRACE("Solver terminated early.");
+                        break;
+                    case SolverStatus::MaximalIterationsExceeded:
+                        STORM_LOG_ASSERT(false, "Non-iterative solver should not exceed maximal number of iterations.");
+                        STORM_LOG_WARN("Solver did not converge.");
+                        break;
+                    case SolverStatus::Aborted:
+                        STORM_LOG_WARN("Solver was aborted.");
+                        break;
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Solver terminated unexpectedly.");
+                }
+            }
+        }
+
+
+        template<typename ValueType>
+        SolverStatus AbstractEquationSolver<ValueType>::updateStatusIfNotConverged(SolverStatus status, std::vector<ValueType> const& x, uint64_t iterations, uint64_t maximalNumberOfIterations, SolverGuarantee const& guarantee) const {
+            if (status != SolverStatus::Converged) {
+                if (this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x, guarantee)) {
+                    status = SolverStatus::TerminatedEarly;
+                } else if (iterations >= maximalNumberOfIterations) {
+                    status = SolverStatus::MaximalIterationsExceeded;
+                } else if (storm::utility::resources::isTerminate()) {
+                    status = SolverStatus::Aborted;
+                }
+            }
+            return status;
         }
         
         template class AbstractEquationSolver<double>;

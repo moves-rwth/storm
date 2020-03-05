@@ -230,7 +230,7 @@ namespace storm {
                 status = updateStatusIfNotConverged(status, x, iterations, maxIter);
             } while (status == SolverStatus::InProgress);
             
-            reportStatus(status, iterations);
+            this->reportStatus(status, iterations);
             
             // If requested, we store the scheduler for retrieval.
             if (this->isTrackSchedulersSet() && !(providedPlayer1Choices && providedPlayer2Choices)) {
@@ -330,7 +330,7 @@ namespace storm {
                 status = updateStatusIfNotConverged(status, *currentX, iterations, maxIter);
             }
                         
-            reportStatus(status, iterations);
+            this->reportStatus(status, iterations);
             
             // If we performed an odd number of iterations, we need to swap the x and currentX, because the newest result
             // is currently stored in currentX, but x is the output vector.
@@ -572,18 +572,6 @@ namespace storm {
                 }
             }
             return status;
-        }
-        
-        template<typename ValueType>
-        void StandardGameSolver<ValueType>::reportStatus(SolverStatus status, uint64_t iterations) const {
-            switch (status) {
-                case SolverStatus::Converged: STORM_LOG_INFO("Iterative solver converged after " << iterations << " iterations."); break;
-                case SolverStatus::TerminatedEarly: STORM_LOG_INFO("Iterative solver terminated early after " << iterations << " iterations."); break;
-                case SolverStatus::MaximalIterationsExceeded: STORM_LOG_WARN("Iterative solver did not converge after " << iterations << " iterations."); break;
-                case SolverStatus::Aborted: STORM_LOG_WARN("Iterative solver was aborted."); break;
-                default:
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Iterative solver terminated unexpectedly.");
-            }
         }
         
         template<typename ValueType>

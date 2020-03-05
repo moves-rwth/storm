@@ -56,8 +56,7 @@ namespace storm {
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryP1RowGroupVector; // player1Matrix.rowGroupCount() entries
 
             SolverStatus updateStatusIfNotConverged(SolverStatus status, std::vector<ValueType> const& x, uint64_t iterations, uint64_t maximalNumberOfIterations) const;
-            void reportStatus(SolverStatus status, uint64_t iterations) const;
-            
+
             /// The factory used to obtain linear equation solvers.
             std::unique_ptr<LinearEquationSolverFactory<ValueType>> linearEquationSolverFactory;
             

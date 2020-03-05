@@ -65,19 +65,22 @@ namespace storm {
             
             // Set up additional environment variables.
             uint_fast64_t iterations = 0;
-            bool converged = false;
-            bool terminate = false;
+            SolverStatus status = SolverStatus::InProgress;
             
             this->startMeasureProgress();
-            while (!converged && !terminate && iterations < maxIter) {
+            while (status == SolverStatus::InProgress && iterations < maxIter) {
                 A->performSuccessiveOverRelaxationStep(omega, x, b);
                 
                 // Now check if the process already converged within our precision.
-                converged = storm::utility::vector::equalModuloPrecision<ValueType>(*this->cachedRowVector, x, precision, relative);
-                terminate = this->terminateNow(x, SolverGuarantee::None);
-                
+                if (storm::utility::vector::equalModuloPrecision<ValueType>(*this->cachedRowVector, x, precision, relative)) {
+                    status = SolverStatus::Converged;
+                }
+                if (this->terminateNow(x, SolverGuarantee::None)) {
+                    status = SolverStatus::TerminatedEarly;
+                }
+
                 // If we did not yet converge, we need to backup the contents of x.
-                if (!converged) {
+                if (status != SolverStatus::Converged) {
                     *this->cachedRowVector = x;
                 }
                 
@@ -86,15 +89,19 @@ namespace storm {
 
                 // Increase iteration count so we can abort if convergence is too slow.
                 ++iterations;
+
+                if (storm::utility::resources::isTerminate()) {
+                    status = SolverStatus::Aborted;
+                }
             }
             
             if (!this->isCachingEnabled()) {
                 clearCache();
             }
-            
-            this->logIterations(converged, terminate, iterations);
-            
-            return converged;
+
+            this->reportStatus(status, iterations);
+
+            return status == SolverStatus::Converged;
         }
     
         template<typename ValueType>
@@ -127,20 +134,22 @@ namespace storm {
             
             // Set up additional environment variables.
             uint_fast64_t iterations = 0;
-            bool converged = false;
-            bool terminate = false;
+            SolverStatus status = SolverStatus::InProgress;
 
             this->startMeasureProgress();
-            while (!converged && !terminate && iterations < maxIter) {
+            while (status == SolverStatus::InProgress && iterations < maxIter) {
                 // Compute D^-1 * (b - LU * x) and store result in nextX.
                 jacobiDecomposition->multiplier->multiply(env, *currentX, nullptr, *nextX);
                 storm::utility::vector::subtractVectors(b, *nextX, *nextX);
                 storm::utility::vector::multiplyVectorsPointwise(jacobiDecomposition->DVector, *nextX, *nextX);
                 
                 // Now check if the process already converged within our precision.
-                converged = storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *nextX, precision, relative);
-                terminate = this->terminateNow(*currentX, SolverGuarantee::None);
-                
+                if (storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *nextX, precision, relative)) {
+                    status = SolverStatus::Converged;
+                }
+                if (this->terminateNow(*currentX, SolverGuarantee::None)) {
+                    status = SolverStatus::TerminatedEarly;
+                }
                 // Swap the two pointers as a preparation for the next iteration.
                 std::swap(nextX, currentX);
                 
@@ -149,6 +158,10 @@ namespace storm {
                 
                 // Increase iteration count so we can abort if convergence is too slow.
                 ++iterations;
+
+                if (storm::utility::resources::isTerminate()) {
+                    status = SolverStatus::Aborted;
+                }
             }
             
             // If the last iteration did not write to the original x we have to swap the contents, because the
@@ -160,10 +173,10 @@ namespace storm {
             if (!this->isCachingEnabled()) {
                 clearCache();
             }
-            
-            this->logIterations(converged, terminate, iterations);
 
-            return converged;
+            this->reportStatus(status, iterations);
+
+            return status == SolverStatus::Converged;
         }
         
         template<typename ValueType>
@@ -257,10 +270,10 @@ namespace storm {
             walkerChaeData->multiplier->multiply(env, *currentX, nullptr, currentAx);
             
             // (3) Perform iterations until convergence.
-            bool converged = false;
+            SolverStatus status = SolverStatus::InProgress;
             uint64_t iterations = 0;
             this->startMeasureProgress();
-            while (!converged && iterations < maxIter) {
+            while (status == SolverStatus::InProgress && iterations < maxIter) {
                 // Perform one Walker-Chae step.
                 walkerChaeData->matrix.performWalkerChaeStep(*currentX, walkerChaeData->columnSums, walkerChaeData->b, currentAx, *nextX);
                 
@@ -268,7 +281,9 @@ namespace storm {
                 walkerChaeData->multiplier->multiply(env, *nextX, nullptr, currentAx);
                 
                 // Check for convergence.
-                converged = storm::utility::vector::computeSquaredNorm2Difference(currentAx, walkerChaeData->b) <= squaredErrorBound;
+                if (storm::utility::vector::computeSquaredNorm2Difference(currentAx, walkerChaeData->b) <= squaredErrorBound) {
+                    status = SolverStatus::Converged;
+                }
                 
                 // Swap the x vectors for the next iteration.
                 std::swap(currentX, nextX);
@@ -278,6 +293,10 @@ namespace storm {
 
                 // Increase iteration count so we can abort if convergence is too slow.
                 ++iterations;
+
+                if (storm::utility::resources::isTerminate()) {
+                    status = SolverStatus::Aborted;
+                }
             }
             
             // If the last iteration did not write to the original x we have to swap the contents, because the
@@ -296,13 +315,9 @@ namespace storm {
                 clearCache();
             }
 
-            if (converged) {
-                STORM_LOG_INFO("Iterative solver converged in " << iterations << " iterations.");
-            } else {
-                STORM_LOG_WARN("Iterative solver did not converge in " << iterations << " iterations.");
-            }
+            this->reportStatus(status, iterations);
 
-            return converged;
+            return status == SolverStatus::Converged;
         }
         
         template<typename ValueType>
@@ -433,9 +448,8 @@ namespace storm {
             if (!this->multiplier) {
                 this->multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, *A);
             }
-            
-            bool converged = false;
-            bool terminate = false;
+
+            SolverStatus status = SolverStatus::InProgress;
             uint64_t iterations = 0;
             bool doConvergenceCheck = true;
             bool useDiffs = this->hasRelevantValues() && !env.solver().native().isSymmetricUpdatesSet();
@@ -452,7 +466,7 @@ namespace storm {
             }
             uint64_t maxIter = env.solver().native().getMaximalNumberOfIterations();
             this->startMeasureProgress();
-            while (!converged && !terminate && iterations < maxIter) {
+            while (status == SolverStatus::InProgress && iterations < maxIter) {
                 // Remember in which directions we took steps in this iteration.
                 bool lowerStep = false;
                 bool upperStep = false;
@@ -537,24 +551,36 @@ namespace storm {
                     // precision here. Doing so, we need to take the means of the lower and upper values later to guarantee
                     // the original precision.
                     if (this->hasRelevantValues()) {
-                        converged = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, this->getRelevantValues(), precision, relative);
+                        if (storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, this->getRelevantValues(), precision, relative)) {
+                            status = SolverStatus::Converged;
+                        }
                     } else {
-                        converged = storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, precision, relative);
+                        if (storm::utility::vector::equalModuloPrecision<ValueType>(*lowerX, *upperX, precision, relative)) {
+                            status = SolverStatus::Converged;
+                        }
                     }
                     if (lowerStep) {
-                        terminate |= this->terminateNow(*lowerX, SolverGuarantee::LessOrEqual);
+                        if (this->terminateNow(*lowerX, SolverGuarantee::LessOrEqual)) {
+                            status = SolverStatus::TerminatedEarly;
+                        }
                     }
                     if (upperStep) {
-                        terminate |= this->terminateNow(*upperX, SolverGuarantee::GreaterOrEqual);
+                        if (this->terminateNow(*upperX, SolverGuarantee::GreaterOrEqual)) {
+                            status = SolverStatus::TerminatedEarly;
+                        }
                     }
                 }
                 
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
+
                 
                 // Set up next iteration.
                 ++iterations;
                 doConvergenceCheck = !doConvergenceCheck;
+                if (storm::utility::resources::isTerminate()) {
+                    status = SolverStatus::Aborted;
+                }
             }
             
             // We take the means of the lower and upper bound so we guarantee the desired precision.
@@ -570,9 +596,9 @@ namespace storm {
             if (!this->isCachingEnabled()) {
                 clearCache();
             }
-            this->logIterations(converged, terminate, iterations);
+            this->reportStatus(status, iterations);
 
-            return converged;
+            return status == SolverStatus::Converged;
         }
         
         
@@ -603,35 +629,39 @@ namespace storm {
                 relevantValuesPtr = &this->getRelevantValues();
             }
             
-            bool converged = false;
-            bool terminate = false;
+            SolverStatus status = SolverStatus::InProgress;
             this->startMeasureProgress();
             uint64_t iterations = 0;
             
-            while (!converged && iterations < env.solver().native().getMaximalNumberOfIterations()) {
+            while (status == SolverStatus::InProgress && iterations < env.solver().native().getMaximalNumberOfIterations()) {
                 this->soundValueIterationHelper->performIterationStep(b);
                 if (this->soundValueIterationHelper->checkConvergenceUpdateBounds(relevantValuesPtr)) {
-                    converged = true;
+                    status = SolverStatus::Converged;
                 }
 
                 // Check whether we terminate early.
-                terminate = this->hasCustomTerminationCondition() && this->soundValueIterationHelper->checkCustomTerminationCondition(this->getTerminationCondition());
+                if (this->hasCustomTerminationCondition() && this->soundValueIterationHelper->checkCustomTerminationCondition(this->getTerminationCondition())) {
+                    status = SolverStatus::TerminatedEarly;
+                }
                 
                 // Update environment variables.
                 ++iterations;
                 
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
+                if (storm::utility::resources::isTerminate()) {
+                    status = SolverStatus::Aborted;
+                }
             }
             this->soundValueIterationHelper->setSolutionVector();
-            
-            this->logIterations(converged, terminate, iterations);
-            
+
+            this->reportStatus(status, iterations);
+
             if (!this->isCachingEnabled()) {
                 clearCache();
             }
             
-            return converged;
+            return status == SolverStatus::Converged;
         }
         
         template<typename ValueType>
@@ -961,7 +991,7 @@ namespace storm {
             // Checked all values at this point.
             return true;
         }
-        
+
         template<typename ValueType>
         void NativeLinearEquationSolver<ValueType>::logIterations(bool converged, bool terminate, uint64_t iterations) const {
             if (converged) {
@@ -972,7 +1002,7 @@ namespace storm {
                 STORM_LOG_WARN("Iterative solver did not converge in " << iterations << " iterations.");
             }
         }
-        
+
         template<typename ValueType>
         NativeLinearEquationSolverMethod NativeLinearEquationSolver<ValueType>::getMethod(Environment const& env, bool isExactMode) const {
             // Adjust the method if none was specified and we want exact or sound computations

@@ -199,16 +199,13 @@ namespace storm {
                 
                 // Update environment variables.
                 ++iterations;
-                status = updateStatusIfNotConverged(status, x, iterations, env.solver().minMax().getMaximalNumberOfIterations(), dir == storm::OptimizationDirection::Minimize ? SolverGuarantee::GreaterOrEqual : SolverGuarantee::LessOrEqual);
+                status = this->updateStatusIfNotConverged(status, x, iterations, env.solver().minMax().getMaximalNumberOfIterations(), dir == storm::OptimizationDirection::Minimize ? SolverGuarantee::GreaterOrEqual : SolverGuarantee::LessOrEqual);
 
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
-                if (storm::utility::resources::isTerminate()) {
-                    status = SolverStatus::Aborted;
-                }
             } while (status == SolverStatus::InProgress);
             
-            reportStatus(status, iterations);
+            this->reportStatus(status, iterations);
             
             // If requested, we store the scheduler for retrieval.
             if (this->isTrackSchedulerSet()) {
@@ -331,7 +328,7 @@ namespace storm {
                 // Update environment variables.
                 std::swap(currentX, newX);
                 ++iterations;
-                status = updateStatusIfNotConverged(status, *currentX, iterations, maximalNumberOfIterations, guarantee);
+                status = this->updateStatusIfNotConverged(status, *currentX, iterations, maximalNumberOfIterations, guarantee);
 
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
@@ -417,7 +414,7 @@ namespace storm {
             auto two = storm::utility::convertNumber<ValueType>(2.0);
             storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(*lowerX, *upperX, x, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
 
-            reportStatus(statusIters.first, statusIters.second);
+            this->reportStatus(statusIters.first, statusIters.second);
 
             // If requested, we store the scheduler for retrieval.
             if (this->isTrackSchedulerSet()) {
@@ -503,7 +500,7 @@ namespace storm {
                 std::swap(x, *currentX);
             }
             
-            reportStatus(result.status, result.iterations);
+            this->reportStatus(result.status, result.iterations);
             
             // If requested, we store the scheduler for retrieval.
             if (this->isTrackSchedulerSet()) {
@@ -666,17 +663,17 @@ namespace storm {
                 ++iterations;
                 doConvergenceCheck = !doConvergenceCheck;
                 if (lowerStep) {
-                    status = updateStatusIfNotConverged(status, *lowerX, iterations, env.solver().minMax().getMaximalNumberOfIterations(), SolverGuarantee::LessOrEqual);
+                    status = this->updateStatusIfNotConverged(status, *lowerX, iterations, env.solver().minMax().getMaximalNumberOfIterations(), SolverGuarantee::LessOrEqual);
                 }
                 if (upperStep) {
-                    status = updateStatusIfNotConverged(status, *upperX, iterations, env.solver().minMax().getMaximalNumberOfIterations(), SolverGuarantee::GreaterOrEqual);
+                    status = this->updateStatusIfNotConverged(status, *upperX, iterations, env.solver().minMax().getMaximalNumberOfIterations(), SolverGuarantee::GreaterOrEqual);
                 }
 
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
             }
             
-            reportStatus(status, iterations);
+            this->reportStatus(status, iterations);
 
             // We take the means of the lower and upper bound so we guarantee the desired precision.
             ValueType two = storm::utility::convertNumber<ValueType>(2.0);
@@ -761,7 +758,7 @@ namespace storm {
                 this->A->multiplyAndReduce(dir, this->A->getRowGroupIndices(), x, &b, *this->auxiliaryRowGroupVector, &this->schedulerChoices.get());
             }
 
-            reportStatus(status, iterations);
+            this->reportStatus(status, iterations);
             
             if (!this->isCachingEnabled()) {
                 clearCache();
@@ -1064,7 +1061,7 @@ namespace storm {
                 status = SolverStatus::MaximalIterationsExceeded;
             }
             
-            reportStatus(status, overallIterations);
+            this->reportStatus(status, overallIterations);
             
             return status == SolverStatus::Converged || status == SolverStatus::TerminatedEarly;
         }
@@ -1101,32 +1098,6 @@ namespace storm {
             }
             if (choice != nullptr) {
                 *choice = optimalRow - this->A->getRowGroupIndices()[group];
-            }
-        }
-
-        template<typename ValueType>
-        SolverStatus IterativeMinMaxLinearEquationSolver<ValueType>::updateStatusIfNotConverged(SolverStatus status, std::vector<ValueType> const& x, uint64_t iterations, uint64_t maximalNumberOfIterations, SolverGuarantee const& guarantee) const {
-            if (status != SolverStatus::Converged) {
-                if (this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x, guarantee)) {
-                    status = SolverStatus::TerminatedEarly;
-                } else if (iterations >= maximalNumberOfIterations) {
-                    status = SolverStatus::MaximalIterationsExceeded;
-                } else if (storm::utility::resources::isTerminate()) {
-                    status = SolverStatus::Aborted;
-                }
-            }
-            return status;
-        }
-        
-        template<typename ValueType>
-        void IterativeMinMaxLinearEquationSolver<ValueType>::reportStatus(SolverStatus status, uint64_t iterations) {
-            switch (status) {
-                case SolverStatus::Converged: STORM_LOG_TRACE("Iterative solver converged after " << iterations << " iterations."); break;
-                case SolverStatus::TerminatedEarly: STORM_LOG_TRACE("Iterative solver terminated early after " << iterations << " iterations."); break;
-                case SolverStatus::MaximalIterationsExceeded: STORM_LOG_WARN("Iterative solver did not converge after " << iterations << " iterations."); break;
-                case SolverStatus::Aborted: STORM_LOG_WARN("Iterative solver was aborted."); break;
-                default:
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Iterative solver terminated unexpectedly.");
             }
         }
         
