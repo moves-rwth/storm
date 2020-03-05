@@ -95,7 +95,6 @@ int main(const int argc, const char** argv) {
 
 
 
-        auto const& coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
         auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
 
         auto symbolicInput = storm::cli::parseSymbolicInput();
