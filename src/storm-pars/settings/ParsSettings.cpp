@@ -27,6 +27,8 @@
 #include "storm/settings/modules/MultiplierSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
 #include "storm/settings/modules/HintSettings.h"
+#include "storm/settings/modules/OviSolverSettings.h"
+#include "storm/settings/modules/TimeBoundedSolverSettings.h"
 
 
 
@@ -59,6 +61,8 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::JitBuilderSettings>();
             storm::settings::addModule<storm::settings::modules::MultiplierSettings>();
             storm::settings::addModule<storm::settings::modules::TransformationSettings>();
+            storm::settings::addModule<storm::settings::modules::OviSolverSettings>();
+            storm::settings::addModule<storm::settings::modules::TimeBoundedSolverSettings>();
 
             storm::settings::addModule<storm::settings::modules::HintSettings>();
         }
