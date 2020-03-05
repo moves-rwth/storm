@@ -26,7 +26,7 @@ namespace storm {
             const std::string NativeEquationSolverSettings::intervalIterationSymmetricUpdatesOptionName = "symmetricupdates";
 
             NativeEquationSolverSettings::NativeEquationSolverSettings() : ModuleSettings(moduleName) {
-                std::vector<std::string> methods = { "jacobi", "gaussseidel", "sor", "walkerchae", "power", "sound-value-iteration", "svi", "interval-iteration", "ii", "ratsearch" };
+                std::vector<std::string> methods = { "jacobi", "gaussseidel", "sor", "walkerchae", "power", "sound-value-iteration", "svi", "optimistic-value-itearation", "ovi", "interval-iteration", "ii", "ratsearch" };
                 this->addOption(storm::settings::OptionBuilder(moduleName, techniqueOptionName, true, "The method to be used for solving linear equation systems with the native engine.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the method to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(methods)).setDefaultValueString("jacobi").build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, maximalIterationsOptionName, false, "The maximal number of iterations to perform before iterative solving is aborted.").setIsAdvanced().setShortName(maximalIterationsOptionShortName).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("count", "The maximal iteration count.").build()).build());
@@ -66,6 +66,8 @@ namespace storm {
                     return storm::solver::NativeLinearEquationSolverMethod::Power;
                 } else if (linearEquationSystemTechniqueAsString == "sound-value-iteration" || linearEquationSystemTechniqueAsString == "svi") {
                     return storm::solver::NativeLinearEquationSolverMethod::SoundValueIteration;
+                } else if (linearEquationSystemTechniqueAsString == "optimistic-value-iteration" || linearEquationSystemTechniqueAsString == "ovi") {
+                    return storm::solver::NativeLinearEquationSolverMethod::OptimisticValueIteration;
                 } else if (linearEquationSystemTechniqueAsString == "interval-iteration" || linearEquationSystemTechniqueAsString == "ii") {
                     return storm::solver::NativeLinearEquationSolverMethod::IntervalIteration;
                 } else if (linearEquationSystemTechniqueAsString == "ratsearch") {

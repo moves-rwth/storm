@@ -1,5 +1,6 @@
 #include "storm/storage/jani/VariableSet.h"
 
+#include "storm/storage/expressions/Expressions.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -437,6 +438,16 @@ namespace storm {
         void VariableSet::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
             for (auto& variable : variables) {
                 variable->substitute(substitution);
+            }
+        }
+        
+        void VariableSet::substituteExpressionVariables(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+            for (auto& variable : variables) {
+                auto varIt = substitution.find(variable->getExpressionVariable());
+                if (varIt != substitution.end()) {
+                    STORM_LOG_ASSERT(varIt->second.isVariable(), "Expected that variables are only substituted by other variables. However, we substitute " << varIt->first.getName() << " by " << varIt->second << ".");
+                    variable->setExpressionVariable(varIt->second.getBaseExpression().asVariableExpression().getVariable());
+                }
             }
         }
     }

@@ -83,6 +83,12 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
+        bool PrismNextStateGenerator<ValueType, StateType>::canHandle(storm::prism::Program const& program) {
+            // We can handle all valid prism programs (except for PTAs)
+            return program.getModelType() != storm::prism::Program::ModelType::PTA;
+        }
+        
+        template<typename ValueType, typename StateType>
         void PrismNextStateGenerator<ValueType, StateType>::checkValid() const {
             // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
 #ifdef STORM_HAVE_CARL

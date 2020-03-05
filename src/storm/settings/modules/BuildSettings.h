@@ -16,12 +16,6 @@ namespace storm {
                  * Creates a new set of core settings.
                  */
                 BuildSettings();
-                /*!
-                 * Retrieves whether the option to use the JIT builder is set.
-                 *
-                 * @return True iff the JIT builder is to be used.
-                 */
-                bool isJitSet() const;
 
                 /*!
                  * Retrieves whether the model exploration order was set.

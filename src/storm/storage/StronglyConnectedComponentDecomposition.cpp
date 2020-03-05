@@ -4,6 +4,7 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/Stopwatch.h"
 
 #include "storm/exceptions/UnexpectedException.h"
 
@@ -54,6 +55,7 @@ namespace storm {
          * @param currentIndex The next free index that can be assigned to states.
          * @param hasPreorderNumber A bit that is used to keep track of the states that already have a preorder number.
          * @param preorderNumbers A vector storing the preorder number for each state.
+         * @param recursionStateStack memory used for the recursion stack.
          * @param s The stack S used by the algorithm.
          * @param p The stack S used by the algorithm.
          * @param stateHasScc A bit vector containing all states that have already been assigned to an SCC.
@@ -63,12 +65,11 @@ namespace storm {
          * is increased.
          */
         template <typename ValueType>
-        void performSccDecompositionGCM(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, uint_fast64_t startState, storm::storage::BitVector& nonTrivialStates, storm::storage::BitVector const* subsystem, storm::storage::BitVector const* choices, uint_fast64_t& currentIndex, storm::storage::BitVector& hasPreorderNumber, std::vector<uint_fast64_t>& preorderNumbers, std::vector<uint_fast64_t>& s, std::vector<uint_fast64_t>& p, storm::storage::BitVector& stateHasScc, std::vector<uint_fast64_t>& stateToSccMapping, uint_fast64_t& sccCount, bool /*forceTopologicalSort*/, std::vector<uint_fast64_t>* sccDepths) {
+        void performSccDecompositionGCM(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, uint_fast64_t startState, storm::storage::BitVector& nonTrivialStates, storm::storage::BitVector const* subsystem, storm::storage::BitVector const* choices, uint_fast64_t& currentIndex, storm::storage::BitVector& hasPreorderNumber, std::vector<uint_fast64_t>& preorderNumbers, std::vector<uint_fast64_t>& recursionStateStack, std::vector<uint_fast64_t>& s, std::vector<uint_fast64_t>& p, storm::storage::BitVector& stateHasScc, std::vector<uint_fast64_t>& stateToSccMapping, uint_fast64_t& sccCount, bool /*forceTopologicalSort*/, std::vector<uint_fast64_t>* sccDepths) {
             // The forceTopologicalSort flag can be ignored as this method always generates a topological sort.
             
             // Prepare the stack used for turning the recursive procedure into an iterative one.
-            std::vector<uint_fast64_t> recursionStateStack;
-            recursionStateStack.reserve(transitionMatrix.getRowGroupCount());
+            STORM_LOG_ASSERT(recursionStateStack.empty(), "Expected an empty recursion stack.");
             recursionStateStack.push_back(startState);
 
             while (!recursionStateStack.empty()) {
@@ -157,48 +158,55 @@ namespace storm {
             STORM_LOG_ASSERT(!options.choicesPtr || options.subsystemPtr, "Expecting subsystem if choices are given.");
             
             uint_fast64_t numberOfStates = transitionMatrix.getRowGroupCount();
-            
-            // Set up the environment of the algorithm.
-            // Start with the two stacks it maintains.
-            std::vector<uint_fast64_t> s;
-            s.reserve(numberOfStates);
-            std::vector<uint_fast64_t> p;
-            p.reserve(numberOfStates);
-            
-            // We also need to store the preorder numbers of states and which states have been assigned to which SCC.
-            std::vector<uint_fast64_t> preorderNumbers(numberOfStates);
-            storm::storage::BitVector hasPreorderNumber(numberOfStates);
-            storm::storage::BitVector stateHasScc(numberOfStates);
-            std::vector<uint_fast64_t> stateToSccMapping(numberOfStates);
             uint_fast64_t sccCount = 0;
-            
-            // Store scc depths if requested
-            std::vector<uint_fast64_t>* sccDepthsPtr = nullptr;
-            sccDepths = boost::none;
-            if (options.isComputeSccDepthsSet || options.areOnlyBottomSccsConsidered) {
-                sccDepths = std::vector<uint_fast64_t>();
-                sccDepthsPtr = &sccDepths.get();
-            }
-            
-            // Finally, we need to keep of trivial states (singleton SCCs without selfloop).
+
+            // We need to keep of trivial states (singleton SCCs without selfloop).
             storm::storage::BitVector nonTrivialStates(numberOfStates, false);
             
-            // Start the search for SCCs from every state in the block.
-            uint_fast64_t currentIndex = 0;
-            if (options.subsystemPtr) {
-                for (auto state : *options.subsystemPtr) {
-                    if (!hasPreorderNumber.get(state)) {
-                        performSccDecompositionGCM(transitionMatrix, state, nonTrivialStates, options.subsystemPtr, options.choicesPtr, currentIndex, hasPreorderNumber, preorderNumbers, s, p, stateHasScc, stateToSccMapping, sccCount, options.isTopologicalSortForced, sccDepthsPtr);
-                    }
+            // Obtain a mapping from states to the SCC it belongs to
+            std::vector<uint_fast64_t> stateToSccMapping(numberOfStates);
+            {
+            
+                // Set up the environment of the algorithm.
+                // Start with the two stacks it maintains.
+                // This is to reduce memory (re-)allocations
+                std::vector<uint_fast64_t> s;
+                s.reserve(numberOfStates);
+                std::vector<uint_fast64_t> p;
+                p.reserve(numberOfStates);
+                std::vector<uint_fast64_t> recursionStateStack;
+                recursionStateStack.reserve(numberOfStates);
+                
+                // We also need to store the preorder numbers of states and which states have been assigned to which SCC.
+                std::vector<uint_fast64_t> preorderNumbers(numberOfStates);
+                storm::storage::BitVector hasPreorderNumber(numberOfStates);
+                storm::storage::BitVector stateHasScc(numberOfStates);
+                
+                // Store scc depths if requested
+                std::vector<uint_fast64_t>* sccDepthsPtr = nullptr;
+                sccDepths = boost::none;
+                if (options.isComputeSccDepthsSet || options.areOnlyBottomSccsConsidered) {
+                    sccDepths = std::vector<uint_fast64_t>();
+                    sccDepthsPtr = &sccDepths.get();
                 }
-            } else {
-                for (uint64_t state = 0; state < transitionMatrix.getRowGroupCount(); ++state) {
-                    if (!hasPreorderNumber.get(state)) {
-                        performSccDecompositionGCM(transitionMatrix, state, nonTrivialStates, options.subsystemPtr, options.choicesPtr, currentIndex, hasPreorderNumber, preorderNumbers, s, p, stateHasScc, stateToSccMapping, sccCount, options.isTopologicalSortForced, sccDepthsPtr);
+
+                
+                // Start the search for SCCs from every state in the block.
+                uint_fast64_t currentIndex = 0;
+                if (options.subsystemPtr) {
+                    for (auto state : *options.subsystemPtr) {
+                        if (!hasPreorderNumber.get(state)) {
+                            performSccDecompositionGCM(transitionMatrix, state, nonTrivialStates, options.subsystemPtr, options.choicesPtr, currentIndex, hasPreorderNumber, preorderNumbers, recursionStateStack, s, p, stateHasScc, stateToSccMapping, sccCount, options.isTopologicalSortForced, sccDepthsPtr);
+                        }
+                    }
+                } else {
+                    for (uint64_t state = 0; state < transitionMatrix.getRowGroupCount(); ++state) {
+                        if (!hasPreorderNumber.get(state)) {
+                            performSccDecompositionGCM(transitionMatrix, state, nonTrivialStates, options.subsystemPtr, options.choicesPtr, currentIndex, hasPreorderNumber, preorderNumbers, recursionStateStack, s, p, stateHasScc, stateToSccMapping, sccCount, options.isTopologicalSortForced, sccDepthsPtr);
+                        }
                     }
                 }
             }
-            
             // After we obtained the state-to-SCC mapping, we build the actual blocks.
             this->blocks.resize(sccCount);
             for (uint64_t state = 0; state < transitionMatrix.getRowGroupCount(); ++state) {

@@ -17,6 +17,7 @@ namespace storm {
             bool containsBoundedUntilFormula() const;
             bool containsCumulativeRewardFormula() const;
             bool containsRewardBoundedFormula() const;
+            bool containsLongRunFormula() const;
             
             FormulaInformation join(FormulaInformation const& other);
             
@@ -25,6 +26,7 @@ namespace storm {
             FormulaInformation& setContainsBoundedUntilFormula(bool newValue = true);
             FormulaInformation& setContainsCumulativeRewardFormula(bool newValue = true);
             FormulaInformation& setContainsRewardBoundedFormula(bool newValue = true);
+            FormulaInformation& setContainsLongRunFormula(bool newValue = true);
             
         private:
             bool mContainsRewardOperator;
@@ -32,6 +34,7 @@ namespace storm {
             bool mContainsBoundedUntilFormula;
             bool mContainsCumulativeRewardFormula;
             bool mContainsRewardBoundedFormula;
+            bool mContainsLongRunFormula;
         };
         
     }

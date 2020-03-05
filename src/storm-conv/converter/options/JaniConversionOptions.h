@@ -44,6 +44,10 @@ namespace storm {
             
             /// If set, local and global variables that are (a) not assigned to some value and (b) have a known initial value are replaced by constants.
             bool replaceUnassignedVariablesWithConstants;
+            
+            /// If set, attempts to simplify the system composition
+            bool simplifyComposition;
+            
         };
     }
 }

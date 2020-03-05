@@ -2,7 +2,7 @@
 
 #include "storm/storage/expressions/CompiledExpression.h"
 
-#include "storm/utility/exprtk.h"
+#include "storm/adapters/ExprttkAdapter.h"
 
 namespace storm {
     namespace expressions {

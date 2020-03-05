@@ -610,6 +610,17 @@ namespace storm {
             std::vector<std::pair<InternalAdd<DdType::CUDD, ValueType>, InternalAdd<DdType::CUDD, ValueType>>> splitIntoGroups(InternalAdd<DdType::CUDD, ValueType> vector, std::vector<uint_fast64_t> const& ddGroupVariableIndices) const;
             
             /*!
+             * Simultaneously splits the ADD and the given vector ADDs into several ADDs that differ in the encoding of
+             * the given group variables (given via indices).
+             *
+             * @param vectors The vectors to split (in addition to the current ADD).
+             * @param ddGroupVariableIndices The indices of the variables that are used to distinguish the groups.
+             * @return A vector of vectors of ADDs such that result.size() is the number of groups and result[i] refers to all ADDs within the same group i (wrt. to the encoding of the given variables).
+             * result[i].back() always refers to this ADD.
+             */
+            std::vector<std::vector<InternalAdd<DdType::CUDD, ValueType>>> splitIntoGroups(std::vector<InternalAdd<DdType::CUDD, ValueType>> const& vectors, std::vector<uint_fast64_t> const& ddGroupVariableIndices) const;
+            
+            /*!
              * Translates the ADD into the components needed for constructing a matrix.
              *
              * @param rowGroupIndices The row group indices.
@@ -715,6 +726,18 @@ namespace storm {
              * @param remainingMetaVariables The meta variables that remain in the DDs after the groups have been split.
              */
             void splitIntoGroupsRec(DdNode* dd1, DdNode* dd2, std::vector<std::pair<InternalAdd<DdType::CUDD, ValueType>, InternalAdd<DdType::CUDD, ValueType>>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel) const;
+            
+            /*!
+             * Splits the given DDs into the groups using the given group variables.
+             *
+             * @param dds The DDs to split.
+             * @param negatedDds indicates which of the DDs need to be interpreted as negated.
+             * @param groups A vector that is to be filled with the DDs for the individual groups.
+             * @param ddGroupVariableIndices The (sorted) indices of all DD group variables that need to be considered.
+             * @param currentLevel The currently considered level in the DD.
+             * @param maxLevel The number of levels that need to be considered.
+             */
+            void splitIntoGroupsRec(std::vector<DdNode*> const& dds, std::vector<std::vector<InternalAdd<DdType::CUDD, ValueType>>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel) const;
             
             /*!
              * Helper function to convert the DD into a (sparse) matrix.

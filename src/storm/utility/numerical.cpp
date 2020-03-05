@@ -219,7 +219,7 @@ namespace storm {
                 // Fill the right side of the array, have two cases lambda < 400 & lambda >= 400.
                 if (m < 400) {
                     // Perform the underflow check, according to Fox-Glynn.
-                    STORM_LOG_THROW(result.right <= 600, storm::exceptions::PrecisionExceededException, "Fox-Glynn: " << result.right << " > 600, underflow is possible.");
+                    STORM_LOG_ERROR_COND(result.right <= 600, "Fox-Glynn: " << result.right << " > 600, underflow is possible.");
 
                     // Compute weights.
                     for (j = m - result.left; j < t; ++j) {

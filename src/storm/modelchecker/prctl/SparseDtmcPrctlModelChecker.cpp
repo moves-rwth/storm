@@ -32,15 +32,27 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
-        bool SparseDtmcPrctlModelChecker<SparseDtmcModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
+        bool SparseDtmcPrctlModelChecker<SparseDtmcModelType>::canHandleStatic(CheckTask<storm::logic::Formula, ValueType> const& checkTask, bool* requiresSingleInitialState) {
             storm::logic::Formula const& formula = checkTask.getFormula();
             if (formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setConditionalProbabilityFormulasAllowed(true).setConditionalRewardFormulasAllowed(true).setTotalRewardFormulasAllowed(true).setOnlyEventuallyFormuluasInConditionalFormulasAllowed(true).setRewardBoundedUntilFormulasAllowed(true).setRewardBoundedCumulativeRewardFormulasAllowed(true).setMultiDimensionalBoundedUntilFormulasAllowed(true).setMultiDimensionalCumulativeRewardFormulasAllowed(true).setTimeOperatorsAllowed(true).setReachbilityTimeFormulasAllowed(true).setRewardAccumulationAllowed(true))) {
                 return true;
-            } else if (formula.isInFragment(storm::logic::quantiles())) {
-                if (this->getModel().getInitialStates().getNumberOfSetBits() > 1) return false;
+            } else if (checkTask.isOnlyInitialStatesRelevantSet() && formula.isInFragment(storm::logic::quantiles())) {
+                if (requiresSingleInitialState) {
+                    *requiresSingleInitialState = true;
+                }
                 return true;
             }
             return false;
+        }
+        
+        template<typename SparseDtmcModelType>
+        bool SparseDtmcPrctlModelChecker<SparseDtmcModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
+            bool requiresSingleInitialState = false;
+            if (canHandleStatic(checkTask, &requiresSingleInitialState)) {
+                return !requiresSingleInitialState || this->getModel().getInitialStates().getNumberOfSetBits() == 1;
+            } else {
+                return false;
+            }
         }
         
         template<typename SparseDtmcModelType>

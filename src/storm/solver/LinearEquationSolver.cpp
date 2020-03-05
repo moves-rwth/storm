@@ -128,8 +128,15 @@ namespace storm {
         std::unique_ptr<LinearEquationSolver<ValueType>> GeneralLinearEquationSolverFactory<ValueType>::create(Environment const& env) const {
             EquationSolverType type = env.solver().getLinearEquationSolverType();
             
-            // Adjust the solver type if none was specified and we want sound computations
-            if (env.solver().isForceSoundness() && type != EquationSolverType::Native && type != EquationSolverType::Eigen && type != EquationSolverType::Elimination && type != EquationSolverType::Topological) {
+            // Adjust the solver type if none was specified and we want sound/exact computations
+            if (env.solver().isForceExact() && type != EquationSolverType::Native && type != EquationSolverType::Eigen && type != EquationSolverType::Elimination && type != EquationSolverType::Topological) {
+                if (env.solver().isLinearEquationSolverTypeSetFromDefaultValue()) {
+                    type = EquationSolverType::Eigen;
+                    STORM_LOG_INFO("Selecting '" + toString(type) + "' as the linear equation solver to guarantee exact results. If you want to override this, please explicitly specify a different solver.");
+                } else {
+                    STORM_LOG_WARN("The selected solver does not yield exact results.");
+                }
+            } else if (env.solver().isForceSoundness() && type != EquationSolverType::Native && type != EquationSolverType::Eigen && type != EquationSolverType::Elimination && type != EquationSolverType::Topological) {
                 if (env.solver().isLinearEquationSolverTypeSetFromDefaultValue()) {
                     type = EquationSolverType::Native;
                     STORM_LOG_INFO("Selecting '" + toString(type) + "' as the linear equation solver to guarantee sound results. If you want to override this, please explicitly specify a different solver.");

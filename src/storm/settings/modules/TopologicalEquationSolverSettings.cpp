@@ -29,7 +29,7 @@ namespace storm {
                 std::vector<std::string> linearEquationSolver = {"gmm++", "native", "eigen", "elimination"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, underlyingEquationSolverOptionName, true, "Sets which solver is considered for solving the underlying equation systems.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the used solver.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(linearEquationSolver)).setDefaultValueString("gmm++").build()).build());
-                std::vector<std::string> minMaxSolvingTechniques = {"vi", "value-iteration", "pi", "policy-iteration", "lp", "linear-programming", "rs", "ratsearch", "ii", "interval-iteration", "svi", "sound-value-iteration", "vi-to-pi"};
+                std::vector<std::string> minMaxSolvingTechniques = {"vi", "value-iteration", "pi", "policy-iteration", "lp", "linear-programming", "rs", "ratsearch", "ii", "interval-iteration", "svi", "sound-value-iteration", "ovi", "optimistic-value-iteration", "vi-to-pi"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, underlyingMinMaxMethodOptionName, true, "Sets which minmax method is considered for solving the underlying minmax equation systems.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the used min max method.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(minMaxSolvingTechniques)).setDefaultValueString("value-iteration").build()).build());
             }
@@ -78,6 +78,8 @@ namespace storm {
                     return storm::solver::MinMaxMethod::IntervalIteration;
                 } else if (minMaxEquationSolvingTechnique == "sound-value-iteration" || minMaxEquationSolvingTechnique == "svi") {
                     return storm::solver::MinMaxMethod::SoundValueIteration;
+                } else if (minMaxEquationSolvingTechnique == "optimistic-value-iteration" || minMaxEquationSolvingTechnique == "ovi") {
+                    return storm::solver::MinMaxMethod::OptimisticValueIteration;
                 } else if (minMaxEquationSolvingTechnique == "vi-to-pi") {
                     return storm::solver::MinMaxMethod::ViToPi;
                 }

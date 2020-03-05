@@ -20,6 +20,11 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
+        void Distribution<ValueType, StateType>::reserve(uint64_t size) {
+            this->distribution.reserve(size);
+        }
+        
+        template<typename ValueType, typename StateType>
         void Distribution<ValueType, StateType>::add(Distribution const& other) {
             container_type newDistribution;
             std::set_union(this->distribution.begin(), this->distribution.end(), other.distribution.begin(), other.distribution.end(), std::inserter(newDistribution, newDistribution.begin()));
@@ -51,12 +56,7 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         void Distribution<ValueType, StateType>::addProbability(StateType const& state, ValueType const& probability) {
-            auto it = this->distribution.find(state);
-            if (it == this->distribution.end()) {
-                this->distribution.emplace_hint(it, state, probability);
-            } else {
-                it->second += probability;
-            }
+            this->distribution[state] += probability;
         }
         
         template<typename ValueType, typename StateType>

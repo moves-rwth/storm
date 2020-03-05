@@ -282,9 +282,8 @@ namespace storm {
                 if (isClosed() && markovianStates.empty()) {
                     return true;
                 }
-
-                storm::storage::MaximalEndComponentDecomposition<ValueType> maxEnd(this->getTransitionMatrix(), this->getBackwardTransitions(),~markovianStates);
-                return !maxEnd.empty();
+                storm::storage::BitVector statesWithZenoCycle = storm::utility::graph::performProb0E(*this, this->getBackwardTransitions(), ~markovianStates, markovianStates);
+                return !statesWithZenoCycle.empty();
             }
 
 

@@ -33,13 +33,7 @@ namespace storm {
     namespace api {
         
         inline storm::jani::ModelFeatures getSupportedJaniFeatures(storm::builder::BuilderType const& builderType) {
-            storm::jani::ModelFeatures features;
-            features.add(storm::jani::ModelFeature::DerivedOperators);
-            features.add(storm::jani::ModelFeature::StateExitRewards);
-            if (builderType == storm::builder::BuilderType::Explicit) {
-                features.add(storm::jani::ModelFeature::Arrays);
-            }
-            return features;
+            return storm::builder::getSupportedJaniFeatures(builderType);
         }
         
         template<storm::dd::DdType LibraryType, typename ValueType>

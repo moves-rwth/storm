@@ -38,20 +38,28 @@ namespace storm {
         }
         
         template<typename ModelType>
-        bool HybridMdpPrctlModelChecker<ModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
+        bool HybridMdpPrctlModelChecker<ModelType>::canHandleStatic(CheckTask<storm::logic::Formula, ValueType> const& checkTask, bool* requiresSingleInitialState) {
             storm::logic::Formula const& formula = checkTask.getFormula();
             if (formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(false).setTimeOperatorsAllowed(true).setReachbilityTimeFormulasAllowed(true).setRewardAccumulationAllowed(true))) {
                 return true;
-            } else {
-                // Check whether we consider a multi-objective formula
-                // For multi-objective model checking, each state requires an individual scheduler (in contrast to single-objective model checking). Let's exclude that multiple states are relevant
-                if(this->getModel().getInitialStates().getNonZeroCount() > 1) return false;
-                if(!checkTask.isOnlyInitialStatesRelevantSet()) return false;
-                return formula.isInFragment(storm::logic::multiObjective().setCumulativeRewardFormulasAllowed(true));
+            } else if (checkTask.isOnlyInitialStatesRelevantSet() && formula.isInFragment(storm::logic::multiObjective().setCumulativeRewardFormulasAllowed(true))) {
+                if (requiresSingleInitialState) {
+                    *requiresSingleInitialState = true;
+                }
             }
-
+            return false;
         }
-                
+        
+        template<typename ModelType>
+        bool HybridMdpPrctlModelChecker<ModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
+            bool requiresSingleInitialState = false;
+            if (canHandleStatic(checkTask, &requiresSingleInitialState)) {
+                return !requiresSingleInitialState || this->getModel().getInitialStates().getNonZeroCount() == 1;
+            } else {
+                return false;
+            }
+        }
+        
         template<typename ModelType>
         std::unique_ptr<CheckResult> HybridMdpPrctlModelChecker<ModelType>::computeUntilProbabilities(Environment const& env, CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) {
             storm::logic::UntilFormula const& pathFormula = checkTask.getFormula();

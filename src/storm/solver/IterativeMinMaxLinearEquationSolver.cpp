@@ -2,10 +2,12 @@
 #include <limits>
 
 #include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
+#include "storm/solver/helper/OptimisticValueIterationHelper.h"
 
 #include "storm/utility/ConstantsComparator.h"
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
+#include "storm/environment/solver/OviSolverEnvironment.h"
 
 #include "storm/utility/KwekMehlhorn.h"
 #include "storm/utility/NumberTraits.h"
@@ -49,7 +51,7 @@ namespace storm {
                 } else {
                     STORM_LOG_WARN("The selected solution method " << toString(method) << " does not guarantee exact results.");
                 }
-            } else if (env.solver().isForceSoundness() && method != MinMaxMethod::SoundValueIteration && method != MinMaxMethod::IntervalIteration && method != MinMaxMethod::PolicyIteration && method != MinMaxMethod::RationalSearch) {
+            } else if (env.solver().isForceSoundness() && method != MinMaxMethod::SoundValueIteration && method != MinMaxMethod::IntervalIteration && method != MinMaxMethod::PolicyIteration && method != MinMaxMethod::RationalSearch && method != MinMaxMethod::OptimisticValueIteration) {
                 if (env.solver().minMax().isMethodSetFromDefault()) {
                     STORM_LOG_INFO("Selecting 'sound value iteration' as the solution technique to guarantee sound results. If you want to override this, please explicitly specify a different method.");
                     method = MinMaxMethod::SoundValueIteration;
@@ -57,16 +59,19 @@ namespace storm {
                     STORM_LOG_WARN("The selected solution method does not guarantee sound results.");
                 }
             }
-            STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch || method == MinMaxMethod::SoundValueIteration || method == MinMaxMethod::IntervalIteration || method == MinMaxMethod::ViToPi, storm::exceptions::InvalidEnvironmentException, "This solver does not support the selected method.");
+            STORM_LOG_THROW(method == MinMaxMethod::ValueIteration || method == MinMaxMethod::PolicyIteration || method == MinMaxMethod::RationalSearch || method == MinMaxMethod::SoundValueIteration || method == MinMaxMethod::IntervalIteration || method == MinMaxMethod::OptimisticValueIteration || method == MinMaxMethod::ViToPi, storm::exceptions::InvalidEnvironmentException, "This solver does not support the selected method.");
             return method;
         }
         
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             bool result = false;
-            switch (getMethod(env, storm::NumberTraits<ValueType>::IsExact)) {
+            switch (getMethod(env, storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact())) {
                 case MinMaxMethod::ValueIteration:
                     result = solveEquationsValueIteration(env, dir, x, b);
+                    break;
+                case MinMaxMethod::OptimisticValueIteration:
+                    result = solveEquationsOptimisticValueIteration(env, dir, x, b);
                     break;
                 case MinMaxMethod::PolicyIteration:
                     result = solveEquationsPolicyIteration(env, dir, x, b);
@@ -228,7 +233,7 @@ namespace storm {
 
         template<typename ValueType>
         MinMaxLinearEquationSolverRequirements IterativeMinMaxLinearEquationSolver<ValueType>::getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction, bool const& hasInitialScheduler) const {
-            auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact);
+            auto method = getMethod(env, storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact());
             
             // Check whether a linear equation solver is needed and potentially start with its requirements
             bool needsLinEqSolver = false;
@@ -252,6 +257,13 @@ namespace storm {
                         }
                     }
                 }
+            } else if (method == MinMaxMethod::OptimisticValueIteration) {
+                // OptimisticValueIteration always requires lower bounds and a unique solution.
+                if (!this->hasUniqueSolution()) {
+                    requirements.requireUniqueSolution();
+                }
+                requirements.requireLowerBounds();
+                
             } else if (method == MinMaxMethod::IntervalIteration) {
                 // Interval iteration requires a unique solution and lower+upper bounds
                 if (!this->hasUniqueSolution()) {
@@ -327,7 +339,100 @@ namespace storm {
             
             return ValueIterationResult(iterations - currentIterations, status);
         }
-        
+
+        template<typename ValueType>
+        ValueType computeMaxAbsDiff(std::vector<ValueType> const& allValues, storm::storage::BitVector const& relevantValues, std::vector<ValueType> const& oldValues) {
+            ValueType result = storm::utility::zero<ValueType>();
+            auto oldValueIt = oldValues.begin();
+            for (auto value : relevantValues) {
+                result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allValues[value] - *oldValueIt));
+                ++oldValueIt;
+            }
+            return result;
+        }
+
+        template<typename ValueType>
+        ValueType computeMaxAbsDiff(std::vector<ValueType> const& allOldValues, std::vector<ValueType> const& allNewValues, storm::storage::BitVector const& relevantValues) {
+            ValueType result = storm::utility::zero<ValueType>();
+            for (auto value : relevantValues) {
+                result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allNewValues[value] - allOldValues[value]));
+            }
+            return result;
+        }
+
+        template<typename ValueType>
+        bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsOptimisticValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
+
+            if (!this->multiplierA) {
+                this->multiplierA = storm::solver::MultiplierFactory<ValueType>().create(env, *this->A);
+            }
+
+            if (!auxiliaryRowGroupVector) {
+                auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
+            }
+            if (!auxiliaryRowGroupVector2) {
+                auxiliaryRowGroupVector2 = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
+            }
+
+            // By default, we can not provide any guarantee
+            SolverGuarantee guarantee = SolverGuarantee::None;
+            // Get handle to multiplier.
+            storm::solver::Multiplier<ValueType> const &multiplier = *this->multiplierA;
+            // Allow aliased multiplications.
+            storm::solver::MultiplicationStyle multiplicationStyle = env.solver().minMax().getMultiplicationStyle();
+            bool useGaussSeidelMultiplication = multiplicationStyle == storm::solver::MultiplicationStyle::GaussSeidel;
+
+            boost::optional<storm::storage::BitVector> relevantValues;
+            if (this->hasRelevantValues()) {
+                relevantValues = this->getRelevantValues();
+            }
+            
+            // x has to start with a lower bound.
+            this->createLowerBoundsVector(x);
+
+            std::vector<ValueType>* lowerX = &x;
+            std::vector<ValueType>* upperX = auxiliaryRowGroupVector.get();
+            std::vector<ValueType>* auxVector = auxiliaryRowGroupVector2.get();
+
+            this->startMeasureProgress();
+            
+            
+            auto statusIters = storm::solver::helper::solveEquationsOptimisticValueIteration(env, lowerX, upperX, auxVector,
+                    [&] (std::vector<ValueType>*& y, std::vector<ValueType>*& yPrime, ValueType const& precision, bool const& relative, uint64_t const& i, uint64_t const& maxI) {
+                        this->showProgressIterative(i);
+                        return performValueIteration(env, dir, y, yPrime, b, precision, relative, guarantee, i, maxI, multiplicationStyle);
+                    },
+                    [&] (std::vector<ValueType>* y, std::vector<ValueType>* yPrime, uint64_t const& i) {
+                        this->showProgressIterative(i);
+                        if (useGaussSeidelMultiplication) {
+                            // Copy over the current vectors so we can modify them in-place.
+                            // This is necessary as we want to compare the new values with the current ones.
+                            *yPrime = *y;
+                            multiplier.multiplyAndReduceGaussSeidel(env, dir, *y, &b);
+                        } else {
+                            multiplier.multiplyAndReduce(env, dir, *y, &b, *yPrime);
+                            std::swap(y, yPrime);
+                        }
+                    }, relevantValues);
+            auto two = storm::utility::convertNumber<ValueType>(2.0);
+            storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(*lowerX, *upperX, x, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
+
+            reportStatus(statusIters.first, statusIters.second);
+
+            // If requested, we store the scheduler for retrieval.
+            if (this->isTrackSchedulerSet()) {
+                this->schedulerChoices = std::vector<uint_fast64_t>(this->A->getRowGroupCount());
+                this->multiplierA->multiplyAndReduce(env, dir, x, &b, *auxiliaryRowGroupVector.get(), &this->schedulerChoices.get());
+                this->multiplierA->multiplyAndReduce(env, dir, x, &b, *auxiliaryRowGroupVector.get(), &this->schedulerChoices.get());
+            }
+
+            if (!this->isCachingEnabled()) {
+                clearCache();
+            }
+
+            return statusIters.first == SolverStatus::Converged || statusIters.first == SolverStatus::TerminatedEarly;
+        }
+
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             if (!this->multiplierA) {
@@ -416,26 +521,6 @@ namespace storm {
         template<typename ValueType>
         void preserveOldRelevantValues(std::vector<ValueType> const& allValues, storm::storage::BitVector const& relevantValues, std::vector<ValueType>& oldValues) {
             storm::utility::vector::selectVectorValues(oldValues, relevantValues, allValues);
-        }
-        
-        template<typename ValueType>
-        ValueType computeMaxAbsDiff(std::vector<ValueType> const& allValues, storm::storage::BitVector const& relevantValues, std::vector<ValueType> const& oldValues) {
-            ValueType result = storm::utility::zero<ValueType>();
-            auto oldValueIt = oldValues.begin();
-            for (auto value : relevantValues) {
-                result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allValues[value] - *oldValueIt));
-                ++oldValueIt;
-            }
-            return result;
-        }
-        
-        template<typename ValueType>
-        ValueType computeMaxAbsDiff(std::vector<ValueType> const& allOldValues, std::vector<ValueType> const& allNewValues, storm::storage::BitVector const& relevantValues) {
-            ValueType result = storm::utility::zero<ValueType>();
-            for (auto value : relevantValues) {
-                result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allNewValues[value] - allOldValues[value]));
-            }
-            return result;
         }
         
         /*!
