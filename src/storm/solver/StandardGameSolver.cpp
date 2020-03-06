@@ -227,7 +227,7 @@ namespace storm {
                 
                 // Update environment variables.
                 ++iterations;
-                status = updateStatusIfNotConverged(status, x, iterations, maxIter);
+                status = this->updateStatus(status, x, SolverGuarantee::None, iterations, maxIter);
             } while (status == SolverStatus::InProgress);
             
             this->reportStatus(status, iterations);
@@ -327,7 +327,7 @@ namespace storm {
                 // Update environment variables.
                 std::swap(currentX, newX);
                 ++iterations;
-                status = updateStatusIfNotConverged(status, *currentX, iterations, maxIter);
+                status = this->updateStatus(status, *currentX, SolverGuarantee::None, iterations, maxIter);
             }
                         
             this->reportStatus(status, iterations);
@@ -559,21 +559,7 @@ namespace storm {
         uint64_t StandardGameSolver<ValueType>::getNumberOfPlayer2States() const {
             return this->player2Matrix.getRowGroupCount();
         }
-        
-        template<typename ValueType>
-        SolverStatus StandardGameSolver<ValueType>::updateStatusIfNotConverged(SolverStatus status, std::vector<ValueType> const& x, uint64_t iterations, uint64_t maximalNumberOfIterations) const {
-            if (status != SolverStatus::Converged) {
-                if (this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x)) {
-                    status = SolverStatus::TerminatedEarly;
-                } else if (iterations >= maximalNumberOfIterations) {
-                    status = SolverStatus::MaximalIterationsExceeded;
-                } else if (storm::utility::resources::isTerminate()) {
-                    status = SolverStatus::Aborted;
-                }
-            }
-            return status;
-        }
-        
+
         template<typename ValueType>
         void StandardGameSolver<ValueType>::clearCache() const {
             multiplierPlayer2Matrix.reset();

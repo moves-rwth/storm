@@ -317,9 +317,9 @@ namespace storm {
 
 
         template<typename ValueType>
-        SolverStatus AbstractEquationSolver<ValueType>::updateStatusIfNotConverged(SolverStatus status, std::vector<ValueType> const& x, uint64_t iterations, uint64_t maximalNumberOfIterations, SolverGuarantee const& guarantee) const {
+        SolverStatus AbstractEquationSolver<ValueType>::updateStatus(SolverStatus status, bool earlyTermination, uint64_t iterations, uint64_t maximalNumberOfIterations) const {
             if (status != SolverStatus::Converged) {
-                if (this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x, guarantee)) {
+                if (earlyTermination) {
                     status = SolverStatus::TerminatedEarly;
                 } else if (iterations >= maximalNumberOfIterations) {
                     status = SolverStatus::MaximalIterationsExceeded;
@@ -329,7 +329,13 @@ namespace storm {
             }
             return status;
         }
-        
+
+        template<typename ValueType>
+        SolverStatus AbstractEquationSolver<ValueType>::updateStatus(SolverStatus status, std::vector<ValueType> const& x, SolverGuarantee const& guarantee, uint64_t iterations, uint64_t maximalNumberOfIterations) const {
+            return this->updateStatus(status, this->hasCustomTerminationCondition() && this->getTerminationCondition().terminateNow(x, guarantee), iterations, maximalNumberOfIterations);
+        }
+
+
         template class AbstractEquationSolver<double>;
         template class AbstractEquationSolver<float>;
 

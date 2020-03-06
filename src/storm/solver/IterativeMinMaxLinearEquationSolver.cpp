@@ -199,7 +199,7 @@ namespace storm {
                 
                 // Update environment variables.
                 ++iterations;
-                status = this->updateStatusIfNotConverged(status, x, iterations, env.solver().minMax().getMaximalNumberOfIterations(), dir == storm::OptimizationDirection::Minimize ? SolverGuarantee::GreaterOrEqual : SolverGuarantee::LessOrEqual);
+                status = this->updateStatus(status, x, dir == storm::OptimizationDirection::Minimize ? SolverGuarantee::GreaterOrEqual : SolverGuarantee::LessOrEqual, iterations, env.solver().minMax().getMaximalNumberOfIterations());
 
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
@@ -328,7 +328,7 @@ namespace storm {
                 // Update environment variables.
                 std::swap(currentX, newX);
                 ++iterations;
-                status = this->updateStatusIfNotConverged(status, *currentX, iterations, maximalNumberOfIterations, guarantee);
+                status = this->updateStatus(status, *currentX, guarantee, iterations, maximalNumberOfIterations);
 
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
@@ -663,10 +663,10 @@ namespace storm {
                 ++iterations;
                 doConvergenceCheck = !doConvergenceCheck;
                 if (lowerStep) {
-                    status = this->updateStatusIfNotConverged(status, *lowerX, iterations, env.solver().minMax().getMaximalNumberOfIterations(), SolverGuarantee::LessOrEqual);
+                    status = this->updateStatus(status, *lowerX, SolverGuarantee::LessOrEqual, iterations, env.solver().minMax().getMaximalNumberOfIterations());
                 }
                 if (upperStep) {
-                    status = this->updateStatusIfNotConverged(status, *upperX, iterations, env.solver().minMax().getMaximalNumberOfIterations(), SolverGuarantee::GreaterOrEqual);
+                    status = this->updateStatus(status, *upperX, SolverGuarantee::GreaterOrEqual, iterations, env.solver().minMax().getMaximalNumberOfIterations());
                 }
 
                 // Potentially show progress.

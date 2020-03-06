@@ -203,13 +203,23 @@ namespace storm {
             /*!
              * Update the status of the solver with respect to convergence, early termination, abortion, etc.
              * @param status Current status.
-             * @param x Vector x.
+             * @param x Vector for terminatation condition.
+             * @param guarantee Guarentee for termination condition.
              * @param iterations Current number of iterations.
              * @param maximalNumberOfIterations Maximal number of iterations.
-             * @param guarantee Guarantee.
              * @return New status.
              */
-            SolverStatus updateStatusIfNotConverged(SolverStatus status, std::vector<ValueType> const& x, uint64_t iterations, uint64_t maximalNumberOfIterations, SolverGuarantee const& guarantee) const;
+            SolverStatus updateStatus(SolverStatus status, std::vector<ValueType> const& x, SolverGuarantee const& guarantee, uint64_t iterations, uint64_t maximalNumberOfIterations) const;
+
+            /*!
+            * Update the status of the solver with respect to convergence, early termination, abortion, etc.
+            * @param status Current status.
+            * @param earlyTermination Flag indicating if the solver can be terminated early.
+            * @param iterations Current number of iterations.
+            * @param maximalNumberOfIterations Maximal number of iterations.
+            * @return New status.
+            */
+            SolverStatus updateStatus(SolverStatus status, bool earlyTermination, uint64_t iterations, uint64_t maximalNumberOfIterations) const;
 
             // A termination condition to be used (can be unset).
             std::unique_ptr<TerminationCondition<ValueType>> terminationCondition;
