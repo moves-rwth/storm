@@ -4,14 +4,12 @@
 #include <utility>
 
 #include "storm/adapters/GmmxxAdapter.h"
-
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
-
-#include "storm/utility/vector.h"
+#include "storm/exceptions/AbortException.h"
 #include "storm/utility/constants.h"
-
 #include "storm/utility/gmm.h"
 #include "storm/utility/vector.h"
+#include "storm/utility/SignalHandler.h"
 
 namespace storm {
     namespace solver {
@@ -71,32 +69,38 @@ namespace storm {
                     maxIter = env.solver().gmmxx().getMaximalNumberOfIterations();
                 }
                 gmm::iteration iter(storm::utility::convertNumber<ValueType>(env.solver().gmmxx().getPrecision()), 0, maxIter);
-                
-                // Invoke gmm with the corresponding settings
-                if (method == GmmxxLinearEquationSolverMethod::Bicgstab) {
-                    if (preconditioner == GmmxxLinearEquationSolverPreconditioner::Ilu) {
-                        gmm::bicgstab(*gmmxxA, x, b, *iluPreconditioner, iter);
-                    } else if (preconditioner == GmmxxLinearEquationSolverPreconditioner::Diagonal) {
-                        gmm::bicgstab(*gmmxxA, x, b, *diagonalPreconditioner, iter);
-                    } else if (preconditioner == GmmxxLinearEquationSolverPreconditioner::None) {
-                        gmm::bicgstab(*gmmxxA, x, b, gmm::identity_matrix(), iter);
+                iter.set_callback([](const gmm::iteration& iteration) -> void { STORM_LOG_THROW(!storm::utility::resources::isTerminate(), storm::exceptions::AbortException, "Gmm++ (externally) aborted after " << iteration.get_iteration() << " iterations."); });
+
+                // We use throwing an exception to abort within Gmm++
+                try {
+                    // Invoke gmm with the corresponding settings
+                    if (method == GmmxxLinearEquationSolverMethod::Bicgstab) {
+                        if (preconditioner == GmmxxLinearEquationSolverPreconditioner::Ilu) {
+                            gmm::bicgstab(*gmmxxA, x, b, *iluPreconditioner, iter);
+                        } else if (preconditioner == GmmxxLinearEquationSolverPreconditioner::Diagonal) {
+                            gmm::bicgstab(*gmmxxA, x, b, *diagonalPreconditioner, iter);
+                        } else if (preconditioner == GmmxxLinearEquationSolverPreconditioner::None) {
+                            gmm::bicgstab(*gmmxxA, x, b, gmm::identity_matrix(), iter);
+                        }
+                    } else if (method == GmmxxLinearEquationSolverMethod::Qmr) {
+                        if (preconditioner == GmmxxLinearEquationSolverPreconditioner::Ilu) {
+                            gmm::qmr(*gmmxxA, x, b, *iluPreconditioner, iter);
+                        } else if (preconditioner == GmmxxLinearEquationSolverPreconditioner::Diagonal) {
+                            gmm::qmr(*gmmxxA, x, b, *diagonalPreconditioner, iter);
+                        } else if (preconditioner == GmmxxLinearEquationSolverPreconditioner::None) {
+                            gmm::qmr(*gmmxxA, x, b, gmm::identity_matrix(), iter);
+                        }
+                    } else if (method == GmmxxLinearEquationSolverMethod::Gmres) {
+                        if (preconditioner == GmmxxLinearEquationSolverPreconditioner::Ilu) {
+                            gmm::gmres(*gmmxxA, x, b, *iluPreconditioner, env.solver().gmmxx().getRestartThreshold(), iter);
+                        } else if (preconditioner == GmmxxLinearEquationSolverPreconditioner::Diagonal) {
+                            gmm::gmres(*gmmxxA, x, b, *diagonalPreconditioner, env.solver().gmmxx().getRestartThreshold(), iter);
+                        } else if (preconditioner == GmmxxLinearEquationSolverPreconditioner::None) {
+                            gmm::gmres(*gmmxxA, x, b, gmm::identity_matrix(), env.solver().gmmxx().getRestartThreshold(), iter);
+                        }
                     }
-                } else if (method == GmmxxLinearEquationSolverMethod::Qmr) {
-                    if (preconditioner == GmmxxLinearEquationSolverPreconditioner::Ilu) {
-                        gmm::qmr(*gmmxxA, x, b, *iluPreconditioner, iter);
-                    } else if (preconditioner == GmmxxLinearEquationSolverPreconditioner::Diagonal) {
-                        gmm::qmr(*gmmxxA, x, b, *diagonalPreconditioner, iter);
-                    } else if (preconditioner == GmmxxLinearEquationSolverPreconditioner::None) {
-                        gmm::qmr(*gmmxxA, x, b, gmm::identity_matrix(), iter);
-                    }
-                } else if (method == GmmxxLinearEquationSolverMethod::Gmres) {
-                    if (preconditioner == GmmxxLinearEquationSolverPreconditioner::Ilu) {
-                        gmm::gmres(*gmmxxA, x, b, *iluPreconditioner, env.solver().gmmxx().getRestartThreshold(), iter);
-                    } else if (preconditioner == GmmxxLinearEquationSolverPreconditioner::Diagonal) {
-                        gmm::gmres(*gmmxxA, x, b, *diagonalPreconditioner, env.solver().gmmxx().getRestartThreshold(), iter);
-                    } else if (preconditioner == GmmxxLinearEquationSolverPreconditioner::None) {
-                        gmm::gmres(*gmmxxA, x, b, gmm::identity_matrix(), env.solver().gmmxx().getRestartThreshold(), iter);
-                    }
+                } catch (storm::exceptions::AbortException const& e) {
+                    // Do nothing
                 }
                 
                 if (!this->isCachingEnabled()) {
