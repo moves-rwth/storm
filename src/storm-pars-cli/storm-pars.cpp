@@ -783,8 +783,8 @@ namespace storm {
             
             // Parse and preprocess symbolic input (PRISM, JANI, properties, etc.)
             auto symbolicInput = storm::cli::parseSymbolicInput();
-            auto mpi = storm::cli::getModelProcessingInformation(symbolicInput);
-            symbolicInput = storm::cli::preprocessSymbolicInput(symbolicInput, mpi.engine);
+            storm::cli::ModelProcessingInformation mpi;
+            std::tie(symbolicInput, mpi) = storm::cli::preprocessSymbolicInput(symbolicInput);
             processInputWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalFunction>(symbolicInput, mpi);
         }
 

@@ -34,15 +34,7 @@ namespace storm {
             }
             
             struct Features {
-                Features(storm::storage::SymbolicModelDescription const& modelDescription, storm::jani::Property const& property) {
-                    if (!modelDescription.isJaniModel()) {
-                        initialize(modelDescription.toJani().asJaniModel(), property);
-                    } else {
-                        initialize(modelDescription.asJaniModel(), property);
-                    }
-                }
-                
-                void initialize(storm::jani::Model const& model, storm::jani::Property const& property) {
+                Features(storm::jani::Model const& model, storm::jani::Property const& property) {
                     continuousTime = !model.isDiscreteTimeModel();
                     nondeterminism = !model.isDeterministicModel();
                     propertyType = getPropertyType(property);
@@ -65,9 +57,9 @@ namespace storm {
             // Intentionally left empty
         }
         
-        void Portfolio::predict(storm::storage::SymbolicModelDescription const& modelDescription, storm::jani::Property const& property) {
+        void Portfolio::predict(storm::jani::Model const& model, storm::jani::Property const& property) {
             typedef pfinternal::PropertyType PropertyType;
-            auto f = pfinternal::Features(modelDescription, property);
+            auto f = pfinternal::Features(model, property);
             
             { // Decision tree start
                 if (f.numEdges <= 618) {
@@ -171,12 +163,12 @@ namespace storm {
             
         }
         
-        void Portfolio::predict(storm::storage::SymbolicModelDescription const& modelDescription, storm::jani::Property const& property, uint64_t stateEstimate) {
+        void Portfolio::predict(storm::jani::Model const& model, storm::jani::Property const& property, uint64_t stateEstimate) {
             typedef pfinternal::PropertyType PropertyType;
-            auto f = pfinternal::Features(modelDescription, property);
+            auto f = pfinternal::Features(model, property);
             f.stateEstimate = stateEstimate;
             // TODO: Actually make use of the estimate
-            predict(modelDescription, property);
+            predict(model, property);
         }
 
         storm::utility::Engine Portfolio::getEngine() const {

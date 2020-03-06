@@ -16,6 +16,7 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
+#include "storm/environment/solver/TimeBoundedSolverEnvironment.h"
 
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
@@ -1028,7 +1029,7 @@ namespace storm {
                 // Use Fox-Glynn to get the truncation points and the weights.
 //                std::tuple<uint_fast64_t, uint_fast64_t, ValueType, std::vector<ValueType>> foxGlynnResult = storm::utility::numerical::getFoxGlynnCutoff(lambda, 1e+300, storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision() / 8.0);
                 
-                storm::utility::numerical::FoxGlynnResult<ValueType> foxGlynnResult = storm::utility::numerical::foxGlynn(lambda, storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision() / 8.0);
+                storm::utility::numerical::FoxGlynnResult<ValueType> foxGlynnResult = storm::utility::numerical::foxGlynn(lambda, storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision()) / 8.0);
                 STORM_LOG_DEBUG("Fox-Glynn cutoff points: left=" << foxGlynnResult.left << ", right=" << foxGlynnResult.right);
                 
                 // Scale the weights so they add up to one.

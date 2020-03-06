@@ -98,8 +98,8 @@ int main(const int argc, const char** argv) {
         auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
 
         auto symbolicInput = storm::cli::parseSymbolicInput();
-        auto mpi = storm::cli::getModelProcessingInformation(symbolicInput);
-        symbolicInput = storm::cli::preprocessSymbolicInput(symbolicInput, mpi.engine);
+        storm::cli::ModelProcessingInformation mpi;
+        std::tie(symbolicInput, mpi) = storm::cli::preprocessSymbolicInput(symbolicInput);
         
         // We should not export here if we are going to do some processing first.
         auto model = storm::cli::buildPreprocessExportModelWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, storm::RationalNumber>(symbolicInput, mpi);
