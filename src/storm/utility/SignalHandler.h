@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdlib>
+#include <cstdint>
 
 #include "storm-config.h"
 #include "storm/utility/OsDetection.h"
