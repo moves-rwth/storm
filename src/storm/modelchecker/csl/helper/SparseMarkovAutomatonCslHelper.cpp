@@ -224,7 +224,12 @@ namespace storm {
                             
                             if (relativePrecision) {
                                 // Reduce kappa a bit
-                                ValueType minValue = *std::min_element(maybeStatesValuesUpper.begin(), maybeStatesValuesUpper.end());
+                                ValueType minValue;
+                                if (relevantMaybeStates) {
+                                    minValue = storm::utility::vector::min_if(maybeStatesValuesUpper, relevantMaybeStates.get());
+                                } else {
+                                    minValue = *std::min_element(maybeStatesValuesUpper.begin(), maybeStatesValuesUpper.end());
+                                }
                                 minValue *= storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getUnifPlusKappa());
                                 kappa = std::min(kappa, minValue);
                                 STORM_LOG_DEBUG("Decreased kappa to " << kappa << ".");
