@@ -232,6 +232,7 @@ namespace storm {
             } else {
                 mpi.verificationValueType = ModelProcessingInformation::ValueType::FinitePrecision;
             }
+            auto originalVerificationValueType = mpi.verificationValueType;
             
             // Since the remaining settings could depend on the ones above, we need apply the portfolio engine now.
             bool usePortfolio = input.model.is_initialized() && mpi.engine == storm::utility::Engine::Portfolio;
@@ -276,10 +277,11 @@ namespace storm {
             }
             if (incompatibleSettings) {
                 if (usePortfolio) {
-                    STORM_LOG_WARN("The settings picked by the portfolio engine (engine=" << mpi.engine << ", bisim=" << mpi.applyBisimulation << ", exact=" << (mpi.verificationValueType != ModelProcessingInformation::ValueType::FinitePrecision) << ") are incompatible with this model. Falling back to sparse engine without bisimulation and floating point arithmetic.");
+                    bool useExact = mpi.verificationValueType != ModelProcessingInformation::ValueType::FinitePrecision;
+                    STORM_LOG_WARN("The settings picked by the portfolio engine (engine=" << mpi.engine << ", bisim=" << mpi.applyBisimulation << ", exact=" << useExact << ") are incompatible with this model. Falling back to default settings.");
                     mpi.engine = storm::utility::Engine::Sparse;
                     mpi.applyBisimulation = false;
-                    mpi.verificationValueType = ModelProcessingInformation::ValueType::FinitePrecision;
+                    mpi.verificationValueType = originalVerificationValueType;
                 } else {
                     STORM_LOG_WARN("The model checking query does not seem to be supported for the selected engine. Storm will try to solve the query, but you will most likely get an error for at least one of the provided properties.");
                 }
