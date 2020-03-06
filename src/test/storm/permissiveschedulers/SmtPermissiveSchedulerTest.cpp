@@ -12,11 +12,8 @@
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 
 
-#if defined STORM_HAVE_MSAT
 TEST(SmtPermissiveSchedulerTest, DieSelection) {
-#else
-TEST(SmtPermissiveSchedulerTest, DISABLED_DieSelection) {
-#endif
+
     storm::Environment env;
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/die_c1.nm");
     storm::parser::FormulaParser formulaParser(program);
