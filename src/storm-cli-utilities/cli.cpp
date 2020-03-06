@@ -246,10 +246,10 @@ namespace storm {
             SymbolicInput symbolicInput = parseSymbolicInput();
             
             // Obtain settings for model processing
-            ModelProcessingInformation mpi = getModelProcessingInformation(symbolicInput);
+            ModelProcessingInformation mpi;
             
             // Preprocess the symbolic input
-            symbolicInput = preprocessSymbolicInput(symbolicInput, mpi.engine);
+            std::tie(symbolicInput, mpi) = preprocessSymbolicInput(symbolicInput);
             
             // Export symbolic input (if requested)
             exportSymbolicInput(symbolicInput);

@@ -156,6 +156,9 @@ namespace storm {
             // If set, bisimulation will be applied.
             bool applyBisimulation;
             
+            // If set, a transformation to Jani will be enforced
+            bool transformToJani;
+            
             // Which data type is to be used for numbers ...
             enum class ValueType {
                 FinitePrecision,
@@ -175,16 +178,17 @@ namespace storm {
         void getModelProcessingInformationPortfolio(SymbolicInput const& input, ModelProcessingInformation& mpi) {
             auto hints = storm::settings::getModule<storm::settings::modules::HintSettings>();
             
-            STORM_LOG_THROW(input.model.is_initialized(), storm::exceptions::InvalidArgumentException, "Portfolio engine requires a symbolic model (PRISM or JANI.");
+            STORM_LOG_THROW(input.model.is_initialized(), storm::exceptions::InvalidArgumentException, "Portfolio engine requires a JANI input model.");
+            STORM_LOG_THROW(input.model->isJaniModel(), storm::exceptions::InvalidArgumentException, "Portfolio engine requires a JANI input model.");
             std::vector<storm::jani::Property> const& properties = input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties;
             STORM_LOG_THROW(!properties.empty(), storm::exceptions::InvalidArgumentException, "Portfolio engine requires a property.");
             STORM_LOG_WARN_COND(properties.size() == 1, "Portfolio engine does not support decisions based on multiple properties. Only the first property will be considered.");
             
             storm::utility::Portfolio pf;
             if (hints.isNumberStatesSet()) {
-                pf.predict(input.model.get(), properties.front(), hints.getNumberStates());
+                pf.predict(input.model->asJaniModel(), properties.front(), hints.getNumberStates());
             } else {
-                pf.predict(input.model.get(), properties.front());
+                pf.predict(input.model->asJaniModel(), properties.front());
             }
             
             mpi.engine = pf.getEngine();
@@ -202,8 +206,14 @@ namespace storm {
                 << std::noboolalpha << std::endl);
         }
         
-        ModelProcessingInformation getModelProcessingInformation(SymbolicInput const& input) {
+        /*!
+         * Sets the model processing information based on the given input.
+         * Finding the right model processing information might require a conversion to jani.
+         * In this case, the jani conversion is stored in the transformedJaniInput pointer (unless it is null)
+         */
+        ModelProcessingInformation getModelProcessingInformation(SymbolicInput const& input, std::shared_ptr<SymbolicInput> const& transformedJaniInput = nullptr) {
             ModelProcessingInformation mpi;
+            auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
             auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
             auto bisimulationSettings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
@@ -224,10 +234,29 @@ namespace storm {
             }
             
             // Since the remaining settings could depend on the ones above, we need apply the portfolio engine now.
-            bool usePortfolio = mpi.engine == storm::utility::Engine::Portfolio;
+            bool usePortfolio = input.model.is_initialized() && mpi.engine == storm::utility::Engine::Portfolio;
             if (usePortfolio) {
-                // This can potentially overwrite the settings above, but will not overwrite settings that were explicitly set by the user (e.g. we will not disable bisimulation or disable exact arithmetic)
-                getModelProcessingInformationPortfolio(input, mpi);
+                if (input.model->isJaniModel()) {
+                    // This can potentially overwrite the settings above, but will not overwrite settings that were explicitly set by the user (e.g. we will not disable bisimulation or disable exact arithmetic)
+                    getModelProcessingInformationPortfolio(input, mpi);
+                } else {
+                    // Transform Prism to jani first
+                    STORM_LOG_ASSERT(input.model->isPrismProgram(), "Unexpected type of input.");
+                    SymbolicInput janiInput;
+                    janiInput.properties = input.properties;
+                    storm::prism::Program const& prog = input.model.get().asPrismProgram();
+                    auto modelAndProperties = prog.toJani(input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties);
+                    janiInput.model = modelAndProperties.first;
+                    if (!modelAndProperties.second.empty()) {
+                        janiInput.preprocessedProperties = std::move(modelAndProperties.second);
+                    }
+                    // This can potentially overwrite the settings above, but will not overwrite settings that were explicitly set by the user (e.g. we will not disable bisimulation or disable exact arithmetic)
+                    getModelProcessingInformationPortfolio(janiInput, mpi);
+                    if (transformedJaniInput) {
+                        // We cache the transformation result.
+                        *transformedJaniInput = std::move(janiInput);
+                    }
+                }
             }
             
             // Check whether these settings are compatible with the provided input.
@@ -255,8 +284,16 @@ namespace storm {
                     STORM_LOG_WARN("The model checking query does not seem to be supported for the selected engine. Storm will try to solve the query, but you will most likely get an error for at least one of the provided properties.");
                 }
             }
-
             
+            // Set whether a transformation to jani is required or necessary
+            mpi.transformToJani = ioSettings.isPrismToJaniSet();
+            auto builderType = storm::utility::getBuilderType(mpi.engine);
+            bool transformToJaniForJit = builderType == storm::builder::BuilderType::Jit;
+            STORM_LOG_WARN_COND(mpi.transformToJani || !transformToJaniForJit, "The JIT-based model builder is only available for JANI models, automatically converting the PRISM input model.");
+            bool transformToJaniForDdMA = (builderType == storm::builder::BuilderType::Dd) && (input.model->getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA);
+            STORM_LOG_WARN_COND(mpi.transformToJani || !transformToJaniForDdMA, "Dd-based model builder for Markov Automata is only available for JANI models, automatically converting the PRISM input model.");
+            mpi.transformToJani |= (transformToJaniForJit || transformToJaniForDdMA);
+
             // Set the Valuetype used during model building
             mpi.buildValueType = mpi.verificationValueType;
             if (bisimulationSettings.useExactArithmeticInDdBisimulation()) {
@@ -294,16 +331,10 @@ namespace storm {
             }
         }
         
-        SymbolicInput preprocessSymbolicInput(SymbolicInput const& input, storm::utility::Engine const& engine) {
+        std::pair<SymbolicInput, ModelProcessingInformation> preprocessSymbolicInput(SymbolicInput const& input) {
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-            auto builderType = storm::utility::getBuilderType(engine);
             
             SymbolicInput output = input;
-            
-            if (output.model && output.model.get().isJaniModel()) {
-                storm::jani::ModelFeatures supportedFeatures = storm::api::getSupportedJaniFeatures(builderType);
-                storm::api::simplifyJaniModel(output.model.get().asJaniModel(), output.properties, supportedFeatures);
-            }
             
             // Substitute constant definitions in symbolic input.
             std::string constantDefinitionString = ioSettings.getConstantDefinitionString();
@@ -315,34 +346,37 @@ namespace storm {
             if (!output.properties.empty()) {
                 output.properties = storm::api::substituteConstantsInProperties(output.properties, constantDefinitions);
             }
-            
             ensureNoUndefinedPropertyConstants(output.properties);
+            auto transformedJani = std::make_shared<SymbolicInput>();
+            ModelProcessingInformation mpi = getModelProcessingInformation(output, transformedJani);
+
+            auto builderType = storm::utility::getBuilderType(mpi.engine);
             
             // Check whether conversion for PRISM to JANI is requested or necessary.
-            if (input.model && input.model.get().isPrismProgram()) {
-                bool transformToJani = ioSettings.isPrismToJaniSet();
-                bool transformToJaniForJit = builderType == storm::builder::BuilderType::Jit;
-                STORM_LOG_WARN_COND(transformToJani || !transformToJaniForJit, "The JIT-based model builder is only available for JANI models, automatically converting the PRISM input model.");
-                bool transformToJaniForDdMA = (builderType == storm::builder::BuilderType::Dd) && (input.model->getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA);
-                STORM_LOG_WARN_COND(transformToJani || !transformToJaniForDdMA, "Dd-based model builder for Markov Automata is only available for JANI models, automatically converting the PRISM input model.");
-                transformToJani |= (transformToJaniForJit || transformToJaniForDdMA);
-                
-                if (transformToJani) {
-                    storm::prism::Program const& model = output.model.get().asPrismProgram();
-                    auto modelAndProperties = model.toJani(output.properties);
-                    
-                    // Remove functions here
-                    modelAndProperties.first.substituteFunctions();
-                    
-                    output.model = modelAndProperties.first;
-                    
-                    if (!modelAndProperties.second.empty()) {
-                        output.preprocessedProperties = std::move(modelAndProperties.second);
+            if (output.model && output.model.get().isPrismProgram()) {
+                if (mpi.transformToJani) {
+                    if (transformedJani->model) {
+                        // Use the cached transformation if possible
+                        output = std::move(*transformedJani);
+                    } else {
+                        storm::prism::Program const& model = output.model.get().asPrismProgram();
+                        auto modelAndProperties = model.toJani(output.properties);
+                        
+                        output.model = modelAndProperties.first;
+                        
+                        if (!modelAndProperties.second.empty()) {
+                            output.preprocessedProperties = std::move(modelAndProperties.second);
+                        }
                     }
                 }
             }
             
-            return output;
+            if (output.model && output.model.get().isJaniModel()) {
+                storm::jani::ModelFeatures supportedFeatures = storm::api::getSupportedJaniFeatures(builderType);
+                storm::api::simplifyJaniModel(output.model.get().asJaniModel(), output.properties, supportedFeatures);
+            }
+
+            return {output, mpi};
         }
         
         void exportSymbolicInput(SymbolicInput const& input) {
@@ -353,16 +387,6 @@ namespace storm {
                     storm::api::exportJaniModelAsDot(model.asJaniModel(), ioSettings.getExportJaniDotFilename());
                 }
             }
-        }
-        
-        SymbolicInput parseAndPreprocessSymbolicInput(storm::utility::Engine const& engine) {
-            // Get the used builder type to handle cases where preprocessing depends on it
-            auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
-            
-            SymbolicInput input = parseSymbolicInput();
-            input = preprocessSymbolicInput(input, engine);
-            exportSymbolicInput(input);
-            return input;
         }
         
         std::vector<std::shared_ptr<storm::logic::Formula const>> createFormulasToRespect(std::vector<storm::jani::Property> const& properties) {
