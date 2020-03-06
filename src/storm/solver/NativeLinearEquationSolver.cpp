@@ -75,10 +75,6 @@ namespace storm {
                 if (storm::utility::vector::equalModuloPrecision<ValueType>(*this->cachedRowVector, x, precision, relative)) {
                     status = SolverStatus::Converged;
                 }
-                if (this->terminateNow(x, SolverGuarantee::None)) {
-                    status = SolverStatus::TerminatedEarly;
-                }
-
                 // If we did not yet converge, we need to backup the contents of x.
                 if (status != SolverStatus::Converged) {
                     *this->cachedRowVector = x;
@@ -90,9 +86,7 @@ namespace storm {
                 // Increase iteration count so we can abort if convergence is too slow.
                 ++iterations;
 
-                if (storm::utility::resources::isTerminate()) {
-                    status = SolverStatus::Aborted;
-                }
+                status = this->updateStatus(status, x, SolverGuarantee::None, iterations, maxIter);
             }
             
             if (!this->isCachingEnabled()) {
@@ -147,9 +141,6 @@ namespace storm {
                 if (storm::utility::vector::equalModuloPrecision<ValueType>(*currentX, *nextX, precision, relative)) {
                     status = SolverStatus::Converged;
                 }
-                if (this->terminateNow(*currentX, SolverGuarantee::None)) {
-                    status = SolverStatus::TerminatedEarly;
-                }
                 // Swap the two pointers as a preparation for the next iteration.
                 std::swap(nextX, currentX);
                 
@@ -159,9 +150,7 @@ namespace storm {
                 // Increase iteration count so we can abort if convergence is too slow.
                 ++iterations;
 
-                if (storm::utility::resources::isTerminate()) {
-                    status = SolverStatus::Aborted;
-                }
+                status = this->updateStatus(status, *currentX, SolverGuarantee::None, iterations, maxIter);
             }
             
             // If the last iteration did not write to the original x we have to swap the contents, because the
@@ -343,18 +332,11 @@ namespace storm {
                 // Check for termination.
                 std::swap(currentX, newX);
                 ++iterations;
-                if (this->terminateNow(*currentX, guarantee)) {
-                    status = SolverStatus::TerminatedEarly;
-                }
+
+                status = this->updateStatus(status, *currentX, guarantee, iterations, maxIterations);
 
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
-                if (storm::utility::resources::isTerminate()) {
-                    status = SolverStatus::Aborted;
-                }
-            }
-            if (status == SolverStatus::InProgress && iterations == maxIterations) {
-                status = SolverStatus::MaximalIterationsExceeded;
             }
 
             return PowerIterationResult(iterations - currentIterations, status);
@@ -559,15 +541,11 @@ namespace storm {
                             status = SolverStatus::Converged;
                         }
                     }
-                    if (lowerStep) {
-                        if (this->terminateNow(*lowerX, SolverGuarantee::LessOrEqual)) {
+                    if (lowerStep && this->terminateNow(*lowerX, SolverGuarantee::LessOrEqual)) {
                             status = SolverStatus::TerminatedEarly;
-                        }
                     }
-                    if (upperStep) {
-                        if (this->terminateNow(*upperX, SolverGuarantee::GreaterOrEqual)) {
+                    if (upperStep && this->terminateNow(*upperX, SolverGuarantee::GreaterOrEqual)) {
                             status = SolverStatus::TerminatedEarly;
-                        }
                     }
                 }
                 
@@ -578,9 +556,7 @@ namespace storm {
                 // Set up next iteration.
                 ++iterations;
                 doConvergenceCheck = !doConvergenceCheck;
-                if (storm::utility::resources::isTerminate()) {
-                    status = SolverStatus::Aborted;
-                }
+                status = this->updateStatus(status, false, iterations, maxIter);
             }
             
             // We take the means of the lower and upper bound so we guarantee the desired precision.
@@ -639,19 +615,13 @@ namespace storm {
                     status = SolverStatus::Converged;
                 }
 
-                // Check whether we terminate early.
-                if (this->hasCustomTerminationCondition() && this->soundValueIterationHelper->checkCustomTerminationCondition(this->getTerminationCondition())) {
-                    status = SolverStatus::TerminatedEarly;
-                }
-                
                 // Update environment variables.
                 ++iterations;
                 
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
-                if (storm::utility::resources::isTerminate()) {
-                    status = SolverStatus::Aborted;
-                }
+
+                status = this->updateStatus(status, this->hasCustomTerminationCondition() && this->soundValueIterationHelper->checkCustomTerminationCondition(this->getTerminationCondition()), iterations, env.solver().native().getMaximalNumberOfIterations());
             }
             this->soundValueIterationHelper->setSolutionVector();
 

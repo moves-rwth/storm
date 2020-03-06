@@ -736,19 +736,11 @@ namespace storm {
                 if (this->soundValueIterationHelper->checkConvergenceUpdateBounds(dir, relevantValuesPtr)) {
                     status = SolverStatus::Converged;
                 } else {
-                    // Update the status accordingly
-                    if (this->hasCustomTerminationCondition() && this->soundValueIterationHelper->checkCustomTerminationCondition(this->getTerminationCondition())) {
-                        status = SolverStatus::TerminatedEarly;
-                    } else if (iterations >= env.solver().minMax().getMaximalNumberOfIterations()) {
-                        status = SolverStatus::MaximalIterationsExceeded;
-                    }
+                    status = this->updateStatus(status, this->hasCustomTerminationCondition() && this->soundValueIterationHelper->checkCustomTerminationCondition(this->getTerminationCondition()), iterations, env.solver().minMax().getMaximalNumberOfIterations());
                 }
                 
                 // Potentially show progress.
                 this->showProgressIterative(iterations);
-                if (storm::utility::resources::isTerminate()) {
-                    status = SolverStatus::Aborted;
-                }
             }
             this->soundValueIterationHelper->setSolutionVector();
             
@@ -1047,18 +1039,13 @@ namespace storm {
                     // Increase the precision.
                     precision /= storm::utility::convertNumber<ValueType>(static_cast<uint64_t>(10));
                 }
-                if (storm::utility::resources::isTerminate()) {
-                    status = SolverStatus::Aborted;
-                }
+
+                status = this->updateStatus(status, false, overallIterations, env.solver().minMax().getMaximalNumberOfIterations());
             }
             
             // Swap the two vectors if the current result is not in the original x.
             if (currentX != originalX) {
                 std::swap(x, tmpX);
-            }
-            
-            if (status == SolverStatus::InProgress && overallIterations == env.solver().minMax().getMaximalNumberOfIterations()) {
-                status = SolverStatus::MaximalIterationsExceeded;
             }
             
             this->reportStatus(status, overallIterations);
