@@ -25,7 +25,7 @@ namespace storm {
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, absoluteOptionName, false, "Sets whether the relative or the absolute error is considered for detecting convergence.").setIsAdvanced().build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, unifPlusKappaOptionName, false, "The truncation factor used in unifPlus.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("kappa", "The factor").setDefaultValueDouble(0.1).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, unifPlusKappaOptionName, false, "Controls which amount of the approximation error is due to truncation.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("kappa", "The factor").setDefaultValueDouble(0.05).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
                 
             }
             
