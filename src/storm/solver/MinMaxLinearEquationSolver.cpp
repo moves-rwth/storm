@@ -7,6 +7,7 @@
 #include "storm/solver/TopologicalMinMaxLinearEquationSolver.h"
 #include "storm/solver/TopologicalCudaMinMaxLinearEquationSolver.h"
 #include "storm/solver/LpMinMaxLinearEquationSolver.h"
+#include "storm/solver/AcyclicMinMaxLinearEquationSolver.h"
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
@@ -211,6 +212,8 @@ namespace storm {
                 result = std::make_unique<TopologicalCudaMinMaxLinearEquationSolver<ValueType>>();
             } else if (method == MinMaxMethod::LinearProgramming) {
                 result = std::make_unique<LpMinMaxLinearEquationSolver<ValueType>>(std::make_unique<storm::utility::solver::LpSolverFactory<ValueType>>());
+            } else if (method == MinMaxMethod::Acyclic) {
+                result = std::make_unique<AcyclicMinMaxLinearEquationSolver<ValueType>>();
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
             }
@@ -226,6 +229,8 @@ namespace storm {
                 result = std::make_unique<IterativeMinMaxLinearEquationSolver<storm::RationalNumber>>(std::make_unique<GeneralLinearEquationSolverFactory<storm::RationalNumber>>());
             } else if (method == MinMaxMethod::LinearProgramming) {
                 result = std::make_unique<LpMinMaxLinearEquationSolver<storm::RationalNumber>>(std::make_unique<storm::utility::solver::LpSolverFactory<storm::RationalNumber>>());
+            } else if (method == MinMaxMethod::Acyclic) {
+                result = std::make_unique<AcyclicMinMaxLinearEquationSolver<storm::RationalNumber>>();
             } else if (method == MinMaxMethod::Topological) {
                 result = std::make_unique<TopologicalMinMaxLinearEquationSolver<storm::RationalNumber>>();
             } else {

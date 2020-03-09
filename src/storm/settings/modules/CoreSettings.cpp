@@ -40,7 +40,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, engineOptionName, false, "Sets which engine is used for model building and model checking.").setShortName(engineOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the engine to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(engines)).setDefaultValueString("sparse").build()).build());
                 
-                std::vector<std::string> linearEquationSolver = {"gmm++", "native", "eigen", "elimination", "topological"};
+                std::vector<std::string> linearEquationSolver = {"gmm++", "native", "eigen", "elimination", "topological", "acyclic"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, eqSolverOptionName, false, "Sets which solver is preferred for solving systems of linear equations.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the solver to prefer.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(linearEquationSolver)).setDefaultValueString("topological").build()).build());
                 
@@ -73,6 +73,8 @@ namespace storm {
                     return storm::solver::EquationSolverType::Elimination;
                 } else if (equationSolverName == "topological") {
                     return storm::solver::EquationSolverType::Topological;
+                } else if (equationSolverName == "acyclic") {
+                    return storm::solver::EquationSolverType::Acyclic;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown equation solver '" << equationSolverName << "'.");
             }

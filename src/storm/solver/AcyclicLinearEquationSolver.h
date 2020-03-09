@@ -1,6 +1,8 @@
 #pragma once
 
-#include "storm/solver/StandardMinMaxLinearEquationSolver.h"
+#include <memory>
+#include "storm/solver/Multiplier.h"
+#include "storm/solver/LinearEquationSolver.h"
 
 namespace storm {
 
@@ -13,30 +15,44 @@ namespace storm {
          * It is optimized for solving many instances of the equation system with the same underlying matrix.
          */
         template<typename ValueType>
-        class AcyclicMinMaxLinearEquationSolver : public StandardMinMaxLinearEquationSolver<ValueType> {
+        class AcyclicLinearEquationSolver : public LinearEquationSolver<ValueType> {
         public:
-            AcyclicMinMaxLinearEquationSolver();
-            AcyclicMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A);
-            AcyclicMinMaxLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A);
+            AcyclicLinearEquationSolver();
+            AcyclicLinearEquationSolver(storm::storage::SparseMatrix<ValueType> const& A);
+            AcyclicLinearEquationSolver(storm::storage::SparseMatrix<ValueType>&& A);
 
-            virtual ~AcyclicMinMaxLinearEquationSolver() {
+            virtual void setMatrix(storm::storage::SparseMatrix<ValueType> const& A) override;
+            virtual void setMatrix(storm::storage::SparseMatrix<ValueType>&& A) override;
+            
+            virtual ~AcyclicLinearEquationSolver() {
             }
-
+            
             virtual void clearCache() const override;
 
-            virtual MinMaxLinearEquationSolverRequirements getRequirements(Environment const& env, boost::optional<storm::solver::OptimizationDirection> const& direction = boost::none, bool const& hasInitialScheduler = false) const override ;
+            virtual LinearEquationSolverProblemFormat getEquationProblemFormat(storm::Environment const& env) const override;
+            virtual LinearEquationSolverRequirements getRequirements(Environment const& env) const override;
 
         protected:
-
-            virtual bool internalSolveEquations(storm::Environment const& env, OptimizationDirection d, std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
+            virtual bool internalSolveEquations(storm::Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const override;
 
         private:
+            
+            virtual uint64_t getMatrixRowCount() const override;
+            virtual uint64_t getMatrixColumnCount() const override;
+            
+            // If the solver takes posession of the matrix, we store the moved matrix in this member, so it gets deleted
+            // when the solver is destructed.
+            std::unique_ptr<storm::storage::SparseMatrix<ValueType>> localA;
+            // A pointer to the original sparse matrix given to this solver. If the solver takes posession of the matrix
+            // the pointer refers to orderedMatrix.
+            storm::storage::SparseMatrix<ValueType> const* A;
+            
             // cached multiplier either with original matrix or ordered matrix
             mutable std::unique_ptr<storm::solver::Multiplier<ValueType>> multiplier;
             // cached matrix for the multiplier (only if different from original matrix)
             mutable boost::optional<storm::storage::SparseMatrix<ValueType>> orderedMatrix;
             // cached row group ordering (only if not identity)
-            mutable boost::optional<std::vector<uint64_t>> rowGroupOrdering; // A.rowGroupCount() entries
+            mutable boost::optional<std::vector<uint64_t>> rowOrdering; // A.rowGroupCount() entries
             // can be used if the entries in 'b' need to be reordered
             mutable boost::optional<std::vector<ValueType>> auxiliaryRowVector; // A.rowCount() entries
             // contains factors applied to scale the entries of the 'b' vector

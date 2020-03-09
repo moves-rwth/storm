@@ -24,6 +24,8 @@ namespace storm {
                     return "topologicalcuda";
                 case MinMaxMethod::ViToPi:
                     return "vi-to-pi";
+                case MinMaxMethod::Acyclic:
+                    return "vi-to-pi";
             }
             return "invalid";
         }
@@ -96,6 +98,8 @@ namespace storm {
                     return "Elimination";
                 case EquationSolverType::Topological:
                     return "Topological";
+                case EquationSolverType::Acyclic:
+                    return "Acyclic";
             }
             return "invalid";
         }

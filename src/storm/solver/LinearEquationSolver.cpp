@@ -8,6 +8,7 @@
 #include "storm/solver/EigenLinearEquationSolver.h"
 #include "storm/solver/EliminationLinearEquationSolver.h"
 #include "storm/solver/TopologicalLinearEquationSolver.h"
+#include "storm/solver/AcyclicLinearEquationSolver.h"
 
 #include "storm/utility/vector.h"
 
@@ -88,7 +89,7 @@ namespace storm {
             EquationSolverType type = env.solver().getLinearEquationSolverType();
             
              // Adjust the solver type if it is not supported by this value type
-            if (type != EquationSolverType::Eigen && type != EquationSolverType::Topological && (env.solver().isLinearEquationSolverTypeSetFromDefaultValue() || type == EquationSolverType::Gmmxx)) {
+            if (type != EquationSolverType::Eigen && type != EquationSolverType::Topological && type != EquationSolverType::Acyclic && (env.solver().isLinearEquationSolverTypeSetFromDefaultValue() || type == EquationSolverType::Gmmxx)) {
                 STORM_LOG_INFO("Selecting '" + toString(EquationSolverType::Eigen) + "' as the linear equation solver since the previously selected one (" << toString(type) << ") does not support exact computations.");
                 type = EquationSolverType::Eigen;
             }
@@ -98,6 +99,7 @@ namespace storm {
                 case EquationSolverType::Eigen: return std::make_unique<EigenLinearEquationSolver<storm::RationalNumber>>();
                 case EquationSolverType::Elimination: return std::make_unique<EliminationLinearEquationSolver<storm::RationalNumber>>();
                 case EquationSolverType::Topological: return std::make_unique<TopologicalLinearEquationSolver<storm::RationalNumber>>();
+                case EquationSolverType::Acyclic: return std::make_unique<AcyclicLinearEquationSolver<storm::RationalNumber>>();
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "Unknown solver type.");
                     return nullptr;
@@ -118,6 +120,7 @@ namespace storm {
                 case EquationSolverType::Eigen: return std::make_unique<EigenLinearEquationSolver<storm::RationalFunction>>();
                 case EquationSolverType::Elimination: return std::make_unique<EliminationLinearEquationSolver<storm::RationalFunction>>();
                 case EquationSolverType::Topological: return std::make_unique<TopologicalLinearEquationSolver<storm::RationalFunction>>();
+                case EquationSolverType::Acyclic: return std::make_unique<AcyclicLinearEquationSolver<storm::RationalFunction>>();
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "Unknown solver type.");
                     return nullptr;
@@ -129,14 +132,14 @@ namespace storm {
             EquationSolverType type = env.solver().getLinearEquationSolverType();
             
             // Adjust the solver type if none was specified and we want sound/exact computations
-            if (env.solver().isForceExact() && type != EquationSolverType::Native && type != EquationSolverType::Eigen && type != EquationSolverType::Elimination && type != EquationSolverType::Topological) {
+            if (env.solver().isForceExact() && type != EquationSolverType::Native && type != EquationSolverType::Eigen && type != EquationSolverType::Elimination && type != EquationSolverType::Topological && type != EquationSolverType::Acyclic) {
                 if (env.solver().isLinearEquationSolverTypeSetFromDefaultValue()) {
                     type = EquationSolverType::Eigen;
                     STORM_LOG_INFO("Selecting '" + toString(type) + "' as the linear equation solver to guarantee exact results. If you want to override this, please explicitly specify a different solver.");
                 } else {
                     STORM_LOG_WARN("The selected solver does not yield exact results.");
                 }
-            } else if (env.solver().isForceSoundness() && type != EquationSolverType::Native && type != EquationSolverType::Eigen && type != EquationSolverType::Elimination && type != EquationSolverType::Topological) {
+            } else if (env.solver().isForceSoundness() && type != EquationSolverType::Native && type != EquationSolverType::Eigen && type != EquationSolverType::Elimination && type != EquationSolverType::Topological && type != EquationSolverType::Acyclic) {
                 if (env.solver().isLinearEquationSolverTypeSetFromDefaultValue()) {
                     type = EquationSolverType::Native;
                     STORM_LOG_INFO("Selecting '" + toString(type) + "' as the linear equation solver to guarantee sound results. If you want to override this, please explicitly specify a different solver.");
@@ -151,6 +154,7 @@ namespace storm {
                 case EquationSolverType::Eigen: return std::make_unique<EigenLinearEquationSolver<ValueType>>();
                 case EquationSolverType::Elimination: return std::make_unique<EliminationLinearEquationSolver<ValueType>>();
                 case EquationSolverType::Topological: return std::make_unique<TopologicalLinearEquationSolver<ValueType>>();
+                case EquationSolverType::Acyclic: return std::make_unique<AcyclicLinearEquationSolver<ValueType>>();
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidEnvironmentException, "Unknown solver type.");
                     return nullptr;
