@@ -1,15 +1,6 @@
 #include "storm/environment/solver/SolverEnvironment.h"
 
-#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
-#include "storm/environment/solver/TimeBoundedSolverEnvironment.h"
-#include "storm/environment/solver/MinMaxSolverEnvironment.h"
-#include "storm/environment/solver/MultiplierEnvironment.h"
-#include "storm/environment/solver/EigenSolverEnvironment.h"
-#include "storm/environment/solver/GmmxxSolverEnvironment.h"
-#include "storm/environment/solver/NativeSolverEnvironment.h"
-#include "storm/environment/solver/GameSolverEnvironment.h"
-#include "storm/environment/solver/TopologicalSolverEnvironment.h"
-#include "storm/environment/solver/OviSolverEnvironment.h"
+#include "storm/environment/solver/AllSolverEnvironments.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
