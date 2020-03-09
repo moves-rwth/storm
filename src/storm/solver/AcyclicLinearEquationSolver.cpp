@@ -62,9 +62,11 @@ namespace storm {
                     orderedMatrix = helper::createReorderedMatrix(*this->A, *rowOrdering, bFactors);
                     this->multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, *orderedMatrix);
                 }
-                auxiliaryRowVector = std::vector<ValueType>();
+                auxiliaryRowVector = std::vector<ValueType>(this->A->getRowCount());
+                auxiliaryRowVector2 = std::vector<ValueType>(this->A->getRowCount());
             }
             
+            std::vector<ValueType>* xPtr = &x;
             std::vector<ValueType> const* bPtr = &b;
             if (rowOrdering) {
                 STORM_LOG_ASSERT(rowOrdering->size() == b.size(), "b-vector has unexpected size.");
@@ -74,9 +76,16 @@ namespace storm {
                     (*auxiliaryRowVector)[bFactor.first] *= bFactor.second;
                 }
                 bPtr = &auxiliaryRowVector.get();
+                xPtr = &auxiliaryRowVector2.get();
             }
             
-            this->multiplier->multiplyGaussSeidel(env, x, bPtr, true);
+            this->multiplier->multiplyGaussSeidel(env, *xPtr, bPtr, true);
+            
+            if (rowOrdering) {
+                for (uint64_t newRow = 0; newRow < x.size(); ++newRow) {
+                    x[(*rowOrdering)[newRow]] = (*xPtr)[newRow];
+                }
+            }
             
             if (!this->isCachingEnabled()) {
                 this->clearCache();
@@ -103,6 +112,7 @@ namespace storm {
             orderedMatrix = boost::none;
             rowOrdering = boost::none;
             auxiliaryRowVector = boost::none;
+            auxiliaryRowVector2 = boost::none;
             bFactors.clear();
         }
         

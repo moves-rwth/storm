@@ -80,7 +80,7 @@ namespace storm {
                 for (uint64_t newRowGroup = 0; newRowGroup < newToOrigIndexMap.size(); ++newRowGroup) {
                     auto const& origRowGroup = newToOrigIndexMap[newRowGroup];
                     if (hasRowGrouping) {
-                        builder.newRowGroup(newRowGroup);
+                        builder.newRowGroup(newRow);
                     }
                     for (uint64_t origRow = matrix.getRowGroupIndices()[origRowGroup]; origRow < matrix.getRowGroupIndices()[origRowGroup + 1]; ++origRow) {
                         for (auto const& entry : matrix.getRow(origRow)) {

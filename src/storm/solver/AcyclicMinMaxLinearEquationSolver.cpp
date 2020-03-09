@@ -47,24 +47,41 @@ namespace storm {
                     orderedMatrix = helper::createReorderedMatrix(*this->A, *rowGroupOrdering, bFactors);
                     this->multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, *orderedMatrix);
                 }
-                auxiliaryRowVector = std::vector<ValueType>();
+                auxiliaryRowVector = std::vector<ValueType>(this->A->getRowCount());
+                auxiliaryRowGroupVector = std::vector<ValueType>(this->A->getRowGroupCount());
             }
             
+            std::vector<ValueType>* xPtr = &x;
             std::vector<ValueType> const* bPtr = &b;
             if (rowGroupOrdering) {
-                STORM_LOG_ASSERT(rowGroupOrdering->size() == b.size(), "b-vector has unexpected size.");
-                auxiliaryRowVector->resize(b.size());
-                storm::utility::vector::selectVectorValues(*auxiliaryRowVector, *rowGroupOrdering, b);
+                STORM_LOG_ASSERT(rowGroupOrdering->size() == x.size(), "x-vector has unexpected size.");
+                STORM_LOG_ASSERT(auxiliaryRowGroupVector->size() == x.size(), "x-vector has unexpected size.");
+                STORM_LOG_ASSERT(auxiliaryRowVector->size() == b.size(), "b-vector has unexpected size.");
+                for (uint64_t newGroupIndex = 0; newGroupIndex < x.size(); ++newGroupIndex) {
+                    uint64_t newRow = orderedMatrix->getRowGroupIndices()[newGroupIndex];
+                    uint64_t newRowGroupEnd = orderedMatrix->getRowGroupIndices()[newGroupIndex + 1];
+                    uint64_t oldRow = this->A->getRowGroupIndices()[(*rowGroupOrdering)[newGroupIndex]];
+                    for (; newRow < newRowGroupEnd; ++newRow, ++oldRow) {
+                        (*auxiliaryRowVector)[newRow] = b[oldRow];
+                    }
+                }
                 for (auto const& bFactor : bFactors) {
                     (*auxiliaryRowVector)[bFactor.first] *= bFactor.second;
                 }
+                xPtr = &auxiliaryRowGroupVector.get();
                 bPtr = &auxiliaryRowVector.get();
             }
             
             if (this->isTrackSchedulerSet()) {
-                this->multiplier->multiplyAndReduceGaussSeidel(env, dir, x, bPtr, &this->schedulerChoices.get(), true);
+                this->multiplier->multiplyAndReduceGaussSeidel(env, dir, *xPtr, bPtr, &this->schedulerChoices.get(), true);
             } else {
-                this->multiplier->multiplyAndReduceGaussSeidel(env, dir, x, bPtr, nullptr, true);
+                this->multiplier->multiplyAndReduceGaussSeidel(env, dir, *xPtr, bPtr, nullptr, true);
+            }
+            
+            if (rowGroupOrdering) {
+                for (uint64_t newGroupIndex = 0; newGroupIndex < x.size(); ++newGroupIndex) {
+                    x[(*rowGroupOrdering)[newGroupIndex]] = (*xPtr)[newGroupIndex];
+                }
             }
             
             if (!this->isCachingEnabled()) {
@@ -87,6 +104,7 @@ namespace storm {
             orderedMatrix = boost::none;
             rowGroupOrdering = boost::none;
             auxiliaryRowVector = boost::none;
+            auxiliaryRowGroupVector = boost::none;
             bFactors.clear();
         }
         
