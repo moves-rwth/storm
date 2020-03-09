@@ -40,8 +40,12 @@ namespace storm {
                         uint64_t current = stack.back();
                         if (visited.get(current)) {
                             // We are backtracking, so add this state now
-                            result.push_back(current);
-                            processed.set(current);
+                            // It might be that we already processed this state before. This can happen, e.g., if this state has two direct predecessors, A and B, and
+                            // A is also a predecessor of B. Then, this node gets inserted into the stack two times: when analyzing A and B.
+                            if (!processed.get(current)) {
+                                result.push_back(current);
+                                processed.set(current);
+                            }
                             stack.pop_back();
                         } else {
                             visited.set(current);
@@ -59,6 +63,7 @@ namespace storm {
                 // we will do backwards iterations, so the order has to be reversed
                 if (orderedMatrixRequired) {
                     std::reverse(result.begin(), result.end());
+                    STORM_LOG_ASSERT(result.size() == matrix.getRowGroupCount(), "Result vector has an unexpected amount of entries.");
                     return result;
                 } else {
                     return boost::none;
