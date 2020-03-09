@@ -21,7 +21,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, timeoutOptionName, false, "If given, computation will abort after the timeout has been reached.").setIsAdvanced().setShortName(timeoutOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("time", "Seconds after which to timeout.").setDefaultValueUnsignedInteger(0).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, printTimeAndMemoryOptionName, false, "Prints CPU time and memory consumption at the end.").setShortName(printTimeAndMemoryOptionShortName).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, signalWaitingTimeOptionName, false, "If given, computation will abort after the timeout has been reached.").setIsAdvanced()
+                this->addOption(storm::settings::OptionBuilder(moduleName, signalWaitingTimeOptionName, false, "Specifies how much time can pass until termination when receiving a termination signal.").setIsAdvanced()
                                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("time", "Seconds after which to exit the program.").setDefaultValueUnsignedInteger(3).build()).build());
             }
             

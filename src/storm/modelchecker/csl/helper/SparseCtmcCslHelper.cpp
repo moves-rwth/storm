@@ -22,6 +22,7 @@
 #include "storm/utility/vector.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/numerical.h"
+#include "storm/utility/SignalHandler.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidStateException.h"
@@ -686,6 +687,9 @@ namespace storm {
                     
                     // Check for convergence. The uniformization rate is already incorporated into the precision parameter
                     if ((maxDiff - minDiff) <= (relative ? (precision * minDiff) : precision)) {
+                        break;
+                    }
+                    if (storm::utility::resources::isTerminate()) {
                         break;
                     }
                 }

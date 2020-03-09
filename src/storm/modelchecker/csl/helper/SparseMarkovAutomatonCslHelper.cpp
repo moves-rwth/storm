@@ -222,9 +222,6 @@ namespace storm {
                                 }
 
                                 progressSteps.updateProgress(N-k);
-                                if (storm::utility::resources::isTerminate()) {
-                                    break;
-                                }
                             }
                             if (computeLowerBound) {
                                 storm::utility::vector::scaleVectorInPlace(maybeStatesValuesLower, storm::utility::one<ValueType>() / foxGlynnResult.totalWeight);
@@ -1132,6 +1129,9 @@ namespace storm {
 
                     // Check for convergence
                     if ((maxDiff - minDiff) <= (relative ? (precision * (v.front() + minDiff)) : precision)) {
+                        break;
+                    }
+                    if (storm::utility::resources::isTerminate()) {
                         break;
                     }
                     

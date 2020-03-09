@@ -1598,6 +1598,9 @@ namespace storm {
                     if ((maxDiff - minDiff) <= (relative ? (precision * minDiff) : precision)) {
                         break;
                     }
+                    if (storm::utility::resources::isTerminate()) {
+                        break;
+                    }
                 }
                 if (maxIter.is_initialized() && iter == maxIter.get()) {
                     STORM_LOG_WARN("LRA computation did not converge within " << iter << " iterations.");
