@@ -219,7 +219,9 @@ namespace storm {
                     uint64_t* newBuckets = new uint64_t[newBucketCount];
                     std::copy_n(buckets, this->bucketCount(), newBuckets);
                     if (init) {
-                        newBuckets[this->bucketCount() - 1] |= ((1ull << (64 - (bitCount & mod64mask))) - 1ull);
+                        if (this->bucketCount() > 0) {
+                            newBuckets[this->bucketCount() - 1] |= ((1ull << (64 - (bitCount & mod64mask))) - 1ull);
+                        }
                         std::fill_n(newBuckets + this->bucketCount(), newBucketCount - this->bucketCount(), -1ull);
                     } else {
                         std::fill_n(newBuckets + this->bucketCount(), newBucketCount - this->bucketCount(), 0);
