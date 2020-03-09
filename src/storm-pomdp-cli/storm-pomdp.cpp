@@ -239,12 +239,9 @@ int main(const int argc, const char** argv) {
         }
 
         if (formula) {
-            storm::logic::ProbabilityOperatorFormula const &probFormula = formula->asProbabilityOperatorFormula();
-            storm::logic::Formula const &subformula1 = probFormula.getSubformula();
-
-
             if (formula->isProbabilityOperatorFormula()) {
-
+                storm::logic::ProbabilityOperatorFormula const &probFormula = formula->asProbabilityOperatorFormula();
+                storm::logic::Formula const &subformula1 = probFormula.getSubformula();
                 std::set<uint32_t> targetObservationSet;
                 storm::storage::BitVector targetStates(pomdp->getNumberOfStates());
                 storm::storage::BitVector badStates(pomdp->getNumberOfStates());
