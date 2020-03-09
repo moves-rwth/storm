@@ -37,18 +37,19 @@ namespace storm {
                 storm::utility::Stopwatch underlyingWatch(true);
                 // Compute the results on the underlying MDP as a basic overapproximation
                 storm::models::sparse::StateLabeling underlyingMdpLabeling(pomdp.getStateLabeling());
-                underlyingMdpLabeling.addLabel("goal");
+                // TODO: Is the following really necessary
+                underlyingMdpLabeling.addLabel("__goal__");
                 std::vector<uint64_t> goalStates;
                 for (auto const &targetObs : targetObservations) {
                     for (auto const &goalState : pomdp.getStatesWithObservation(targetObs)) {
-                        underlyingMdpLabeling.addLabelToState("goal", goalState);
+                        underlyingMdpLabeling.addLabelToState("__goal__", goalState);
                     }
                 }
                 storm::models::sparse::Mdp<ValueType, RewardModelType> underlyingMdp(pomdp.getTransitionMatrix(), underlyingMdpLabeling, pomdp.getRewardModels());
                 auto underlyingModel = std::static_pointer_cast<storm::models::sparse::Model<ValueType, RewardModelType>>(
                         std::make_shared<storm::models::sparse::Mdp<ValueType, RewardModelType>>(underlyingMdp));
                 std::string initPropString = min ? "Pmin" : "Pmax";
-                initPropString += "=? [F \"goal\"]";
+                initPropString += "=? [F \"__goal__\"]";
                 std::vector<storm::jani::Property> propVector = storm::api::parseProperties(initPropString);
                 std::shared_ptr<storm::logic::Formula const> underlyingProperty = storm::api::extractFormulasFromProperties(propVector).front();
                 STORM_PRINT("Underlying MDP" << std::endl)
