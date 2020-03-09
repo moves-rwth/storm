@@ -33,6 +33,34 @@ namespace storm {
         namespace helper {
             
             template<typename ValueType>
+            std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> setUpProbabilisticStatesSolver(storm::Environment& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitions) {
+                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver;
+                    // The min-max system has no end components as we assume non-zeno MAs.
+                    if (transitions.getNonzeroEntryCount() > 0) {
+                        storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> factory;
+                        bool isAcyclic = !storm::utility::graph::hasCycle(transitions);
+                        if (isAcyclic) {
+                            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::Acyclic);
+                        }
+                        solver = factory.create(env, transitions);
+                        solver->setHasUniqueSolution(true); // Assume non-zeno MA
+                        solver->setHasNoEndComponents(true); // assume non-zeno MA
+                        solver->setLowerBound(storm::utility::zero<ValueType>());
+                        solver->setUpperBound(storm::utility::one<ValueType>());
+                        solver->setCachingEnabled(true);
+                        solver->setRequirementsChecked(true);
+                        auto req = solver->getRequirements(env, dir);
+                        req.clearBounds();
+                        req.clearUniqueSolution();
+                        if (isAcyclic) {
+                            req.clearAcyclic();
+                        }
+                        STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "The solver requirement " << req.getEnabledRequirementsAsString() << " has not been checked.");
+                    }
+                    return solver;
+            }
+            
+            template<typename ValueType>
             class UnifPlusHelper {
             public:
                 UnifPlusHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates) : transitionMatrix(transitionMatrix), exitRateVector(exitRateVector), markovianStates(markovianStates) {
@@ -377,25 +405,6 @@ namespace storm {
                     }
                 }
                 
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> setUpProbabilisticStatesSolver(storm::Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitions) const {
-                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver;
-                    if (transitions.getNonzeroEntryCount() > 0) {
-                        storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> factory;
-                        solver = factory.create(env, transitions);
-                        solver->setHasUniqueSolution(true); // Assume non-zeno MA
-                        solver->setHasNoEndComponents(true); // assume non-zeno MA
-                        solver->setLowerBound(storm::utility::zero<ValueType>());
-                        solver->setUpperBound(storm::utility::one<ValueType>());
-                        solver->setCachingEnabled(true);
-                        solver->setRequirementsChecked(true);
-                        auto req = solver->getRequirements(env, dir);
-                        req.clearBounds();
-                        req.clearUniqueSolution();
-                        STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "The solver requirement " << req.getEnabledRequirementsAsString() << " has not been checked.");
-                    }
-                    return solver;
-                }
-                
                 storm::storage::BitVector getProb0States(OptimizationDirection dir, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) const {
                     if (dir == storm::solver::OptimizationDirection::Maximize) {
                         return storm::utility::graph::performProb0A(transitionMatrix.transpose(true), phiStates, psiStates);
@@ -492,20 +501,11 @@ namespace storm {
                     }
                 }
                 
-                // Check for requirements of the solver.
-                // The min-max system has no end components as we assume non-zeno MAs.
-                storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxLinearEquationSolverFactory;
-                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, true, true, dir);
-                requirements.clearBounds();
-                STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
-                
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(env, aProbabilistic);
-                solver->setHasUniqueSolution();
-                solver->setHasNoEndComponents();
-                solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
-                solver->setRequirementsChecked();
-                solver->setCachingEnabled(true);
-                
+                // Create a solver object (only if there are actually transitions between probabilistic states)
+                auto solverEnv = env;
+                solverEnv.solver().setForceExact(true);
+                auto solver = setUpProbabilisticStatesSolver(solverEnv, dir, aProbabilistic);
+
                 // Perform the actual value iteration
                 // * loop until the step bound has been reached
                 // * in the loop:
@@ -520,7 +520,11 @@ namespace storm {
                         storm::utility::vector::addVectors(bProbabilistic, bProbabilisticFixed, bProbabilistic);
                         
                         // Now perform the inner value iteration for probabilistic states.
-                        solver->solveEquations(env, dir, probabilisticNonGoalValues, bProbabilistic);
+                        if (solver) {
+                            solver->solveEquations(solverEnv, dir, probabilisticNonGoalValues, bProbabilistic);
+                        } else {
+                            storm::utility::vector::reduceVectorMinOrMax(dir, bProbabilistic, probabilisticNonGoalValues, aProbabilistic.getRowGroupIndices());
+                        }
                         
                         // (Re-)compute bMarkovian = bMarkovianFixed + aMarkovianToProbabilistic * vProbabilistic.
                         aMarkovianToProbabilistic.multiplyWithVector(probabilisticNonGoalValues, bMarkovian);
@@ -543,7 +547,11 @@ namespace storm {
                     // After the loop, perform one more step of the value iteration for PS states.
                     aProbabilisticToMarkovian.multiplyWithVector(markovianNonGoalValues, bProbabilistic);
                     storm::utility::vector::addVectors(bProbabilistic, bProbabilisticFixed, bProbabilistic);
-                    solver->solveEquations(env, dir, probabilisticNonGoalValues, bProbabilistic);
+                    if (solver) {
+                        solver->solveEquations(solverEnv, dir, probabilisticNonGoalValues, bProbabilistic);
+                    } else {
+                        storm::utility::vector::reduceVectorMinOrMax(dir, bProbabilistic, probabilisticNonGoalValues, aProbabilistic.getRowGroupIndices());
+                    }
                 }
             }
             
@@ -1077,29 +1085,13 @@ namespace storm {
                     if (env.solver().isForceSoundness()) {
                         // To get correct results, the inner equation systems are solved exactly.
                         // TODO investigate how an error would propagate
-                        solverEnv.solver().minMax().setMethod(storm::solver::MinMaxMethod::Topological);
-                        solverEnv.solver().topological().setUnderlyingMinMaxMethod(storm::solver::MinMaxMethod::PolicyIteration);
-                        solverEnv.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Topological);
-                        solverEnv.solver().topological().setUnderlyingEquationSolverType(storm::solver::EquationSolverType::Eigen);
-                        solverEnv.solver().eigen().setMethod(storm::solver::EigenLinearEquationSolverMethod::SparseLU);
+                        solverEnv.solver().setForceExact(true);
                     }
                     
                     x.resize(aProbabilistic.getRowGroupCount(), storm::utility::zero<ValueType>());
                     b = probabilisticChoiceRewards;
                     
-                    // Check for requirements of the solver.
-                    // The solution is unique as we assume non-zeno MAs.
-                    storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxLinearEquationSolverFactory;
-                    storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(solverEnv, true, true, dir);
-                    requirements.clearLowerBounds();
-                    STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
-    
-                    solver = minMaxLinearEquationSolverFactory.create(solverEnv, std::move(aProbabilistic));
-                    solver->setLowerBound(storm::utility::zero<ValueType>());
-                    solver->setHasUniqueSolution(true);
-                    solver->setHasNoEndComponents(true);
-                    solver->setRequirementsChecked(true);
-                    solver->setCachingEnabled(true);
+                    solver = setUpProbabilisticStatesSolver(solverEnv, dir, aProbabilistic);
                 }
                 
                 uint64_t iter = 0;
@@ -1111,7 +1103,11 @@ namespace storm {
                     ++iter;
                     // Compute the expected total rewards for the probabilistic states
                     if (hasProbabilisticStates) {
-                        solver->solveEquations(solverEnv, dir, x, b);
+                        if (solver) {
+                            solver->solveEquations(solverEnv, dir, x, b);
+                        } else {
+                            storm::utility::vector::reduceVectorMinOrMax(dir, b, x, aProbabilistic.getRowGroupIndices());
+                        }
                     }
                     // now compute the values for the markovian states. We also keep track of the maximal and minimal difference between two values (for convergence checking)
                     auto vIt = v.begin();
