@@ -36,6 +36,7 @@ namespace storm {
         class SynchronizationVector;
         struct ArrayEliminatorData;
         class Property;
+        struct InformationObject;
         
         class Model {
         public:
@@ -390,6 +391,10 @@ namespace storm {
              */
             std::size_t getTotalNumberOfNonTransientVariables() const;
 
+            /*!
+             * Returns various information of this model.
+             */
+            InformationObject getModelInformation() const;
 
             /*!
              * Sets the system composition expression of the JANI model.

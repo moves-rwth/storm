@@ -20,6 +20,7 @@
 #include "storm/storage/jani/FunctionEliminator.h"
 #include "storm/storage/jani/VariablesToConstantsTransformer.h"
 #include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/jani/traverser/InformationCollector.h"
 
 #include "storm/storage/expressions/LinearityCheckVisitor.h"
 
@@ -684,6 +685,10 @@ namespace storm {
             return res;
         }
 
+        InformationObject Model::getModelInformation() const {
+            return collectModelInformation(*this);
+        }
+        
         Variable const& Model::addVariable(Variable const& variable) {
             if (variable.isBooleanVariable()) {
                 return addVariable(variable.asBooleanVariable());
