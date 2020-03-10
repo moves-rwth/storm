@@ -1,8 +1,10 @@
 #include "storm/utility/Portfolio.h"
 
+#include <sstream>
+
 #include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/Property.h"
-
+#include "storm/storage/jani/traverser/InformationCollector.h"
 #include "storm/logic/Formula.h"
 #include "storm/logic/FormulaInformation.h"
 
@@ -38,9 +40,42 @@ namespace storm {
                     continuousTime = !model.isDiscreteTimeModel();
                     nondeterminism = !model.isDeterministicModel();
                     propertyType = getPropertyType(property);
-                    numVariables = model.getTotalNumberOfNonTransientVariables();
-                    numAutomata = model.getNumberOfAutomata();
-                    numEdges = model.getNumberOfEdges();
+                    auto modelInfo = model.getModelInformation();
+                    numVariables = modelInfo.nrVariables;
+                    numEdges = modelInfo.nrEdges;
+                    numAutomata = modelInfo.nrAutomata;
+                    stateDomainSize = modelInfo.stateDomainSize;
+                    avgDomainSize = modelInfo.avgVarDomainSize;
+                    stateEstimate = 0;
+                }
+                
+                std::string toString() const {
+                    std::stringstream str;
+                    str << std::boolalpha << "continuous-time=" << continuousTime << "\tnondeterminism=" << nondeterminism << "\tpropertytype=";
+                    switch (propertyType) {
+                        case PropertyType::Unbounded:
+                            str << "unbounded";
+                            break;
+                        case PropertyType::Bounded:
+                            str << "bounded";
+                            break;
+                        case PropertyType::LongRun:
+                            str << "longrun";
+                            break;
+                    }
+                    str << "\tnumVariables=" << numVariables;
+                    str << "\tnumEdges=" << numEdges;
+                    str << "\tnumAutomata=" << numAutomata;
+                    if (stateDomainSize > 0) {
+                        str << "\tstateDomainSize=" << stateDomainSize;
+                    }
+                    if (avgDomainSize > 0.0) {
+                        str << "\tavgDomainSize=" << avgDomainSize;
+                    }
+                    if (stateEstimate > 0) {
+                        str << "\tstateEstimate=" << stateEstimate;
+                    }
+                    return str.str();
                 }
                 
                 bool continuousTime;
@@ -49,7 +84,9 @@ namespace storm {
                 uint64_t numVariables;
                 uint64_t numAutomata;
                 uint64_t numEdges;
+                uint64_t stateDomainSize;
                 uint64_t stateEstimate;
+                double avgDomainSize;
             };
         }
         
@@ -60,6 +97,7 @@ namespace storm {
         void Portfolio::predict(storm::jani::Model const& model, storm::jani::Property const& property) {
             typedef pfinternal::PropertyType PropertyType;
             auto f = pfinternal::Features(model, property);
+            STORM_LOG_INFO("Portfolio engine using features " << f.toString() << ".");
             
             { // Decision tree start
                 if (f.numEdges <= 618) {
@@ -167,6 +205,8 @@ namespace storm {
             typedef pfinternal::PropertyType PropertyType;
             auto f = pfinternal::Features(model, property);
             f.stateEstimate = stateEstimate;
+            STORM_LOG_INFO("Portfolio engine using features " << f.toString() << ".");
+
             // TODO: Actually make use of the estimate
             predict(model, property);
         }
