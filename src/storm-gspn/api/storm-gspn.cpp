@@ -94,7 +94,7 @@ namespace storm {
             storm::utility::openFile(filename, stream);
             
             std::string line;
-            while ( std::getline(stream, line) ) {
+            while (storm::utility::getline(stream, line)) {
                 std::vector<std::string> strs;
                 boost::split(strs, line, boost::is_any_of("\t "));
                 STORM_LOG_THROW(strs.size() == 2, storm::exceptions::WrongFormatException, "Expect key value pairs");
