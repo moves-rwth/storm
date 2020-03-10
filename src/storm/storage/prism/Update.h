@@ -93,6 +93,11 @@ namespace storm {
              */
             Update removeIdentityAssignments() const;
             
+            /*!
+             * Simplifies the update in various ways (also removes identity assignments)
+             */
+            Update simplify() const;
+            
             friend std::ostream& operator<<(std::ostream& stream, Update const& assignment);
             
         private:

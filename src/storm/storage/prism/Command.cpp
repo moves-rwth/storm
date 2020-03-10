@@ -85,9 +85,10 @@ namespace storm {
             std::vector<Update> newUpdates;
             newUpdates.reserve(this->getNumberOfUpdates());
             for (auto const& update : this->getUpdates()) {
-                newUpdates.emplace_back(update.removeIdentityAssignments());
+                newUpdates.emplace_back(update.simplify());
             }
-            return copyWithNewUpdates(std::move(newUpdates));
+            auto simpleGuard = guardExpression.simplify().reduceNesting();
+            return Command(this->globalIndex, this->markovian, this->getActionIndex(), this->getActionName(), simpleGuard, newUpdates, this->getFilename(), this->getLineNumber());
         }
         
         Command Command::copyWithNewUpdates(std::vector<Update> && newUpdates) const {
