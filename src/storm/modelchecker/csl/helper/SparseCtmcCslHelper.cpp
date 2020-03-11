@@ -1143,11 +1143,7 @@ namespace storm {
                 // Use Fox-Glynn to get the truncation points and the weights.
                 storm::utility::numerical::FoxGlynnResult<ValueType> foxGlynnResult = storm::utility::numerical::foxGlynn(lambda, epsilon);
                 STORM_LOG_DEBUG("Fox-Glynn cutoff points: left=" << foxGlynnResult.left << ", right=" << foxGlynnResult.right);
-                
-                // Scale the weights so they add up to one.
-                for (auto& element : foxGlynnResult.weights) {
-                    element /= foxGlynnResult.totalWeight;
-                }
+                // foxGlynnResult.weights do not sum up to one. This is to enhance numerical stability.
                 
                 // If the cumulative reward is to be computed, we need to adjust the weights.
                 if (useMixedPoissonProbabilities) {
@@ -1155,7 +1151,7 @@ namespace storm {
                     
                     for (auto& element : foxGlynnResult.weights) {
                         sum += element;
-                        element = (1 - sum) / uniformizationRate;
+                        element = (foxGlynnResult.totalWeight - sum) / uniformizationRate;
                     }
                 }
                 
@@ -1190,6 +1186,10 @@ namespace storm {
                         multiplier->multiply(env, values, nullptr, values);
                         storm::utility::vector::applyPointwise(result, values, result, addAndScale);
                     }
+                    // To make sure that the values obtained before the left truncation point have the same 'impact' on the total result as the values obtained
+                    // between the left and right truncation point, we scale them here with the total sum of the weights.
+                    // Note that we divide with this value afterwards. This is to improve numerical stability.
+                    storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(result, foxGlynnResult.totalWeight);
                 }
                 
                 // For the indices that fall in between the truncation points, we need to perform the matrix-vector
@@ -1203,6 +1203,8 @@ namespace storm {
                     storm::utility::vector::applyPointwise(result, values, result, addAndScale);
                 }
                 
+                // Finally, divide the result by the total weight
+                storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(result, storm::utility::one<ValueType>() / foxGlynnResult.totalWeight);
                 return result;
             }
             
