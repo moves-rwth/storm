@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace logic {
-        FormulaInformation::FormulaInformation() : mContainsRewardOperator(false), mContainsNextFormula(false), mContainsBoundedUntilFormula(false), mContainsCumulativeRewardFormula(false), mContainsRewardBoundedFormula(false) {
+        FormulaInformation::FormulaInformation() : mContainsRewardOperator(false), mContainsNextFormula(false), mContainsBoundedUntilFormula(false), mContainsCumulativeRewardFormula(false), mContainsRewardBoundedFormula(false), mContainsLongRunFormula(false) {
             // Intentionally left empty
         }
         

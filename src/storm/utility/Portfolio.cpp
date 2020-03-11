@@ -30,7 +30,7 @@ namespace storm {
                     STORM_LOG_INFO("Assuming Long Run property:" << property);
                     return PropertyType::LongRun;
                 } else {
-                    STORM_LOG_INFO("Unbounded property:" << property);
+                    STORM_LOG_INFO("Assuming Unbounded property:" << property);
                     return PropertyType::Unbounded;
                 }
             }
