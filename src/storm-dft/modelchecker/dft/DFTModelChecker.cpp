@@ -534,7 +534,8 @@ namespace storm {
                 } else {
                     os << ", ";
                 }
-                os << boost::apply_visitor(ResultOutputVisitor(), result);
+                boost::variant<std::ostream&> stream(os);
+                boost::apply_visitor(ResultOutputVisitor(), result, stream);
             }
             os << "]" << std::endl;
         }

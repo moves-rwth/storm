@@ -22,20 +22,15 @@ namespace storm {
             typedef std::vector<boost::variant<ValueType, approximation_result>> dft_results;
             typedef std::vector<std::shared_ptr<storm::logic::Formula const>> property_vector;
 
-            class ResultOutputVisitor : public boost::static_visitor<std::string> {
+            class ResultOutputVisitor : public boost::static_visitor<> {
             public:
-                std::string operator()(ValueType result) const {
-                    std::stringstream stream;
-                    stream << result;
-                    return stream.str();
+                void operator()(ValueType result, std::ostream& os) const {
+                    os << result;
                 }
 
-                std::string operator()(std::pair<ValueType, ValueType> const& result) const {
-                    std::stringstream stream;
-                    stream << "(" << result.first << ", " << result.second << ")";
-                    return stream.str();
+                void operator()(std::pair<ValueType, ValueType> const& result, std::ostream& os) const {
+                    os << "(" << result.first << ", " << result.second << ")";
                 }
-
             };
 
             /*!
