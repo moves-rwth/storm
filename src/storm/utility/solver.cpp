@@ -15,6 +15,7 @@
 #include "storm/solver/MathsatSmtSolver.h"
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/GeneralSettings.h"
 #include "storm/utility/NumberTraits.h"
 
 #include "storm/exceptions/InvalidSettingsException.h"
@@ -29,7 +30,8 @@ namespace storm {
                 storm::solver::LpSolverType t;
                 if (solvT == storm::solver::LpSolverTypeSelection::FROMSETTINGS) {
                     t = storm::settings::getModule<storm::settings::modules::CoreSettings>().getLpSolver();
-                    if (storm::NumberTraits<ValueType>::IsExact && t != storm::solver::LpSolverType::Z3 && storm::settings::getModule<storm::settings::modules::CoreSettings>().isLpSolverSetFromDefaultValue()) {
+                    bool useExact = storm::NumberTraits<ValueType>::IsExact || storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactFinitePrecisionSet();
+                    if (useExact && t != storm::solver::LpSolverType::Z3 && storm::settings::getModule<storm::settings::modules::CoreSettings>().isLpSolverSetFromDefaultValue()) {
                         t = storm::solver::LpSolverType::Z3;
                     }
                 } else {

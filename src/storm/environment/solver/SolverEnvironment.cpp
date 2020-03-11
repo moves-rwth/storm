@@ -14,8 +14,9 @@
 namespace storm {
     
     SolverEnvironment::SolverEnvironment() {
-        forceSoundness = storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet();
-        forceExact = storm::settings::getModule<storm::settings::modules::GeneralSettings>().isExactSet();
+        auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+        forceSoundness = generalSettings.isSoundSet();
+        forceExact = generalSettings.isExactSet() || generalSettings.isExactFinitePrecisionSet();
         linearEquationSolverType = storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver();
         linearEquationSolverTypeSetFromDefault = storm::settings::getModule<storm::settings::modules::CoreSettings>().isEquationSolverSetFromDefaultValue();
     }

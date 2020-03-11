@@ -45,7 +45,8 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file from which to read the configuration.").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, bisimulationOptionName, false, "Sets whether to perform bisimulation minimization.").setShortName(bisimulationOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, parametricOptionName, false, "Sets whether to enable parametric model checking.").setIsAdvanced().build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, exactOptionName, false, "Sets whether to enable exact model checking.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, exactOptionName, false, "Sets whether to enable exact model checking.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("valuetype", "The kind of datatype used to represent numeric values").setDefaultValueString("rationals").makeOptional().addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator({"rationals", "floats"})).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, soundOptionName, false, "Sets whether to force sound model checking.").build());
             }
             
@@ -90,7 +91,11 @@ namespace storm {
             }
 
             bool GeneralSettings::isExactSet() const {
-                return this->getOption(exactOptionName).getHasOptionBeenSet();
+                return this->getOption(exactOptionName).getHasOptionBeenSet() && this->getOption(exactOptionName).getArgumentByName("valuetype").getValueAsString() == "rationals";
+            }
+
+            bool GeneralSettings::isExactFinitePrecisionSet() const {
+                return this->getOption(exactOptionName).getHasOptionBeenSet() && this->getOption(exactOptionName).getArgumentByName("valuetype").getValueAsString() == "floats";
             }
             
             bool GeneralSettings::isSoundSet() const {

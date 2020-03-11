@@ -37,6 +37,8 @@ namespace storm {
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
             std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<ValueType> const& exitRates, bool qualitative, double lowerBound, double upperBound) {
                 
+                STORM_LOG_THROW(!env.solver().isForceExact(), storm::exceptions::InvalidOperationException, "Exact computations not possible for bounded until probabilities.");
+                
                 uint_fast64_t numberOfStates = rateMatrix.getRowCount();
                 
                 // If the time bounds are [0, inf], we rather call untimed reachability.
@@ -257,6 +259,8 @@ namespace storm {
             
             template <typename ValueType, typename RewardModelType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
             std::vector<ValueType> SparseCtmcCslHelper::computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRateVector, RewardModelType const& rewardModel, double timeBound) {
+                STORM_LOG_THROW(!env.solver().isForceExact(), storm::exceptions::InvalidOperationException, "Exact computations not possible for cumulative expected rewards.");
+
                 // Only compute the result if the model has a state-based reward model.
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 

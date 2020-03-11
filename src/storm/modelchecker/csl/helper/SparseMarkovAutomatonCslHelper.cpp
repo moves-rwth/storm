@@ -619,6 +619,8 @@ namespace storm {
             
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
             std::vector<ValueType> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair) {
+                STORM_LOG_THROW(!env.solver().isForceExact(), storm::exceptions::InvalidOperationException, "Exact computations not possible for bounded until probabilities.");
+                
                 // Choose the applicable method
                 auto method = env.solver().timeBounded().getMaMethod();
                 if (method == storm::solver::MaBoundedReachabilityMethod::Imca) {
