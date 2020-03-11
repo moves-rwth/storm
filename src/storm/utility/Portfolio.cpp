@@ -99,115 +99,132 @@ namespace storm {
             auto f = pfinternal::Features(model, property);
             STORM_LOG_INFO("Portfolio engine using features " << f.toString() << ".");
             
-            { // Decision tree start
-                if (f.numEdges <= 618) {
-                    if (!f.continuousTime) {
-                        if (f.numVariables <= 3) {
+            if (f.numVariables <= 12) {
+                if (f.avgDomainSize <= 323.25) {
+                    if (f.stateDomainSize <= 381703) {
+                        if (f.numAutomata <= 1) {
                             exact();
-                        } else { // f.numVariables > 3
-                            if (f.propertyType == PropertyType::Bounded) {
-                                if (f.numEdges <= 25) {
-                                    dd();
-                                } else { // f.numEdges > 25
-                                    ddbisim();
-                                }
-                            } else { // !(f.propertyType == PropertyType::Bounded)
-                                if (f.numEdges <= 46) {
-                                    if (f.numVariables <= 8) {
-                                        hybrid();
-                                    } else { // f.numVariables > 8
-                                        if (f.numAutomata <= 1) {
-                                            ddbisim();
-                                        } else { // f.numAutomata > 1
-                                            if (f.numVariables <= 18) {
-                                                if (f.numEdges <= 36) {
-                                                    if (f.numEdges <= 30) {
-                                                        if (f.numAutomata <= 9) {
-                                                            sparse();
-                                                        } else { // f.numAutomata > 9
-                                                            hybrid();
-                                                        }
-                                                    } else { // f.numEdges > 30
-                                                        dd();
-                                                    }
-                                                } else { // f.numEdges > 36
-                                                    ddbisim();
-                                                }
-                                            } else { // f.numVariables > 18
-                                                hybrid();
-                                            }
-                                        }
-                                    }
-                                } else { // f.numEdges > 46
-                                    if (!f.nondeterminism) {
-                                        if (f.numEdges <= 92) {
-                                            ddbisim();
-                                        } else { // f.numEdges > 92
-                                            dd();
-                                        }
-                                    } else { // f.nondeterminism
-                                        if (f.numVariables <= 51) {
-                                            if (f.numAutomata <= 6) {
-                                                if (f.numAutomata <= 3) {
-                                                    if (f.numEdges <= 85) {
-                                                        sparse();
-                                                    } else { // f.numEdges > 85
-                                                        hybrid();
-                                                    }
-                                                } else { // f.numAutomata > 3
-                                                    hybrid();
-                                                }
-                                            } else { // f.numAutomata > 6
-                                                if (f.numAutomata <= 9) {
-                                                    ddbisim();
-                                                } else { // f.numAutomata > 9
-                                                    hybrid();
-                                                }
-                                            }
-                                        } else { // f.numVariables > 51
-                                            sparse();
-                                        }
+                        } else { // f.numAutomata > 1
+                            if (f.numEdges <= 34) {
+                                if (!f.nondeterminism) {
+                                    sparse();
+                                } else { // f.nondeterminism
+                                    if (f.stateDomainSize <= 1764) {
+                                        ddbisim();
+                                    } else { // f.stateDomainSize > 1764
+                                        sparse();
                                     }
                                 }
+                            } else { // f.numEdges > 34
+                                sparse();
                             }
                         }
-                    } else { // f.continuousTime
-                        if (!f.nondeterminism) {
-                            if (f.numAutomata <= 5) {
-                                hybrid();
-                            } else { // f.numAutomata > 5
-                                if (f.numVariables <= 8) {
-                                    sparse();
-                                } else { // f.numVariables > 8
-                                    if (f.numEdges <= 19) {
-                                        exact();
-                                    } else { // f.numEdges > 19
-                                        if (f.numVariables <= 21) {
-                                            hybrid();
-                                        } else { // f.numVariables > 21
+                    } else { // f.stateDomainSize > 381703
+                        if (!f.continuousTime) {
+                            if (f.numEdges <= 6002) {
+                                if (f.propertyType == PropertyType::Bounded) {
+                                    if (f.numEdges <= 68) {
+                                        hybrid();
+                                    } else { // f.numEdges > 68
+                                        ddbisim();
+                                    }
+                                } else { // !(f.propertyType == PropertyType::Bounded)
+                                    if (f.avgDomainSize <= 26.4375) {
+                                        hybrid();
+                                    } else { // f.avgDomainSize > 26.4375
+                                        if (f.stateDomainSize <= 208000000) {
                                             sparse();
+                                        } else { // f.stateDomainSize > 208000000
+                                            hybrid();
                                         }
                                     }
                                 }
+                            } else { // f.numEdges > 6002
+                                sparse();
                             }
-                        } else { // f.nondeterminism
-                            sparse();
+                        } else { // f.continuousTime
+                            if (f.numAutomata <= 16) {
+                                sparse();
+                            } else { // f.numAutomata > 16
+                                if (f.propertyType == PropertyType::Bounded) {
+                                    sparse();
+                                } else { // !(f.propertyType == PropertyType::Bounded)
+                                    hybrid();
+                                }
+                            }
                         }
                     }
-                } else { // f.numEdges > 618
+                } else { // f.avgDomainSize > 323.25
                     sparse();
                 }
-            } // Decision tree end
-            
+            } else { // f.numVariables > 12
+                if (f.stateDomainSize <= 47006507008) {
+                    if (f.avgDomainSize <= 4.538461446762085) {
+                        if (f.numVariables <= 82) {
+                            if (!f.continuousTime) {
+                                if (f.numAutomata <= 8) {
+                                    sparse();
+                                } else { // f.numAutomata > 8
+                                    hybrid();
+                                }
+                            } else { // f.continuousTime
+                                hybrid();
+                            }
+                        } else { // f.numVariables > 82
+                            if (f.numVariables <= 114) {
+                                ddbisim();
+                            } else { // f.numVariables > 114
+                                hybrid();
+                            }
+                        }
+                    } else { // f.avgDomainSize > 4.538461446762085
+                        ddbisim();
+                    }
+                } else { // f.stateDomainSize > 47006507008
+                    if (f.numVariables <= 19) {
+                        if (f.avgDomainSize <= 20.430288314819336) {
+                            hybrid();
+                        } else { // f.avgDomainSize > 20.430288314819336
+                            if (f.stateDomainSize <= 209736679590723584) {
+                                ddbisim();
+                            } else { // f.stateDomainSize > 209736679590723584
+                                if (f.propertyType == PropertyType::Bounded) {
+                                    hybrid();
+                                } else { // !(f.propertyType == PropertyType::Bounded)
+                                    sparse();
+                                }
+                            }
+                        }
+                    } else { // f.numVariables > 19
+                        if (!f.nondeterminism) {
+                            if (f.numVariables <= 27) {
+                                if (f.propertyType == PropertyType::Bounded) {
+                                    hybrid();
+                                } else { // !(f.propertyType == PropertyType::Bounded)
+                                    sparse();
+                                }
+                            } else { // f.numVariables > 27
+                                ddbisim();
+                            }
+                        } else { // f.nondeterminism
+                            if (f.numAutomata <= 8) {
+                                sparse();
+                            } else { // f.numAutomata > 8
+                                hybrid();
+                            }
+                        }
+                    }
+                }
+            }
         }
         
-        void Portfolio::predict(storm::jani::Model const& model, storm::jani::Property const& property, uint64_t stateEstimate) {
-            typedef pfinternal::PropertyType PropertyType;
-            auto f = pfinternal::Features(model, property);
-            f.stateEstimate = stateEstimate;
-            STORM_LOG_INFO("Portfolio engine using features " << f.toString() << ".");
-
-            // TODO: Actually make use of the estimate
+        void Portfolio::predict(storm::jani::Model const& model, storm::jani::Property const& property, uint64_t) {
+            //typedef pfinternal::PropertyType PropertyType;
+            //auto f = pfinternal::Features(model, property);
+            //f.stateEstimate = stateEstimate;
+            //STORM_LOG_INFO("Portfolio engine using features " << f.toString() << ".");
+            
+            // Right now, we do not make use of the state estimate, so we just ask the 'default' decision tree.
             predict(model, property);
         }
 
