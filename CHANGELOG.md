@@ -14,11 +14,12 @@ Version 1.4.x
 - JIT model building is now invoked via `--engine jit` (instead of `--jit`).
 - DRN: support import of choice labelling.
 - Added option `--build:buildchoiceorig` to build a model (PRISM or JANI) with choice origins (which are exported with, e.g. `--exportscheduler`).
-- Implemented optimistic value iteration for sound computations and use it as a default.
-- Unif+ for time bounded properties on Markov automata now computes results with relative precision. Use `--absolute` for the previous behavior.
-- Apply the maximum progress assumption while building a Markov automata with the Dd engine.
+- Implemented optimistic value iteration for sound computations and set it as new default in `--sound` mode.
+- Time bounded properties for Markov automata are now computed with relative precision. Use `--absolute` for the previous behavior.
+- Apply the maximum progress assumption while building a Markov automaton with one of the symbolic engines.
 - Added option `--build:nomaxprog` to disable applying the maximum progress assumption during model building (for Markov Automata).
 - Added hybrid engine for Markov Automata.
+- Improved performance of the Unif+ algorithm (used for time-bounded properties on Markov Automata).
 - Various performance improvements for model building with the sparse engine.
 - `storm-dft`: Symmetry reduction is now enabled by default and can be disabled via `--nosymmetryreduction`.
 - `storm-pomdp`: Only accept POMDPs that are canonical.
