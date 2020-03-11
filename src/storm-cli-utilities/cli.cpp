@@ -238,6 +238,8 @@ namespace storm {
             setResourceLimits();
             setLogLevel();
             setFileLogging();
+            // Set output precision
+            storm::utility::setOutputDigitsFromGeneralPrecision(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
         }
 
         

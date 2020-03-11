@@ -225,7 +225,7 @@ namespace storm {
                     }
                     return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(components));
                 }
-                STORM_LOG_TRACE("MA matrix:" << std::endl << this->getTransitionMatrix());
+                //STORM_LOG_TRACE("MA matrix:" << std::endl << this->getTransitionMatrix());
                 STORM_LOG_TRACE("Markovian states: " << getMarkovianStates());
 
                 // Eliminate all probabilistic states by state elimination
