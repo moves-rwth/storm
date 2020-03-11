@@ -332,15 +332,21 @@ namespace {
             result = checker->check(this->env(), tasks[6]);
             EXPECT_TRUE(storm::utility::isInfinity(this->getQuantitativeResultAtInitialState(model, result)));
         }
-        
-        result = checker->check(this->env(), tasks[7]);
-        EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
- 
-        result = checker->check(this->env(), tasks[8]);
-        EXPECT_NEAR(this->parseNumber("407"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
- 
-        result = checker->check(this->env(), tasks[9]);
-        EXPECT_NEAR(this->parseNumber("27"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
- 
+
+#ifndef STORM_HAVE_Z3_OPTIMIZE
+        if (!storm::utility::isZero(this->precision())) {
+#endif
+            // Checking LRA properties exactly requires an exact LP solver.
+            result = checker->check(this->env(), tasks[7]);
+            EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+     
+            result = checker->check(this->env(), tasks[8]);
+            EXPECT_NEAR(this->parseNumber("407"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+     
+            result = checker->check(this->env(), tasks[9]);
+            EXPECT_NEAR(this->parseNumber("27"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+#ifndef STORM_HAVE_Z3_OPTIMIZE
+        }
+#endif
     }
 }
