@@ -34,6 +34,39 @@
 namespace storm {
     namespace modelchecker {
         namespace helper {
+            
+            template <typename ValueType>
+            bool SparseCtmcCslHelper::checkAndUpdateTransientProbabilityEpsilon(storm::Environment const& env, ValueType& epsilon, std::vector<ValueType> const& resultVector, storm::storage::BitVector const& relevantPositions) {
+                // Check if the check is necessary for the provided settings
+                if (!env.solver().isForceSoundness() || !env.solver().timeBounded().getRelativeTerminationCriterion()) {
+                    // No need to update epsilon
+                    return false;
+                }
+                
+                ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision());
+                // If we need to compute values with relative precision, it might be necessary to increase the precision requirements (epsilon)
+                ValueType newEpsilon = epsilon;
+                // Only consider positions that are relevant for the solve goal (e.g. initial states of the model) and are supposed to have a non-zero value
+                for (auto const& state : relevantPositions) {
+                    if (storm::utility::isZero(resultVector[state])) {
+                        newEpsilon = std::min(epsilon * storm::utility::convertNumber<ValueType>(0.1), newEpsilon);
+                    } else {
+                        ValueType relativeError = epsilon / resultVector[state]; // epsilon is an upper bound for the absolute error we made
+                        if (relativeError > precision) {
+                            newEpsilon = std::min(resultVector[state] * precision, newEpsilon);
+                        }
+                    }
+                }
+                if (newEpsilon < epsilon) {
+                    STORM_LOG_INFO("Re-computing transient probabilities with new truncation error " << newEpsilon << " to guarantee sound results with relative precision.");
+                    epsilon = newEpsilon;
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+            
+            
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
             std::vector<ValueType> SparseCtmcCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& rateMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<ValueType> const& exitRates, bool qualitative, double lowerBound, double upperBound) {
                 
@@ -52,6 +85,9 @@ namespace storm {
                 // Create the result vector.
                 std::vector<ValueType> result;
                 
+                // Set the possible (absolute) error allowed for truncation (epsilon for fox-glynn)
+                ValueType epsilon = storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision()) / 8.0;
+                
                 // If we identify the states that have probability 0 of reaching the target states, we can exclude them from the
                 // further computations.
                 storm::storage::BitVector statesWithProbabilityGreater0 = storm::utility::graph::performProbGreater0(backwardTransitions, phiStates, psiStates);
@@ -59,89 +95,38 @@ namespace storm {
                 storm::storage::BitVector statesWithProbabilityGreater0NonPsi = statesWithProbabilityGreater0 & ~psiStates;
                 STORM_LOG_INFO("Found " << statesWithProbabilityGreater0NonPsi.getNumberOfSetBits() << " 'maybe' states.");
                 
-                if (!statesWithProbabilityGreater0.empty()) {
-                    if (storm::utility::isZero(upperBound)) {
-                        // In this case, the interval is of the form [0, 0].
-                        result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
-                        storm::utility::vector::setVectorValues<ValueType>(result, psiStates, storm::utility::one<ValueType>());
-                    } else {
-                        if (storm::utility::isZero(lowerBound)) {
-                            // In this case, the interval is of the form [0, t].
-                            // Note that this excludes [0, inf] since this is untimed reachability and we considered this case earlier.
-                            
+                // the positions within the result for which the precision needs to be checked
+                storm::storage::BitVector relevantValues;
+                if (goal.hasRelevantValues()) {
+                    relevantValues = std::move(goal.relevantValues());
+                    relevantValues &= statesWithProbabilityGreater0;
+                } else {
+                    relevantValues = statesWithProbabilityGreater0;
+                }
+                
+                do { // Iterate until the desired precision is reached (only relevant for relative precision criterion)
+                    if (!statesWithProbabilityGreater0.empty()) {
+                        if (storm::utility::isZero(upperBound)) {
+                            // In this case, the interval is of the form [0, 0].
                             result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
                             storm::utility::vector::setVectorValues<ValueType>(result, psiStates, storm::utility::one<ValueType>());
-                            if (!statesWithProbabilityGreater0NonPsi.empty()) {
-                                // Find the maximal rate of all 'maybe' states to take it as the uniformization rate.
-                                ValueType uniformizationRate = 0;
-                                for (auto const& state : statesWithProbabilityGreater0NonPsi) {
-                                    uniformizationRate = std::max(uniformizationRate, exitRates[state]);
-                                }
-                                uniformizationRate *= 1.02;
-                                STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
-                                
-                                // Compute the uniformized matrix.
-                                storm::storage::SparseMatrix<ValueType> uniformizedMatrix = computeUniformizedMatrix(rateMatrix, statesWithProbabilityGreater0NonPsi, uniformizationRate, exitRates);
-                                
-                                // Compute the vector that is to be added as a compensation for removing the absorbing states.
-                                std::vector<ValueType> b = rateMatrix.getConstrainedRowSumVector(statesWithProbabilityGreater0NonPsi, psiStates);
-                                for (auto& element : b) {
-                                    element /= uniformizationRate;
-                                }
-                                
-                                // Finally compute the transient probabilities.
-                                std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNumberOfSetBits(), storm::utility::zero<ValueType>());
-                                std::vector<ValueType> subresult = computeTransientProbabilities(env, uniformizedMatrix, &b, upperBound, uniformizationRate, values);
-                                storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0NonPsi, subresult);
-                            }
-                        } else if (upperBound == storm::utility::infinity<ValueType>()) {
-                            // In this case, the interval is of the form [t, inf] with t != 0.
-                            
-                            // Start by computing the (unbounded) reachability probabilities of reaching psi states while
-                            // staying in phi states.
-                            result = computeUntilProbabilities(env, storm::solver::SolveGoal<ValueType>(), rateMatrix, backwardTransitions, exitRates, phiStates, psiStates, qualitative);
-                            
-                            // Determine the set of states that must be considered further.
-                            storm::storage::BitVector relevantStates = statesWithProbabilityGreater0 & phiStates;
-                            std::vector<ValueType> subResult(relevantStates.getNumberOfSetBits());
-                            storm::utility::vector::selectVectorValues(subResult, relevantStates, result);
-                            
-                            ValueType uniformizationRate = 0;
-                            for (auto const& state : relevantStates) {
-                                uniformizationRate = std::max(uniformizationRate, exitRates[state]);
-                            }
-                            uniformizationRate *= 1.02;
-                            STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
-                            
-                            // Compute the uniformized matrix.
-                            storm::storage::SparseMatrix<ValueType> uniformizedMatrix = computeUniformizedMatrix(rateMatrix, relevantStates, uniformizationRate, exitRates);
-                            
-                            // Compute the transient probabilities.
-                            subResult = computeTransientProbabilities<ValueType>(env, uniformizedMatrix, nullptr, lowerBound, uniformizationRate, subResult);
-                            
-                            // Fill in the correct values.
-                            storm::utility::vector::setVectorValues(result, ~relevantStates, storm::utility::zero<ValueType>());
-                            storm::utility::vector::setVectorValues(result, relevantStates, subResult);
                         } else {
-                            // In this case, the interval is of the form [t, t'] with t != 0 and t' != inf.
-                            
-                            if (lowerBound != upperBound) {
-                                // In this case, the interval is of the form [t, t'] with t != 0, t' != inf and t != t'.
+                            if (storm::utility::isZero(lowerBound)) {
+                                // In this case, the interval is of the form [0, t].
+                                // Note that this excludes [0, inf] since this is untimed reachability and we considered this case earlier.
                                 
-                                
-                                storm::storage::BitVector relevantStates = statesWithProbabilityGreater0 & phiStates;
-                                std::vector<ValueType> newSubresult(relevantStates.getNumberOfSetBits(), storm::utility::zero<ValueType>());
-                                storm::utility::vector::setVectorValues(newSubresult, psiStates % relevantStates, storm::utility::one<ValueType>());
+                                result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
+                                storm::utility::vector::setVectorValues<ValueType>(result, psiStates, storm::utility::one<ValueType>());
                                 if (!statesWithProbabilityGreater0NonPsi.empty()) {
                                     // Find the maximal rate of all 'maybe' states to take it as the uniformization rate.
-                                    ValueType uniformizationRate = storm::utility::zero<ValueType>();
+                                    ValueType uniformizationRate = 0;
                                     for (auto const& state : statesWithProbabilityGreater0NonPsi) {
                                         uniformizationRate = std::max(uniformizationRate, exitRates[state]);
                                     }
                                     uniformizationRate *= 1.02;
                                     STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
                                     
-                                    // Compute the (first) uniformized matrix.
+                                    // Compute the uniformized matrix.
                                     storm::storage::SparseMatrix<ValueType> uniformizedMatrix = computeUniformizedMatrix(rateMatrix, statesWithProbabilityGreater0NonPsi, uniformizationRate, exitRates);
                                     
                                     // Compute the vector that is to be added as a compensation for removing the absorbing states.
@@ -150,59 +135,121 @@ namespace storm {
                                         element /= uniformizationRate;
                                     }
                                     
-                                    // Start by computing the transient probabilities of reaching a psi state in time t' - t.
+                                    // Finally compute the transient probabilities.
                                     std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNumberOfSetBits(), storm::utility::zero<ValueType>());
-                                    std::vector<ValueType> subresult = computeTransientProbabilities(env, uniformizedMatrix, &b, upperBound - lowerBound, uniformizationRate, values);
-                                    storm::utility::vector::setVectorValues(newSubresult, statesWithProbabilityGreater0NonPsi % relevantStates, subresult);
+                                    std::vector<ValueType> subresult = computeTransientProbabilities(env, uniformizedMatrix, &b, upperBound, uniformizationRate, values, epsilon);
+                                    storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0NonPsi, subresult);
                                 }
+                            } else if (upperBound == storm::utility::infinity<ValueType>()) {
+                                // In this case, the interval is of the form [t, inf] with t != 0.
                                 
-                                // Then compute the transient probabilities of being in such a state after t time units. For this,
-                                // we must re-uniformize the CTMC, so we need to compute the second uniformized matrix.
-                                ValueType uniformizationRate = storm::utility::zero<ValueType>();
+                                // Start by computing the (unbounded) reachability probabilities of reaching psi states while
+                                // staying in phi states.
+                                result = computeUntilProbabilities(env, storm::solver::SolveGoal<ValueType>(), rateMatrix, backwardTransitions, exitRates, phiStates, psiStates, qualitative);
+                                
+                                // Determine the set of states that must be considered further.
+                                storm::storage::BitVector relevantStates = statesWithProbabilityGreater0 & phiStates;
+                                std::vector<ValueType> subResult(relevantStates.getNumberOfSetBits());
+                                storm::utility::vector::selectVectorValues(subResult, relevantStates, result);
+                                
+                                ValueType uniformizationRate = 0;
                                 for (auto const& state : relevantStates) {
                                     uniformizationRate = std::max(uniformizationRate, exitRates[state]);
                                 }
                                 uniformizationRate *= 1.02;
                                 STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
                                 
-                                // Finally, we compute the second set of transient probabilities.
+                                // Compute the uniformized matrix.
                                 storm::storage::SparseMatrix<ValueType> uniformizedMatrix = computeUniformizedMatrix(rateMatrix, relevantStates, uniformizationRate, exitRates);
-                                newSubresult = computeTransientProbabilities<ValueType>(env, uniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult);
+                                
+                                // Compute the transient probabilities.
+                                subResult = computeTransientProbabilities<ValueType>(env, uniformizedMatrix, nullptr, lowerBound, uniformizationRate, subResult, epsilon);
                                 
                                 // Fill in the correct values.
-                                result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
                                 storm::utility::vector::setVectorValues(result, ~relevantStates, storm::utility::zero<ValueType>());
-                                storm::utility::vector::setVectorValues(result, relevantStates, newSubresult);
+                                storm::utility::vector::setVectorValues(result, relevantStates, subResult);
                             } else {
-                                // In this case, the interval is of the form [t, t] with t != 0, t != inf.
+                                // In this case, the interval is of the form [t, t'] with t != 0 and t' != inf.
                                 
-                                std::vector<ValueType> newSubresult = std::vector<ValueType>(statesWithProbabilityGreater0.getNumberOfSetBits());
-                                storm::utility::vector::setVectorValues(newSubresult, psiStates % statesWithProbabilityGreater0, storm::utility::one<ValueType>());
-                                
-                                // Then compute the transient probabilities of being in such a state after t time units. For this,
-                                // we must re-uniformize the CTMC, so we need to compute the second uniformized matrix.
-                                ValueType uniformizationRate = storm::utility::zero<ValueType>();
-                                for (auto const& state : statesWithProbabilityGreater0) {
-                                    uniformizationRate = std::max(uniformizationRate, exitRates[state]);
+                                if (lowerBound != upperBound) {
+                                    // In this case, the interval is of the form [t, t'] with t != 0, t' != inf and t != t'.
+                                    
+                                    
+                                    storm::storage::BitVector relevantStates = statesWithProbabilityGreater0 & phiStates;
+                                    std::vector<ValueType> newSubresult(relevantStates.getNumberOfSetBits(), storm::utility::zero<ValueType>());
+                                    storm::utility::vector::setVectorValues(newSubresult, psiStates % relevantStates, storm::utility::one<ValueType>());
+                                    if (!statesWithProbabilityGreater0NonPsi.empty()) {
+                                        // Find the maximal rate of all 'maybe' states to take it as the uniformization rate.
+                                        ValueType uniformizationRate = storm::utility::zero<ValueType>();
+                                        for (auto const& state : statesWithProbabilityGreater0NonPsi) {
+                                            uniformizationRate = std::max(uniformizationRate, exitRates[state]);
+                                        }
+                                        uniformizationRate *= 1.02;
+                                        STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
+                                        
+                                        // Compute the (first) uniformized matrix.
+                                        storm::storage::SparseMatrix<ValueType> uniformizedMatrix = computeUniformizedMatrix(rateMatrix, statesWithProbabilityGreater0NonPsi, uniformizationRate, exitRates);
+                                        
+                                        // Compute the vector that is to be added as a compensation for removing the absorbing states.
+                                        std::vector<ValueType> b = rateMatrix.getConstrainedRowSumVector(statesWithProbabilityGreater0NonPsi, psiStates);
+                                        for (auto& element : b) {
+                                            element /= uniformizationRate;
+                                        }
+                                        
+                                        // Start by computing the transient probabilities of reaching a psi state in time t' - t.
+                                        std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNumberOfSetBits(), storm::utility::zero<ValueType>());
+                                        // divide the possible error by two since we will make this error two times.
+                                        std::vector<ValueType> subresult = computeTransientProbabilities(env, uniformizedMatrix, &b, upperBound - lowerBound, uniformizationRate, values, epsilon / storm::utility::convertNumber<ValueType>(2.0));
+                                        storm::utility::vector::setVectorValues(newSubresult, statesWithProbabilityGreater0NonPsi % relevantStates, subresult);
+                                    }
+                                    
+                                    // Then compute the transient probabilities of being in such a state after t time units. For this,
+                                    // we must re-uniformize the CTMC, so we need to compute the second uniformized matrix.
+                                    ValueType uniformizationRate = storm::utility::zero<ValueType>();
+                                    for (auto const& state : relevantStates) {
+                                        uniformizationRate = std::max(uniformizationRate, exitRates[state]);
+                                    }
+                                    uniformizationRate *= 1.02;
+                                    STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
+                                    
+                                    // Finally, we compute the second set of transient probabilities.
+                                    storm::storage::SparseMatrix<ValueType> uniformizedMatrix = computeUniformizedMatrix(rateMatrix, relevantStates, uniformizationRate, exitRates);
+                                    newSubresult = computeTransientProbabilities<ValueType>(env, uniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult, epsilon / storm::utility::convertNumber<ValueType>(2.0));
+                                    
+                                    // Fill in the correct values.
+                                    result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
+                                    storm::utility::vector::setVectorValues(result, ~relevantStates, storm::utility::zero<ValueType>());
+                                    storm::utility::vector::setVectorValues(result, relevantStates, newSubresult);
+                                } else {
+                                    // In this case, the interval is of the form [t, t] with t != 0, t != inf.
+                                    
+                                    std::vector<ValueType> newSubresult = std::vector<ValueType>(statesWithProbabilityGreater0.getNumberOfSetBits());
+                                    storm::utility::vector::setVectorValues(newSubresult, psiStates % statesWithProbabilityGreater0, storm::utility::one<ValueType>());
+                                    
+                                    // Then compute the transient probabilities of being in such a state after t time units. For this,
+                                    // we must re-uniformize the CTMC, so we need to compute the second uniformized matrix.
+                                    ValueType uniformizationRate = storm::utility::zero<ValueType>();
+                                    for (auto const& state : statesWithProbabilityGreater0) {
+                                        uniformizationRate = std::max(uniformizationRate, exitRates[state]);
+                                    }
+                                    uniformizationRate *= 1.02;
+                                    STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
+                                    
+                                    // Finally, we compute the second set of transient probabilities.
+                                    storm::storage::SparseMatrix<ValueType> uniformizedMatrix = computeUniformizedMatrix(rateMatrix, statesWithProbabilityGreater0, uniformizationRate, exitRates);
+                                    newSubresult = computeTransientProbabilities<ValueType>(env, uniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult, epsilon);
+                                    
+                                    // Fill in the correct values.
+                                    result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
+                                    storm::utility::vector::setVectorValues(result, ~statesWithProbabilityGreater0, storm::utility::zero<ValueType>());
+                                    storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0, newSubresult);
                                 }
-                                uniformizationRate *= 1.02;
-                                STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
-                                
-                                // Finally, we compute the second set of transient probabilities.
-                                storm::storage::SparseMatrix<ValueType> uniformizedMatrix = computeUniformizedMatrix(rateMatrix, statesWithProbabilityGreater0, uniformizationRate, exitRates);
-                                newSubresult = computeTransientProbabilities<ValueType>(env, uniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult);
-                                
-                                // Fill in the correct values.
-                                result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
-                                storm::utility::vector::setVectorValues(result, ~statesWithProbabilityGreater0, storm::utility::zero<ValueType>());
-                                storm::utility::vector::setVectorValues(result, statesWithProbabilityGreater0, newSubresult);
                             }
                         }
+                    } else {
+                        result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
                     }
-                } else {
-                    result = std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
-                }
-                
+                } while (checkAndUpdateTransientProbabilityEpsilon(env, epsilon, result, relevantValues));
                 return result;
             }
             
@@ -236,19 +283,48 @@ namespace storm {
                 // Initialize result to state rewards of the this->getModel().
                 std::vector<ValueType> result(rewardModel.getStateRewardVector());
                 
-                // If the time-bound is not zero, we need to perform a transient analysis.
-                if (timeBound > 0) {
-                    ValueType uniformizationRate = 0;
-                    for (auto const& rate : exitRateVector) {
-                        uniformizationRate = std::max(uniformizationRate, rate);
-                    }
-                    uniformizationRate *= 1.02;
-                    STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
-                    
-                    storm::storage::SparseMatrix<ValueType> uniformizedMatrix = computeUniformizedMatrix(rateMatrix, storm::storage::BitVector(numberOfStates, true), uniformizationRate, exitRateVector);
-                    result = computeTransientProbabilities<ValueType>(env, uniformizedMatrix, nullptr, timeBound, uniformizationRate, result);
+                // If the time-bound is zero, just return the current reward vector
+                if (storm::utility::isZero(timeBound)) {
+                    return result;
+                }
+                ValueType maxValue = storm::utility::vector::maximumElementAbs(result);
+                
+                // If all entries are zero, we return the zero-vector
+                if (storm::utility::isZero(maxValue)) {
+                    return result;
+                }
+            
+                ValueType uniformizationRate = 0;
+                for (auto const& rate : exitRateVector) {
+                    uniformizationRate = std::max(uniformizationRate, rate);
+                }
+                uniformizationRate *= 1.02;
+                STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
+                
+                storm::storage::SparseMatrix<ValueType> uniformizedMatrix = computeUniformizedMatrix(rateMatrix, storm::storage::BitVector(numberOfStates, true), uniformizationRate, exitRateVector);
+
+                // Set the possible error allowed for truncation (epsilon for fox-glynn)
+                ValueType epsilon = storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision());
+                if (env.solver().timeBounded().getRelativeTerminationCriterion()) {
+                    // Be more precise, if the maximum value is very small (precision can/has to be refined later)
+                    epsilon *= std::min(storm::utility::one<ValueType>(), maxValue);
+                } else {
+                    // Be more precise, if the maximal possible value is very large
+                    epsilon /= std::max(storm::utility::one<ValueType>(), maxValue);
                 }
                 
+                storm::storage::BitVector relevantValues;
+                if (goal.hasRelevantValues()) {
+                    relevantValues = std::move(goal.relevantValues());
+                } else {
+                    relevantValues = storm::storage::BitVector(result.size(), true);
+                }
+                
+                // Loop until the desired precision is reached.
+                do {
+                    result = computeTransientProbabilities<ValueType>(env, uniformizedMatrix, nullptr, timeBound, uniformizationRate, result, epsilon);
+                } while (checkAndUpdateTransientProbabilityEpsilon(env, epsilon, result, relevantValues));
+            
                 return result;
             }
             
@@ -285,9 +361,37 @@ namespace storm {
                 
                 // Compute the total state reward vector.
                 std::vector<ValueType> totalRewardVector = rewardModel.getTotalRewardVector(rateMatrix, exitRateVector);
+                ValueType maxReward = storm::utility::vector::maximumElementAbs(totalRewardVector);
                 
-                // Finally, compute the transient probabilities.
-                return computeTransientProbabilities<ValueType, true>(env, uniformizedMatrix, nullptr, timeBound, uniformizationRate, totalRewardVector);
+                // If all rewards are zero, the result is the constant zero vector.
+                if (storm::utility::isZero(maxReward)) {
+                    return std::vector<ValueType>(numberOfStates, storm::utility::zero<ValueType>());
+                }
+                
+                // Set the possible (absolute) error allowed for truncation (epsilon for fox-glynn)
+                ValueType epsilon = storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision());
+                if (env.solver().timeBounded().getRelativeTerminationCriterion()) {
+                    // Be more precise, if the value is very small (precision can/has to be refined later)
+                    epsilon *= std::min(storm::utility::one<ValueType>(), maxReward);
+                } else {
+                    // Be more precise, if the maximal possible value is very large
+                    epsilon /= std::max(storm::utility::one<ValueType>(), maxReward * timeBound);
+                }
+                
+                storm::storage::BitVector relevantValues;
+                if (goal.hasRelevantValues()) {
+                    relevantValues = std::move(goal.relevantValues());
+                } else {
+                    relevantValues = storm::storage::BitVector(totalRewardVector.size(), true);
+                }
+                
+                // Loop until the desired precision is reached.
+                std::vector<ValueType> result;
+                do {
+                    result = computeTransientProbabilities<ValueType, true>(env, uniformizedMatrix, nullptr, timeBound, uniformizationRate, totalRewardVector, epsilon);
+                } while (checkAndUpdateTransientProbabilityEpsilon(env, epsilon, result, relevantValues));
+    
+                return result;
             }
             
             template <typename ValueType, typename RewardModelType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
@@ -972,7 +1076,9 @@ namespace storm {
                         element /= uniformizationRate;
                         std::cout << element << std::endl;
                     }*/
-
+                    
+                    ValueType epsilon = storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision()) / 8.0;
+                    STORM_LOG_WARN_COND(!env.solver().timeBounded().getRelativeTerminationCriterion(), "Computation of transient probabilities with relative precision not supported. Using absolute precision instead.");
                     std::vector<ValueType> values(relevantStates.getNumberOfSetBits(), storm::utility::zero<ValueType>());
                     // Set initial states
                     size_t i = 0;
@@ -984,7 +1090,7 @@ namespace storm {
                         ++i;
                     }
                     // Finally compute the transient probabilities.
-                    std::vector<ValueType> subresult = computeTransientProbabilities<ValueType>(env, uniformizedMatrix, nullptr, timeBound, uniformizationRate, values);
+                    std::vector<ValueType> subresult = computeTransientProbabilities<ValueType>(env, uniformizedMatrix, nullptr, timeBound, uniformizationRate, values, epsilon);
 
                     storm::utility::vector::setVectorValues(result, relevantStates, subresult);
                 }
@@ -1025,8 +1131,8 @@ namespace storm {
             }
 
             template<typename ValueType, bool useMixedPoissonProbabilities, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            std::vector<ValueType> SparseCtmcCslHelper::computeTransientProbabilities(Environment const& env, storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, std::vector<ValueType> const* addVector, ValueType timeBound, ValueType uniformizationRate, std::vector<ValueType> values) {
-                
+            std::vector<ValueType> SparseCtmcCslHelper::computeTransientProbabilities(Environment const& env, storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, std::vector<ValueType> const* addVector, ValueType timeBound, ValueType uniformizationRate, std::vector<ValueType> values, ValueType epsilon) {
+                STORM_LOG_WARN_COND(epsilon > storm::utility::convertNumber<ValueType>(1e-20), "Very low truncation error " << epsilon << " requested. Numerical inaccuracies are possible.");
                 ValueType lambda = timeBound * uniformizationRate;
                 
                 // If no time can pass, the current values are the result.
@@ -1035,9 +1141,7 @@ namespace storm {
                 }
                 
                 // Use Fox-Glynn to get the truncation points and the weights.
-//                std::tuple<uint_fast64_t, uint_fast64_t, ValueType, std::vector<ValueType>> foxGlynnResult = storm::utility::numerical::getFoxGlynnCutoff(lambda, 1e+300, storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision() / 8.0);
-                
-                storm::utility::numerical::FoxGlynnResult<ValueType> foxGlynnResult = storm::utility::numerical::foxGlynn(lambda, storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision()) / 8.0);
+                storm::utility::numerical::FoxGlynnResult<ValueType> foxGlynnResult = storm::utility::numerical::foxGlynn(lambda, epsilon);
                 STORM_LOG_DEBUG("Fox-Glynn cutoff points: left=" << foxGlynnResult.left << ", right=" << foxGlynnResult.right);
                 
                 // Scale the weights so they add up to one.
@@ -1157,7 +1261,7 @@ namespace storm {
             
             template storm::storage::SparseMatrix<double> SparseCtmcCslHelper::computeUniformizedMatrix(storm::storage::SparseMatrix<double> const& rateMatrix, storm::storage::BitVector const& maybeStates, double uniformizationRate, std::vector<double> const& exitRates);
             
-            template std::vector<double> SparseCtmcCslHelper::computeTransientProbabilities(Environment const& env, storm::storage::SparseMatrix<double> const& uniformizedMatrix, std::vector<double> const* addVector, double timeBound, double uniformizationRate, std::vector<double> values);
+            template std::vector<double> SparseCtmcCslHelper::computeTransientProbabilities(Environment const& env, storm::storage::SparseMatrix<double> const& uniformizedMatrix, std::vector<double> const* addVector, double timeBound, double uniformizationRate, std::vector<double> values, double epsilon);
 
 #ifdef STORM_HAVE_CARL
             template std::vector<storm::RationalNumber> SparseCtmcCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& rateMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::vector<storm::RationalNumber> const& exitRates, bool qualitative, double lowerBound, double upperBound);

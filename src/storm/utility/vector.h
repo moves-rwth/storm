@@ -928,6 +928,16 @@ namespace storm {
                 
                 return true;
             }
+            
+            template <class T>
+            T maximumElementAbs(std::vector<T> const& vector) {
+                T res = storm::utility::zero<T>();
+                for (auto const& element : vector) {
+                    res = std::max(res, storm::utility::abs(element));
+                }
+                return res;
+            }
+            
             template<class T>
             T maximumElementDiff(std::vector<T> const& vectorLeft, std::vector<T> const& vectorRight) {
                 T maxDiff = storm::utility::zero<T>();
