@@ -289,12 +289,14 @@ namespace storm {
             
             // Set whether a transformation to jani is required or necessary
             mpi.transformToJani = ioSettings.isPrismToJaniSet();
-            auto builderType = storm::utility::getBuilderType(mpi.engine);
-            bool transformToJaniForJit = builderType == storm::builder::BuilderType::Jit;
-            STORM_LOG_WARN_COND(mpi.transformToJani || !transformToJaniForJit, "The JIT-based model builder is only available for JANI models, automatically converting the PRISM input model.");
-            bool transformToJaniForDdMA = (builderType == storm::builder::BuilderType::Dd) && (input.model->getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA);
-            STORM_LOG_WARN_COND(mpi.transformToJani || !transformToJaniForDdMA, "Dd-based model builder for Markov Automata is only available for JANI models, automatically converting the PRISM input model.");
-            mpi.transformToJani |= (transformToJaniForJit || transformToJaniForDdMA);
+            if (input.model) {
+                auto builderType = storm::utility::getBuilderType(mpi.engine);
+                bool transformToJaniForJit = builderType == storm::builder::BuilderType::Jit;
+                STORM_LOG_WARN_COND(mpi.transformToJani || !transformToJaniForJit, "The JIT-based model builder is only available for JANI models, automatically converting the PRISM input model.");
+                bool transformToJaniForDdMA = (builderType == storm::builder::BuilderType::Dd) && (input.model->getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA);
+                STORM_LOG_WARN_COND(mpi.transformToJani || !transformToJaniForDdMA, "Dd-based model builder for Markov Automata is only available for JANI models, automatically converting the PRISM input model.");
+                mpi.transformToJani |= (transformToJaniForJit || transformToJaniForDdMA);
+            }
 
             // Set the Valuetype used during model building
             mpi.buildValueType = mpi.verificationValueType;
