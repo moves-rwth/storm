@@ -289,7 +289,7 @@ namespace storm {
                         STORM_LOG_WARN("Iterative solver did not converge after " << iterations.get() << " iterations.");
                         break;
                     case SolverStatus::Aborted:
-                        STORM_LOG_WARN("Iterative solver was aborted.");
+                        STORM_LOG_WARN("Iterative solver was aborted after " << iterations.get() << " iterations.");
                         break;
                     default:
                         STORM_LOG_THROW(false, storm::exceptions::InvalidStateException, "Iterative solver terminated unexpectedly.");
