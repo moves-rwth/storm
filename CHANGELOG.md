@@ -4,10 +4,11 @@ Changelog
 This changelog lists only the most important changes. Smaller (bug)fixes as well as non-mature features are not part of the changelog.
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
-Version 1.4.x
+
+Version 1.5.x
 -------------
 
-## Version 1.4.2 (under development)
+## Version 1.5.0 (2020/03)
 - Added portfolio engine which picks a good engine (among other settings) based on features of the symbolic input.
 - Abort of Storm (via timeout or CTRL+C for example) is now gracefully handled. After an abort signal the program waits some seconds to output the result computed so far and terminates afterwards. A second signal immediately terminates the program.
 - Setting `--engine dd-to-sparse --bisimulation` now triggers extracting the sparse bisimulation quotient.
@@ -25,6 +26,11 @@ Version 1.4.x
 - `storm-pomdp`: Only accept POMDPs that are canonical.
 - `storm-pomdp`: Prism language extended with observable expressions.
 - `storm-pomdp`: Various fixes that prevented usage.
+- Several bug fixes.
+
+
+Version 1.4.x
+-------------
 
 ### Version 1.4.1 (2019/12)
 - Implemented long run average (LRA) computation for DTMCs/CTMCs via value iteration and via gain/bias equations.
