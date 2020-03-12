@@ -76,24 +76,31 @@ namespace storm {
                     storm::storage::BitVector probabilisticMaybeStates = ~markovianStates & maybeStates;
                     storm::storage::BitVector markovianStatesModMaybeStates = markovianMaybeStates % maybeStates;
                     storm::storage::BitVector probabilisticStatesModMaybeStates = probabilisticMaybeStates % maybeStates;
+                    // Catch the case where this query can be solved by solving the untimed variant instead.
+                    // This is the case if there is no Markovian maybe state (e.g. if the initial state is already a psi state) of if the time bound is infinity.
+                    if (markovianMaybeStates.empty() || storm::utility::isInfinity(upperTimeBound)) {
+                        return SparseMarkovAutomatonCslHelper::computeUntilProbabilities<ValueType>(env, dir, transitionMatrix, transitionMatrix.transpose(true), phiStates, psiStates, false, false).values;
+                    }
+                    
                     boost::optional<storm::storage::BitVector> relevantMaybeStates;
                     if (relevantStates) {
                         relevantMaybeStates = relevantStates.get() % maybeStates;
                     }
-                    // Catch the case where this is query can be solved by solving the untimed variant instead.
-                    // This is the case if there is no Markovian maybe state (e.g. if the initial state is already a psi state) of if the time bound is infinity.
-                    if (markovianMaybeStates.empty() || storm::utility::isInfinity(upperTimeBound)) {
-                        return SparseMarkovAutomatonCslHelper::computeUntilProbabilities<ValueType>(env, dir, transitionMatrix, transitionMatrix.transpose(true), phiStates, psiStates, false, false).values;
+                    // Store the best solution known so far (useful in cases where the computation gets aborted)
+                    std::vector<ValueType> bestKnownSolution;
+                    if (relevantMaybeStates) {
+                        bestKnownSolution.resize(relevantStates->size());
                     }
                     
                     // Get the exit rates restricted to only markovian maybe states.
                     std::vector<ValueType> markovianExitRates = storm::utility::vector::filterVector(exitRateVector, markovianMaybeStates);
                     
                     // Obtain parameters of the algorithm
+                    auto two = storm::utility::convertNumber<ValueType>(2.0);
                     // Truncation error
                     ValueType kappa = storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getUnifPlusKappa());
                     // Precision to be achieved
-                    ValueType epsilon = storm::utility::convertNumber<ValueType>(2.0) * storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision());
+                    ValueType epsilon = two * storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision());
                     bool relativePrecision = env.solver().timeBounded().getRelativeTerminationCriterion();
                     // Uniformization rate
                     ValueType lambda = *std::max_element(markovianExitRates.begin(), markovianExitRates.end());
@@ -132,7 +139,7 @@ namespace storm {
                     uint64_t iteration = 0;
                     progressIterations.startNewMeasurement(iteration);
                     bool converged = false;
-                    
+                    bool abortedInnerIterations = false;
                     while (!converged) {
                         // Maximal step size
                         uint64_t N = storm::utility::ceil(lambda * upperTimeBound * std::exp(2) - storm::utility::log(kappa * epsilon));
@@ -155,8 +162,9 @@ namespace storm {
                             progressSteps.setMaxCount(N);
                             progressSteps.startNewMeasurement(0);
                             bool firstIteration = true; // The first iterations can be irrelevant, because they will only produce zeroes anyway.
+                            int64_t k = N;
                             // Iteration k = N is always non-relevant
-                            for (int64_t k = N - 1; k >= 0; --k) {
+                            for (--k; k >= 0; --k) {
                                 
                                 // Check whether the iteration is relevant, that is, whether it will contribute non-zero values to the overall result
                                 if (computeLowerBound) {
@@ -222,20 +230,36 @@ namespace storm {
                                 }
 
                                 progressSteps.updateProgress(N-k);
+                                if (storm::utility::resources::isTerminate()) {
+                                    abortedInnerIterations = true;
+                                    break;
+                                }
                             }
+
                             if (computeLowerBound) {
                                 storm::utility::vector::scaleVectorInPlace(maybeStatesValuesLower, storm::utility::one<ValueType>() / foxGlynnResult.totalWeight);
                             } else {
                                 storm::utility::vector::scaleVectorInPlace(maybeStatesValuesUpper, storm::utility::one<ValueType>() / foxGlynnResult.totalWeight);
                             }
-
+                            
+                            if (abortedInnerIterations || storm::utility::resources::isTerminate()) {
+                                break;
+                            }
+                            
                             // Check if the lower and upper bound are sufficiently close to each other
                             converged = checkConvergence(maybeStatesValuesLower, maybeStatesValuesUpper, relevantMaybeStates, epsilon, relativePrecision, kappa);
                             if (converged) {
                                 break;
                             }
-                            if (storm::utility::resources::isTerminate()) {
-                                break;
+                            
+                            // Store the best solution we have found so far.
+                            if (relevantMaybeStates) {
+                                auto currentSolIt = bestKnownSolution.begin();
+                                for (auto const& state : relevantMaybeStates.get()) {
+                                    // We take the average of the lower and upper bounds
+                                    *currentSolIt = (maybeStatesValuesLower[state] + maybeStatesValuesUpper[state]) / two;
+                                    ++currentSolIt;
+                                }
                             }
                         }
                         
@@ -244,7 +268,7 @@ namespace storm {
                             
                             // Double lambda.
                             ValueType oldLambda = lambda;
-                            lambda *= storm::utility::convertNumber<ValueType>(2.0);
+                            lambda *= two;
                             STORM_LOG_DEBUG("Increased lambda to " << lambda << ".");
                             
                             if (relativePrecision) {
@@ -268,17 +292,24 @@ namespace storm {
                         }
                         progressIterations.updateProgress(++iteration);
                         if (storm::utility::resources::isTerminate()) {
+                            STORM_LOG_WARN("Aborted unif+ in iteration " << iteration << ".");
                             break;
                         }
                     }
-                    
-                    // We take the average of the lower and upper bounds
-                    auto two = storm::utility::convertNumber<ValueType>(2.0);
-                    storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(maybeStatesValuesLower, maybeStatesValuesUpper, maybeStatesValuesLower, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
-    
+
+                    // Prepare the result vector
                     std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
                     storm::utility::vector::setVectorValues(result, psiStates, storm::utility::one<ValueType>());
-                    storm::utility::vector::setVectorValues(result, maybeStates, maybeStatesValuesLower);
+                    
+                    if (abortedInnerIterations && iteration > 1 && relevantMaybeStates && relevantStates) {
+                        // We should take the stored solution instead of the current (probably more incorrect) lower/upper values
+                        storm::utility::vector::setVectorValues(result, maybeStates & relevantStates.get(), bestKnownSolution);
+                    } else {
+                        // We take the average of the lower and upper bounds
+                        storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(maybeStatesValuesLower, maybeStatesValuesUpper, maybeStatesValuesLower, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
+    
+                        storm::utility::vector::setVectorValues(result, maybeStates, maybeStatesValuesLower);
+                    }
                     return result;
                 }
 
