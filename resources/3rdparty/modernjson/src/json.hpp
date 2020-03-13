@@ -9055,7 +9055,11 @@ Format](http://rfc7159.net/rfc7159)
         */
         template <typename FloatValueType>
         FloatValueType str_to_float_t(FloatValueType* /* type */) const {
-            return storm::utility::convertNumber<FloatValueType, std::string>(std::string(reinterpret_cast<typename string_t::const_pointer>(m_start)));
+            // Use std::strtod to get the position where the number ends. Then parse it as a rational Number
+            char const* strptr = reinterpret_cast<typename string_t::const_pointer>(m_start);
+            char* end_pos;
+            std::strtod(strptr, &end_pos);
+            return storm::utility::convertNumber<FloatValueType, std::string>(std::string(strptr, end_pos - strptr));
         }
             
         template <>
