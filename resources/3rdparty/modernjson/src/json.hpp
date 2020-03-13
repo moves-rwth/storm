@@ -168,10 +168,22 @@ and fractional parts.
         
         template <>
         void float_to_stream(std::ostream& o, storm::RationalNumber const& number) {
-            auto result = storm::utility::to_string(storm::utility::convertNumber<double>(number));
+            double numberAsDouble = storm::utility::convertNumber<double>(number);
+            std::stringstream ss;
+            ss.precision(std::numeric_limits<double>::digits10);
+            ss << numberAsDouble;
+            auto result = ss.str();
             // Parse the result again to check for accuracy
             auto compare = storm::utility::convertNumber<storm::RationalNumber>(result);
-            STORM_LOG_WARN_COND(compare == number, "Inaccurate JSON export: During export, the number " << number << " will be rounded to " << result << ".");
+            if (compare != number) {
+                // Retry with increased accuracy
+                ss = std::stringstream();
+                ss.precision(std::numeric_limits<double>::max_digits10 + 2);
+                ss << numberAsDouble;
+                result = ss.str();
+                compare = storm::utility::convertNumber<storm::RationalNumber>(result);
+                STORM_LOG_WARN_COND(compare == number, "Inaccurate JSON export: The number " << number << " will be rounded to " << compare << ". Difference is approx. " << (storm::utility::convertNumber<double, storm::RationalNumber>(number - compare)) << ".");
+            }
             o << result;
         }
         
@@ -2256,7 +2268,7 @@ Format](http://rfc7159.net/rfc7159)
             // double->string; to be safe, we read this value from
             // std::numeric_limits<number_float_t>::digits10
             // Note that other libraries need to be able to read this, so we just stick to the standard double precision.
-            ss.precision(std::numeric_limits<double>::max_digits10 + 2);
+            ss.precision(std::numeric_limits<double>::digits10);
 
             if (indent >= 0)
             {

@@ -12,7 +12,7 @@
 namespace storm {
     namespace jani {
 
-        typedef storm::json<double> ExportJsonType;
+        typedef storm::json<storm::RationalNumber> ExportJsonType;
         
         class ExpressionToJson : public storm::expressions::ExpressionVisitor, public storm::expressions::JaniExpressionVisitor {
             

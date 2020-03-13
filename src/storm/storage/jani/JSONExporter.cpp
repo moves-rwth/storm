@@ -125,23 +125,6 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ComparisonType");
         }
         
-        ExportJsonType numberToJson(storm::RationalNumber rn) {
-            ExportJsonType numDecl;
-            numDecl = storm::utility::convertNumber<double>(rn);
-//            if(carl::isOne(carl::getDenom(rn))) {
-//                numDecl = ExportJsonType(carl::toString(carl::getNum(rn)));
-//            } else {
-//                numDecl["op"] = "/";
-//                // TODO set json lib to work with arbitrary precision ints.
-//                assert(carl::toInt<int64_t>(carl::getNum(rn)) == carl::getNum(rn));
-//                assert(carl::toInt<int64_t>(carl::getDenom(rn)) == carl::getDenom(rn));
-//                numDecl["left"] = carl::toInt<int64_t>(carl::getNum(rn));
-//                numDecl["right"] = carl::toInt<int64_t>(carl::getDenom(rn));
-//            }
-            return numDecl;
-        }
-        
-        
         ExportJsonType FormulaToJaniJson::constructPropertyInterval(boost::optional<storm::expressions::Expression> const& lower, boost::optional<bool> const& lowerExclusive, boost::optional<storm::expressions::Expression> const& upper, boost::optional<bool> const& upperExclusive) const {
             STORM_LOG_THROW((lower.is_initialized() || upper.is_initialized()), storm::exceptions::InvalidJaniException, "PropertyInterval needs either a lower or an upper bound, but none was given.");
             STORM_LOG_THROW((lower.is_initialized() || !lowerExclusive.is_initialized()), storm::exceptions::InvalidJaniException, "PropertyInterval defines wether the lower bound is exclusive but no lower bound is given.");
@@ -690,7 +673,7 @@ namespace storm {
             return ExportJsonType(expression.getValue());
         }
         boost::any ExpressionToJson::visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const&) {
-            return ExportJsonType(expression.getValueAsDouble());
+            return ExportJsonType(expression.getValue());
         }
         
         boost::any ExpressionToJson::visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data) {
@@ -994,7 +977,7 @@ namespace storm {
                 destEntry["location"] = locationNames.at(destination.getLocationIndex());
                 bool prob1 = false;
                 if(destination.getProbability().isLiteral()) {
-                    if(destination.getProbability().evaluateAsDouble() == 1) {
+                    if(storm::utility::isOne(destination.getProbability().evaluateAsRational())) {
                         prob1 = true;
                     }
                 }
