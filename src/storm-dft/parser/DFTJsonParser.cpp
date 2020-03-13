@@ -21,7 +21,7 @@ namespace storm {
             STORM_LOG_DEBUG("Parsing from JSON file");
             std::ifstream file;
             storm::utility::openFile(filename, file);
-            json jsonInput;
+            Json jsonInput;
             jsonInput << file;
             storm::utility::closeFile(file);
             return parseJson(jsonInput);
@@ -30,19 +30,19 @@ namespace storm {
         template<typename ValueType>
         storm::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJsonFromString(std::string const& jsonString) {
             STORM_LOG_DEBUG("Parsing from JSON string");
-            json jsonInput = json::parse(jsonString);
+            Json jsonInput = Json::parse(jsonString);
             return parseJson(jsonInput);
         }
 
         template<typename ValueType>
-        storm::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(json const& jsonInput) {
+        storm::storage::DFT<ValueType> DFTJsonParser<ValueType>::parseJson(Json const& jsonInput) {
             // Init DFT builder and value parser
             storm::builder::DFTBuilder<ValueType> builder;
             ValueParser<ValueType> valueParser;
 
             // Try to parse parameters
             if (jsonInput.find("parameters") != jsonInput.end()) {
-                json parameters = jsonInput.at("parameters");
+                Json parameters = jsonInput.at("parameters");
                 STORM_LOG_THROW(parameters.empty() || (std::is_same<ValueType, storm::RationalFunction>::value), storm::exceptions::NotSupportedException,
                                 "Parameters only allowed when using rational functions.");
                 for (auto it = parameters.begin(); it != parameters.end(); ++it) {
@@ -52,12 +52,12 @@ namespace storm {
                 }
             }
 
-            json nodes = jsonInput.at("nodes");
+            Json nodes = jsonInput.at("nodes");
             // Start by building mapping from ids to their unique names
             std::map<std::string, std::string> nameMapping;
             std::set<std::string> names;
             for (auto& element : nodes) {
-                json data = element.at("data");
+                Json data = element.at("data");
                 std::string id = data.at("id");
                 std::string uniqueName = generateUniqueName(data.at("name"));
                 STORM_LOG_THROW(names.find(uniqueName) == names.end(), storm::exceptions::WrongFormatException, "Element '" << uniqueName << "' was already declared.");
@@ -69,7 +69,7 @@ namespace storm {
             for (auto& element : nodes) {
                 STORM_LOG_TRACE("Parsing: " << element);
                 bool success = true;
-                json data = element.at("data");
+                Json data = element.at("data");
                 std::string name = generateUniqueName(data.at("name"));
                 std::vector<std::string> childNames;
                 if (data.count("children") > 0) {
@@ -137,7 +137,7 @@ namespace storm {
                     // TODO: do splitting later in rewriting step
                     if (type != "fdep" && type != "pdep") {
                         // Set layout positions
-                        json position = element.at("position");
+                        Json position = element.at("position");
                         double x = position.at("x");
                         double y = position.at("y");
                         builder.addLayoutInfo(name, x / 7, y / 7);
@@ -171,7 +171,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::string DFTJsonParser<ValueType>::parseJsonNumber(json number) {
+        std::string DFTJsonParser<ValueType>::parseJsonNumber(Json number) {
             if (number.is_string()) {
                 return number.get<std::string>();
             } else {

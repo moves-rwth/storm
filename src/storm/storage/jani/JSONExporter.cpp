@@ -39,13 +39,13 @@
 namespace storm {
     namespace jani {
 
-        modernjson::json anyToJson(boost::any&& input) {
+        ExportJsonType anyToJson(boost::any&& input) {
             boost::any tmp(std::move(input));
-            modernjson::json res = std::move(*boost::any_cast<modernjson::json>(&tmp));
+            ExportJsonType res = std::move(*boost::any_cast<ExportJsonType>(&tmp));
             return res;
         }
         
-        modernjson::json buildExpression(storm::expressions::Expression const& exp,  std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables = VariableSet(), VariableSet const& localVariables = VariableSet(), std::unordered_set<std::string> const& auxiliaryVariables = {}) {
+        ExportJsonType buildExpression(storm::expressions::Expression const& exp,  std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables = VariableSet(), VariableSet const& localVariables = VariableSet(), std::unordered_set<std::string> const& auxiliaryVariables = {}) {
             STORM_LOG_TRACE("Exporting " << exp);
             return ExpressionToJson::translate(exp,  constants, globalVariables, localVariables, auxiliaryVariables);
         }
@@ -56,27 +56,27 @@ namespace storm {
                 
             }
             
-            static modernjson::json translate(storm::jani::Composition const& comp, bool allowRecursion = true) {
+            static ExportJsonType translate(storm::jani::Composition const& comp, bool allowRecursion = true) {
                 CompositionJsonExporter visitor(allowRecursion);
                 return anyToJson(comp.accept(visitor, boost::none));
             }
             
             virtual boost::any visit(AutomatonComposition const& composition, boost::any const&) {
-                modernjson::json compDecl;
-                modernjson::json autDecl;
+                ExportJsonType compDecl;
+                ExportJsonType autDecl;
                 autDecl["automaton"] = composition.getAutomatonName();
-                std::vector<modernjson::json> elements;
+                std::vector<ExportJsonType> elements;
                 elements.push_back(autDecl);
                 compDecl["elements"] = elements;
                 return compDecl;
             }
             
             virtual boost::any visit(ParallelComposition const& composition, boost::any const& data) {
-                modernjson::json compDecl;
+                ExportJsonType compDecl;
                 
-                std::vector<modernjson::json> elems;
+                std::vector<ExportJsonType> elems;
                 for (auto const& subcomp : composition.getSubcompositions()) {
-                    modernjson::json elemDecl;
+                    ExportJsonType elemDecl;
                     if (subcomp->isAutomatonComposition()) {
                         elemDecl["automaton"] = std::static_pointer_cast<AutomatonComposition>(subcomp)->getAutomatonName();
                     } else {
@@ -86,9 +86,9 @@ namespace storm {
                     elems.push_back(elemDecl);
                 }
                 compDecl["elements"] = elems;
-                std::vector<modernjson::json> synElems;
+                std::vector<ExportJsonType> synElems;
                 for (auto const& syncs : composition.getSynchronizationVectors()) {
-                    modernjson::json syncDecl;
+                    ExportJsonType syncDecl;
                     syncDecl["synchronise"] = std::vector<std::string>();
                     for (auto const& syncIn : syncs.getInput()) {
                         if (syncIn == SynchronizationVector::NO_ACTION_INPUT) {
@@ -125,11 +125,11 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ComparisonType");
         }
         
-        modernjson::json numberToJson(storm::RationalNumber rn) {
-            modernjson::json numDecl;
+        ExportJsonType numberToJson(storm::RationalNumber rn) {
+            ExportJsonType numDecl;
             numDecl = storm::utility::convertNumber<double>(rn);
 //            if(carl::isOne(carl::getDenom(rn))) {
-//                numDecl = modernjson::json(carl::toString(carl::getNum(rn)));
+//                numDecl = ExportJsonType(carl::toString(carl::getNum(rn)));
 //            } else {
 //                numDecl["op"] = "/";
 //                // TODO set json lib to work with arbitrary precision ints.
@@ -142,12 +142,12 @@ namespace storm {
         }
         
         
-        modernjson::json FormulaToJaniJson::constructPropertyInterval(boost::optional<storm::expressions::Expression> const& lower, boost::optional<bool> const& lowerExclusive, boost::optional<storm::expressions::Expression> const& upper, boost::optional<bool> const& upperExclusive) const {
+        ExportJsonType FormulaToJaniJson::constructPropertyInterval(boost::optional<storm::expressions::Expression> const& lower, boost::optional<bool> const& lowerExclusive, boost::optional<storm::expressions::Expression> const& upper, boost::optional<bool> const& upperExclusive) const {
             STORM_LOG_THROW((lower.is_initialized() || upper.is_initialized()), storm::exceptions::InvalidJaniException, "PropertyInterval needs either a lower or an upper bound, but none was given.");
             STORM_LOG_THROW((lower.is_initialized() || !lowerExclusive.is_initialized()), storm::exceptions::InvalidJaniException, "PropertyInterval defines wether the lower bound is exclusive but no lower bound is given.");
             STORM_LOG_THROW((upper.is_initialized() || !upperExclusive.is_initialized()), storm::exceptions::InvalidJaniException, "PropertyInterval defines wether the upper bound is exclusive but no upper bound is given.");
             
-            modernjson::json iDecl;
+            ExportJsonType iDecl;
             if (lower) {
                 iDecl["lower"] = buildExpression(*lower, model.getConstants(), model.getGlobalVariables());
                 if (lowerExclusive) {
@@ -163,7 +163,7 @@ namespace storm {
             return iDecl;
         }
         
-        modernjson::json FormulaToJaniJson::constructRewardAccumulation(storm::logic::RewardAccumulation const& rewardAccumulation, std::string const& rewardModelName) const {
+        ExportJsonType FormulaToJaniJson::constructRewardAccumulation(storm::logic::RewardAccumulation const& rewardAccumulation, std::string const& rewardModelName) const {
             storm::jani::RewardModelInformation info(model, rewardModelName);
             
             bool steps = rewardAccumulation.isStepsSet() && (info.hasActionRewards() || info.hasTransitionRewards());
@@ -173,7 +173,7 @@ namespace storm {
             return constructRewardAccumulation(storm::logic::RewardAccumulation(steps, time, exit));
         }
         
-        modernjson::json FormulaToJaniJson::constructRewardAccumulation(storm::logic::RewardAccumulation const& rewardAccumulation) const {
+        ExportJsonType FormulaToJaniJson::constructRewardAccumulation(storm::logic::RewardAccumulation const& rewardAccumulation) const {
             std::vector<std::string> res;
             if (rewardAccumulation.isStepsSet()) {
                 res.push_back("steps");
@@ -188,7 +188,7 @@ namespace storm {
             return res;
         }
 
-        modernjson::json FormulaToJaniJson::constructStandardRewardAccumulation(std::string const& rewardModelName) const {
+        ExportJsonType FormulaToJaniJson::constructStandardRewardAccumulation(std::string const& rewardModelName) const {
             if (model.isDiscreteTimeModel()) {
                 return constructRewardAccumulation(storm::logic::RewardAccumulation(true, false, true), rewardModelName);
             } else {
@@ -196,7 +196,7 @@ namespace storm {
             }
         }
         
-        modernjson::json FormulaToJaniJson::translate(storm::logic::Formula const& formula, storm::jani::Model const& model, storm::jani::ModelFeatures& modelFeatures) {
+        ExportJsonType FormulaToJaniJson::translate(storm::logic::Formula const& formula, storm::jani::Model const& model, storm::jani::ModelFeatures& modelFeatures) {
             FormulaToJaniJson translator(model);
             auto result = anyToJson(formula.accept(translator));
             if (translator.containsStateExitRewards()) {
@@ -214,11 +214,11 @@ namespace storm {
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::AtomicLabelFormula const& f, boost::any const&) const {
-            modernjson::json opDecl(f.getLabel());
+            ExportJsonType opDecl(f.getLabel());
             return opDecl;
         }
         boost::any FormulaToJaniJson::visit(storm::logic::BinaryBooleanStateFormula const& f, boost::any const& data) const{
-            modernjson::json opDecl;
+            ExportJsonType opDecl;
             storm::logic::BinaryBooleanStateFormula::OperatorType op = f.getOperator();
             opDecl["op"] = op == storm::logic::BinaryBooleanStateFormula::OperatorType::And ? "∧" : "∨";
             opDecl["left"] = anyToJson(f.getLeftSubformula().accept(*this, data));
@@ -226,18 +226,18 @@ namespace storm {
             return opDecl;
         }
         boost::any FormulaToJaniJson::visit(storm::logic::BooleanLiteralFormula const& f, boost::any const&) const {
-            modernjson::json opDecl(f.isTrueFormula() ? true : false);
+            ExportJsonType opDecl(f.isTrueFormula() ? true : false);
             return opDecl;
         }
         boost::any FormulaToJaniJson::visit(storm::logic::BoundedUntilFormula const& f, boost::any const& data) const {
             STORM_LOG_THROW(!f.hasMultiDimensionalSubformulas(), storm::exceptions::NotSupportedException, "Jani export of multi-dimensional bounded until formulas is not supported.");
-            modernjson::json opDecl;
+            ExportJsonType opDecl;
             opDecl["op"] = "U";
             opDecl["left"] = anyToJson(f.getLeftSubformula().accept(*this, data));
             opDecl["right"] = anyToJson(f.getRightSubformula().accept(*this, data));
             
             bool hasStepBounds(false), hasTimeBounds(false);
-            std::vector<modernjson::json> rewardBounds;
+            std::vector<ExportJsonType> rewardBounds;
             
             for (uint64_t i = 0; i < f.getDimension(); ++i) {
                 boost::optional<storm::expressions::Expression> lower, upper;
@@ -250,7 +250,7 @@ namespace storm {
                     upper = f.getUpperBound(i);
                     upperExclusive = f.isUpperBoundStrict(i);
                 }
-                modernjson::json propertyInterval = constructPropertyInterval(lower, lowerExclusive, upper, upperExclusive);
+                ExportJsonType propertyInterval = constructPropertyInterval(lower, lowerExclusive, upper, upperExclusive);
     
                 auto tbr = f.getTimeBoundReference(i);
                 if (tbr.isStepBound() || (model.isDiscreteTimeModel() && tbr.isTimeBound())) {
@@ -258,7 +258,7 @@ namespace storm {
                     hasStepBounds = true;
                     opDecl["step-bounds"] = propertyInterval;
                 } else if(tbr.isRewardBound()) {
-                    modernjson::json rewbound;
+                    ExportJsonType rewbound;
                     rewbound["exp"] = buildExpression(model.getRewardModelExpression(tbr.getRewardName()), model.getConstants(), model.getGlobalVariables());
                     if (tbr.hasRewardAccumulation()) {
                         rewbound["accumulate"] = constructRewardAccumulation(tbr.getRewardAccumulation(), tbr.getRewardName());
@@ -274,7 +274,7 @@ namespace storm {
                 }
             }
             if (!rewardBounds.empty()) {
-                opDecl["reward-bounds"] = modernjson::json(rewardBounds);
+                opDecl["reward-bounds"] = ExportJsonType(rewardBounds);
             }
             return opDecl;
 
@@ -289,7 +289,7 @@ namespace storm {
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::EventuallyFormula const& f, boost::any const& data) const {
-            modernjson::json opDecl;
+            ExportJsonType opDecl;
             opDecl["op"] = "U";
             opDecl["left"] = anyToJson(f.getTrueFormula()->accept(*this, data));
             opDecl["right"] = anyToJson(f.getSubformula().accept(*this, data));
@@ -297,7 +297,7 @@ namespace storm {
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::TimeOperatorFormula const& f, boost::any const& data) const {
-            modernjson::json opDecl;
+            ExportJsonType opDecl;
             
             // Create standard reward accumulation for time operator formulas.
             storm::logic::RewardAccumulation rewAcc(model.isDiscreteTimeModel(), !model.isDiscreteTimeModel(), false);
@@ -320,7 +320,7 @@ namespace storm {
                     opDecl["left"]["op"] = (bound.comparisonType == storm::logic::ComparisonType::Less || bound.comparisonType == storm::logic::ComparisonType::LessEqual) ? "Emax" : "Emin";
                     opDecl["left"]["reach"] = anyToJson(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
                 }
-                opDecl["left"]["exp"] = modernjson::json(1);
+                opDecl["left"]["exp"] = ExportJsonType(1);
                 opDecl["left"]["accumulate"] = rewAccJson;
                 opDecl["right"] = buildExpression(bound.threshold, model.getConstants(), model.getGlobalVariables());
             } else {
@@ -336,14 +336,14 @@ namespace storm {
                     opDecl["op"] = "Emin";
                     opDecl["reach"] = anyToJson(f.getSubformula().asEventuallyFormula().getSubformula().accept(*this, data));
                 }
-                opDecl["exp"] = modernjson::json(1);
+                opDecl["exp"] = ExportJsonType(1);
                 opDecl["accumulate"] = rewAccJson;
             }
             return opDecl;
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::GloballyFormula const& f, boost::any const& data) const {
-            modernjson::json opDecl;
+            ExportJsonType opDecl;
             opDecl["op"] = "G";
             opDecl["exp"] = anyToJson(f.getSubformula().accept(*this, data));
             return opDecl;
@@ -354,7 +354,7 @@ namespace storm {
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::LongRunAverageOperatorFormula const& f, boost::any const& data) const {
-            modernjson::json opDecl;
+            ExportJsonType opDecl;
             if(f.hasBound()) {
                 auto bound = f.getBound();
                 opDecl["op"] = comparisonTypeToJani(bound.comparisonType);
@@ -381,7 +381,7 @@ namespace storm {
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::LongRunAverageRewardFormula const&, boost::any const&) const {
-//            modernjson::json opDecl;
+//            ExportJsonType opDecl;
 //            if(f.()) {
 //                auto bound = f.getBound();
 //                opDecl["op"] = comparisonTypeToJani(bound.comparisonType);
@@ -419,7 +419,7 @@ namespace storm {
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::NextFormula const& f, boost::any const& data) const {
-            modernjson::json opDecl;
+            ExportJsonType opDecl;
             opDecl["op"] = "U";
             opDecl["left"] = anyToJson(f.getTrueFormula()->accept(*this, data));
             opDecl["right"] = anyToJson(f.getSubformula().accept(*this, data));
@@ -432,7 +432,7 @@ namespace storm {
         
         
         boost::any FormulaToJaniJson::visit(storm::logic::ProbabilityOperatorFormula const& f, boost::any const& data) const {
-            modernjson::json opDecl;
+            ExportJsonType opDecl;
             
             if(f.hasBound()) {
                 auto bound = f.getBound();
@@ -460,7 +460,7 @@ namespace storm {
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::RewardOperatorFormula const& f, boost::any const& data) const {
-            modernjson::json opDecl;
+            ExportJsonType opDecl;
             
             std::string instantName;
             if (model.isDiscreteTimeModel()) {
@@ -529,7 +529,7 @@ namespace storm {
             opDecl["exp"] = buildExpression(model.getRewardModelExpression(rewardModelName), model.getConstants(), model.getGlobalVariables());
             
             if(f.hasBound()) {
-                modernjson::json compDecl;
+                ExportJsonType compDecl;
                 auto bound = f.getBound();
                 compDecl["op"] = comparisonTypeToJani(bound.comparisonType);
                 compDecl["left"] = std::move(opDecl);
@@ -545,7 +545,7 @@ namespace storm {
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::UnaryBooleanStateFormula const& f, boost::any const& data) const {
-            modernjson::json opDecl;
+            ExportJsonType opDecl;
             storm::logic::UnaryBooleanStateFormula::OperatorType op = f.getOperator();
             assert(op == storm::logic::UnaryBooleanStateFormula::OperatorType::Not);
             opDecl["op"] = "¬";
@@ -554,7 +554,7 @@ namespace storm {
         }
         
         boost::any FormulaToJaniJson::visit(storm::logic::UntilFormula const& f, boost::any const& data) const {
-            modernjson::json opDecl;
+            ExportJsonType opDecl;
             opDecl["op"] = "U";
             opDecl["left"] = anyToJson(f.getLeftSubformula().accept(*this, data));
             opDecl["right"] = anyToJson(f.getRightSubformula().accept(*this, data));
@@ -616,7 +616,7 @@ namespace storm {
             }
         }
         
-        modernjson::json ExpressionToJson::translate(storm::expressions::Expression const& expr, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, std::unordered_set<std::string> const& auxiliaryVariables) {
+        ExportJsonType ExpressionToJson::translate(storm::expressions::Expression const& expr, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, std::unordered_set<std::string> const& auxiliaryVariables) {
             
             // Simplify the expression first and reduce the nesting
             auto simplifiedExpr = storm::jani::reduceNestingInJaniExpression(expr.simplify());
@@ -626,7 +626,7 @@ namespace storm {
         }
         
         boost::any ExpressionToJson::visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data) {
-            modernjson::json opDecl;
+            ExportJsonType opDecl;
             opDecl["op"] = "ite";
             opDecl["if"] = anyToJson(expression.getCondition()->accept(*this, data));
             opDecl["then"] = anyToJson(expression.getThenExpression()->accept(*this, data));
@@ -634,21 +634,21 @@ namespace storm {
             return opDecl;
         }
         boost::any ExpressionToJson::visit(storm::expressions::BinaryBooleanFunctionExpression const& expression, boost::any const& data) {
-            modernjson::json opDecl;
+            ExportJsonType opDecl;
             opDecl["op"] = operatorTypeToJaniString(expression.getOperator());
             opDecl["left"] = anyToJson(expression.getOperand(0)->accept(*this, data));
             opDecl["right"] = anyToJson(expression.getOperand(1)->accept(*this, data));
             return opDecl;
         }
         boost::any ExpressionToJson::visit(storm::expressions::BinaryNumericalFunctionExpression const& expression, boost::any const& data) {
-            modernjson::json opDecl;
+            ExportJsonType opDecl;
             opDecl["op"] = operatorTypeToJaniString(expression.getOperator());
             opDecl["left"] = anyToJson(expression.getOperand(0)->accept(*this, data));
             opDecl["right"] = anyToJson(expression.getOperand(1)->accept(*this, data));
             return opDecl;
         }
         boost::any ExpressionToJson::visit(storm::expressions::BinaryRelationExpression const& expression, boost::any const& data) {
-            modernjson::json opDecl;
+            ExportJsonType opDecl;
             opDecl["op"] = operatorTypeToJaniString(expression.getOperator());
             opDecl["left"] = anyToJson(expression.getOperand(0)->accept(*this, data));
             opDecl["right"] = anyToJson(expression.getOperand(1)->accept(*this, data));
@@ -656,47 +656,47 @@ namespace storm {
         }
         boost::any ExpressionToJson::visit(storm::expressions::VariableExpression const& expression, boost::any const&) {
             if (auxiliaryVariables.count(expression.getVariableName())) {
-                return modernjson::json(expression.getVariableName());
+                return ExportJsonType(expression.getVariableName());
             } else if (globalVariables.hasVariable(expression.getVariable())) {
-                return modernjson::json(globalVariables.getVariable(expression.getVariable()).getName());
+                return ExportJsonType(globalVariables.getVariable(expression.getVariable()).getName());
             } else if (localVariables.hasVariable(expression.getVariable())) {
-                return modernjson::json(localVariables.getVariable(expression.getVariable()).getName());
+                return ExportJsonType(localVariables.getVariable(expression.getVariable()).getName());
             } else {
                 for (auto const& constant : constants) {
                     if (constant.getExpressionVariable() == expression.getVariable()) {
-                        return modernjson::json(constant.getName());
+                        return ExportJsonType(constant.getName());
                     }
                 }
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Expression variable '" << expression.getVariableName() << "' not known in Jani data structures.");
-            return modernjson::json(); // should not reach this point.
+            return ExportJsonType(); // should not reach this point.
         }
         boost::any ExpressionToJson::visit(storm::expressions::UnaryBooleanFunctionExpression const& expression, boost::any const& data) {
-            modernjson::json opDecl;
+            ExportJsonType opDecl;
             opDecl["op"] = operatorTypeToJaniString(expression.getOperator());
             opDecl["exp"] = anyToJson(expression.getOperand()->accept(*this, data));
             return opDecl;
         }
         boost::any ExpressionToJson::visit(storm::expressions::UnaryNumericalFunctionExpression const& expression, boost::any const& data) {
-            modernjson::json opDecl;
+            ExportJsonType opDecl;
             opDecl["op"] = operatorTypeToJaniString(expression.getOperator());
             opDecl["exp"] = anyToJson(expression.getOperand()->accept(*this, data));
             return opDecl;
         }
         boost::any ExpressionToJson::visit(storm::expressions::BooleanLiteralExpression const& expression, boost::any const&) {
-            return modernjson::json(expression.getValue());
+            return ExportJsonType(expression.getValue());
         }
         boost::any ExpressionToJson::visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const&) {
-            return modernjson::json(expression.getValue());
+            return ExportJsonType(expression.getValue());
         }
         boost::any ExpressionToJson::visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const&) {
-            return modernjson::json(expression.getValueAsDouble());
+            return ExportJsonType(expression.getValueAsDouble());
         }
         
         boost::any ExpressionToJson::visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data) {
-            modernjson::json opDecl;
+            ExportJsonType opDecl;
             opDecl["op"] = "av";
-            std::vector<modernjson::json> elements;
+            std::vector<ExportJsonType> elements;
             uint64_t size = expression.size()->evaluateAsInt();
             for (uint64_t i = 0; i < size; ++i) {
                 elements.push_back(anyToJson(expression.at(i)->accept(*this, data)));
@@ -706,7 +706,7 @@ namespace storm {
         }
         
         boost::any ExpressionToJson::visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) {
-            modernjson::json opDecl;
+            ExportJsonType opDecl;
             opDecl["op"] = "ac";
             opDecl["var"] = expression.getIndexVar().getName();
             opDecl["length"] = anyToJson(expression.size()->accept(*this, data));
@@ -719,7 +719,7 @@ namespace storm {
         }
         
         boost::any ExpressionToJson::visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data) {
-            modernjson::json opDecl;
+            ExportJsonType opDecl;
             opDecl["op"] = "aa";
             opDecl["exp"] = anyToJson(expression.getOperand(0)->accept(*this, data));
             opDecl["index"] = anyToJson(expression.getOperand(1)->accept(*this, data));
@@ -727,10 +727,10 @@ namespace storm {
         }
         
         boost::any ExpressionToJson::visit(storm::expressions::FunctionCallExpression const& expression, boost::any const& data) {
-            modernjson::json opDecl;
+            ExportJsonType opDecl;
             opDecl["op"] = "call";
             opDecl["function"] = expression.getFunctionIdentifier();
-            std::vector<modernjson::json> arguments;
+            std::vector<ExportJsonType> arguments;
             for (uint64_t i = 0; i < expression.getNumberOfArguments(); ++i) {
                 arguments.push_back(anyToJson(expression.getArgument(i)->accept(*this, data)));
             }
@@ -766,8 +766,8 @@ namespace storm {
             STORM_LOG_INFO("Conversion completed " << janiModel.getName() << ".");
         }
         
-        modernjson::json buildActionArray(std::vector<storm::jani::Action> const& actions) {
-            std::vector<modernjson::json> actionReprs;
+        ExportJsonType buildActionArray(std::vector<storm::jani::Action> const& actions) {
+            std::vector<ExportJsonType> actionReprs;
             uint64_t actIndex = 0;
             for(auto const& act : actions) {
                 if(actIndex == storm::jani::Model::SILENT_ACTION_INDEX) {
@@ -775,17 +775,17 @@ namespace storm {
                     continue;
                 }
                 actIndex++;
-                modernjson::json actEntry;
+                ExportJsonType actEntry;
                 actEntry["name"] = act.getName();
                 actionReprs.push_back(actEntry);
             }
             
-            return modernjson::json(actionReprs);
+            return ExportJsonType(actionReprs);
             
         }
         
-        modernjson::json buildTypeDescription(storm::expressions::Type const& type) {
-            modernjson::json typeDescr;
+        ExportJsonType buildTypeDescription(storm::expressions::Type const& type) {
+            ExportJsonType typeDescr;
             if (type.isIntegerType()) {
                 typeDescr = "int";
             } else if (type.isRationalType()) {
@@ -801,7 +801,7 @@ namespace storm {
             return typeDescr;
         }
         
-        void getBoundsFromConstraints(modernjson::json& typeDesc, storm::expressions::Variable const& var, storm::expressions::Expression const& constraint, std::vector<storm::jani::Constant> const& constants) {
+        void getBoundsFromConstraints(ExportJsonType& typeDesc, storm::expressions::Variable const& var, storm::expressions::Expression const& constraint, std::vector<storm::jani::Constant> const& constants) {
             if (constraint.getBaseExpression().isBinaryBooleanFunctionExpression() && constraint.getBaseExpression().getOperator() == storm::expressions::OperatorType::And) {
                 getBoundsFromConstraints(typeDesc, var, constraint.getBaseExpression().getOperand(0), constants);
                 getBoundsFromConstraints(typeDesc, var, constraint.getBaseExpression().getOperand(1), constants);
@@ -825,12 +825,12 @@ namespace storm {
             }
         }
         
-        modernjson::json buildConstantsArray(std::vector<storm::jani::Constant> const& constants) {
-            std::vector<modernjson::json> constantDeclarations;
+        ExportJsonType buildConstantsArray(std::vector<storm::jani::Constant> const& constants) {
+            std::vector<ExportJsonType> constantDeclarations;
             for(auto const& constant : constants) {
-                modernjson::json constantEntry;
+                ExportJsonType constantEntry;
                 constantEntry["name"] = constant.getName();
-                modernjson::json typeDesc;
+                ExportJsonType typeDesc;
                 if (constant.hasConstraint()) {
                     typeDesc["kind"] = "bounded";
                     typeDesc["base"] = buildTypeDescription(constant.getType());
@@ -844,19 +844,19 @@ namespace storm {
                 }
                 constantDeclarations.push_back(constantEntry);
             }
-            return modernjson::json(constantDeclarations);
+            return ExportJsonType(constantDeclarations);
         }
         
         
-        modernjson::json buildVariablesArray(storm::jani::VariableSet const& varSet, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables = VariableSet()) {
-            modernjson::json variableDeclarations = std::vector<modernjson::json>();
+        ExportJsonType buildVariablesArray(storm::jani::VariableSet const& varSet, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables = VariableSet()) {
+            ExportJsonType variableDeclarations = std::vector<ExportJsonType>();
             for(auto const& variable : varSet) {
-                modernjson::json varEntry;
+                ExportJsonType varEntry;
                 varEntry["name"] = variable.getName();
                 if (variable.isTransient()) {
                     varEntry["transient"] = variable.isTransient();
                 }
-                modernjson::json typeDesc;
+                ExportJsonType typeDesc;
                 if(variable.isBooleanVariable()) {
                     typeDesc = "bool";
                 } else if (variable.isRealVariable()) {
@@ -879,7 +879,7 @@ namespace storm {
                             break;
                         case storm::jani::ArrayVariable::ElementType::Int:
                             if (variable.asArrayVariable().hasElementTypeBound()) {
-                                modernjson::json baseTypeDescr;
+                                ExportJsonType baseTypeDescr;
                                 baseTypeDescr["kind"] = "bounded";
                                 baseTypeDescr["base "] = "int";
                                 if (variable.asArrayVariable().hasLowerElementTypeBound()) {
@@ -907,17 +907,17 @@ namespace storm {
             return variableDeclarations;
         }
 
-        modernjson::json buildFunctionsArray(std::unordered_map<std::string, FunctionDefinition> const& functionDefinitions, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables = VariableSet()) {
-            modernjson::json functionDeclarations = std::vector<modernjson::json>();
+        ExportJsonType buildFunctionsArray(std::unordered_map<std::string, FunctionDefinition> const& functionDefinitions, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables = VariableSet()) {
+            ExportJsonType functionDeclarations = std::vector<ExportJsonType>();
             for (auto const& nameFunDef : functionDefinitions) {
                 storm::jani::FunctionDefinition const& funDef = nameFunDef.second;
-                modernjson::json funDefJson;
+                ExportJsonType funDefJson;
                 funDefJson["name"] = nameFunDef.first;
                 funDefJson["type"] = buildTypeDescription(funDef.getType());
-                std::vector<modernjson::json> parameterDeclarations;
+                std::vector<ExportJsonType> parameterDeclarations;
                 std::unordered_set<std::string> parameterNames;
                 for (auto const& p : funDef.getParameters()) {
-                    modernjson::json parDefJson;
+                    ExportJsonType parDefJson;
                     parDefJson["name"] = p.getName();
                     parameterNames.insert(p.getName());
                     parDefJson["type"] = buildTypeDescription(p.getType());
@@ -930,16 +930,16 @@ namespace storm {
             return functionDeclarations;
         }
         
-        modernjson::json buildAssignmentArray(storm::jani::OrderedAssignments const& orderedAssignments, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, bool commentExpressions) {
-            modernjson::json assignmentDeclarations = std::vector<modernjson::json>();
+        ExportJsonType buildAssignmentArray(storm::jani::OrderedAssignments const& orderedAssignments, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, bool commentExpressions) {
+            ExportJsonType assignmentDeclarations = std::vector<ExportJsonType>();
             bool addIndex = orderedAssignments.hasMultipleLevels();
             for(auto const& assignment : orderedAssignments) {
-                modernjson::json assignmentEntry;
+                ExportJsonType assignmentEntry;
                 if (assignment.getLValue().isVariable()) {
                     assignmentEntry["ref"] = assignment.getVariable().getName();
                 } else {
                     STORM_LOG_ASSERT(assignment.getLValue().isArrayAccess(), "Unhandled LValue " << assignment.getLValue());
-                    modernjson::json arrayAccess;
+                    ExportJsonType arrayAccess;
                     arrayAccess["op"] = "aa";
                     arrayAccess["exp"] = assignment.getLValue().getArray().getName();
                     arrayAccess["index"] = buildExpression(assignment.getLValue().getArrayIndex(), constants, globalVariables, localVariables);
@@ -957,13 +957,13 @@ namespace storm {
             return assignmentDeclarations;
         }
         
-        modernjson::json buildLocationsArray(std::vector<storm::jani::Location> const& locations, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, bool commentExpressions) {
-            modernjson::json locationDeclarations = std::vector<modernjson::json>();
+        ExportJsonType buildLocationsArray(std::vector<storm::jani::Location> const& locations, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, bool commentExpressions) {
+            ExportJsonType locationDeclarations = std::vector<ExportJsonType>();
             for(auto const& location : locations) {
-                modernjson::json locEntry;
+                ExportJsonType locEntry;
                 locEntry["name"] = location.getName();
                 if (location.hasTimeProgressInvariant()) {
-                    modernjson::json timeProg;
+                    ExportJsonType timeProg;
                     timeProg["exp"] = buildExpression(location.getTimeProgressInvariant(), constants, globalVariables, localVariables);
                     if (commentExpressions) {
                         timeProg["comment"] = location.getTimeProgressInvariant().toString();
@@ -978,19 +978,19 @@ namespace storm {
             return locationDeclarations;
         }
         
-        modernjson::json buildInitialLocations(storm::jani::Automaton const& automaton) {
+        ExportJsonType buildInitialLocations(storm::jani::Automaton const& automaton) {
             std::vector<std::string> names;
             for(auto const& initLocIndex : automaton.getInitialLocationIndices()) {
                 names.push_back(automaton.getLocation(initLocIndex).getName());
             }
-            return modernjson::json(names);
+            return ExportJsonType(names);
         }
         
-        modernjson::json buildDestinations(std::vector<EdgeDestination> const& destinations, std::map<uint64_t, std::string> const& locationNames, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, bool commentExpressions) {
+        ExportJsonType buildDestinations(std::vector<EdgeDestination> const& destinations, std::map<uint64_t, std::string> const& locationNames, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, bool commentExpressions) {
             assert(destinations.size() > 0);
-            modernjson::json destDeclarations = std::vector<modernjson::json>();
+            ExportJsonType destDeclarations = std::vector<ExportJsonType>();
             for(auto const& destination : destinations) {
-                modernjson::json destEntry;
+                ExportJsonType destEntry;
                 destEntry["location"] = locationNames.at(destination.getLocationIndex());
                 bool prob1 = false;
                 if(destination.getProbability().isLiteral()) {
@@ -1012,14 +1012,14 @@ namespace storm {
             return destDeclarations;
         }
         
-        modernjson::json buildEdges(std::vector<Edge> const& edges , std::map<uint64_t, std::string> const& actionNames, std::map<uint64_t, std::string> const& locationNames, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, bool commentExpressions) {
-            modernjson::json edgeDeclarations = std::vector<modernjson::json>();
+        ExportJsonType buildEdges(std::vector<Edge> const& edges , std::map<uint64_t, std::string> const& actionNames, std::map<uint64_t, std::string> const& locationNames, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, bool commentExpressions) {
+            ExportJsonType edgeDeclarations = std::vector<ExportJsonType>();
             for(auto const& edge : edges) {
                 if (edge.getGuard().isFalse()) {
                     continue;
                 }
                 STORM_LOG_THROW(edge.getDestinations().size() > 0, storm::exceptions::InvalidJaniException, "An edge without destinations is not allowed.");
-                modernjson::json edgeEntry;
+                ExportJsonType edgeEntry;
                 edgeEntry["location"] = locationNames.at(edge.getSourceLocationIndex());
                 if(!edge.hasSilentAction()) {
                     edgeEntry["action"] = actionNames.at(edge.getActionIndex());
@@ -1046,10 +1046,10 @@ namespace storm {
             return edgeDeclarations;
         }
         
-        modernjson::json buildAutomataArray(std::vector<storm::jani::Automaton> const& automata, std::map<uint64_t, std::string> const& actionNames, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, bool commentExpressions) {
-            modernjson::json automataDeclarations = std::vector<modernjson::json>();
+        ExportJsonType buildAutomataArray(std::vector<storm::jani::Automaton> const& automata, std::map<uint64_t, std::string> const& actionNames, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, bool commentExpressions) {
+            ExportJsonType automataDeclarations = std::vector<ExportJsonType>();
             for(auto const& automaton : automata) {
-                modernjson::json autoEntry;
+                ExportJsonType autoEntry;
                 autoEntry["name"] = automaton.getName();
                 autoEntry["variables"] = buildVariablesArray(automaton.getVariables(), constants, globalVariables, automaton.getVariables());
                 if (!automaton.getFunctionDefinitions().empty()) {
@@ -1108,8 +1108,8 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown FilterType");
         }
         
-        modernjson::json convertFilterExpression(storm::jani::FilterExpression const& fe, storm::jani::Model const& model, storm::jani::ModelFeatures& modelFeatures) {
-            modernjson::json propDecl;
+        ExportJsonType convertFilterExpression(storm::jani::FilterExpression const& fe, storm::jani::Model const& model, storm::jani::ModelFeatures& modelFeatures) {
+            ExportJsonType propDecl;
             propDecl["states"]["op"] = "initial";
             propDecl["op"] = "filter";
             propDecl["fun"] = janiFilterTypeString(fe.getFilterType());
@@ -1119,18 +1119,18 @@ namespace storm {
         
         
         void JsonExporter::convertProperties( std::vector<storm::jani::Property> const& formulas, storm::jani::Model const& model) {
-            modernjson::json properties;
+            ExportJsonType properties;
             
             // Unset model-features that only relate to properties. These are only set if such properties actually exist.
             modelFeatures.remove(storm::jani::ModelFeature::StateExitRewards);
             if (formulas.empty()) {
-                jsonStruct["properties"] = modernjson::json(modernjson::json::value_t::array);
+                jsonStruct["properties"] = ExportJsonType(ExportJsonType::value_t::array);
                 return;
             }
 
             uint64_t index = 0;
             for(auto const& f : formulas) {
-                modernjson::json propDecl;
+                ExportJsonType propDecl;
                 propDecl["name"] = f.getName();
                 propDecl["expression"] = convertFilterExpression(f.getFilter(), model, modelFeatures);
                 ++index;
@@ -1139,8 +1139,8 @@ namespace storm {
             jsonStruct["properties"] = std::move(properties);
         }
         
-        modernjson::json JsonExporter::finalize() {
-            jsonStruct["features"] = modernjson::json::parse(modelFeatures.toString());
+        ExportJsonType JsonExporter::finalize() {
+            jsonStruct["features"] = ExportJsonType::parse(modelFeatures.toString());
             return jsonStruct;
         }
 
