@@ -7,12 +7,7 @@
 #include "storm/logic/RewardAccumulation.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-
-
-// JSON parser
-#include "json.hpp"
-
-using json = nlohmann::json;
+#include "storm/adapters/JsonAdapter.h"
 
 namespace storm {
     namespace jani {
@@ -34,6 +29,7 @@ namespace storm {
          * The JANI format parser.
          * Parses Models and Properties
          */
+        template <typename ValueType>
         class JaniParser {
 
         public:
@@ -41,6 +37,7 @@ namespace storm {
             typedef std::unordered_map<std::string, storm::jani::Variable const*> VariablesMap;
             typedef std::unordered_map<std::string, storm::jani::Constant const*> ConstantsMap;
             typedef std::unordered_map<std::string, storm::jani::FunctionDefinition const*> FunctionsMap;
+            typedef storm::json<ValueType> Json;
 
             JaniParser() : expressionManager(new storm::expressions::ExpressionManager()) {}
             JaniParser(std::string const& jsonstring);
@@ -75,8 +72,8 @@ namespace storm {
             };
 
             std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseModel(bool parseProperties = true);
-            storm::jani::Property parseProperty(storm::jani::Model& model, json const& propertyStructure, Scope const& scope);
-            storm::jani::Automaton parseAutomaton(json const& automatonStructure, storm::jani::Model const& parentModel, Scope const& scope);
+            storm::jani::Property parseProperty(storm::jani::Model& model, storm::json<ValueType> const& propertyStructure, Scope const& scope);
+            storm::jani::Automaton parseAutomaton(storm::json<ValueType> const& automatonStructure, storm::jani::Model const& parentModel, Scope const& scope);
             struct ParsedType {
                 enum class BasicType {Bool, Int, Real};
                 boost::optional<BasicType> basicType;
@@ -84,30 +81,30 @@ namespace storm {
                 std::unique_ptr<ParsedType> arrayBase;
                 storm::expressions::Type expressionType;
             };
-            void parseType(ParsedType& result, json const& typeStructure, std::string variableName, Scope const& scope);
-            storm::jani::LValue parseLValue(json const& lValueStructure, Scope const& scope);
-            std::shared_ptr<storm::jani::Variable>  parseVariable(json const& variableStructure, bool requireInitialValues, Scope const& scope, std::string const& namePrefix = "");
-            storm::expressions::Expression parseExpression(json const& expressionStructure, Scope const& scope, bool returnNoneOnUnknownOpString = false, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables = {});
+            void parseType(ParsedType& result, storm::json<ValueType> const& typeStructure, std::string variableName, Scope const& scope);
+            storm::jani::LValue parseLValue(storm::json<ValueType> const& lValueStructure, Scope const& scope);
+            std::shared_ptr<storm::jani::Variable>  parseVariable(storm::json<ValueType> const& variableStructure, bool requireInitialValues, Scope const& scope, std::string const& namePrefix = "");
+            storm::expressions::Expression parseExpression(storm::json<ValueType> const& expressionStructure, Scope const& scope, bool returnNoneOnUnknownOpString = false, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables = {});
             
         private:
-            std::shared_ptr<storm::jani::Constant> parseConstant(json const& constantStructure, Scope const& scope);
-            storm::jani::FunctionDefinition parseFunctionDefinition(json const& functionDefinitionStructure, Scope const& scope, bool firstPass, std::string const& parameterNamePrefix = "");
+            std::shared_ptr<storm::jani::Constant> parseConstant(storm::json<ValueType> const& constantStructure, Scope const& scope);
+            storm::jani::FunctionDefinition parseFunctionDefinition(storm::json<ValueType> const& functionDefinitionStructure, Scope const& scope, bool firstPass, std::string const& parameterNamePrefix = "");
 
             /**
              * Helper for parsing the actions of a model.
              */
-            void parseActions(json const& actionStructure, storm::jani::Model& parentModel);
-            std::shared_ptr<storm::logic::Formula const> parseFormula(storm::jani::Model& model, json const& propertyStructure,   storm::logic::FormulaContext formulaContext, Scope const& scope, boost::optional<storm::logic::Bound> bound = boost::none);
-            std::vector<storm::expressions::Expression> parseUnaryExpressionArguments(json const& expressionStructure, std::string const& opstring, Scope const& scope, bool returnNoneOnUnknownOpString = false, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables = {});
-            std::vector<storm::expressions::Expression> parseBinaryExpressionArguments(json const& expressionStructure, std::string const& opstring,  Scope const& scope, bool returnNoneOnUnknownOpString = false, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables = {});
+            void parseActions(storm::json<ValueType> const& actionStructure, storm::jani::Model& parentModel);
+            std::shared_ptr<storm::logic::Formula const> parseFormula(storm::jani::Model& model, storm::json<ValueType> const& propertyStructure,   storm::logic::FormulaContext formulaContext, Scope const& scope, boost::optional<storm::logic::Bound> bound = boost::none);
+            std::vector<storm::expressions::Expression> parseUnaryExpressionArguments(storm::json<ValueType> const& expressionStructure, std::string const& opstring, Scope const& scope, bool returnNoneOnUnknownOpString = false, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables = {});
+            std::vector<storm::expressions::Expression> parseBinaryExpressionArguments(storm::json<ValueType> const& expressionStructure, std::string const& opstring,  Scope const& scope, bool returnNoneOnUnknownOpString = false, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables = {});
 
 
-            std::vector<std::shared_ptr<storm::logic::Formula const>> parseUnaryFormulaArgument(storm::jani::Model& model, json const& propertyStructure, storm::logic::FormulaContext formulaContext,  std::string const& opstring, Scope const& scope);
-            std::vector<std::shared_ptr<storm::logic::Formula const>> parseBinaryFormulaArguments(storm::jani::Model& model, json const& propertyStructure, storm::logic::FormulaContext formulaContext, std::string const& opstring, Scope const& scope);
-            storm::jani::PropertyInterval parsePropertyInterval(json const& piStructure, Scope const& scope);
-            storm::logic::RewardAccumulation parseRewardAccumulation(json const& accStructure, std::string const& context);
+            std::vector<std::shared_ptr<storm::logic::Formula const>> parseUnaryFormulaArgument(storm::jani::Model& model, storm::json<ValueType> const& propertyStructure, storm::logic::FormulaContext formulaContext,  std::string const& opstring, Scope const& scope);
+            std::vector<std::shared_ptr<storm::logic::Formula const>> parseBinaryFormulaArguments(storm::jani::Model& model, storm::json<ValueType> const& propertyStructure, storm::logic::FormulaContext formulaContext, std::string const& opstring, Scope const& scope);
+            storm::jani::PropertyInterval parsePropertyInterval(storm::json<ValueType> const& piStructure, Scope const& scope);
+            storm::logic::RewardAccumulation parseRewardAccumulation(storm::json<ValueType> const& accStructure, std::string const& context);
             
-            std::shared_ptr<storm::jani::Composition> parseComposition(json const& compositionStructure);
+            std::shared_ptr<storm::jani::Composition> parseComposition(storm::json<ValueType> const& compositionStructure);
             storm::expressions::Variable getVariableOrConstantExpression(std::string const& ident, Scope const& scope, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables = {});
 
 
@@ -115,7 +112,7 @@ namespace storm {
             /**
              * The overall structure currently under inspection.
              */
-            json parsedStructure;
+            storm::json<double> parsedStructure;
             /**
              * The expression manager to be used.
              */

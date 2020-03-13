@@ -24,7 +24,7 @@ namespace storm {
 
         std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseJaniModel(std::string const& filename, boost::optional<std::vector<std::string>> const& propertyFilter) {
             bool parseProperties = !propertyFilter.is_initialized() || !propertyFilter.get().empty();
-            std::pair<storm::jani::Model, std::vector<storm::jani::Property>> modelAndFormulae = storm::parser::JaniParser::parse(filename, parseProperties);
+            std::pair<storm::jani::Model, std::vector<storm::jani::Property>> modelAndFormulae = storm::parser::JaniParser<double>::parse(filename, parseProperties);
             
             // eliminate unselected properties.
             if (propertyFilter.is_initialized()) {
