@@ -112,7 +112,7 @@ namespace storm {
             /**
              * The overall structure currently under inspection.
              */
-            storm::json<double> parsedStructure;
+            storm::json<ValueType> parsedStructure;
             /**
              * The expression manager to be used.
              */

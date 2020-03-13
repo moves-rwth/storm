@@ -1603,5 +1603,6 @@ namespace storm {
         }
         
         template class JaniParser<double>;
+        template class JaniParser<storm::RationalNumber>;
     }
 }
