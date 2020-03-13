@@ -9053,16 +9053,14 @@ Format](http://rfc7159.net/rfc7159)
 
         @return the floating point number
         */
-        template <typename FloatValueType>
-        FloatValueType str_to_float_t(FloatValueType* /* type */) const {
-            // Use std::strtod to get the position where the number ends. Then parse it as a rational Number
-            char const* strptr = reinterpret_cast<typename string_t::const_pointer>(m_start);
-            char* end_pos;
-            std::strtod(strptr, &end_pos);
-            return storm::utility::convertNumber<FloatValueType, std::string>(std::string(strptr, end_pos - strptr));
-        }
+            storm::RationalNumber str_to_float_t(storm::RationalNumber* /* type */) const {
+                // Use std::strtod to get the position where the number ends. Then parse it as a rational Number
+                char const* strptr = reinterpret_cast<typename string_t::const_pointer>(m_start);
+                char* end_pos;
+                std::strtod(strptr, &end_pos);
+                return storm::utility::convertNumber<storm::RationalNumber, std::string>(std::string(strptr, end_pos - strptr));
+            }
             
-        template <>
             long double str_to_float_t(long double* /* type */) const
             {
                 return std::strtold(reinterpret_cast<typename string_t::const_pointer>(m_start), NULL);
@@ -9080,7 +9078,6 @@ Format](http://rfc7159.net/rfc7159)
 
         @return the floating point number
         */
-        template <>
             double str_to_float_t(double* /* type */) const
             {
                 return std::strtod(reinterpret_cast<typename string_t::const_pointer>(m_start), NULL);
@@ -9099,7 +9096,6 @@ Format](http://rfc7159.net/rfc7159)
 
         @return the floating point number
         */
-        template <>
             float str_to_float_t(float* /* type */) const
             {
                 return std::strtof(reinterpret_cast<typename string_t::const_pointer>(m_start), NULL);
