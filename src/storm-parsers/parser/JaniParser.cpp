@@ -41,7 +41,7 @@ namespace storm {
         template <typename ValueType>
         const bool JaniParser<ValueType>::defaultBooleanInitialValue = false;
         template <typename ValueType>
-        const double JaniParser<ValueType>::defaultRationalInitialValue = storm::utility::zero<ValueType>();
+        const ValueType JaniParser<ValueType>::defaultRationalInitialValue = storm::utility::zero<ValueType>();
         template <typename ValueType>
         const int64_t JaniParser<ValueType>::defaultIntegerInitialValue = 0;
         const std::string VARIABLE_AUTOMATON_DELIMITER = "_";
@@ -1061,7 +1061,7 @@ namespace storm {
             } else if (expressionStructure.is_number_integer()) {
                 return expressionManager->integer(expressionStructure.template get<int64_t>());
             } else if (expressionStructure.is_number_float()) {
-                return expressionManager->rational(storm::utility::convertNumber<storm::RationalNumber>(expressionStructure.dump()));
+                return expressionManager->rational(storm::utility::convertNumber<storm::RationalNumber>(expressionStructure.template get<ValueType>()));
             } else if (expressionStructure.is_string()) {
                 std::string ident = expressionStructure.template get<std::string>();
                 return storm::expressions::Expression(getVariableOrConstantExpression(ident, scope, auxiliaryVariables));

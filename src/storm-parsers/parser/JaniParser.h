@@ -128,7 +128,7 @@ namespace storm {
             static const bool defaultVariableTransient;
             
             static const bool defaultBooleanInitialValue;
-            static const double defaultRationalInitialValue;
+            static const ValueType defaultRationalInitialValue;
             static const int64_t defaultIntegerInitialValue;
 
             static const std::set<std::string> unsupportedOpstrings;
