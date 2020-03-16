@@ -7,7 +7,7 @@ The releases of major and minor versions contain an overview of changes since th
 
 Version 1.5.x
 -------------
-## Version 1.5.1 (2020/03) (under development)
+## Version 1.5.1 (2020/03)
 - Jani models are now parsed using exact arithmetic.
 
 ## Version 1.5.0 (2020/03)
