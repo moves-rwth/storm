@@ -225,8 +225,6 @@ namespace storm {
                     }
                     return std::make_shared<storm::models::sparse::Ctmc<ValueType, RewardModelType>>(std::move(components));
                 }
-                //STORM_LOG_TRACE("MA matrix:" << std::endl << this->getTransitionMatrix());
-                STORM_LOG_TRACE("Markovian states: " << getMarkovianStates());
 
                 // Eliminate all probabilistic states by state elimination
                 // Initialize
@@ -239,7 +237,6 @@ namespace storm {
                     if (this->isProbabilisticState(state)) {
                         // Eliminate this probabilistic state
                         stateEliminator.eliminateState(state, true);
-                        STORM_LOG_TRACE("Flexible matrix after eliminating state " << state << ":" << std::endl << flexibleMatrix);
                     }
                 }
 
@@ -265,7 +262,6 @@ namespace storm {
 
                 storm::storage::SparseMatrix<ValueType> rateMatrix = transitionMatrixBuilder.build();
                 rateMatrix = rateMatrix.getSubmatrix(false, keepStates, keepStates, false);
-                STORM_LOG_TRACE("New CTMC matrix:" << std::endl << rateMatrix);
                 // Construct CTMC
                 storm::models::sparse::StateLabeling stateLabeling = this->getStateLabeling().getSubLabeling(keepStates);
 
