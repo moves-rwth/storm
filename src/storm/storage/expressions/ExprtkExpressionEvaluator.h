@@ -6,7 +6,7 @@
 
 #include "storm/storage/expressions/ExpressionEvaluatorBase.h"
 
-#include "storm/utility/exprtk.h"
+#include "storm/adapters/ExprttkAdapter.h"
 
 #include "storm/storage/expressions/ToExprtkStringVisitor.h"
 

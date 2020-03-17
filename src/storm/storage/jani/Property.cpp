@@ -114,6 +114,11 @@ namespace storm {
             return res;
         }
         
+        void Property::gatherReferencedRewardModels(std::set<std::string>& rewardModelNames) const {
+            getFilter().getFormula()->gatherReferencedRewardModels(rewardModelNames);
+            getFilter().getStatesFormula()->gatherReferencedRewardModels(rewardModelNames);
+        }
+        
         std::ostream& operator<<(std::ostream& os, Property const& p) {
             return os << "(" << p.getName() << "): " << p.getFilter();
         }

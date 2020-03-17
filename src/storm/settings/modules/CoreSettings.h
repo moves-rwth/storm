@@ -5,6 +5,7 @@
 #include "storm/settings/modules/ModuleSettings.h"
 
 #include "storm/builder/ExplorationOrder.h"
+#include "storm/utility/Engine.h"
 
 namespace storm {
     namespace solver {
@@ -26,10 +27,6 @@ namespace storm {
              */
             class CoreSettings : public ModuleSettings {
             public:
-                // An enumeration of all engines.
-                enum class Engine {
-                    Sparse, Hybrid, Dd, DdSparse, Exploration, AbstractionRefinement
-                };
 
                 /*!
                  * Creates a new set of core settings.
@@ -118,12 +115,12 @@ namespace storm {
                  *
                  * @return The selected engine.
                  */
-                Engine getEngine() const;
+                storm::utility::Engine getEngine() const;
 
                 /*!
                  * Sets the engine for further usage.
                  */
-                void setEngine(Engine);
+                void setEngine(storm::utility::Engine const& engine);
 
                 bool check() const override;
                 void finalize() override;
@@ -132,7 +129,7 @@ namespace storm {
                 static const std::string moduleName;
 
             private:
-                Engine engine;
+                storm::utility::Engine engine;
 
                 // Define the string names of the options as constants.
                 static const std::string eqSolverOptionName;

@@ -13,6 +13,7 @@
 #include "storm/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/SymbolicMdpPrctlModelChecker.h"
 #include "storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
+#include "storm/modelchecker/csl/HybridMarkovAutomatonCslModelChecker.h"
 #include "storm/modelchecker/abstraction/GameBasedMdpModelChecker.h"
 #include "storm/modelchecker/abstraction/BisimulationAbstractionRefinementModelChecker.h"
 #include "storm/modelchecker/exploration/SparseExplorationModelChecker.h"
@@ -20,6 +21,7 @@
 
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Mdp.h"
+#include "storm/models/symbolic/MarkovAutomaton.h"
 
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
@@ -328,6 +330,27 @@ namespace storm {
         }
 
         template<storm::dd::DdType DdType, typename ValueType>
+        typename std::enable_if<!std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithHybridEngine(storm::Environment const& env, std::shared_ptr<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>> const& ma, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
+            std::unique_ptr<storm::modelchecker::CheckResult> result;
+            storm::modelchecker::HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>> modelchecker(*ma);
+            if (modelchecker.canHandle(task)) {
+                result = modelchecker.check(env, task);
+            }
+            return result;
+        }
+
+        template<storm::dd::DdType DdType, typename ValueType>
+        typename std::enable_if<std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithHybridEngine(storm::Environment const& , std::shared_ptr<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>> const&, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const&) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Hybrid engine cannot verify MDPs with this data type.");
+        }
+
+        template<storm::dd::DdType DdType, typename ValueType>
+        std::unique_ptr<storm::modelchecker::CheckResult> verifyWithHybridEngine(std::shared_ptr<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>> const& ma, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
+            Environment env;
+            return verifyWithHybridEngine(env, ma, task);
+        }
+
+        template<storm::dd::DdType DdType, typename ValueType>
         std::unique_ptr<storm::modelchecker::CheckResult> verifyWithHybridEngine(storm::Environment const& env, std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
             std::unique_ptr<storm::modelchecker::CheckResult> result;
             if (model->getType() == storm::models::ModelType::Dtmc) {
@@ -336,6 +359,8 @@ namespace storm {
                 result = verifyWithHybridEngine(env, model->template as<storm::models::symbolic::Ctmc<DdType, ValueType>>(), task);
             } else if (model->getType() == storm::models::ModelType::Mdp) {
                 result = verifyWithHybridEngine(env, model->template as<storm::models::symbolic::Mdp<DdType, ValueType>>(), task);
+            } else if (model->getType() == storm::models::ModelType::MarkovAutomaton) {
+                result = verifyWithHybridEngine(env, model->template as<storm::models::symbolic::MarkovAutomaton<DdType, ValueType>>(), task);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "The model type " << model->getType() << " is not supported by the hybrid engine.");
             }

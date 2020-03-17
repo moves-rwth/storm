@@ -24,23 +24,23 @@ namespace storm {
         }
 
         template<typename ValueType>
-        modernjson::json DftJsonExporter<ValueType>::translate(storm::storage::DFT<ValueType> const& dft) {
+        typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translate(storm::storage::DFT<ValueType> const& dft) {
             // Nodes
-            modernjson::json jsonNodes;
+            Json jsonNodes;
             for (size_t i = 0; i < dft.nrElements(); ++i) {
-                modernjson::json jsonNode = translateNode(dft.getElement(i));
+                Json jsonNode = translateNode(dft.getElement(i));
                 jsonNodes.push_back(jsonNode);
             }
 
-            modernjson::json jsonDft;
+            Json jsonDft;
             jsonDft["toplevel"] = std::to_string(dft.getTopLevelIndex());
             jsonDft["nodes"] = jsonNodes;
             return jsonDft;
         }
 
         template<typename ValueType>
-        modernjson::json DftJsonExporter<ValueType>::translateNode(DFTElementCPointer const& element) {
-            modernjson::json nodeData;
+        typename DftJsonExporter<ValueType>::Json DftJsonExporter<ValueType>::translateNode(DFTElementCPointer const& element) {
+            Json nodeData;
             nodeData["id"] = std::to_string(element->id());
             nodeData["name"] = element->name();
             std::string type = storm::storage::toString(element->type());
@@ -117,7 +117,7 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Element of type '" << element->type() << "' is not supported.");
             }
 
-            modernjson::json jsonNode;
+            Json jsonNode;
             jsonNode["data"] = nodeData;
             jsonNode["group"] = "nodes";
             jsonNode["classes"] = type;

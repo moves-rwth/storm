@@ -39,6 +39,15 @@ namespace storm {
                  */
                 uint_fast64_t getTimeoutInSeconds() const;
 
+                /*!
+                 * Retrieves the waiting time of the program after a signal.
+                 * If a signal to abort is handled, the program should terminate.
+                 * However, it waits the given number of seconds before it is killed to allow for printing preliminary results.
+                 *
+                 * @return The number of seconds after which to exit the program.
+                 */
+                uint_fast64_t getSignalWaitingTimeInSeconds() const;
+
                 // The name of the module.
                 static const std::string moduleName;
 
@@ -48,6 +57,7 @@ namespace storm {
                 static const std::string timeoutOptionShortName;
                 static const std::string printTimeAndMemoryOptionName;
                 static const std::string printTimeAndMemoryOptionShortName;
+                static const std::string signalWaitingTimeOptionName;
             };
         }
     }

@@ -93,13 +93,13 @@ namespace storm {
                  * @param timeBound The time bound to use.
                  * @param uniformizationRate The used uniformization rate.
                  * @param values A vector mapping each state to an initial probability.
-                 * @param linearEquationSolverFactory The factory to use when instantiating new linear equation solvers.
-                 * @param useMixedPoissonProbabilities If set to true, instead of taking the poisson probabilities,  mixed
+                 * @param epsilon The precision used for computing the truncation points
+                 * @tparam useMixedPoissonProbabilities If set to true, instead of taking the poisson probabilities,  mixed
                  * poisson probabilities are used.
                  * @return The vector of transient probabilities.
                  */
                 template<typename ValueType, bool useMixedPoissonProbabilities = false, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type = 0>
-                static std::vector<ValueType> computeTransientProbabilities(Environment const& env, storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, std::vector<ValueType> const* addVector, ValueType timeBound, ValueType uniformizationRate, std::vector<ValueType> values);
+                static std::vector<ValueType> computeTransientProbabilities(Environment const& env, storm::storage::SparseMatrix<ValueType> const& uniformizedMatrix, std::vector<ValueType> const* addVector, ValueType timeBound, ValueType uniformizationRate, std::vector<ValueType> values, ValueType epsilon);
                 
                 /*!
                  * Converts the given rate-matrix into a time-abstract probability matrix.
@@ -120,6 +120,16 @@ namespace storm {
                  */
                 template <typename ValueType>
                 static storm::storage::SparseMatrix<ValueType> computeGeneratorMatrix(storm::storage::SparseMatrix<ValueType> const& rateMatrix, std::vector<ValueType> const& exitRates);
+                
+                /*!
+                 * Checks whether the given result vector is sufficiently precise, according to the provided epsilon and the specified settings
+                 * @param epsilon The truncation error. If the result needs to be more precise, this value will be decreased
+                 * @param resultVector the currently obtained result
+                 * @param relevantPositions Only these positions of the resultVector will be considered.
+                 * @return
+                 */
+                template <typename ValueType>
+                static bool checkAndUpdateTransientProbabilityEpsilon(storm::Environment const& env, ValueType& epsilon, std::vector<ValueType> const& resultVector, storm::storage::BitVector const& relevantPositions);
                 
             private:
                 template <typename ValueType>

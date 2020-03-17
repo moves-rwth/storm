@@ -587,6 +587,25 @@ namespace storm {
         }
         
         template<typename ValueType>
+        typename SparseMatrix<ValueType>::index_type SparseMatrix<ValueType>::getNumRowsInRowGroups(storm::storage::BitVector const& groupConstraint) const {
+            if (this->hasTrivialRowGrouping()) {
+                return groupConstraint.getNumberOfSetBits();
+            }
+            index_type numRows = 0;
+            index_type rowGroupIndex = groupConstraint.getNextSetIndex(0);
+            while (rowGroupIndex < this->getRowGroupCount()) {
+                index_type start = this->getRowGroupIndices()[rowGroupIndex];
+                rowGroupIndex = groupConstraint.getNextUnsetIndex(rowGroupIndex + 1);
+                index_type end = this->getRowGroupIndices()[rowGroupIndex];
+                // All rows with index in [start,end) are selected.
+                numRows += end - start;
+                rowGroupIndex = groupConstraint.getNextSetIndex(rowGroupIndex + 1);
+            }
+            return numRows;
+        }
+
+        
+        template<typename ValueType>
         std::vector<typename SparseMatrix<ValueType>::index_type> const& SparseMatrix<ValueType>::getRowGroupIndices() const {
             // If there is no current row grouping, we need to create it.
             if (!this->rowGroupIndices) {
@@ -874,7 +893,7 @@ namespace storm {
         template<typename ValueType>
         std::vector<ValueType> SparseMatrix<ValueType>::getConstrainedRowGroupSumVector(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint) const {
             std::vector<ValueType> result;
-            result.reserve(rowGroupConstraint.getNumberOfSetBits());
+            result.reserve(this->getNumRowsInRowGroups(rowGroupConstraint));
             if (!this->hasTrivialRowGrouping()) {
                 for (auto rowGroup : rowGroupConstraint) {
                     for (index_type row = this->getRowGroupIndices()[rowGroup]; row < this->getRowGroupIndices()[rowGroup + 1]; ++row) {

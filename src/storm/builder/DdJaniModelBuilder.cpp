@@ -14,6 +14,7 @@
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/CompositionInformationVisitor.h"
+#include "storm/storage/jani/ArrayEliminator.h"
 
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
@@ -44,6 +45,57 @@
 
 namespace storm {
     namespace builder {
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        storm::jani::ModelFeatures DdJaniModelBuilder<Type, ValueType>::getSupportedJaniFeatures() {
+            storm::jani::ModelFeatures features;
+            features.add(storm::jani::ModelFeature::DerivedOperators);
+            features.add(storm::jani::ModelFeature::StateExitRewards);
+            // We do not add Functions and arrays as these should ideally be substituted before creating this generator.
+            // This is because functions or arrays may also occur in properties and the user of this builder should take care of that.
+            return features;
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        bool DdJaniModelBuilder<Type, ValueType>::canHandle(storm::jani::Model const& model, boost::optional<std::vector<storm::jani::Property>> const& properties) {
+            // Check jani features
+            auto features = model.getModelFeatures();
+            features.remove(storm::jani::ModelFeature::Arrays); // can be substituted
+            features.remove(storm::jani::ModelFeature::DerivedOperators);
+            features.remove(storm::jani::ModelFeature::Functions); // can be substituted
+            features.remove(storm::jani::ModelFeature::StateExitRewards);
+            if (!features.empty()) {
+                STORM_LOG_INFO("Symbolic engine can not build Jani model due to unsupported jani features.");
+                return false;
+            }
+            // Check assignment levels
+            if (model.usesAssignmentLevels()) {
+                STORM_LOG_INFO("Symbolic engine can not build Jani model due to assignment levels.");
+                return false;
+            }
+            // Check nonTrivial reward expressions
+            if (properties) {
+                std::set<std::string> rewardModels;
+                for (auto const& p : properties.get()) {
+                    p.gatherReferencedRewardModels(rewardModels);
+                }
+                for (auto const& r : rewardModels) {
+                    if (model.isNonTrivialRewardModelExpression(r)) {
+                        STORM_LOG_INFO("Symbolic engine can not build Jani model due to non-trivial reward expressions.");
+                        return false;
+                    }
+                }
+            } else {
+                if (model.hasNonTrivialRewardExpression()) {
+                    STORM_LOG_INFO("Symbolic engine can not build Jani model due to non-trivial reward expressions.");
+                    return false;
+                }
+            }
+            
+            // There probably are more cases where the model is unsupported. However, checking these is often more involved.
+            // As this method is supposed to be a quick check, we just return true at this point.
+            return true;
+        }
         
         template <storm::dd::DdType Type, typename ValueType>
         DdJaniModelBuilder<Type, ValueType>::Options::Options(bool buildAllLabels, bool buildAllRewardModels, bool applyMaximumProgressAssumption) : buildAllLabels(buildAllLabels), buildAllRewardModels(buildAllRewardModels), applyMaximumProgressAssumption(applyMaximumProgressAssumption), rewardModelsToBuild(), constantDefinitions() {
@@ -2087,10 +2139,20 @@ namespace storm {
             auto features = model.getModelFeatures();
             features.remove(storm::jani::ModelFeature::DerivedOperators);
             features.remove(storm::jani::ModelFeature::StateExitRewards);
-            STORM_LOG_THROW(features.empty(), storm::exceptions::InvalidSettingsException, "The dd jani model builder does not support the following model feature(s): " << features.toString() << ".");
 
             storm::jani::Model preparedModel = model;
-            preparedModel.substituteFunctions();
+            preparedModel.simplifyComposition();
+            if (features.hasArrays()) {
+                STORM_LOG_ERROR("The jani model still considers arrays. These should have been eliminated before calling the dd builder. The arrays are eliminated now, but occurrences in properties will not be handled properly.");
+                preparedModel.eliminateArrays();
+                features.remove(storm::jani::ModelFeature::Arrays);
+            }
+            if (features.hasFunctions()) {
+                STORM_LOG_ERROR("The jani model still considers functions. These should have been substituted before calling the dd builder. The functions are substituted now, but occurrences in properties will not be handled properly.");
+                preparedModel.substituteFunctions();
+                features.remove(storm::jani::ModelFeature::Functions);
+            }
+            STORM_LOG_THROW(features.empty(), storm::exceptions::InvalidSettingsException, "The dd jani model builder does not support the following model feature(s): " << features.toString() << ".");
             
             // Lift the transient edge destinations. We can do so, as we know that there are no assignment levels (because that's not supported anyway).
             if (preparedModel.hasTransientEdgeDestinationAssignments()) {

@@ -53,8 +53,12 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void NativeMultiplier<ValueType>::multiplyGaussSeidel(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b) const {
-            this->matrix.multiplyWithVectorBackward(x, x, b);
+        void NativeMultiplier<ValueType>::multiplyGaussSeidel(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b, bool backwards) const {
+            if (backwards) {
+                this->matrix.multiplyWithVectorBackward(x, x, b);
+            } else {
+                this->matrix.multiplyWithVectorForward(x, x, b);
+            }
         }
         
         template<typename ValueType>
@@ -79,8 +83,12 @@ namespace storm {
         }
         
         template<typename ValueType>
-        void NativeMultiplier<ValueType>::multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices) const {
-            this->matrix.multiplyAndReduceBackward(dir, rowGroupIndices, x, b, x, choices);
+        void NativeMultiplier<ValueType>::multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices, bool backwards) const {
+            if (backwards) {
+                this->matrix.multiplyAndReduceBackward(dir, rowGroupIndices, x, b, x, choices);
+            } else {
+                this->matrix.multiplyAndReduceForward(dir, rowGroupIndices, x, b, x, choices);
+            }
         }
         
         template<typename ValueType>

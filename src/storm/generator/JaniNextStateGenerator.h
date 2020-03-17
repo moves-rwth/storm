@@ -32,6 +32,18 @@ namespace storm {
             
             JaniNextStateGenerator(storm::jani::Model const& model, NextStateGeneratorOptions const& options = NextStateGeneratorOptions());
             
+            /*!
+             * Returns the jani features with which this builder can deal natively.
+             */
+            static storm::jani::ModelFeatures getSupportedJaniFeatures();
+            
+            /*!
+             * A quick check to detect whether the given model is not supported.
+             * This method only over-approximates the set of models that can be handled, i.e., if this
+             * returns true, the model might still be unsupported.
+             */
+            static bool canHandle(storm::jani::Model const& model);
+            
             virtual ModelType getModelType() const override;
             virtual bool isDeterministicModel() const override;
             virtual bool isDiscreteTimeModel() const override;
@@ -124,7 +136,7 @@ namespace storm {
             typedef std::pair<uint64_t, EdgeSetWithIndices> AutomatonAndEdgeSet;
             typedef std::vector<AutomatonAndEdgeSet> AutomataEdgeSets;
             
-            std::vector<Choice<ValueType>> expandSynchronizingEdgeCombination(AutomataEdgeSets const& edgeCombination, uint64_t outputActionIndex, CompressedState const& state, StateToIdCallback stateToIdCallback);
+            void expandSynchronizingEdgeCombination(AutomataEdgeSets const& edgeCombination, uint64_t outputActionIndex, CompressedState const& state, StateToIdCallback stateToIdCallback, std::vector<Choice<ValueType>>& newChoices);
             void generateSynchronizedDistribution(storm::storage::BitVector const& state, AutomataEdgeSets const& edgeCombination, std::vector<EdgeSetWithIndices::const_iterator> const& iteratorList, storm::builder::jit::Distribution<StateType, ValueType>& distribution, std::vector<ValueType>& stateActionRewards, EdgeIndexSet& edgeIndices, StateToIdCallback stateToIdCallback);
 
             /*!

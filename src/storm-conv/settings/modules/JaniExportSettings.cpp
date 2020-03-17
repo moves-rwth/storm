@@ -23,6 +23,7 @@ namespace storm {
             const std::string JaniExportSettings::eliminateArraysOptionName = "remove-arrays";
             const std::string JaniExportSettings::eliminateFunctionsOptionName = "remove-functions";
             const std::string JaniExportSettings::replaceUnassignedVariablesWithConstantsOptionName = "replace-unassigned-vars";
+            const std::string JaniExportSettings::simplifyCompositionOptionName = "simplify-composition";
             
             JaniExportSettings::JaniExportSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, locationVariablesOptionName, true, "Variables to export in the location").addArgument(storm::settings::ArgumentBuilder::createStringArgument("variables", "A comma separated list of automaton and local variable names seperated by a dot, e.g. A.x,B.y.").setDefaultValueString("").build()).build());
@@ -34,6 +35,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, eliminateArraysOptionName, false, "If set, transforms the model such that array variables/expressions are eliminated.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, eliminateFunctionsOptionName, false, "If set, transforms the model such that functions are eliminated.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, replaceUnassignedVariablesWithConstantsOptionName, false, "If set, local and global variables that are (a) not assigned to some value and (b) have a known initial value are replaced by constants.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, simplifyCompositionOptionName, false, "If set, attempts to simplify the system composition.").build());
             }
             
             bool JaniExportSettings::isAllowEdgeAssignmentsSet() const {
@@ -86,6 +88,10 @@ namespace storm {
             
             bool JaniExportSettings::isReplaceUnassignedVariablesWithConstantsSet() const {
                 return this->getOption(replaceUnassignedVariablesWithConstantsOptionName).getHasOptionBeenSet();
+            }
+            
+            bool JaniExportSettings::isSimplifyCompositionSet() const {
+                return this->getOption(simplifyCompositionOptionName).getHasOptionBeenSet();
             }
             
             void JaniExportSettings::finalize() {

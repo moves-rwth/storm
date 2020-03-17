@@ -106,6 +106,11 @@ namespace storm {
         }
         
         template<>
+        int_fast64_t convertNumber(double const& number){
+            return std::llround(number);
+        }
+        
+        template<>
         double convertNumber(uint_fast64_t const& number){
             return number;
         }
@@ -285,6 +290,7 @@ namespace storm {
         template<typename ValueType>
         std::string to_string(ValueType const& value) {
             std::stringstream ss;
+            ss.precision(std::numeric_limits<ValueType>::max_digits10 + 2);
             ss << value;
             return ss.str();
         }

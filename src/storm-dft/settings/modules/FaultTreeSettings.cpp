@@ -15,8 +15,8 @@ namespace storm {
         namespace modules {
 
             const std::string FaultTreeSettings::moduleName = "dft";
-            const std::string FaultTreeSettings::symmetryReductionOptionName = "symmetryreduction";
-            const std::string FaultTreeSettings::symmetryReductionOptionShortName = "symred";
+            const std::string FaultTreeSettings::noSymmetryReductionOptionName = "nosymmetryreduction";
+            const std::string FaultTreeSettings::noSymmetryReductionOptionShortName = "nosymred";
             const std::string FaultTreeSettings::modularisationOptionName = "modularisation";
             const std::string FaultTreeSettings::disableDCOptionName = "disabledc";
             const std::string FaultTreeSettings::allowDCRelevantOptionName = "allowdcrelevant";
@@ -32,8 +32,8 @@ namespace storm {
 #endif
 
             FaultTreeSettings::FaultTreeSettings() : ModuleSettings(moduleName) {
-                this->addOption(storm::settings::OptionBuilder(moduleName, symmetryReductionOptionName, false, "Exploit symmetric structure of model.").setShortName(
-                        symmetryReductionOptionShortName).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, noSymmetryReductionOptionName, false, "Do not exploit symmetric structure of model.").setShortName(
+                        noSymmetryReductionOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, modularisationOptionName, false, "Use modularisation (not applicable for expected time).").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, disableDCOptionName, false, "Disable Don't Care propagation.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, firstDependencyOptionName, false,
@@ -62,7 +62,7 @@ namespace storm {
             }
 
             bool FaultTreeSettings::useSymmetryReduction() const {
-                return this->getOption(symmetryReductionOptionName).getHasOptionBeenSet();
+                return !this->getOption(noSymmetryReductionOptionName).getHasOptionBeenSet();
             }
 
             bool FaultTreeSettings::useModularisation() const {

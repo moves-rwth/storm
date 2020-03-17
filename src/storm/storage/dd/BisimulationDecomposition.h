@@ -7,6 +7,7 @@
 #include "storm/storage/bisimulation/BisimulationType.h"
 #include "storm/storage/dd/bisimulation/SignatureMode.h"
 #include "storm/storage/dd/bisimulation/PreservationInformation.h"
+#include "storm/storage/dd/bisimulation/QuotientFormat.h"
 
 #include "storm/logic/Formula.h"
 
@@ -64,7 +65,7 @@ namespace storm {
             /*!
              * Retrieves the quotient model after the bisimulation decomposition was computed.
              */
-            std::shared_ptr<storm::models::Model<ExportValueType>> getQuotient() const;
+            std::shared_ptr<storm::models::Model<ExportValueType>> getQuotient(storm::dd::bisimulation::QuotientFormat const& quotientFormat) const;
             
         private:
             void initialize();

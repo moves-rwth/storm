@@ -7,6 +7,7 @@
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/UnexpectedException.h"
+#include "storm/utility/SignalHandler.h"
 
 namespace storm {
     namespace solver {
@@ -79,6 +80,7 @@ namespace storm {
                 returnValue = solveFullyConnectedEquationSystem(sccSolverEnvironment, x, b);
             } else {
                 storm::storage::BitVector sccAsBitVector(x.size(), false);
+                uint64_t sccIndex = 0;
                 for (auto const& scc : *this->sortedSccDecomposition) {
                     if (scc.size() == 1) {
                         returnValue = solveTrivialScc(*scc.begin(), x, b) && returnValue;
@@ -88,6 +90,11 @@ namespace storm {
                             sccAsBitVector.set(state, true);
                         }
                         returnValue = solveScc(sccSolverEnvironment, sccAsBitVector, x, b) && returnValue;
+                    }
+                    ++sccIndex;
+                    if (storm::utility::resources::isTerminate()) {
+                        STORM_LOG_WARN("Topological solver aborted after analyzing " << sccIndex << "/" << this->sortedSccDecomposition->size() << " SCCs.");
+                        break;
                     }
                 }
             }

@@ -4,17 +4,35 @@ Changelog
 This changelog lists only the most important changes. Smaller (bug)fixes as well as non-mature features are not part of the changelog.
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
+
+Version 1.5.x
+-------------
+## Version 1.5.1 (2020/03)
+- Jani models are now parsed using exact arithmetic.
+
+## Version 1.5.0 (2020/03)
+- Added portfolio engine which picks a good engine (among other settings) based on features of the symbolic input.
+- Abort of Storm (via timeout or CTRL+C for example) is now gracefully handled. After an abort signal the program waits some seconds to output the result computed so far and terminates afterwards. A second signal immediately terminates the program.
+- Setting `--engine dd-to-sparse --bisimulation` now triggers extracting the sparse bisimulation quotient.
+- JIT model building is now invoked via `--engine jit` (instead of `--jit`).
+- DRN: support import of choice labelling.
+- Added option `--build:buildchoiceorig` to build a model (PRISM or JANI) with choice origins (which are exported with, e.g. `--exportscheduler`).
+- Implemented optimistic value iteration for sound computations and set it as new default in `--sound` mode.
+- Time bounded properties for Markov automata are now computed with relative precision. Use `--absolute` for the previous behavior.
+- Apply the maximum progress assumption while building a Markov automaton with one of the symbolic engines.
+- Added option `--build:nomaxprog` to disable applying the maximum progress assumption during model building (for Markov Automata).
+- Added hybrid engine for Markov Automata.
+- Improved performance of the Unif+ algorithm (used for time-bounded properties on Markov Automata).
+- Various performance improvements for model building with the sparse engine.
+- `storm-dft`: Symmetry reduction is now enabled by default and can be disabled via `--nosymmetryreduction`.
+- `storm-pomdp`: Only accept POMDPs that are canonical.
+- `storm-pomdp`: Prism language extended with observable expressions.
+- `storm-pomdp`: Various fixes that prevented usage.
+- Several bug fixes.
+
+
 Version 1.4.x
 -------------
-
-## Version 1.4.2 (under development)
-- DRN: support import of choice labelling
-- Added option `--build:buildchoiceorig` to build a model (PRISM or JANI) with choice origins (which are exported with, e.g. `--exportscheduler`).
-- Apply the maximum progress assumption while building a Markov automata with the Dd engine.
-- Added option `--build:nomaxprog` to disable applying the maximum progress assumption during model building (for Markov Automata)
-- `storm-pomdp`: Only accept POMDPs that are canonical
-- `storm-pomdp`: Prism language extended with observable expressions
-- `storm-pomdp`: Various fixes that prevented usage.
 
 ### Version 1.4.1 (2019/12)
 - Implemented long run average (LRA) computation for DTMCs/CTMCs via value iteration and via gain/bias equations.

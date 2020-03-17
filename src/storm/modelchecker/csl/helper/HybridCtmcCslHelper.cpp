@@ -3,6 +3,8 @@
 #include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 #include "storm/modelchecker/prctl/helper/HybridDtmcPrctlHelper.h"
 
+#include "storm/environment/solver/TimeBoundedSolverEnvironment.h"
+
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
@@ -45,12 +47,33 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, double lowerBound, double upperBound) {
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, double lowerBound, double upperBound) {
                 
                 // If the time bounds are [0, inf], we rather call untimed reachability.
                 if (storm::utility::isZero(lowerBound) && upperBound == storm::utility::infinity<ValueType>()) {
                     return computeUntilProbabilities(env, model, rateMatrix, exitRateVector, phiStates, psiStates, qualitative);
                 }
+                
+                if (env.solver().isForceSoundness() && env.solver().timeBounded().getRelativeTerminationCriterion()) {
+                    // Forward this query to the sparse engine
+                    storm::utility::Stopwatch conversionWatch(true);
+                    storm::dd::Odd odd = model.getReachableStates().createOdd();
+                    storm::storage::SparseMatrix<ValueType> explicitRateMatrix = rateMatrix.toMatrix(odd, odd);
+                    std::vector<ValueType> explicitExitRateVector = exitRateVector.toVector(odd);
+                    storm::solver::SolveGoal<ValueType> goal;
+                    if (onlyInitialStatesRelevant) {
+                        goal.setRelevantValues(model.getInitialStates().toVector(odd));
+                    }
+                    conversionWatch.stop();
+                    STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
+
+                    std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeBoundedUntilProbabilities<ValueType>(env, std::move(goal), explicitRateMatrix, explicitRateMatrix.transpose(true), phiStates.toVector(odd), psiStates.toVector(odd), explicitExitRateVector, qualitative, lowerBound, upperBound);
+
+                    return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
+                }
+                
+                // Set the possible (absolute) error allowed for truncation (epsilon for fox-glynn)
+                ValueType epsilon = storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision()) / 8.0;
                 
                 // From this point on, we know that we have to solve a more complicated problem [t, t'] with either t != 0
                 // or t' != inf.
@@ -94,7 +117,7 @@ namespace storm {
                             
                             // Finally compute the transient probabilities.
                             std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNonZeroCount(), storm::utility::zero<ValueType>());
-                            std::vector<ValueType> subresult = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities(env, explicitUniformizedMatrix, &explicitB, upperBound, uniformizationRate, values);
+                            std::vector<ValueType> subresult = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities(env, explicitUniformizedMatrix, &explicitB, upperBound, uniformizationRate, values, epsilon);
                             
                             return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(),
                                                                                                           (psiStates || !statesWithProbabilityGreater0) && model.getReachableStates(),
@@ -141,7 +164,7 @@ namespace storm {
                             STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
 
                             // Compute the transient probabilities.
-                            result = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities<ValueType>(env, explicitUniformizedMatrix, nullptr, lowerBound, uniformizationRate, result);
+                            result = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities<ValueType>(env, explicitUniformizedMatrix, nullptr, lowerBound, uniformizationRate, result, epsilon);
                             
                             return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), !relevantStates && model.getReachableStates(), model.getManager().template getAddZero<ValueType>(), relevantStates, odd, result));
                         } else {
@@ -169,7 +192,7 @@ namespace storm {
 
                                 // Compute the transient probabilities.
                                 std::vector<ValueType> values(statesWithProbabilityGreater0NonPsi.getNonZeroCount(), storm::utility::zero<ValueType>());
-                                std::vector<ValueType> subResult = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities(env, explicitUniformizedMatrix, &explicitB, upperBound - lowerBound, uniformizationRate, values);
+                                std::vector<ValueType> subResult = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities(env, explicitUniformizedMatrix, &explicitB, upperBound - lowerBound, uniformizationRate, values, epsilon);
                                 
                                 // Transform the explicit result to a hybrid check result, so we can easily convert it to
                                 // a symbolic qualitative format.
@@ -209,7 +232,7 @@ namespace storm {
                                 conversionWatch.stop();
                                 STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
 
-                                newSubresult = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities<ValueType>(env, explicitUniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult);
+                                newSubresult = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities<ValueType>(env, explicitUniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult, epsilon);
                                 
                                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), !relevantStates && model.getReachableStates(), model.getManager().template getAddZero<ValueType>(), relevantStates, odd, newSubresult));
                             } else {
@@ -236,7 +259,7 @@ namespace storm {
                                 conversionWatch.stop();
                                 STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
 
-                                newSubresult = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities<ValueType>(env, explicitUniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult);
+                                newSubresult = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities<ValueType>(env, explicitUniformizedMatrix, nullptr, lowerBound, uniformizationRate, newSubresult, epsilon);
                                 
                                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType>(model.getReachableStates(), !statesWithProbabilityGreater0 && model.getReachableStates(), model.getManager().template getAddZero<ValueType>(), statesWithProbabilityGreater0, odd, newSubresult));
                             }
@@ -248,12 +271,12 @@ namespace storm {
             }
             
             template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, double lowerBound, double upperBound) {
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& phiStates, storm::dd::Bdd<DdType> const& psiStates, bool qualitative, double lowerBound, double upperBound) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded until probabilities is unsupported for this value type.");
             }
             
             template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeInstantaneousRewards(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& rewardModel, double timeBound) {
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeInstantaneousRewards(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& rewardModel, double timeBound) {
                 
                 // Only compute the result if the model has a state-based reward model.
                 STORM_LOG_THROW(rewardModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
@@ -266,10 +289,12 @@ namespace storm {
                 conversionWatch.stop();
                 
                 // Initialize result to state rewards of the model.
-                std::vector<ValueType> result = rewardModel.getStateRewardVector().toVector(odd);
+                auto rewardsAdd = rewardModel.getStateRewardVector();
+                std::vector<ValueType> result = rewardsAdd.toVector(odd);
+                ValueType maxValue = std::max(rewardsAdd.getMax(), -rewardsAdd.getMin());
                 
-                // If the time-bound is not zero, we need to perform a transient analysis.
-                if (timeBound > 0) {
+                // If the rewards are not zero and the time-bound is not zero, we need to perform a transient analysis.
+                if (!storm::utility::isZero(maxValue) && timeBound > 0) {
                     ValueType uniformizationRate = 1.02 * exitRateVector.getMax();
                     STORM_LOG_THROW(uniformizationRate > 0, storm::exceptions::InvalidStateException, "The uniformization rate must be positive.");
                     
@@ -280,19 +305,39 @@ namespace storm {
                     conversionWatch.stop();
                     STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
 
-                    result = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities<ValueType>(env, explicitUniformizedMatrix, nullptr, timeBound, uniformizationRate, result);
+                    // Set the possible error allowed for truncation (epsilon for fox-glynn)
+                    ValueType epsilon = storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision());
+                    if (env.solver().timeBounded().getRelativeTerminationCriterion()) {
+                        // Be more precise, if the maximum value is very small (This still gives no sound guarantee!)
+                        epsilon *= std::min(storm::utility::one<ValueType>(), maxValue);
+                    } else {
+                        // Be more precise, if the maximal possible value is very large
+                        epsilon /= std::max(storm::utility::one<ValueType>(), maxValue);
+                    }
+                    
+                    storm::storage::BitVector relevantValues;
+                    if (onlyInitialStatesRelevant) {
+                        relevantValues = model.getInitialStates().toVector(odd);
+                    } else {
+                        relevantValues = storm::storage::BitVector(result.size(), true);
+                    }
+                    
+                    // Loop until the desired precision is reached.
+                    do {
+                        result = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities<ValueType>(env, explicitUniformizedMatrix, nullptr, timeBound, uniformizationRate, result, epsilon);
+                    } while (storm::modelchecker::helper::SparseCtmcCslHelper::checkAndUpdateTransientProbabilityEpsilon(env, epsilon, result, relevantValues));
                 }
                 
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), odd, result));
             }
             
             template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeInstantaneousRewards(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& rewardModel, double timeBound) {
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeInstantaneousRewards(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& rewardModel, double timeBound) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing instantaneous rewards is unsupported for this value type.");
             }
             
             template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeCumulativeRewards(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& rewardModel, double timeBound) {
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeCumulativeRewards(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& rewardModel, double timeBound) {
                 // Only compute the result if the model has a state-based reward model.
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 
@@ -327,18 +372,47 @@ namespace storm {
                 conversionWatch.stop();
                 STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
 
+                ValueType maxReward = std::max(totalRewardVector.getMax(), -totalRewardVector.getMin());
+                
+                // If all rewards are zero, the result is the constant zero vector.
+                if (storm::utility::isZero(maxReward)) {
+                    return std::unique_ptr<CheckResult>(new SymbolicQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().template getAddZero<ValueType>()));
+                }
+                
+                // Set the possible (absolute) error allowed for truncation (epsilon for fox-glynn)
+                ValueType epsilon = storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision());
+                if (env.solver().timeBounded().getRelativeTerminationCriterion()) {
+                    // Be more precise, if the value is very small (this still gives no sound guarantee)
+                    epsilon *= std::min(storm::utility::one<ValueType>(), maxReward);
+                } else {
+                    // Be more precise, if the maximal possible value is very large
+                    epsilon /= std::max(storm::utility::one<ValueType>(), maxReward * timeBound);
+                }
+                
+                storm::storage::BitVector relevantValues;
+                if (onlyInitialStatesRelevant) {
+                    relevantValues = model.getInitialStates().toVector(odd);
+                } else {
+                    relevantValues = storm::storage::BitVector(explicitTotalRewardVector.size(), true);
+                }
+                
+                std::vector<ValueType> result;
                 // Finally, compute the transient probabilities.
-                std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities<ValueType, true>(env, explicitUniformizedMatrix, nullptr, timeBound, uniformizationRate, explicitTotalRewardVector);
+                // Loop until the desired precision is reached.
+                do {
+                    result = storm::modelchecker::helper::SparseCtmcCslHelper::computeTransientProbabilities<ValueType, true>(env, explicitUniformizedMatrix, nullptr, timeBound, uniformizationRate, explicitTotalRewardVector, epsilon);
+                } while (storm::modelchecker::helper::SparseCtmcCslHelper::checkAndUpdateTransientProbabilityEpsilon(env, epsilon, result, relevantValues));
+                
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
             }
             
             template<storm::dd::DdType DdType, typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeCumulativeRewards(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& rewardModel, double timeBound) {
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeCumulativeRewards(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& rewardModel, double timeBound) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing cumulative rewards is unsupported for this value type.");
             }
             
             template<storm::dd::DdType DdType, class ValueType>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeLongRunAverageProbabilities(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& psiStates) {
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeLongRunAverageProbabilities(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& psiStates) {
                 
                 storm::utility::Stopwatch conversionWatch(true);
                 
@@ -347,16 +421,20 @@ namespace storm {
                 
                 storm::storage::SparseMatrix<ValueType> explicitRateMatrix = rateMatrix.toMatrix(odd, odd);
                 std::vector<ValueType> explicitExitRateVector = exitRateVector.toVector(odd);
+                storm::solver::SolveGoal<ValueType> goal;
+                if (onlyInitialStatesRelevant) {
+                    goal.setRelevantValues(model.getInitialStates().toVector(odd));
+                }
                 conversionWatch.stop();
                 STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
 
-                std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeLongRunAverageProbabilities(env, storm::solver::SolveGoal<ValueType>(), explicitRateMatrix, psiStates.toVector(odd), &explicitExitRateVector);
+                std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeLongRunAverageProbabilities(env, std::move(goal), explicitRateMatrix, psiStates.toVector(odd), &explicitExitRateVector);
 
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
             }
             
             template<storm::dd::DdType DdType, class ValueType>
-            std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeLongRunAverageRewards(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& rewardModel) {
+            std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeLongRunAverageRewards(Environment const& env, storm::models::symbolic::Ctmc<DdType, ValueType> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<DdType, ValueType> const& rateMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector, typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& rewardModel) {
                 
                 STORM_LOG_THROW(!rewardModel.empty(), storm::exceptions::InvalidPropertyException, "Missing reward model for formula. Skipping formula.");
                 storm::dd::Add<DdType, ValueType> probabilityMatrix = computeProbabilityMatrix(rateMatrix, exitRateVector);
@@ -368,10 +446,14 @@ namespace storm {
                 
                 storm::storage::SparseMatrix<ValueType> explicitRateMatrix = rateMatrix.toMatrix(odd, odd);
                 std::vector<ValueType> explicitExitRateVector = exitRateVector.toVector(odd);
+                storm::solver::SolveGoal<ValueType> goal;
+                if (onlyInitialStatesRelevant) {
+                    goal.setRelevantValues(model.getInitialStates().toVector(odd));
+                }
                 conversionWatch.stop();
                 STORM_LOG_INFO("Converting symbolic matrix/vector to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
 
-                std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeLongRunAverageRewards(env, storm::solver::SolveGoal<ValueType>(), explicitRateMatrix, rewardModel.getTotalRewardVector(probabilityMatrix, model.getColumnVariables(), exitRateVector, true).toVector(odd), &explicitExitRateVector);
+                std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeLongRunAverageRewards(env, std::move(goal), explicitRateMatrix, rewardModel.getTotalRewardVector(probabilityMatrix, model.getColumnVariables(), exitRateVector, true).toVector(odd), &explicitExitRateVector);
                 
                 return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(result)));
             }
@@ -402,50 +484,50 @@ namespace storm {
             // Explicit instantiations.
             
             // Cudd, double.
-            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double> const& model, storm::dd::Add<storm::dd::DdType::CUDD, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, bool qualitative, double lowerBound, double upperBound);
-            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeInstantaneousRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double> const& model, storm::dd::Add<storm::dd::DdType::CUDD, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::CUDD, double>::RewardModelType const& rewardModel, double timeBound);
-            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeCumulativeRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double> const& model, storm::dd::Add<storm::dd::DdType::CUDD, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::CUDD, double>::RewardModelType const& rewardModel, double timeBound);
+            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<storm::dd::DdType::CUDD, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, bool qualitative, double lowerBound, double upperBound);
+            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeInstantaneousRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<storm::dd::DdType::CUDD, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::CUDD, double>::RewardModelType const& rewardModel, double timeBound);
+            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeCumulativeRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<storm::dd::DdType::CUDD, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::CUDD, double>::RewardModelType const& rewardModel, double timeBound);
             template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeUntilProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double> const& model, storm::dd::Add<storm::dd::DdType::CUDD, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, bool qualitative);
             template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeReachabilityRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double> const& model, storm::dd::Add<storm::dd::DdType::CUDD, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::CUDD, double>::RewardModelType const& rewardModel, storm::dd::Bdd<storm::dd::DdType::CUDD> const& targetStates, bool qualitative);
-            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeLongRunAverageProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double> const& model, storm::dd::Add<storm::dd::DdType::CUDD, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates);
+            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeLongRunAverageProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<storm::dd::DdType::CUDD, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates);
             template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeNextProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double> const& model, storm::dd::Add<storm::dd::DdType::CUDD, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::CUDD> const& nextStates);
-            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeLongRunAverageRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double> const& model, storm::dd::Add<storm::dd::DdType::CUDD, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::CUDD, double>::RewardModelType const& rewardModel);
+            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeLongRunAverageRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<storm::dd::DdType::CUDD, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::CUDD, double>::RewardModelType const& rewardModel);
             template storm::dd::Add<storm::dd::DdType::CUDD, double> HybridCtmcCslHelper::computeProbabilityMatrix(storm::dd::Add<storm::dd::DdType::CUDD, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector);
             template storm::dd::Add<storm::dd::DdType::CUDD, double> HybridCtmcCslHelper::computeUniformizedMatrix(storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double> const& model, storm::dd::Add<storm::dd::DdType::CUDD, double> const& transitionMatrix, storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::CUDD> const& maybeStates, double uniformizationRate);
 
             // Sylvan, double.
-            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, bool qualitative, double lowerBound, double upperBound);
-            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeInstantaneousRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>::RewardModelType const& rewardModel, double timeBound);
-            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeCumulativeRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>::RewardModelType const& rewardModel, double timeBound);
+            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, bool qualitative, double lowerBound, double upperBound);
+            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeInstantaneousRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>::RewardModelType const& rewardModel, double timeBound);
+            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeCumulativeRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>::RewardModelType const& rewardModel, double timeBound);
             template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeUntilProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, bool qualitative);
             template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeReachabilityRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>::RewardModelType const& rewardModel, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& targetStates, bool qualitative);
-            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeLongRunAverageProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates);
+            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeLongRunAverageProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates);
             template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeNextProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nextStates);
-            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeLongRunAverageRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>::RewardModelType const& rewardModel);
+            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeLongRunAverageRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>::RewardModelType const& rewardModel);
             template storm::dd::Add<storm::dd::DdType::Sylvan, double> HybridCtmcCslHelper::computeProbabilityMatrix(storm::dd::Add<storm::dd::DdType::Sylvan, double> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& exitRateVector);
             template storm::dd::Add<storm::dd::DdType::Sylvan, double> HybridCtmcCslHelper::computeUniformizedMatrix(storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& transitionMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& maybeStates, double uniformizationRate);
 
             // Sylvan, rational number.
-            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, bool qualitative, double lowerBound, double upperBound);
-            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeInstantaneousRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalNumber>::RewardModelType const& rewardModel, double timeBound);
-            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeCumulativeRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalNumber>::RewardModelType const& rewardModel, double timeBound);
+            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, bool qualitative, double lowerBound, double upperBound);
+            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeInstantaneousRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalNumber>::RewardModelType const& rewardModel, double timeBound);
+            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeCumulativeRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalNumber>::RewardModelType const& rewardModel, double timeBound);
             template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeUntilProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, bool qualitative);
             template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeReachabilityRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalNumber>::RewardModelType const& rewardModel, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& targetStates, bool qualitative);
-            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeLongRunAverageProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates);
+            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeLongRunAverageProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates);
             template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeNextProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nextStates);
-            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeLongRunAverageRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalNumber>::RewardModelType const& rewardModel);
+            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeLongRunAverageRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalNumber>::RewardModelType const& rewardModel);
             template storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> HybridCtmcCslHelper::computeProbabilityMatrix(storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& exitRateVector);
             template storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> HybridCtmcCslHelper::computeUniformizedMatrix(storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& transitionMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& maybeStates, storm::RationalNumber uniformizationRate);
 
             // Sylvan, rational function.
-            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, bool qualitative, double lowerBound, double upperBound);
-            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeInstantaneousRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalFunction>::RewardModelType const& rewardModel, double timeBound);
-            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeCumulativeRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalFunction>::RewardModelType const& rewardModel, double timeBound);
+            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, bool qualitative, double lowerBound, double upperBound);
+            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeInstantaneousRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalFunction>::RewardModelType const& rewardModel, double timeBound);
+            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeCumulativeRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalFunction>::RewardModelType const& rewardModel, double timeBound);
             template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeUntilProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, bool qualitative);
             template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeReachabilityRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalFunction>::RewardModelType const& rewardModel, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& targetStates, bool qualitative);
-            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeLongRunAverageProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates);
+            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeLongRunAverageProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates);
             template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeNextProbabilities(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& nextStates);
-            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeLongRunAverageRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalFunction>::RewardModelType const& rewardModel);
+            template std::unique_ptr<CheckResult> HybridCtmcCslHelper::computeLongRunAverageRewards(Environment const& env, storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction> const& model, bool onlyInitialStatesRelevant, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalFunction>::RewardModelType const& rewardModel);
             template storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> HybridCtmcCslHelper::computeProbabilityMatrix(storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& rateMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& exitRateVector);
             template storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> HybridCtmcCslHelper::computeUniformizedMatrix(storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& transitionMatrix, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalFunction> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& maybeStates, storm::RationalFunction uniformizationRate);
 

@@ -1,5 +1,9 @@
 #pragma once
+
+#include <string>
+
 #include "storm/storage/jani/ModelType.h"
+
 
 namespace storm {
     namespace jani {
@@ -7,14 +11,19 @@ namespace storm {
         class Model;
 
         struct InformationObject {
-            storm::jani::ModelType modelType;
-            uint64_t nrVariables;
-            uint64_t nrAutomata;
-            uint64_t nrEdges;
-            uint64_t nrLocations;
+            InformationObject();
+            storm::jani::ModelType modelType; /// The type of the model
+            uint64_t nrVariables; /// The number of non-transient variables in the model
+            uint64_t nrAutomata; /// The number of automata in the model
+            uint64_t nrEdges; /// The number of edges in the model
+            uint64_t nrLocations; /// The numer of all locations of all automata of the model
+            uint64_t stateDomainSize; /// The size of the domain of the states (i.e., the product of the range of all variables times the number of locations).
+                                    /// Here, 0 means that the state domain size is unknown.
+            double avgVarDomainSize; /// The average range of the domain a variable can have
+                                    /// Here, 0 means that the range of at least one non-transient variable is unknown.
         };
 
-        InformationObject collect(Model const& model);
+        InformationObject collectModelInformation(Model const& model);
     }
 }
 

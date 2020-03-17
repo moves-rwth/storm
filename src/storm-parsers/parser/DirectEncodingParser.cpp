@@ -7,17 +7,25 @@
 #include <boost/algorithm/string/predicate.hpp>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
+
+#include "storm/exceptions/AbortException.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/settings/SettingsManager.h"
+
+#include "storm/models/sparse/MarkovAutomaton.h"
+#include "storm/models/sparse/Ctmc.h"
+
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/settings/SettingsManager.h"
-#include "storm/utility/builder.h"
 #include "storm/utility/constants.h"
+#include "storm/utility/builder.h"
 #include "storm/utility/file.h"
 #include "storm/utility/macros.h"
+#include "storm/utility/SignalHandler.h"
 
 
 namespace storm {
@@ -348,6 +356,13 @@ namespace storm {
                     STORM_LOG_THROW(target < stateSize, storm::exceptions::WrongFormatException, "Target state " << target << " is greater than state size " << stateSize);
                     builder.addNextValue(row, target, value);
                 }
+
+                if (storm::utility::resources::isTerminate()) {
+                    std::cout << "Parsed " << state << "/" << stateSize << " states before abort." << std::endl;
+                    STORM_LOG_THROW(false, storm::exceptions::AbortException, "Aborted in state space exploration.");
+                    break;
+                }
+
             } // end state iteration
             STORM_LOG_TRACE("Finished parsing");
 

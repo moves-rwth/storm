@@ -53,6 +53,33 @@ namespace storm {
 #ifdef WINDOWS
             static const std::string DYLIB_EXTENSION = ".dll";
 #endif
+      
+            template <typename ValueType, typename RewardModelType>
+            storm::jani::ModelFeatures ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::getSupportedJaniFeatures() {
+                storm::jani::ModelFeatures features;
+                features.add(storm::jani::ModelFeature::DerivedOperators);
+                features.add(storm::jani::ModelFeature::StateExitRewards);
+                // We do not add Functions and arrays as these should ideally be substituted before creating this generator.
+                // This is because functions or arrays may also occur in properties and the user of this builder should take care of that.
+                return features;
+            }
+        
+            template <typename ValueType, typename RewardModelType>
+            bool ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::canHandle(storm::jani::Model const& model) {
+                // Check jani features
+                auto features = model.getModelFeatures();
+                features.remove(storm::jani::ModelFeature::Arrays); // can be substituted
+                features.remove(storm::jani::ModelFeature::DerivedOperators);
+                features.remove(storm::jani::ModelFeature::Functions); // can be substituted
+                features.remove(storm::jani::ModelFeature::StateExitRewards);
+                if (!features.empty()) {
+                    STORM_LOG_INFO("Jit engine can not build Jani model due to unsupported jani features.");
+                    return false;
+                }
+                // There probably are more cases where the model is unsupported. However, checking these is often more involved.
+                // As this method is supposed to be a quick check, we just return true at this point.
+                return true;
+            }
             
             template <typename ValueType, typename RewardModelType>
             ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::ExplicitJitJaniModelBuilder(storm::jani::Model const& model, storm::builder::BuilderOptions const& options) : options(options), model(model.substituteConstantsFunctions()), modelComponentsBuilder(model.getModelType()) {

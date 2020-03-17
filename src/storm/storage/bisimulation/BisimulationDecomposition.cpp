@@ -2,12 +2,17 @@
 
 #include <chrono>
 
+#include "storm/exceptions/AbortException.h"
+#include "storm/exceptions/IllegalFunctionCallException.h"
+#include "storm/exceptions/InvalidOptionException.h"
+
+#include "storm/logic/FormulaInformation.h"
+#include "storm/logic/FragmentSpecification.h"
+
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/storage/bisimulation/DeterministicBlockData.h"
 
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -15,12 +20,10 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
 
-#include "storm/logic/FormulaInformation.h"
-#include "storm/logic/FragmentSpecification.h"
+#include "storm/storage/bisimulation/DeterministicBlockData.h"
 
 #include "storm/utility/macros.h"
-#include "storm/exceptions/IllegalFunctionCallException.h"
-#include "storm/exceptions/InvalidOptionException.h"
+#include "storm/utility/SignalHandler.h"
 
 namespace storm {
     namespace storage {
@@ -250,6 +253,12 @@ namespace storm {
                 
                 // Now refine the partition using the current splitter.
                 refinePartitionBasedOnSplitter(*splitter, splitterQueue);
+
+                if (storm::utility::resources::isTerminate()) {
+                    std::cout << "Performed " << iterations << " iterations of partition refinement before abort." << std::endl;
+                    STORM_LOG_THROW(false, storm::exceptions::AbortException, "Aborted in bisimulation computation.");
+                    break;
+                }
             }
         }
         

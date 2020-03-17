@@ -24,22 +24,17 @@ namespace storm {
         }
         
         template <typename ModelType>
+        bool HybridCtmcCslModelChecker<ModelType>::canHandleStatic(CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
+            auto fragment = storm::logic::csrl().setGloballyFormulasAllowed(false).setLongRunAverageRewardFormulasAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setTimeAllowed(true).setTimeOperatorsAllowed(true).setRewardAccumulationAllowed(true);
+            if (!storm::NumberTraits<ValueType>::SupportsExponential) {
+                fragment.setBoundedUntilFormulasAllowed(false).setCumulativeRewardFormulasAllowed(false).setInstantaneousFormulasAllowed(false);
+            }
+            return checkTask.getFormula().isInFragment(fragment);
+        }
+        
+        template <typename ModelType>
         bool HybridCtmcCslModelChecker<ModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
-            return HybridCtmcCslModelChecker<ModelType>::canHandleImplementation<ValueType>(checkTask);
-        }
-        
-        template <typename ModelType>
-        template<typename CValueType, typename std::enable_if<storm::NumberTraits<CValueType>::SupportsExponential, int>::type>
-        bool HybridCtmcCslModelChecker<ModelType>::canHandleImplementation(CheckTask<storm::logic::Formula, CValueType> const& checkTask) const {
-            storm::logic::Formula const& formula = checkTask.getFormula();
-            return formula.isInFragment(storm::logic::csrl().setGloballyFormulasAllowed(false).setLongRunAverageRewardFormulasAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setTimeAllowed(true).setTimeOperatorsAllowed(true).setRewardAccumulationAllowed(true));
-        }
-        
-        template <typename ModelType>
-        template<typename CValueType, typename std::enable_if<!storm::NumberTraits<CValueType>::SupportsExponential, int>::type>
-        bool HybridCtmcCslModelChecker<ModelType>::canHandleImplementation(CheckTask<storm::logic::Formula, CValueType> const& checkTask) const {
-            storm::logic::Formula const& formula = checkTask.getFormula();
-            return formula.isInFragment(storm::logic::csrl().setGloballyFormulasAllowed(false).setLongRunAverageRewardFormulasAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setTimeAllowed(true).setTimeOperatorsAllowed(true).setBoundedUntilFormulasAllowed(false).setCumulativeRewardFormulasAllowed(false).setInstantaneousFormulasAllowed(false));
+            return canHandleStatic(checkTask);
         }
         
         template<typename ModelType>
@@ -102,7 +97,7 @@ namespace storm {
                 upperBound = storm::utility::infinity<double>();
             }
             
-            return storm::modelchecker::helper::HybridCtmcCslHelper::computeBoundedUntilProbabilities<DdType, ValueType>(env, this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), checkTask.isQualitativeSet(), lowerBound, upperBound);
+            return storm::modelchecker::helper::HybridCtmcCslHelper::computeBoundedUntilProbabilities<DdType, ValueType>(env, this->getModel(), checkTask.isOnlyInitialStatesRelevantSet(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), checkTask.isQualitativeSet(), lowerBound, upperBound);
         }
         
         template<typename ModelType>
@@ -110,7 +105,7 @@ namespace storm {
             storm::logic::InstantaneousRewardFormula const& rewardPathFormula = checkTask.getFormula();
             
             STORM_LOG_THROW(!rewardPathFormula.isStepBounded(), storm::exceptions::NotImplementedException, "Currently step-bounded properties on CTMCs are not supported.");
-            return storm::modelchecker::helper::HybridCtmcCslHelper::computeInstantaneousRewards<DdType, ValueType>(env, this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), rewardPathFormula.getBound<double>());
+            return storm::modelchecker::helper::HybridCtmcCslHelper::computeInstantaneousRewards<DdType, ValueType>(env, this->getModel(), checkTask.isOnlyInitialStatesRelevantSet(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), checkTask.isRewardModelSet() ? this->getModel().getRewardModel(checkTask.getRewardModel()) : this->getModel().getRewardModel(""), rewardPathFormula.getBound<double>());
         }
 
         template<typename ModelType>
@@ -119,7 +114,7 @@ namespace storm {
 
             STORM_LOG_THROW(rewardPathFormula.getTimeBoundReference().isTimeBound(), storm::exceptions::NotImplementedException, "Currently step-bounded and reward-bounded properties on CTMCs are not supported.");
             auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
-            return storm::modelchecker::helper::HybridCtmcCslHelper::computeCumulativeRewards<DdType, ValueType>(env, this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), rewardModel.get(), rewardPathFormula.getNonStrictBound<double>());
+            return storm::modelchecker::helper::HybridCtmcCslHelper::computeCumulativeRewards<DdType, ValueType>(env, this->getModel(), checkTask.isOnlyInitialStatesRelevantSet(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), rewardModel.get(), rewardPathFormula.getNonStrictBound<double>());
         }
         
         template<typename ModelType>
@@ -128,13 +123,13 @@ namespace storm {
             std::unique_ptr<CheckResult> subResultPointer = this->check(env, stateFormula);
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             
-            return storm::modelchecker::helper::HybridCtmcCslHelper::computeLongRunAverageProbabilities<DdType, ValueType>(env, this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), subResult.getTruthValuesVector());
+            return storm::modelchecker::helper::HybridCtmcCslHelper::computeLongRunAverageProbabilities<DdType, ValueType>(env, this->getModel(), checkTask.isOnlyInitialStatesRelevantSet(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), subResult.getTruthValuesVector());
         }
         
         template<typename ModelType>
         std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeLongRunAverageRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
             auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
-            return storm::modelchecker::helper::HybridCtmcCslHelper::computeLongRunAverageRewards<DdType, ValueType>(env, this->getModel(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), rewardModel.get());
+            return storm::modelchecker::helper::HybridCtmcCslHelper::computeLongRunAverageRewards<DdType, ValueType>(env, this->getModel(), checkTask.isOnlyInitialStatesRelevantSet(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), rewardModel.get());
         }
         
         // Explicitly instantiate the model checker.

@@ -22,7 +22,7 @@ namespace storm {
                 filestream.open(filepath);
             }
             STORM_LOG_THROW(filestream, storm::exceptions::FileIoException , "Could not open file " << filepath << ".");
-            filestream.precision(10);
+            filestream.precision(std::cout.precision());
             if (!silent) {
                 STORM_PRINT_AND_LOG("Write to file " << filepath << "." << std::endl);
             }

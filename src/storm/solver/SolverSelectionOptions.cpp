@@ -18,9 +18,13 @@ namespace storm {
                     return "intervaliteration";
                 case MinMaxMethod::SoundValueIteration:
                     return "soundvalueiteration";
+                case MinMaxMethod::OptimisticValueIteration:
+                    return "optimisticvalueiteration";
                 case MinMaxMethod::TopologicalCuda:
                     return "topologicalcuda";
                 case MinMaxMethod::ViToPi:
+                    return "vi-to-pi";
+                case MinMaxMethod::Acyclic:
                     return "vi-to-pi";
             }
             return "invalid";
@@ -60,6 +64,16 @@ namespace storm {
             return "invalid";
         }
         
+        std::string toString(MaBoundedReachabilityMethod m) {
+            switch(m) {
+                case MaBoundedReachabilityMethod::Imca:
+                    return "imca";
+                case MaBoundedReachabilityMethod::UnifPlus:
+                    return "unifplus";
+            }
+            return "invalid";
+        }
+        
         std::string toString(LpSolverType t) {
             switch(t) {
                 case LpSolverType::Gurobi:
@@ -84,6 +98,8 @@ namespace storm {
                     return "Elimination";
                 case EquationSolverType::Topological:
                     return "Topological";
+                case EquationSolverType::Acyclic:
+                    return "Acyclic";
             }
             return "invalid";
         }
@@ -112,6 +128,8 @@ namespace storm {
                     return "Power";
                 case NativeLinearEquationSolverMethod::SoundValueIteration:
                     return "SoundValueIteration";
+                case NativeLinearEquationSolverMethod::OptimisticValueIteration:
+                    return "optimisticvalueiteration";
                 case NativeLinearEquationSolverMethod::IntervalIteration:
                     return "IntervalIteration";
                 case NativeLinearEquationSolverMethod::RationalSearch:

@@ -3,12 +3,7 @@
 #include "storm/utility/macros.h"
 
 #include "storm-dft/storage/dft/DFT.h"
-
-// JSON parser
-#include "json.hpp"
-namespace modernjson {
-    using json = nlohmann::basic_json<std::map, std::vector, std::string, bool, int64_t, uint64_t, double, std::allocator>;
-}
+#include "storm/adapters/JsonAdapter.h"
 
 namespace storm {
     namespace storage {
@@ -18,7 +13,8 @@ namespace storm {
          */
         template<typename ValueType>
         class DftJsonExporter {
-
+            typedef typename storm::json<double> Json;
+            
             using DFTElementPointer = std::shared_ptr<DFTElement<ValueType>>;
             using DFTElementCPointer = std::shared_ptr<DFTElement<ValueType> const>;
             using DFTGatePointer = std::shared_ptr<DFTGate<ValueType>>;
@@ -31,9 +27,9 @@ namespace storm {
 
         private:
 
-            static modernjson::json translate(storm::storage::DFT<ValueType> const& dft);
+            static Json translate(storm::storage::DFT<ValueType> const& dft);
 
-            static modernjson::json translateNode(DFTElementCPointer const& element);
+            static Json translateNode(DFTElementCPointer const& element);
 
         };
     }

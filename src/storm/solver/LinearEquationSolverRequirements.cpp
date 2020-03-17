@@ -10,6 +10,11 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        LinearEquationSolverRequirements& LinearEquationSolverRequirements::requireAcyclic(bool critical) {
+            acyclicRequirement.enable(critical);
+            return *this;
+        }
+        
         LinearEquationSolverRequirements& LinearEquationSolverRequirements::requireLowerBounds(bool critical) {
             lowerBoundsRequirement.enable(critical);
             return *this;
@@ -26,6 +31,10 @@ namespace storm {
             return *this;
         }
         
+        SolverRequirement const& LinearEquationSolverRequirements::acyclic() const {
+            return acyclicRequirement;
+        }
+        
         SolverRequirement const& LinearEquationSolverRequirements::lowerBounds() const {
             return lowerBoundsRequirement;
         }
@@ -36,10 +45,15 @@ namespace storm {
         
         SolverRequirement const& LinearEquationSolverRequirements::get(Element const& element) const {
             switch (element) {
-                case Element::LowerBounds: return lowerBounds(); break;
-                case Element::UpperBounds: return upperBounds(); break;
+                case Element::Acyclic: return acyclic();
+                case Element::LowerBounds: return lowerBounds();
+                case Element::UpperBounds: return upperBounds();
             }
             STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ElementType");
+        }
+        
+        void LinearEquationSolverRequirements::clearAcyclic() {
+            acyclicRequirement.clear();
         }
         
         void LinearEquationSolverRequirements::clearLowerBounds() {
@@ -51,17 +65,23 @@ namespace storm {
         }
         
         bool LinearEquationSolverRequirements::hasEnabledRequirement() const {
-            return lowerBoundsRequirement || upperBoundsRequirement;
+            return acyclicRequirement || lowerBoundsRequirement || upperBoundsRequirement;
         }
         
         bool LinearEquationSolverRequirements::hasEnabledCriticalRequirement() const {
-            return lowerBoundsRequirement.isCritical() || upperBoundsRequirement.isCritical();
+            return acyclicRequirement.isCritical() || lowerBoundsRequirement.isCritical() || upperBoundsRequirement.isCritical();
         }
-        
         
         std::string LinearEquationSolverRequirements::getEnabledRequirementsAsString() const {
             std::string res = "[";
             bool first = true;
+            if (acyclic()) {
+                if (!first) { res += ", "; } else {first = false;}
+                res += "acyclic";
+                if (acyclic().isCritical()) {
+                    res += "(mandatory)";
+                }
+            }
             if (lowerBounds()) {
                 if (!first) { res += ", "; } else {first = false;}
                 res += "lowerBounds";

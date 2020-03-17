@@ -36,66 +36,78 @@ namespace storm {
         ////////////
         // Defaults
         ////////////
-        const bool JaniParser::defaultVariableTransient = false;
-        const bool JaniParser::defaultBooleanInitialValue = false;
-        const double JaniParser::defaultRationalInitialValue = 0.0;
-        const int64_t JaniParser::defaultIntegerInitialValue = 0;
+        template <typename ValueType>
+        const bool JaniParser<ValueType>::defaultVariableTransient = false;
+        template <typename ValueType>
+        const bool JaniParser<ValueType>::defaultBooleanInitialValue = false;
+        template <typename ValueType>
+        const ValueType JaniParser<ValueType>::defaultRationalInitialValue = storm::utility::zero<ValueType>();
+        template <typename ValueType>
+        const int64_t JaniParser<ValueType>::defaultIntegerInitialValue = 0;
         const std::string VARIABLE_AUTOMATON_DELIMITER = "_";
-        const std::set<std::string> JaniParser::unsupportedOpstrings({"sin", "cos", "tan", "cot", "sec", "csc", "asin", "acos", "atan", "acot", "asec", "acsc",
+        template <typename ValueType>
+        const std::set<std::string> JaniParser<ValueType>::unsupportedOpstrings({"sin", "cos", "tan", "cot", "sec", "csc", "asin", "acos", "atan", "acot", "asec", "acsc",
                                                          "sinh", "cosh", "tanh", "coth", "sech", "csch", "asinh", "acosh", "atanh", "asinh", "acosh"});
 
 
-        std::string getString(json const& structure, std::string const& errorInfo) {
+        template <typename ValueType>
+        std::string getString(typename JaniParser<ValueType>::Json const& structure, std::string const& errorInfo) {
             STORM_LOG_THROW(structure.is_string(), storm::exceptions::InvalidJaniException, "Expected a string in " << errorInfo << ", got '" << structure.dump() << "'");
             return structure.front();
         }
 
-        bool getBoolean(json const& structure, std::string const& errorInfo) {
+        template <typename ValueType>
+        bool getBoolean(typename JaniParser<ValueType>::Json const& structure, std::string const& errorInfo) {
             STORM_LOG_THROW(structure.is_boolean(), storm::exceptions::InvalidJaniException, "Expected a Boolean in " << errorInfo << ", got " << structure.dump() << "'");
             return structure.front();
         }
 
-        uint64_t getUnsignedInt(json const& structure, std::string const& errorInfo) {
+        template <typename ValueType>
+        uint64_t getUnsignedInt(typename JaniParser<ValueType>::Json const& structure, std::string const& errorInfo) {
             STORM_LOG_THROW(structure.is_number(), storm::exceptions::InvalidJaniException, "Expected a number in " << errorInfo << ", got '" << structure.dump() << "'");
-            int num = structure.front();
+            int64_t num = structure.front();
             STORM_LOG_THROW(num >= 0, storm::exceptions::InvalidJaniException, "Expected a positive number in " << errorInfo << ", got '" << num << "'");
             return static_cast<uint64_t>(num);
         }
 
-        int64_t getSignedInt(json const& structure, std::string const& errorInfo) {
+        template <typename ValueType>
+        int64_t getSignedInt(typename JaniParser<ValueType>::Json const& structure, std::string const& errorInfo) {
             STORM_LOG_THROW(structure.is_number(), storm::exceptions::InvalidJaniException, "Expected a number in " << errorInfo << ", got '" << structure.dump() << "'");
-            int num = structure.front();
-            return static_cast<int64_t>(num);
+            return structure.front();
         }
 
-        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> JaniParser::parse(std::string const& path, bool parseProperties) {
+        template <typename ValueType>
+        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> JaniParser<ValueType>::parse(std::string const& path, bool parseProperties) {
             JaniParser parser;
             parser.readFile(path);
             return parser.parseModel(parseProperties);
         }
 
-        JaniParser::JaniParser(std::string const& jsonstring) {
-            parsedStructure = json::parse(jsonstring);
+        template <typename ValueType>
+        JaniParser<ValueType>::JaniParser(std::string const& jsonstring) {
+            parsedStructure = Json::parse(jsonstring);
         }
 
-        void JaniParser::readFile(std::string const &path) {
+        template <typename ValueType>
+        void JaniParser<ValueType>::readFile(std::string const &path) {
             std::ifstream file;
             storm::utility::openFile(path, file);
             parsedStructure << file;
             storm::utility::closeFile(file);
         }
 
-        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> JaniParser::parseModel(bool parseProperties) {
+        template <typename ValueType>
+        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> JaniParser<ValueType>::parseModel(bool parseProperties) {
             //jani-version
             STORM_LOG_THROW(parsedStructure.count("jani-version") == 1, storm::exceptions::InvalidJaniException, "Jani-version must be given exactly once.");
-            uint64_t version = getUnsignedInt(parsedStructure.at("jani-version"), "jani version");
+            uint64_t version = getUnsignedInt<ValueType>(parsedStructure.at("jani-version"), "jani version");
             STORM_LOG_WARN_COND(version >= 1 && version <=1, "JANI Version " << version << " is not supported. Results may be wrong.");
             //name
             STORM_LOG_THROW(parsedStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "A model must have a (single) name");
-            std::string name = getString(parsedStructure.at("name"), "model name");
+            std::string name = getString<ValueType>(parsedStructure.at("name"), "model name");
             //model type
             STORM_LOG_THROW(parsedStructure.count("type") == 1, storm::exceptions::InvalidJaniException, "A type must be given exactly once");
-            std::string modeltypestring = getString(parsedStructure.at("type"), "type of the model");
+            std::string modeltypestring = getString<ValueType>(parsedStructure.at("type"), "type of the model");
             storm::jani::ModelType type = storm::jani::getModelType(modeltypestring);
             STORM_LOG_THROW(type != storm::jani::ModelType::UNDEFINED, storm::exceptions::InvalidJaniException, "model type " + modeltypestring + " not recognized");
             storm::jani::Model model(name, type, version, expressionManager);
@@ -104,7 +116,7 @@ namespace storm {
             if (featuresCount == 1) {
                 auto allKnownModelFeatures = storm::jani::getAllKnownModelFeatures();
                 for (auto const& feature : parsedStructure.at("features")) {
-					std::string featureStr = getString(feature, "Model feature");
+					std::string featureStr = getString<ValueType>(feature, "Model feature");
                     bool found = false;
                     for (auto const& knownFeature : allKnownModelFeatures.asSet()) {
                         if (featureStr == storm::jani::toString(knownFeature)) {
@@ -219,19 +231,22 @@ namespace storm {
             }
             return {model, properties};
         }
-        
-        std::vector<std::shared_ptr<storm::logic::Formula const>> JaniParser::parseUnaryFormulaArgument(storm::jani::Model& model, json const& propertyStructure, storm::logic::FormulaContext formulaContext, std::string const& opstring, Scope const& scope) {
+
+        template <typename ValueType>
+        std::vector<std::shared_ptr<storm::logic::Formula const>> JaniParser<ValueType>::parseUnaryFormulaArgument(storm::jani::Model& model, Json const& propertyStructure, storm::logic::FormulaContext formulaContext, std::string const& opstring, Scope const& scope) {
             STORM_LOG_THROW(propertyStructure.count("exp") == 1, storm::exceptions::InvalidJaniException, "Expecting operand for operator " << opstring << " in " << scope.description);
             return  { parseFormula(model, propertyStructure.at("exp"), formulaContext, scope.refine("Operand of operator " + opstring)) };
         }
         
-        std::vector<std::shared_ptr<storm::logic::Formula const>> JaniParser::parseBinaryFormulaArguments(storm::jani::Model& model, json const& propertyStructure, storm::logic::FormulaContext formulaContext, std::string const& opstring, Scope const& scope) {
+        template <typename ValueType>
+        std::vector<std::shared_ptr<storm::logic::Formula const>> JaniParser<ValueType>::parseBinaryFormulaArguments(storm::jani::Model& model, Json const& propertyStructure, storm::logic::FormulaContext formulaContext, std::string const& opstring, Scope const& scope) {
             STORM_LOG_THROW(propertyStructure.count("left") == 1, storm::exceptions::InvalidJaniException, "Expecting left operand for operator " << opstring << " in " << scope.description);
             STORM_LOG_THROW(propertyStructure.count("right") == 1, storm::exceptions::InvalidJaniException, "Expecting right operand for operator " << opstring << " in " << scope.description);
             return { parseFormula(model, propertyStructure.at("left"), formulaContext, scope.refine("Operand of operator " + opstring)),  parseFormula(model, propertyStructure.at("right"), formulaContext, scope.refine("Operand of operator " + opstring))  };
         }
         
-        storm::jani::PropertyInterval JaniParser::parsePropertyInterval(json const& piStructure, Scope const& scope) {
+        template <typename ValueType>
+        storm::jani::PropertyInterval JaniParser<ValueType>::parsePropertyInterval(Json const& piStructure, Scope const& scope) {
             storm::jani::PropertyInterval pi;
             if (piStructure.count("lower") > 0) {
                 pi.lowerBound = parseExpression(piStructure.at("lower"), scope.refine("Lower bound for property interval"));
@@ -253,7 +268,8 @@ namespace storm {
             return pi;
         }
 
-        storm::logic::RewardAccumulation JaniParser::parseRewardAccumulation(json const& accStructure, std::string const& context) {
+        template <typename ValueType>
+        storm::logic::RewardAccumulation JaniParser<ValueType>::parseRewardAccumulation(Json const& accStructure, std::string const& context) {
             bool accTime = false;
             bool accSteps = false;
             bool accExit = false;
@@ -284,14 +300,15 @@ namespace storm {
                 upperBounds.push_back(boost::none);
             }
         }
-        
-        std::shared_ptr<storm::logic::Formula const> JaniParser::parseFormula(storm::jani::Model& model, json const& propertyStructure, storm::logic::FormulaContext formulaContext, Scope const& scope, boost::optional<storm::logic::Bound> bound) {
+
+        template <typename ValueType>
+        std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula(storm::jani::Model& model, Json const& propertyStructure, storm::logic::FormulaContext formulaContext, Scope const& scope, boost::optional<storm::logic::Bound> bound) {
             if (propertyStructure.is_boolean()) {
-                return std::make_shared<storm::logic::BooleanLiteralFormula>(propertyStructure.get<bool>());
+                return std::make_shared<storm::logic::BooleanLiteralFormula>(propertyStructure.template get<bool>());
             }
             if (propertyStructure.is_string()) {
-                if (labels.count(propertyStructure.get<std::string>()) > 0) {
-                    return std::make_shared<storm::logic::AtomicLabelFormula>(propertyStructure.get<std::string>());
+                if (labels.count(propertyStructure.template get<std::string>()) > 0) {
+                    return std::make_shared<storm::logic::AtomicLabelFormula>(propertyStructure.template get<std::string>());
                 }
             }
             storm::expressions::Expression expr = parseExpression(propertyStructure, scope.refine("expression in property"), true);
@@ -310,7 +327,7 @@ namespace storm {
                 }
             }
             if (propertyStructure.count("op") == 1) {
-                std::string opString = getString(propertyStructure.at("op"), "Operation description");
+                std::string opString = getString<ValueType>(propertyStructure.at("op"), "Operation description");
                 
                 if(opString == "Pmin" || opString == "Pmax") {
                     std::vector<std::shared_ptr<storm::logic::Formula const>> args = parseUnaryFormulaArgument(model, propertyStructure, storm::logic::FormulaContext::Probability, opString, scope);
@@ -538,10 +555,10 @@ namespace storm {
                     std::vector<std::string> const leftRight = {"left", "right"};
                     for (uint64_t i = 0; i < 2; ++i) {
                         if (propertyStructure.at(leftRight[i]).count("op") > 0) {
-                            std::string propertyOperatorString = getString(propertyStructure.at(leftRight[i]).at("op"), "property-operator");
+                            std::string propertyOperatorString = getString<ValueType>(propertyStructure.at(leftRight[i]).at("op"), "property-operator");
                             std::set<std::string> const propertyOperatorStrings = {"Pmin", "Pmax","Emin", "Emax", "Smin", "Smax"};
                             if (propertyOperatorStrings.count(propertyOperatorString) > 0) {
-                                auto boundExpr = parseExpression(propertyStructure.at(leftRight[1-i]), scope.refine("Threshold for operator " + propertyStructure.at(leftRight[i]).at("op").get<std::string>()));
+                                auto boundExpr = parseExpression(propertyStructure.at(leftRight[1-i]), scope.refine("Threshold for operator " + propertyStructure.at(leftRight[i]).at("op").template get<std::string>()));
                                 if ((opString == "=" || opString == "≠")) {
                                     STORM_LOG_THROW(!boundExpr.containsVariables(), storm::exceptions::NotSupportedException, "Comparison operators '=' or '≠' in property specifications are currently not supported.");
                                     auto boundValue = boundExpr.evaluateAsRational();
@@ -576,23 +593,24 @@ namespace storm {
             }
         }
         
-        storm::jani::Property JaniParser::parseProperty(storm::jani::Model& model, json const& propertyStructure, Scope const& scope) {
+        template <typename ValueType>
+        storm::jani::Property JaniParser<ValueType>::parseProperty(storm::jani::Model& model, Json const& propertyStructure, Scope const& scope) {
             STORM_LOG_THROW(propertyStructure.count("name") ==  1, storm::exceptions::InvalidJaniException, "Property must have a name");
             // TODO check unique name
-            std::string name = getString(propertyStructure.at("name"), "property-name");
+            std::string name = getString<ValueType>(propertyStructure.at("name"), "property-name");
             STORM_LOG_TRACE("Parsing property named: " << name);
             std::string comment = "";
             if (propertyStructure.count("comment") > 0) {
-                comment = getString(propertyStructure.at("comment"), "comment for property named '" + name + "'.");
+                comment = getString<ValueType>(propertyStructure.at("comment"), "comment for property named '" + name + "'.");
             }
             STORM_LOG_THROW(propertyStructure.count("expression") == 1, storm::exceptions::InvalidJaniException, "Property must have an expression");
             // Parse filter expression.
-            json const& expressionStructure = propertyStructure.at("expression");
+            Json const& expressionStructure = propertyStructure.at("expression");
             
             STORM_LOG_THROW(expressionStructure.count("op") == 1, storm::exceptions::InvalidJaniException, "Expression in property must have an operation description");
             STORM_LOG_THROW(expressionStructure.at("op") == "filter", storm::exceptions::InvalidJaniException, "Top level operation of a property must be a filter");
             STORM_LOG_THROW(expressionStructure.count("fun") == 1, storm::exceptions::InvalidJaniException, "Filter must have a function descritpion");
-            std::string funDescr = getString(expressionStructure.at("fun"), "Filter function in property named " + name);
+            std::string funDescr = getString<ValueType>(expressionStructure.at("fun"), "Filter function in property named " + name);
             storm::modelchecker::FilterType ft;
             if (funDescr == "min") {
                 ft = storm::modelchecker::FilterType::MIN;
@@ -621,7 +639,7 @@ namespace storm {
             STORM_LOG_THROW(expressionStructure.count("states") == 1, storm::exceptions::InvalidJaniException, "Filter must have a states description");
             std::shared_ptr<storm::logic::Formula const> statesFormula;
             if (expressionStructure.at("states").count("op") > 0) {
-                std::string statesDescr = getString(expressionStructure.at("states").at("op"), "Filtered states in property named " + name);
+                std::string statesDescr = getString<ValueType>(expressionStructure.at("states").at("op"), "Filtered states in property named " + name);
                 if (statesDescr == "initial") {
                     statesFormula = std::make_shared<storm::logic::AtomicLabelFormula>("init");
                 }
@@ -642,9 +660,10 @@ namespace storm {
             return storm::jani::Property(name, storm::jani::FilterExpression(formula, ft, statesFormula), {}, comment);
         }
 
-        std::shared_ptr<storm::jani::Constant> JaniParser::parseConstant(json const& constantStructure, Scope const& scope) {
+        template <typename ValueType>
+        std::shared_ptr<storm::jani::Constant> JaniParser<ValueType>::parseConstant(Json const& constantStructure, Scope const& scope) {
             STORM_LOG_THROW(constantStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "Variable (scope: " + scope.description + ") must have a name");
-            std::string name = getString(constantStructure.at("name"), "variable-name in " + scope.description + "-scope");
+            std::string name = getString<ValueType>(constantStructure.at("name"), "variable-name in " + scope.description + "-scope");
             // TODO check existance of name.
             // TODO store prefix in variable.
             std::string exprManagerName = name;
@@ -689,7 +708,8 @@ namespace storm {
             return std::make_shared<storm::jani::Constant>(name, std::move(var), definingExpression, constraintExpression);
         }
         
-        void JaniParser::parseType(ParsedType& result, json const& typeStructure, std::string variableName, Scope const& scope) {
+        template <typename ValueType>
+        void JaniParser<ValueType>::parseType(ParsedType& result, Json const& typeStructure, std::string variableName, Scope const& scope) {
             if (typeStructure.is_string()) {
                 if (typeStructure == "real") {
                     result.basicType = ParsedType::BasicType::Real;
@@ -709,7 +729,7 @@ namespace storm {
                 }
             } else if (typeStructure.is_object()) {
                 STORM_LOG_THROW(typeStructure.count("kind") == 1, storm::exceptions::InvalidJaniException, "For complex type as in variable " << variableName << "(scope: " << scope.description << ") kind must be given");
-                std::string kind = getString(typeStructure.at("kind"), "kind for complex type as in variable " + variableName  + "(scope: " + scope.description + ") ");
+                std::string kind = getString<ValueType>(typeStructure.at("kind"), "kind for complex type as in variable " + variableName  + "(scope: " + scope.description + ") ");
                 if (kind == "bounded") {
                     STORM_LOG_THROW(typeStructure.count("lower-bound") + typeStructure.count("upper-bound") > 0, storm::exceptions::InvalidJaniException, "For bounded type as in variable " << variableName << "(scope: " << scope.description << ") lower-bound or upper-bound must be given");
                     storm::expressions::Expression lowerboundExpr;
@@ -721,7 +741,7 @@ namespace storm {
                         upperboundExpr = parseExpression(typeStructure.at("upper-bound"), scope.refine("Upper bound for variable "+ variableName));
                     }
                     STORM_LOG_THROW(typeStructure.count("base") == 1, storm::exceptions::InvalidJaniException, "For bounded type as in variable " << variableName << "(scope: " << scope.description << ") base must be given");
-                    std::string basictype = getString(typeStructure.at("base"), "base for bounded type as in variable " + variableName  + "(scope: " + scope.description + ") ");
+                    std::string basictype = getString<ValueType>(typeStructure.at("base"), "base for bounded type as in variable " + variableName  + "(scope: " + scope.description + ") ");
                     if (basictype == "int") {
                         STORM_LOG_THROW(!lowerboundExpr.isInitialized() || lowerboundExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Lower bound for bounded integer variable " << variableName << "(scope: " << scope.description << ") must be integer-typed");
                         STORM_LOG_THROW(!upperboundExpr.isInitialized() || upperboundExpr.hasIntegerType(), storm::exceptions::InvalidJaniException, "Upper bound for bounded integer variable " << variableName << "(scope: " << scope.description << ") must be integer-typed");
@@ -754,9 +774,10 @@ namespace storm {
             }
         }
         
-        storm::jani::FunctionDefinition JaniParser::parseFunctionDefinition(json const& functionDefinitionStructure, Scope const& scope, bool firstPass, std::string const& parameterNamePrefix) {
+        template <typename ValueType>
+        storm::jani::FunctionDefinition JaniParser<ValueType>::parseFunctionDefinition(Json const& functionDefinitionStructure, Scope const& scope, bool firstPass, std::string const& parameterNamePrefix) {
             STORM_LOG_THROW(functionDefinitionStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "Function definition (scope: " + scope.description + ") must have a name");
-            std::string functionName = getString(functionDefinitionStructure.at("name"), "function-name in " + scope.description);
+            std::string functionName = getString<ValueType>(functionDefinitionStructure.at("name"), "function-name in " + scope.description);
             STORM_LOG_THROW(functionDefinitionStructure.count("type") == 1, storm::exceptions::InvalidJaniException, "Function definition '" + functionName + "' (scope: " + scope.description + ") must have a (single) type-declaration.");
             ParsedType type;
             parseType(type, functionDefinitionStructure.at("type"), functionName, scope);
@@ -767,7 +788,7 @@ namespace storm {
                 STORM_LOG_THROW(functionDefinitionStructure.count("parameters") == 1, storm::exceptions::InvalidJaniException, "Function definition '" + functionName + "' (scope: " + scope.description + ") must have exactly one list of parameters.");
                 for (auto const& parameterStructure : functionDefinitionStructure.at("parameters")) {
                     STORM_LOG_THROW(parameterStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "Parameter declaration of parameter " + std::to_string(parameters.size()) + " of Function definition '" + functionName + "' (scope: " + scope.description + ") must have a name");
-                    std::string parameterName = getString(parameterStructure.at("name"), "parameter-name of parameter " + std::to_string(parameters.size()) + " of Function definition '" + functionName + "' (scope: " + scope.description + ").");
+                    std::string parameterName = getString<ValueType>(parameterStructure.at("name"), "parameter-name of parameter " + std::to_string(parameters.size()) + " of Function definition '" + functionName + "' (scope: " + scope.description + ").");
                     ParsedType parameterType;
                     STORM_LOG_THROW(parameterStructure.count("type") == 1, storm::exceptions::InvalidJaniException, "Parameter declaration of parameter " + std::to_string(parameters.size()) + " of Function definition '" + functionName + "' (scope: " + scope.description + ") must have exactly one type.");
                     parseType(parameterType, parameterStructure.at("type"), parameterName, scope.refine("parameter declaration of parameter " + std::to_string(parameters.size()) + " of function definition " + functionName));
@@ -789,9 +810,10 @@ namespace storm {
         }
 
         
-        std::shared_ptr<storm::jani::Variable> JaniParser::parseVariable(json const& variableStructure, bool requireInitialValues, Scope const& scope, std::string const& namePrefix) {
+        template <typename ValueType>
+        std::shared_ptr<storm::jani::Variable> JaniParser<ValueType>::parseVariable(Json const& variableStructure, bool requireInitialValues, Scope const& scope, std::string const& namePrefix) {
             STORM_LOG_THROW(variableStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "Variable (scope: " + scope.description + ") must have a name");
-            std::string name = getString(variableStructure.at("name"), "variable-name in " + scope.description + "-scope");
+            std::string name = getString<ValueType>(variableStructure.at("name"), "variable-name in " + scope.description + "-scope");
             // TODO check existance of name.
             // TODO store prefix in variable.
             std::string exprManagerName = namePrefix + name;
@@ -799,7 +821,7 @@ namespace storm {
             size_t tvarcount = variableStructure.count("transient");
             STORM_LOG_THROW(tvarcount <= 1, storm::exceptions::InvalidJaniException, "Multiple definitions of transient not allowed in variable '" + name  + "' (scope: " + scope.description + ").");
             if(tvarcount == 1) {
-                transientVar = getBoolean(variableStructure.at("transient"), "transient-attribute in variable '" + name  + "' (scope: " + scope.description + ").");
+                transientVar = getBoolean<ValueType>(variableStructure.at("transient"), "transient-attribute in variable '" + name  + "' (scope: " + scope.description + ").");
             }
             STORM_LOG_THROW(variableStructure.count("type") == 1, storm::exceptions::InvalidJaniException, "Variable '" + name + "' (scope: " + scope.description + ") must have a (single) type-declaration.");
             ParsedType type;
@@ -928,12 +950,14 @@ namespace storm {
             STORM_LOG_THROW(expected == actual, storm::exceptions::InvalidJaniException, "Operator " << opstring  << " expects " << expected << " arguments, but got " << actual << " in " << errorInfo << ".");
         }
 
-        std::vector<storm::expressions::Expression> JaniParser::parseUnaryExpressionArguments(json const& expressionDecl, std::string const& opstring, Scope const& scope, bool returnNoneInitializedOnUnknownOperator, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables) {
+        template <typename ValueType>
+        std::vector<storm::expressions::Expression> JaniParser<ValueType>::parseUnaryExpressionArguments(Json const& expressionDecl, std::string const& opstring, Scope const& scope, bool returnNoneInitializedOnUnknownOperator, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables) {
             storm::expressions::Expression left = parseExpression(expressionDecl.at("exp"), scope.refine("Argument of operator " + opstring), returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
             return {left};
         }
 
-        std::vector<storm::expressions::Expression> JaniParser::parseBinaryExpressionArguments(json const& expressionDecl, std::string const& opstring, Scope const& scope, bool returnNoneInitializedOnUnknownOperator, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables) {
+        template <typename ValueType>
+        std::vector<storm::expressions::Expression> JaniParser<ValueType>::parseBinaryExpressionArguments(Json const& expressionDecl, std::string const& opstring, Scope const& scope, bool returnNoneInitializedOnUnknownOperator, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables) {
             storm::expressions::Expression left = parseExpression(expressionDecl.at("left"), scope.refine("Left argument of operator " + opstring), returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
             storm::expressions::Expression right = parseExpression(expressionDecl.at("right"), scope.refine("Right argument of operator " + opstring), returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
             return {left, right};
@@ -966,9 +990,10 @@ namespace storm {
             STORM_LOG_THROW(expr.getType().isArrayType(), storm::exceptions::InvalidJaniException, "Operator " << opstring << " expects argument " + std::to_string(argNr) + " to be of type 'array' in " << errorInfo << ".");
         }
 
-        storm::jani::LValue JaniParser::parseLValue(json const& lValueStructure, Scope const& scope) {
+        template <typename ValueType>
+        storm::jani::LValue JaniParser<ValueType>::parseLValue(Json const& lValueStructure, Scope const& scope) {
             if (lValueStructure.is_string()) {
-                std::string ident = getString(lValueStructure, scope.description);
+                std::string ident = getString<ValueType>(lValueStructure, scope.description);
                 if (scope.localVars != nullptr) {
                     auto localVar = scope.localVars->find(ident);
                     if (localVar != scope.localVars->end()) {
@@ -980,7 +1005,7 @@ namespace storm {
                 STORM_LOG_THROW(globalVar != scope.globalVars->end(), storm::exceptions::InvalidJaniException, "Unknown identifier '" << ident << "' occurs in " << scope.description);
                 return storm::jani::LValue(*globalVar->second);
             } else if (lValueStructure.count("op") == 1) {
-                std::string opstring = getString(lValueStructure.at("op"), scope.description);
+                std::string opstring = getString<ValueType>(lValueStructure.at("op"), scope.description);
                 STORM_LOG_THROW(opstring == "aa", storm::exceptions::InvalidJaniException, "Unknown operation '" << opstring << "' occurs in " << scope.description);
                 STORM_LOG_THROW(lValueStructure.count("exp"), storm::exceptions::InvalidJaniException, "Missing 'exp' in array access at " << scope.description);
                 storm::jani::LValue exp = parseLValue(lValueStructure.at("exp"), scope.refine("LValue description of array expression"));
@@ -994,7 +1019,8 @@ namespace storm {
             }
         }
 
-        storm::expressions::Variable JaniParser::getVariableOrConstantExpression(std::string const& ident, Scope const& scope, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables) {
+        template <typename ValueType>
+        storm::expressions::Variable JaniParser<ValueType>::getVariableOrConstantExpression(std::string const& ident, Scope const& scope, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables) {
             {
                 auto it = auxiliaryVariables.find(ident);
                 if (it != auxiliaryVariables.end()) {
@@ -1024,26 +1050,27 @@ namespace storm {
             return storm::expressions::Variable();
         }
 
-        storm::expressions::Expression JaniParser::parseExpression(json const& expressionStructure, Scope const& scope, bool returnNoneInitializedOnUnknownOperator, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables) {
+        template <typename ValueType>
+        storm::expressions::Expression JaniParser<ValueType>::parseExpression(Json const& expressionStructure, Scope const& scope, bool returnNoneInitializedOnUnknownOperator, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables) {
             if (expressionStructure.is_boolean()) {
-                if (expressionStructure.get<bool>()) {
+                if (expressionStructure.template get<bool>()) {
                     return expressionManager->boolean(true);
                 } else {
                     return expressionManager->boolean(false);
                 }
             } else if (expressionStructure.is_number_integer()) {
-                return expressionManager->integer(expressionStructure.get<int64_t>());
+                return expressionManager->integer(expressionStructure.template get<int64_t>());
             } else if (expressionStructure.is_number_float()) {
-                return expressionManager->rational(storm::utility::convertNumber<storm::RationalNumber>(expressionStructure.dump()));
+                return expressionManager->rational(storm::utility::convertNumber<storm::RationalNumber>(expressionStructure.template get<ValueType>()));
             } else if (expressionStructure.is_string()) {
-                std::string ident = expressionStructure.get<std::string>();
+                std::string ident = expressionStructure.template get<std::string>();
                 return storm::expressions::Expression(getVariableOrConstantExpression(ident, scope, auxiliaryVariables));
             } else if (expressionStructure.is_object()) {
                 if (expressionStructure.count("distribution") == 1) {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Distributions are not supported by storm expressions, cannot import " << expressionStructure.dump() << " in " << scope.description << ".");
                 }
                 if (expressionStructure.count("op") == 1) {
-                    std::string opstring = getString(expressionStructure.at("op"), scope.description);
+                    std::string opstring = getString<ValueType>(expressionStructure.at("op"), scope.description);
                     std::vector<storm::expressions::Expression> arguments = {};
                     if(opstring == "ite") {
                         STORM_LOG_THROW(expressionStructure.count("if") == 1, storm::exceptions::InvalidJaniException, "If operator required");
@@ -1277,7 +1304,7 @@ namespace storm {
                         storm::expressions::Expression length = parseExpression(expressionStructure.at("length"), scope.refine("index of array constructor expression"), returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
                         ensureIntegerType(length, opstring, 1, scope.description);
                         STORM_LOG_THROW(expressionStructure.count("var") == 1, storm::exceptions::InvalidJaniException, "Array access operator requires exactly one var (at " + scope.description + ").");
-                        std::string indexVarName = getString(expressionStructure.at("var"), "Field 'var' of Array access operator (at " + scope.description + ").");
+                        std::string indexVarName = getString<ValueType>(expressionStructure.at("var"), "Field 'var' of Array access operator (at " + scope.description + ").");
                         STORM_LOG_THROW(auxiliaryVariables.find(indexVarName) == auxiliaryVariables.end(), storm::exceptions::InvalidJaniException, "Index variable " << indexVarName << " is already defined as an auxiliary variable (at " + scope.description + ").");
                         auto newAuxVars = auxiliaryVariables;
                         storm::expressions::Variable indexVar = expressionManager->declareFreshIntegerVariable(false, "ac_" + indexVarName);
@@ -1287,7 +1314,7 @@ namespace storm {
                         return std::make_shared<storm::expressions::ConstructorArrayExpression>(*expressionManager, expressionManager->getArrayType(exp.getType()), length.getBaseExpressionPointer(), indexVar, exp.getBaseExpressionPointer())->toExpression();
                     } else if (opstring == "call") {
                         STORM_LOG_THROW(expressionStructure.count("function") == 1, storm::exceptions::InvalidJaniException, "Function call operator requires exactly one function (at " + scope.description + ").");
-                        std::string functionName = getString(expressionStructure.at("function"), "in function call operator (at " + scope.description + ").");
+                        std::string functionName = getString<ValueType>(expressionStructure.at("function"), "in function call operator (at " + scope.description + ").");
                         storm::jani::FunctionDefinition const* functionDefinition;
                         if (scope.localFunctions != nullptr && scope.localFunctions->count(functionName) > 0) {
                             functionDefinition = scope.localFunctions->at(functionName);
@@ -1322,20 +1349,22 @@ namespace storm {
 
         }
 
-        void JaniParser::parseActions(json const& actionStructure, storm::jani::Model& parentModel) {
+        template <typename ValueType>
+        void JaniParser<ValueType>::parseActions(Json const& actionStructure, storm::jani::Model& parentModel) {
             std::set<std::string> actionNames;
             for(auto const& actionEntry : actionStructure) {
                 STORM_LOG_THROW(actionEntry.count("name") == 1, storm::exceptions::InvalidJaniException, "Actions must have exactly one name.");
-                std::string actionName = getString(actionEntry.at("name"), "name of action");
+                std::string actionName = getString<ValueType>(actionEntry.at("name"), "name of action");
                 STORM_LOG_THROW(actionNames.count(actionName) == 0, storm::exceptions::InvalidJaniException, "Action with name " + actionName + " already exists.");
                 parentModel.addAction(storm::jani::Action(actionName));
                 actionNames.emplace(actionName);
             }
         }
 
-        storm::jani::Automaton JaniParser::parseAutomaton(json const &automatonStructure, storm::jani::Model const& parentModel, Scope const& globalScope) {
+        template <typename ValueType>
+        storm::jani::Automaton JaniParser<ValueType>::parseAutomaton(Json const &automatonStructure, storm::jani::Model const& parentModel, Scope const& globalScope) {
             STORM_LOG_THROW(automatonStructure.count("name") == 1, storm::exceptions::InvalidJaniException, "Each automaton must have a name");
-            std::string name = getString(automatonStructure.at("name"), " the name field for automaton");
+            std::string name = getString<ValueType>(automatonStructure.at("name"), " the name field for automaton");
             Scope scope = globalScope.refine(name);
             storm::jani::Automaton automaton(name, expressionManager->declareIntegerVariable("_loc_" + name));
 
@@ -1381,7 +1410,7 @@ namespace storm {
             std::unordered_map<std::string, uint64_t> locIds;
             for(auto const& locEntry : automatonStructure.at("locations")) {
                 STORM_LOG_THROW(locEntry.count("name") == 1, storm::exceptions::InvalidJaniException, "Locations for automaton '" << name << "' must have exactly one name");
-                std::string locName = getString(locEntry.at("name"), "location of automaton " + name);
+                std::string locName = getString<ValueType>(locEntry.at("name"), "location of automaton " + name);
                 STORM_LOG_THROW(locIds.count(locName) == 0, storm::exceptions::InvalidJaniException, "Location with name '" + locName + "' already exists in automaton '" + name + "'");
                 STORM_LOG_THROW(locEntry.count("invariant") == 0, storm::exceptions::InvalidJaniException, "Invariants in locations as in '" + locName + "' in automaton '" + name + "' are not supported");
                 //STORM_LOG_THROW(locEntry.count("invariant") > 0 && !supportsInvariants(parentModel.getModelType()), storm::exceptions::InvalidJaniException, "Invariants are not supported in the model type " + to_string(parentModel.getModelType()));
@@ -1400,8 +1429,8 @@ namespace storm {
                 locIds.emplace(locName, id);
             }
             STORM_LOG_THROW(automatonStructure.count("initial-locations") == 1, storm::exceptions::InvalidJaniException, "Automaton '" << name << "' does not have initial locations.");
-            for(json const& initLocStruct : automatonStructure.at("initial-locations")) {
-                automaton.addInitialLocation(getString(initLocStruct, "Initial locations for automaton '" + name + "'."));
+            for(Json const& initLocStruct : automatonStructure.at("initial-locations")) {
+                automaton.addInitialLocation(getString<ValueType>(initLocStruct, "Initial locations for automaton '" + name + "'."));
             }
             STORM_LOG_THROW(automatonStructure.count("restrict-initial") < 2, storm::exceptions::InvalidJaniException, "Automaton '" << name << "' has multiple initial value restrictions");
             storm::expressions::Expression initialValueRestriction = expressionManager->boolean(true);
@@ -1416,13 +1445,13 @@ namespace storm {
             for (auto const& edgeEntry : automatonStructure.at("edges")) {
                 // source location
                 STORM_LOG_THROW(edgeEntry.count("location") == 1, storm::exceptions::InvalidJaniException, "Each edge in automaton '" << name << "' must have a source");
-                std::string sourceLoc = getString(edgeEntry.at("location"), "source location for edge in automaton '" + name + "'");
+                std::string sourceLoc = getString<ValueType>(edgeEntry.at("location"), "source location for edge in automaton '" + name + "'");
                 STORM_LOG_THROW(locIds.count(sourceLoc) == 1, storm::exceptions::InvalidJaniException, "Source of edge has unknown location '" << sourceLoc << "' in automaton '" << name << "'.");
                 // action
                 STORM_LOG_THROW(edgeEntry.count("action") < 2, storm::exceptions::InvalidJaniException, "Edge from " << sourceLoc << " in automaton " << name << " has multiple actions");
                 std::string action = storm::jani::Model::SILENT_ACTION_NAME; // def is tau
                 if(edgeEntry.count("action") > 0) {
-                    action = getString(edgeEntry.at("action"), "action name in edge from '" + sourceLoc + "' in automaton '" + name + "'");
+                    action = getString<ValueType>(edgeEntry.at("action"), "action name in edge from '" + sourceLoc + "' in automaton '" + name + "'");
                     // TODO check if action is known
                     assert(action != "");
                 }
@@ -1460,7 +1489,7 @@ namespace storm {
                         // index
                         int64_t assignmentIndex = 0; // default.
                         if(assignmentEntry.count("index") > 0) {
-                            assignmentIndex = getSignedInt(assignmentEntry.at("index"), "assignment index in edge from '" + sourceLoc + "' in automaton '" + name + "'");
+                            assignmentIndex = getSignedInt<ValueType>(assignmentEntry.at("index"), "assignment index in edge from '" + sourceLoc + "' in automaton '" + name + "'");
                         }
                         templateEdge->getAssignments().add(storm::jani::Assignment(lValue, assignmentExpr, assignmentIndex));
                     }
@@ -1472,7 +1501,7 @@ namespace storm {
                 for(auto const& destEntry : edgeEntry.at("destinations")) {
                     // target location
                     STORM_LOG_THROW(edgeEntry.count("location") == 1, storm::exceptions::InvalidJaniException, "Each destination in edge from '" << sourceLoc << "' in automaton '" << name << "' must have a target location");
-                    std::string targetLoc = getString(destEntry.at("location"), "target location for edge from '" + sourceLoc + "' in automaton '" + name + "'");
+                    std::string targetLoc = getString<ValueType>(destEntry.at("location"), "target location for edge from '" + sourceLoc + "' in automaton '" + name + "'");
                     STORM_LOG_THROW(locIds.count(targetLoc) == 1, storm::exceptions::InvalidJaniException, "Target of edge has unknown location '" << targetLoc << "' in automaton '" << name << "'.");
                     // probability
                     storm::expressions::Expression probExpr;
@@ -1502,7 +1531,7 @@ namespace storm {
                             // index
                             int64_t assignmentIndex = 0; // default.
                             if(assignmentEntry.count("index") > 0) {
-                                assignmentIndex = getSignedInt(assignmentEntry.at("index"), "assignment index in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'");
+                                assignmentIndex = getSignedInt<ValueType>(assignmentEntry.at("index"), "assignment index in edge from '" + sourceLoc + "' to '" + targetLoc + "' in automaton '" + name + "'");
                             }
                             assignments.emplace_back(lValue, assignmentExpr, assignmentIndex);
                         }
@@ -1516,7 +1545,8 @@ namespace storm {
             return automaton;
         }
         
-        std::vector<storm::jani::SynchronizationVector> parseSyncVectors(json const& syncVectorStructure) {
+        template <typename ValueType>
+        std::vector<storm::jani::SynchronizationVector> parseSyncVectors(typename JaniParser<ValueType>::Json const& syncVectorStructure) {
             std::vector<storm::jani::SynchronizationVector> syncVectors;
             // TODO add error checks
             for (auto const& syncEntry : syncVectorStructure) {
@@ -1534,9 +1564,10 @@ namespace storm {
             return syncVectors;
         }
 
-        std::shared_ptr<storm::jani::Composition> JaniParser::parseComposition(json const &compositionStructure) {
+        template <typename ValueType>
+        std::shared_ptr<storm::jani::Composition> JaniParser<ValueType>::parseComposition(Json const &compositionStructure) {
             if(compositionStructure.count("automaton")) {
-                return std::shared_ptr<storm::jani::AutomatonComposition>(new storm::jani::AutomatonComposition(compositionStructure.at("automaton").get<std::string>()));
+                return std::shared_ptr<storm::jani::AutomatonComposition>(new storm::jani::AutomatonComposition(compositionStructure.at("automaton").template get<std::string>()));
             }
             
             STORM_LOG_THROW(compositionStructure.count("elements") == 1, storm::exceptions::InvalidJaniException, "Elements of a composition must be given, got " << compositionStructure.dump());
@@ -1564,11 +1595,14 @@ namespace storm {
             STORM_LOG_THROW(compositionStructure.count("syncs") < 2, storm::exceptions::InvalidJaniException, "Sync vectors can be given at most once");
             std::vector<storm::jani::SynchronizationVector> syncVectors;
             if (compositionStructure.count("syncs") > 0) {
-                syncVectors = parseSyncVectors(compositionStructure.at("syncs"));
+                syncVectors = parseSyncVectors<ValueType>(compositionStructure.at("syncs"));
             }
             
             return std::shared_ptr<storm::jani::Composition>(new storm::jani::ParallelComposition(compositions, syncVectors));
             
         }
+        
+        template class JaniParser<double>;
+        template class JaniParser<storm::RationalNumber>;
     }
 }

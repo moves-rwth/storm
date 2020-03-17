@@ -637,6 +637,58 @@ namespace storm {
         }
         
         template<typename ValueType>
+        std::vector<std::vector<InternalAdd<DdType::CUDD, ValueType>>> InternalAdd<DdType::CUDD, ValueType>::splitIntoGroups(std::vector<InternalAdd<DdType::CUDD, ValueType>> const& vectors, std::vector<uint_fast64_t> const& ddGroupVariableIndices) const {
+            std::vector<std::vector<InternalAdd<DdType::CUDD, ValueType>>> result;
+            std::vector<DdNode*> dds;
+            for (auto const& vector : vectors) {
+                dds.push_back(vector.getCuddDdNode());
+            }
+            dds.push_back(this->getCuddDdNode());
+            
+            splitIntoGroupsRec(dds, result, ddGroupVariableIndices, 0, ddGroupVariableIndices.size());
+            return result;
+        }
+        
+        template<typename ValueType>
+        void InternalAdd<DdType::CUDD, ValueType>::splitIntoGroupsRec(std::vector<DdNode*> const& dds, std::vector<std::vector<InternalAdd<DdType::CUDD, ValueType>>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel) const {
+            // For the empty DD, we do not need to create a group.
+            {
+                bool emptyDd = true;
+                for (auto const& dd : dds) {
+                    if (dd != Cudd_ReadZero(ddManager->getCuddManager().getManager())) {
+                        emptyDd = false;
+                        break;
+                    }
+                }
+                if (emptyDd) {
+                    return;
+                }
+            }
+            
+            if (currentLevel == maxLevel) {
+                std::vector<InternalAdd<DdType::CUDD, ValueType>> newGroup;
+                for (auto dd : dds) {
+                    newGroup.emplace_back(ddManager, cudd::ADD(ddManager->getCuddManager(), dd));
+                }
+                groups.push_back(std::move(newGroup));
+            } else {
+                std::vector<DdNode*> thenSubDds(dds), elseSubDds(dds);
+                for (uint64_t ddIndex = 0; ddIndex < dds.size(); ++ddIndex) {
+                    auto const& dd = dds[ddIndex];
+                    if (ddGroupVariableIndices[currentLevel] == Cudd_NodeReadIndex(dd)) {
+                        thenSubDds[ddIndex] = Cudd_T(dd);
+                        elseSubDds[ddIndex] = Cudd_E(dd);
+                    }
+                }
+                splitIntoGroupsRec(thenSubDds, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                splitIntoGroupsRec(elseSubDds, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+            }
+        }
+        
+        
+        
+        
+        template<typename ValueType>
         void InternalAdd<DdType::CUDD, ValueType>::toMatrixComponents(std::vector<uint_fast64_t> const& rowGroupIndices, std::vector<uint_fast64_t>& rowIndications, std::vector<storm::storage::MatrixEntry<uint_fast64_t, ValueType>>& columnsAndValues, Odd const& rowOdd, Odd const& columnOdd, std::vector<uint_fast64_t> const& ddRowVariableIndices, std::vector<uint_fast64_t> const& ddColumnVariableIndices, bool writeValues) const {
             return toMatrixComponentsRec(this->getCuddDdNode(), rowGroupIndices, rowIndications, columnsAndValues, rowOdd, columnOdd, 0, 0, ddRowVariableIndices.size() + ddColumnVariableIndices.size(), 0, 0, ddRowVariableIndices, ddColumnVariableIndices, writeValues);
         }

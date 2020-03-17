@@ -197,7 +197,6 @@ int main(const int argc, const char** argv) {
 
         typedef double VT;
 
-        auto const& coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
         auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
         auto const &general = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
         auto const &debug = storm::settings::getModule<storm::settings::modules::DebugSettings>();
@@ -213,12 +212,12 @@ int main(const int argc, const char** argv) {
             storm::utility::setLogLevel(l3pp::LogLevel::TRACE);
         }
 
-        // For several engines, no model building step is performed, but the verification is started right away.
-        storm::settings::modules::CoreSettings::Engine engine = coreSettings.getEngine();
-
-        storm::cli::SymbolicInput symbolicInput = storm::cli::parseAndPreprocessSymbolicInput();
+        auto symbolicInput = storm::cli::parseSymbolicInput();
+        storm::cli::ModelProcessingInformation mpi;
+        std::tie(symbolicInput, mpi) = storm::cli::preprocessSymbolicInput(symbolicInput);
+        
         // We should not export here if we are going to do some processing first.
-        auto model = storm::cli::buildPreprocessExportModelWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, double>(symbolicInput, engine);
+        auto model = storm::cli::buildPreprocessExportModelWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, VT>(symbolicInput, mpi);
         STORM_LOG_THROW(model && model->getType() == storm::models::ModelType::Pomdp, storm::exceptions::WrongFormatException, "Expected a POMDP.");
 
         std::shared_ptr<storm::models::sparse::Pomdp<VT>> pomdp = model->template as<storm::models::sparse::Pomdp<VT>>();

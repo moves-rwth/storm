@@ -1,3 +1,4 @@
+#include <storm/models/symbolic/MarkovAutomaton.h>
 #include "storm/modelchecker/propositional/SymbolicPropositionalModelChecker.h"
 
 #include "storm/storage/dd/Add.h"
@@ -6,6 +7,7 @@
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/Mdp.h"
+#include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/models/symbolic/StochasticTwoPlayerGame.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 
@@ -62,21 +64,25 @@ namespace storm {
         template class SymbolicPropositionalModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>>;
         template class SymbolicPropositionalModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::CUDD, double>>;
         template class SymbolicPropositionalModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::CUDD, double>>;
+        template class SymbolicPropositionalModelChecker<storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::CUDD, double>>;
         template class SymbolicPropositionalModelChecker<storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::CUDD, double>>;
         template class SymbolicPropositionalModelChecker<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>>;
         template class SymbolicPropositionalModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, double>>;
         template class SymbolicPropositionalModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, double>>;
         template class SymbolicPropositionalModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, double>>;
+        template class SymbolicPropositionalModelChecker<storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::Sylvan, double>>;
         template class SymbolicPropositionalModelChecker<storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, double>>;
         template class SymbolicPropositionalModelChecker<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
         template class SymbolicPropositionalModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
         template class SymbolicPropositionalModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
         template class SymbolicPropositionalModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
+        template class SymbolicPropositionalModelChecker<storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
         template class SymbolicPropositionalModelChecker<storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, storm::RationalNumber>>;
         template class SymbolicPropositionalModelChecker<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalFunction>>;
         template class SymbolicPropositionalModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::Sylvan, storm::RationalFunction>>;
         template class SymbolicPropositionalModelChecker<storm::models::symbolic::Ctmc<storm::dd::DdType::Sylvan, storm::RationalFunction>>;
         template class SymbolicPropositionalModelChecker<storm::models::symbolic::Mdp<storm::dd::DdType::Sylvan, storm::RationalFunction>>;
+        template class SymbolicPropositionalModelChecker<storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::Sylvan, storm::RationalFunction>>;
         template class SymbolicPropositionalModelChecker<storm::models::symbolic::StochasticTwoPlayerGame<storm::dd::DdType::Sylvan, storm::RationalFunction>>;
 
     }
