@@ -30,9 +30,11 @@ namespace storm {
                 std::map<uint64_t, ValueType> overApproxMap;
                 std::map<uint64_t, ValueType> underApproxMap;
                 std::vector<storm::pomdp::Belief<ValueType>> beliefList;
+                std::vector<storm::pomdp::Belief<ValueType>> beliefGrid;
                 std::vector<bool> beliefIsTarget;
                 bsmap_type overApproxBeliefStateMap;
                 bsmap_type underApproxBeliefStateMap;
+                uint64_t initialBeliefId;
             };
 
             template<class ValueType, typename RewardModelType = models::sparse::StandardRewardModel<ValueType>>
@@ -137,11 +139,19 @@ namespace storm {
                  * @param maxUaModelSize the maximum size of the underapproximation model to be generated
                  * @return struct containing components generated during the computation to be used in later refinement iterations
                  */
-                std::unique_ptr<RefinementComponents<ValueType>>
+                std::shared_ptr<RefinementComponents<ValueType>>
                 computeFirstRefinementStep(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
                                            std::set<uint32_t> const &targetObservations, bool min, std::vector<uint64_t> &observationResolutionVector,
                                            bool computeRewards, double explorationThreshold, boost::optional<std::map<uint64_t, ValueType>> overApproximationMap = boost::none,
                                            boost::optional<std::map<uint64_t, ValueType>> underApproximationMap = boost::none, uint64_t maxUaModelSize = 200);
+
+                std::shared_ptr<RefinementComponents<ValueType>>
+                computeRefinementStep(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
+                                      std::set<uint32_t> const &targetObservations, bool min, std::vector<uint64_t> &observationResolutionVector,
+                                      bool computeRewards, double explorationThreshold, std::shared_ptr<RefinementComponents<ValueType>> refinementComponents,
+                                      std::set<uint32_t> changedObservations,
+                                      boost::optional<std::map<uint64_t, ValueType>> overApproximationMap = boost::none,
+                                      boost::optional<std::map<uint64_t, ValueType>> underApproximationMap = boost::none, uint64_t maxUaModelSize = 200);
 
                 /**
                  * Helper method that handles the computation of reachability probabilities and rewards using the on-the-fly state space generation for a fixed grid size
