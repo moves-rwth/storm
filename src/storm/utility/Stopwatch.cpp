@@ -55,6 +55,11 @@ namespace storm {
             isStopped = true;
         }
         
+        void Stopwatch::restart() {
+            reset();
+            start();
+        }
+        
         bool Stopwatch::stopped() const {
             return isStopped;
         }
