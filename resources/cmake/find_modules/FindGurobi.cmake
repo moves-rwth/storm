@@ -18,66 +18,71 @@ else (GUROBI_INCLUDE_DIR)
 find_path(GUROBI_INCLUDE_DIR 
           NAMES gurobi_c++.h
           PATHS "$ENV{GUROBI_HOME}/include"
-                    "/Library/gurobi502/mac64/include"
-                    "/Library/gurobi602/mac64/include"
-                    "/Library/gurobi604/mac64/include"
-                    "/Library/gurobi605/mac64/include"
-                    "/Library/gurobi650/mac64/include"
-                    "/Library/gurobi651/mac64/include"
-                    "/Library/gurobi652/mac64/include"
-                    "/Library/gurobi702/mac64/include"
-                    "/Library/gurobi801/mac64/include"
-                    "/Library/gurobi810/mac64/include"
                     "/Library/gurobi900/mac64/include"
+                    "/Library/gurobi811/mac64/include"
+                    "/Library/gurobi810/mac64/include"
+                    "/Library/gurobi801/mac64/include"
+                    "/Library/gurobi702/mac64/include"
+                    "/Library/gurobi652/mac64/include"
+                    "/Library/gurobi651/mac64/include"
+                    "/Library/gurobi650/mac64/include"
+                    "/Library/gurobi605/mac64/include"
+                    "/Library/gurobi604/mac64/include"
+                    "/Library/gurobi602/mac64/include"
+                    "/Library/gurobi502/mac64/include"
                     "${GUROBI_ROOT}/include"
           )
 
 find_library( GUROBI_LIBRARY 
               NAMES gurobi
-		    gurobi45
-		    gurobi46
-        gurobi50 
-        gurobi51
-        gurobi52
-        gurobi55
-        gurobi56
-        gurobi60
-        gurobi65
-        gurobi70
-        gurobi75
-        gurobi80
-        gurobi81
         gurobi90
+        gurobi81
+        gurobi80
+        gurobi75
+        gurobi70
+        gurobi65
+        gurobi60
+        gurobi56
+        gurobi55
+        gurobi52
+        gurobi51
+        gurobi50
+        gurobi46
+        gurobi45
               PATHS "$ENV{GUROBI_HOME}/lib"
-                    "/Library/gurobi502/mac64/lib"
-                    "/Library/gurobi602/mac64/lib"
-                    "/Library/gurobi604/mac64/lib"
-                    "/Library/gurobi605/mac64/lib"
-                    "/Library/gurobi650/mac64/lib"
-                    "/Library/gurobi651/mac64/lib"
-                    "/Library/gurobi652/mac64/lib"
-                    "/Library/gurobi702/mac64/lib"
-                    "/Library/gurobi801/mac64/lib"
-                    "/Library/gurobi810/mac64/lib"
-                    "/Library/gurobi811/mac64/lib"
+
                     "/Library/gurobi900/mac64/lib"
+                    "/Library/gurobi811/mac64/lib"
+                    "/Library/gurobi810/mac64/lib"
+                    "/Library/gurobi801/mac64/lib"
+                    "/Library/gurobi702/mac64/lib"
+                    "/Library/gurobi652/mac64/lib"
+                    "/Library/gurobi651/mac64/lib"
+                    "/Library/gurobi650/mac64/lib"
+                    "/Library/gurobi605/mac64/lib"
+                    "/Library/gurobi604/mac64/lib"
+                    "/Library/gurobi602/mac64/lib"
+                    "/Library/gurobi502/mac64/lib"
                     "${GUROBI_ROOT}/lib"
               )
 
 find_library( GUROBI_CXX_LIBRARY 
               NAMES gurobi_c++
-              PATHS "$ENV{GUROBI_HOME}/lib" 
-                    "/Library/gurobi502/mac64/lib"
-                    "/Library/gurobi602/mac64/lib"
-                    "/Library/gurobi604/mac64/lib"
-                    "/Library/gurobi605/mac64/lib"
-                    "/Library/gurobi650/mac64/lib"
-                    "/Library/gurobi651/mac64/lib"
-                    "/Library/gurobi652/mac64/lib"
-                    "/Library/gurobi702/mac64/lib"
-                    "/Library/gurobi801/mac64/lib"
-                    "/Library/gurobi810/mac64/lib"
+              PATHS "$ENV{GUROBI_HOME}/lib"
+
                     "/Library/gurobi900/mac64/lib"
+                    "/Library/gurobi811/mac64/lib"
+                    "/Library/gurobi810/mac64/lib"
+                    "/Library/gurobi801/mac64/lib"
+                    "/Library/gurobi702/mac64/lib"
+                    "/Library/gurobi652/mac64/lib"
+                    "/Library/gurobi651/mac64/lib"
+                    "/Library/gurobi650/mac64/lib"
+                    "/Library/gurobi605/mac64/lib"
+                    "/Library/gurobi604/mac64/lib"
+                    "/Library/gurobi602/mac64/lib"
+                    "/Library/gurobi502/mac64/lib"
+
                     "${GUROBI_ROOT}/lib"
               )
 

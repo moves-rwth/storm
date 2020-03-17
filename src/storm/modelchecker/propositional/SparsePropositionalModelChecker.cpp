@@ -5,6 +5,7 @@
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Mdp.h"
+#include "storm/models/sparse/Pomdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
@@ -55,6 +56,7 @@ namespace storm {
         template class SparsePropositionalModelChecker<storm::models::sparse::Dtmc<double>>;
         template class SparsePropositionalModelChecker<storm::models::sparse::Ctmc<double>>;
         template class SparsePropositionalModelChecker<storm::models::sparse::Mdp<double>>;
+        template class SparsePropositionalModelChecker<storm::models::sparse::Pomdp<double>>;
         template class SparsePropositionalModelChecker<storm::models::sparse::MarkovAutomaton<double>>;
         
 #ifdef STORM_HAVE_CARL
@@ -64,6 +66,7 @@ namespace storm {
         template class SparsePropositionalModelChecker<storm::models::sparse::Dtmc<storm::RationalNumber>>;
         template class SparsePropositionalModelChecker<storm::models::sparse::Ctmc<storm::RationalNumber>>;
         template class SparsePropositionalModelChecker<storm::models::sparse::Mdp<storm::RationalNumber>>;
+        template class SparsePropositionalModelChecker<storm::models::sparse::Pomdp<storm::RationalNumber>>;
         template class SparsePropositionalModelChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
 
         template class SparsePropositionalModelChecker<storm::models::sparse::Model<storm::RationalFunction>>;
