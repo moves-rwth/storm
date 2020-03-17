@@ -308,6 +308,7 @@ namespace storm {
         
         void processOptions() {
             // Start by setting some urgent options (log levels, etc.)
+            // We cannot use the general variants used for other executables since the "GeneralSettings" module is not available in Storm-conv
             setUrgentOptions();
             
             // Branch on the type of input

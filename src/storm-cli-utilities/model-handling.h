@@ -1084,7 +1084,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType DdType, typename BuildValueType, typename VerificationValueType = BuildValueType>
-        std::shared_ptr<storm::models::ModelBase> buildPreprocessExportModelWithValueTypeAndDdlib(SymbolicInput const& input, ModelProcessingInformation const& mpi) {
+        std::shared_ptr<storm::models::ModelBase> buildPreprocessModelWithValueTypeAndDdlib(SymbolicInput const& input, ModelProcessingInformation const& mpi) {
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
             auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
             std::shared_ptr<storm::models::ModelBase> model;
@@ -1104,6 +1104,14 @@ namespace storm {
                     model = preprocessingResult.first;
                     model->printModelInformationToStream(std::cout);
                 }
+            }
+            return model;
+        }
+
+        template <storm::dd::DdType DdType, typename BuildValueType, typename VerificationValueType = BuildValueType>
+        std::shared_ptr<storm::models::ModelBase> buildPreprocessExportModelWithValueTypeAndDdlib(SymbolicInput const& input, ModelProcessingInformation const& mpi) {
+            auto model = buildPreprocessModelWithValueTypeAndDdlib<DdType, BuildValueType, VerificationValueType>(input, mpi);
+            if (model) {
                 exportModel<DdType, BuildValueType>(model, input);
             }
             return model;
