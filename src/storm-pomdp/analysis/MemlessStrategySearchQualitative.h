@@ -20,9 +20,9 @@ namespace pomdp {
                                          storm::storage::BitVector const& surelyReachSinkStates,
                                          std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory) :
                 pomdp(pomdp),
+                targetObservations(targetObservationSet),
                 targetStates(targetStates),
-                surelyReachSinkStates(surelyReachSinkStates),
-                targetObservations(targetObservationSet) {
+                surelyReachSinkStates(surelyReachSinkStates) {
             this->expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
             smtSolver = smtSolverFactory->create(*expressionManager);
 
