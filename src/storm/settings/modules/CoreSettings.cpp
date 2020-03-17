@@ -32,12 +32,15 @@ namespace storm {
             const std::string CoreSettings::intelTbbOptionName = "enable-tbb";
             const std::string CoreSettings::intelTbbOptionShortName = "tbb";
             
-            CoreSettings::CoreSettings() : ModuleSettings(moduleName), engine(CoreSettings::Engine::Sparse) {
-                std::vector<std::string> engines = {"sparse", "hybrid", "dd", "dd-to-sparse", "expl", "abs"};
+            CoreSettings::CoreSettings() : ModuleSettings(moduleName), engine(storm::utility::Engine::Sparse) {
+                std::vector<std::string> engines;
+                for (auto e : storm::utility::getEngines()) {
+                    engines.push_back(storm::utility::toString(e));
+                }
                 this->addOption(storm::settings::OptionBuilder(moduleName, engineOptionName, false, "Sets which engine is used for model building and model checking.").setShortName(engineOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the engine to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(engines)).setDefaultValueString("sparse").build()).build());
                 
-                std::vector<std::string> linearEquationSolver = {"gmm++", "native", "eigen", "elimination", "topological"};
+                std::vector<std::string> linearEquationSolver = {"gmm++", "native", "eigen", "elimination", "topological", "acyclic"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, eqSolverOptionName, false, "Sets which solver is preferred for solving systems of linear equations.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the solver to prefer.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(linearEquationSolver)).setDefaultValueString("topological").build()).build());
                 
@@ -70,6 +73,8 @@ namespace storm {
                     return storm::solver::EquationSolverType::Elimination;
                 } else if (equationSolverName == "topological") {
                     return storm::solver::EquationSolverType::Topological;
+                } else if (equationSolverName == "acyclic") {
+                    return storm::solver::EquationSolverType::Acyclic;
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown equation solver '" << equationSolverName << "'.");
             }
@@ -133,32 +138,19 @@ namespace storm {
                 return this->getOption(cudaOptionName).getHasOptionBeenSet();
             }
             
-            CoreSettings::Engine CoreSettings::getEngine() const {
+            storm::utility::Engine CoreSettings::getEngine() const {
                 return engine;
             }
 
-            void CoreSettings::setEngine(Engine newEngine) {
+            void CoreSettings::setEngine(storm::utility::Engine const& newEngine) {
                 this->engine = newEngine;
             }
             
             void CoreSettings::finalize() {
                 // Finalize engine.
                 std::string engineStr = this->getOption(engineOptionName).getArgumentByName("name").getValueAsString();
-                if (engineStr == "sparse") {
-                    engine =  CoreSettings::Engine::Sparse;
-                } else if (engineStr == "hybrid") {
-                    engine = CoreSettings::Engine::Hybrid;
-                } else if (engineStr == "dd") {
-                    engine = CoreSettings::Engine::Dd;
-                } else if (engineStr == "dd-to-sparse") {
-                    engine = CoreSettings::Engine::DdSparse;
-                } else if (engineStr == "expl") {
-                    engine = CoreSettings::Engine::Exploration;
-                } else if (engineStr == "abs") {
-                    engine = CoreSettings::Engine::AbstractionRefinement;
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Unknown engine '" << engineStr << "'.");
-                }
+                engine = storm::utility::engineFromString(engineStr);
+                STORM_LOG_THROW(engine != storm::utility::Engine::Unknown, storm::exceptions::IllegalArgumentValueException, "Unknown engine '" << engineStr << "'.");
             }
 
             bool CoreSettings::check() const {

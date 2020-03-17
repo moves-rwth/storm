@@ -3,6 +3,7 @@
 #include "storm/storage/dd/DdManager.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
+#include "storm/storage/sparse/ModelComponents.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/macros.h"
@@ -83,7 +84,28 @@ namespace storm {
         template<storm::dd::DdType Type, typename ValueType>
         std::shared_ptr<storm::models::sparse::Mdp<ValueType>> SymbolicMdpToSparseMdpTransformer<Type, ValueType>::translate(storm::models::symbolic::Mdp<Type, ValueType> const& symbolicMdp, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
             storm::dd::Odd odd = symbolicMdp.getReachableStates().createOdd();
-            storm::storage::SparseMatrix<ValueType> transitionMatrix = symbolicMdp.getTransitionMatrix().toMatrix(symbolicMdp.getNondeterminismVariables(), odd, odd);
+            
+            // Collect action reward vectors that need translation
+            std::vector<storm::dd::Add<Type, ValueType>> symbolicActionRewardVectors;
+            std::map<std::string, uint64_t> rewardNameToActionRewardIndexMap;
+            for (auto const& rewardModelNameAndModel : symbolicMdp.getRewardModels()) {
+                if (rewardModelNameAndModel.second.hasStateActionRewards()) {
+                    rewardNameToActionRewardIndexMap.emplace(rewardModelNameAndModel.first, symbolicActionRewardVectors.size());
+                    symbolicActionRewardVectors.push_back(rewardModelNameAndModel.second.getStateActionRewardVector());
+                }
+            }
+            // Build transition matrix and (potentially) actionRewardVectors.
+            storm::storage::SparseMatrix<ValueType> transitionMatrix;
+            std::vector<std::vector<ValueType>> actionRewardVectors;
+            if (symbolicActionRewardVectors.empty()) {
+                transitionMatrix = symbolicMdp.getTransitionMatrix().toMatrix(symbolicMdp.getNondeterminismVariables(), odd, odd);
+            } else {
+                auto matrRewards = symbolicMdp.getTransitionMatrix().toMatrixVectors(symbolicActionRewardVectors, symbolicMdp.getNondeterminismVariables(), odd, odd);
+                transitionMatrix = std::move(matrRewards.first);
+                actionRewardVectors = std::move(matrRewards.second);
+            }
+            
+            // Translate reward models
             std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> rewardModels;
             for (auto const& rewardModelNameAndModel : symbolicMdp.getRewardModels()) {
                 boost::optional<std::vector<ValueType>> stateRewards;
@@ -92,12 +114,14 @@ namespace storm {
                 if (rewardModelNameAndModel.second.hasStateRewards()) {
                     stateRewards = rewardModelNameAndModel.second.getStateRewardVector().toVector(odd);
                 }
-                // Note: .getStateActionRewardVector().toVector(odd); does not work as it needs to have information regarding the nondeterminism
-                // One could use transitionMatrix().toMatrixVector instead.
-                STORM_LOG_THROW(!rewardModelNameAndModel.second.hasStateActionRewards(), storm::exceptions::NotImplementedException, "Translation of symbolic to explicit state-action rewards is not yet supported.");
+                auto actRewIndexIt = rewardNameToActionRewardIndexMap.find(rewardModelNameAndModel.first);
+                if (actRewIndexIt != rewardNameToActionRewardIndexMap.end()) {
+                    stateActionRewards = std::move(actionRewardVectors[actRewIndexIt->second]);
+                }
                 STORM_LOG_THROW(!rewardModelNameAndModel.second.hasTransitionRewards(), storm::exceptions::NotImplementedException, "Translation of symbolic to explicit transition rewards is not yet supported.");
-                rewardModels.emplace(rewardModelNameAndModel.first,storm::models::sparse::StandardRewardModel<ValueType>(stateRewards, stateActionRewards, transitionRewards));
+                rewardModels.emplace(rewardModelNameAndModel.first, storm::models::sparse::StandardRewardModel<ValueType>(stateRewards, stateActionRewards, transitionRewards));
             }
+
             storm::models::sparse::StateLabeling labelling(transitionMatrix.getRowGroupCount());
 
             labelling.addLabel("init", symbolicMdp.getInitialStates().toVector(odd));
@@ -159,6 +183,72 @@ namespace storm {
             
             return std::make_shared<storm::models::sparse::Ctmc<ValueType>>(transitionMatrix, labelling, rewardModels);
         }
+        
+        
+        template<storm::dd::DdType Type, typename ValueType>
+        std::shared_ptr<storm::models::sparse::MarkovAutomaton<ValueType>> SymbolicMaToSparseMaTransformer<Type, ValueType>::translate(storm::models::symbolic::MarkovAutomaton<Type, ValueType> const& symbolicMa, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) {
+            storm::dd::Odd odd = symbolicMa.getReachableStates().createOdd();
+            // Collect action reward vectors that need translation
+            std::vector<storm::dd::Add<Type, ValueType>> symbolicActionRewardVectors;
+            std::map<std::string, uint64_t> rewardNameToActionRewardIndexMap;
+            for (auto const& rewardModelNameAndModel : symbolicMa.getRewardModels()) {
+                if (rewardModelNameAndModel.second.hasStateActionRewards()) {
+                    rewardNameToActionRewardIndexMap.emplace(rewardModelNameAndModel.first, symbolicActionRewardVectors.size());
+                    symbolicActionRewardVectors.push_back(rewardModelNameAndModel.second.getStateActionRewardVector());
+                }
+            }
+            // Build transition matrix and (potentially) actionRewardVectors.
+            storm::storage::SparseMatrix<ValueType> transitionMatrix;
+            std::vector<std::vector<ValueType>> actionRewardVectors;
+            if (symbolicActionRewardVectors.empty()) {
+                transitionMatrix = symbolicMa.getTransitionMatrix().toMatrix(symbolicMa.getNondeterminismVariables(), odd, odd);
+            } else {
+                auto matrRewards = symbolicMa.getTransitionMatrix().toMatrixVectors(symbolicActionRewardVectors, symbolicMa.getNondeterminismVariables(), odd, odd);
+                transitionMatrix = std::move(matrRewards.first);
+                actionRewardVectors = std::move(matrRewards.second);
+            }
+            
+            // Translate reward models
+            std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> rewardModels;
+            for (auto const& rewardModelNameAndModel : symbolicMa.getRewardModels()) {
+                boost::optional<std::vector<ValueType>> stateRewards;
+                boost::optional<std::vector<ValueType>> stateActionRewards;
+                boost::optional<storm::storage::SparseMatrix<ValueType>> transitionRewards;
+                if (rewardModelNameAndModel.second.hasStateRewards()) {
+                    stateRewards = rewardModelNameAndModel.second.getStateRewardVector().toVector(odd);
+                }
+                auto actRewIndexIt = rewardNameToActionRewardIndexMap.find(rewardModelNameAndModel.first);
+                if (actRewIndexIt != rewardNameToActionRewardIndexMap.end()) {
+                    stateActionRewards = std::move(actionRewardVectors[actRewIndexIt->second]);
+                }
+                STORM_LOG_THROW(!rewardModelNameAndModel.second.hasTransitionRewards(), storm::exceptions::NotImplementedException, "Translation of symbolic to explicit transition rewards is not yet supported.");
+                rewardModels.emplace(rewardModelNameAndModel.first, storm::models::sparse::StandardRewardModel<ValueType>(stateRewards, stateActionRewards, transitionRewards));
+            }
+
+            storm::models::sparse::StateLabeling labelling(transitionMatrix.getRowGroupCount());
+
+            labelling.addLabel("init", symbolicMa.getInitialStates().toVector(odd));
+            labelling.addLabel("deadlock", symbolicMa.getDeadlockStates().toVector(odd));
+            if (formulas.empty()) {
+                for (auto const& label : symbolicMa.getLabels()) {
+                    labelling.addLabel(label, symbolicMa.getStates(label).toVector(odd));
+                }
+            } else {
+                LabelInformation labelInfo(formulas);
+                for (auto const& label : labelInfo.atomicLabels) {
+                    labelling.addLabel(label, symbolicMa.getStates(label).toVector(odd));
+                }
+                for (auto const& expressionLabel : labelInfo.expressionLabels) {
+                    labelling.addLabel(expressionLabel.first, symbolicMa.getStates(expressionLabel.second).toVector(odd));
+                }
+            }
+            storm::storage::BitVector markovianStates = symbolicMa.getMarkovianStates().toVector(odd);
+            storm::storage::sparse::ModelComponents<ValueType> components(std::move(transitionMatrix), std::move(labelling), std::move(rewardModels), false, std::move(markovianStates));
+            components.exitRates = symbolicMa.getExitRateVector().toVector(odd);
+            
+            return std::make_shared<storm::models::sparse::MarkovAutomaton<ValueType>>(std::move(components));
+        }
+        
 
         template class SymbolicDtmcToSparseDtmcTransformer<storm::dd::DdType::CUDD, double>;
         template class SymbolicDtmcToSparseDtmcTransformer<storm::dd::DdType::Sylvan, double>;
@@ -174,6 +264,11 @@ namespace storm {
         template class SymbolicCtmcToSparseCtmcTransformer<storm::dd::DdType::Sylvan, double>;
         template class SymbolicCtmcToSparseCtmcTransformer<storm::dd::DdType::Sylvan, storm::RationalNumber>;
         template class SymbolicCtmcToSparseCtmcTransformer<storm::dd::DdType::Sylvan, storm::RationalFunction>;
+
+        template class SymbolicMaToSparseMaTransformer<storm::dd::DdType::CUDD, double>;
+        template class SymbolicMaToSparseMaTransformer<storm::dd::DdType::Sylvan, double>;
+        template class SymbolicMaToSparseMaTransformer<storm::dd::DdType::Sylvan, storm::RationalNumber>;
+        template class SymbolicMaToSparseMaTransformer<storm::dd::DdType::Sylvan, storm::RationalFunction>;
 
     }
 }

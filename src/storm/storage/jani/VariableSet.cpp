@@ -1,5 +1,6 @@
 #include "storm/storage/jani/VariableSet.h"
 
+#include "storm/storage/expressions/Expressions.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -76,7 +77,8 @@ namespace storm {
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Cannot add variable of unknown type.");
         }
-        
+
+
         BooleanVariable const& VariableSet::addVariable(BooleanVariable const& variable) {
             STORM_LOG_THROW(!this->hasVariable(variable.getName()), storm::exceptions::WrongFormatException, "Cannot add variable with name '" << variable.getName() << "', because a variable with that name already exists.");
             std::shared_ptr<BooleanVariable> newVariable = std::make_shared<BooleanVariable>(variable);
@@ -321,7 +323,16 @@ namespace storm {
         bool VariableSet::empty() const {
             return !(containsBooleanVariable() || containsBoundedIntegerVariable() || containsUnboundedIntegerVariables() || containsRealVariables() || containsArrayVariables() || containsClockVariables());
         }
-        
+
+        uint64_t VariableSet::getNumberOfVariables() const {
+            return variables.size();
+        }
+
+
+        uint64_t VariableSet::getNumberOfNontransientVariables() const {
+            return getNumberOfVariables() - getNumberOfTransientVariables();
+        }
+
         uint_fast64_t VariableSet::getNumberOfTransientVariables() const {
             uint_fast64_t result = 0;
             for (auto const& variable : variables) {
@@ -427,6 +438,16 @@ namespace storm {
         void VariableSet::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
             for (auto& variable : variables) {
                 variable->substitute(substitution);
+            }
+        }
+        
+        void VariableSet::substituteExpressionVariables(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) {
+            for (auto& variable : variables) {
+                auto varIt = substitution.find(variable->getExpressionVariable());
+                if (varIt != substitution.end()) {
+                    STORM_LOG_ASSERT(varIt->second.isVariable(), "Expected that variables are only substituted by other variables. However, we substitute " << varIt->first.getName() << " by " << varIt->second << ".");
+                    variable->setExpressionVariable(varIt->second.getBaseExpression().asVariableExpression().getVariable());
+                }
             }
         }
     }

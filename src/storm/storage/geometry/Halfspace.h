@@ -5,6 +5,8 @@
 #include <iomanip>
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
+#include "storm/storage/expressions/Expressions.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 namespace storm {
     namespace storage {
@@ -96,6 +98,16 @@ namespace storm {
                         stream << offset();
                     }
                     return stream.str();
+                }
+                
+                storm::expressions::Expression toExpression(storm::expressions::ExpressionManager const& manager, std::vector<storm::expressions::Variable> const& variables) {
+                    STORM_LOG_ASSERT(variables.size() == normalVector().size(), "Dimension missmatch.");
+                    STORM_LOG_ASSERT(normalVector().size() != 0, "Invalid dimension.");
+                    storm::expressions::Expression lhs = manager.rational(normalVector()[0]) * variables[0].getExpression();
+                    for (uint64_t dim = 1; dim < normalVector().size(); ++dim) {
+                        lhs = lhs + manager.rational(normalVector()[dim]) * variables[dim].getExpression();
+                    }
+                    return lhs <= manager.rational(offset());
                 }
                 
                 std::vector<ValueType> const& normalVector() const {

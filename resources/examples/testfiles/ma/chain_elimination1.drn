@@ -1,0 +1,155 @@
+// Exported by storm
+// Original model type: Markov Automaton
+@type: Markov Automaton
+@parameters
+
+@reward_models
+
+@nr_states
+43
+@model
+state 0 !0 init
+	action 0
+		1 : 1
+state 1 !0.0003
+	action 0
+		2 : 0.3333333333
+		3 : 0.3333333333
+		4 : 0.3333333333
+state 2 !0
+	action 0
+		5 : 1
+state 3 !0
+	action 0
+		6 : 1
+state 4 !0
+	action 0
+		7 : 1
+state 5 !0
+	action 0
+		8 : 1
+state 6 !0
+	action 0
+		9 : 1
+state 7 !0
+	action 0
+		10 : 1
+state 8 !0
+	action 0
+		12 : 1
+state 9 !0
+	action 0
+		14 : 1
+state 10 !0.1002 Fail
+	action 0
+		11 : 0.000998003992
+		13 : 0.000998003992
+		15 : 0.998003992
+state 11 !0 Fail
+	action 0
+		18 : 1
+state 12 !0.1002 Fail
+	action 0
+		16 : 0.000998003992
+		19 : 0.000998003992
+		20 : 0.998003992
+state 13 !0 Fail
+	action 0
+		21 : 1
+state 14 !0.1002 Fail
+	action 0
+		17 : 0.000998003992
+		22 : 0.000998003992
+		23 : 0.998003992
+state 15 !0 Fail
+	action 0
+		24 : 1
+state 16 !0 Fail
+	action 0
+		25 : 1
+state 17 !0 Fail
+	action 0
+		25 : 1
+state 18 !0 Fail
+	action 0
+		26 : 1
+state 19 !0 Fail
+	action 0
+		26 : 1
+state 20 !0 Fail
+	action 0
+		27 : 1
+state 21 !0 Fail
+	action 0
+		28 : 1
+state 22 !0 Fail
+	action 0
+		28 : 1
+state 23 !0 Fail
+	action 0
+		27 : 1
+state 24 !0 Fail
+	action 0
+		1 : 1
+state 25 !0.2001 Fail
+	action 0
+		31 : 0.0004997501249
+		32 : 0.4997501249
+		33 : 0.4997501249
+state 26 !0.2001 Fail
+	action 0
+		29 : 0.0004997501249
+		34 : 0.4997501249
+		35 : 0.4997501249
+state 27 !0 Fail
+	action 0
+		24 : 1
+state 28 !0.2001 Fail
+	action 0
+		30 : 0.0004997501249
+		36 : 0.4997501249
+		37 : 0.4997501249
+state 29 !0 Fail
+	action 0
+		38 : 1
+state 30 !0 Fail
+	action 0
+		38 : 1
+state 31 !0 Fail
+	action 0
+		38 : 1
+state 32 !0 Fail
+	action 0
+		14 : 1
+state 33 !0 Fail
+	action 0
+		12 : 1
+state 34 !0 Fail
+	action 0
+		12 : 1
+state 35 !0 Fail
+	action 0
+		39 : 1
+state 36 !0 Fail
+	action 0
+		14 : 1
+state 37 !0 Fail
+	action 0
+		39 : 1
+state 38 !0.3 Fail
+	action 0
+		40 : 0.3333333333
+		41 : 0.3333333333
+		42 : 0.3333333333
+state 39 !0 Fail
+	action 0
+		10 : 1
+state 40 !0 Fail
+	action 0
+		25 : 1
+state 41 !0 Fail
+	action 0
+		28 : 1
+state 42 !0 Fail
+	action 0
+		26 : 1

@@ -9,6 +9,7 @@
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
+#include "storm/utility/SignalHandler.h"
 
 namespace storm {
     namespace solver {
@@ -77,6 +78,7 @@ namespace storm {
                 }
                 storm::storage::BitVector sccRowGroupsAsBitVector(x.size(), false);
                 storm::storage::BitVector sccRowsAsBitVector(b.size(), false);
+                uint64_t sccIndex = 0;
                 for (auto const& scc : *this->sortedSccDecomposition) {
                     if (scc.size() == 1) {
                         returnValue = solveTrivialScc(*scc.begin(), dir, x, b) && returnValue;
@@ -91,6 +93,11 @@ namespace storm {
                             }
                         }
                         returnValue = solveScc(sccSolverEnvironment, dir, sccRowGroupsAsBitVector, sccRowsAsBitVector, x, b) && returnValue;
+                    }
+                    ++sccIndex;
+                    if (storm::utility::resources::isTerminate()) {
+                        STORM_LOG_WARN("Topological solver aborted after analyzing " << sccIndex << "/" << this->sortedSccDecomposition->size() << " SCCs.");
+                        break;
                     }
                 }
                 

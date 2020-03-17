@@ -9,13 +9,14 @@
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/utility/constants.h"
 
 namespace storm {
     namespace storage {
         
-        modernjson::json readQvbsJsonFile(std::string const& filePath) {
+        storm::json<storm::RationalNumber> readQvbsJsonFile(std::string const& filePath) {
             STORM_LOG_THROW(storm::utility::fileExistsAndIsReadable(filePath), storm::exceptions::WrongFormatException, "QVBS json file " << filePath << " was not found.");
-            modernjson::json result;
+            storm::json<storm::RationalNumber> result;
             std::ifstream file;
             storm::utility::openFile(filePath, file);
             result << file;
@@ -23,11 +24,11 @@ namespace storm {
             return result;
         }
         
-        std::string getString(modernjson::json const& structure, std::string const& errorInfo = "") {
+        std::string getString(storm::json<storm::RationalNumber> const& structure, std::string const& errorInfo = "") {
             if (structure.is_number_integer()) {
                 return std::to_string(structure.get<int64_t>());
             } else if (structure.is_number_float()) {
-                return std::to_string(structure.get<double>());
+                return storm::utility::to_string(structure.get<storm::RationalNumber>());
             } else if (structure.is_string()) {
                 return structure.get<std::string>();
             } else if (structure.is_boolean()) {

@@ -16,12 +16,6 @@ namespace storm {
                  * Creates a new set of core settings.
                  */
                 BuildSettings();
-                /*!
-                 * Retrieves whether the option to use the JIT builder is set.
-                 *
-                 * @return True iff the JIT builder is to be used.
-                 */
-                bool isJitSet() const;
 
                 /*!
                  * Retrieves whether the model exploration order was set.
@@ -78,12 +72,21 @@ namespace storm {
                  * @return true iff the full model should be build.
                  */
                 bool isBuildFullModelSet() const;
-
+                
+                /*!
+                 * Retrieves whether the maximum progress assumption is to be applied when building the model
+                 */
+                bool isApplyNoMaximumProgressAssumptionSet() const;
+                
                 /*!
                  * Retrieves whether the choice labels should be build
-                 * @return
                  */
                 bool isBuildChoiceLabelsSet() const;
+                
+                /*!
+                 * Retrieves whether the choice origins should be build
+                 */
+                bool isBuildChoiceOriginsSet() const;
 
                 /*!
                  * Retrieves whether the choice labels should be build

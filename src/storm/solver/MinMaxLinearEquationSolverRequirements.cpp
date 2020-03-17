@@ -10,6 +10,11 @@ namespace storm {
             // Intentionally left empty.
         }
         
+        MinMaxLinearEquationSolverRequirements& MinMaxLinearEquationSolverRequirements::requireAcyclic(bool critical) {
+            acyclicRequirement.enable(critical);
+            return *this;
+        }
+        
         MinMaxLinearEquationSolverRequirements& MinMaxLinearEquationSolverRequirements::requireUniqueSolution(bool critical) {
             uniqueSolutionRequirement.enable(critical);
             return *this;
@@ -36,6 +41,10 @@ namespace storm {
             return *this;
         }
         
+        SolverRequirement const&  MinMaxLinearEquationSolverRequirements::acyclic() const {
+            return acyclicRequirement;
+        }
+        
         SolverRequirement const&  MinMaxLinearEquationSolverRequirements::uniqueSolution() const {
             return uniqueSolutionRequirement;
         }
@@ -54,12 +63,17 @@ namespace storm {
         
         SolverRequirement const&  MinMaxLinearEquationSolverRequirements::get(Element const& element) const {
             switch (element) {
+                case Element::Acyclic: return acyclic(); break;
                 case Element::UniqueSolution: return uniqueSolution(); break;
                 case Element::ValidInitialScheduler: return validInitialScheduler(); break;
                 case Element::LowerBounds: return lowerBounds(); break;
                 case Element::UpperBounds: return upperBounds(); break;
             }
             STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unknown ElementType");
+        }
+        
+        void MinMaxLinearEquationSolverRequirements::clearAcyclic() {
+            acyclicRequirement.clear();
         }
         
         void MinMaxLinearEquationSolverRequirements::clearUniqueSolution() {
@@ -84,16 +98,23 @@ namespace storm {
         }
         
         bool MinMaxLinearEquationSolverRequirements::hasEnabledRequirement() const {
-            return uniqueSolutionRequirement || validInitialSchedulerRequirement || lowerBoundsRequirement || upperBoundsRequirement;
+            return acyclicRequirement || uniqueSolutionRequirement || validInitialSchedulerRequirement || lowerBoundsRequirement || upperBoundsRequirement;
         }
         
         bool MinMaxLinearEquationSolverRequirements::hasEnabledCriticalRequirement() const {
-            return uniqueSolutionRequirement.isCritical() || validInitialSchedulerRequirement.isCritical() || lowerBoundsRequirement.isCritical() || upperBoundsRequirement.isCritical();
+            return acyclicRequirement.isCritical() || uniqueSolutionRequirement.isCritical() || validInitialSchedulerRequirement.isCritical() || lowerBoundsRequirement.isCritical() || upperBoundsRequirement.isCritical();
         }
         
         std::string MinMaxLinearEquationSolverRequirements::getEnabledRequirementsAsString() const {
             std::string res = "[";
             bool first = true;
+            if (acyclic()) {
+                if (!first) { res += ", "; } else {first = false;}
+                res += "Acyclic";
+                if (acyclic().isCritical()) {
+                    res += "(mandatory)";
+                }
+            }
             if (uniqueSolution()) {
                 if (!first) { res += ", "; } else {first = false;}
                 res += "UniqueSolution";

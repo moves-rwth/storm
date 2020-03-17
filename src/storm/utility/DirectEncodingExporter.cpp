@@ -63,6 +63,7 @@ namespace storm {
             }
             os << std::endl;
             os << "@nr_states" << std::endl << sparseModel->getNumberOfStates() << std::endl;
+            os << "@nr_choices" << std::endl << sparseModel->getNumberOfChoices() << std::endl;
             os << "@model" << std::endl;
 
             storm::storage::SparseMatrix<ValueType> const& matrix = sparseModel->getTransitionMatrix();
@@ -125,6 +126,9 @@ namespace storm {
                     if (sparseModel->hasChoiceLabeling()) {
                         os << "\taction ";
                         bool lfirst = true;
+                        if (sparseModel->getChoiceLabeling().getLabelsOfChoice(row).empty()) {
+                            os << "__NOLABEL__";
+                        }
                         for (auto const& label : sparseModel->getChoiceLabeling().getLabelsOfChoice(row)) {
                             if (!lfirst) {
                                 os << "_";

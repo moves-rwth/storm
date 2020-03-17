@@ -83,6 +83,12 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
+        bool PrismNextStateGenerator<ValueType, StateType>::canHandle(storm::prism::Program const& program) {
+            // We can handle all valid prism programs (except for PTAs)
+            return program.getModelType() != storm::prism::Program::ModelType::PTA;
+        }
+        
+        template<typename ValueType, typename StateType>
         void PrismNextStateGenerator<ValueType, StateType>::checkValid() const {
             // If the program still contains undefined constants and we are not in a parametric setting, assemble an appropriate error message.
 #ifdef STORM_HAVE_CARL
@@ -282,22 +288,18 @@ namespace storm {
             result.setExpanded();
             
             std::vector<Choice<ValueType>> allChoices;
-            std::vector<Choice<ValueType>> allLabeledChoices;
             if (this->getOptions().isApplyMaximalProgressAssumptionSet()) {
                 // First explore only edges without a rate
                 allChoices = getUnlabeledChoices(*this->state, stateToIdCallback, CommandFilter::Probabilistic);
-                allLabeledChoices = getLabeledChoices(*this->state, stateToIdCallback, CommandFilter::Probabilistic);
-                if (allChoices.empty() && allLabeledChoices.empty()) {
+                addLabeledChoices(allChoices, *this->state, stateToIdCallback, CommandFilter::Probabilistic);
+                if (allChoices.empty()) {
                     // Expand the Markovian edges if there are no probabilistic ones.
                     allChoices = getUnlabeledChoices(*this->state, stateToIdCallback, CommandFilter::Markovian);
-                    allLabeledChoices = getLabeledChoices(*this->state, stateToIdCallback, CommandFilter::Markovian);
+                    addLabeledChoices(allChoices, *this->state, stateToIdCallback, CommandFilter::Markovian);
                 }
             } else {
                 allChoices = getUnlabeledChoices(*this->state, stateToIdCallback);
-                allLabeledChoices = getLabeledChoices(*this->state, stateToIdCallback);
-            }
-            for (auto& choice : allLabeledChoices) {
-                    allChoices.push_back(std::move(choice));
+                addLabeledChoices(allChoices, *this->state, stateToIdCallback);
             }
             
             std::size_t totalNumberOfChoices = allChoices.size();
@@ -422,11 +424,25 @@ namespace storm {
             return newState;
         }
         
+        struct ActiveCommandData {
+            ActiveCommandData(storm::prism::Module const* modulePtr, std::set<uint_fast64_t> const* commandIndicesPtr, typename std::set<uint_fast64_t>::const_iterator currentCommandIndexIt) : modulePtr(modulePtr), commandIndicesPtr(commandIndicesPtr), currentCommandIndexIt(currentCommandIndexIt) {
+                // Intentionally left empty
+            }
+            storm::prism::Module const* modulePtr;
+            std::set<uint_fast64_t> const* commandIndicesPtr;
+            typename std::set<uint_fast64_t>::const_iterator currentCommandIndexIt;
+        };
+        
         template<typename ValueType, typename StateType>
         boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> PrismNextStateGenerator<ValueType, StateType>::getActiveCommandsByActionIndex(uint_fast64_t const& actionIndex, CommandFilter const& commandFilter) {
-            boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> result((std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>()));
-                        
+            
+            // First check whether there is at least one enabled command at each module
+            // This avoids evaluating unnecessarily many guards.
+            // If we find one module without an enabled command, we return boost::none.
+            // At the same time, we store pointers to the relevant modules, the relevant command sets and the first enabled command within each set.
+            
             // Iterate over all modules.
+            std::vector<ActiveCommandData> activeCommands;
             for (uint_fast64_t i = 0; i < program.getNumberOfModules(); ++i) {
                 storm::prism::Module const& module = program.getModule(i);
                 
@@ -440,14 +456,47 @@ namespace storm {
                 // If the module contains the action, but there is no command in the module that is labeled with
                 // this action, we don't have any feasible command combinations.
                 if (commandIndices.empty()) {
-                    return boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>>();
+                    return boost::none;
                 }
                 
+                // Look up commands by their indices and check if the guard evaluates to true in the given state.
+                bool hasOneEnabledCommand = false;
+                for (auto commandIndexIt = commandIndices.begin(), commandIndexIte = commandIndices.end(); commandIndexIt != commandIndexIte; ++commandIndexIt) {
+                    storm::prism::Command const& command = module.getCommand(*commandIndexIt);
+                    if (commandFilter != CommandFilter::All) {
+                        STORM_LOG_ASSERT(commandFilter == CommandFilter::Markovian || commandFilter == CommandFilter::Probabilistic, "Unexpected command filter.");
+                        if ((commandFilter == CommandFilter::Markovian) != command.isMarkovian()) {
+                            continue;
+                        }
+                    }
+                    if (this->evaluator->asBool(command.getGuardExpression())) {
+                        // Found the first enabled command for this module.
+                        hasOneEnabledCommand = true;
+                        activeCommands.emplace_back(&module, &commandIndices, commandIndexIt);
+                        break;
+                    }
+                }
+                
+                if (!hasOneEnabledCommand) {
+                    return boost::none;
+                }
+            }
+            
+            // If we reach this point, there has to be at least one active command for each relevant module.
+            std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>> result;
+
+            // Iterate over all command sets.
+            for (auto const& activeCommand : activeCommands) {
                 std::vector<std::reference_wrapper<storm::prism::Command const>> commands;
                 
+                auto commandIndexIt = activeCommand.currentCommandIndexIt;
+                // The command at the current position is already known to be enabled
+                commands.push_back(activeCommand.modulePtr->getCommand(*commandIndexIt));
+                
                 // Look up commands by their indices and add them if the guard evaluates to true in the given state.
-                for (uint_fast64_t commandIndex : commandIndices) {
-                    storm::prism::Command const& command = module.getCommand(commandIndex);
+                auto commandIndexIte = activeCommand.commandIndicesPtr->end();
+                for (++commandIndexIt; commandIndexIt != commandIndexIte; ++commandIndexIt) {
+                    storm::prism::Command const& command = activeCommand.modulePtr->getCommand(*commandIndexIt);
                     if (commandFilter != CommandFilter::All) {
                         STORM_LOG_ASSERT(commandFilter == CommandFilter::Markovian || commandFilter == CommandFilter::Probabilistic, "Unexpected command filter.");
                         if ((commandFilter == CommandFilter::Markovian) != command.isMarkovian()) {
@@ -459,16 +508,10 @@ namespace storm {
                     }
                 }
                 
-                // If there was no enabled command although the module has some command with the required action label,
-                // we must not return anything.
-                if (commands.size() == 0) {
-                    return boost::none;
-                }
-                
-                result.get().push_back(std::move(commands));
+                result.push_back(std::move(commands));
             }
             
-            STORM_LOG_ASSERT(!result->empty(), "Expected non-empty list.");
+            STORM_LOG_ASSERT(!result.empty(), "Expected non-empty list.");
             return result;
         }
         
@@ -570,8 +613,7 @@ namespace storm {
         }
             
         template<typename ValueType, typename StateType>
-        std::vector<Choice<ValueType>> PrismNextStateGenerator<ValueType, StateType>::getLabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter) {
-            std::vector<Choice<ValueType>> result;
+        void PrismNextStateGenerator<ValueType, StateType>::addLabeledChoices(std::vector<Choice<ValueType>>& choices, CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter) {
 
             for (uint_fast64_t actionIndex : program.getSynchronizingActionIndices()) {
                 boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> optionalActiveCommandLists = getActiveCommandsByActionIndex(actionIndex, commandFilter);
@@ -598,10 +640,10 @@ namespace storm {
                         // At this point, we applied all commands of the current command combination and newTargetStates
                         // contains all target states and their respective probabilities. That means we are now ready to
                         // add the choice to the list of transitions.
-                        result.push_back(Choice<ValueType>(actionIndex));
+                        choices.push_back(Choice<ValueType>(actionIndex));
 
                         // Now create the actual distribution.
-                        Choice<ValueType>& choice = result.back();
+                        Choice<ValueType>& choice = choices.back();
 
                         // Remember the choice label and origins only if we were asked to.
                         if (this->options.isBuildChoiceLabelsSet()) {
@@ -617,6 +659,7 @@ namespace storm {
 
                         // Add the probabilities/rates to the newly created choice.
                         ValueType probabilitySum = storm::utility::zero<ValueType>();
+                        choice.reserve(std::distance(distribution.begin(), distribution.end()));
                         for (auto const& stateProbability : distribution) {
                             choice.addProbability(stateProbability.getState(), stateProbability.getValue());
                             if (this->options.isExplorationChecksSet()) {
@@ -658,8 +701,6 @@ namespace storm {
                     }
                 }
             }
-
-            return result;
         }
         
         template<typename ValueType, typename StateType>
@@ -682,7 +723,20 @@ namespace storm {
             
             return NextStateGenerator<ValueType, StateType>::label(stateStorage, initialStateIndices, deadlockStateIndices, labels);
         }
-        
+
+        template<typename ValueType, typename StateType>
+        storm::storage::BitVector PrismNextStateGenerator<ValueType, StateType>::evaluateObservationLabels(CompressedState const& state) const {
+            // TODO consider to avoid reloading by computing these bitvectors in an earlier build stage
+            unpackStateIntoEvaluator(state, this->variableInformation, *this->evaluator);
+
+            storm::storage::BitVector result(program.getNumberOfObservationLabels() * 64);
+            for (uint64_t i = 0; i < program.getNumberOfObservationLabels(); ++i) {
+                result.setFromInt(64*i,64,this->evaluator->asInt(program.getObservationLabels()[i].getStatePredicateExpression()));
+            }
+            return result;
+        };
+
+
         template<typename ValueType, typename StateType>
         std::size_t PrismNextStateGenerator<ValueType, StateType>::getNumberOfRewardModels() const {
             return rewardModels.size();

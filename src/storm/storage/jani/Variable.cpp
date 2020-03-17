@@ -26,6 +26,10 @@ namespace storm {
         storm::expressions::Variable const& Variable::getExpressionVariable() const {
             return variable;
         }
+        
+        void Variable::setExpressionVariable(storm::expressions::Variable const& newVariable) {
+            variable = newVariable;
+        }
 
         std::string const& Variable::getName() const {
             return name;

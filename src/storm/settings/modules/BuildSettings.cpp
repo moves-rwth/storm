@@ -18,7 +18,6 @@ namespace storm {
 
             const std::string BuildSettings::moduleName = "build";
 
-            const std::string jitOptionName = "jit";
             const std::string explorationOrderOptionName = "explorder";
             const std::string explorationOrderOptionShortName = "eo";
             const std::string explorationChecksOptionName = "explchecks";
@@ -29,7 +28,9 @@ namespace storm {
             const std::string dontFixDeadlockOptionShortName = "ndl";
             const std::string noBuildOptionName = "nobuild";
             const std::string fullModelBuildOptionName = "buildfull";
+            const std::string applyNoMaxProgAssumptionOptionName = "nomaxprog";
             const std::string buildChoiceLabelOptionName = "buildchoicelab";
+            const std::string buildChoiceOriginsOptionName = "buildchoiceorig";
             const std::string buildStateValuationsOptionName = "buildstateval";
             const std::string buildOutOfBoundsStateOptionName = "buildoutofboundsstate";
             const std::string bitsForUnboundedVariablesOptionName = "int-bits";
@@ -38,9 +39,10 @@ namespace storm {
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, prismCompatibilityOptionName, false, "Enables PRISM compatibility. This may be necessary to process some PRISM models.").setShortName(prismCompatibilityOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, dontFixDeadlockOptionName, false, "If the model contains deadlock states, they need to be fixed by setting this option.").setShortName(dontFixDeadlockOptionShortName).setIsAdvanced().build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, jitOptionName, false, "If set, the model is built using the JIT model builder.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, fullModelBuildOptionName, false, "If set, include all rewards and labels.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, applyNoMaxProgAssumptionOptionName, false, "If set, the maximum progress assumption is not applied while building the model (relevant for MAs)").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, buildChoiceLabelOptionName, false, "If set, also build the choice labels").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, buildChoiceOriginsOptionName, false, "If set, also build information that for each choice indicates the part(s) of the input that yielded the choice.").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, buildStateValuationsOptionName, false, "If set, also build the state valuations").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, noBuildOptionName, false, "If set, do not build the model.").setIsAdvanced().build());
 
@@ -51,10 +53,6 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, buildOutOfBoundsStateOptionName, false, "If set, a state for out-of-bounds valuations is added").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, bitsForUnboundedVariablesOptionName, false, "Sets the number of bits that is used for unbounded integer variables.").setIsAdvanced()
                                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("number", "The number of bits.").addValidatorUnsignedInteger(ArgumentValidatorFactory::createUnsignedRangeValidatorExcluding(0,63)).setDefaultValueUnsignedInteger(32).build()).build());
-            }
-
-            bool BuildSettings::isJitSet() const {
-                return this->getOption(jitOptionName).getHasOptionBeenSet();
             }
 
             bool BuildSettings::isExplorationOrderSet() const {
@@ -81,8 +79,16 @@ namespace storm {
                 return this->getOption(noBuildOptionName).getHasOptionBeenSet();
             }
 
+            bool BuildSettings::isApplyNoMaximumProgressAssumptionSet() const {
+                return this->getOption(applyNoMaxProgAssumptionOptionName).getHasOptionBeenSet();
+            }
+
             bool BuildSettings::isBuildChoiceLabelsSet() const {
                 return this->getOption(buildChoiceLabelOptionName).getHasOptionBeenSet();
+            }
+            
+            bool BuildSettings::isBuildChoiceOriginsSet() const {
+                return this->getOption(buildChoiceOriginsOptionName).getHasOptionBeenSet();
             }
 
             bool BuildSettings::isBuildStateValuationsSet() const {

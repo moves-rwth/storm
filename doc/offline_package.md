@@ -1,0 +1,55 @@
+#Create a package for Offline installation
+
+On this page we detail steps to obtain an installation package that can be used to install Storm on a system without an internet connection.
+This is usefull, e.g., for long term archiving where we can not be sure how long dependencies will be available.
+
+We assume that there is a fixed reference system based on Ubuntu which is not going to change (e.g. a Virtual Machine that will be made available)
+
+Since we can not simply execute `apt-get install ...`, the dependencies (and their dependencies...) have to be included in the installation package.
+The easiest way to do that is to tell `apt-get` to only download the packages and to put them into a directory you like (lets say the current working directory `.`):
+```console
+sudo apt-get -d -o Dir::Cache=. -o DIR::Cache::archives=. install <Packages>
+```
+
+Replace `<Packages>` with the packages you need (see stormchecker.org for more info).
+The downloaded `*.deb` files have to be included in the installation package.
+
+Apart from that we will need to download the sources from _carl_ (recall to use the master14 branch) and, of course, the storm sources.
+
+We currently checkout the _l3pp_ git during the building process. You might need to adapt the l3pp section in `$STORMDIR/resources/3rdparty/CMakeLists.txt` by removing the `GIT_REPOSITORY ...` and `GIT_TAG ...` arguments.
+
+
+Assuming that the directory `dependencies` contains the `*.deb` files, and `carl` and `storm` contain the source files of carl and storm, respecteively, an installation script can look as follows:
+
+```console
+#!/bin/bash
+
+# Get the number of available threads for multithreaded compiling
+$THREADS=$(nproc)
+
+# cd to the directory where the script lies in
+cd "$( dirname "${BASH_SOURCE[0]}" )"
+
+echo "Installing dependencies. You might need to enter the root password 'tacas20ae'"
+cd dependencies
+sudo dpkg -i *.deb
+cd ..
+
+echo "Installing carl using $THREADS threads"
+cd carl
+mkdir build
+cd build
+cmake .. -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON
+make lib_carl -j$THREADS
+cd ../../
+
+echo "Installing Storm using $THREADS threads"
+cd storm
+mkdir build
+cd build
+cmake ..
+make storm-main -j$THREADS
+cd ../../
+
+echo "Installation successfull."
+```

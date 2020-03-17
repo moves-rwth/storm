@@ -22,20 +22,15 @@ namespace storm {
             typedef std::vector<boost::variant<ValueType, approximation_result>> dft_results;
             typedef std::vector<std::shared_ptr<storm::logic::Formula const>> property_vector;
 
-            class ResultOutputVisitor : public boost::static_visitor<std::string> {
+            class ResultOutputVisitor : public boost::static_visitor<> {
             public:
-                std::string operator()(ValueType result) const {
-                    std::stringstream stream;
-                    stream << result;
-                    return stream.str();
+                void operator()(ValueType result, std::ostream& os) const {
+                    os << result;
                 }
 
-                std::string operator()(std::pair<ValueType, ValueType> const& result) const {
-                    std::stringstream stream;
-                    stream << "(" << result.first << ", " << result.second << ")";
-                    return stream.str();
+                void operator()(std::pair<ValueType, ValueType> const& result, std::ostream& os) const {
+                    os << "(" << result.first << ", " << result.second << ")";
                 }
-
             };
 
             /*!
@@ -56,13 +51,13 @@ namespace storm {
              * @param approximationError Error allowed for approximation. Value 0 indicates no approximation.
              * @param approximationHeuristic Heuristic used for state space exploration.
              * @param eliminateChains If true, chains of non-Markovian states are elimianted from the resulting MA
-             * @param ignoreLabeling If true, the labeling of states is ignored during state elimination
+             * @param labelBehavior Behavior of labels of eliminated states
              * @return Model checking results for the given properties..
              */
             dft_results check(storm::storage::DFT<ValueType> const& origDft, property_vector const& properties, bool symred = true, bool allowModularisation = true,
                               std::set<size_t> const& relevantEvents = {}, bool allowDCForRelevantEvents = true, double approximationError = 0.0,
                               storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH,
-                              bool eliminateChains = false, bool ignoreLabeling = false);
+                              bool eliminateChains = false, storm::transformer::EliminationLabelBehavior labelBehavior = storm::transformer::EliminationLabelBehavior::KeepLabels);
 
             /*!
              * Print timings of all operations to stream.
@@ -102,13 +97,14 @@ namespace storm {
              * @param approximationError Error allowed for approximation. Value 0 indicates no approximation.
              * @param approximationHeuristic Heuristic used for approximation.
              * @param eliminateChains If true, chains of non-Markovian states are elimianted from the resulting MA
-             * @param ignoreLabeling If true, the labeling of states is ignored during state elimination
+             * @param labelBehavior Behavior of labels of eliminated states
              * @return Model checking results (or in case of approximation two results for lower and upper bound)
              */
             dft_results checkHelper(storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, bool allowModularisation,
                                     std::set<size_t> const& relevantEvents, bool allowDCForRelevantEvents = true, double approximationError = 0.0,
                                     storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH,
-                                    bool eliminateChains = false, bool ignoreLabeling = false);
+                                    bool eliminateChains = false,
+                                    storm::transformer::EliminationLabelBehavior labelBehavior = storm::transformer::EliminationLabelBehavior::KeepLabels);
 
             /*!
              * Internal helper for building a CTMC from a DFT via parallel composition.
@@ -136,14 +132,15 @@ namespace storm {
              * @param approximationError Error allowed for approximation. Value 0 indicates no approximation.
              * @param approximationHeuristic Heuristic used for approximation.
              * @param eliminateChains If true, chains of non-Markovian states are elimianted from the resulting MA
-             * @param ignoreLabeling If true, the labeling of states is ignored during state elimination
+             * @param labelBehavior Behavior of labels of eliminated states
              *
              * @return Model checking result
              */
             dft_results checkDFT(storm::storage::DFT<ValueType> const& dft, property_vector const& properties, bool symred, std::set<size_t> const& relevantEvents = {},
                                  bool allowDCForRelevantEvents = true, double approximationError = 0.0,
                                  storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH,
-                                 bool eliminateChains = false, bool ignoreLabeling = false);
+                                 bool eliminateChains = false,
+                                 storm::transformer::EliminationLabelBehavior labelBehavior = storm::transformer::EliminationLabelBehavior::KeepLabels);
 
             /*!
              * Check the given markov model for the given properties.

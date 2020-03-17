@@ -28,6 +28,7 @@
 
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/ProgressMeasurement.h"
+#include "storm/utility/SignalHandler.h"
 #include "storm/utility/export.h"
 
 #include "storm/utility/macros.h"
@@ -137,6 +138,9 @@ namespace storm {
                     }
                     ++numCheckedEpochs;
                     progress.updateProgress(numCheckedEpochs);
+                    if (storm::utility::resources::isTerminate()) {
+                        break;
+                    }
                 }
                 
                 std::map<storm::storage::sparse::state_type, ValueType> result;

@@ -1,427 +1,467 @@
 #include "storm/modelchecker/csl/helper/SparseMarkovAutomatonCslHelper.h"
 
-#include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
-
-#include "storm/models/sparse/StandardRewardModel.h"
-
-#include "storm/storage/StronglyConnectedComponentDecomposition.h"
-#include "storm/storage/MaximalEndComponentDecomposition.h"
-
-#include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/GeneralSettings.h"
-#include "storm/settings/modules/MinMaxEquationSolverSettings.h"
-
 #include "storm/environment/Environment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
 #include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 #include "storm/environment/solver/EigenSolverEnvironment.h"
-
+#include "storm/environment/solver/TimeBoundedSolverEnvironment.h"
+#include "storm/exceptions/InvalidOperationException.h"
+#include "storm/exceptions/UncheckedRequirementException.h"
+#include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
+#include "storm/models/sparse/StandardRewardModel.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/MinMaxEquationSolverSettings.h"
+#include "storm/solver/Multiplier.h"
+#include "storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/solver/LpSolver.h"
+#include "storm/storage/StronglyConnectedComponentDecomposition.h"
+#include "storm/storage/MaximalEndComponentDecomposition.h"
+#include "storm/storage/expressions/Variable.h"
+#include "storm/storage/expressions/Expression.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/NumberTraits.h"
+#include "storm/utility/SignalHandler.h"
 
-#include "storm/storage/expressions/Variable.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 
-#include "storm/solver/MinMaxLinearEquationSolver.h"
-#include "storm/solver/LpSolver.h"
-
-#include "storm/exceptions/InvalidStateException.h"
-#include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/InvalidOperationException.h"
-#include "storm/exceptions/UncheckedRequirementException.h"
 
 namespace storm {
     namespace modelchecker {
         namespace helper {
-
-            /**
-             * Data structure holding result vectors (vLower, vUpper, wUpper) for Unif+.
-             */
-            template<typename ValueType>
-            struct UnifPlusVectors {
-                UnifPlusVectors() {
-                    // Intentionally empty
-                }
-
-                /**
-                 * Initialize results vectors. vLowerOld, vUpperOld and wUpper[k=N] are initialized with zeros.
-                 */
-                UnifPlusVectors(uint64_t steps, uint64_t noStates) : numberOfStates(noStates), steps(steps), resLowerOld(numberOfStates, storm::utility::zero<ValueType>()), resLowerNew(numberOfStates, -1), resUpper(numberOfStates, storm::utility::zero<ValueType>()), wUpperOld(numberOfStates, storm::utility::zero<ValueType>()), wUpperNew(numberOfStates, -1) {
-                    // Intentionally left empty
-                }
-
-                /**
-                 * Prepare new iteration by setting the new result vectors as old result vectors, and initializing the new result vectors with -1 again.
-                 */
-                void prepareNewIteration() {
-                    resLowerOld.swap(resLowerNew);
-                    std::fill(resLowerNew.begin(), resLowerNew.end(), -1);
-                    wUpperOld.swap(wUpperNew);
-                    std::fill(wUpperNew.begin(), wUpperNew.end(), -1);
-                }
-
-                uint64_t numberOfStates;
-                uint64_t steps;
-                std::vector<ValueType> resLowerOld;
-                std::vector<ValueType> resLowerNew;
-                std::vector<ValueType> resUpper;
-                std::vector<ValueType> wUpperOld;
-                std::vector<ValueType> wUpperNew;
-            };
             
             template<typename ValueType>
-            void calculateUnifPlusVector(Environment const& env, uint64_t k, uint64_t state, bool calcLower, ValueType lambda, uint64_t numberOfProbabilisticChoices, std::vector<std::vector<ValueType>> const & relativeReachability, OptimizationDirection dir, UnifPlusVectors<ValueType>& unifVectors, storm::storage::SparseMatrix<ValueType> const& fullTransitionMatrix, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> const& solver, storm::utility::numerical::FoxGlynnResult<ValueType> const& poisson, bool cycleFree) {
-                // Set reference to acutal vector
-                std::vector<ValueType>& resVectorOld = calcLower ? unifVectors.resLowerOld : unifVectors.wUpperOld;
-                std::vector<ValueType>& resVectorNew = calcLower ? unifVectors.resLowerNew : unifVectors.wUpperNew;
-
-                if (resVectorNew[state] != -1) {
-                    // Result already calculated.
-                    return;
-                }
-                
-                auto numberOfStates = fullTransitionMatrix.getRowGroupCount();
-                uint64_t N = unifVectors.steps;
-                auto const& rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
-                ValueType res;
-                
-                // First case, k==N, independent from kind of state.
-                if (k == N) {
-                    STORM_LOG_ASSERT(false, "Result for k=N was already calculated.");
-                    resVectorNew[state] = storm::utility::zero<ValueType>();
-                    return;
-                }
-                
-                // Goal state, independent from kind of state.
-                if (psiStates[state]) {
-                    if (calcLower) {
-                        // v lower
-                        res = storm::utility::zero<ValueType>();
-                        for (uint64_t i = k; i < N; ++i){
-                            if (i >= poisson.left && i <= poisson.right) {
-                                res += poisson.weights[i - poisson.left];
-                            }
+            std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> setUpProbabilisticStatesSolver(storm::Environment& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitions) {
+                    std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver;
+                    // The min-max system has no end components as we assume non-zeno MAs.
+                    if (transitions.getNonzeroEntryCount() > 0) {
+                        storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> factory;
+                        bool isAcyclic = !storm::utility::graph::hasCycle(transitions);
+                        if (isAcyclic) {
+                            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::Acyclic);
                         }
-                        resVectorNew[state] = res;
-                    } else {
-                        // w upper
-                        resVectorNew[state] = storm::utility::one<ValueType>();
+                        solver = factory.create(env, transitions);
+                        solver->setHasUniqueSolution(true); // Assume non-zeno MA
+                        solver->setHasNoEndComponents(true); // assume non-zeno MA
+                        solver->setLowerBound(storm::utility::zero<ValueType>());
+                        solver->setUpperBound(storm::utility::one<ValueType>());
+                        solver->setCachingEnabled(true);
+                        solver->setRequirementsChecked(true);
+                        auto req = solver->getRequirements(env, dir);
+                        req.clearBounds();
+                        req.clearUniqueSolution();
+                        if (isAcyclic) {
+                            req.clearAcyclic();
+                        }
+                        STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "The solver requirement " << req.getEnabledRequirementsAsString() << " has not been checked.");
                     }
-                    return;
-                }
-
-
-                // Markovian non-goal state.
-                if (markovianStates[state]) {
-                    res = storm::utility::zero<ValueType>();
-                    for (auto const& element : fullTransitionMatrix.getRow(rowGroupIndices[state])) {
-                        uint64_t successor = element.getColumn();
-                        if (resVectorOld[successor] == -1) {
-                            STORM_LOG_ASSERT(false, "Need to calculate previous result.");
-                            calculateUnifPlusVector(env, k+1, successor, calcLower, lambda, numberOfProbabilisticChoices, relativeReachability, dir, unifVectors, fullTransitionMatrix, markovianStates, psiStates, solver, poisson, cycleFree);
-                        }
-                        res += element.getValue() * resVectorOld[successor];
-                    }
-                    resVectorNew[state]=res;
-                    return;
+                    return solver;
+            }
+            
+            template<typename ValueType>
+            class UnifPlusHelper {
+            public:
+                UnifPlusHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates) : transitionMatrix(transitionMatrix), exitRateVector(exitRateVector), markovianStates(markovianStates) {
+                    // Intentionally left empty
                 }
                 
-                // Probabilistic non-goal state.
-                if (cycleFree) {
-                    // If the model is cycle free, do "slight value iteration". (What is that?)
-                    res = -1;
-                    for (uint64_t i = rowGroupIndices[state]; i < rowGroupIndices[state + 1]; ++i) {
-                        auto row = fullTransitionMatrix.getRow(i);
-                        ValueType between = storm::utility::zero<ValueType>();
-                        for (auto const& element : row) {
-                            uint64_t successor = element.getColumn();
-                            
-                            // This should never happen, right? The model has no cycles, and therefore also no self-loops.
-                            if (successor == state) {
-                                continue;
+                std::vector<ValueType> computeBoundedUntilProbabilities(storm::Environment const& env, OptimizationDirection dir, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, ValueType const& upperTimeBound, boost::optional<storm::storage::BitVector> const& relevantStates = boost::none) {
+                    // Since there is no lower time bound, we can treat the psiStates as if they are absorbing.
+                    
+                    // Compute some important subsets of states
+                    storm::storage::BitVector maybeStates = ~(getProb0States(dir, phiStates, psiStates) | psiStates);
+                    storm::storage::BitVector markovianMaybeStates = markovianStates & maybeStates;
+                    storm::storage::BitVector probabilisticMaybeStates = ~markovianStates & maybeStates;
+                    storm::storage::BitVector markovianStatesModMaybeStates = markovianMaybeStates % maybeStates;
+                    storm::storage::BitVector probabilisticStatesModMaybeStates = probabilisticMaybeStates % maybeStates;
+                    // Catch the case where this query can be solved by solving the untimed variant instead.
+                    // This is the case if there is no Markovian maybe state (e.g. if the initial state is already a psi state) of if the time bound is infinity.
+                    if (markovianMaybeStates.empty() || storm::utility::isInfinity(upperTimeBound)) {
+                        return SparseMarkovAutomatonCslHelper::computeUntilProbabilities<ValueType>(env, dir, transitionMatrix, transitionMatrix.transpose(true), phiStates, psiStates, false, false).values;
+                    }
+                    
+                    boost::optional<storm::storage::BitVector> relevantMaybeStates;
+                    if (relevantStates) {
+                        relevantMaybeStates = relevantStates.get() % maybeStates;
+                    }
+                    // Store the best solution known so far (useful in cases where the computation gets aborted)
+                    std::vector<ValueType> bestKnownSolution;
+                    if (relevantMaybeStates) {
+                        bestKnownSolution.resize(relevantStates->size());
+                    }
+                    
+                    // Get the exit rates restricted to only markovian maybe states.
+                    std::vector<ValueType> markovianExitRates = storm::utility::vector::filterVector(exitRateVector, markovianMaybeStates);
+                    
+                    // Obtain parameters of the algorithm
+                    auto two = storm::utility::convertNumber<ValueType>(2.0);
+                    // Truncation error
+                    ValueType kappa = storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getUnifPlusKappa());
+                    // Precision to be achieved
+                    ValueType epsilon = two * storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision());
+                    bool relativePrecision = env.solver().timeBounded().getRelativeTerminationCriterion();
+                    // Uniformization rate
+                    ValueType lambda = *std::max_element(markovianExitRates.begin(), markovianExitRates.end());
+                    STORM_LOG_DEBUG("Initial lambda is " << lambda << ".");
+
+                    // Split the transitions into various part
+                    // The (uniformized) probabilities to go from a Markovian state to a psi state in one step
+                    std::vector<std::pair<uint64_t, ValueType>> markovianToPsiProbabilities = getSparseOneStepProbabilities(markovianMaybeStates, psiStates);
+                    for (auto& entry : markovianToPsiProbabilities) {
+                        entry.second *= markovianExitRates[entry.first] / lambda;
+                    }
+                    // Uniformized transitions from Markovian maybe states to all other maybe states. Inserts selfloop entries.
+                    storm::storage::SparseMatrix<ValueType> markovianToMaybeTransitions = getUniformizedMarkovianTransitions(markovianExitRates, lambda, maybeStates, markovianMaybeStates);
+                    // Transitions from probabilistic maybe states to probabilistic maybe states.
+                    storm::storage::SparseMatrix<ValueType> probabilisticToProbabilisticTransitions = transitionMatrix.getSubmatrix(true, probabilisticMaybeStates, probabilisticMaybeStates, false);
+                    // Transitions from probabilistic maybe states to Markovian maybe states.
+                    storm::storage::SparseMatrix<ValueType> probabilisticToMarkovianTransitions = transitionMatrix.getSubmatrix(true, probabilisticMaybeStates, markovianMaybeStates, false);
+                    // The probabilities to go from a probabilistic state to a psi state in one step
+                    std::vector<std::pair<uint64_t, ValueType>> probabilisticToPsiProbabilities = getSparseOneStepProbabilities(probabilisticMaybeStates, psiStates);
+
+                    // Set up a solver for the transitions between probabilistic states (if there are some)
+                    Environment solverEnv = env;
+                    solverEnv.solver().setForceExact(true); // Errors within the inner iterations can propagate significantly
+                    auto solver = setUpProbabilisticStatesSolver(solverEnv, dir, probabilisticToProbabilisticTransitions);
+                    
+                    // Allocate auxiliary memory that can be used during the iterations
+                    std::vector<ValueType> maybeStatesValuesLower(maybeStates.getNumberOfSetBits(), storm::utility::zero<ValueType>()); // should be zero initially
+                    std::vector<ValueType> maybeStatesValuesWeightedUpper(maybeStates.getNumberOfSetBits(), storm::utility::zero<ValueType>()); // should be zero initially
+                    std::vector<ValueType> maybeStatesValuesUpper(maybeStates.getNumberOfSetBits(), storm::utility::zero<ValueType>()); // should be zero initially
+                    std::vector<ValueType> nextMarkovianStateValues = std::move(markovianExitRates); // At this point, the markovianExitRates are no longer needed, so we 'move' them away instead of allocating new memory
+                    std::vector<ValueType> nextProbabilisticStateValues(probabilisticToProbabilisticTransitions.getRowGroupCount());
+                    std::vector<ValueType> eqSysRhs(probabilisticToProbabilisticTransitions.getRowCount());
+                    
+                    // Start the outer iterations which increase the uniformization rate until lower and upper bound on the result vector is sufficiently small
+                    storm::utility::ProgressMeasurement progressIterations("iterations");
+                    uint64_t iteration = 0;
+                    progressIterations.startNewMeasurement(iteration);
+                    bool converged = false;
+                    bool abortedInnerIterations = false;
+                    while (!converged) {
+                        // Maximal step size
+                        uint64_t N = storm::utility::ceil(lambda * upperTimeBound * std::exp(2) - storm::utility::log(kappa * epsilon));
+                        // Compute poisson distribution.
+                        // The division by 8 is similar to what is done for CTMCs (probably to reduce numerical impacts?)
+                        auto foxGlynnResult = storm::utility::numerical::foxGlynn(lambda * upperTimeBound, epsilon * kappa / storm::utility::convertNumber<ValueType>(8.0));
+                        // Scale the weights so they sum to one.
+                        //storm::utility::vector::scaleVectorInPlace(foxGlynnResult.weights, storm::utility::one<ValueType>() / foxGlynnResult.totalWeight);
+                        
+                        // Set up multiplier
+                        auto markovianToMaybeMultiplier = storm::solver::MultiplierFactory<ValueType>().create(env, markovianToMaybeTransitions);
+                        auto probabilisticToMarkovianMultiplier = storm::solver::MultiplierFactory<ValueType>().create(env, probabilisticToMarkovianTransitions);
+                        
+                        //Perform inner iterations first for upper, then for lower bound
+                        STORM_LOG_ASSERT(!storm::utility::vector::hasNonZeroEntry(maybeStatesValuesUpper), "Current values need to be initialized with zero.");
+                        for (bool computeLowerBound : {false, true}) {
+                            auto& maybeStatesValues = computeLowerBound ? maybeStatesValuesLower : maybeStatesValuesWeightedUpper;
+                            ValueType targetValue = computeLowerBound ? storm::utility::zero<ValueType>() : storm::utility::one<ValueType>();
+                            storm::utility::ProgressMeasurement progressSteps("steps in iteration " + std::to_string(iteration) + " for " + std::string(computeLowerBound ? "lower" : "upper") + " bounds.");
+                            progressSteps.setMaxCount(N);
+                            progressSteps.startNewMeasurement(0);
+                            bool firstIteration = true; // The first iterations can be irrelevant, because they will only produce zeroes anyway.
+                            int64_t k = N;
+                            // Iteration k = N is always non-relevant
+                            for (--k; k >= 0; --k) {
+                                
+                                // Check whether the iteration is relevant, that is, whether it will contribute non-zero values to the overall result
+                                if (computeLowerBound) {
+                                    // Check whether the value for visiting a target state will be zero.
+                                    if (static_cast<uint64_t>(k) > foxGlynnResult.right) {
+                                        // Reaching this point means that we are in one of the earlier iterations where fox glynn told us to cut off
+                                        continue;
+                                    }
+                                } else {
+                                    uint64_t i = N-1-k;
+                                    if (i > foxGlynnResult.right) {
+                                        // Reaching this point means that we are in a later iteration which will not contribute to the upper bound
+                                        // Since i will only get larger in subsequent iterations, we can directly break here.
+                                        break;
+                                    }
+                                }
+                                
+                                // Compute the values at Markovian maybe states.
+                                if (firstIteration) {
+                                    firstIteration = false;
+                                    // Reaching this point means that this is the very first relevant iteration.
+                                    // If we are in the very first relevant iteration, we know that all states from the previous iteration have value zero.
+                                    // It is therefore valid (and necessary) to just set the values of Markovian states to zero.
+                                    std::fill(nextMarkovianStateValues.begin(), nextMarkovianStateValues.end(), storm::utility::zero<ValueType>());
+                                } else {
+                                    // Compute the values at Markovian maybe states.
+                                    markovianToMaybeMultiplier->multiply(env, maybeStatesValues, nullptr, nextMarkovianStateValues);
+                                    for (auto const& oneStepProb : markovianToPsiProbabilities) {
+                                        nextMarkovianStateValues[oneStepProb.first] += oneStepProb.second * targetValue;
+                                    }
+                                }
+
+                                // Update the value when reaching a psi state.
+                                // This has to be done after updating the Markovian state values since we needed the 'old' target value above.
+                                if (computeLowerBound && static_cast<uint64_t>(k) >= foxGlynnResult.left) {
+                                    assert(static_cast<uint64_t>(k) <= foxGlynnResult.right); // has to hold since this iteration is relevant
+                                    targetValue += foxGlynnResult.weights[k - foxGlynnResult.left];
+                                }
+                                
+                                // Compute the values at probabilistic states.
+                                probabilisticToMarkovianMultiplier->multiply(env, nextMarkovianStateValues, nullptr, eqSysRhs);
+                                for (auto const& oneStepProb : probabilisticToPsiProbabilities) {
+                                    eqSysRhs[oneStepProb.first] += oneStepProb.second * targetValue;
+                                }
+                                if (solver) {
+                                    solver->solveEquations(solverEnv, dir, nextProbabilisticStateValues, eqSysRhs);
+                                } else {
+                                    storm::utility::vector::reduceVectorMinOrMax(dir, eqSysRhs, nextProbabilisticStateValues, probabilisticToProbabilisticTransitions.getRowGroupIndices());
+                                }
+                                
+                                // Create the new values for the maybestates
+                                // Fuse the results together
+                                storm::utility::vector::setVectorValues(maybeStatesValues, markovianStatesModMaybeStates, nextMarkovianStateValues);
+                                storm::utility::vector::setVectorValues(maybeStatesValues, probabilisticStatesModMaybeStates, nextProbabilisticStateValues);
+                                if (!computeLowerBound) {
+                                    // Add the scaled values to the actual result vector
+                                    uint64_t i = N-1-k;
+                                    if (i >= foxGlynnResult.left) {
+                                        assert(i <= foxGlynnResult.right); // has to hold since this iteration is considered relevant.
+                                        ValueType const& weight = foxGlynnResult.weights[i - foxGlynnResult.left];
+                                        storm::utility::vector::addScaledVector(maybeStatesValuesUpper, maybeStatesValuesWeightedUpper, weight);
+                                    }
+                                }
+
+                                progressSteps.updateProgress(N-k);
+                                if (storm::utility::resources::isTerminate()) {
+                                    abortedInnerIterations = true;
+                                    break;
+                                }
                             }
-                            
-                            if (resVectorNew[successor] == -1) {
-                                calculateUnifPlusVector(env, k, successor, calcLower, lambda, numberOfProbabilisticChoices, relativeReachability, dir, unifVectors, fullTransitionMatrix, markovianStates, psiStates, solver, poisson, cycleFree);
-                            }
-                            between += element.getValue() * resVectorNew[successor];
-                        }
-                        if (maximize(dir)) {
-                            res = storm::utility::max(res, between);
-                        } else {
-                            if (res != -1) {
-                                res = storm::utility::min(res, between);
+
+                            if (computeLowerBound) {
+                                storm::utility::vector::scaleVectorInPlace(maybeStatesValuesLower, storm::utility::one<ValueType>() / foxGlynnResult.totalWeight);
                             } else {
-                                res = between;
-                            }
-                        }
-                    }
-                    resVectorNew[state] = res;
-                    return;
-                }
-                
-                // If we arrived at this point, the model is not cycle free. Use the solver to solve the underlying equation system.
-                uint64_t numberOfProbabilisticStates = numberOfStates - markovianStates.getNumberOfSetBits();
-                std::vector<ValueType> b(numberOfProbabilisticChoices, storm::utility::zero<ValueType>());
-                std::vector<ValueType> x(numberOfProbabilisticStates, storm::utility::zero<ValueType>());
-                
-                // Compute right-hand side vector b.
-                uint64_t row = 0;
-                for (uint64_t i = 0; i < numberOfStates; ++i) {
-                    if (markovianStates[i]) {
-                        continue;
-                    }
-
-                    for (auto j = rowGroupIndices[i]; j < rowGroupIndices[i + 1]; j++) {
-                        uint64_t stateCount = 0;
-                        res = storm::utility::zero<ValueType>();
-                        for (auto const& element : fullTransitionMatrix.getRow(j)) {
-                            auto successor = element.getColumn();
-                            if (!markovianStates[successor]) {
-                                continue;
+                                storm::utility::vector::scaleVectorInPlace(maybeStatesValuesUpper, storm::utility::one<ValueType>() / foxGlynnResult.totalWeight);
                             }
                             
-                            if (resVectorNew[successor] == -1) {
-                                calculateUnifPlusVector(env, k, successor, calcLower, lambda, numberOfProbabilisticStates, relativeReachability, dir, unifVectors, fullTransitionMatrix, markovianStates, psiStates, solver,  poisson, cycleFree);
+                            if (abortedInnerIterations || storm::utility::resources::isTerminate()) {
+                                break;
                             }
-                            res += relativeReachability[j][stateCount] * resVectorNew[successor];
-                            ++stateCount;
+                            
+                            // Check if the lower and upper bound are sufficiently close to each other
+                            converged = checkConvergence(maybeStatesValuesLower, maybeStatesValuesUpper, relevantMaybeStates, epsilon, relativePrecision, kappa);
+                            if (converged) {
+                                break;
+                            }
+                            
+                            // Store the best solution we have found so far.
+                            if (relevantMaybeStates) {
+                                auto currentSolIt = bestKnownSolution.begin();
+                                for (auto const& state : relevantMaybeStates.get()) {
+                                    // We take the average of the lower and upper bounds
+                                    *currentSolIt = (maybeStatesValuesLower[state] + maybeStatesValuesUpper[state]) / two;
+                                    ++currentSolIt;
+                                }
+                            }
                         }
                         
-                        b[row] = res;
+                        if (!converged) {
+                            // Increase the uniformization rate and prepare the next run
+                            
+                            // Double lambda.
+                            ValueType oldLambda = lambda;
+                            lambda *= two;
+                            STORM_LOG_DEBUG("Increased lambda to " << lambda << ".");
+                            
+                            if (relativePrecision) {
+                                // Reduce kappa a bit
+                                ValueType minValue;
+                                if (relevantMaybeStates) {
+                                    minValue = storm::utility::vector::min_if(maybeStatesValuesUpper, relevantMaybeStates.get());
+                                } else {
+                                    minValue = *std::min_element(maybeStatesValuesUpper.begin(), maybeStatesValuesUpper.end());
+                                }
+                                minValue *= storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getUnifPlusKappa());
+                                kappa = std::min(kappa, minValue);
+                                STORM_LOG_DEBUG("Decreased kappa to " << kappa << ".");
+                            }
+                            
+                            // Apply uniformization with new rate
+                            uniformize(markovianToMaybeTransitions, markovianToPsiProbabilities, oldLambda, lambda, markovianStatesModMaybeStates);
+                            
+                            // Reset the values of the maybe states to zero.
+                            std::fill(maybeStatesValuesUpper.begin(), maybeStatesValuesUpper.end(), storm::utility::zero<ValueType>());
+                        }
+                        progressIterations.updateProgress(++iteration);
+                        if (storm::utility::resources::isTerminate()) {
+                            STORM_LOG_WARN("Aborted unif+ in iteration " << iteration << ".");
+                            break;
+                        }
+                    }
+
+                    // Prepare the result vector
+                    std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+                    storm::utility::vector::setVectorValues(result, psiStates, storm::utility::one<ValueType>());
+                    
+                    if (abortedInnerIterations && iteration > 1 && relevantMaybeStates && relevantStates) {
+                        // We should take the stored solution instead of the current (probably more incorrect) lower/upper values
+                        storm::utility::vector::setVectorValues(result, maybeStates & relevantStates.get(), bestKnownSolution);
+                    } else {
+                        // We take the average of the lower and upper bounds
+                        storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(maybeStatesValuesLower, maybeStatesValuesUpper, maybeStatesValuesLower, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
+    
+                        storm::utility::vector::setVectorValues(result, maybeStates, maybeStatesValuesLower);
+                    }
+                    return result;
+                }
+
+            private:
+                
+                bool checkConvergence(std::vector<ValueType> const& lower, std::vector<ValueType> const& upper, boost::optional<storm::storage::BitVector> const& relevantValues, ValueType const& epsilon, bool relative, ValueType& kappa) {
+                    STORM_LOG_ASSERT(!relevantValues.is_initialized() || relevantValues->size() == lower.size(), "Relevant values size mismatch.");
+                    if (!relative) {
+                        if (relevantValues) {
+                            return storm::utility::vector::equalModuloPrecision(lower, upper, relevantValues.get(), epsilon * (storm::utility::one<ValueType>() - kappa), false);
+                        } else {
+                            return storm::utility::vector::equalModuloPrecision(lower, upper, epsilon * (storm::utility::one<ValueType>() - kappa), false);
+                        }
+                    }
+                    ValueType truncationError = epsilon * kappa;
+                    for (uint64_t i = 0; i < lower.size(); ++i) {
+                        if (relevantValues) {
+                            i = relevantValues->getNextSetIndex(i);
+                            if (i == lower.size()) {
+                                break;
+                            }
+                        }
+                        if (lower[i] == upper[i]) {
+                            continue;
+                        }
+                        if (lower[i] <= truncationError) {
+                            return false;
+                        }
+                        ValueType absDiff = upper[i] - lower[i] + truncationError;
+                        ValueType relDiff = absDiff / lower[i];
+                        if (relDiff > epsilon) {
+                            return false;
+                        }
+                        STORM_LOG_ASSERT(absDiff > storm::utility::zero<ValueType>(), "Upper bound " << upper[i] << " is smaller than lower bound " << lower[i] << ".");
+                    }
+                    return true;
+                }
+                
+                storm::storage::SparseMatrix<ValueType> getUniformizedMarkovianTransitions(std::vector<ValueType> const& oldRates, ValueType uniformizationRate, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const& markovianMaybeStates) {
+                    // We need a submatrix whose rows correspond to the markovian states and columns correpsond to the maybestates.
+                    // In addition, we need 'selfloop' entries for the markovian maybe states.
+                    
+                    // First build a submatrix without selfloop entries
+                    auto submatrix = transitionMatrix.getSubmatrix(true, markovianMaybeStates, maybeStates);
+                    assert(submatrix.getRowCount() == submatrix.getRowGroupCount());
+
+                    // Now add selfloop entries at the correct positions and apply uniformization
+                    storm::storage::SparseMatrixBuilder<ValueType> builder(submatrix.getRowCount(), submatrix.getColumnCount());
+                    auto markovianStateColumns = markovianMaybeStates % maybeStates;
+                    uint64_t row = 0;
+                    for (auto const& selfloopColumn : markovianStateColumns) {
+                        ValueType const& oldExitRate = oldRates[row];
+                        bool foundSelfoop = false;
+                        for (auto const& entry : submatrix.getRow(row)) {
+                            if (entry.getColumn() == selfloopColumn) {
+                                foundSelfoop = true;
+                                ValueType newSelfLoop = uniformizationRate - oldExitRate + entry.getValue() * oldExitRate;
+                                builder.addNextValue(row, entry.getColumn(), newSelfLoop / uniformizationRate);
+                            } else {
+                                builder.addNextValue(row, entry.getColumn(), entry.getValue() * oldExitRate / uniformizationRate);
+                            }
+                        }
+                        if (!foundSelfoop) {
+                            ValueType newSelfLoop = uniformizationRate - oldExitRate;
+                            builder.addNextValue(row, selfloopColumn, newSelfLoop / uniformizationRate);
+                        }
                         ++row;
                     }
-                }
-                
-                // Solve the equation system.
-                solver->solveEquations(env, dir, x, b);
-
-                // Expand the solution for the probabilistic states to all states.
-                storm::utility::vector::setVectorValues(resVectorNew, ~markovianStates, x);
-            }
-
-            template <typename ValueType>
-            void eliminateProbabilisticSelfLoops(storm::storage::SparseMatrix<ValueType>& transitionMatrix, storm::storage::BitVector const& markovianStates) {
-                auto const& rowGroupIndices = transitionMatrix.getRowGroupIndices();
-
-                for (uint64_t i = 0; i < transitionMatrix.getRowGroupCount(); ++i) {
-                    if (markovianStates[i]) {
-                        continue;
-                    }
-                    
-                    for (uint64_t j = rowGroupIndices[i]; j < rowGroupIndices[i + 1]; j++) {
-                        ValueType selfLoop = storm::utility::zero<ValueType>();
-                        for (auto const& element: transitionMatrix.getRow(j)){
-                            if (element.getColumn() == i) {
-                                selfLoop += element.getValue();
-                            }
-                        }
-
-                        if (storm::utility::isZero(selfLoop)) {
-                            continue;
-                        }
-                        
-                        for (auto& element : transitionMatrix.getRow(j)) {
-                            if (element.getColumn() != i) {
-                                if (!storm::utility::isOne(selfLoop)) {
-                                    element.setValue(element.getValue() / (storm::utility::one<ValueType>() - selfLoop));
-                                }
-                            } else {
-                                element.setValue(storm::utility::zero<ValueType>());
-                            }
-                        }
-                    }
-                }
-            }
-
-            template<typename ValueType>
-            std::vector<ValueType> computeBoundedUntilProbabilitiesUnifPlus(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair) {
-                STORM_LOG_TRACE("Using UnifPlus to compute bounded until probabilities.");
-
-                // Obtain bit vectors to identify different kind of states.
-                storm::storage::BitVector allStates(markovianStates.size(), true);
-                storm::storage::BitVector probabilisticStates = ~markovianStates;
-
-                // Searching for SCCs in probabilistic fragment to decide which algorithm is applied.
-                bool cycleFree = !storm::utility::graph::hasCycle(transitionMatrix, probabilisticStates);
-
-                // Vectors to store computed vectors.
-                UnifPlusVectors<ValueType> unifVectors;
-
-                // Transitions from goal states will be ignored. However, we mark them as non-probabilistic to make sure
-                // we do not apply the MDP algorithm to them.
-                storm::storage::BitVector markovianAndGoalStates = markovianStates | psiStates;
-                probabilisticStates &= ~psiStates;
-
-                std::vector<ValueType> mutableExitRates = exitRateVector;
-                
-                // Extend the transition matrix with diagonal entries so we can change them easily during the uniformization step.
-                typename storm::storage::SparseMatrix<ValueType> fullTransitionMatrix = transitionMatrix.getSubmatrix(true, allStates, allStates, true);
-
-                // Eliminate self-loops of probabilistic states. Is this really needed for the "slight value iteration" process?
-                eliminateProbabilisticSelfLoops(fullTransitionMatrix, markovianAndGoalStates);
-                typename storm::storage::SparseMatrix<ValueType> probMatrix;
-                uint64_t numberOfProbabilisticChoices = 0;
-                if (!probabilisticStates.empty()) {
-                    probMatrix = fullTransitionMatrix.getSubmatrix(true, probabilisticStates, probabilisticStates, true);
-                    numberOfProbabilisticChoices = probMatrix.getRowCount();
+                    assert(row == submatrix.getRowCount());
+    
+                    return builder.build();
                 }
 
-                // Get row grouping of transition matrix.
-                auto const& rowGroupIndices = fullTransitionMatrix.getRowGroupIndices();
-
-                // (1) define/declare horizon, epsilon, kappa, N, lambda, maxNorm
-                uint64_t numberOfStates = fullTransitionMatrix.getRowGroupCount();
-                // 'Unpack' the bounds to make them more easily accessible.
-                double lowerBound = boundsPair.first;
-                double upperBound = boundsPair.second;
-                // Lower bound > 0 is not implemented!
-                STORM_LOG_THROW(lowerBound == 0, storm::exceptions::NotImplementedException, "Support for lower bound > 0 not implemented in Unif+.");
-                // Truncation error
-                // TODO: make kappa a parameter.
-                ValueType kappa = storm::utility::one<ValueType>() / 10;
-                // Approximation error
-                ValueType epsilon = storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision();
-                // Lambda is largest exit rate
-                ValueType lambda = exitRateVector[0];
-                for (ValueType const& rate : exitRateVector) {
-                    lambda = std::max(rate, lambda);
-                }
-                STORM_LOG_DEBUG("Initial lambda is " << lambda << ".");
-
-                // Compute the relative reachability vectors and create solver for models with SCCs.
-                std::vector<std::vector<ValueType>> relativeReachabilities(transitionMatrix.getRowCount());
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver;
-                if (!cycleFree) {
-                    for (uint64_t i = 0; i < numberOfStates; i++) {
-                        if (markovianAndGoalStates[i]) {
-                            continue;
-                        }
-
-                        for (auto j = rowGroupIndices[i]; j < rowGroupIndices[i + 1]; ++j) {
-                            for (auto const& element : fullTransitionMatrix.getRow(j)) {
-                                if (markovianAndGoalStates[element.getColumn()]) {
-                                    relativeReachabilities[j].push_back(element.getValue());
-                                }
-                            }
-                        }
-                    }
-
-                    // Create solver.
-                    storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxLinearEquationSolverFactory;
-                    storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, true, true, dir);
-                    requirements.clearBounds();
-                    STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
-                    
-                    if (numberOfProbabilisticChoices > 0) {
-                        solver = minMaxLinearEquationSolverFactory.create(env, probMatrix);
-                        solver->setHasUniqueSolution();
-                        solver->setHasNoEndComponents();
-                        solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
-                        solver->setRequirementsChecked();
-                        solver->setCachingEnabled(true);
-                    }
-                }
-
-                ValueType maxNorm = storm::utility::zero<ValueType>();
-                // Maximal step size
-                uint64_t N;
-                storm::utility::ProgressMeasurement progressIterations("iterations");
-                size_t iteration = 0;
-                progressIterations.startNewMeasurement(iteration);
-                // Loop until result is within precision bound.
-                do {
-                    // (2) update parameter
-                    N = storm::utility::ceil(lambda * upperBound * std::exp(2) - storm::utility::log(kappa * epsilon));
-
-                    // (3) uniform  - just applied to Markovian states.
-                    for (uint64_t i = 0; i < numberOfStates; i++) {
-                        if (!markovianAndGoalStates[i] || psiStates[i]) {
-                            continue;
-                        }
-                        
-                        // As the current state is Markovian, its branching probabilities are stored within one row.
-                        uint64_t markovianRowIndex = rowGroupIndices[i];
-
-                        if (mutableExitRates[i] == lambda) {
+                void uniformize(storm::storage::SparseMatrix<ValueType>& matrix, std::vector<std::pair<uint64_t, ValueType>>& oneSteps,  std::vector<ValueType> const& oldRates, ValueType uniformizationRate, storm::storage::BitVector const& selfloopColumns) {
+                    uint64_t row = 0;
+                    for (auto const& selfloopColumn : selfloopColumns) {
+                        ValueType const& oldExitRate = oldRates[row];
+                        if (oldExitRate == uniformizationRate) {
                             // Already uniformized.
+                            ++row;
                             continue;
                         }
-
-                        auto markovianRow = fullTransitionMatrix.getRow(markovianRowIndex);
-                        ValueType oldExitRate = mutableExitRates[i];
-                        ValueType newExitRate = lambda;
-                        for (auto& v : markovianRow) {
-                            if (v.getColumn() == i) {
-                                ValueType newSelfLoop = newExitRate - oldExitRate + v.getValue() * oldExitRate;
-                                ValueType newRate = newSelfLoop / newExitRate;
-                                v.setValue(newRate);
+                        for (auto& v : matrix.getRow(row)) {
+                            if (v.getColumn() == selfloopColumn) {
+                                ValueType newSelfLoop = uniformizationRate - oldExitRate + v.getValue() * oldExitRate;
+                                v.setValue(newSelfLoop / uniformizationRate);
                             } else {
-                                ValueType oldProbability = v.getValue();
-                                ValueType newProbability = oldProbability * oldExitRate / newExitRate;
-                                v.setValue(newProbability);
+                                v.setValue(v.getValue() * oldExitRate / uniformizationRate);
                             }
                         }
-                        mutableExitRates[i] = newExitRate;
+                        ++row;
                     }
-
-                    // Compute poisson distribution.
-                    storm::utility::numerical::FoxGlynnResult<ValueType> foxGlynnResult = storm::utility::numerical::foxGlynn(lambda * upperBound, epsilon * kappa / 100);
-
-                    // Scale the weights so they sum to one.
-                    for (auto& element : foxGlynnResult.weights) {
-                        element /= foxGlynnResult.totalWeight;
+                    assert(row == matrix.getRowCount());
+                    for (auto& oneStep : oneSteps) {
+                        oneStep.second *= oldRates[oneStep.first] / uniformizationRate;
                     }
-
-                    // (4) Define vectors/matrices.
-                    // Initialize result vectors and already insert zeros for iteration N
-                    unifVectors = UnifPlusVectors<ValueType>(N, numberOfStates);
-
-                    // (5) Compute vectors and maxNorm.
-                    // Iteration k = N was already performed by initializing with zeros.
-
-                    // Iterations k < N
-                    storm::utility::ProgressMeasurement progressSteps("steps in iteration " + std::to_string(iteration));
-                    progressSteps.setMaxCount(N);
-                    progressSteps.startNewMeasurement(0);
-                    for (int64_t k = N-1; k >= 0; --k) {
-                        if (k < (int64_t)(N-1)) {
-                            unifVectors.prepareNewIteration();
-                        }
-                        for (uint64_t state = 0; state < numberOfStates; ++state) {
-                            // Calculate results for lower bound and wUpper
-                            calculateUnifPlusVector(env, k, state, true, lambda, numberOfProbabilisticChoices, relativeReachabilities, dir, unifVectors, fullTransitionMatrix, markovianAndGoalStates, psiStates, solver, foxGlynnResult, cycleFree);
-                            calculateUnifPlusVector(env, k, state, false, lambda, numberOfProbabilisticChoices, relativeReachabilities, dir, unifVectors, fullTransitionMatrix, markovianAndGoalStates, psiStates, solver, foxGlynnResult, cycleFree);
-                            // Calculate result for upper bound
-                            uint64_t index = N-1-k;
-                            if (index >= foxGlynnResult.left && index <= foxGlynnResult.right) {
-                                STORM_LOG_ASSERT(unifVectors.wUpperNew[state] != -1, "wUpper was not computed before.");
-                                unifVectors.resUpper[state] += foxGlynnResult.weights[index - foxGlynnResult.left] * unifVectors.wUpperNew[state];
+                }
+                
+                /// Uniformizes the given matrix assuming that it is already uniform. The selfloopColumns indicate for each row, the column indices that correspond to the 'selfloops' for that row
+                void uniformize(storm::storage::SparseMatrix<ValueType>& matrix, std::vector<std::pair<uint64_t, ValueType>>& oneSteps, ValueType oldUniformizationRate, ValueType newUniformizationRate, storm::storage::BitVector const& selfloopColumns) {
+                    if (oldUniformizationRate != newUniformizationRate) {
+                        assert(oldUniformizationRate < newUniformizationRate);
+                        ValueType rateDiff = newUniformizationRate - oldUniformizationRate;
+                        ValueType rateFraction = oldUniformizationRate / newUniformizationRate;
+                        uint64_t row = 0;
+                        for (auto const& selfloopColumn : selfloopColumns) {
+                            for (auto& v : matrix.getRow(row)) {
+                                if (v.getColumn() == selfloopColumn) {
+                                    ValueType newSelfLoop = rateDiff + v.getValue() * oldUniformizationRate;
+                                    v.setValue(newSelfLoop / newUniformizationRate);
+                                } else {
+                                    v.setValue(v.getValue() * rateFraction);
+                                }
                             }
+                            ++row;
                         }
-                        progressSteps.updateProgress(N-k);
+                        assert(row == matrix.getRowCount());
+                        for (auto& oneStep : oneSteps) {
+                            oneStep.second *= rateFraction;
+                        }
                     }
-
-                    // Only iterate over result vector, as the results can only get more precise.
-                    maxNorm = storm::utility::zero<ValueType>();
-                    for (uint64_t i = 0; i < numberOfStates; i++){
-                        ValueType diff = storm::utility::abs(unifVectors.resUpper[i] - unifVectors.resLowerNew[i]);
-                        maxNorm = std::max(maxNorm, diff);
+                }
+                
+                storm::storage::BitVector getProb0States(OptimizationDirection dir, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates) const {
+                    if (dir == storm::solver::OptimizationDirection::Maximize) {
+                        return storm::utility::graph::performProb0A(transitionMatrix.transpose(true), phiStates, psiStates);
+                    } else {
+                        return storm::utility::graph::performProb0E(transitionMatrix, transitionMatrix.getRowGroupIndices(), transitionMatrix.transpose(true), phiStates, psiStates);
                     }
-
-                    // (6) Double lambda.
-                    lambda *= 2;
-                    STORM_LOG_DEBUG("Increased lambda to " << lambda << ", max diff is " << maxNorm << ".");
-                    progressIterations.updateProgress(++iteration);
-                } while (maxNorm > epsilon * (1 - kappa));
-
-                return unifVectors.resLowerNew;
-            }
-
+                }
+                
+                /*!
+                 * Returns a vector with pairs of state indices and non-zero probabilities to move from the corresponding state to a target state.
+                 * The state indices are with respect to the number of states satisfying the sourceStateConstraint, i.e. the indices are in the range [0, sourceStateConstraint.getNumberOfSetBits())
+                 */
+                std::vector<std::pair<uint64_t, ValueType>> getSparseOneStepProbabilities(storm::storage::BitVector const& sourceStateConstraint, storm::storage::BitVector const& targetStateConstraint) const {
+                    auto denseResult = transitionMatrix.getConstrainedRowGroupSumVector(sourceStateConstraint, targetStateConstraint);
+                    std::vector<std::pair<uint64_t, ValueType>> sparseResult;
+                    for (uint64 i = 0; i < denseResult.size(); ++i) {
+                        auto const& val = denseResult[i];
+                        if (!storm::utility::isZero(val)) {
+                            sparseResult.emplace_back(i, val);
+                        }
+                    }
+                    return sparseResult;
+                }
+                
+                storm::storage::SparseMatrix<ValueType> const& transitionMatrix;
+                std::vector<ValueType> const& exitRateVector;
+                storm::storage::BitVector const& markovianStates;
+            };
+            
             template <typename ValueType>
             void computeBoundedReachabilityProbabilitiesImca(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRates, storm::storage::BitVector const& goalStates, storm::storage::BitVector const& markovianNonGoalStates, storm::storage::BitVector const& probabilisticNonGoalStates, std::vector<ValueType>& markovianNonGoalValues, std::vector<ValueType>& probabilisticNonGoalValues, ValueType delta, uint64_t numberOfSteps) {
                 
@@ -489,20 +529,11 @@ namespace storm {
                     }
                 }
                 
-                // Check for requirements of the solver.
-                // The min-max system has no end components as we assume non-zeno MAs.
-                storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxLinearEquationSolverFactory;
-                storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(env, true, true, dir);
-                requirements.clearBounds();
-                STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
-                
-                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(env, aProbabilistic);
-                solver->setHasUniqueSolution();
-                solver->setHasNoEndComponents();
-                solver->setBounds(storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
-                solver->setRequirementsChecked();
-                solver->setCachingEnabled(true);
-                
+                // Create a solver object (only if there are actually transitions between probabilistic states)
+                auto solverEnv = env;
+                solverEnv.solver().setForceExact(true);
+                auto solver = setUpProbabilisticStatesSolver(solverEnv, dir, aProbabilistic);
+
                 // Perform the actual value iteration
                 // * loop until the step bound has been reached
                 // * in the loop:
@@ -517,7 +548,11 @@ namespace storm {
                         storm::utility::vector::addVectors(bProbabilistic, bProbabilisticFixed, bProbabilistic);
                         
                         // Now perform the inner value iteration for probabilistic states.
-                        solver->solveEquations(env, dir, probabilisticNonGoalValues, bProbabilistic);
+                        if (solver) {
+                            solver->solveEquations(solverEnv, dir, probabilisticNonGoalValues, bProbabilistic);
+                        } else {
+                            storm::utility::vector::reduceVectorMinOrMax(dir, bProbabilistic, probabilisticNonGoalValues, aProbabilistic.getRowGroupIndices());
+                        }
                         
                         // (Re-)compute bMarkovian = bMarkovianFixed + aMarkovianToProbabilistic * vProbabilistic.
                         aMarkovianToProbabilistic.multiplyWithVector(probabilisticNonGoalValues, bMarkovian);
@@ -531,13 +566,20 @@ namespace storm {
                     } else {
                         storm::utility::vector::addVectors(markovianNonGoalValues, bMarkovianFixed, markovianNonGoalValues);
                     }
+                    if (storm::utility::resources::isTerminate()) {
+                        break;
+                    }
                 }
                 
                 if (existProbabilisticStates) {
                     // After the loop, perform one more step of the value iteration for PS states.
                     aProbabilisticToMarkovian.multiplyWithVector(markovianNonGoalValues, bProbabilistic);
                     storm::utility::vector::addVectors(bProbabilistic, bProbabilisticFixed, bProbabilistic);
-                    solver->solveEquations(env, dir, probabilisticNonGoalValues, bProbabilistic);
+                    if (solver) {
+                        solver->solveEquations(solverEnv, dir, probabilisticNonGoalValues, bProbabilistic);
+                    } else {
+                        storm::utility::vector::reduceVectorMinOrMax(dir, bProbabilistic, probabilisticNonGoalValues, aProbabilistic.getRowGroupIndices());
+                    }
                 }
             }
             
@@ -556,7 +598,7 @@ namespace storm {
                 for (auto value : exitRateVector) {
                     maxExitRate = std::max(maxExitRate, value);
                 }
-                ValueType delta = (2 * storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()) / (upperBound * maxExitRate * maxExitRate);
+                ValueType delta = (2.0 * storm::utility::convertNumber<ValueType>(env.solver().timeBounded().getPrecision())) / (upperBound * maxExitRate * maxExitRate);
                 
                 // (2) Compute the number of steps we need to make for the interval.
                 uint64_t numberOfSteps = static_cast<uint64_t>(std::ceil((upperBound - lowerBound) / delta));
@@ -607,23 +649,38 @@ namespace storm {
             }
             
             template <typename ValueType, typename std::enable_if<storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            std::vector<ValueType> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair) {
-                auto const& settings = storm::settings::getModule<storm::settings::modules::MinMaxEquationSolverSettings>();
-                if (settings.getMarkovAutomatonBoundedReachabilityMethod() == storm::settings::modules::MinMaxEquationSolverSettings::MarkovAutomatonBoundedReachabilityMethod::Imca) {
-                    return computeBoundedUntilProbabilitiesImca(env, dir, transitionMatrix, exitRateVector, markovianStates, psiStates, boundsPair);
+            std::vector<ValueType> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair) {
+                STORM_LOG_THROW(!env.solver().isForceExact(), storm::exceptions::InvalidOperationException, "Exact computations not possible for bounded until probabilities.");
+                
+                // Choose the applicable method
+                auto method = env.solver().timeBounded().getMaMethod();
+                if (method == storm::solver::MaBoundedReachabilityMethod::Imca) {
+                    if (!phiStates.full()) {
+                        STORM_LOG_WARN("Using Unif+ method because IMCA method does not support (phi Until psi) for non-trivial phi");
+                        method = storm::solver::MaBoundedReachabilityMethod::UnifPlus;
+                    }
                 } else {
-                    STORM_LOG_ASSERT(settings.getMarkovAutomatonBoundedReachabilityMethod() == storm::settings::modules::MinMaxEquationSolverSettings::MarkovAutomatonBoundedReachabilityMethod::UnifPlus, "Unknown solution method.");
+                    STORM_LOG_ASSERT(method == storm::solver::MaBoundedReachabilityMethod::UnifPlus, "Unknown solution method.");
                     if (!storm::utility::isZero(boundsPair.first)) {
                         STORM_LOG_WARN("Using IMCA method because Unif+ does not support a lower bound > 0.");
-                        return computeBoundedUntilProbabilitiesImca(env, dir, transitionMatrix, exitRateVector, markovianStates, psiStates, boundsPair);
-                    } else {
-                        return computeBoundedUntilProbabilitiesUnifPlus(env, dir, transitionMatrix, exitRateVector, markovianStates, psiStates, boundsPair);
+                        method = storm::solver::MaBoundedReachabilityMethod::Imca;
                     }
+                }
+
+                if (method == storm::solver::MaBoundedReachabilityMethod::Imca) {
+                    return computeBoundedUntilProbabilitiesImca(env, goal.direction(), transitionMatrix, exitRateVector, markovianStates, psiStates, boundsPair);
+                } else {
+                        UnifPlusHelper<ValueType> helper(transitionMatrix, exitRateVector, markovianStates);
+                        boost::optional<storm::storage::BitVector> relevantValues;
+                        if (goal.hasRelevantValues()) {
+                            relevantValues = std::move(goal.relevantValues());
+                        }
+                        return helper.computeBoundedUntilProbabilities(env, goal.direction(), phiStates, psiStates, boundsPair.second, relevantValues);
                 }
             }
               
             template <typename ValueType, typename std::enable_if<!storm::NumberTraits<ValueType>::SupportsExponential, int>::type>
-            std::vector<ValueType> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair) {
+            std::vector<ValueType> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair) {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded until probabilities is unsupported for this value type.");
             }
 
@@ -883,7 +940,7 @@ namespace storm {
                 
                 // Solve MEC with the method specified in the settings
                 storm::solver::LraMethod method = env.solver().lra().getNondetLraMethod();
-                if (storm::NumberTraits<ValueType>::IsExact && env.solver().lra().isNondetLraMethodSetFromDefault() && method != storm::solver::LraMethod::LinearProgramming) {
+                if ((storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact()) && env.solver().lra().isNondetLraMethodSetFromDefault() && method != storm::solver::LraMethod::LinearProgramming) {
                     STORM_LOG_INFO("Selecting 'LP' as the solution technique for long-run properties to guarantee exact results. If you want to override this, please explicitly specify a different LRA method.");
                     method = storm::solver::LraMethod::LinearProgramming;
                 } else if (env.solver().isForceSoundness() && env.solver().lra().isNondetLraMethodSetFromDefault() && method != storm::solver::LraMethod::ValueIteration) {
@@ -1058,29 +1115,13 @@ namespace storm {
                     if (env.solver().isForceSoundness()) {
                         // To get correct results, the inner equation systems are solved exactly.
                         // TODO investigate how an error would propagate
-                        solverEnv.solver().minMax().setMethod(storm::solver::MinMaxMethod::Topological);
-                        solverEnv.solver().topological().setUnderlyingMinMaxMethod(storm::solver::MinMaxMethod::PolicyIteration);
-                        solverEnv.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Topological);
-                        solverEnv.solver().topological().setUnderlyingEquationSolverType(storm::solver::EquationSolverType::Eigen);
-                        solverEnv.solver().eigen().setMethod(storm::solver::EigenLinearEquationSolverMethod::SparseLU);
+                        solverEnv.solver().setForceExact(true);
                     }
                     
                     x.resize(aProbabilistic.getRowGroupCount(), storm::utility::zero<ValueType>());
                     b = probabilisticChoiceRewards;
                     
-                    // Check for requirements of the solver.
-                    // The solution is unique as we assume non-zeno MAs.
-                    storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxLinearEquationSolverFactory;
-                    storm::solver::MinMaxLinearEquationSolverRequirements requirements = minMaxLinearEquationSolverFactory.getRequirements(solverEnv, true, true, dir);
-                    requirements.clearLowerBounds();
-                    STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
-    
-                    solver = minMaxLinearEquationSolverFactory.create(solverEnv, std::move(aProbabilistic));
-                    solver->setLowerBound(storm::utility::zero<ValueType>());
-                    solver->setHasUniqueSolution(true);
-                    solver->setHasNoEndComponents(true);
-                    solver->setRequirementsChecked(true);
-                    solver->setCachingEnabled(true);
+                    solver = setUpProbabilisticStatesSolver(solverEnv, dir, aProbabilistic);
                 }
                 
                 uint64_t iter = 0;
@@ -1092,7 +1133,11 @@ namespace storm {
                     ++iter;
                     // Compute the expected total rewards for the probabilistic states
                     if (hasProbabilisticStates) {
-                        solver->solveEquations(solverEnv, dir, x, b);
+                        if (solver) {
+                            solver->solveEquations(solverEnv, dir, x, b);
+                        } else {
+                            storm::utility::vector::reduceVectorMinOrMax(dir, b, x, aProbabilistic.getRowGroupIndices());
+                        }
                     }
                     // now compute the values for the markovian states. We also keep track of the maximal and minimal difference between two values (for convergence checking)
                     auto vIt = v.begin();
@@ -1119,6 +1164,9 @@ namespace storm {
                     if ((maxDiff - minDiff) <= (relative ? (precision * (v.front() + minDiff)) : precision)) {
                         break;
                     }
+                    if (storm::utility::resources::isTerminate()) {
+                        break;
+                    }
                     
                     // update the rhs of the MinMax equation system
                     ValueType referenceValue = v.front();
@@ -1136,7 +1184,7 @@ namespace storm {
                 return v.front() * uniformizationRate;
             }
             
-            template std::vector<double> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<double> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair);
+            template std::vector<double> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::solver::SolveGoal<double>&& goal, storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<double> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair);
                 
             template MDPSparseModelCheckingHelperReturnType<double> SparseMarkovAutomatonCslHelper::computeUntilProbabilities(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::SparseMatrix<double> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, bool produceScheduler);
                 
@@ -1156,7 +1204,7 @@ namespace storm {
             
             template double SparseMarkovAutomatonCslHelper::computeLraForMaximalEndComponentVI(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<double> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::models::sparse::StandardRewardModel<double> const& rewardModel, storm::storage::MaximalEndComponent const& mec);
             
-            template std::vector<storm::RationalNumber> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, std::vector<storm::RationalNumber> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair);
+            template std::vector<storm::RationalNumber> SparseMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(Environment const& env, storm::solver::SolveGoal<storm::RationalNumber>&& goal, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, std::vector<storm::RationalNumber> const& exitRateVector, storm::storage::BitVector const& markovianStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, std::pair<double, double> const& boundsPair);
                 
             template MDPSparseModelCheckingHelperReturnType<storm::RationalNumber> SparseMarkovAutomatonCslHelper::computeUntilProbabilities(Environment const& env, OptimizationDirection dir, storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::SparseMatrix<storm::RationalNumber> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, bool qualitative, bool produceScheduler);
                 

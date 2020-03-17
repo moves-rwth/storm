@@ -64,7 +64,10 @@ int main(const int argc, const char **argv) {
         if (!optionsCorrect) {
             return -1;
         }
-        
+
+        // Start by setting some urgent options (log levels, resources, etc.)
+        storm::cli::setUrgentOptions();
+
         auto gspnSettings = storm::settings::getModule<storm::settings::modules::GSPNSettings>();
 
         // parse gspn from file

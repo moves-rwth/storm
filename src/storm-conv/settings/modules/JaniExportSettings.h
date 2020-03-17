@@ -31,6 +31,8 @@ namespace storm {
                 bool isEliminateFunctionsSet() const;
                 
                 bool isReplaceUnassignedVariablesWithConstantsSet() const;
+                
+                bool isSimplifyCompositionSet() const;
 
                 std::vector<std::pair<std::string, std::string>> getLocationVariables() const;
 
@@ -49,6 +51,7 @@ namespace storm {
                 static const std::string eliminateArraysOptionName;
                 static const std::string eliminateFunctionsOptionName;
                 static const std::string replaceUnassignedVariablesWithConstantsOptionName;
+                static const std::string simplifyCompositionOptionName;
                 
             };
         }

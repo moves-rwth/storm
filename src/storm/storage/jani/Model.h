@@ -36,6 +36,7 @@ namespace storm {
         class SynchronizationVector;
         struct ArrayEliminatorData;
         class Property;
+        struct InformationObject;
         
         class Model {
         public:
@@ -384,7 +385,17 @@ namespace storm {
              *  Retrieves the total number of edges in this model.
              */
             std::size_t getNumberOfEdges() const;
-            
+
+            /*!
+             * Number of global and local variables.
+             */
+            std::size_t getTotalNumberOfNonTransientVariables() const;
+
+            /*!
+             * Returns various information of this model.
+             */
+            InformationObject getModelInformation() const;
+
             /*!
              * Sets the system composition expression of the JANI model.
              */
@@ -405,6 +416,13 @@ namespace storm {
              * Retrieves the system composition expression.
              */
             Composition const& getSystemComposition() const;
+            
+            /*!
+             * Attempts to simplify the composition.
+             * Right now, this only means that automata that occur  multiple times in the composition will be
+             * duplicated su that each automata occurs at most once.
+             */
+            void simplifyComposition();
             
             /*!
              * Retrieves the set of action names.
@@ -547,7 +565,7 @@ namespace storm {
              * Determines whether this model is a discrete-time model.
              */
             bool isDiscreteTimeModel() const;
-            
+
             /*!
              * Retrieves a list of expressions that characterize the legal values of the variables in this model.
              *

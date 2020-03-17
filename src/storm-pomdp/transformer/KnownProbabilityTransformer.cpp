@@ -116,8 +116,8 @@ namespace storm {
                 return std::make_shared<storm::models::sparse::Pomdp<ValueType>>(newPomdp);
             }
 
-            template
-            class KnownProbabilityTransformer<double>;
+            template class KnownProbabilityTransformer<double>;
+            template class KnownProbabilityTransformer<storm::RationalNumber>;
         }
     }
 }

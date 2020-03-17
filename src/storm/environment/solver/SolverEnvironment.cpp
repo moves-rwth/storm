@@ -1,13 +1,6 @@
 #include "storm/environment/solver/SolverEnvironment.h"
 
-#include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
-#include "storm/environment/solver/MinMaxSolverEnvironment.h"
-#include "storm/environment/solver/MultiplierEnvironment.h"
-#include "storm/environment/solver/EigenSolverEnvironment.h"
-#include "storm/environment/solver/GmmxxSolverEnvironment.h"
-#include "storm/environment/solver/NativeSolverEnvironment.h"
-#include "storm/environment/solver/GameSolverEnvironment.h"
-#include "storm/environment/solver/TopologicalSolverEnvironment.h"
+#include "storm/environment/solver/AllSolverEnvironments.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
@@ -21,7 +14,9 @@
 namespace storm {
     
     SolverEnvironment::SolverEnvironment() {
-        forceSoundness = storm::settings::getModule<storm::settings::modules::GeneralSettings>().isSoundSet();
+        auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+        forceSoundness = generalSettings.isSoundSet();
+        forceExact = generalSettings.isExactSet() || generalSettings.isExactFinitePrecisionSet();
         linearEquationSolverType = storm::settings::getModule<storm::settings::modules::CoreSettings>().getEquationSolver();
         linearEquationSolverTypeSetFromDefault = storm::settings::getModule<storm::settings::modules::CoreSettings>().isEquationSolverSetFromDefaultValue();
     }
@@ -36,6 +31,14 @@ namespace storm {
     
     LongRunAverageSolverEnvironment const& SolverEnvironment::lra() const {
         return longRunAverageSolverEnvironment.get();
+    }
+    
+    TimeBoundedSolverEnvironment& SolverEnvironment::timeBounded() {
+        return timeBoundedSolverEnvironment.get();
+    }
+    
+    TimeBoundedSolverEnvironment const& SolverEnvironment::timeBounded() const {
+        return timeBoundedSolverEnvironment.get();
     }
     
     MinMaxSolverEnvironment& SolverEnvironment::minMax() {
@@ -94,12 +97,28 @@ namespace storm {
         return topologicalSolverEnvironment.get();
     }
 
+    OviSolverEnvironment& SolverEnvironment::ovi() {
+        return oviSolverEnvironment.get();
+    }
+    
+    OviSolverEnvironment const& SolverEnvironment::ovi() const {
+        return oviSolverEnvironment.get();
+    }
+
     bool SolverEnvironment::isForceSoundness() const {
         return forceSoundness;
     }
     
     void SolverEnvironment::setForceSoundness(bool value) {
         SolverEnvironment::forceSoundness = value;
+    }
+    
+    bool SolverEnvironment::isForceExact() const {
+        return forceExact;
+    }
+    
+    void SolverEnvironment::setForceExact(bool value) {
+        SolverEnvironment::forceExact = value;
     }
     
     storm::solver::EquationSolverType const& SolverEnvironment::getLinearEquationSolverType() const {

@@ -150,6 +150,11 @@ namespace storm {
              */
             std::size_t size() const;
             
+            /*!
+             * If the size is already known, reserves space in the underlying distribution.
+             */
+            void reserve(std::size_t const& size);
+            
         private:
             // A flag indicating whether this choice is Markovian or not.
             bool markovian;

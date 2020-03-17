@@ -2,7 +2,9 @@
 
 #include "storm/settings/Option.h"
 #include "storm/settings/OptionBuilder.h"
+#include "storm/settings/ArgumentBuilder.h"
 #include "storm/exceptions/InvalidSettingsException.h"
+#include "storm/exceptions/IllegalArgumentValueException.h"
 
 namespace storm {
     namespace settings {
@@ -11,7 +13,7 @@ namespace storm {
             const std::string TransformationSettings::moduleName = "transformation";
 
             const std::string TransformationSettings::chainEliminationOptionName = "eliminate-chains";
-            const std::string TransformationSettings::ignoreLabelingOptionName = "ec-ignore-labeling";
+            const std::string TransformationSettings::labelBehaviorOptionName = "ec-label-behavior";
             const std::string TransformationSettings::toNondetOptionName = "to-nondet";
             const std::string TransformationSettings::toDiscreteTimeOptionName = "to-discrete";
 
@@ -19,8 +21,15 @@ namespace storm {
             TransformationSettings::TransformationSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, chainEliminationOptionName, false,
                                                                "If set, chains of non-Markovian states are eliminated if the resulting model is a Markov Automaton.").setIsAdvanced().build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, ignoreLabelingOptionName, false,
-                                                               "If set, the elimination of chains ignores the labels for all non-Markovian states. This may cause wrong results.").setIsAdvanced().build());
+                std::vector<std::string> labelBehavior;
+                labelBehavior.push_back("keep");
+                labelBehavior.push_back("merge");
+                labelBehavior.push_back("delete");
+                this->addOption(storm::settings::OptionBuilder(moduleName, labelBehaviorOptionName, false,
+                                                               "Sets the behavior of labels for all non-Markovian states. Some options may cause wrong results.").setIsAdvanced().addArgument(
+                        storm::settings::ArgumentBuilder::createStringArgument("behavior",
+                                                                               "The behavior how the transformer handles labels of non-Markovian states. 'keep' does not eliminate states with different labels, 'merge' builds the union of labels of all eliminated states, 'delete' only keeps the labels of the last state.").setDefaultValueString(
+                                "keep").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(labelBehavior)).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, toNondetOptionName, false, "If set, DTMCs/CTMCs are converted to MDPs/MAs (without actual nondeterminism) before model checking.").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, toDiscreteTimeOptionName, false, "If set, CTMCs/MAs are converted to DTMCs/MDPs (which might or might not preserve the provided properties).").setIsAdvanced().build());
             }
@@ -29,8 +38,17 @@ namespace storm {
                 return this->getOption(chainEliminationOptionName).getHasOptionBeenSet();
             }
 
-            bool TransformationSettings::isIgnoreLabelingSet() const {
-                return this->getOption(ignoreLabelingOptionName).getHasOptionBeenSet();
+            storm::transformer::EliminationLabelBehavior TransformationSettings::getLabelBehavior() const {
+                std::string labelBehaviorAsString = this->getOption(labelBehaviorOptionName).getArgumentByName("behavior").getValueAsString();
+                if (labelBehaviorAsString == "keep") {
+                    return storm::transformer::EliminationLabelBehavior::KeepLabels;
+                } else if (labelBehaviorAsString == "merge") {
+                    return storm::transformer::EliminationLabelBehavior::MergeLabels;
+                } else if (labelBehaviorAsString == "delete") {
+                    return storm::transformer::EliminationLabelBehavior::DeleteLabels;
+                }
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException,
+                                "Illegal value '" << labelBehaviorAsString << "' set as label behavior for the elimination.");
             }
 
             bool TransformationSettings::isToNondeterministicModelSet() const {
@@ -43,7 +61,7 @@ namespace storm {
 
             bool TransformationSettings::check() const {
                 // Ensure that labeling preservation is only set if chain elimination is set
-                STORM_LOG_THROW(isChainEliminationSet() || !isIgnoreLabelingSet(),
+                STORM_LOG_THROW(isChainEliminationSet() || !this->getOption(labelBehaviorOptionName).getHasOptionBeenSet(),
                                 storm::exceptions::InvalidSettingsException,
                                 "Label preservation can only be chosen if chain elimination is applied.");
 

@@ -19,6 +19,11 @@ namespace storm {
 
             explicit HybridDtmcPrctlModelChecker(ModelType const& model);
             
+            /*!
+             * Returns false, if this task can certainly not be handled by this model checker (independent of the concrete model).
+             */
+            static bool canHandleStatic(CheckTask<storm::logic::Formula, ValueType> const& checkTask);
+            
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const override;
             virtual std::unique_ptr<CheckResult> computeBoundedUntilProbabilities(Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask) override;

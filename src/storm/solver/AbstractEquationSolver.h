@@ -6,8 +6,10 @@
 #include <iostream>
 #include <boost/optional.hpp>
 
+#include "storm/solver/SolverStatus.h"
 #include "storm/solver/TerminationCondition.h"
 #include "storm/utility/ProgressMeasurement.h"
+
 
 namespace storm {
     namespace solver {
@@ -190,6 +192,34 @@ namespace storm {
             void createUpperBoundsVector(std::vector<ValueType>& upperBoundsVector) const;
             void createUpperBoundsVector(std::unique_ptr<std::vector<ValueType>>& upperBoundsVector, uint64_t length) const;
             void createLowerBoundsVector(std::vector<ValueType>& lowerBoundsVector) const;
+
+            /*!
+             * Report the current status of the solver.
+             * @param status Solver status.
+             * @param iterations Number of iterations (if solver is iterative).
+             */
+            void reportStatus(SolverStatus status, boost::optional<uint64_t> const& iterations = boost::none) const;
+
+            /*!
+             * Update the status of the solver with respect to convergence, early termination, abortion, etc.
+             * @param status Current status.
+             * @param x Vector for terminatation condition.
+             * @param guarantee Guarentee for termination condition.
+             * @param iterations Current number of iterations.
+             * @param maximalNumberOfIterations Maximal number of iterations.
+             * @return New status.
+             */
+            SolverStatus updateStatus(SolverStatus status, std::vector<ValueType> const& x, SolverGuarantee const& guarantee, uint64_t iterations, uint64_t maximalNumberOfIterations) const;
+
+            /*!
+            * Update the status of the solver with respect to convergence, early termination, abortion, etc.
+            * @param status Current status.
+            * @param earlyTermination Flag indicating if the solver can be terminated early.
+            * @param iterations Current number of iterations.
+            * @param maximalNumberOfIterations Maximal number of iterations.
+            * @return New status.
+            */
+            SolverStatus updateStatus(SolverStatus status, bool earlyTermination, uint64_t iterations, uint64_t maximalNumberOfIterations) const;
 
             // A termination condition to be used (can be unset).
             std::unique_ptr<TerminationCondition<ValueType>> terminationCondition;

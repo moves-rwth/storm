@@ -19,7 +19,7 @@ namespace storm {
             template <storm::dd::DdType DdType, typename ValueType, typename ExportValueType = ValueType>
             class QuotientExtractor {
             public:
-                QuotientExtractor();
+                QuotientExtractor(storm::dd::bisimulation::QuotientFormat const& quotientFormat);
                 
                 std::shared_ptr<storm::models::Model<ExportValueType>> extract(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation);
                 
@@ -32,7 +32,7 @@ namespace storm {
 
                 bool useRepresentatives;
                 bool useOriginalVariables;
-                storm::settings::modules::BisimulationSettings::QuotientFormat quotientFormat;
+                 storm::dd::bisimulation::QuotientFormat quotientFormat;
             };
             
         }

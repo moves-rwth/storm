@@ -99,6 +99,49 @@ TEST(PrismParser, ComplexTest) {
     EXPECT_EQ(1ul, result.getNumberOfLabels());
 }
 
+
+TEST(PrismParser, POMDPInputTest) {
+    std::string testInput =
+            R"(pomdp
+
+    observables
+            i
+    endobservables
+
+    module example
+    s : [0..4] init 0;
+    i : bool init true;
+    [] s=0 -> 0.5: (s'=1) & (i'=false) + 0.5: (s'=2) & (i'=false);
+    [] s=1 | s=2 -> 1: (s'=3) & (i'=true);
+    [r] s=1 -> 1: (s'=4) & (i'=true);
+    [r] s=2 -> 1: (s'=3) & (i'=true);
+    endmodule
+
+    )";
+
+    storm::prism::Program result;
+    EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
+
+    std::string testInput2 =
+            R"(pomdp
+
+        observable intermediate = s=1 | s=2;
+
+        module example
+        s : [0..4] init 0;
+        [] s=0 -> 0.5: (s'=1) + 0.5: (s'=2);
+        [l] s=1 -> 1: (s'=3);
+        [l] s=2 -> 1: (s'=4);
+        [r] s=1 -> 1: (s'=4);
+        [r] s=2 -> 1: (s'=3);
+        endmodule
+
+    )";
+
+    EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput2, "testfile"));
+}
+
+
 TEST(PrismParser, IllegalInputTest) {
     std::string testInput =
     R"(ctmc
@@ -224,4 +267,3 @@ TEST(PrismParser, IllegalInputTest) {
 TEST(PrismParser, IllegalSynchronizedWriteTest) {
     STORM_SILENT_EXPECT_THROW(storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2-illegalSynchronizingWrite.nm"), storm::exceptions::WrongFormatException);
 }
-

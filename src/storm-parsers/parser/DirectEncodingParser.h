@@ -9,6 +9,9 @@
 namespace storm {
     namespace parser {
 
+        struct DirectEncodingParserOptions {
+            bool buildChoiceLabeling = false;
+        };
         /*!
          *	Parser for models in the DRN format with explicit encoding.
          */
@@ -23,7 +26,7 @@ namespace storm {
              *
              * @return A sparse model
              */
-            static std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> parseModel(std::string const& file);
+            static std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> parseModel(std::string const& fil, DirectEncodingParserOptions const& options = DirectEncodingParserOptions());
 
         private:
 
@@ -40,8 +43,8 @@ namespace storm {
              * @return Transition matrix.
              */
             static std::shared_ptr<storm::storage::sparse::ModelComponents<ValueType, RewardModelType>>
-            parseStates(std::istream& file, storm::models::ModelType type, size_t stateSize, std::unordered_map<std::string, ValueType> const& placeholders,
-                        ValueParser<ValueType> const& valueParser, std::vector<std::string> const& rewardModelNames);
+            parseStates(std::istream& file, storm::models::ModelType type, size_t stateSize, size_t nrChoices, std::unordered_map<std::string, ValueType> const& placeholders,
+                        ValueParser<ValueType> const& valueParser, std::vector<std::string> const& rewardModelNames, DirectEncodingParserOptions const& options);
 
             /*!
              * Parse value from string while using placeholders.

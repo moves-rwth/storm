@@ -20,6 +20,9 @@ namespace storm {
             static const storm::dd::DdType DdType = ModelType::DdType;
 
             explicit HybridCtmcCslModelChecker(ModelType const& model);
+
+            // Returns false, if this task can certainly not be handled by this model checker (independent of the concrete model).
+            static bool canHandleStatic(CheckTask<storm::logic::Formula, ValueType> const& checkTask);
             
             // The implemented methods of the AbstractModelChecker interface.
             virtual bool canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const override;
@@ -33,14 +36,7 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeCumulativeRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> computeReachabilityRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> computeReachabilityTimes(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) override;
-
-        private:
-            template<typename CValueType = ValueType, typename std::enable_if<storm::NumberTraits<CValueType>::SupportsExponential, int>::type = 0>
-            bool canHandleImplementation(CheckTask<storm::logic::Formula, CValueType> const& checkTask) const;
-            
-            template<typename CValueType = ValueType, typename std::enable_if<!storm::NumberTraits<CValueType>::SupportsExponential, int>::type = 0>
-            bool canHandleImplementation(CheckTask<storm::logic::Formula, CValueType> const& checkTask) const;
-            
+        
         };
         
     } // namespace modelchecker

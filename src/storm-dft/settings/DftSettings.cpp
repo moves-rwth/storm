@@ -24,6 +24,9 @@
 #include "storm-gspn/settings/modules/GSPNSettings.h"
 #include "storm-gspn/settings/modules/GSPNExportSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
+#include "storm/settings/modules/HintSettings.h"
+#include "storm/settings/modules/OviSolverSettings.h"
+#include "storm/settings/modules/TimeBoundedSolverSettings.h"
 
 
 namespace storm {
@@ -39,6 +42,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::IOSettings>();
             storm::settings::addModule<storm::settings::modules::CoreSettings>();
             storm::settings::addModule<storm::settings::modules::TransformationSettings>();
+            storm::settings::addModule<storm::settings::modules::HintSettings>();
 
             storm::settings::addModule<storm::settings::modules::DebugSettings>();
             storm::settings::addModule<storm::settings::modules::ModelCheckerSettings>();
@@ -49,6 +53,8 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::EliminationSettings>();
             storm::settings::addModule<storm::settings::modules::MinMaxEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::MultiplierSettings>();
+            storm::settings::addModule<storm::settings::modules::OviSolverSettings>();
+            storm::settings::addModule<storm::settings::modules::TimeBoundedSolverSettings>();
             storm::settings::addModule<storm::settings::modules::GameSolverSettings>(false);
             // storm::settings::addModule<storm::settings::modules::BisimulationSettings>();
             storm::settings::addModule<storm::settings::modules::ResourceSettings>();

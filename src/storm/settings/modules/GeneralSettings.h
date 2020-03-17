@@ -93,11 +93,18 @@ namespace storm {
                 bool isParametricSet() const;
                 
                 /*!
-                 * Retrieves whether the option enabling exact model checking is set.
+                 * Retrieves whether the option enabling exact model checking is set and we should use infinite precision rationals.
                  *
                  * @return True iff the option was set.
                  */
                 bool isExactSet() const;
+                
+                /*!
+                 * Retrieves whether the option enabling exact model checking is set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isExactFinitePrecisionSet() const;
                 
                 /*!
                  * Retrieves whether the option forcing soundnet is set.

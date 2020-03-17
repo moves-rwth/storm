@@ -69,9 +69,13 @@ namespace storm {
             return result;
         }
 
-        uint32_t unpackStateToObservabilityClass(CompressedState const& state, std::unordered_map<storm::storage::BitVector,uint32_t>& observabilityMap, storm::storage::BitVector const& mask) {
+        uint32_t unpackStateToObservabilityClass(CompressedState const& state, storm::storage::BitVector const& observationVector, std::unordered_map<storm::storage::BitVector,uint32_t>& observabilityMap, storm::storage::BitVector const& mask) {
             STORM_LOG_ASSERT(state.size() == mask.size(), "Mask should be as long as state.");
             storm::storage::BitVector observeClass = state & mask;
+            if (observationVector.size() != 0) {
+                observeClass.concat(observationVector);
+            }
+
             auto it = observabilityMap.find(observeClass);
             if (it != observabilityMap.end()) {
                 return it->second;

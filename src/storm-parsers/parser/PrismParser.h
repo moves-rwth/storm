@@ -41,6 +41,7 @@ namespace storm {
                 modules.clear();
                 rewardModels.clear();
                 labels.clear();
+                observationLabels.clear();
                 hasInitialConstruct = false;
                 initialConstruct = storm::prism::InitialConstruct();
                 systemCompositionConstruct = boost::none;
@@ -60,6 +61,7 @@ namespace storm {
             std::vector<storm::prism::Module> modules;
             std::vector<storm::prism::RewardModel> rewardModels;
             std::vector<storm::prism::Label> labels;
+            std::vector<storm::prism::ObservationLabel> observationLabels;
             bool hasInitialConstruct;
             storm::prism::InitialConstruct initialConstruct;
             boost::optional<storm::prism::SystemCompositionConstruct> systemCompositionConstruct;
@@ -261,6 +263,7 @@ namespace storm {
             // Rules for initial states expression.
             qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> initialStatesConstruct;
 
+            // Rules for POMDP observables (standard prism)
             qi::rule<Iterator, qi::unused_type(), Skipper> observablesConstruct;
             
             // Rules for invariant constructs
@@ -283,6 +286,10 @@ namespace storm {
             // Rules for label definitions.
             qi::rule<Iterator, storm::prism::Label(), Skipper> labelDefinition;
             qi::rule<Iterator, std::string(), Skipper> freshLabelName;
+
+            // Rules for observable (observation-label) definitions.
+            qi::rule<Iterator, storm::prism::ObservationLabel(), Skipper> observableDefinition;
+            qi::rule<Iterator, std::string(), Skipper> freshObservationLabelName;
 
             // Rules for formula definitions.
             qi::rule<Iterator, std::string(), Skipper> formulaDefinitionRhs;
@@ -307,6 +314,7 @@ namespace storm {
             bool isKnownModuleName(std::string const& moduleName);
             bool isFreshModuleName(std::string const& moduleName);
             bool isFreshLabelName(std::string const& moduleName);
+            bool isFreshObservationLabelName(std::string const& labelName);
             bool isFreshRewardModelName(std::string const& moduleName);
             bool isOfBoolType(storm::expressions::Expression const& expression);
             bool isOfIntType(storm::expressions::Expression const& expression);
@@ -332,6 +340,7 @@ namespace storm {
             storm::prism::Formula createFormulaFirstRun(std::string const& formulaName, std::string const& expression);
             storm::prism::Formula createFormulaSecondRun(std::string const& formulaName, storm::expressions::Expression const& expression);
             storm::prism::Label createLabel(std::string const& labelName, storm::expressions::Expression expression) const;
+            storm::prism::ObservationLabel createObservationLabel(std::string const& labelName, storm::expressions::Expression expression) const;
             storm::prism::RewardModel createRewardModel(std::string const& rewardModelName, std::vector<storm::prism::StateReward> const& stateRewards, std::vector<storm::prism::StateActionReward> const& stateActionRewards, std::vector<storm::prism::TransitionReward> const& transitionRewards) const;
             storm::prism::StateReward createStateReward(storm::expressions::Expression statePredicateExpression, storm::expressions::Expression rewardValueExpression) const;
             storm::prism::StateActionReward createStateActionReward(boost::optional<std::string> const& actionName, storm::expressions::Expression statePredicateExpression, storm::expressions::Expression rewardValueExpression, GlobalProgramInformation& globalProgramInformation) const;

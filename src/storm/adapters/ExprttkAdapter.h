@@ -5,6 +5,9 @@
 
 #pragma GCC diagnostic push
 
+// exprtk should be case sensitive in our case.
+#define exprtk_disable_caseinsensitivity
+
 #include "exprtk.hpp"
 
 #pragma GCC diagnostic pop

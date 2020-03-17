@@ -13,6 +13,8 @@
 #include "storm/solver/GmmxxMultiplier.h"
 #include "storm/environment/solver/MultiplierEnvironment.h"
 #include "storm/exceptions/IllegalArgumentException.h"
+#include "storm/utility/SignalHandler.h"
+#include "storm/utility/ProgressMeasurement.h"
 
 namespace storm {
     namespace solver {
@@ -33,21 +35,36 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void Multiplier<ValueType>::multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices) const {
-            multiplyAndReduceGaussSeidel(env, dir, this->matrix.getRowGroupIndices(), x, b, choices);
+        void Multiplier<ValueType>::multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices, bool backwards) const {
+            multiplyAndReduceGaussSeidel(env, dir, this->matrix.getRowGroupIndices(), x, b, choices, backwards);
         }
     
         template<typename ValueType>
         void Multiplier<ValueType>::repeatedMultiply(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint64_t n) const {
+            storm::utility::ProgressMeasurement progress("multiplications");
+            progress.setMaxCount(n);
+            progress.startNewMeasurement(0);
             for (uint64_t i = 0; i < n; ++i) {
+                progress.updateProgress(i);
                 multiply(env, x, b, x);
+                if (storm::utility::resources::isTerminate()) {
+                    STORM_LOG_WARN("Aborting after " << i << " of " << n << " multiplications.");
+                    break;
+                }
             }
         }
     
         template<typename ValueType>
         void Multiplier<ValueType>::repeatedMultiplyAndReduce(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, uint64_t n) const {
+            storm::utility::ProgressMeasurement progress("multiplications");
+            progress.setMaxCount(n);
+            progress.startNewMeasurement(0);
             for (uint64_t i = 0; i < n; ++i) {
                 multiplyAndReduce(env, dir, x, b, x);
+                if (storm::utility::resources::isTerminate()) {
+                    STORM_LOG_WARN("Aborting after " << i << " of " << n << " multiplications");
+                    break;
+                }
             }
         }
     

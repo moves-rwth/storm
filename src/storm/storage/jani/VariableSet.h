@@ -228,26 +228,36 @@ namespace storm {
              * Retrieves whether this variable set is empty.
              */
             bool empty() const;
-            
+
+            /*!
+             * Total number of variables, including transient variables.
+             */
+            uint64_t getNumberOfVariables() const;
+
+            /*
+             * Total number of nontransient variables
+             */
+            uint64_t getNumberOfNontransientVariables() const;
+
             /*!
              * Retrieves the number of transient variables in this variable set.
              */
-            uint_fast64_t getNumberOfTransientVariables() const;
+            uint64_t getNumberOfTransientVariables() const;
             
             /*!
              * Retrieves the number of real transient variables in this variable set.
              */
-            uint_fast64_t getNumberOfRealTransientVariables() const;
+            uint64_t getNumberOfRealTransientVariables() const;
 
             /*!
              * Retrieves the number of unbounded integer transient variables in this variable set.
              */
-            uint_fast64_t getNumberOfUnboundedIntegerTransientVariables() const;
+            uint64_t getNumberOfUnboundedIntegerTransientVariables() const;
 
             /*!
              * Retrieves the number of numerical (i.e. real, or integer) transient variables in this variable set.
              */
-            uint_fast64_t getNumberOfNumericalTransientVariables() const;
+            uint64_t getNumberOfNumericalTransientVariables() const;
 
             /*!
              * Retrieves the transient variables in this variable set.
@@ -271,6 +281,14 @@ namespace storm {
              * @param substitution
              */
             void substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+            
+            /*!
+             * Substitutes the actual variables according to the given substitution.
+             * @param substitution The substitution. Assumed to only map variables to VariableExpressions.
+             * @note does not substitute variables in initial expressions, variable bounds, ...
+             */
+            void substituteExpressionVariables(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution);
+            
             
         private:
             /// The vector of all variables.
