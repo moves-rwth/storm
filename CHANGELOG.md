@@ -7,6 +7,10 @@ The releases of major and minor versions contain an overview of changes since th
 
 Version 1.5.x
 -------------
+## Version 1.5.x (Under development)
+- CMake: Search for Gurobi prefers new versions
+- Tests: Enabled tests for permissive schedulers
+
 ## Version 1.5.1 (2020/03)
 - Jani models are now parsed using exact arithmetic.
 
