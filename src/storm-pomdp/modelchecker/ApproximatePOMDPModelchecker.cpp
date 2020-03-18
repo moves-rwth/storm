@@ -835,8 +835,8 @@ namespace storm {
                 return std::make_shared<RefinementComponents<ValueType>>(
                         RefinementComponents<ValueType>{modelPtr, overApprox, underApproxComponents->underApproxValue, overApproxResultMap,
                                                         underApproxComponents->underApproxMap, refinementComponents->beliefList, refinementComponents->beliefGrid,
-                                                        refinementComponents->beliefIsTarget,
-                                                        refinementComponents->overApproxBeliefStateMap, underApproxComponents->underApproxBeliefStateMap});
+                                                        refinementComponents->beliefIsTarget, refinementComponents->overApproxBeliefStateMap,
+                                                        underApproxComponents->underApproxBeliefStateMap, refinementComponents->initialBeliefId});
             }
 
             template<typename ValueType, typename RewardModelType>
