@@ -99,37 +99,6 @@ namespace storm {
                 std::unique_ptr<POMDPCheckResult<ValueType>>
                 computeReachabilityRewardOTF(std::set<uint32_t> const &targetObservations, bool min);
 
-                // TODO: Check if this is obsolete
-                /**
-                 * Compute the reachability probability for given target observations on a POMDP for the given resolution only.
-                 * Static state space generation is used for the overapproximation, i.e. the whole grid is generated
-                 *
-                 * @param pomdp the POMDP to be checked
-                 * @param targetObservations the set of observations to be reached
-                 * @param min true if the minimum probability is to be computed
-                 * @param gridResolution the initial grid resolution
-                 * @return A struct containing the final overapproximation (overApproxValue) and underapproximation (underApproxValue) values
-                 */
-                std::unique_ptr<POMDPCheckResult<ValueType>>
-                computeReachabilityProbability(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                               std::set<uint32_t> const &targetObservations, bool min,
-                                               uint64_t gridResolution);
-
-                // TODO: Check if this is obsolete
-                /**
-                 * Compute the reachability rewards for given target observations on a POMDP for the given resolution only.
-                 * Static state space generation is used for the overapproximation, i.e. the whole grid is generated
-                 *
-                 * @param targetObservations the set of observations to be reached
-                 * @param min true if the minimum rewards are to be computed
-                 * @param gridResolution the initial grid resolution
-                 * @return A struct containing the overapproximation (overApproxValue) and underapproximation (underApproxValue) values
-                 */
-                std::unique_ptr<POMDPCheckResult<ValueType>>
-                computeReachabilityReward(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                          std::set<uint32_t> const &targetObservations, bool min,
-                                          uint64_t gridResolution);
-
             private:
                 /**
                  * Helper method to compute the inital step of the refinement loop
@@ -172,21 +141,6 @@ namespace storm {
                                        std::vector<uint64_t> &observationResolutionVector, bool computeRewards,
                                        boost::optional<std::map<uint64_t, ValueType>> overApproximationMap = boost::none,
                                        boost::optional<std::map<uint64_t, ValueType>> underApproximationMap = boost::none, uint64_t maxUaModelSize = 200);
-
-                // TODO: Check if this is obsolete
-                /**
-                 * Helper method to compute reachability properties using static state space generation
-                 *
-                 * @param targetObservations set of target observations
-                 * @param min true if minimum value is to be computed
-                 * @param gridResolution the resolution of the grid to be used
-                 * @param computeRewards true if rewards are to be computed, false if probability is computed
-                 * @return A struct containing the overapproximation (overApproxValue) and underapproximation (underApproxValue) values
-                 */
-                std::unique_ptr<POMDPCheckResult<ValueType>>
-                computeReachability(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                    std::set<uint32_t> const &targetObservations, bool min,
-                                    uint64_t gridResolution, bool computeRewards);
 
                 /**
                  * Helper to compute an underapproximation of the reachability property.
@@ -314,43 +268,9 @@ namespace storm {
                 ValueType getRewardAfterAction(uint64_t action, storm::pomdp::Belief<ValueType> &belief);
 
 
-                /**
-                 * Helper method for value iteration on data structures representing the belief grid
-                 * This is very close to the method implemented in PRISM POMDP
-                 *
-                 * @param pomdp The POMDP
-                 * @param beliefList data structure to store all generated beliefs
-                 * @param beliefGrid data structure to store references to the grid beliefs specifically
-                 * @param beliefIsTarget vector containing true if the corresponding belief in the beleif list is a target belief
-                 * @param observationProbabilities data structure containing for each belief and possible action the probability to go to a state with a given observation
-                 * @param nextBelieves data structure containing for each belief the successor belief after performing an action and observing a given observation
-                 * @param beliefActionRewards data structure containing for each belief and possible action the reward for performing the action
-                 * @param subSimplexCache caching data structure to store already computed subsimplices
-                 * @param lambdaCache caching data structure to store already computed lambda values
-                 * @param result data structure to store result values for each grid state
-                 * @param chosenActions data structure to store the action(s) that lead to the computed result value
-                 * @param gridResolution the resolution of the grid
-                 * @param min true if minimal values are to be computed
-                 * @param computeRewards true if rewards are to be computed
-                 * @return the resulting probability/reward in the initial state
-                 */
-                ValueType
-                overApproximationValueIteration(std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
-                                                std::vector<storm::pomdp::Belief<ValueType>> &beliefGrid, std::vector<bool> &beliefIsTarget,
-                                                std::map<uint64_t, std::vector<std::map<uint32_t, ValueType>>> &observationProbabilities,
-                                                std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
-                                                std::map<uint64_t, std::vector<ValueType>> &beliefActionRewards,
-                                                std::map<uint64_t, std::vector<std::map<uint64_t, ValueType>>> &subSimplexCache,
-                                                std::map<uint64_t, std::vector<ValueType>> &lambdaCache, std::map<uint64_t, ValueType> &result,
-                                                std::map<uint64_t, std::vector<uint64_t>> &chosenActions,
-                                                uint64_t gridResolution, bool min, bool computeRewards);
-
                 storm::models::sparse::Pomdp<ValueType, RewardModelType> const& pomdp;
                 Options options;
                 storm::utility::ConstantsComparator<ValueType> cc;
-                // TODO: these should be obsolete, right?
-                bool useMdp;
-                uint64_t maxIterations;
             };
 
         }
