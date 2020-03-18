@@ -90,8 +90,6 @@ namespace storm {
                 // This can probably be improved (i.e. resolutions for single belief states)
                 STORM_PRINT("Initial Resolution: " << gridResolution << std::endl)
                 std::vector<uint64_t> observationResolutionVector(pomdp.getNrObservations(), gridResolution);
-                auto overRes = storm::utility::one<ValueType>();
-                auto underRes = storm::utility::zero<ValueType>();
                 std::set<uint32_t> changedObservations;
                 uint64_t underApproxModelSize = 200;
                 uint64_t refinementCounter = 1;
