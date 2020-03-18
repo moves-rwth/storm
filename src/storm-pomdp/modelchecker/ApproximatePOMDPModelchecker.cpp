@@ -1052,85 +1052,6 @@ namespace storm {
             }
 
             template<typename ValueType, typename RewardModelType>
-            void ApproximatePOMDPModelchecker<ValueType, RewardModelType>::constructBeliefGrid(
-                    std::set<uint32_t> const &target_observations, uint64_t gridResolution,
-                    std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
-                    std::vector<storm::pomdp::Belief<ValueType>> &grid, std::vector<bool> &beliefIsTarget,
-                    uint64_t nextId) {
-                bool isTarget;
-                uint64_t newId = nextId;
-
-                for (uint32_t observation = 0; observation < pomdp.getNrObservations(); ++observation) {
-                    std::vector<uint64_t> statesWithObservation = pomdp.getStatesWithObservation(observation);
-                    isTarget = target_observations.find(observation) != target_observations.end();
-
-                    // TODO this can probably be condensed
-                    if (statesWithObservation.size() == 1) {
-                        // If there is only one state with the observation, we can directly add the corresponding belief
-                        std::map<uint64_t, ValueType> distribution;
-                        distribution[statesWithObservation.front()] = storm::utility::one<ValueType>();
-                        storm::pomdp::Belief<ValueType> belief = {newId, observation, distribution};
-                        STORM_LOG_TRACE(
-                                "Add Belief " << std::to_string(newId) << " [(" << std::to_string(observation) << "),"
-                                              << distribution << "]");
-                        beliefList.push_back(belief);
-                        grid.push_back(belief);
-                        beliefIsTarget.push_back(isTarget);
-                        ++newId;
-                    } else {
-                        // Otherwise we have to enumerate all possible distributions with regards to the grid
-                        // helper is used to derive the distribution of the belief
-                        std::vector<ValueType> helper(statesWithObservation.size(), ValueType(0));
-                        helper[0] = storm::utility::convertNumber<ValueType>(gridResolution);
-                        bool done = false;
-                        uint64_t index = 0;
-
-                        while (!done) {
-                            std::map<uint64_t, ValueType> distribution;
-                            for (size_t i = 0; i < statesWithObservation.size() - 1; ++i) {
-                                if (helper[i] - helper[i + 1] > ValueType(0)) {
-                                    distribution[statesWithObservation[i]] = (helper[i] - helper[i + 1]) /
-                                                                             storm::utility::convertNumber<ValueType>(
-                                                                                     gridResolution);
-                                }
-                            }
-                            if (helper[statesWithObservation.size() - 1] > ValueType(0)) {
-                                distribution[statesWithObservation.back()] =
-                                        helper[statesWithObservation.size() - 1] /
-                                        storm::utility::convertNumber<ValueType>(gridResolution);
-                            }
-                            storm::pomdp::Belief<ValueType> belief = {newId, observation, distribution};
-                            STORM_LOG_TRACE("Add Belief " << std::to_string(newId) << " [(" << std::to_string(observation) << ")," << distribution << "]");
-                            beliefList.push_back(belief);
-                            grid.push_back(belief);
-                            beliefIsTarget.push_back(isTarget);
-                            if (helper[statesWithObservation.size() - 1] ==
-                                storm::utility::convertNumber<ValueType>(gridResolution)) {
-                                // If the last entry of helper is the gridResolution, we have enumerated all necessary distributions
-                                done = true;
-                            } else {
-                                // Update helper by finding the index to increment
-                                index = statesWithObservation.size() - 1;
-                                while (helper[index] == helper[index - 1]) {
-                                    --index;
-                                }
-                                STORM_LOG_ASSERT(index > 0, "Error in BeliefGrid generation - index wrong");
-                                // Increment the value at the index
-                                ++helper[index];
-                                // Reset all indices greater than the changed one to 0
-                                ++index;
-                                while (index < statesWithObservation.size()) {
-                                    helper[index] = 0;
-                                    ++index;
-                                }
-                            }
-                            ++newId;
-                        }
-                    }
-                }
-            }
-
-            template<typename ValueType, typename RewardModelType>
             std::pair<std::vector<std::map<uint64_t, ValueType>>, std::vector<ValueType>>
             ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeSubSimplexAndLambdas(
                     std::map<uint64_t, ValueType> &probabilities, uint64_t resolution, uint64_t nrStates) {
@@ -1224,24 +1145,6 @@ namespace storm {
                 }
 
                 return res;
-            }
-
-            template<typename ValueType, typename RewardModelType>
-            storm::pomdp::Belief<ValueType>
-            ApproximatePOMDPModelchecker<ValueType, RewardModelType>::getBeliefAfterAction(storm::pomdp::Belief<ValueType> &belief, uint64_t actionIndex, uint64_t id) {
-                std::map<uint64_t, ValueType> distributionAfter;
-                uint32_t observation = 0;
-                for (auto const &probEntry : belief.probabilities) {
-                    uint64_t state = probEntry.first;
-                    auto row = pomdp.getTransitionMatrix().getRow(pomdp.getChoiceIndex(storm::storage::StateActionPair(state, actionIndex)));
-                    for (auto const &entry : row) {
-                        if (entry.getValue() > 0) {
-                            observation = pomdp.getObservation(entry.getColumn());
-                            distributionAfter[entry.getColumn()] += belief.probabilities[state] * entry.getValue();
-                        }
-                    }
-                }
-                return storm::pomdp::Belief<ValueType>{id, observation, distributionAfter};
             }
 
             template<typename ValueType, typename RewardModelType>

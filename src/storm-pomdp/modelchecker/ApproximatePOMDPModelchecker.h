@@ -185,22 +185,6 @@ namespace storm {
 
 
                 /**
-                 * Helper method to construct the static belief grid for the POMDP overapproximation
-                 *
-                 * @param target_observations set of target observations
-                 * @param gridResolution the resolution of the grid to be constructed
-                 * @param beliefList data structure to store all generated beliefs
-                 * @param grid data structure to store references to the grid beliefs specifically
-                 * @param beliefIsTarget vector containing true if the corresponding belief in the beleif list is a target belief
-                 * @param nextId the ID to be used for the next generated belief
-                 */
-                void constructBeliefGrid(std::set<uint32_t> const &target_observations, uint64_t gridResolution,
-                                         std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
-                                         std::vector<storm::pomdp::Belief<ValueType>> &grid,
-                                         std::vector<bool> &beliefIsTarget, uint64_t nextId);
-
-
-                /**
                  * Helper method to get the probabilities to be in a state with each observation after performing an action
                  *
                  * @param belief the belief in which the action is performed
@@ -227,17 +211,6 @@ namespace storm {
                         std::set<uint32_t> const &targetObservations,
                         storm::pomdp::Belief<ValueType> &belief,
                         uint64_t actionIndex, uint32_t observation, uint64_t id);
-
-                /**
-                 * Helper method to generate the next belief that results from a belief by performing an action
-                 *
-                 * @param belief the starting belief
-                 * @param actionIndex the index of the action to be performed
-                 * @param id the ID for the generated belief
-                 * @return a belief object representing the belief after performing the action in the starting belief
-                 */
-                storm::pomdp::Belief<ValueType>
-                getBeliefAfterAction(storm::pomdp::Belief<ValueType> &belief, uint64_t actionIndex, uint64_t id);
 
                 /**
                  * Helper to get the id of a Belief stored in a given vector structure
