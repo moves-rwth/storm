@@ -54,7 +54,7 @@ namespace storm {
                         STORM_LOG_THROW(reachableFromSinkStates.empty(), storm::exceptions::NotSupportedException, "There are sink states that can reach non-sink states. This is currently not supported");
                     }
                     if (options.doRefinement) {
-                        return refineReachabilityProbability(formulaInfo.getTargetStates().observations, formulaInfo.minimize());
+                        return refineReachability(formulaInfo.getTargetStates().observations, formulaInfo.minimize(), false);
                     } else {
                         return computeReachabilityProbabilityOTF(formulaInfo.getTargetStates().observations, formulaInfo.minimize());
                     }
@@ -62,8 +62,7 @@ namespace storm {
                     // FIXME: Instead of giving up, introduce a new observation for target states and make sink states absorbing.
                     STORM_LOG_THROW(formulaInfo.getTargetStates().observationClosed, storm::exceptions::NotSupportedException, "There are non-target states with the same observation as a target state. This is currently not supported");
                     if (options.doRefinement) {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Rewards with refinement not implemented yet");
-                        //return refineReachabilityProbability(formulaInfo.getTargetStates().observations, formulaInfo.minimize());
+                        return refineReachability(formulaInfo.getTargetStates().observations, formulaInfo.minimize(), true);
                     } else {
                         // FIXME: pick the non-unique reward model here
                         STORM_LOG_THROW(pomdp.hasUniqueRewardModel(), storm::exceptions::NotSupportedException, "Non-unique reward models not implemented yet.");
@@ -77,7 +76,7 @@ namespace storm {
             
             template<typename ValueType, typename RewardModelType>
             std::unique_ptr<POMDPCheckResult<ValueType>>
-            ApproximatePOMDPModelchecker<ValueType, RewardModelType>::refineReachabilityProbability(std::set<uint32_t> const &targetObservations, bool min) {
+            ApproximatePOMDPModelchecker<ValueType, RewardModelType>::refineReachability(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards) {
                 std::srand(time(NULL));
                 // Compute easy upper and lower bounds
                 storm::utility::Stopwatch underlyingWatch(true);
@@ -94,11 +93,15 @@ namespace storm {
                 storm::models::sparse::Mdp<ValueType, RewardModelType> underlyingMdp(pomdp.getTransitionMatrix(), underlyingMdpLabeling, pomdp.getRewardModels());
                 auto underlyingModel = std::static_pointer_cast<storm::models::sparse::Model<ValueType, RewardModelType>>(
                         std::make_shared<storm::models::sparse::Mdp<ValueType, RewardModelType>>(underlyingMdp));
-                std::string initPropString = min ? "Pmin" : "Pmax";
+                std::string initPropString = computeRewards ? "R" : "P";
+                initPropString += min ? "min" : "max";
                 initPropString += "=? [F \"__goal__\"]";
                 std::vector<storm::jani::Property> propVector = storm::api::parseProperties(initPropString);
                 std::shared_ptr<storm::logic::Formula const> underlyingProperty = storm::api::extractFormulasFromProperties(propVector).front();
                 STORM_PRINT("Underlying MDP" << std::endl)
+                if (computeRewards) {
+                    underlyingMdp.addRewardModel("std", pomdp.getUniqueRewardModel());
+                }
                 underlyingMdp.printModelInformationToStream(std::cout);
                 std::unique_ptr<storm::modelchecker::CheckResult> underlyingRes(
                         storm::api::verifyWithSparseEngine<ValueType>(underlyingModel, storm::api::createTask<ValueType>(underlyingProperty, false)));
@@ -119,6 +122,9 @@ namespace storm {
                     }
                 }
                 auto underApproxModel = underlyingMdp.applyScheduler(pomdpScheduler, false);
+                if (computeRewards) {
+                    underApproxModel->restrictRewardModels({"std"});
+                }
                 STORM_PRINT("Random Positional Scheduler" << std::endl)
                 underApproxModel->printModelInformationToStream(std::cout);
                 std::unique_ptr<storm::modelchecker::CheckResult> underapproxRes(
@@ -140,10 +146,12 @@ namespace storm {
                 uint64_t underApproxModelSize = 200;
                 uint64_t refinementCounter = 1;
                 STORM_PRINT("==============================" << std::endl << "Initial Computation" << std::endl << "------------------------------" << std::endl)
-                std::shared_ptr<RefinementComponents<ValueType>> res = computeFirstRefinementStep(targetObservations, min, observationResolutionVector, false, initialOverApproxMap,
+                std::shared_ptr<RefinementComponents<ValueType>> res = computeFirstRefinementStep(targetObservations, min, observationResolutionVector, computeRewards,
+                                                                                                  initialOverApproxMap,
                                                                                                   initialUnderApproxMap, underApproxModelSize);
                 ValueType lastMinScore = storm::utility::infinity<ValueType>();
-                while (refinementCounter < 1000 && res->overApproxValue - res->underApproxValue > options.refinementPrecision) {
+                while (refinementCounter < 1000 && ((!min && res->overApproxValue - res->underApproxValue > options.refinementPrecision) ||
+                                                    (min && res->underApproxValue - res->overApproxValue > options.refinementPrecision))) {
                     // TODO the actual refinement
                     // choose which observation(s) to refine
                     std::vector<ValueType> obsAccumulator(pomdp.getNrObservations(), storm::utility::zero<ValueType>());
@@ -215,10 +223,11 @@ namespace storm {
                     }
                     STORM_PRINT(
                             "==============================" << std::endl << "Refinement Step " << refinementCounter << std::endl << "------------------------------" << std::endl)
-                    res = computeRefinementStep(targetObservations, min, observationResolutionVector, false,
+                    res = computeRefinementStep(targetObservations, min, observationResolutionVector, computeRewards,
                                                 res, changedObservations, initialOverApproxMap, initialUnderApproxMap, underApproxModelSize);
                     //storm::api::exportSparseModelAsDot(res->overApproxModelPtr, "oa_model_" + std::to_string(refinementCounter +1) + ".dot");
-                    STORM_LOG_ERROR_COND(cc.isLess(res->underApproxValue, res->overApproxValue) || cc.isEqual(res->underApproxValue, res->overApproxValue),
+                    STORM_LOG_ERROR_COND((!min && cc.isLess(res->underApproxValue, res->overApproxValue)) || (min && cc.isLess(res->overApproxValue, res->underApproxValue)) ||
+                                         cc.isEqual(res->underApproxValue, res->overApproxValue),
                                          "The value for the under-approximation is larger than the value for the over-approximation.");
                     ++refinementCounter;
                 }
@@ -373,8 +382,8 @@ namespace storm {
                     uint64_t currId = beliefsToBeExpanded.front();
                     beliefsToBeExpanded.pop_front();
                     bool isTarget = beliefIsTarget[currId];
-                    
-                    if (boundMapsSet && cc.isLess(weightedSumOverMap[currId] - weightedSumUnderMap[currId], options.explorationThreshold)) {
+
+                    if (boundMapsSet && !computeRewards && cc.isLess(weightedSumOverMap[currId] - weightedSumUnderMap[currId], options.explorationThreshold)) {
                         // TODO: with rewards whe would have to assign the corresponding reward to this transition
                         mdpTransitions.push_back({{{1, weightedSumOverMap[currId]}, {0, storm::utility::one<ValueType>() - weightedSumOverMap[currId]}}});
                         continue;
@@ -458,19 +467,10 @@ namespace storm {
                                     }
                                 }
                             }
-                            if (computeRewards) {
-                                actionRewardsInState[action] = getRewardAfterAction(pomdp.getChoiceIndex(storm::storage::StateActionPair(representativeState, action)),
-                                                                                    beliefList[currId]);
-                            }
                             if (!transitionInActionBelief.empty()) {
                                 transitionsInBelief.push_back(transitionInActionBelief);
                             }
                         }
-                        if (computeRewards) {
-                            beliefActionRewards.emplace(std::make_pair(currId, actionRewardsInState));
-                        }
-
-
                         if (transitionsInBelief.empty()) {
                             std::map<uint64_t, ValueType> transitionInActionBelief;
                             transitionInActionBelief[beliefStateMap.left.at(currId)] = storm::utility::one<ValueType>();
@@ -654,11 +654,6 @@ namespace storm {
                             }
                         }
                     }
-                    /* TODO
-                    if (computeRewards) {
-                        actionRewardsInState[action] = getRewardAfterAction(pomdp.getChoiceIndex(storm::storage::StateActionPair(representativeState, action)),
-                                                                            refinementComponents->beliefList[currId]);
-                    }*/
                     if (!transitionInActionBelief.empty()) {
                         transitionsStateActionPair[stateActionPair] = transitionInActionBelief;
                     }
@@ -754,19 +749,10 @@ namespace storm {
                                     }
                                 }
                             }
-                            /*
-                            if (computeRewards) {
-                                actionRewardsInState[action] = getRewardAfterAction(pomdp.getChoiceIndex(storm::storage::StateActionPair(representativeState, action)),
-                                                                                    beliefList[currId]);
-                            }*/
                             if (!transitionInActionBelief.empty()) {
                                 transitionsStateActionPair[std::make_pair(refinementComponents->overApproxBeliefStateMap.left.at(currId), action)] = transitionInActionBelief;
                             }
                         }
-                        /*
-                        if (computeRewards) {
-                            beliefActionRewards.emplace(std::make_pair(currId, actionRewardsInState));
-                        }*/
                     }
                 }
 
@@ -817,6 +803,21 @@ namespace storm {
                 }
                 storm::storage::sparse::ModelComponents<ValueType, RewardModelType> modelComponents(smb.build(), mdpLabeling);
                 storm::models::sparse::Mdp<ValueType, RewardModelType> overApproxMdp(modelComponents);
+                if (computeRewards) {
+                    storm::models::sparse::StandardRewardModel<ValueType> mdpRewardModel(boost::none, std::vector<ValueType>(modelComponents.transitionMatrix.getRowCount()));
+                    for (auto const &iter : refinementComponents->overApproxBeliefStateMap.left) {
+                        auto currentBelief = refinementComponents->beliefList[iter.first];
+                        auto representativeState = pomdp.getStatesWithObservation(currentBelief.observation).front();
+                        for (uint64_t action = 0; action < overApproxMdp.getNumberOfChoices(iter.second); ++action) {
+                            // Add the reward
+                            mdpRewardModel.setStateActionReward(overApproxMdp.getChoiceIndex(storm::storage::StateActionPair(iter.second, action)),
+                                                                getRewardAfterAction(pomdp.getChoiceIndex(storm::storage::StateActionPair(representativeState, action)),
+                                                                                     currentBelief));
+                        }
+                    }
+                    overApproxMdp.addRewardModel("std", mdpRewardModel);
+                    overApproxMdp.restrictRewardModels(std::set<std::string>({"std"}));
+                }
                 overApproxMdp.printModelInformationToStream(std::cout);
 
                 auto model = std::make_shared<storm::models::sparse::Mdp<ValueType, RewardModelType>>(overApproxMdp);

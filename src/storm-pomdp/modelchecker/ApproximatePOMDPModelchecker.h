@@ -75,7 +75,7 @@ namespace storm {
                  * @return A struct containing the final overapproximation (overApproxValue) and underapproximation (underApproxValue) values
                  */
                 std::unique_ptr<POMDPCheckResult<ValueType>>
-                refineReachabilityProbability(std::set<uint32_t> const &targetObservations, bool min);
+                refineReachability(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards);
 
                 /**
                  * Compute the reachability probability of given target observations on a POMDP for the given resolution only.
