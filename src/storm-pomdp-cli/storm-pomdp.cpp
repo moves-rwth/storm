@@ -27,6 +27,8 @@
 #include "storm-pomdp/analysis/QualitativeStrategySearchNaive.h"
 
 #include "storm/api/storm.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/utility/Stopwatch.h"
 
 #include "storm/exceptions/UnexpectedException.h"
@@ -93,10 +95,11 @@ namespace storm {
             }
             
             template<typename ValueType, storm::dd::DdType DdType>
-            bool performAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& pomdp, storm::pomdp::analysis::FormulaInformation const& formulaInfo) {
+            bool performAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& pomdp, storm::pomdp::analysis::FormulaInformation const& formulaInfo, storm::logic::Formula const& formula) {
                 auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
                 bool analysisPerformed = false;
                 if (pomdpSettings.isGridApproximationSet()) {
+                    STORM_PRINT_AND_LOG("Applying grid approximation... ");
                     STORM_LOG_THROW(formulaInfo.isNonNestedReachabilityProbability() || formulaInfo.isNonNestedExpectedRewardFormula(), storm::exceptions::NotSupportedException, "Unsupported formula type for Grid approximation.");
                     STORM_LOG_THROW(!formulaInfo.getTargetStates().empty(), storm::exceptions::UnexpectedException, "The set of target states is empty.");
                     STORM_LOG_THROW(formulaInfo.getTargetStates().observationClosed, storm::exceptions::UnexpectedException, "Observations on target states also occur on non-target states. This is unexpected at this point.");
@@ -111,8 +114,8 @@ namespace storm {
                     ValueType overRes = result->overApproxValue;
                     ValueType underRes = result->underApproxValue;
                     if (overRes != underRes) {
-                        STORM_PRINT("Overapproximation Result: " << overRes << std::endl)
-                        STORM_PRINT("Underapproximation Result: " << underRes << std::endl)
+                        STORM_PRINT("Overapproximation Result: " << overRes << std::endl);
+                        STORM_PRINT("Underapproximation Result: " << underRes << std::endl);
                     } else {
                         STORM_PRINT("Result: " << overRes << std::endl)
                     }
@@ -136,6 +139,13 @@ namespace storm {
                     } else {
                         STORM_LOG_ERROR("This method is not implemented.");
                     }
+                    analysisPerformed = true;
+                }
+                if (pomdpSettings.isCheckFullyObservableSet()) {
+                    STORM_PRINT_AND_LOG("Analyzing the formula on the fully observable MDP ... ");
+                    auto result = storm::api::verifyWithSparseEngine<ValueType>(pomdp->template as<storm::models::sparse::Mdp<ValueType>>(), storm::api::createTask<ValueType>(formula.asSharedPointer(), true))->template asExplicitQuantitativeCheckResult<ValueType>();
+                    result.filter(storm::modelchecker::ExplicitQualitativeCheckResult(pomdp->getInitialStates()));
+                    STORM_PRINT_AND_LOG("Result: " << result.getMax() << std::endl);
                     analysisPerformed = true;
                 }
                 return analysisPerformed;
@@ -259,7 +269,7 @@ namespace storm {
                     }
                     
                     sw.restart();
-                    if (performAnalysis<ValueType, DdType>(pomdp, formulaInfo)) {
+                    if (performAnalysis<ValueType, DdType>(pomdp, formulaInfo, *formula)) {
                         sw.stop();
                         STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << "s." << std::endl);
                     }

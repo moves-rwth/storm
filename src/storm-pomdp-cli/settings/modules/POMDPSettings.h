@@ -34,6 +34,7 @@ namespace storm {
                 bool isTransformSimpleSet() const;
                 bool isTransformBinarySet() const;
                 bool isMemlessSearchSet() const;
+                bool isCheckFullyObservableSet() const;
                 std::string getMemlessSearchMethod() const;
                 std::string getFscApplicationTypeString() const;
                 uint64_t getMemoryBound() const;
