@@ -1279,9 +1279,8 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             ValueType ApproximatePOMDPModelchecker<ValueType, RewardModelType>::getRewardAfterAction(uint64_t action, storm::pomdp::Belief<ValueType> &belief) {
                 auto result = storm::utility::zero<ValueType>();
-                for (size_t i = 0; i < belief.probabilities.size(); ++i) {
-                    for (auto const &probEntry : belief.probabilities)
-                        result += probEntry.second * pomdp.getUniqueRewardModel().getTotalStateActionReward(probEntry.first, action, pomdp.getTransitionMatrix());
+                for (auto const &probEntry : belief.probabilities) {
+                    result += probEntry.second * pomdp.getUniqueRewardModel().getTotalStateActionReward(probEntry.first, action, pomdp.getTransitionMatrix());
                 }
                 return result;
             }
