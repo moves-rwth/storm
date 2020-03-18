@@ -8,6 +8,10 @@
 #include "storm/storage/jani/Property.h"
 
 namespace storm {
+    namespace logic {
+        class Formula;
+    }
+    
     namespace pomdp {
         namespace modelchecker {
             typedef boost::bimap<uint64_t, uint64_t> bsmap_type;
@@ -47,53 +51,54 @@ namespace storm {
             template<class ValueType, typename RewardModelType = models::sparse::StandardRewardModel<ValueType>>
             class ApproximatePOMDPModelchecker {
             public:
-                explicit ApproximatePOMDPModelchecker();
+                
+                struct Options {
+                    Options();
+                    uint64_t  initialGridResolution; /// Decides how precise the bounds are
+                    ValueType explorationThreshold; /// the threshold for exploration stopping. If the difference between over- and underapproximation for a state is smaller than the threshold, stop exploration of the state
+                    bool doRefinement; /// Sets whether the bounds should be refined automatically until the refinement precision is reached
+                    ValueType refinementPrecision; /// Used to decide when the refinement should terminate
+                    ValueType numericPrecision; /// Used to decide whether two values are equal
+                };
+                
+                ApproximatePOMDPModelchecker(storm::models::sparse::Pomdp<ValueType, RewardModelType> const& pomdp, Options options = Options());
+                
+                std::unique_ptr<POMDPCheckResult<ValueType>> check(storm::logic::Formula const& formula);
 
+            private:
                 /**
                  * Compute the reachability probability of given target observations on a POMDP using the automatic refinement loop
                  *
-                 * @param pomdp the POMDP to be checked
                  * @param targetObservations the set of observations to be reached
                  * @param min true if minimum probability is to be computed
-                 * @param gridResolution the initial grid resolution
-                 * @param explorationThreshold the threshold for exploration stopping. If the difference between over- and underapproximation for a state is smaller than the threshold, stop exploration of the state
                  * @return A struct containing the final overapproximation (overApproxValue) and underapproximation (underApproxValue) values
                  */
                 std::unique_ptr<POMDPCheckResult<ValueType>>
-                refineReachabilityProbability(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp, std::set<uint32_t> const &targetObservations, bool min,
-                                              uint64_t gridResolution, double explorationThreshold);
+                refineReachabilityProbability(std::set<uint32_t> const &targetObservations, bool min);
 
                 /**
                  * Compute the reachability probability of given target observations on a POMDP for the given resolution only.
                  * On-the-fly state space generation is used for the overapproximation
                  *
-                 * @param pomdp the POMDP to be checked
                  * @param targetObservations the set of observations to be reached
                  * @param min true if minimum probability is to be computed
-                 * @param gridResolution the grid resolution
-                 * @param explorationThreshold the threshold for exploration stopping. If the difference between over- and underapproximation for a state is smaller than the threshold, stop exploration of the state
                  * @return A struct containing the overapproximation (overApproxValue) and underapproximation (underApproxValue) values
                  */
                 std::unique_ptr<POMDPCheckResult<ValueType>>
-                computeReachabilityProbabilityOTF(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                                  std::set<uint32_t> const &targetObservations, bool min,
-                                                  uint64_t gridResolution, double explorationThreshold);
+                computeReachabilityProbabilityOTF(std::set<uint32_t> const &targetObservations, bool min);
 
                 /**
                  * Compute the reachability rewards for given target observations on a POMDP for the given resolution only.
                  * On-the-fly state space generation is used for the overapproximation
                  *
-                 * @param pomdp the POMDP to be checked
                  * @param targetObservations the set of observations to be reached
                  * @param min true if minimum rewards are to be computed
-                 * @param gridResolution the initial grid resolution
-                 * @param explorationThreshold the threshold for exploration stopping. If the difference between over- and underapproximation for a state is smaller than the threshold, stop exploration of the state
                  * @return A struct containing the overapproximation (overApproxValue) and underapproximation (underApproxValue) values
                  */
                 std::unique_ptr<POMDPCheckResult<ValueType>>
-                computeReachabilityRewardOTF(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp, std::set<uint32_t> const &targetObservations, bool min,
-                                             uint64_t gridResolution);
+                computeReachabilityRewardOTF(std::set<uint32_t> const &targetObservations, bool min);
 
+                // TODO: Check if this is obsolete
                 /**
                  * Compute the reachability probability for given target observations on a POMDP for the given resolution only.
                  * Static state space generation is used for the overapproximation, i.e. the whole grid is generated
@@ -109,11 +114,11 @@ namespace storm {
                                                std::set<uint32_t> const &targetObservations, bool min,
                                                uint64_t gridResolution);
 
+                // TODO: Check if this is obsolete
                 /**
                  * Compute the reachability rewards for given target observations on a POMDP for the given resolution only.
                  * Static state space generation is used for the overapproximation, i.e. the whole grid is generated
                  *
-                 * @param pomdp the POMDP to be checked
                  * @param targetObservations the set of observations to be reached
                  * @param min true if the minimum rewards are to be computed
                  * @param gridResolution the initial grid resolution
@@ -128,27 +133,23 @@ namespace storm {
                 /**
                  * Helper method to compute the inital step of the refinement loop
                  *
-                 * @param pomdp the pomdp to be checked
                  * @param targetObservations set of target observations
                  * @param min true if minimum value is to be computed
                  * @param observationResolutionVector vector containing the resolution to be used for each observation
                  * @param computeRewards true if rewards are to be computed, false if probability is computed
-                 * @param explorationThreshold the threshold for exploration stopping. If the difference between over- and underapproximation for a state is smaller than the threshold, stop exploration of the state
                  * @param overApproximationMap optional mapping of original POMDP states to a naive overapproximation value
                  * @param underApproximationMap optional mapping of original POMDP states to a naive underapproximation value
                  * @param maxUaModelSize the maximum size of the underapproximation model to be generated
                  * @return struct containing components generated during the computation to be used in later refinement iterations
                  */
                 std::shared_ptr<RefinementComponents<ValueType>>
-                computeFirstRefinementStep(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                           std::set<uint32_t> const &targetObservations, bool min, std::vector<uint64_t> &observationResolutionVector,
-                                           bool computeRewards, double explorationThreshold, boost::optional<std::map<uint64_t, ValueType>> overApproximationMap = boost::none,
+                computeFirstRefinementStep(std::set<uint32_t> const &targetObservations, bool min, std::vector<uint64_t> &observationResolutionVector,
+                                           bool computeRewards, boost::optional<std::map<uint64_t, ValueType>> overApproximationMap = boost::none,
                                            boost::optional<std::map<uint64_t, ValueType>> underApproximationMap = boost::none, uint64_t maxUaModelSize = 200);
 
                 std::shared_ptr<RefinementComponents<ValueType>>
-                computeRefinementStep(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                      std::set<uint32_t> const &targetObservations, bool min, std::vector<uint64_t> &observationResolutionVector,
-                                      bool computeRewards, double explorationThreshold, std::shared_ptr<RefinementComponents<ValueType>> refinementComponents,
+                computeRefinementStep(std::set<uint32_t> const &targetObservations, bool min, std::vector<uint64_t> &observationResolutionVector,
+                                      bool computeRewards, std::shared_ptr<RefinementComponents<ValueType>> refinementComponents,
                                       std::set<uint32_t> changedObservations,
                                       boost::optional<std::map<uint64_t, ValueType>> overApproximationMap = boost::none,
                                       boost::optional<std::map<uint64_t, ValueType>> underApproximationMap = boost::none, uint64_t maxUaModelSize = 200);
@@ -156,28 +157,25 @@ namespace storm {
                 /**
                  * Helper method that handles the computation of reachability probabilities and rewards using the on-the-fly state space generation for a fixed grid size
                  *
-                 * @param pomdp the pomdp to be checked
                  * @param targetObservations set of target observations
                  * @param min true if minimum value is to be computed
                  * @param observationResolutionVector vector containing the resolution to be used for each observation
                  * @param computeRewards true if rewards are to be computed, false if probability is computed
-                 * @param explorationThreshold the threshold for exploration stopping. If the difference between over- and underapproximation for a state is smaller than the threshold, stop exploration of the state
                  * @param overApproximationMap optional mapping of original POMDP states to a naive overapproximation value
                  * @param underApproximationMap optional mapping of original POMDP states to a naive underapproximation value
                  * @param maxUaModelSize the maximum size of the underapproximation model to be generated
                  * @return A struct containing the overapproximation (overApproxValue) and underapproximation (underApproxValue) values
                  */
                 std::unique_ptr<POMDPCheckResult<ValueType>>
-                computeReachabilityOTF(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                       std::set<uint32_t> const &targetObservations, bool min,
-                                       std::vector<uint64_t> &observationResolutionVector, bool computeRewards, double explorationThreshold,
+                computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min,
+                                       std::vector<uint64_t> &observationResolutionVector, bool computeRewards,
                                        boost::optional<std::map<uint64_t, ValueType>> overApproximationMap = boost::none,
                                        boost::optional<std::map<uint64_t, ValueType>> underApproximationMap = boost::none, uint64_t maxUaModelSize = 200);
 
+                // TODO: Check if this is obsolete
                 /**
                  * Helper method to compute reachability properties using static state space generation
                  *
-                 * @param pomdp the POMDP to be checked
                  * @param targetObservations set of target observations
                  * @param min true if minimum value is to be computed
                  * @param gridResolution the resolution of the grid to be used
@@ -193,7 +191,6 @@ namespace storm {
                  * Helper to compute an underapproximation of the reachability property.
                  * The implemented method unrolls the belief support of the given POMDP up to a given number of belief states.
                  *
-                 * @param pomdp the POMDP to be checked
                  * @param beliefList vector containing already generated beliefs
                  * @param beliefIsTarget vector containinf for each belief in beliefList true if the belief is a target
                  * @param targetObservations set of target observations
@@ -203,8 +200,7 @@ namespace storm {
                  * @param maxModelSize number of states up until which the belief support should be unrolled
                  * @return struct containing the components generated during the under approximation
                  */
-                std::unique_ptr<UnderApproxComponents<ValueType, RewardModelType>> computeUnderapproximation(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                                                                                             std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
+                std::unique_ptr<UnderApproxComponents<ValueType, RewardModelType>> computeUnderapproximation(std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
                                                                                                              std::vector<bool> &beliefIsTarget,
                                                                                                              std::set<uint32_t> const &targetObservations,
                                                                                                              uint64_t initialBeliefId, bool min, bool computeReward,
@@ -218,7 +214,7 @@ namespace storm {
                  * @return a belief representing the initial belief
                  */
                 storm::pomdp::Belief<ValueType>
-                getInitialBelief(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp, uint64_t id);
+                getInitialBelief(uint64_t id);
 
 
                 /**
@@ -236,7 +232,6 @@ namespace storm {
                 /**
                  * Helper method to construct the static belief grid for the POMDP overapproximation
                  *
-                 * @param pomdp the POMDP to be approximated
                  * @param target_observations set of target observations
                  * @param gridResolution the resolution of the grid to be constructed
                  * @param beliefList data structure to store all generated beliefs
@@ -244,8 +239,7 @@ namespace storm {
                  * @param beliefIsTarget vector containing true if the corresponding belief in the beleif list is a target belief
                  * @param nextId the ID to be used for the next generated belief
                  */
-                void constructBeliefGrid(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                                         std::set<uint32_t> const &target_observations, uint64_t gridResolution,
+                void constructBeliefGrid(std::set<uint32_t> const &target_observations, uint64_t gridResolution,
                                          std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
                                          std::vector<storm::pomdp::Belief<ValueType>> &grid,
                                          std::vector<bool> &beliefIsTarget, uint64_t nextId);
@@ -254,21 +248,17 @@ namespace storm {
                 /**
                  * Helper method to get the probabilities to be in a state with each observation after performing an action
                  *
-                 * @param pomdp the POMDP
                  * @param belief the belief in which the action is performed
                  * @param actionIndex the index of the action to be performed
                  * @return mapping from each observation to the probability to be in a state with that observation after performing the action
                  */
-                std::map<uint32_t, ValueType> computeObservationProbabilitiesAfterAction(
-                        storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                        storm::pomdp::Belief<ValueType> &belief,
+                std::map<uint32_t, ValueType> computeObservationProbabilitiesAfterAction(storm::pomdp::Belief<ValueType> &belief,
                         uint64_t actionIndex);
 
                 /**
                  * Helper method to get the id of the next belief that results from a belief by performing an action and observing an observation.
                  * If the belief does not exist yet, it is created and added to the list of all beliefs
                  *
-                 * @param pomdp the POMDP on which the evaluation should be performed
                  * @param beliefList data structure to store all generated beliefs
                  * @param beliefIsTarget vector containing true if the corresponding belief in the beleif list is a target belief
                  * @param targetObservations set of target observations
@@ -277,9 +267,7 @@ namespace storm {
                  * @param observation the observation after the action was performed
                  * @return the resulting belief (observation and distribution)
                  */
-                uint64_t getBeliefAfterActionAndObservation(
-                        storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp,
-                        std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
+                uint64_t getBeliefAfterActionAndObservation(std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
                         std::vector<bool> &beliefIsTarget,
                         std::set<uint32_t> const &targetObservations,
                         storm::pomdp::Belief<ValueType> &belief,
@@ -288,15 +276,13 @@ namespace storm {
                 /**
                  * Helper method to generate the next belief that results from a belief by performing an action
                  *
-                 * @param pomdp the POMDP
                  * @param belief the starting belief
                  * @param actionIndex the index of the action to be performed
                  * @param id the ID for the generated belief
                  * @return a belief object representing the belief after performing the action in the starting belief
                  */
                 storm::pomdp::Belief<ValueType>
-                getBeliefAfterAction(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp, storm::pomdp::Belief<ValueType> &belief, uint64_t actionIndex,
-                                     uint64_t id);
+                getBeliefAfterAction(storm::pomdp::Belief<ValueType> &belief, uint64_t actionIndex, uint64_t id);
 
                 /**
                  * Helper to get the id of a Belief stored in a given vector structure
@@ -320,12 +306,11 @@ namespace storm {
                 /**
                  * Get the reward for performing an action in a given belief
                  *
-                 * @param pomdp the POMDP
                  * @param action the index of the action to be performed
                  * @param belief the belief in which the action is performed
                  * @return the reward earned by performing the action in the belief
                  */
-                ValueType getRewardAfterAction(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp, uint64_t action, storm::pomdp::Belief<ValueType> &belief);
+                ValueType getRewardAfterAction(uint64_t action, storm::pomdp::Belief<ValueType> &belief);
 
 
                 /**
@@ -349,7 +334,7 @@ namespace storm {
                  * @return the resulting probability/reward in the initial state
                  */
                 ValueType
-                overApproximationValueIteration(storm::models::sparse::Pomdp<ValueType, RewardModelType> const &pomdp, std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
+                overApproximationValueIteration(std::vector<storm::pomdp::Belief<ValueType>> &beliefList,
                                                 std::vector<storm::pomdp::Belief<ValueType>> &beliefGrid, std::vector<bool> &beliefIsTarget,
                                                 std::map<uint64_t, std::vector<std::map<uint32_t, ValueType>>> &observationProbabilities,
                                                 std::map<uint64_t, std::vector<std::map<uint32_t, uint64_t>>> &nextBelieves,
@@ -359,8 +344,10 @@ namespace storm {
                                                 std::map<uint64_t, std::vector<uint64_t>> &chosenActions,
                                                 uint64_t gridResolution, bool min, bool computeRewards);
 
+                storm::models::sparse::Pomdp<ValueType, RewardModelType> const& pomdp;
+                Options options;
                 storm::utility::ConstantsComparator<ValueType> cc;
-                double precision;
+                // TODO: these should be obsolete, right?
                 bool useMdp;
                 bool cacheSubsimplices;
                 uint64_t maxIterations;
