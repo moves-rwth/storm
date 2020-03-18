@@ -219,7 +219,8 @@ namespace storm {
                     res = computeRefinementStep(targetObservations, min, observationResolutionVector, false,
                                                 res, changedObservations, initialOverApproxMap, underApproxMap, underApproxModelSize);
                     //storm::api::exportSparseModelAsDot(res->overApproxModelPtr, "oa_model_" + std::to_string(refinementCounter +1) + ".dot");
-                    if (cc.isEqual(res->overApproxValue, res->underApproxValue)) {
+                    STORM_LOG_ERROR_COND(cc.isLess(res->underApproxValue, res->overApproxValue), "The value for the under-approximation is larger than the value for the over-approximation.");
+                    if (res->overApproxValue - res->underApproxValue <= options.refinementPrecision) {
                         break;
                     }
                     ++refinementCounter;
