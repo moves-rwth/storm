@@ -106,10 +106,6 @@ namespace storm {
                 STORM_LOG_ASSERT(declarationVariablePair != declarationToVariableMapping.end(), "Unknown variable declaration.");
                 return declarationVariablePair->second;
             }
-            
-            std::unordered_map<storm::expressions::Variable, msat_decl> const& getAllDeclaredVariables() const {
-				return variableToDeclarationMapping;
-			}
 
             virtual boost::any visit(storm::expressions::BinaryBooleanFunctionExpression const& expression, boost::any const& data) override {
                 msat_term leftResult = boost::any_cast<msat_term>(expression.getFirstOperand()->accept(*this, data));
