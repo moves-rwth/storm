@@ -142,7 +142,7 @@ namespace storm {
                 STORM_PRINT("==============================" << std::endl << "Initial Computation" << std::endl << "------------------------------" << std::endl)
                 std::shared_ptr<RefinementComponents<ValueType>> res = computeFirstRefinementStep(targetObservations, min, observationResolutionVector, false, initialOverApproxMap, underApproxMap, underApproxModelSize);
                 ValueType lastMinScore = storm::utility::infinity<ValueType>();
-                while (refinementCounter < 1000) {
+                while (refinementCounter < 1000 && res->overApproxValue - res->underApproxValue > options.refinementPrecision) {
                     // TODO the actual refinement
                     // choose which observation(s) to refine
                     std::vector<ValueType> obsAccumulator(pomdp.getNrObservations(), storm::utility::zero<ValueType>());
@@ -219,9 +219,6 @@ namespace storm {
                     //storm::api::exportSparseModelAsDot(res->overApproxModelPtr, "oa_model_" + std::to_string(refinementCounter +1) + ".dot");
                     STORM_LOG_ERROR_COND(cc.isLess(res->underApproxValue, res->overApproxValue) || cc.isEqual(res->underApproxValue, res->overApproxValue),
                                          "The value for the under-approximation is larger than the value for the over-approximation.");
-                    if (res->overApproxValue - res->underApproxValue <= options.refinementPrecision) {
-                        break;
-                    }
                     ++refinementCounter;
                 }
 
