@@ -88,10 +88,10 @@ namespace storm {
                     auto const& gridSettings = storm::settings::getModule<storm::settings::modules::GridApproximationSettings>();
                     typename storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<ValueType>::Options options;
                     options.initialGridResolution = gridSettings.getGridResolution();
-                    options.explorationThreshold = gridSettings.getExplorationThreshold();
+                    options.explorationThreshold = storm::utility::convertNumber<ValueType>(gridSettings.getExplorationThreshold());
                     options.doRefinement = gridSettings.isRefineSet();
-                    options.refinementPrecision = gridSettings.getRefinementPrecision();
-                    options.numericPrecision = gridSettings.getNumericPrecision();
+                    options.refinementPrecision = storm::utility::convertNumber<ValueType>(gridSettings.getRefinementPrecision());
+                    options.numericPrecision = storm::utility::convertNumber<ValueType>(gridSettings.getNumericPrecision());
                     options.cacheSubsimplices = gridSettings.isCacheSimplicesSet();
                     if (storm::NumberTraits<ValueType>::IsExact) {
                         if (gridSettings.isNumericPrecisionSetFromDefault()) {
