@@ -125,11 +125,11 @@ namespace storm {
                         storm::api::verifyWithSparseEngine<ValueType>(underApproxModel, storm::api::createTask<ValueType>(underlyingProperty, false)));
                 STORM_LOG_ASSERT(underapproxRes, "Result not exist.");
                 underapproxRes->filter(storm::modelchecker::ExplicitQualitativeCheckResult(storm::storage::BitVector(underApproxModel->getNumberOfStates(), true)));
-                auto underApproxMap = underapproxRes->asExplicitQuantitativeCheckResult<ValueType>().getValueMap();
+                auto initialUnderApproxMap = underapproxRes->asExplicitQuantitativeCheckResult<ValueType>().getValueMap();
                 positionalWatch.stop();
 
                 STORM_PRINT("Pre-Processing Results: " << initialOverApproxMap[underlyingMdp.getInitialStates().getNextSetIndex(0)] << " // "
-                                                       << underApproxMap[underApproxModel->getInitialStates().getNextSetIndex(0)] << std::endl)
+                                                       << initialUnderApproxMap[underApproxModel->getInitialStates().getNextSetIndex(0)] << std::endl)
                 STORM_PRINT("Preprocessing Times: " << underlyingWatch << " / " << positionalWatch << std::endl)
 
                 // Initialize the resolution mapping. For now, we always give all beliefs with the same observation the same resolution.
@@ -140,7 +140,8 @@ namespace storm {
                 uint64_t underApproxModelSize = 200;
                 uint64_t refinementCounter = 1;
                 STORM_PRINT("==============================" << std::endl << "Initial Computation" << std::endl << "------------------------------" << std::endl)
-                std::shared_ptr<RefinementComponents<ValueType>> res = computeFirstRefinementStep(targetObservations, min, observationResolutionVector, false, initialOverApproxMap, underApproxMap, underApproxModelSize);
+                std::shared_ptr<RefinementComponents<ValueType>> res = computeFirstRefinementStep(targetObservations, min, observationResolutionVector, false, initialOverApproxMap,
+                                                                                                  initialUnderApproxMap, underApproxModelSize);
                 ValueType lastMinScore = storm::utility::infinity<ValueType>();
                 while (refinementCounter < 1000 && res->overApproxValue - res->underApproxValue > options.refinementPrecision) {
                     // TODO the actual refinement
@@ -215,7 +216,7 @@ namespace storm {
                     STORM_PRINT(
                             "==============================" << std::endl << "Refinement Step " << refinementCounter << std::endl << "------------------------------" << std::endl)
                     res = computeRefinementStep(targetObservations, min, observationResolutionVector, false,
-                                                res, changedObservations, initialOverApproxMap, underApproxMap, underApproxModelSize);
+                                                res, changedObservations, initialOverApproxMap, initialUnderApproxMap, underApproxModelSize);
                     //storm::api::exportSparseModelAsDot(res->overApproxModelPtr, "oa_model_" + std::to_string(refinementCounter +1) + ".dot");
                     STORM_LOG_ERROR_COND(cc.isLess(res->underApproxValue, res->overApproxValue) || cc.isEqual(res->underApproxValue, res->overApproxValue),
                                          "The value for the under-approximation is larger than the value for the over-approximation.");
