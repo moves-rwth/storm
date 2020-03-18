@@ -137,7 +137,7 @@ namespace storm {
             template <typename PomdpType>
             FormulaInformation getFormulaInformation(PomdpType const& pomdp, storm::logic::RewardOperatorFormula const& formula) {
                 STORM_LOG_THROW(formula.hasOptimalityType(), storm::exceptions::InvalidPropertyException, "The property does not specify an optimization direction (min/max)");
-                STORM_LOG_WARN_COND(formula.hasBound(), "The reward threshold for the given property will be ignored.");
+                STORM_LOG_WARN_COND(!formula.hasBound(), "The reward threshold for the given property will be ignored.");
                 std::string rewardModelName = "";
                 if (formula.hasRewardModelName()) {
                     rewardModelName = formula.getRewardModelName();
@@ -152,7 +152,7 @@ namespace storm {
                     targetStatesFormula = subformula.asEventuallyFormula().getSubformula().asSharedPointer();
                 }
                 if (targetStatesFormula && targetStatesFormula->isInFragment(storm::logic::propositional())) {
-                    FormulaInformation result(FormulaInformation::Type::NonNestedReachabilityProbability, formula.getOptimalityType(), rewardModelName);
+                    FormulaInformation result(FormulaInformation::Type::NonNestedExpectedRewardFormula, formula.getOptimalityType(), rewardModelName);
                     result.updateTargetStates(pomdp, getStates(*targetStatesFormula, false, pomdp));
                     return result;
                 }
