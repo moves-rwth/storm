@@ -27,7 +27,6 @@ namespace storm {
                 bool isQualitativeReductionSet() const;
 
                 bool isGridApproximationSet() const;
-                bool isLimitExplorationSet() const;
                 bool isAnalyzeUniqueObservationsSet() const;
                 bool isMecReductionSet() const;
                 bool isSelfloopReductionSet() const;
@@ -39,8 +38,6 @@ namespace storm {
                 std::string getFscApplicationTypeString() const;
                 uint64_t getMemoryBound() const;
 
-                uint64_t getGridResolution() const;
-                double getExplorationThreshold() const;
                 storm::storage::PomdpMemoryPattern getMemoryPattern() const;
                 
                 bool check() const override;

@@ -15,7 +15,6 @@ namespace storm {
             const std::string POMDPSettings::moduleName = "pomdp";
             const std::string exportAsParametricModelOption = "parametric-drn";
             const std::string gridApproximationOption = "gridapproximation";
-            const std::string limitBeliefExplorationOption = "limit-exploration";
             const std::string qualitativeReductionOption = "qualitativereduction";
             const std::string analyzeUniqueObservationsOption = "uniqueobservations";
             const std::string mecReductionOption = "mecreduction";
@@ -42,9 +41,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, fscmode, false, "Sets the way the pMC is obtained").addArgument(storm::settings::ArgumentBuilder::createStringArgument("type", "type name").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(fscModes)).setDefaultValueString("standard").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, transformBinaryOption, false, "Transforms the pomdp to a binary pomdp.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, transformSimpleOption, false, "Transforms the pomdp to a binary and simple pomdp.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, gridApproximationOption, false,"Analyze the POMDP using grid approximation.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("resolution","the resolution of the grid").setDefaultValueUnsignedInteger(10).makeOptional().addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterValidator(0)).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, limitBeliefExplorationOption, false,"Sets whether the belief space exploration is stopped if upper and lower bound are close").addArgument(
-                        storm::settings::ArgumentBuilder::createDoubleArgument("threshold","the difference between upper and lower bound when to stop").setDefaultValueDouble(0.0).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0,1)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, gridApproximationOption, false,"Analyze the POMDP using grid approximation.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, memlessSearchOption, false, "Search for a qualitative memoryless scheuler").addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "method name").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(memlessSearchMethods)).setDefaultValueString("none").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, checkFullyObservableOption, false, "Performs standard model checking on the underlying MDP").build());
 
@@ -78,10 +75,6 @@ namespace storm {
                 return this->getOption(gridApproximationOption).getHasOptionBeenSet();
             }
 
-            uint64_t POMDPSettings::getGridResolution() const {
-                return this->getOption(gridApproximationOption).getArgumentByName("resolution").getValueAsUnsignedInteger();
-            }
-
             bool POMDPSettings::isMemlessSearchSet() const {
                 return this->getOption(memlessSearchOption).getHasOptionBeenSet();
             }
@@ -92,14 +85,6 @@ namespace storm {
 
             std::string POMDPSettings::getMemlessSearchMethod() const {
                 return this->getOption(memlessSearchOption).getArgumentByName("method").getValueAsString();
-            }
-
-            bool POMDPSettings::isLimitExplorationSet() const {
-                return this->getOption(limitBeliefExplorationOption).getHasOptionBeenSet();
-            }
-
-            double POMDPSettings::getExplorationThreshold() const {
-                return this->getOption(limitBeliefExplorationOption).getArgumentByName("threshold").getValueAsDouble();
             }
 
             uint64_t POMDPSettings::getMemoryBound() const {

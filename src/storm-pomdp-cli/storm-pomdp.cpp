@@ -5,6 +5,7 @@
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
+#include "storm-pomdp-cli/settings/modules/GridApproximationSettings.h"
 #include "storm-pomdp-cli/settings/PomdpSettings.h"
 
 #include "storm/analysis/GraphConditions.h"
@@ -29,6 +30,7 @@
 #include "storm/api/storm.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/utility/NumberTraits.h"
 #include "storm/utility/Stopwatch.h"
 
 #include "storm/exceptions/UnexpectedException.h"
@@ -73,23 +75,6 @@ namespace storm {
                     formulaInfo.updateTargetStates(*pomdp, std::move(prob1States));
                     formulaInfo.updateSinkStates(*pomdp, std::move(prob0States));
                     preprocessingPerformed = true;
-                } else if (pomdpSettings.isGridApproximationSet()) {
-                    // We still might need to apply the KnownProbabilityTransformer, to ensure that the grid approximation works properly
-                    if (formulaInfo.isNonNestedReachabilityProbability()) {
-                        if (!formulaInfo.getTargetStates().observationClosed || !formulaInfo.getSinkStates().states.empty()) {
-                            // Make target states observation closed and/or sink states absorbing
-                            storm::pomdp::transformer::KnownProbabilityTransformer<ValueType> kpt = storm::pomdp::transformer::KnownProbabilityTransformer<ValueType>();
-                            auto prob0States = formulaInfo.getSinkStates().states;
-                            auto prob1States = formulaInfo.getTargetStates().states;
-                            pomdp = kpt.transform(*pomdp, prob0States, prob1States);
-                            // Update formulaInfo to changes from Preprocessing
-                            formulaInfo.updateTargetStates(*pomdp, std::move(prob1States));
-                            formulaInfo.updateSinkStates(*pomdp, std::move(prob0States));
-                            preprocessingPerformed = true;
-                        }
-                    } else if (formulaInfo.isNonNestedExpectedRewardFormula()) {
-                        STORM_LOG_THROW(formulaInfo.getTargetStates().observationClosed, storm::exceptions::NotSupportedException, "Target states of reward property are not observation closed. This case is not yet implemented.");
-                    }
                 }
                 return preprocessingPerformed;
             }
@@ -100,17 +85,23 @@ namespace storm {
                 bool analysisPerformed = false;
                 if (pomdpSettings.isGridApproximationSet()) {
                     STORM_PRINT_AND_LOG("Applying grid approximation... ");
-                    STORM_LOG_THROW(formulaInfo.isNonNestedReachabilityProbability() || formulaInfo.isNonNestedExpectedRewardFormula(), storm::exceptions::NotSupportedException, "Unsupported formula type for Grid approximation.");
-                    STORM_LOG_THROW(!formulaInfo.getTargetStates().empty(), storm::exceptions::UnexpectedException, "The set of target states is empty.");
-                    STORM_LOG_THROW(formulaInfo.getTargetStates().observationClosed, storm::exceptions::UnexpectedException, "Observations on target states also occur on non-target states. This is unexpected at this point.");
-                    storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<ValueType> checker = storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<ValueType>();
-                    std::unique_ptr<storm::pomdp::modelchecker::POMDPCheckResult<ValueType>> result;
-                    if (formulaInfo.isNonNestedReachabilityProbability()) {
-                        result = checker.refineReachabilityProbability(*pomdp, formulaInfo.getTargetStates().observations, formulaInfo.minimize(), pomdpSettings.getGridResolution(), pomdpSettings.getExplorationThreshold());
-                    } else {
-                        // TODO: no exploration threshold?
-                        result = checker.computeReachabilityReward(*pomdp, formulaInfo.getTargetStates().observations, formulaInfo.minimize(), pomdpSettings.getGridResolution());
+                    auto const& gridSettings = storm::settings::getModule<storm::settings::modules::GridApproximationSettings>();
+                    typename storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<ValueType>::Options options;
+                    options.initialGridResolution = gridSettings.getGridResolution();
+                    options.explorationThreshold = gridSettings.getExplorationThreshold();
+                    options.doRefinement = gridSettings.isRefineSet();
+                    options.refinementPrecision = gridSettings.getRefinementPrecision();
+                    options.numericPrecision = gridSettings.getNumericPrecision();
+                    if (storm::NumberTraits<ValueType>::IsExact) {
+                        if (gridSettings.isNumericPrecisionSetFromDefault()) {
+                            STORM_LOG_WARN_COND(storm::utility::isZero(options.numericPrecision), "Setting numeric precision to zero because exact arithmethic is used.");
+                            options.numericPrecision = storm::utility::zero<ValueType>();
+                        } else {
+                            STORM_LOG_WARN_COND(storm::utility::isZero(options.numericPrecision), "A non-zero numeric precision was set although exact arithmethic is used. Results might be inexact.");
+                        }
                     }
+                    storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<ValueType> checker = storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<ValueType>(*pomdp, options);
+                    std::unique_ptr<storm::pomdp::modelchecker::POMDPCheckResult<ValueType>> result = checker.check(formula);
                     ValueType overRes = result->overApproxValue;
                     ValueType underRes = result->underApproxValue;
                     if (overRes != underRes) {
