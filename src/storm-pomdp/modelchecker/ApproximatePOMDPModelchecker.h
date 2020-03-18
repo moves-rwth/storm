@@ -59,6 +59,7 @@ namespace storm {
                     bool doRefinement; /// Sets whether the bounds should be refined automatically until the refinement precision is reached
                     ValueType refinementPrecision; /// Used to decide when the refinement should terminate
                     ValueType numericPrecision; /// Used to decide whether two values are equal
+                    bool cacheSubsimplices; /// Enables caching of subsimplices
                 };
                 
                 ApproximatePOMDPModelchecker(storm::models::sparse::Pomdp<ValueType, RewardModelType> const& pomdp, Options options = Options());
@@ -349,7 +350,6 @@ namespace storm {
                 storm::utility::ConstantsComparator<ValueType> cc;
                 // TODO: these should be obsolete, right?
                 bool useMdp;
-                bool cacheSubsimplices;
                 uint64_t maxIterations;
             };
 

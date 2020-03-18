@@ -92,6 +92,7 @@ namespace storm {
                     options.doRefinement = gridSettings.isRefineSet();
                     options.refinementPrecision = gridSettings.getRefinementPrecision();
                     options.numericPrecision = gridSettings.getNumericPrecision();
+                    options.cacheSubsimplices = gridSettings.isCacheSimplicesSet();
                     if (storm::NumberTraits<ValueType>::IsExact) {
                         if (gridSettings.isNumericPrecisionSetFromDefault()) {
                             STORM_LOG_WARN_COND(storm::utility::isZero(options.numericPrecision), "Setting numeric precision to zero because exact arithmethic is used.");

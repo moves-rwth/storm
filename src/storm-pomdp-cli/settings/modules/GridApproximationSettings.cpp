@@ -18,6 +18,7 @@ namespace storm {
             const std::string resolutionOption = "resolution";
             const std::string limitBeliefExplorationOption = "limit-exploration";
             const std::string numericPrecisionOption = "numeric-precision";
+            const std::string cacheSimplicesOption = "cache-simplices";
 
             GridApproximationSettings::GridApproximationSettings() : ModuleSettings(moduleName) {
                 
@@ -31,6 +32,8 @@ namespace storm {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, numericPrecisionOption, false,"Sets the precision used to determine whether two belief-states are equal.").addArgument(
                         storm::settings::ArgumentBuilder::createDoubleArgument("value","the precision").setDefaultValueDouble(1e-9).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0, 1)).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, cacheSimplicesOption, false,"Enables caching of simplices which requires more memory but can be faster.").build());
                 
             }
 
@@ -56,6 +59,10 @@ namespace storm {
             
             double GridApproximationSettings::getNumericPrecision() const {
                 return this->getOption(numericPrecisionOption).getArgumentByName("value").getValueAsDouble();
+            }
+            
+            bool GridApproximationSettings::isCacheSimplicesSet() const {
+                return this->getOption(cacheSimplicesOption).getHasOptionBeenSet();
             }
             
         } // namespace modules

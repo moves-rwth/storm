@@ -26,6 +26,7 @@ namespace storm {
                 double getExplorationThreshold() const;
                 bool isNumericPrecisionSetFromDefault() const;
                 double getNumericPrecision() const;
+                bool isCacheSimplicesSet() const;
                 
                 // The name of the module.
                 static const std::string moduleName;

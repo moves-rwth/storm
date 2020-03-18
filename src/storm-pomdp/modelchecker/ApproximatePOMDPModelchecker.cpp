@@ -34,6 +34,7 @@ namespace storm {
                 doRefinement = true;
                 refinementPrecision = storm::utility::convertNumber<ValueType>(1e-4);
                 numericPrecision = storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(1e-9);
+                cacheSubsimplices = false;
             }
             
             template<typename ValueType, typename RewardModelType>
@@ -41,7 +42,6 @@ namespace storm {
                 cc = storm::utility::ConstantsComparator<ValueType>(storm::utility::convertNumber<ValueType>(this->options.numericPrecision), false);
                 useMdp = true;
                 maxIterations = 1000;
-                cacheSubsimplices = false;
             }
 
             template<typename ValueType, typename RewardModelType>
@@ -299,7 +299,7 @@ namespace storm {
                 auto initTemp = computeSubSimplexAndLambdas(initialBelief.probabilities, observationResolutionVector[initialBelief.observation], pomdp.getNumberOfStates());
                 auto initSubSimplex = initTemp.first;
                 auto initLambdas = initTemp.second;
-                if (cacheSubsimplices) {
+                if (options.cacheSubsimplices) {
                     subSimplexCache[0] = initSubSimplex;
                     lambdaCache[0] = initLambdas;
                 }
@@ -406,7 +406,7 @@ namespace storm {
                                 //Triangulate here and put the possibly resulting belief in the grid
                                 std::vector<std::map<uint64_t, ValueType>> subSimplex;
                                 std::vector<ValueType> lambdas;
-                                if (cacheSubsimplices && subSimplexCache.count(idNextBelief) > 0) {
+                                if (options.cacheSubsimplices && subSimplexCache.count(idNextBelief) > 0) {
                                     subSimplex = subSimplexCache[idNextBelief];
                                     lambdas = lambdaCache[idNextBelief];
                                 } else {
@@ -414,7 +414,7 @@ namespace storm {
                                                                             observationResolutionVector[beliefList[idNextBelief].observation], pomdp.getNumberOfStates());
                                     subSimplex = temp.first;
                                     lambdas = temp.second;
-                                    if (cacheSubsimplices) {
+                                    if (options.cacheSubsimplices) {
                                         subSimplexCache[idNextBelief] = subSimplex;
                                         lambdaCache[idNextBelief] = lambdas;
                                     }
@@ -600,7 +600,7 @@ namespace storm {
                         std::vector<std::map<uint64_t, ValueType>> subSimplex;
                         std::vector<ValueType> lambdas;
                         //TODO add caching
-                        if (cacheSubsimplices && subSimplexCache.count(idNextBelief) > 0) {
+                        if (options.cacheSubsimplices && subSimplexCache.count(idNextBelief) > 0) {
                             subSimplex = subSimplexCache[idNextBelief];
                             lambdas = lambdaCache[idNextBelief];
                         } else {
@@ -609,7 +609,7 @@ namespace storm {
                                                                     pomdp.getNumberOfStates());
                             subSimplex = temp.first;
                             lambdas = temp.second;
-                            if (cacheSubsimplices) {
+                            if (options.cacheSubsimplices) {
                                 subSimplexCache[idNextBelief] = subSimplex;
                                 lambdaCache[idNextBelief] = lambdas;
                             }
@@ -693,7 +693,7 @@ namespace storm {
                                 std::vector<std::map<uint64_t, ValueType>> subSimplex;
                                 std::vector<ValueType> lambdas;
                                 /* TODO Caching
-                                if (cacheSubsimplices && subSimplexCache.count(idNextBelief) > 0) {
+                                if (options.cacheSubsimplices && subSimplexCache.count(idNextBelief) > 0) {
                                     subSimplex = subSimplexCache[idNextBelief];
                                     lambdas = lambdaCache[idNextBelief];
                                 } else { */
@@ -702,7 +702,7 @@ namespace storm {
                                                                         pomdp.getNumberOfStates());
                                 subSimplex = temp.first;
                                 lambdas = temp.second;
-                                /*if (cacheSubsimplices) {
+                                /*if (options.cacheSubsimplices) {
                                     subSimplexCache[idNextBelief] = subSimplex;
                                     lambdaCache[idNextBelief] = lambdas;
                                 }
@@ -882,14 +882,14 @@ namespace storm {
                                     // cache the values  to not always re-calculate
                                     std::vector<std::map<uint64_t, ValueType>> subSimplex;
                                     std::vector<ValueType> lambdas;
-                                    if (cacheSubsimplices && subSimplexCache.count(nextBelief.id) > 0) {
+                                    if (options.cacheSubsimplices && subSimplexCache.count(nextBelief.id) > 0) {
                                         subSimplex = subSimplexCache[nextBelief.id];
                                         lambdas = lambdaCache[nextBelief.id];
                                     } else {
                                         auto temp = computeSubSimplexAndLambdas(nextBelief.probabilities, gridResolution, pomdp.getNumberOfStates());
                                         subSimplex = temp.first;
                                         lambdas = temp.second;
-                                        if (cacheSubsimplices) {
+                                        if (options.cacheSubsimplices) {
                                             subSimplexCache[nextBelief.id] = subSimplex;
                                             lambdaCache[nextBelief.id] = lambdas;
                                         }
@@ -937,7 +937,7 @@ namespace storm {
 
                 std::vector<ValueType> initialLambda;
                 std::vector<std::map<uint64_t, ValueType>> initialSubsimplex;
-                if (cacheSubsimplices) {
+                if (options.cacheSubsimplices) {
                     initialLambda = lambdaCache[0];
                     initialSubsimplex = subSimplexCache[0];
                 } else {
@@ -1007,7 +1007,7 @@ namespace storm {
                 std::map<uint64_t, std::vector<ValueType>> lambdaCache;
 
                 auto temp = computeSubSimplexAndLambdas(initialBelief.probabilities, gridResolution, pomdp.getNumberOfStates());
-                if (cacheSubsimplices) {
+                if (options.cacheSubsimplices) {
                     subSimplexCache[0] = temp.first;
                     lambdaCache[0] = temp.second;
                 }
