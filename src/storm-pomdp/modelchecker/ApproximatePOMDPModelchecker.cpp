@@ -73,6 +73,40 @@ namespace storm {
                 }
             }
             
+            template<typename ValueType, typename RewardModelType>
+            void ApproximatePOMDPModelchecker<ValueType, RewardModelType>::printStatisticsToStream(std::ostream& stream) const {
+                stream << "##### Grid Approximation Statistics ######" << std::endl;
+                stream << "# Input model: " << std::endl;
+                pomdp.printModelInformationToStream(stream);
+                stream << "# Max. Number of states with same observation: " << pomdp.getMaxNrStatesWithSameObservation() << std::endl;
+                
+                if (statistics.aborted) {
+                    stream << "# Computation aborted early";
+                }
+                
+                // Refinement information:
+                if (statistics.refinementSteps) {
+                    stream << "# Number of refinement steps " << statistics.refinementSteps.get();
+                }
+                
+                // The overapproximation MDP:
+                if (statistics.overApproximationStates) {
+                    stream << "# Number of states in the ";
+                    if (options.doRefinement) {
+                        stream << "final ";
+                    }
+                    stream << "grid MDP for the over-approximation: ";
+                    if (statistics.overApproximationBuildAborted) {
+                        stream << ">=";
+                    }
+                    stream << statistics.overApproximationStates.get() << std::endl;
+                    stream << "# Time spend for building the grid MDP(s): " << statistics.overApproximationBuildTime << std::endl;
+                    stream << "# Time spend for checking the grid MDP(s): " << statistics.overApproximationCheckTime << std::endl;
+                }
+
+                stream << "##########################################" << std::endl;
+            }
+
             
             template<typename ValueType, typename RewardModelType>
             std::unique_ptr<POMDPCheckResult<ValueType>>

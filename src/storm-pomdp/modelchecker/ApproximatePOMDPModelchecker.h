@@ -66,6 +66,8 @@ namespace storm {
                 
                 std::unique_ptr<POMDPCheckResult<ValueType>> check(storm::logic::Formula const& formula);
 
+                void printStatisticsToStream(std::ostream& stream) const;
+                
             private:
                 /**
                  * Compute the reachability probability of given target observations on a POMDP using the automatic refinement loop
@@ -240,7 +242,16 @@ namespace storm {
                  */
                 ValueType getRewardAfterAction(uint64_t action, storm::pomdp::Belief<ValueType> &belief);
 
-
+                struct Statistics {
+                    boost::optional<uint64_t> overApproximationStates;
+                    bool overApproximationBuildAborted;
+                    storm::utility::Stopwatch overApproximationBuildTime;
+                    storm::utility::Stopwatch overApproximationCheckTime;
+                    boost::optional<uint64_t> refinementSteps;
+                    bool aborted;
+                };
+                Statistics statistics;
+                
                 storm::models::sparse::Pomdp<ValueType, RewardModelType> const& pomdp;
                 Options options;
                 storm::utility::ConstantsComparator<ValueType> cc;
