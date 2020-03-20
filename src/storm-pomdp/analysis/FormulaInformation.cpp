@@ -169,7 +169,11 @@ namespace storm {
                 return FormulaInformation();
             }
             
+            template void FormulaInformation::updateTargetStates<storm::models::sparse::Pomdp<double>>(storm::models::sparse::Pomdp<double> const& pomdp, storm::storage::BitVector&& newTargetStates);
+            template void FormulaInformation::updateSinkStates<storm::models::sparse::Pomdp<double>>(storm::models::sparse::Pomdp<double> const& pomdp, storm::storage::BitVector&& newSinkStates);
             template FormulaInformation getFormulaInformation<storm::models::sparse::Pomdp<double>>(storm::models::sparse::Pomdp<double> const& pomdp, storm::logic::Formula const& formula);
+            template void FormulaInformation::updateTargetStates<storm::models::sparse::Pomdp<storm::RationalNumber>>(storm::models::sparse::Pomdp<storm::RationalNumber> const& pomdp, storm::storage::BitVector&& newTargetStates);
+            template void FormulaInformation::updateSinkStates<storm::models::sparse::Pomdp<storm::RationalNumber>>(storm::models::sparse::Pomdp<storm::RationalNumber> const& pomdp, storm::storage::BitVector&& newSinkStates);
             template FormulaInformation getFormulaInformation<storm::models::sparse::Pomdp<storm::RationalNumber>>(storm::models::sparse::Pomdp<storm::RationalNumber> const& pomdp, storm::logic::Formula const& formula);
             
         }
