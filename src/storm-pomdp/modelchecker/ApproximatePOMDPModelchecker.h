@@ -243,11 +243,19 @@ namespace storm {
                 ValueType getRewardAfterAction(uint64_t action, storm::pomdp::Belief<ValueType> &belief);
 
                 struct Statistics {
+                    Statistics();
+                    boost::optional<uint64_t> refinementSteps;
+                    
                     boost::optional<uint64_t> overApproximationStates;
                     bool overApproximationBuildAborted;
                     storm::utility::Stopwatch overApproximationBuildTime;
                     storm::utility::Stopwatch overApproximationCheckTime;
-                    boost::optional<uint64_t> refinementSteps;
+                    
+                    boost::optional<uint64_t> underApproximationStates;
+                    bool underApproximationBuildAborted;
+                    storm::utility::Stopwatch underApproximationBuildTime;
+                    storm::utility::Stopwatch underApproximationCheckTime;
+                    
                     bool aborted;
                 };
                 Statistics statistics;

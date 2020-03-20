@@ -22,6 +22,7 @@
 #include "storm-parsers/api/storm-parsers.h"
 
 #include "storm/utility/macros.h"
+#include "storm/utility/SignalHandler.h"
 #include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
@@ -36,6 +37,10 @@ namespace storm {
                 numericPrecision = storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(1e-9);
                 cacheSubsimplices = false;
             }
+            template<typename ValueType, typename RewardModelType>
+            ApproximatePOMDPModelchecker<ValueType, RewardModelType>::Statistics::Statistics() :  overApproximationBuildAborted(false), underApproximationBuildAborted(false), aborted(false) {
+                // intentionally left empty;
+            }
             
             template<typename ValueType, typename RewardModelType>
             ApproximatePOMDPModelchecker<ValueType, RewardModelType>::ApproximatePOMDPModelchecker(storm::models::sparse::Pomdp<ValueType, RewardModelType> const& pomdp, Options options) : pomdp(pomdp), options(options) {
@@ -44,6 +49,10 @@ namespace storm {
 
             template<typename ValueType, typename RewardModelType>
             std::unique_ptr<POMDPCheckResult<ValueType>> ApproximatePOMDPModelchecker<ValueType, RewardModelType>::check(storm::logic::Formula const& formula) {
+                // Reset all collected statistics
+                statistics = Statistics();
+                std::unique_ptr<POMDPCheckResult<ValueType>> result;
+                // Extract the relevant information from the formula
                 auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(pomdp, formula);
                 if (formulaInfo.isNonNestedReachabilityProbability()) {
                     // FIXME: Instead of giving up, introduce a new observation for target states and make sink states absorbing.
@@ -54,23 +63,27 @@ namespace storm {
                         STORM_LOG_THROW(reachableFromSinkStates.empty(), storm::exceptions::NotSupportedException, "There are sink states that can reach non-sink states. This is currently not supported");
                     }
                     if (options.doRefinement) {
-                        return refineReachability(formulaInfo.getTargetStates().observations, formulaInfo.minimize(), false);
+                        result = refineReachability(formulaInfo.getTargetStates().observations, formulaInfo.minimize(), false);
                     } else {
-                        return computeReachabilityProbabilityOTF(formulaInfo.getTargetStates().observations, formulaInfo.minimize());
+                        result = computeReachabilityProbabilityOTF(formulaInfo.getTargetStates().observations, formulaInfo.minimize());
                     }
                 } else if (formulaInfo.isNonNestedExpectedRewardFormula()) {
                     // FIXME: Instead of giving up, introduce a new observation for target states and make sink states absorbing.
                     STORM_LOG_THROW(formulaInfo.getTargetStates().observationClosed, storm::exceptions::NotSupportedException, "There are non-target states with the same observation as a target state. This is currently not supported");
                     if (options.doRefinement) {
-                        return refineReachability(formulaInfo.getTargetStates().observations, formulaInfo.minimize(), true);
+                        result = refineReachability(formulaInfo.getTargetStates().observations, formulaInfo.minimize(), true);
                     } else {
                         // FIXME: pick the non-unique reward model here
                         STORM_LOG_THROW(pomdp.hasUniqueRewardModel(), storm::exceptions::NotSupportedException, "Non-unique reward models not implemented yet.");
-                        return computeReachabilityRewardOTF(formulaInfo.getTargetStates().observations, formulaInfo.minimize());
+                        result = computeReachabilityRewardOTF(formulaInfo.getTargetStates().observations, formulaInfo.minimize());
                     }
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unsupported formula '" << formula << "'.");
                 }
+                if (storm::utility::resources::isTerminate()) {
+                    statistics.aborted = true;
+                }
+                return result;
             }
             
             template<typename ValueType, typename RewardModelType>
@@ -100,8 +113,23 @@ namespace storm {
                         stream << ">=";
                     }
                     stream << statistics.overApproximationStates.get() << std::endl;
-                    stream << "# Time spend for building the grid MDP(s): " << statistics.overApproximationBuildTime << std::endl;
-                    stream << "# Time spend for checking the grid MDP(s): " << statistics.overApproximationCheckTime << std::endl;
+                    stream << "# Time spend for building the over-approx grid MDP(s): " << statistics.overApproximationBuildTime << std::endl;
+                    stream << "# Time spend for checking the over-approx grid MDP(s): " << statistics.overApproximationCheckTime << std::endl;
+                }
+                
+                // The underapproximation MDP:
+                if (statistics.underApproximationStates) {
+                    stream << "# Number of states in the ";
+                    if (options.doRefinement) {
+                        stream << "final ";
+                    }
+                    stream << "grid MDP for the under-approximation: ";
+                    if (statistics.underApproximationBuildAborted) {
+                        stream << ">=";
+                    }
+                    stream << statistics.underApproximationStates.get() << std::endl;
+                    stream << "# Time spend for building the under-approx grid MDP(s): " << statistics.underApproximationBuildTime << std::endl;
+                    stream << "# Time spend for checking the under-approx grid MDP(s): " << statistics.underApproximationCheckTime << std::endl;
                 }
 
                 stream << "##########################################" << std::endl;
@@ -183,9 +211,16 @@ namespace storm {
                 std::shared_ptr<RefinementComponents<ValueType>> res = computeFirstRefinementStep(targetObservations, min, observationResolutionVector, computeRewards,
                                                                                                   initialOverApproxMap,
                                                                                                   initialUnderApproxMap, underApproxModelSize);
+                if (res == nullptr) {
+                    statistics.refinementSteps = 0;
+                    return nullptr;
+                }
                 ValueType lastMinScore = storm::utility::infinity<ValueType>();
                 while (refinementCounter < 1000 && ((!min && res->overApproxValue - res->underApproxValue > options.refinementPrecision) ||
                                                     (min && res->underApproxValue - res->overApproxValue > options.refinementPrecision))) {
+                    if (storm::utility::resources::isTerminate()) {
+                        break;
+                    }
                     // TODO the actual refinement
                     // choose which observation(s) to refine
                     std::vector<ValueType> obsAccumulator(pomdp.getNrObservations(), storm::utility::zero<ValueType>());
@@ -265,7 +300,7 @@ namespace storm {
                                          "The value for the under-approximation is larger than the value for the over-approximation.");
                     ++refinementCounter;
                 }
-
+                statistics.refinementSteps = refinementCounter;
                 return std::make_unique<POMDPCheckResult<ValueType>>(POMDPCheckResult<ValueType>{res->overApproxValue, res->underApproxValue});
             }
 
@@ -280,6 +315,9 @@ namespace storm {
                 STORM_PRINT("Use On-The-Fly Grid Generation" << std::endl)
                 auto result = computeFirstRefinementStep(targetObservations, min, observationResolutionVector, computeRewards, overApproximationMap,
                                                          underApproximationMap, maxUaModelSize);
+                if (result == nullptr) {
+                    return nullptr;
+                }
                 return std::make_unique<POMDPCheckResult<ValueType>>(POMDPCheckResult<ValueType>{result->overApproxValue, result->underApproxValue});
             }
 
@@ -313,7 +351,7 @@ namespace storm {
                 // current ID -> action -> reward
                 std::map<uint64_t, std::vector<ValueType>> beliefActionRewards;
                 uint64_t nextId = 0;
-                storm::utility::Stopwatch expansionTimer(true);
+                statistics.overApproximationBuildTime.start();
                 // Initial belief always has belief ID 0
                 storm::pomdp::Belief<ValueType> initialBelief = getInitialBelief(nextId);
                 ++nextId;
@@ -512,11 +550,19 @@ namespace storm {
                         }
                         mdpTransitions.push_back(transitionsInBelief);
                     }
+                    if (storm::utility::resources::isTerminate()) {
+                        statistics.overApproximationBuildAborted = true;
+                        break;
+                    }
                 }
-                expansionTimer.stop();
-                STORM_PRINT("Grid size: " << beliefGrid.size() << std::endl)
-                STORM_PRINT("Belief space expansion took " << expansionTimer << std::endl)
-
+                statistics.overApproximationStates = mdpTransitions.size();
+                STORM_PRINT("Grid size: " << beliefGrid.size() << std::endl);
+                STORM_PRINT("Over Approximation MDP build took " << statistics.overApproximationBuildTime << " seconds." << std::endl);
+                if (storm::utility::resources::isTerminate()) {
+                    statistics.overApproximationBuildTime.stop();
+                    return nullptr;
+                }
+                
                 storm::models::sparse::StateLabeling mdpLabeling(mdpTransitions.size());
                 mdpLabeling.addLabel("init");
                 mdpLabeling.addLabel("target");
@@ -541,6 +587,8 @@ namespace storm {
                     overApproxMdp.addRewardModel("std", mdpRewardModel);
                     overApproxMdp.restrictRewardModels(std::set<std::string>({"std"}));
                 }
+                statistics.overApproximationBuildTime.stop();
+                STORM_PRINT("Over Approximation MDP build took " << statistics.overApproximationBuildTime << " seconds." << std::endl);
                 overApproxMdp.printModelInformationToStream(std::cout);
 
                 auto model = std::make_shared<storm::models::sparse::Mdp<ValueType, RewardModelType>>(overApproxMdp);
@@ -555,19 +603,26 @@ namespace storm {
                 hint.setResultHint(hintVector);
                 auto hintPtr = std::make_shared<storm::modelchecker::ExplicitModelCheckerHint<ValueType>>(hint);
                 task.setHint(hintPtr);
-                storm::utility::Stopwatch overApproxTimer(true);
+                statistics.overApproximationCheckTime.start();
                 std::unique_ptr<storm::modelchecker::CheckResult> res(storm::api::verifyWithSparseEngine<ValueType>(model, task));
-                overApproxTimer.stop();
-                STORM_LOG_ASSERT(res, "Result not exist.");
+                statistics.overApproximationCheckTime.stop();
+                if (storm::utility::resources::isTerminate() && !res) {
+                    return nullptr;
+                }
+                STORM_LOG_ASSERT(res, "Result does not exist.");
                 res->filter(storm::modelchecker::ExplicitQualitativeCheckResult(storm::storage::BitVector(overApproxMdp.getNumberOfStates(), true)));
                 auto overApproxResultMap = res->asExplicitQuantitativeCheckResult<ValueType>().getValueMap();
                 auto overApprox = overApproxResultMap[beliefStateMap.left.at(initialBelief.id)];
 
-                STORM_PRINT("Time Overapproximation: " << overApproxTimer << std::endl)
+                STORM_PRINT("Time Overapproximation: " <<  statistics.overApproximationCheckTime << " seconds." << std::endl);
                 //auto underApprox = weightedSumUnderMap[initialBelief.id];
                 auto underApproxComponents = computeUnderapproximation(beliefList, beliefIsTarget, targetObservations, initialBelief.id, min, computeRewards,
                                                                        maxUaModelSize);
                 STORM_PRINT("Over-Approximation Result: " << overApprox << std::endl);
+                if (storm::utility::resources::isTerminate() && !underApproxComponents) {
+                    return std::make_unique<RefinementComponents<ValueType>>(
+                        RefinementComponents<ValueType>{modelPtr, overApprox, 0, overApproxResultMap, {}, beliefList, beliefGrid, beliefIsTarget, beliefStateMap, {}, initialBelief.id});
+                }
                 STORM_PRINT("Under-Approximation Result: " << underApproxComponents->underApproxValue << std::endl);
 
                 return std::make_unique<RefinementComponents<ValueType>>(
@@ -600,6 +655,8 @@ namespace storm {
                 // Map to save the weighted values resulting from the initial preprocessing for newly added beliefs / indices in beliefSpace
                 std::map<uint64_t, ValueType> weightedSumOverMap;
                 std::map<uint64_t, ValueType> weightedSumUnderMap;
+
+                statistics.overApproximationBuildTime.start();
 
                 uint64_t nextBeliefId = refinementComponents->beliefList.size();
                 uint64_t nextStateId = refinementComponents->overApproxModelPtr->getNumberOfStates();
@@ -788,8 +845,18 @@ namespace storm {
                             }
                         }
                     }
+                    if (storm::utility::resources::isTerminate()) {
+                        statistics.overApproximationBuildAborted = true;
+                        break;
+                    }
                 }
 
+                statistics.overApproximationStates = nextStateId;
+                if (storm::utility::resources::isTerminate()) {
+                    statistics.overApproximationBuildTime.stop();
+                    // Return the result from the old refinement step
+                    return refinementComponents;
+                }
                 storm::models::sparse::StateLabeling mdpLabeling(nextStateId);
                 mdpLabeling.addLabel("init");
                 mdpLabeling.addLabel("target");
@@ -853,7 +920,9 @@ namespace storm {
                     overApproxMdp.restrictRewardModels(std::set<std::string>({"std"}));
                 }
                 overApproxMdp.printModelInformationToStream(std::cout);
-
+                statistics.overApproximationBuildTime.stop();
+                STORM_PRINT("Over Approximation MDP build took " << statistics.overApproximationBuildTime << " seconds." << std::endl);
+                
                 auto model = std::make_shared<storm::models::sparse::Mdp<ValueType, RewardModelType>>(overApproxMdp);
                 auto modelPtr = std::static_pointer_cast<storm::models::sparse::Model<ValueType, RewardModelType>>(model);
                 std::string propertyString = computeRewards ? "R" : "P";
@@ -862,19 +931,26 @@ namespace storm {
                 std::vector<storm::jani::Property> propertyVector = storm::api::parseProperties(propertyString);
                 std::shared_ptr<storm::logic::Formula const> property = storm::api::extractFormulasFromProperties(propertyVector).front();
                 auto task = storm::api::createTask<ValueType>(property, false);
-                storm::utility::Stopwatch overApproxTimer(true);
+                statistics.overApproximationCheckTime.start();
                 std::unique_ptr<storm::modelchecker::CheckResult> res(storm::api::verifyWithSparseEngine<ValueType>(model, task));
-                overApproxTimer.stop();
+                statistics.overApproximationCheckTime.stop();
+                if (storm::utility::resources::isTerminate() && !res) {
+                    return refinementComponents; // Return the result from the previous iteration
+                }
+                STORM_PRINT("Time Overapproximation: " << statistics.overApproximationCheckTime << std::endl)
                 STORM_LOG_ASSERT(res, "Result not exist.");
                 res->filter(storm::modelchecker::ExplicitQualitativeCheckResult(storm::storage::BitVector(overApproxMdp.getNumberOfStates(), true)));
                 auto overApproxResultMap = res->asExplicitQuantitativeCheckResult<ValueType>().getValueMap();
                 auto overApprox = overApproxResultMap[refinementComponents->overApproxBeliefStateMap.left.at(refinementComponents->initialBeliefId)];
 
-                STORM_PRINT("Time Overapproximation: " << overApproxTimer << std::endl)
                 //auto underApprox = weightedSumUnderMap[initialBelief.id];
                 auto underApproxComponents = computeUnderapproximation(refinementComponents->beliefList, refinementComponents->beliefIsTarget, targetObservations,
                                                                        refinementComponents->initialBeliefId, min, computeRewards, maxUaModelSize);
                 STORM_PRINT("Over-Approximation Result: " << overApprox << std::endl);
+                if (storm::utility::resources::isTerminate() && !underApproxComponents) {
+                    return std::make_unique<RefinementComponents<ValueType>>(
+                        RefinementComponents<ValueType>{modelPtr, overApprox, refinementComponents->underApproxValue, overApproxResultMap, {}, refinementComponents->beliefList, refinementComponents->beliefGrid, refinementComponents->beliefIsTarget, refinementComponents->overApproxBeliefStateMap, {}, refinementComponents->initialBeliefId});
+                }
                 STORM_PRINT("Under-Approximation Result: " << underApproxComponents->underApproxValue << std::endl);
 
                 return std::make_shared<RefinementComponents<ValueType>>(
@@ -918,6 +994,7 @@ namespace storm {
                 uint64_t nextId = beliefList.size();
                 uint64_t counter = 0;
 
+                statistics.underApproximationBuildTime.start();
                 // Expand the believes
                 visitedBelieves.insert(initialBeliefId);
                 believesToBeExpanded.push_back(initialBeliefId);
@@ -958,8 +1035,17 @@ namespace storm {
                         transitions.push_back(actionTransitionStorage);
                     }
                     believesToBeExpanded.pop_front();
+                    if (storm::utility::resources::isTerminate()) {
+                        statistics.underApproximationBuildAborted = true;
+                        break;
+                    }
                 }
-
+                statistics.underApproximationStates = transitions.size();
+                if (storm::utility::resources::isTerminate()) {
+                    statistics.underApproximationBuildTime.stop();
+                    return nullptr;
+                }
+                
                 storm::models::sparse::StateLabeling labeling(transitions.size());
                 labeling.addLabel("init");
                 labeling.addLabel("target");
@@ -993,6 +1079,7 @@ namespace storm {
                 model = std::make_shared<storm::models::sparse::Mdp<ValueType, RewardModelType>>(underApproxMdp);
 
                 model->printModelInformationToStream(std::cout);
+                statistics.underApproximationBuildTime.stop();
 
                 std::string propertyString;
                 if (computeRewards) {
@@ -1003,7 +1090,12 @@ namespace storm {
                 std::vector<storm::jani::Property> propertyVector = storm::api::parseProperties(propertyString);
                 std::shared_ptr<storm::logic::Formula const> property = storm::api::extractFormulasFromProperties(propertyVector).front();
 
+                statistics.underApproximationCheckTime.start();
                 std::unique_ptr<storm::modelchecker::CheckResult> res(storm::api::verifyWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(property, false)));
+                statistics.underApproximationCheckTime.stop();
+                if (storm::utility::resources::isTerminate() && !res) {
+                    return nullptr;
+                }
                 STORM_LOG_ASSERT(res, "Result does not exist.");
                 res->filter(storm::modelchecker::ExplicitQualitativeCheckResult(storm::storage::BitVector(underApproxMdp.getNumberOfStates(), true)));
                 auto underApproxResultMap = res->asExplicitQuantitativeCheckResult<ValueType>().getValueMap();
