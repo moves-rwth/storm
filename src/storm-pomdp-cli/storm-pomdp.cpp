@@ -32,6 +32,8 @@
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/Stopwatch.h"
+#include "storm/utility/SignalHandler.h"
+#include "storm/utility/NumberTraits.h"
 
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -79,6 +81,20 @@ namespace storm {
                 return preprocessingPerformed;
             }
             
+            template<typename ValueType>
+            void printResult(ValueType const& lowerBound, ValueType const& upperBound) {
+                if (lowerBound == upperBound) {
+                    STORM_PRINT_AND_LOG(lowerBound);
+                } else {
+                    STORM_PRINT_AND_LOG("[" << lowerBound << ", " << upperBound << "] (width=" << ValueType(upperBound - lowerBound) << ")");
+                }
+                if (storm::NumberTraits<ValueType>::IsExact) {
+                    STORM_PRINT_AND_LOG(" (approx. ");
+                    printResult(storm::utility::convertNumber<double>(lowerBound), storm::utility::convertNumber<double>(upperBound));
+                    STORM_PRINT_AND_LOG(")");
+                }
+            }
+            
             template<typename ValueType, storm::dd::DdType DdType>
             bool performAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& pomdp, storm::pomdp::analysis::FormulaInformation const& formulaInfo, storm::logic::Formula const& formula) {
                 auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
@@ -103,14 +119,13 @@ namespace storm {
                     }
                     storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<ValueType> checker = storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<ValueType>(*pomdp, options);
                     std::unique_ptr<storm::pomdp::modelchecker::POMDPCheckResult<ValueType>> result = checker.check(formula);
-                    ValueType overRes = result->overApproxValue;
-                    ValueType underRes = result->underApproxValue;
-                    if (overRes != underRes) {
-                        STORM_PRINT("Overapproximation Result: " << overRes << std::endl);
-                        STORM_PRINT("Underapproximation Result: " << underRes << std::endl);
+                    checker.printStatisticsToStream(std::cout);
+                    if (storm::utility::resources::isTerminate()) {
+                        STORM_PRINT_AND_LOG("Result till abort: ")
                     } else {
-                        STORM_PRINT("Result: " << overRes << std::endl)
+                        STORM_PRINT_AND_LOG("Result: ")
                     }
+                    printResult(result->underApproxValue, result->overApproxValue);
                     analysisPerformed = true;
                 }
                 if (pomdpSettings.isMemlessSearchSet()) {
