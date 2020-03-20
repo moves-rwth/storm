@@ -127,10 +127,11 @@ namespace storm {
                             STORM_PRINT_AND_LOG("Result: ")
                         }
                         printResult(result->underApproxValue, result->overApproxValue);
-                        analysisPerformed = true;
+                        STORM_PRINT_AND_LOG(std::endl);
                     } else {
-                        STORM_PRINT_AND_LOG("Result: Not available.");
+                        STORM_PRINT_AND_LOG("Result: Not available." << std::endl);
                     }
+                    analysisPerformed = true;
                 }
                 if (pomdpSettings.isMemlessSearchSet()) {
                     STORM_LOG_THROW(formulaInfo.isNonNestedReachabilityProbability(), storm::exceptions::NotSupportedException, "Qualitative memoryless scheduler search is not implemented for this property type.");
