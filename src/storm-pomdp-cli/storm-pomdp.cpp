@@ -120,13 +120,17 @@ namespace storm {
                     storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<ValueType> checker = storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<ValueType>(*pomdp, options);
                     std::unique_ptr<storm::pomdp::modelchecker::POMDPCheckResult<ValueType>> result = checker.check(formula);
                     checker.printStatisticsToStream(std::cout);
-                    if (storm::utility::resources::isTerminate()) {
-                        STORM_PRINT_AND_LOG("Result till abort: ")
+                    if (result) {
+                        if (storm::utility::resources::isTerminate()) {
+                            STORM_PRINT_AND_LOG("Result till abort: ")
+                        } else {
+                            STORM_PRINT_AND_LOG("Result: ")
+                        }
+                        printResult(result->underApproxValue, result->overApproxValue);
+                        analysisPerformed = true;
                     } else {
-                        STORM_PRINT_AND_LOG("Result: ")
+                        STORM_PRINT_AND_LOG("Result: Not available.");
                     }
-                    printResult(result->underApproxValue, result->overApproxValue);
-                    analysisPerformed = true;
                 }
                 if (pomdpSettings.isMemlessSearchSet()) {
                     STORM_LOG_THROW(formulaInfo.isNonNestedReachabilityProbability(), storm::exceptions::NotSupportedException, "Qualitative memoryless scheduler search is not implemented for this property type.");
@@ -241,7 +245,7 @@ namespace storm {
                 
                 auto model = storm::cli::buildPreprocessExportModelWithValueTypeAndDdlib<DdType, ValueType>(symbolicInput, mpi);
                 if (!model) {
-                    STORM_PRINT_AND_LOG("No input model given.");
+                    STORM_PRINT_AND_LOG("No input model given." << std::endl);
                     return;
                 }
                 STORM_LOG_THROW(model->getType() == storm::models::ModelType::Pomdp && model->isSparseModel(), storm::exceptions::WrongFormatException, "Expected a POMDP in sparse representation.");
