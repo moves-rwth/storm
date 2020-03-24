@@ -173,6 +173,10 @@ namespace storm {
             
             // The environment used during model checking
             storm::Environment env;
+            
+            // A flag which is set to true, if the settings were detected to be compatible.
+            // If this is false, it could be that the query can not be handled.
+            bool isCompatible;
         };
         
         void getModelProcessingInformationPortfolio(SymbolicInput const& input, ModelProcessingInformation& mpi) {
@@ -261,30 +265,33 @@ namespace storm {
             }
             
             // Check whether these settings are compatible with the provided input.
-            bool incompatibleSettings = false;
             if (input.model) {
-                switch (mpi.verificationValueType) {
-                    case ModelProcessingInformation::ValueType::Parametric:
-                        incompatibleSettings = !storm::utility::canHandle<storm::RationalFunction>(mpi.engine, input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties, input.model.get());
-                        break;
-                    case ModelProcessingInformation::ValueType::Exact:
-                        incompatibleSettings = !storm::utility::canHandle<storm::RationalNumber>(mpi.engine, input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties, input.model.get());
-                        break;
-                    case ModelProcessingInformation::ValueType::FinitePrecision:
-                        incompatibleSettings = !storm::utility::canHandle<double>(mpi.engine, input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties, input.model.get());
-                        break;
+                auto checkCompatibleSettings = [&mpi, &input] {
+                    switch (mpi.verificationValueType) {
+                        case ModelProcessingInformation::ValueType::Parametric:
+                            return storm::utility::canHandle<storm::RationalFunction>(mpi.engine, input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties, input.model.get());
+                        case ModelProcessingInformation::ValueType::Exact:
+                            return storm::utility::canHandle<storm::RationalNumber>(mpi.engine, input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties, input.model.get());
+                            break;
+                        case ModelProcessingInformation::ValueType::FinitePrecision:
+                            return storm::utility::canHandle<double>(mpi.engine, input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties, input.model.get());
+                    }
+                };
+                mpi.isCompatible = checkCompatibleSettings();
+                if (!mpi.isCompatible) {
+                    if (usePortfolio) {
+                        bool useExact = mpi.verificationValueType != ModelProcessingInformation::ValueType::FinitePrecision;
+                        STORM_LOG_WARN("The settings picked by the portfolio engine (engine=" << mpi.engine << ", bisim=" << mpi.applyBisimulation << ", exact=" << useExact << ") are incompatible with this model. Falling back to default settings.");
+                        mpi.engine = storm::utility::Engine::Sparse;
+                        mpi.applyBisimulation = false;
+                        mpi.verificationValueType = originalVerificationValueType;
+                        // Retry check with new settings
+                        mpi.isCompatible = checkCompatibleSettings();
+                    }
                 }
-            }
-            if (incompatibleSettings) {
-                if (usePortfolio) {
-                    bool useExact = mpi.verificationValueType != ModelProcessingInformation::ValueType::FinitePrecision;
-                    STORM_LOG_WARN("The settings picked by the portfolio engine (engine=" << mpi.engine << ", bisim=" << mpi.applyBisimulation << ", exact=" << useExact << ") are incompatible with this model. Falling back to default settings.");
-                    mpi.engine = storm::utility::Engine::Sparse;
-                    mpi.applyBisimulation = false;
-                    mpi.verificationValueType = originalVerificationValueType;
-                } else {
-                    STORM_LOG_WARN("The model checking query does not seem to be supported for the selected engine. Storm will try to solve the query, but you will most likely get an error for at least one of the provided properties.");
-                }
+            } else {
+                // If there is no input model, nothing has to be done, actually
+                mpi.isCompatible = true;
             }
             
             // Set whether a transformation to jani is required or necessary
