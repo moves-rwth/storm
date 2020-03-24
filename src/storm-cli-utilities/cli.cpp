@@ -256,9 +256,11 @@ namespace storm {
             // Preprocess the symbolic input
             std::tie(symbolicInput, mpi) = preprocessSymbolicInput(symbolicInput);
             
+            STORM_LOG_WARN_COND(mpi.isCompatible, "The model checking query does not seem to be supported for the selected engine. Storm will try to solve the query, but you will most likely get an error for at least one of the provided properties.");
+
             // Export symbolic input (if requested)
             exportSymbolicInput(symbolicInput);
-
+            
 #ifdef STORM_HAVE_CARL
             switch (mpi.verificationValueType) {
                 case ModelProcessingInformation::ValueType::Parametric:
