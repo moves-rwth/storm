@@ -33,6 +33,8 @@ option(STORM_DEVELOPER "Sets whether the development mode is used." OFF)
 option(STORM_ALLWARNINGS "Compile with even more warnings" OFF)
 option(STORM_USE_LTO "Sets whether link-time optimizations are enabled." ON)
 MARK_AS_ADVANCED(STORM_USE_LTO)
+option(STORM_USE_THIN_LTO "Sets whether thin link-time optimizations are enabled (faster compile times than normal LTO)." OFF)
+MARK_AS_ADVANCED(STORM_USE_THIN_LTO)
 option(STORM_PORTABLE "Sets whether a build needs to be portable." OFF)
 MARK_AS_ADVANCED(STORM_PORTABLE)
 # Force POPCNT is helpful for portable code targetting platforms with SSE4.2 operation support.
@@ -267,7 +269,10 @@ elseif (STORM_COMPILER_GCC)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -rdynamic")
 endif ()
 
-if (STORM_USE_LTO)
+if (STORM_USE_THIN_LTO)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto=thin")
+	message(STATUS "Storm - Enabling link-time optimizations using ThinLTO.")
+elseif (STORM_USE_LTO)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
 
     # Fix for problems that occurred when using LTO on gcc. This should be removed when it
