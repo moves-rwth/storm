@@ -5,8 +5,8 @@
 #include <algorithm>
 #include <functional>
 #include <numeric>
-#include <storm/adapters/RationalFunctionAdapter.h>
-#include <storm/adapters/IntelTbbAdapter.h>
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/IntelTbbAdapter.h"
 
 #include <boost/optional.hpp>
 

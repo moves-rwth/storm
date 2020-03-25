@@ -11,7 +11,6 @@
 
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/exceptions/OptionParserException.h"
-#include "storm/utility/storm-version.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/IOSettings.h"
