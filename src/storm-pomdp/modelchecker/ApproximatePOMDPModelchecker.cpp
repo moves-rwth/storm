@@ -99,7 +99,7 @@ namespace storm {
                 
                 // Refinement information:
                 if (statistics.refinementSteps) {
-                    stream << "# Number of refinement steps " << statistics.refinementSteps.get();
+                    stream << "# Number of refinement steps: " << statistics.refinementSteps.get();
                 }
                 
                 // The overapproximation MDP:
