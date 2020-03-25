@@ -19,7 +19,8 @@
 #endif
 
 #ifdef STORM_HAVE_INTELTBB
-#include "tbb/tbb.h"
+#include "tbb/parallel_for.h"
+#include "tbb/blocked_range.h"
 #include "tbb/tbb_stddef.h"
 #endif
 
