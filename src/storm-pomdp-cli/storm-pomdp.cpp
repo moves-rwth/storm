@@ -155,11 +155,20 @@ namespace storm {
                 }
                 if (pomdpSettings.isCheckFullyObservableSet()) {
                     STORM_PRINT_AND_LOG("Analyzing the formula on the fully observable MDP ... ");
-                    auto result = storm::api::verifyWithSparseEngine<ValueType>(pomdp->template as<storm::models::sparse::Mdp<ValueType>>(), storm::api::createTask<ValueType>(formula.asSharedPointer(), true))->template asExplicitQuantitativeCheckResult<ValueType>();
-                    result.filter(storm::modelchecker::ExplicitQualitativeCheckResult(pomdp->getInitialStates()));
-                    STORM_PRINT_AND_LOG("\nResult: ");
-                    printResult(result.getMin(), result.getMax());
-                    STORM_PRINT_AND_LOG(std::endl);
+                    auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(pomdp->template as<storm::models::sparse::Mdp<ValueType>>(), storm::api::createTask<ValueType>(formula.asSharedPointer(), true));
+                    if (resultPtr) {
+                        auto result = resultPtr->template asExplicitQuantitativeCheckResult<ValueType>();
+                        result.filter(storm::modelchecker::ExplicitQualitativeCheckResult(pomdp->getInitialStates()));
+                        if (storm::utility::resources::isTerminate()) {
+                            STORM_PRINT_AND_LOG("\nResult till abort: ")
+                        } else {
+                            STORM_PRINT_AND_LOG("\nResult: ")
+                        }
+                        printResult(result.getMin(), result.getMax());
+                        STORM_PRINT_AND_LOG(std::endl);
+                    } else {
+                        STORM_PRINT_AND_LOG("\nResult: Not available." << std::endl);
+                    }
                     analysisPerformed = true;
                 }
                 return analysisPerformed;
