@@ -94,12 +94,12 @@ namespace storm {
                 stream << "# Max. Number of states with same observation: " << pomdp.getMaxNrStatesWithSameObservation() << std::endl;
                 
                 if (statistics.aborted) {
-                    stream << "# Computation aborted early";
+                    stream << "# Computation aborted early" << std::endl;
                 }
                 
                 // Refinement information:
                 if (statistics.refinementSteps) {
-                    stream << "# Number of refinement steps: " << statistics.refinementSteps.get();
+                    stream << "# Number of refinement steps: " << statistics.refinementSteps.get() << std::endl;
                 }
                 
                 // The overapproximation MDP:
