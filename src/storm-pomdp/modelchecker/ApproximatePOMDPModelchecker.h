@@ -240,7 +240,8 @@ namespace storm {
                  * @param belief the belief in which the action is performed
                  * @return the reward earned by performing the action in the belief
                  */
-                ValueType getRewardAfterAction(uint64_t action, storm::pomdp::Belief<ValueType> &belief);
+                ValueType getRewardAfterAction(uint64_t action, storm::pomdp::Belief<ValueType> const& belief);
+                ValueType getRewardAfterAction(uint64_t action, std::map<uint64_t, ValueType> const& belief);
 
                 struct Statistics {
                     Statistics();
