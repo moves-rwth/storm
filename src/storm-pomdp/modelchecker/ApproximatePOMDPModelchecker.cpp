@@ -305,7 +305,11 @@ namespace storm {
                     ++refinementCounter;
                 }
                 statistics.refinementSteps = refinementCounter;
-                return std::make_unique<POMDPCheckResult<ValueType>>(POMDPCheckResult<ValueType>{res->overApproxValue, res->underApproxValue});
+                if (min) {
+                    return std::make_unique<POMDPCheckResult<ValueType>>(POMDPCheckResult<ValueType>{res->underApproxValue, res->overApproxValue});
+                } else {
+                    return std::make_unique<POMDPCheckResult<ValueType>>(POMDPCheckResult<ValueType>{res->overApproxValue, res->underApproxValue});
+                }
             }
 
             template<typename ValueType, typename RewardModelType>
@@ -322,7 +326,11 @@ namespace storm {
                 if (result == nullptr) {
                     return nullptr;
                 }
-                return std::make_unique<POMDPCheckResult<ValueType>>(POMDPCheckResult<ValueType>{result->overApproxValue, result->underApproxValue});
+                if (min) {
+                    return std::make_unique<POMDPCheckResult<ValueType>>(POMDPCheckResult<ValueType>{result->underApproxValue, result->overApproxValue});
+                } else {
+                    return std::make_unique<POMDPCheckResult<ValueType>>(POMDPCheckResult<ValueType>{result->overApproxValue, result->underApproxValue});
+                }
             }
 
 
