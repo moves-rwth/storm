@@ -3,8 +3,8 @@
 namespace storm {
     namespace modelchecker {
 
-        int SFTBDDChecker::f(int x) {
-            return x;
+        template<storm::dd::DdType Type>
+        SFTBDDChecker<Type>::SFTBDDChecker() : ddManager{std::make_shared<storm::dd::DdManager<Type>>()} {
         }
 
     }
