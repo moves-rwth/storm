@@ -42,6 +42,32 @@ namespace storm {
                 return idIt->second;
             }
             
+            std::string toString(BeliefType const& belief) const {
+                std::stringstream str;
+                str << "{ ";
+                bool first = true;
+                for (auto const& entry : belief) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        str << ", ";
+                    }
+                    str << entry.first << ": " << entry.second;
+                }
+                str << " }";
+                return str.str();
+            }
+            
+            std::string toString(Triangulation const& t) const {
+                std::stringstream str;
+                str << "(\n";
+                for (uint64_t i = 0; i < t.size(); ++i) {
+                    str << "\t" << t.weights[i] << " * \t" << toString(getGridPoint(t.gridPoints[i])) << "\n";
+                }
+                str <<")\n";
+                return str.str();
+            }
+            
             bool isEqual(BeliefType const& first, BeliefType const& second) const {
                 if (first.size() != second.size()) {
                     return false;
@@ -132,7 +158,7 @@ namespace storm {
                     STORM_LOG_ERROR("Triangulated belief is not a belief.");
                 }
                 if (!isEqual(belief, triangulatedBelief)) {
-                    STORM_LOG_ERROR("Belief does not match triangulated belief.");
+                    STORM_LOG_ERROR("Belief:\n\t" << toString(belief) << "\ndoes not match triangulated belief:\n\t" << toString(triangulatedBelief) << ".");
                     return false;
                 }
                 return true;
@@ -233,10 +259,8 @@ namespace storm {
                         result.gridPoints.push_back(getOrAddGridPointId(gridPoint));
                     }
                 }
-                std::reverse(result.weights.begin(), result.weights.end());
                 
-                STORM_LOG_ASSERT(assertTriangulation(belief, result), "Incorrect triangulation.");
-                
+                STORM_LOG_ASSERT(assertTriangulation(belief, result), "Incorrect triangulation: " << toString(result));
                 return result;
             }
             
