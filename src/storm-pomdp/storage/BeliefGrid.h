@@ -10,7 +10,8 @@
 namespace storm {
     namespace storage {
         
-        template <typename PomdpType, typename BeliefValueType, typename StateType = uint64_t>
+        template <typename PomdpType, typename BeliefValueType = typename PomdpType::ValueType, typename StateType = uint64_t>
+        // TODO: Change name. This actually does not only manage grid points.
         class BeliefGrid {
         public:
             
@@ -137,6 +138,28 @@ namespace storm {
                 return true;
             }
             
+            BeliefId getInitialBelief() {
+                STORM_LOG_ASSERT(pomdp.getInitialStates().getNumberOfSetBits() < 2,
+                                 "POMDP contains more than one initial state");
+                STORM_LOG_ASSERT(pomdp.getInitialStates().getNumberOfSetBits() == 1,
+                                 "POMDP does not contain an initial state");
+                BeliefType belief;
+                belief[*pomdp.getInitialStates().begin()] = storm::utility::one<ValueType>();
+                
+                STORM_LOG_ASSERT(assertBelief(belief), "Invalid initial belief.");
+                return getOrAddGridPointId(belief);
+            }
+            
+            uint32_t getBeliefObservation(BeliefType belief) {
+                STORM_LOG_ASSERT(assertBelief(belief), "Invalid belief.");
+                return pomdp.getObservation(belief.begin()->first);
+            }
+            
+            uint32_t getBeliefObservation(BeliefId beliefId) {
+                return getBeliefObservation(getGridPoint(beliefId));
+            }
+            
+            
             Triangulation triangulateBelief(BeliefType belief, uint64_t resolution) {
                 //TODO this can also be simplified using the sparse vector interpretation
                 //TODO Enable chaching for this method?
@@ -229,9 +252,9 @@ namespace storm {
                 return gridPoints.size();
             }
             
-            std::map<BeliefId, ValueType> expandAction(BeliefId const& gridPointId, uint64_t actionIndex, std::vector<uint64_t> const& observationResolutions) {
-                
+            std::map<BeliefId, ValueType> expandInternal(BeliefId const& gridPointId, uint64_t actionIndex, boost::optional<std::vector<uint64_t>> const& observationTriangulationResolutions = boost::none) {
                 std::map<BeliefId, ValueType> destinations; // The belief ids should be ordered
+                // TODO: Does this make sense? It could be better to order them afterwards because now we rely on the fact that MDP states have the same order than their associated BeliefIds
                 
                 BeliefType gridPoint = getGridPoint(gridPointId);
                 
@@ -247,7 +270,7 @@ namespace storm {
                     }
                 }
                 
-                // Now for each successor observation we find and triangulate the successor belief
+                // Now for each successor observation we find and potentially triangulate the successor belief
                 for (auto const& successor : successorObs) {
                     BeliefType successorBelief;
                     for (auto const& pointEntry : gridPoint) {
@@ -261,14 +284,26 @@ namespace storm {
                     }
                     STORM_LOG_ASSERT(assertBelief(successorBelief), "Invalid successor belief.");
                     
-                    Triangulation triangulation = triangulateBelief(successorBelief, observationResolutions[successor.first]);
-                    for (size_t j = 0; j < triangulation.size(); ++j) {
-                        addToDistribution(destinations, triangulation.gridPoints[j], triangulation.weights[j] * successor.second);
+                    if (observationTriangulationResolutions) {
+                        Triangulation triangulation = triangulateBelief(successorBelief, observationTriangulationResolutions.get()[successor.first]);
+                        for (size_t j = 0; j < triangulation.size(); ++j) {
+                            addToDistribution(destinations, triangulation.gridPoints[j], triangulation.weights[j] * successor.second);
+                        }
+                    } else {
+                        addToDistribution(destinations, getOrAddGridPointId(successorBelief), successor.second);
                     }
                 }
     
                 return destinations;
                 
+            }
+            
+            std::map<BeliefId, ValueType> expandAndTriangulate(BeliefId const& gridPointId, uint64_t actionIndex, std::vector<uint64_t> const& observationResolutions) {
+                return expandInternal(gridPointId, actionIndex, observationResolutions);
+            }
+            
+            std::map<BeliefId, ValueType> expand(BeliefId const& gridPointId, uint64_t actionIndex) {
+                return expandInternal(gridPointId, actionIndex);
             }
             
         private:
@@ -284,7 +319,6 @@ namespace storm {
             }
             
             PomdpType const& pomdp;
-            uint64_t resolution;
             
             std::vector<BeliefType> gridPoints;
             std::map<BeliefType, BeliefId> gridPointToIdMap;

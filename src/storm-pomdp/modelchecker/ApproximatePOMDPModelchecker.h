@@ -3,6 +3,7 @@
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/utility/logging.h"
 #include "storm-pomdp/storage/Belief.h"
+#include "storm-pomdp/storage/BeliefGrid.h"
 #include <boost/bimap.hpp>
 
 #include "storm/storage/jani/Property.h"
@@ -161,6 +162,9 @@ namespace storm {
                                                                                                              std::vector<bool> &beliefIsTarget,
                                                                                                              std::set<uint32_t> const &targetObservations,
                                                                                                              uint64_t initialBeliefId, bool min, bool computeReward,
+                                                                                                             uint64_t maxModelSize);
+                std::unique_ptr<UnderApproxComponents<ValueType, RewardModelType>> computeUnderapproximation(storm::storage::BeliefGrid<storm::models::sparse::Pomdp<ValueType>>& beliefGrid,
+                                                                                                             std::set<uint32_t> const &targetObservations, bool min, bool computeReward,
                                                                                                              uint64_t maxModelSize);
 
                 /**

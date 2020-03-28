@@ -23,7 +23,6 @@
 #include "storm/api/export.h"
 #include "storm-parsers/api/storm-parsers.h"
 
-#include "storm-pomdp/storage/BeliefGrid.h"
 
 #include "storm/utility/macros.h"
 #include "storm/utility/SignalHandler.h"
@@ -477,7 +476,7 @@ namespace storm {
                         std::vector<std::map<uint64_t, ValueType>> transitionsInBelief;
 
                         for (uint64_t action = 0; action < numChoices; ++action) {
-                            auto successorGridPoints = newBeliefGrid.expandAction(currId, action, observationResolutionVector);
+                            auto successorGridPoints = beliefGrid.expandAndTriangulate(currId, action, observationResolutionVector);
                             // Check for newly found grid points
                             foundBeliefs.grow(newBeliefGrid.getNumberOfGridPointIds(), false);
                             for (auto const& successor : successorGridPoints) {
@@ -1072,6 +1071,158 @@ namespace storm {
                 return std::make_unique<UnderApproxComponents<ValueType>>(UnderApproxComponents<ValueType>{underApprox, underApproxResultMap, beliefStateMap});
             }
 
+            template<typename ValueType, typename RewardModelType>
+            std::unique_ptr<UnderApproxComponents<ValueType, RewardModelType>>
+            ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeUnderapproximation(storm::storage::BeliefGrid<storm::models::sparse::Pomdp<ValueType>>& beliefGrid,
+                                                                                                std::set<uint32_t> const &targetObservations, bool min,
+                                                                                                bool computeRewards, uint64_t maxModelSize) {
+                // Build the belief MDP until enough states are explored.
+                //TODO think of other ways to stop exploration besides model size
+
+                statistics.underApproximationBuildTime.start();
+
+                // Reserve states 0 and 1 as always sink/goal states
+                storm::storage::SparseMatrixBuilder<ValueType> mdpTransitionsBuilder(0, 0, 0, true, true);
+                uint64_t extraBottomState = 0;
+                uint64_t extraTargetState = computeRewards ? 0 : 1;
+                uint64_t nextMdpStateId = extraTargetState + 1;
+                uint64_t mdpMatrixRow = 0;
+                for (uint64_t state = 0; state < nextMdpStateId; ++state) {
+                    mdpTransitionsBuilder.newRowGroup(mdpMatrixRow);
+                    mdpTransitionsBuilder.addNextValue(mdpMatrixRow, state, storm::utility::one<ValueType>());
+                    ++mdpMatrixRow;
+                }
+                std::vector<uint64_t> targetStates = {extraTargetState};
+
+                bsmap_type beliefStateMap;
+                std::deque<uint64_t> beliefsToBeExpanded;
+                
+                auto initialBeliefId = beliefGrid.getInitialBelief();
+                beliefStateMap.insert(bsmap_type::value_type(initialBeliefId, nextMdpStateId));
+                beliefsToBeExpanded.push_back(initialBeliefId);
+                ++nextMdpStateId;
+
+                // Expand the believes
+                storm::storage::BitVector foundBeliefs(beliefGrid.getNumberOfGridPointIds(), false);
+                for (auto const& belId : beliefsToBeExpanded) {
+                    foundBeliefs.set(belId, true);
+                }
+                while (!beliefsToBeExpanded.empty()) {
+                    uint64_t currId = beliefsToBeExpanded.front();
+                    beliefsToBeExpanded.pop_front();
+                    
+                    uint64_t currMdpState = beliefStateMap.left.at(currId);
+                    auto const& currBelief = beliefGrid.getGridPoint(currId);
+                    uint32_t currObservation = beliefGrid.getBeliefObservation(currBelief);
+                    
+                    mdpTransitionsBuilder.newRowGroup(mdpMatrixRow);
+                    
+                    if (targetObservations.count(currObservation) != 0) {
+                        // Make this state absorbing
+                        targetStates.push_back(currMdpState);
+                        mdpTransitionsBuilder.addNextValue(mdpMatrixRow, currMdpState, storm::utility::one<ValueType>());
+                        ++mdpMatrixRow;
+                    } else if (currMdpState > maxModelSize) {
+                        // In other cases, this could be helpflull as well.
+                        if (min) {
+                            // Get an upper bound here
+                            if (computeRewards) {
+                                // TODO: With minimizing rewards we need an upper bound!
+                                // For now, add a selfloop to "generate" infinite reward
+                                mdpTransitionsBuilder.addNextValue(mdpMatrixRow, currMdpState, storm::utility::one<ValueType>());
+                            } else {
+                                mdpTransitionsBuilder.addNextValue(mdpMatrixRow, extraTargetState, storm::utility::one<ValueType>());
+                            }
+                        } else {
+                            mdpTransitionsBuilder.addNextValue(mdpMatrixRow, computeRewards ? extraTargetState : extraBottomState, storm::utility::one<ValueType>());
+                        }
+                        ++mdpMatrixRow;
+                    } else {
+                        // Iterate over all actions and add the corresponding transitions
+                        uint64_t someState = currBelief.begin()->first;
+                        uint64_t numChoices = pomdp.getNumberOfChoices(someState);
+                        for (uint64_t action = 0; action < numChoices; ++action) {
+                            auto successorBeliefs = beliefGrid.expand(currId, action);
+                            // Check for newly found beliefs
+                            foundBeliefs.grow(beliefGrid.getNumberOfGridPointIds(), false);
+                            for (auto const& successor : successorBeliefs) {
+                                auto successorId = successor.first;
+                                if (!foundBeliefs.get(successorId)) {
+                                    foundBeliefs.set(successorId);
+                                    beliefsToBeExpanded.push_back(successorId);
+                                    beliefStateMap.insert(bsmap_type::value_type(successorId, nextMdpStateId));
+                                    ++nextMdpStateId;
+                                }
+                                auto successorMdpState = beliefStateMap.left.at(successorId);
+                                // This assumes that the successor MDP states are given in ascending order, which is indeed the case because the successorGridPoints are sorted.
+                                mdpTransitionsBuilder.addNextValue(mdpMatrixRow, successorMdpState, successor.second);
+                            }
+                            ++mdpMatrixRow;
+                        }
+                    }
+                    if (storm::utility::resources::isTerminate()) {
+                        statistics.underApproximationBuildAborted = true;
+                        break;
+                    }
+                }
+                statistics.underApproximationStates = nextMdpStateId;
+                if (storm::utility::resources::isTerminate()) {
+                    statistics.underApproximationBuildTime.stop();
+                    return nullptr;
+                }
+                
+                storm::models::sparse::StateLabeling mdpLabeling(nextMdpStateId);
+                mdpLabeling.addLabel("init");
+                mdpLabeling.addLabel("target");
+                mdpLabeling.addLabelToState("init", beliefStateMap.left.at(initialBeliefId));
+                for (auto targetState : targetStates) {
+                    mdpLabeling.addLabelToState("target", targetState);
+                }
+                
+                storm::storage::sparse::ModelComponents<ValueType, RewardModelType> modelComponents(mdpTransitionsBuilder.build(mdpMatrixRow, nextMdpStateId, nextMdpStateId), std::move(mdpLabeling));
+                auto model = std::make_shared<storm::models::sparse::Mdp<ValueType, RewardModelType>>(std::move(modelComponents));
+                if (computeRewards) {
+                    storm::models::sparse::StandardRewardModel<ValueType> mdpRewardModel(boost::none, std::vector<ValueType>(mdpMatrixRow));
+                    for (auto const &iter : beliefStateMap.left) {
+                        auto currentBelief = beliefGrid.getGridPoint(iter.first);
+                        auto representativeState = currentBelief.begin()->first;
+                        for (uint64_t action = 0; action < model->getNumberOfChoices(representativeState); ++action) {
+                            // Add the reward
+                            uint64_t mdpChoice = model->getChoiceIndex(storm::storage::StateActionPair(iter.second, action));
+                            uint64_t pomdpChoice = pomdp.getChoiceIndex(storm::storage::StateActionPair(representativeState, action));
+                            mdpRewardModel.setStateActionReward(mdpChoice, getRewardAfterAction(pomdpChoice, currentBelief));
+                        }
+                    }
+                    model->addRewardModel("default", mdpRewardModel);
+                    model->restrictRewardModels(std::set<std::string>({"default"}));
+                }
+
+                model->printModelInformationToStream(std::cout);
+                statistics.underApproximationBuildTime.stop();
+
+                std::string propertyString;
+                if (computeRewards) {
+                    propertyString = min ? "Rmin=? [F \"target\"]" : "Rmax=? [F \"target\"]";
+                } else {
+                    propertyString = min ? "Pmin=? [F \"target\"]" : "Pmax=? [F \"target\"]";
+                }
+                std::vector<storm::jani::Property> propertyVector = storm::api::parseProperties(propertyString);
+                std::shared_ptr<storm::logic::Formula const> property = storm::api::extractFormulasFromProperties(propertyVector).front();
+
+                statistics.underApproximationCheckTime.start();
+                std::unique_ptr<storm::modelchecker::CheckResult> res(storm::api::verifyWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(property, false)));
+                statistics.underApproximationCheckTime.stop();
+                if (storm::utility::resources::isTerminate() && !res) {
+                    return nullptr;
+                }
+                STORM_LOG_ASSERT(res, "Result does not exist.");
+                res->filter(storm::modelchecker::ExplicitQualitativeCheckResult(storm::storage::BitVector(model->getNumberOfStates(), true)));
+                auto underApproxResultMap = res->asExplicitQuantitativeCheckResult<ValueType>().getValueMap();
+                auto underApprox = underApproxResultMap[beliefStateMap.left.at(initialBeliefId)];
+
+                return std::make_unique<UnderApproxComponents<ValueType>>(UnderApproxComponents<ValueType>{underApprox, underApproxResultMap, beliefStateMap});
+            }
+            
 
             template<typename ValueType, typename RewardModelType>
             storm::storage::SparseMatrix<ValueType>
