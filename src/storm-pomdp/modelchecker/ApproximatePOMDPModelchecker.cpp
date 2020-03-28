@@ -367,7 +367,7 @@ namespace storm {
                 bsmap_type beliefStateMap;
 
                 std::deque<uint64_t> beliefsToBeExpanded;
-                storm::storage::BitVector expandedBeliefs;
+                storm::storage::BitVector foundBeliefs;
 
                 // current ID -> action -> reward
                 std::map<uint64_t, std::vector<ValueType>> beliefActionRewards;
@@ -445,13 +445,14 @@ namespace storm {
                 if (options.explorationThreshold > storm::utility::zero<ValueType>()) {
                     STORM_PRINT("Exploration threshold: " << options.explorationThreshold << std::endl)
                 }
-                expandedBeliefs.grow(newBeliefGrid.getNumberOfGridPointIds(), false);
+                foundBeliefs.grow(newBeliefGrid.getNumberOfGridPointIds(), false);
+                for (auto const& belId : beliefsToBeExpanded) {
+                    foundBeliefs.set(belId, true);
+                }
                 while (!beliefsToBeExpanded.empty()) {
                     uint64_t currId = beliefsToBeExpanded.front();
-
                     beliefsToBeExpanded.pop_front();
-                    expandedBeliefs.set(currId, true); // Do not expand this belief again.
-                    assert(currId < expandedBeliefs.size());
+                    
                     uint64_t currMdpState = beliefStateMap.left.at(currId);
                     auto const& currBelief = newBeliefGrid.getGridPoint(currId);
                     uint32_t currObservation = pomdp.getObservation(currBelief.begin()->first);
@@ -478,12 +479,13 @@ namespace storm {
                         for (uint64_t action = 0; action < numChoices; ++action) {
                             auto successorGridPoints = newBeliefGrid.expandAction(currId, action, observationResolutionVector);
                             // Check for newly found grid points
-                            expandedBeliefs.grow(newBeliefGrid.getNumberOfGridPointIds(), false);
+                            foundBeliefs.grow(newBeliefGrid.getNumberOfGridPointIds(), false);
                             for (auto const& successor : successorGridPoints) {
                                 auto successorId = successor.first;
                                 auto successorBelief = newBeliefGrid.getGridPoint(successorId);
                                 auto successorObservation = pomdp.getObservation(successorBelief.begin()->first);
-                                if (!expandedBeliefs.get(successorId)) {
+                                if (!foundBeliefs.get(successorId)) {
+                                    foundBeliefs.set(successorId);
                                     beliefsToBeExpanded.push_back(successorId);
                                     beliefStateMap.insert(bsmap_type::value_type(successorId, nextMdpStateId));
                                     ++nextMdpStateId;
