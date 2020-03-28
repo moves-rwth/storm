@@ -2,41 +2,37 @@
 
 #include <map>
 
+
+#include "storm/builder/RewardModelBuilder.h"
+#include "storm/builder/ChoiceInformationBuilder.h"
+
+#include "storm/exceptions/AbortException.h"
+#include "storm/exceptions/WrongFormatException.h"
+
+#include "storm/generator/PrismNextStateGenerator.h"
+#include "storm/generator/JaniNextStateGenerator.h"
+
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
-#include "storm/storage/expressions/ExpressionManager.h"
-
 #include "storm/settings/modules/BuildSettings.h"
 
-#include "storm/builder/RewardModelBuilder.h"
-#include "storm/builder/ChoiceInformationBuilder.h"
-
-#include "storm/generator/PrismNextStateGenerator.h"
-#include "storm/generator/JaniNextStateGenerator.h"
-
-
-#include "storm/storage/jani/Edge.h"
-#include "storm/storage/jani/EdgeDestination.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Automaton.h"
-#include "storm/storage/jani/Location.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
-#include "storm/storage/jani/CompositionInformationVisitor.h"
 
-#include "storm/utility/prism.h"
+#include "storm/utility/builder.h"
 #include "storm/utility/constants.h"
+#include "storm/utility/prism.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/ConstantsComparator.h"
-#include "storm/utility/builder.h"
+#include "storm/utility/SignalHandler.h"
 
-#include "storm/exceptions/WrongFormatException.h"
-#include "storm/exceptions/InvalidArgumentException.h"
-#include "storm/exceptions/InvalidOperationException.h"
 
 namespace storm {
     namespace builder {
@@ -245,11 +241,11 @@ namespace storm {
                     }
                     ++currentRowGroup;
                 }
-                
+
+                ++numberOfExploredStates;
                 if (generator->getOptions().isShowProgressSet()) {
                     ++numberOfExploredStatesSinceLastMessage;
-                    ++numberOfExploredStates;
-                    
+
                     auto now = std::chrono::high_resolution_clock::now();
                     auto durationSinceLastMessage = std::chrono::duration_cast<std::chrono::seconds>(now - timeOfLastMessage).count();
                     if (static_cast<uint64_t>(durationSinceLastMessage) >= generator->getOptions().getShowProgressDelay()) {
@@ -259,6 +255,13 @@ namespace storm {
                         timeOfLastMessage = std::chrono::high_resolution_clock::now();
                         numberOfExploredStatesSinceLastMessage = 0;
                     }
+                }
+
+                if (storm::utility::resources::isTerminate()) {
+                    auto durationSinceStart = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - timeOfStart).count();
+                    std::cout << "Explored " << numberOfExploredStates << " states in " << durationSinceStart << " seconds before abort." << std::endl;
+                    STORM_LOG_THROW(false, storm::exceptions::AbortException, "Aborted in state space exploration.");
+                    break;
                 }
             }
             

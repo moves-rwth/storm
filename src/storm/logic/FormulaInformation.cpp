@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace logic {
-        FormulaInformation::FormulaInformation() : mContainsRewardOperator(false), mContainsNextFormula(false), mContainsBoundedUntilFormula(false), mContainsCumulativeRewardFormula(false), mContainsRewardBoundedFormula(false) {
+        FormulaInformation::FormulaInformation() : mContainsRewardOperator(false), mContainsNextFormula(false), mContainsBoundedUntilFormula(false), mContainsCumulativeRewardFormula(false), mContainsRewardBoundedFormula(false), mContainsLongRunFormula(false) {
             // Intentionally left empty
         }
         
@@ -26,6 +26,10 @@ namespace storm {
             return this->mContainsRewardBoundedFormula;
         }
         
+        bool FormulaInformation::containsLongRunFormula() const {
+            return this->mContainsLongRunFormula;
+        }
+        
         FormulaInformation FormulaInformation::join(FormulaInformation const& other) {
             FormulaInformation result;
             result.mContainsRewardOperator = this->containsRewardOperator() || other.containsRewardOperator();
@@ -33,6 +37,7 @@ namespace storm {
             result.mContainsBoundedUntilFormula = this->containsBoundedUntilFormula() || other.containsBoundedUntilFormula();
             result.mContainsCumulativeRewardFormula = this->containsCumulativeRewardFormula() || other.containsCumulativeRewardFormula();
             result.mContainsRewardBoundedFormula = this->containsRewardBoundedFormula() || other.containsRewardBoundedFormula();
+            result.mContainsLongRunFormula = this->containsLongRunFormula() || other.containsLongRunFormula();
             return result;
         }
         
@@ -58,6 +63,11 @@ namespace storm {
         
         FormulaInformation& FormulaInformation::setContainsRewardBoundedFormula(bool newValue) {
             this->mContainsRewardBoundedFormula = newValue;
+            return *this;
+        }
+        
+        FormulaInformation& FormulaInformation::setContainsLongRunFormula(bool newValue) {
+            this->mContainsLongRunFormula = newValue;
             return *this;
         }
     }

@@ -9,6 +9,7 @@ namespace storm {
                 case SolverStatus::TerminatedEarly: out << "terminated"; break;
                 case SolverStatus::MaximalIterationsExceeded: out << "maximal iterations exceeded"; break;
                 case SolverStatus::InProgress: out << "in progress"; break;
+                case SolverStatus::Aborted: out << "aborted"; break;
             }
             return out;
         }

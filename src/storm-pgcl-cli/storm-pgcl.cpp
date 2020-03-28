@@ -69,6 +69,9 @@ int main(const int argc, const char** argv) {
         if (!optionsCorrect) {
             return -1;
         }
+
+        // Start by setting some urgent options (log levels, resources, etc.)
+        storm::cli::setUrgentOptions();
     
         auto pgcl = storm::settings::getModule<storm::settings::modules::PGCLSettings>();
         if (!pgcl.isPgclFileSet()) {

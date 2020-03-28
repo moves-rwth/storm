@@ -126,6 +126,7 @@ namespace pomdp {
                                          std::set<uint32_t> const& targetObservationSet,
                                          storm::storage::BitVector const& targetStates,
                                          storm::storage::BitVector const& surelyReachSinkStates,
+
                                          std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory,
                                          MemlessSearchOptions const& options);
 

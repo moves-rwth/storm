@@ -137,6 +137,7 @@ namespace storm {
             bool containsUndefinedConstants() const;
             std::set<storm::expressions::Variable> getUsedVariablesAndConstants() const;
             std::set<std::string> getUsedLabels() const;
+            void gatherReferencedRewardModels(std::set<std::string>& rewardModelNames) const;
             
             std::shared_ptr<storm::logic::Formula const> getRawFormula() const;
             

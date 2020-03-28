@@ -818,18 +818,17 @@ namespace storm {
             };
 
             template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
-            QuotientExtractor<DdType, ValueType, ExportValueType>::QuotientExtractor() : useRepresentatives(false) {
+            QuotientExtractor<DdType, ValueType, ExportValueType>::QuotientExtractor(storm::dd::bisimulation::QuotientFormat const& quotientFormat) : useRepresentatives(false), quotientFormat(quotientFormat) {
                 auto const& settings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
                 this->useRepresentatives = settings.isUseRepresentativesSet();
                 this->useOriginalVariables = settings.isUseOriginalVariablesSet();
-                this->quotientFormat = settings.getQuotientFormat();
             }
             
             template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
             std::shared_ptr<storm::models::Model<ExportValueType>> QuotientExtractor<DdType, ValueType, ExportValueType>::extract(storm::models::symbolic::Model<DdType, ValueType> const& model, Partition<DdType, ValueType> const& partition, PreservationInformation<DdType, ValueType> const& preservationInformation) {
                 auto start = std::chrono::high_resolution_clock::now();
                 std::shared_ptr<storm::models::Model<ExportValueType>> result;
-                if (quotientFormat == storm::settings::modules::BisimulationSettings::QuotientFormat::Sparse) {
+                if (quotientFormat == storm::dd::bisimulation::QuotientFormat::Sparse) {
                     result = extractSparseQuotient(model, partition, preservationInformation);
                 } else {
                     result = extractDdQuotient(model, partition, preservationInformation);

@@ -32,6 +32,7 @@
 
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/ProgressMeasurement.h"
+#include "storm/utility/SignalHandler.h"
 #include "storm/utility/export.h"
 #include "storm/utility/NumberTraits.h"
 
@@ -135,6 +136,9 @@ namespace storm {
                     }
                     ++numCheckedEpochs;
                     progress.updateProgress(numCheckedEpochs);
+                    if (storm::utility::resources::isTerminate()) {
+                        break;
+                    }
                 }
                 
                 std::map<storm::storage::sparse::state_type, ValueType> result;
@@ -1477,7 +1481,7 @@ namespace storm {
                 
                 // Solve MEC with the method specified in the settings
                 storm::solver::LraMethod method = env.solver().lra().getNondetLraMethod();
-                if (storm::NumberTraits<ValueType>::IsExact && env.solver().lra().isNondetLraMethodSetFromDefault() && method != storm::solver::LraMethod::LinearProgramming) {
+                if ((storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact()) && env.solver().lra().isNondetLraMethodSetFromDefault() && method != storm::solver::LraMethod::LinearProgramming) {
                     STORM_LOG_INFO("Selecting 'LP' as the solution technique for long-run properties to guarantee exact results. If you want to override this, please explicitly specify a different LRA method.");
                     method = storm::solver::LraMethod::LinearProgramming;
                 } else if (env.solver().isForceSoundness() && env.solver().lra().isNondetLraMethodSetFromDefault() && method != storm::solver::LraMethod::ValueIteration) {
@@ -1592,6 +1596,9 @@ namespace storm {
                     }
 
                     if ((maxDiff - minDiff) <= (relative ? (precision * minDiff) : precision)) {
+                        break;
+                    }
+                    if (storm::utility::resources::isTerminate()) {
                         break;
                     }
                 }

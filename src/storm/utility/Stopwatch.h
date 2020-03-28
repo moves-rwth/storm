@@ -67,6 +67,11 @@ namespace storm {
             void reset();
             
             /*!
+             * Reset the stopwatch and immediately start it
+             */
+            void restart();
+            
+            /*!
              * Retrieves whether the watch is stopped.
              */
             bool stopped() const;

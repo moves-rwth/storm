@@ -59,6 +59,11 @@ namespace storm {
 
                 uint64_t getNrObservations() const;
 
+                /*!
+                 * Returns the number of hidden values, i.e. the maximum number of states with the same observation
+                 */
+                uint64_t getMaxNrStatesWithSameObservation() const;
+                
                 std::vector<uint32_t> const& getObservations() const;
 
                 std::vector<uint64_t> getStatesWithObservation(uint32_t observation) const;

@@ -24,7 +24,14 @@ namespace storm {
             enum class CommandFilter {All, Markovian, Probabilistic};
 
             PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options = NextStateGeneratorOptions());
-
+            
+            /*!
+             * A quick check to detect whether the given model is not supported.
+             * This method only over-approximates the set of models that can be handled, i.e., if this
+             * returns true, the model might still be unsupported.
+             */
+            static bool canHandle(storm::prism::Program const& program);
+            
             virtual ModelType getModelType() const override;
             virtual bool isDeterministicModel() const override;
             virtual bool isDiscreteTimeModel() const override;
@@ -88,10 +95,11 @@ namespace storm {
             /*!
              * Retrieves all labeled choices possible from the given state.
              *
+             * @param choices The new choices are inserted in this vector
              * @param state The state for which to retrieve the unlabeled choices.
              * @return The labeled choices of the state.
              */
-            std::vector<Choice<ValueType>> getLabeledChoices(CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter = CommandFilter::All);
+            void addLabeledChoices(std::vector<Choice<ValueType>>& choices, CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter = CommandFilter::All);
 
 
             /*!

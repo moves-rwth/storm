@@ -55,9 +55,26 @@ namespace storm {
             }
 
             template<typename ValueType, typename RewardModelType>
+            uint64_t  Pomdp<ValueType, RewardModelType>::getMaxNrStatesWithSameObservation() const {
+                std::map<uint32_t, uint64_t> counts;
+                for (auto const& obs : observations) {
+                    auto insertionRes = counts.emplace(obs, 1ull);
+                    if (!insertionRes.second) {
+                        ++insertionRes.first->second;
+                    }
+                }
+                uint64_t result = 0;
+                for (auto const& count : counts) {
+                    result = std::max(result, count.second);
+                }
+                return result;
+            }
+            
+            template<typename ValueType, typename RewardModelType>
             std::vector<uint32_t> const& Pomdp<ValueType, RewardModelType>::getObservations() const {
                 return observations;
             }
+            
 
             template<typename ValueType, typename RewardModelType>
             std::string Pomdp<ValueType, RewardModelType>::additionalDotStateInfo(uint64_t state) const {

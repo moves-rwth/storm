@@ -29,9 +29,14 @@ namespace storm {
         }
         
         template<typename ModelType>
-        bool SymbolicMdpPrctlModelChecker<ModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
+        bool SymbolicMdpPrctlModelChecker<ModelType>::canHandleStatic(CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
             storm::logic::Formula const& formula = checkTask.getFormula();
             return formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(false).setTimeOperatorsAllowed(true).setReachbilityTimeFormulasAllowed(true).setRewardAccumulationAllowed(true));
+        }
+        
+        template<typename ModelType>
+        bool SymbolicMdpPrctlModelChecker<ModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
+            return canHandleStatic(checkTask);
         }
         
         template<typename ModelType>

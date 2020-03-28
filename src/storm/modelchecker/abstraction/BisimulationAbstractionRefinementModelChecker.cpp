@@ -60,7 +60,7 @@ namespace storm {
         
         template<typename ModelType>
         std::shared_ptr<storm::models::Model<typename BisimulationAbstractionRefinementModelChecker<ModelType>::ValueType>> BisimulationAbstractionRefinementModelChecker<ModelType>::getAbstractModel() {
-            lastAbstractModel = this->bisimulation->getQuotient();
+            lastAbstractModel = this->bisimulation->getQuotient(storm::dd::bisimulation::QuotientFormat::Dd);
             return lastAbstractModel;
         }
         

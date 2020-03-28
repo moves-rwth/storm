@@ -49,8 +49,9 @@ namespace storm {
              * to the number of columns of A.
              * @param b If non-null, this vector is added after the multiplication. If given, its length must be equal
              * to the number of rows of A.
+             * @param backwards if true, the iterations will be performed beginning from the last row and ending at the first row.
              */
-            virtual void multiplyGaussSeidel(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b) const = 0;
+            virtual void multiplyGaussSeidel(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const* b, bool backwards = true) const = 0;
             
             /*!
              * Performs a matrix-vector multiplication x' = A*x + b and then minimizes/maximizes over the row groups
@@ -82,9 +83,10 @@ namespace storm {
              * @param result The target vector into which to write the multiplication result. Its length must be equal
              * to the number of rows of A. Can be the same as the x vector.
              * @param choices If given, the choices made in the reduction process are written to this vector.
+             * @param backwards if true, the iterations will be performed beginning from the last rowgroup and ending at the first rowgroup.
              */
-            void multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices = nullptr) const;
-            virtual void multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices = nullptr) const = 0;
+            void multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices = nullptr, bool backwards = true) const;
+            virtual void multiplyAndReduceGaussSeidel(Environment const& env, OptimizationDirection const& dir, std::vector<uint64_t> const& rowGroupIndices, std::vector<ValueType>& x, std::vector<ValueType> const* b, std::vector<uint_fast64_t>* choices = nullptr, bool backwards = true) const = 0;
             
             /*!
              * Performs repeated matrix-vector multiplication, using x[0] = x and x[i + 1] = A*x[i] + b. After

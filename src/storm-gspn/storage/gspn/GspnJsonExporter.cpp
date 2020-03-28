@@ -17,8 +17,8 @@ namespace storm {
             os << translate(gspn).dump(4) << std::endl;
         }
 
-        modernjson::json GspnJsonExporter::translate(storm::gspn::GSPN const& gspn) {
-            modernjson::json jsonGspn;
+        typename GspnJsonExporter::Json GspnJsonExporter::translate(storm::gspn::GSPN const& gspn) {
+            Json jsonGspn;
 
             // Layouts
             std::map<uint64_t, LayoutInfo> placeLayout = gspn.getPlaceLayoutInfos();
@@ -35,7 +35,7 @@ namespace storm {
                     y = placeLayout.at(place.getID()).y;
                 }
                 tmpX += 3;
-                modernjson::json jsonPlace = translatePlace(place, x, y);
+                Json jsonPlace = translatePlace(place, x, y);
                 jsonGspn.push_back(jsonPlace);
             }
 
@@ -48,7 +48,7 @@ namespace storm {
                     y = transitionLayout.at(transition.getID()).y;
                 }
                 tmpX += 3;
-                modernjson::json jsonImmediateTransition = translateImmediateTransition(transition, x, y);
+                Json jsonImmediateTransition = translateImmediateTransition(transition, x, y);
                 jsonGspn.push_back(jsonImmediateTransition);
             }
 
@@ -61,7 +61,7 @@ namespace storm {
                     y = transitionLayout.at(transition.getID()).y;
                 }
                 tmpX += 3;
-                modernjson::json jsonTimedTransition = translateTimedTransition(transition, x, y);
+                Json jsonTimedTransition = translateTimedTransition(transition, x, y);
                 jsonGspn.push_back(jsonTimedTransition);
             }
 
@@ -72,21 +72,21 @@ namespace storm {
                 // Export input arcs
                 for (auto const& entry : transition.getInputPlaces()) {
                     storm::gspn::Place place = places.at(entry.first);
-                    modernjson::json jsonInputArc = translateArc(transition, place, entry.second, true, ArcType::INPUT);
+                    Json jsonInputArc = translateArc(transition, place, entry.second, true, ArcType::INPUT);
                     jsonGspn.push_back(jsonInputArc);
                 }
 
                 // Export inhibitor arcs
                 for (auto const& entry : transition.getInhibitionPlaces()) {
                     storm::gspn::Place place = places.at(entry.first);
-                    modernjson::json jsonInputArc = translateArc(transition, place, entry.second, true, ArcType::INHIBITOR);
+                    Json jsonInputArc = translateArc(transition, place, entry.second, true, ArcType::INHIBITOR);
                     jsonGspn.push_back(jsonInputArc);
                 }
 
                 // Export output arcs
                 for (auto const& entry : transition.getOutputPlaces()) {
                     storm::gspn::Place place = places.at(entry.first);
-                    modernjson::json jsonInputArc = translateArc(transition, place, entry.second, true, ArcType::OUTPUT);
+                    Json jsonInputArc = translateArc(transition, place, entry.second, true, ArcType::OUTPUT);
                     jsonGspn.push_back(jsonInputArc);
                 }
             }
@@ -95,21 +95,21 @@ namespace storm {
                 // Export input arcs
                 for (auto const& entry : transition.getInputPlaces()) {
                     storm::gspn::Place place = places.at(entry.first);
-                    modernjson::json jsonInputArc = translateArc(transition, place, entry.second, false, ArcType::INPUT);
+                    Json jsonInputArc = translateArc(transition, place, entry.second, false, ArcType::INPUT);
                     jsonGspn.push_back(jsonInputArc);
                 }
 
                 // Export inhibitor arcs
                 for (auto const& entry : transition.getInhibitionPlaces()) {
                     storm::gspn::Place place = places.at(entry.first);
-                    modernjson::json jsonInputArc = translateArc(transition, place, entry.second, false, ArcType::INHIBITOR);
+                    Json jsonInputArc = translateArc(transition, place, entry.second, false, ArcType::INHIBITOR);
                     jsonGspn.push_back(jsonInputArc);
                 }
 
                 // Export output arcs
                 for (auto const& entry : transition.getOutputPlaces()) {
                     storm::gspn::Place place = places.at(entry.first);
-                    modernjson::json jsonInputArc = translateArc(transition, place, entry.second, false, ArcType::OUTPUT);
+                    Json jsonInputArc = translateArc(transition, place, entry.second, false, ArcType::OUTPUT);
                     jsonGspn.push_back(jsonInputArc);
                 }
             }
@@ -117,17 +117,17 @@ namespace storm {
         }
 
 
-        modernjson::json GspnJsonExporter::translatePlace(storm::gspn::Place const& place, double x, double y) {
-            modernjson::json data;
+        typename GspnJsonExporter::Json GspnJsonExporter::translatePlace(storm::gspn::Place const& place, double x, double y) {
+            Json data;
             data["id"] = toJsonString(place);
             data["name"] = place.getName();
             data["marking"] = place.getNumberOfInitialTokens();
 
-            modernjson::json position;
+            Json position;
             position["x"] = x * scaleFactor;
             position["y"] = y * scaleFactor;
 
-            modernjson::json jsonPlace;
+            Json jsonPlace;
             jsonPlace["data"] = data;
             jsonPlace["position"] = position;
             jsonPlace["group"] = "nodes";
@@ -135,18 +135,18 @@ namespace storm {
             return jsonPlace;
         }
 
-        modernjson::json GspnJsonExporter::translateImmediateTransition(storm::gspn::ImmediateTransition<double> const& transition, double x, double y) {
-            modernjson::json data;
+        typename GspnJsonExporter::Json GspnJsonExporter::translateImmediateTransition(storm::gspn::ImmediateTransition<double> const& transition, double x, double y) {
+            Json data;
             data["id"] = toJsonString(transition, true);
             data["name"] = transition.getName();
             data["priority"] = transition.getPriority();
             data["weight"] = transition.getWeight();
 
-            modernjson::json position;
+            Json position;
             position["x"] = x * scaleFactor;
             position["y"] = y * scaleFactor;
 
-            modernjson::json jsonTrans;
+            Json jsonTrans;
             jsonTrans["data"] = data;
             jsonTrans["position"] = position;
             jsonTrans["group"] = "nodes";
@@ -154,8 +154,8 @@ namespace storm {
             return jsonTrans;
         }
 
-         modernjson::json GspnJsonExporter::translateTimedTransition(storm::gspn::TimedTransition<double> const& transition, double x, double y) {
-             modernjson::json data;
+         typename GspnJsonExporter::Json GspnJsonExporter::translateTimedTransition(storm::gspn::TimedTransition<double> const& transition, double x, double y) {
+             Json data;
              data["id"] = toJsonString(transition, false);
              data["name"] = transition.getName();
              data["rate"] = transition.getRate();
@@ -170,11 +170,11 @@ namespace storm {
                  }
              }
              
-             modernjson::json position;
+             Json position;
              position["x"] = x * scaleFactor;
              position["y"] = y * scaleFactor;
 
-             modernjson::json jsonTrans;
+             Json jsonTrans;
              jsonTrans["data"] = data;
              jsonTrans["position"] = position;
              jsonTrans["group"] = "nodes";
@@ -182,14 +182,14 @@ namespace storm {
              return jsonTrans;
          }
 
-        modernjson::json GspnJsonExporter::translateArc(storm::gspn::Transition const& transition, storm::gspn::Place const& place, uint64_t multiplicity, bool immediate, ArcType arctype) {
-            modernjson::json data;
+        typename GspnJsonExporter::Json GspnJsonExporter::translateArc(storm::gspn::Transition const& transition, storm::gspn::Place const& place, uint64_t multiplicity, bool immediate, ArcType arctype) {
+            Json data;
             data["id"] = toJsonString(transition, place, arctype);
             data["source"] = toJsonString(place);
             data["target"] = toJsonString(transition, immediate);
             data["mult"] = multiplicity;
 
-            modernjson::json jsonArc;
+            Json jsonArc;
             jsonArc["data"] = data;
             //jsonTrans["group"] = "nodes";
             switch (arctype) {

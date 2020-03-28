@@ -130,8 +130,8 @@ namespace storm {
 
             private:
                 // Define the string names of the options as constants.
-                static const std::string symmetryReductionOptionName;
-                static const std::string symmetryReductionOptionShortName;
+                static const std::string noSymmetryReductionOptionName;
+                static const std::string noSymmetryReductionOptionShortName;
                 static const std::string modularisationOptionName;
                 static const std::string disableDCOptionName;
                 static const std::string allowDCRelevantOptionName;

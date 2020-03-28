@@ -5,8 +5,8 @@
 #include "storm/utility/file.h"
 #include "storm/utility/storm-version.h"
 #include "storm/utility/macros.h"
-
 #include "storm/utility/initialize.h"
+#include "storm/utility/SignalHandler.h"
 #include "storm/utility/Stopwatch.h"
 
 #include <type_traits>
@@ -204,6 +204,9 @@ namespace storm {
             if (resources.isTimeoutSet()) {
                 storm::utility::resources::setCPULimit(resources.getTimeoutInSeconds());
             }
+
+            // register signal handler to handle aborts
+            storm::utility::resources::installSignalHandler();
         }
         
         void setLogLevel() {
@@ -235,6 +238,8 @@ namespace storm {
             setResourceLimits();
             setLogLevel();
             setFileLogging();
+            // Set output precision
+            storm::utility::setOutputDigitsFromGeneralPrecision(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
         }
 
         
@@ -242,25 +247,36 @@ namespace storm {
             // Start by setting some urgent options (log levels, resources, etc.)
             setUrgentOptions();
             
-            // Parse and preprocess symbolic input (PRISM, JANI, properties, etc.)
-            SymbolicInput symbolicInput = parseAndPreprocessSymbolicInput();
+            // Parse symbolic input (PRISM, JANI, properties, etc.)
+            SymbolicInput symbolicInput = parseSymbolicInput();
             
-            auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-            if (generalSettings.isParametricSet()) {
+            // Obtain settings for model processing
+            ModelProcessingInformation mpi;
+            
+            // Preprocess the symbolic input
+            std::tie(symbolicInput, mpi) = preprocessSymbolicInput(symbolicInput);
+            
+            STORM_LOG_WARN_COND(mpi.isCompatible, "The model checking query does not seem to be supported for the selected engine. Storm will try to solve the query, but you will most likely get an error for at least one of the provided properties.");
+
+            // Export symbolic input (if requested)
+            exportSymbolicInput(symbolicInput);
+            
 #ifdef STORM_HAVE_CARL
-                processInputWithValueType<storm::RationalFunction>(symbolicInput);
-#else
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No parameters are supported in this build.");
-#endif
-            } else if (generalSettings.isExactSet()) {
-#ifdef STORM_HAVE_CARL
-                processInputWithValueType<storm::RationalNumber>(symbolicInput);
-#else
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "No exact numbers are supported in this build.");
-#endif
-            } else {
-                processInputWithValueType<double>(symbolicInput);
+            switch (mpi.verificationValueType) {
+                case ModelProcessingInformation::ValueType::Parametric:
+                    processInputWithValueType<storm::RationalFunction>(symbolicInput, mpi);
+                    break;
+                case ModelProcessingInformation::ValueType::Exact:
+                    processInputWithValueType<storm::RationalNumber>(symbolicInput, mpi);
+                    break;
+                case ModelProcessingInformation::ValueType::FinitePrecision:
+                    processInputWithValueType<double>(symbolicInput, mpi);
+                    break;
             }
+#else
+            STORM_LOG_THROW(mpi.verificationValueType == ModelProcessingInformation::ValueType::FinitePrecision, storm::exceptions::NotSupportedException, "No exact numbers or parameters are supported in this build.");
+            processInputWithValueType<double>(symbolicInput, mpi);
+#endif
         }
 
         void printTimeAndMemoryStatistics(uint64_t wallclockMilliseconds) {

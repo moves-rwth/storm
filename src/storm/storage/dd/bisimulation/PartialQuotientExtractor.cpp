@@ -16,11 +16,11 @@ namespace storm {
         namespace bisimulation {
             
             template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
-            PartialQuotientExtractor<DdType, ValueType, ExportValueType>::PartialQuotientExtractor(storm::models::symbolic::Model<DdType, ValueType> const& model) : model(model) {
-                auto const& settings = storm::settings::getModule<storm::settings::modules::BisimulationSettings>();
-                this->quotientFormat = settings.getQuotientFormat();
-                
-                STORM_LOG_THROW(this->quotientFormat == storm::settings::modules::BisimulationSettings::QuotientFormat::Dd, storm::exceptions::NotSupportedException, "Only DD-based partial quotient extraction is currently supported.");
+            PartialQuotientExtractor<DdType, ValueType, ExportValueType>::PartialQuotientExtractor(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::bisimulation::QuotientFormat const& quotientFormat) : model(model), quotientFormat(quotientFormat) {
+                if (this->quotientFormat != storm::dd::bisimulation::QuotientFormat::Dd) {
+                    STORM_LOG_ERROR("Only DD-based partial quotient extraction is currently supported. Switching to DD-based extraction.");
+                    this->quotientFormat = storm::dd::bisimulation::QuotientFormat::Dd;
+                }
             }
             
             template<storm::dd::DdType DdType, typename ValueType, typename ExportValueType>
@@ -28,7 +28,7 @@ namespace storm {
                 auto start = std::chrono::high_resolution_clock::now();
                 std::shared_ptr<storm::models::Model<ExportValueType>> result;
                 
-                STORM_LOG_THROW(this->quotientFormat == storm::settings::modules::BisimulationSettings::QuotientFormat::Dd, storm::exceptions::NotSupportedException, "Only DD-based partial quotient extraction is currently supported.");
+                STORM_LOG_THROW(this->quotientFormat == storm::dd::bisimulation::QuotientFormat::Dd, storm::exceptions::NotSupportedException, "Only DD-based partial quotient extraction is currently supported.");
                 result = extractDdQuotient(partition, preservationInformation);
                 auto end = std::chrono::high_resolution_clock::now();
                 STORM_LOG_TRACE("Quotient extraction completed in " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << "ms.");

@@ -5,8 +5,8 @@
 #include <algorithm>
 #include <functional>
 #include <numeric>
-#include <storm/adapters/RationalFunctionAdapter.h>
-#include <storm/adapters/IntelTbbAdapter.h>
+#include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/adapters/IntelTbbAdapter.h"
 
 #include <boost/optional.hpp>
 
@@ -927,6 +927,29 @@ namespace storm {
                 }
                 
                 return true;
+            }
+            
+            template <class T>
+            T maximumElementAbs(std::vector<T> const& vector) {
+                T res = storm::utility::zero<T>();
+                for (auto const& element : vector) {
+                    res = std::max(res, storm::utility::abs(element));
+                }
+                return res;
+            }
+            
+            template<class T>
+            T maximumElementDiff(std::vector<T> const& vectorLeft, std::vector<T> const& vectorRight) {
+                T maxDiff = storm::utility::zero<T>();
+                auto leftIt = vectorLeft.begin();
+                auto leftIte = vectorLeft.end();
+                auto rightIt = vectorRight.begin();
+                for (; leftIt != leftIte; ++leftIt, ++rightIt) {
+                    T diff = *leftIt - *rightIt;
+                    T possDiff = storm::utility::abs(diff);
+                    maxDiff = maxDiff < possDiff ? possDiff : maxDiff;
+                }
+                return maxDiff;
             }
             
             template<class T>

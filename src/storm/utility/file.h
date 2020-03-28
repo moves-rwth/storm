@@ -22,7 +22,7 @@ namespace storm {
                 filestream.open(filepath);
             }
             STORM_LOG_THROW(filestream, storm::exceptions::FileIoException , "Could not open file " << filepath << ".");
-            filestream.precision(10);
+            filestream.precision(std::cout.precision());
             if (!silent) {
                 STORM_PRINT_AND_LOG("Write to file " << filepath << "." << std::endl);
             }
@@ -69,6 +69,29 @@ namespace storm {
             filestream.open(filename);
             return filestream.good();
         }
+
+        /*!
+         * Overloaded getline function which handles different types of newline (\n and \r).
+         * @param input Input stream.
+         * @param str Output string.
+         * @return Remaining stream.
+         */
+        template<class CharT, class Traits, class Allocator>
+        inline std::basic_istream<CharT, Traits>& getline(std::basic_istream<CharT, Traits>& input, std::basic_string<CharT, Traits, Allocator>& str) {
+            auto& res = std::getline(input, str);
+            // Remove linebreaks
+            std::string::reverse_iterator rit = str.rbegin();
+            while (rit != str.rend()) {
+                if (*rit == '\r' || *rit == '\n') {
+                    ++rit;
+                    str.pop_back();
+                } else {
+                    break;
+                }
+            }
+            return res;
+        }
+
 
     }
 }

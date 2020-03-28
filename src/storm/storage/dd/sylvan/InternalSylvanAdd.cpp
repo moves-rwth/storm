@@ -987,6 +987,22 @@ namespace storm {
         }
         
         template<typename ValueType>
+        std::vector<std::vector<InternalAdd<DdType::Sylvan, ValueType>>> InternalAdd<DdType::Sylvan, ValueType>::splitIntoGroups(std::vector<InternalAdd<DdType::Sylvan, ValueType>> const& vectors, std::vector<uint_fast64_t> const& ddGroupVariableIndices) const {
+            std::vector<std::vector<InternalAdd<DdType::Sylvan, ValueType>>> result;
+            std::vector<MTBDD> dds;
+            storm::storage::BitVector negatedDds(vectors.size() + 1);
+            for (auto const& vector : vectors) {
+                negatedDds.set(dds.size(), mtbdd_hascomp(vector.getSylvanMtbdd().GetMTBDD()));
+                dds.push_back(mtbdd_regular(vector.getSylvanMtbdd().GetMTBDD()));
+            }
+            dds.push_back(this->getSylvanMtbdd().GetMTBDD());
+            negatedDds.set(vectors.size(),  mtbdd_hascomp(this->getSylvanMtbdd().GetMTBDD()));
+            
+            splitIntoGroupsRec(dds, negatedDds, result, ddGroupVariableIndices, 0, ddGroupVariableIndices.size());
+            return result;
+        }
+        
+        template<typename ValueType>
         void InternalAdd<DdType::Sylvan, ValueType>::splitIntoGroupsRec(MTBDD dd, bool negated, std::vector<InternalAdd<DdType::Sylvan, ValueType>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel) const {
             // For the empty DD, we do not need to create a group.
             if (mtbdd_isleaf(dd) && mtbdd_iszero(dd)) {
@@ -1007,6 +1023,8 @@ namespace storm {
                 bool elseComplemented = mtbdd_hascomp(elseDdNode) ^ negated;
                 bool thenComplemented = mtbdd_hascomp(thenDdNode) ^ negated;
                 
+                // FIXME: We first traverse the else successor (unlike other variants of this method).
+                // Otherwise, the GameBasedMdpModelCheckerTest would not terminate. See github issue #64
                 splitIntoGroupsRec(mtbdd_regular(elseDdNode), elseComplemented, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
                 splitIntoGroupsRec(mtbdd_regular(thenDdNode), thenComplemented, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
             }
@@ -1060,6 +1078,48 @@ namespace storm {
                 
                 splitIntoGroupsRec(mtbdd_regular(dd1ThenNode), dd1ThenComplemented, mtbdd_regular(dd2ThenNode), dd2ThenComplemented, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
                 splitIntoGroupsRec(mtbdd_regular(dd1ElseNode), dd1ElseComplemented, mtbdd_regular(dd2ElseNode), dd2ElseComplemented, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+            }
+        }
+        
+        template<typename ValueType>
+        void InternalAdd<DdType::Sylvan, ValueType>::splitIntoGroupsRec(std::vector<MTBDD> const& dds, storm::storage::BitVector const& negatedDds, std::vector<std::vector<InternalAdd<DdType::Sylvan, ValueType>>>& groups, std::vector<uint_fast64_t> const& ddGroupVariableIndices, uint_fast64_t currentLevel, uint_fast64_t maxLevel) const {
+            // For the empty DD, we do not need to create a group.
+            {
+                bool emptyDd = true;
+                for (auto const& dd : dds) {
+                    if (!(mtbdd_isleaf(dd) && mtbdd_iszero(dd))) {
+                        emptyDd = false;
+                        break;
+                    }
+                }
+                if (emptyDd) {
+                    return;
+                }
+            }
+            
+            if (currentLevel == maxLevel) {
+                std::vector<InternalAdd<DdType::Sylvan, ValueType>> newGroup;
+                for (uint64_t ddIndex = 0; ddIndex < dds.size(); ++ddIndex) {
+                    newGroup.emplace_back(ddManager, negatedDds.get(ddIndex) ? sylvan::Mtbdd(dds[ddIndex]).Negate() : sylvan::Mtbdd(dds[ddIndex]));
+                }
+                groups.push_back(std::move(newGroup));
+            } else {
+                std::vector<MTBDD> thenSubDds(dds), elseSubDds(dds);
+                storm::storage::BitVector thenNegatedSubDds(negatedDds), elseNegatedSubDds(negatedDds);
+                for (uint64_t ddIndex = 0; ddIndex < dds.size(); ++ddIndex) {
+                    auto const& dd = dds[ddIndex];
+                    if (!mtbdd_isleaf(dd) && ddGroupVariableIndices[currentLevel] == mtbdd_getvar(dd)) {
+                        MTBDD ddThenNode = mtbdd_gethigh(dd);
+                        MTBDD ddElseNode = mtbdd_getlow(dd);
+                        thenSubDds[ddIndex] = mtbdd_regular(ddThenNode);
+                        elseSubDds[ddIndex] = mtbdd_regular(ddElseNode);
+                        // Determine whether we have to evaluate the successors as if they were complemented.
+                        thenNegatedSubDds.set(ddIndex, mtbdd_hascomp(ddThenNode) ^ negatedDds.get(ddIndex));
+                        elseNegatedSubDds.set(ddIndex, mtbdd_hascomp(ddElseNode) ^ negatedDds.get(ddIndex));
+                    }
+                }
+                splitIntoGroupsRec(thenSubDds, thenNegatedSubDds, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
+                splitIntoGroupsRec(elseSubDds, elseNegatedSubDds, groups, ddGroupVariableIndices, currentLevel + 1, maxLevel);
             }
         }
         

@@ -11,7 +11,6 @@
 
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/exceptions/OptionParserException.h"
-#include "storm/utility/storm-version.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/IOSettings.h"
@@ -32,6 +31,7 @@
 #include "storm/settings/modules/GurobiSettings.h"
 #include "storm/settings/modules/Smt2SmtSolverSettings.h"
 #include "storm/settings/modules/TopologicalEquationSolverSettings.h"
+#include "storm/settings/modules/TimeBoundedSolverSettings.h"
 #include "storm/settings/modules/ExplorationSettings.h"
 #include "storm/settings/modules/ResourceSettings.h"
 #include "storm/settings/modules/AbstractionSettings.h"
@@ -40,6 +40,7 @@
 #include "storm/settings/modules/MultiplierSettings.h"
 #include "storm/settings/modules/TransformationSettings.h"
 #include "storm/settings/modules/HintSettings.h"
+#include "storm/settings/modules/OviSolverSettings.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/file.h"
 #include "storm/utility/string.h"
@@ -539,7 +540,7 @@ namespace storm {
             bool globalScope = true;
             std::string activeModule = "";
             uint_fast64_t lineNumber = 1;
-            for (std::string line; getline(input, line); ++lineNumber) {
+            for (std::string line; storm::utility::getline(input, line); ++lineNumber) {
                 // If the first character of the line is a "[", we expect the settings of a new module to start and
                 // the line to be of the shape [<module>].
                 if (line.at(0) == '[') {
@@ -657,6 +658,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::NativeEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::EliminationSettings>();
             storm::settings::addModule<storm::settings::modules::LongRunAverageSolverSettings>();
+            storm::settings::addModule<storm::settings::modules::TimeBoundedSolverSettings>();
             storm::settings::addModule<storm::settings::modules::MinMaxEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::GameSolverSettings>();
             storm::settings::addModule<storm::settings::modules::BisimulationSettings>();
@@ -672,6 +674,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::MultiplierSettings>();
             storm::settings::addModule<storm::settings::modules::TransformationSettings>();
             storm::settings::addModule<storm::settings::modules::HintSettings>();
+            storm::settings::addModule<storm::settings::modules::OviSolverSettings>();
         }
 
     }

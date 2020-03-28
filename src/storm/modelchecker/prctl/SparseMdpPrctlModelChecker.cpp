@@ -39,21 +39,30 @@ namespace storm {
         }
         
         template<typename SparseMdpModelType>
-        bool SparseMdpPrctlModelChecker<SparseMdpModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
+        bool SparseMdpPrctlModelChecker<SparseMdpModelType>::canHandleStatic(CheckTask<storm::logic::Formula, ValueType> const& checkTask, bool* requiresSingleInitialState) {
             storm::logic::Formula const& formula = checkTask.getFormula();
             if (formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setConditionalProbabilityFormulasAllowed(true).setOnlyEventuallyFormuluasInConditionalFormulasAllowed(true).setTotalRewardFormulasAllowed(true).setRewardBoundedUntilFormulasAllowed(true).setRewardBoundedCumulativeRewardFormulasAllowed(true).setMultiDimensionalBoundedUntilFormulasAllowed(true).setMultiDimensionalCumulativeRewardFormulasAllowed(true).setTimeOperatorsAllowed(true).setReachbilityTimeFormulasAllowed(true).setRewardAccumulationAllowed(true))) {
                 return true;
-            } else if (formula.isInFragment(storm::logic::multiObjective().setCumulativeRewardFormulasAllowed(true).setTimeBoundedCumulativeRewardFormulasAllowed(true).setStepBoundedCumulativeRewardFormulasAllowed(true).setRewardBoundedCumulativeRewardFormulasAllowed(true).setTimeBoundedUntilFormulasAllowed(true).setStepBoundedUntilFormulasAllowed(true).setRewardBoundedUntilFormulasAllowed(true).setMultiDimensionalBoundedUntilFormulasAllowed(true).setMultiDimensionalCumulativeRewardFormulasAllowed(true))) {
-                // Check whether we consider a multi-objective formula
-                // For multi-objective model checking, each initial state requires an individual scheduler (in contrast to single-objective model checking). Let's exclude multiple initial states.
-                if (this->getModel().getInitialStates().getNumberOfSetBits() > 1) return false;
-                if (!checkTask.isOnlyInitialStatesRelevantSet()) return false;
-                return true;
-            } else if (formula.isInFragment(storm::logic::quantiles())) {
-                if (this->getModel().getInitialStates().getNumberOfSetBits() > 1) return false;
-                return true;
+            } else if (checkTask.isOnlyInitialStatesRelevantSet()) {
+                auto multiObjectiveFragment = storm::logic::multiObjective().setCumulativeRewardFormulasAllowed(true).setTimeBoundedCumulativeRewardFormulasAllowed(true).setStepBoundedCumulativeRewardFormulasAllowed(true).setRewardBoundedCumulativeRewardFormulasAllowed(true).setTimeBoundedUntilFormulasAllowed(true).setStepBoundedUntilFormulasAllowed(true).setRewardBoundedUntilFormulasAllowed(true).setMultiDimensionalBoundedUntilFormulasAllowed(true).setMultiDimensionalCumulativeRewardFormulasAllowed(true);
+                if (formula.isInFragment(multiObjectiveFragment) || formula.isInFragment(storm::logic::quantiles())) {
+                    if (requiresSingleInitialState) {
+                        *requiresSingleInitialState = true;
+                    }
+                    return true;
+                }
             }
             return false;
+        }
+        
+        template<typename SparseMdpModelType>
+        bool SparseMdpPrctlModelChecker<SparseMdpModelType>::canHandle(CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
+            bool requiresSingleInitialState = false;
+            if (canHandleStatic(checkTask, &requiresSingleInitialState)) {
+                return !requiresSingleInitialState || this->getModel().getInitialStates().getNumberOfSetBits() == 1;
+            } else {
+                return false;
+            }
         }
         
         template<typename SparseMdpModelType>

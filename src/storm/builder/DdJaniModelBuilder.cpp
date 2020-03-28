@@ -14,6 +14,7 @@
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/CompositionInformationVisitor.h"
+#include "storm/storage/jani/ArrayEliminator.h"
 
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
@@ -46,18 +47,69 @@ namespace storm {
     namespace builder {
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdJaniModelBuilder<Type, ValueType>::Options::Options(bool buildAllLabels, bool buildAllRewardModels) : buildAllLabels(buildAllLabels), buildAllRewardModels(buildAllRewardModels), rewardModelsToBuild(), constantDefinitions(), terminalStates(), negatedTerminalStates() {
+        storm::jani::ModelFeatures DdJaniModelBuilder<Type, ValueType>::getSupportedJaniFeatures() {
+            storm::jani::ModelFeatures features;
+            features.add(storm::jani::ModelFeature::DerivedOperators);
+            features.add(storm::jani::ModelFeature::StateExitRewards);
+            // We do not add Functions and arrays as these should ideally be substituted before creating this generator.
+            // This is because functions or arrays may also occur in properties and the user of this builder should take care of that.
+            return features;
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        bool DdJaniModelBuilder<Type, ValueType>::canHandle(storm::jani::Model const& model, boost::optional<std::vector<storm::jani::Property>> const& properties) {
+            // Check jani features
+            auto features = model.getModelFeatures();
+            features.remove(storm::jani::ModelFeature::Arrays); // can be substituted
+            features.remove(storm::jani::ModelFeature::DerivedOperators);
+            features.remove(storm::jani::ModelFeature::Functions); // can be substituted
+            features.remove(storm::jani::ModelFeature::StateExitRewards);
+            if (!features.empty()) {
+                STORM_LOG_INFO("Symbolic engine can not build Jani model due to unsupported jani features.");
+                return false;
+            }
+            // Check assignment levels
+            if (model.usesAssignmentLevels()) {
+                STORM_LOG_INFO("Symbolic engine can not build Jani model due to assignment levels.");
+                return false;
+            }
+            // Check nonTrivial reward expressions
+            if (properties) {
+                std::set<std::string> rewardModels;
+                for (auto const& p : properties.get()) {
+                    p.gatherReferencedRewardModels(rewardModels);
+                }
+                for (auto const& r : rewardModels) {
+                    if (model.isNonTrivialRewardModelExpression(r)) {
+                        STORM_LOG_INFO("Symbolic engine can not build Jani model due to non-trivial reward expressions.");
+                        return false;
+                    }
+                }
+            } else {
+                if (model.hasNonTrivialRewardExpression()) {
+                    STORM_LOG_INFO("Symbolic engine can not build Jani model due to non-trivial reward expressions.");
+                    return false;
+                }
+            }
+            
+            // There probably are more cases where the model is unsupported. However, checking these is often more involved.
+            // As this method is supposed to be a quick check, we just return true at this point.
+            return true;
+        }
+        
+        template <storm::dd::DdType Type, typename ValueType>
+        DdJaniModelBuilder<Type, ValueType>::Options::Options(bool buildAllLabels, bool buildAllRewardModels, bool applyMaximumProgressAssumption) : buildAllLabels(buildAllLabels), buildAllRewardModels(buildAllRewardModels), applyMaximumProgressAssumption(applyMaximumProgressAssumption), rewardModelsToBuild(), constantDefinitions() {
             // Intentionally left empty.
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdJaniModelBuilder<Type, ValueType>::Options::Options(storm::logic::Formula const& formula) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), terminalStates(), negatedTerminalStates() {
+        DdJaniModelBuilder<Type, ValueType>::Options::Options(storm::logic::Formula const& formula) : buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions() {
             this->preserveFormula(formula);
             this->setTerminalStatesFromFormula(formula);
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        DdJaniModelBuilder<Type, ValueType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) : buildAllLabels(false), buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions(), terminalStates(), negatedTerminalStates() {
+        DdJaniModelBuilder<Type, ValueType>::Options::Options(std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas) : buildAllLabels(false), buildAllRewardModels(false), rewardModelsToBuild(), constantDefinitions() {
             if (!formulas.empty()) {
                 for (auto const& formula : formulas) {
                     this->preserveFormula(*formula);
@@ -71,12 +123,7 @@ namespace storm {
         template <storm::dd::DdType Type, typename ValueType>
         void DdJaniModelBuilder<Type, ValueType>::Options::preserveFormula(storm::logic::Formula const& formula) {
             // If we already had terminal states, we need to erase them.
-            if (terminalStates) {
-                terminalStates.reset();
-            }
-            if (negatedTerminalStates) {
-                negatedTerminalStates.reset();
-            }
+            terminalStates.clear();
             
             // If we are not required to build all reward models, we determine the reward models we need to build.
             if (!buildAllRewardModels) {
@@ -93,28 +140,7 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         void DdJaniModelBuilder<Type, ValueType>::Options::setTerminalStatesFromFormula(storm::logic::Formula const& formula) {
-            if (formula.isAtomicExpressionFormula()) {
-                terminalStates = formula.asAtomicExpressionFormula().getExpression();
-            } else if (formula.isEventuallyFormula()) {
-                storm::logic::Formula const& sub = formula.asEventuallyFormula().getSubformula();
-                if (sub.isAtomicExpressionFormula() || sub.isAtomicLabelFormula()) {
-                    this->setTerminalStatesFromFormula(sub);
-                }
-            } else if (formula.isUntilFormula()) {
-                storm::logic::Formula const& right = formula.asUntilFormula().getRightSubformula();
-                if (right.isAtomicExpressionFormula() || right.isAtomicLabelFormula()) {
-                    this->setTerminalStatesFromFormula(right);
-                }
-                storm::logic::Formula const& left = formula.asUntilFormula().getLeftSubformula();
-                if (left.isAtomicExpressionFormula()) {
-                    negatedTerminalStates = left.asAtomicExpressionFormula().getExpression();
-                }
-            } else if (formula.isProbabilityOperatorFormula()) {
-                storm::logic::Formula const& sub = formula.asProbabilityOperatorFormula().getSubformula();
-                if (sub.isEventuallyFormula() || sub.isUntilFormula()) {
-                    this->setTerminalStatesFromFormula(sub);
-                }
-            }
+            terminalStates = getTerminalStatesFromFormula(formula);
         }
         
         template <storm::dd::DdType Type, typename ValueType>
@@ -688,6 +714,19 @@ namespace storm {
                     return ActionDd(newGuard, newTransitions, newTransientEdgeAssignments, newLocalNondeterminismVariables, newVariableToWritingFragment, newIllegalFragment);
                 }
 
+                /*!
+                 * Conjuncts the guard of the action with the provided condition, i.e., this action is only enabled if the provided condition is true.
+                 */
+                void conjunctGuardWith(storm::dd::Bdd<Type> const& condition) {
+                    guard &= condition;
+                    storm::dd::Add<Type, ValueType> conditionAdd = condition.template toAdd<ValueType>();
+                    transitions *= conditionAdd;
+                    for (auto& t : transientEdgeAssignments) {
+                        t.second *= conditionAdd;
+                    }
+                    illegalFragment &= condition;
+                }
+                
                 bool isInputEnabled() const {
                     return inputEnabled;
                 }
@@ -696,10 +735,10 @@ namespace storm {
                     inputEnabled = true;
                 }
                 
-                // A DD that represents all states that have this edge enabled.
+                // A DD that represents all states that have this action enabled.
                 storm::dd::Bdd<Type> guard;
                 
-                // A DD that represents the transitions of this edge.
+                // A DD that represents the transitions of this action.
                 storm::dd::Add<Type, ValueType> transitions;
                 
                 // A mapping from transient variables to their assignments.
@@ -813,11 +852,12 @@ namespace storm {
                 std::pair<uint64_t, uint64_t> localNondeterminismVariables;
             };
             
-            CombinedEdgesSystemComposer(storm::jani::Model const& model, storm::jani::CompositionInformation const& actionInformation, CompositionVariables<Type, ValueType> const& variables, std::vector<storm::expressions::Variable> const& transientVariables) : SystemComposer<Type, ValueType>(model, variables, transientVariables), actionInformation(actionInformation) {
+            CombinedEdgesSystemComposer(storm::jani::Model const& model, storm::jani::CompositionInformation const& actionInformation, CompositionVariables<Type, ValueType> const& variables, std::vector<storm::expressions::Variable> const& transientVariables, bool applyMaximumProgress) : SystemComposer<Type, ValueType>(model, variables, transientVariables), actionInformation(actionInformation), applyMaximumProgress(applyMaximumProgress) {
                 // Intentionally left empty.
             }
         
             storm::jani::CompositionInformation const& actionInformation;
+            bool applyMaximumProgress;
 
             ComposerResult<Type, ValueType> compose() override {
                 STORM_LOG_THROW(this->model.hasStandardCompliantComposition(), storm::exceptions::WrongFormatException, "Model builder only supports non-nested parallel compositions.");
@@ -899,7 +939,7 @@ namespace storm {
                     inputEnabledActionIndices.insert(actionInformation.getActionIndex(actionName));
                 }
                 
-                return buildAutomatonDd(composition.getAutomatonName(), data.empty() ? actionInstantiations : boost::any_cast<ActionInstantiations const&>(data), inputEnabledActionIndices);
+                return buildAutomatonDd(composition.getAutomatonName(), data.empty() ? actionInstantiations : boost::any_cast<ActionInstantiations const&>(data), inputEnabledActionIndices, data.empty());
             }
             
             boost::any visit(storm::jani::ParallelComposition const& composition, boost::any const& data) override {
@@ -939,13 +979,14 @@ namespace storm {
                             boost::optional<uint64_t> previousActionPosition = synchVector.getPositionOfPrecedingParticipatingAction(subcompositionIndex);
                             STORM_LOG_ASSERT(previousActionPosition, "Inconsistent information about synchronization vector.");
                             AutomatonDd const& previousAutomatonDd = subautomata[previousActionPosition.get()];
-                            auto precedingActionIt = previousAutomatonDd.actions.find(ActionIdentification(actionInformation.getActionIndex(synchVector.getInput(previousActionPosition.get())), synchronizationVectorIndex, isCtmc));
+                            auto precedingActionIndex = actionInformation.getActionIndex(synchVector.getInput(previousActionPosition.get()));
+                            auto precedingActionIt = previousAutomatonDd.actions.find(ActionIdentification(precedingActionIndex, synchronizationVectorIndex, isCtmc));
 
                             uint64_t highestLocalNondeterminismVariable = 0;
                             if (precedingActionIt != previousAutomatonDd.actions.end()) {
                                 highestLocalNondeterminismVariable = precedingActionIt->second.getHighestLocalNondeterminismVariable();
                             } else {
-                                STORM_LOG_WARN("Subcomposition does not have action that is mentioned in parallel composition.");
+                                STORM_LOG_WARN("Subcomposition does not have action" << actionInformation.getActionName(precedingActionIndex) << " that is mentioned in parallel composition.");
                             }
                             actionInstantiations[actionIndex].emplace_back(actionIndex, synchronizationVectorIndex, highestLocalNondeterminismVariable, isCtmc);
                         }
@@ -961,6 +1002,9 @@ namespace storm {
             AutomatonDd composeInParallel(std::vector<AutomatonDd> const& subautomata, std::vector<storm::jani::SynchronizationVector> const& synchronizationVectors) {
                 AutomatonDd result(this->variables.manager->template getAddOne<ValueType>());
                 
+                // Disjunction of all guards of non-markovian actions (only required for maximum progress assumption.
+                storm::dd::Bdd<Type> nonMarkovianActionGuards = this->variables.manager->getBddZero();
+                
                 // Build the results of the synchronization vectors.
                 std::unordered_map<ActionIdentification, std::vector<ActionDd>, ActionIdentificationHash> actions;
                 for (uint64_t synchronizationVectorIndex = 0; synchronizationVectorIndex < synchronizationVectors.size(); ++synchronizationVectorIndex) {
@@ -968,6 +1012,11 @@ namespace storm {
                     
                     boost::optional<ActionDd> synchronizingAction = combineSynchronizingActions(subautomata, synchVector, synchronizationVectorIndex);
                     if (synchronizingAction) {
+                        if (applyMaximumProgress) {
+                            STORM_LOG_ASSERT(this->model.getModelType() == storm::jani::ModelType::MA, "Maximum progress assumption enabled for unexpected model type.");
+                            // By the JANI standard, we can assume that synchronizing actions of MAs are always non-Markovian.
+                            nonMarkovianActionGuards |= synchronizingAction->guard;
+                        }
                         actions[ActionIdentification(actionInformation.getActionIndex(synchVector.getOutput()), this->model.getModelType() == storm::jani::ModelType::CTMC)].emplace_back(synchronizingAction.get());
                     }
                 }
@@ -1011,9 +1060,26 @@ namespace storm {
                     auto& allSilentActionDds = actions[silentActionIdentification];
                     allSilentActionDds.insert(allSilentActionDds.end(), silentActionDds.begin(), silentActionDds.end());
                 }
+                
+                // Add guards of non-markovian actions
+                if (applyMaximumProgress) {
+                    auto allSilentActionDdsIt = actions.find(silentActionIdentification);
+                    if (allSilentActionDdsIt != actions.end()) {
+                        for (ActionDd const& silentActionDd : allSilentActionDdsIt->second) {
+                            nonMarkovianActionGuards |= silentActionDd.guard;
+                        }
+                    }
+                }
+                
                 if (!silentMarkovianActionDds.empty()) {
                     auto& allMarkovianSilentActionDds = actions[silentMarkovianActionIdentification];
                     allMarkovianSilentActionDds.insert(allMarkovianSilentActionDds.end(), silentMarkovianActionDds.begin(), silentMarkovianActionDds.end());
+                    if (applyMaximumProgress && !nonMarkovianActionGuards.isZero()) {
+                        auto invertedNonMarkovianGuards = !nonMarkovianActionGuards;
+                        for (ActionDd& markovianActionDd : allMarkovianSilentActionDds) {
+                            markovianActionDd.conjunctGuardWith(invertedNonMarkovianGuards);
+                        }
+                    }
                 }
 
                 // Finally, combine (potentially) multiple action DDs.
@@ -1693,9 +1759,12 @@ namespace storm {
                 }
             }
             
-            AutomatonDd buildAutomatonDd(std::string const& automatonName, ActionInstantiations const& actionInstantiations, std::set<uint64_t> const& inputEnabledActionIndices) {
+            AutomatonDd buildAutomatonDd(std::string const& automatonName, ActionInstantiations const& actionInstantiations, std::set<uint64_t> const& inputEnabledActionIndices, bool isTopLevelAutomaton) {
                 STORM_LOG_TRACE("Building DD for automaton '" << automatonName << "'.");
                 AutomatonDd result(this->variables.automatonToIdentityMap.at(automatonName));
+                
+                // Disjunction of all guards of non-markovian actions (only required for maximum progress assumption).
+                storm::dd::Bdd<Type> nonMarkovianActionGuards = this->variables.manager->getBddZero();
                 
                 storm::jani::Automaton const& automaton = this->model.getAutomaton(automatonName);
                 for (auto const& actionInstantiation : actionInstantiations) {
@@ -1713,12 +1782,20 @@ namespace storm {
                         if (inputEnabled) {
                             actionDd.setIsInputEnabled();
                         }
+                        if (applyMaximumProgress && isTopLevelAutomaton && !instantiation.isMarkovian()) {
+                            nonMarkovianActionGuards |= actionDd.guard;
+                        }
                         STORM_LOG_TRACE("Used local nondeterminism variables are " << actionDd.getLowestLocalNondeterminismVariable() << " to " << actionDd.getHighestLocalNondeterminismVariable() << ".");
                         result.actions[ActionIdentification(actionIndex, instantiation.synchronizationVectorIndex, instantiation.isMarkovian())] = actionDd;
                         result.extendLocalNondeterminismVariables(actionDd.getLocalNondeterminismVariables());
                     }
                 }
                 
+                if (applyMaximumProgress && isTopLevelAutomaton) {
+                    ActionIdentification silentMarkovianActionIdentification(storm::jani::Model::SILENT_ACTION_INDEX, true);
+                    result.actions[silentMarkovianActionIdentification].conjunctGuardWith(!nonMarkovianActionGuards);
+                }
+
                 for (uint64_t locationIndex = 0; locationIndex < automaton.getNumberOfLocations(); ++locationIndex) {
                     auto const& location = automaton.getLocation(locationIndex);
                     performTransientAssignments(location.getAssignments().getTransientAssignments(), [this,&automatonName,locationIndex,&result] (storm::jani::Assignment const& assignment) {
@@ -1870,7 +1947,7 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        storm::dd::Bdd<Type> postprocessSystem(storm::jani::Model const& model, ComposerResult<Type, ValueType>& system, CompositionVariables<Type, ValueType> const& variables, typename DdJaniModelBuilder<Type, ValueType>::Options const& options) {
+        storm::dd::Bdd<Type> postprocessSystem(storm::jani::Model const& model, ComposerResult<Type, ValueType>& system, CompositionVariables<Type, ValueType> const& variables, typename DdJaniModelBuilder<Type, ValueType>::Options const& options, std::map<std::string, storm::expressions::Expression> const& labelsToExpressionMap) {
             // For DTMCs, we normalize each row to 1 (to account for non-determinism).
             if (model.getModelType() == storm::jani::ModelType::DTMC) {
                 storm::dd::Add<Type, ValueType> stateToNumberOfChoices = system.transitions.sumAbstract(variables.columnMetaVariables);
@@ -1883,25 +1960,23 @@ namespace storm {
             }
             
             // If we were asked to treat some states as terminal states, we cut away their transitions now.
-            if (options.terminalStates || options.negatedTerminalStates) {
-                std::map<storm::expressions::Variable, storm::expressions::Expression> constantsSubstitution = model.getConstantsSubstitution();
-                
-                storm::dd::Bdd<Type> terminalStatesBdd = variables.manager->getBddZero();
-                if (options.terminalStates) {
-                    storm::expressions::Expression terminalExpression = options.terminalStates.get().substitute(constantsSubstitution);
-                    STORM_LOG_TRACE("Making the states satisfying " << terminalExpression << " terminal.");
-                    terminalStatesBdd = variables.rowExpressionAdapter->translateExpression(terminalExpression).toBdd();
-                }
-                if (options.negatedTerminalStates) {
-                    storm::expressions::Expression negatedTerminalExpression = options.negatedTerminalStates.get().substitute(constantsSubstitution);
-                    STORM_LOG_TRACE("Making the states *not* satisfying " << negatedTerminalExpression << " terminal.");
-                    terminalStatesBdd |= !variables.rowExpressionAdapter->translateExpression(negatedTerminalExpression).toBdd();
-                }
-                
+            storm::dd::Bdd<Type> terminalStatesBdd = variables.manager->getBddZero();
+            if (!options.terminalStates.empty()) {
+                storm::expressions::Expression terminalExpression = options.terminalStates.asExpression([&model, &labelsToExpressionMap](std::string const& labelName) {
+                        auto exprIt = labelsToExpressionMap.find(labelName);
+                        if (exprIt != labelsToExpressionMap.end()) {
+                            return exprIt->second;
+                        } else {
+                            STORM_LOG_THROW(labelName == "init" || labelName == "deadlock", storm::exceptions::InvalidArgumentException, "Terminal states refer to illegal label '" << labelName << "'.");
+                            // If the label name is "init" we can abort 'exploration' directly at the initial state. If it is deadlock, we do not have to abort.
+                            return model.getExpressionManager().boolean(labelName == "init");
+                        }
+                });
+                terminalExpression = terminalExpression.substitute(model.getConstantsSubstitution());
+                terminalStatesBdd = variables.rowExpressionAdapter->translateExpression(terminalExpression).toBdd();
                 system.transitions *= (!terminalStatesBdd).template toAdd<ValueType>();
-                return terminalStatesBdd;
             }
-            return variables.manager->getBddZero();
+            return terminalStatesBdd;
         }
         
         template <storm::dd::DdType Type, typename ValueType>
@@ -2064,10 +2139,20 @@ namespace storm {
             auto features = model.getModelFeatures();
             features.remove(storm::jani::ModelFeature::DerivedOperators);
             features.remove(storm::jani::ModelFeature::StateExitRewards);
-            STORM_LOG_THROW(features.empty(), storm::exceptions::InvalidSettingsException, "The dd jani model builder does not support the following model feature(s): " << features.toString() << ".");
 
             storm::jani::Model preparedModel = model;
-            preparedModel.substituteFunctions();
+            preparedModel.simplifyComposition();
+            if (features.hasArrays()) {
+                STORM_LOG_ERROR("The jani model still considers arrays. These should have been eliminated before calling the dd builder. The arrays are eliminated now, but occurrences in properties will not be handled properly.");
+                preparedModel.eliminateArrays();
+                features.remove(storm::jani::ModelFeature::Arrays);
+            }
+            if (features.hasFunctions()) {
+                STORM_LOG_ERROR("The jani model still considers functions. These should have been substituted before calling the dd builder. The functions are substituted now, but occurrences in properties will not be handled properly.");
+                preparedModel.substituteFunctions();
+                features.remove(storm::jani::ModelFeature::Functions);
+            }
+            STORM_LOG_THROW(features.empty(), storm::exceptions::InvalidSettingsException, "The dd jani model builder does not support the following model feature(s): " << features.toString() << ".");
             
             // Lift the transient edge destinations. We can do so, as we know that there are no assignment levels (because that's not supported anyway).
             if (preparedModel.hasTransientEdgeDestinationAssignments()) {
@@ -2089,17 +2174,24 @@ namespace storm {
             std::vector<storm::expressions::Variable> rewardVariables = selectRewardVariables<Type, ValueType>(preparedModel, options);
             
             // Create a builder to compose and build the model.
-            CombinedEdgesSystemComposer<Type, ValueType> composer(preparedModel, actionInformation, variables, rewardVariables);
+            bool applyMaximumProgress = options.applyMaximumProgressAssumption && model.getModelType() == storm::jani::ModelType::MA;
+            CombinedEdgesSystemComposer<Type, ValueType> composer(preparedModel, actionInformation, variables, rewardVariables, applyMaximumProgress);
             ComposerResult<Type, ValueType> system = composer.compose();
 
             // Postprocess the variables in place.
             postprocessVariables(preparedModel.getModelType(), system, variables);
 
+            // Build the label to expressions mapping.
+            auto labelsToExpressionMap = buildLabelExpressions(preparedModel, variables, options);
+            
             // Postprocess the system in place and get the states that were terminal (i.e. whose transitions were cut off).
-            storm::dd::Bdd<Type> terminalStates = postprocessSystem(preparedModel, system, variables, options);
+            storm::dd::Bdd<Type> terminalStates = postprocessSystem(preparedModel, system, variables, options, labelsToExpressionMap);
             
             // Start creating the model components.
             ModelComponents<Type, ValueType> modelComponents;
+            
+            // Set the label expressions
+            modelComponents.labelToExpressionMap = std::move(labelsToExpressionMap);
             
             // Build initial states.
             modelComponents.initialStates = computeInitialStates(preparedModel, variables);
@@ -2127,9 +2219,6 @@ namespace storm {
             
             // Build the reward models.
             modelComponents.rewardModels = buildRewardModels(reachableStatesAdd, modelComponents.transitionMatrix, preparedModel.getModelType(), variables, system, rewardVariables);
-            
-            // Build the label to expressions mapping.
-            modelComponents.labelToExpressionMap = buildLabelExpressions(preparedModel, variables, options);
             
             // Finally, create the model.
             return createModel(preparedModel.getModelType(), variables, modelComponents);

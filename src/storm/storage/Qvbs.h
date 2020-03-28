@@ -4,11 +4,8 @@
 #include <vector>
 #include <boost/optional.hpp>
 
-// JSON parser
-#include "json.hpp"
-namespace modernjson {
-    using json = nlohmann::json;
-}
+#include "storm/adapters/JsonAdapter.h"
+#include "storm/adapters/RationalNumberAdapter.h"
 
 
 namespace storm {
@@ -36,7 +33,7 @@ namespace storm {
             std::vector<std::string> instanceInfos;
             
             std::string modelPath;
-            modernjson::json modelData;
+            storm::json<storm::RationalNumber> modelData;
         };
     }
 }

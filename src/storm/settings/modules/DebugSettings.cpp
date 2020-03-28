@@ -13,6 +13,7 @@ namespace storm {
             const std::string DebugSettings::moduleName = "debug";
             const std::string DebugSettings::debugOptionName = "debug";
             const std::string DebugSettings::traceOptionName = "trace";
+            const std::string DebugSettings::additionalChecksOptionName = "additional-checks";
             const std::string DebugSettings::logfileOptionName = "logfile";
             const std::string DebugSettings::logfileOptionShortName = "l";
             const std::string DebugSettings::testOptionName = "test";
@@ -20,6 +21,7 @@ namespace storm {
             DebugSettings::DebugSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, debugOptionName, false, "Print debug output.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, traceOptionName, false, "Print even more debug output.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, additionalChecksOptionName, false, "If set, additional sanity checks are performed during execution.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, logfileOptionName, false, "If specified, the log output will also be written to this file.").setShortName(logfileOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to write the log.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, testOptionName, false, "Activate a test setting.").setIsAdvanced().build());
@@ -31,6 +33,10 @@ namespace storm {
             
             bool DebugSettings::isTraceSet() const {
                 return this->getOption(traceOptionName).getHasOptionBeenSet();
+            }
+            
+            bool DebugSettings::isAdditionalChecksSet() const {
+                return this->getOption(additionalChecksOptionName).getHasOptionBeenSet();
             }
             
             bool DebugSettings::isLogfileSet() const {

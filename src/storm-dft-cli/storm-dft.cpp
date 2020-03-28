@@ -21,8 +21,6 @@
  */
 template<typename ValueType>
 void processOptions() {
-    // Start by setting some urgent options (log levels, resources, etc.)
-    storm::cli::setUrgentOptions();
 
     auto const& dftIOSettings = storm::settings::getModule<storm::settings::modules::DftIOSettings>();
     auto const& faultTreeSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
@@ -265,9 +263,15 @@ int main(const int argc, const char** argv) {
         if (!storm::cli::parseOptions(argc, argv)) {
             return -1;
         }
+        
+        // Start by setting some urgent options (log levels, resources, etc.)
+        storm::cli::setUrgentOptions();
 
         storm::settings::modules::GeneralSettings const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
         if (generalSettings.isParametricSet()) {
+            processOptions<storm::RationalFunction>();
+        } else if (generalSettings.isExactSet()) {
+            STORM_LOG_WARN("Exact solving over rational numbers is not implemented. Performing exact solving using rational functions instead.");
             processOptions<storm::RationalFunction>();
         } else {
             processOptions<double>();

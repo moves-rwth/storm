@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <math.h>
 
 namespace storm {
     namespace utility {
@@ -27,11 +28,29 @@ namespace storm {
 
         void setUp() {
             initializeLogger();
-            std::cout.precision(10);
+            setOutputDigits(10);
         }
 
         void cleanUp() {
             // Intentionally left empty.
+        }
+
+        void setOutputDigits(int digits) {
+            std::cout.precision(digits);
+        }
+
+        void setOutputDigitsFromGeneralPrecision(float precision) {
+            if (precision >= 1 || precision < 0) {
+                setOutputDigits(10);
+            } else {
+                int digits = ceil(-log10(precision)) + 4;
+                // Ensure at least 10 digits for now
+                if (digits < 10) {
+                    setOutputDigits(10);
+                } else {
+                    setOutputDigits(digits);
+                }
+            }
         }
         
         l3pp::LogLevel getLogLevel() {

@@ -33,36 +33,33 @@ namespace storm {
     namespace api {
         
         inline storm::jani::ModelFeatures getSupportedJaniFeatures(storm::builder::BuilderType const& builderType) {
-            storm::jani::ModelFeatures features;
-            features.add(storm::jani::ModelFeature::DerivedOperators);
-            features.add(storm::jani::ModelFeature::StateExitRewards);
-            if (builderType == storm::builder::BuilderType::Explicit) {
-                features.add(storm::jani::ModelFeature::Arrays);
-            }
-            return features;
+            return storm::builder::getSupportedJaniFeatures(builderType);
         }
         
         template<storm::dd::DdType LibraryType, typename ValueType>
-        std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool buildFullModel = false) {
+        std::shared_ptr<storm::models::symbolic::Model<LibraryType, ValueType>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool buildFullModel = false, bool applyMaximumProgress = true) {
             if (model.isPrismProgram()) {
                 typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options options;
                 options = typename storm::builder::DdPrismModelBuilder<LibraryType, ValueType>::Options(formulas);
-                
                 if (buildFullModel) {
                     options.buildAllLabels = true;
                     options.buildAllRewardModels = true;
+                    options.terminalStates.clear();
                 }
                 
                 storm::builder::DdPrismModelBuilder<LibraryType, ValueType> builder;
                 return builder.build(model.asPrismProgram(), options);
             } else {
                 STORM_LOG_THROW(model.isJaniModel(), storm::exceptions::NotSupportedException, "Building symbolic model from this model description is unsupported.");
-                typename storm::builder::DdJaniModelBuilder<LibraryType, ValueType>::Options options;
-                options = typename storm::builder::DdJaniModelBuilder<LibraryType, ValueType>::Options(formulas);
+                typename storm::builder::DdJaniModelBuilder<LibraryType, ValueType>::Options options(formulas);
                 
                 if (buildFullModel) {
                     options.buildAllLabels = true;
                     options.buildAllRewardModels = true;
+                    options.applyMaximumProgressAssumption = false;
+                    options.terminalStates.clear();
+                } else {
+                    options.applyMaximumProgressAssumption = (model.getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA && applyMaximumProgress);
                 }
                 
                 storm::builder::DdJaniModelBuilder<LibraryType, ValueType> builder;
@@ -71,12 +68,12 @@ namespace storm {
         }
         
         template<>
-        inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalNumber>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool buildFullModel) {
+        inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalNumber>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool, bool) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "CUDD does not support rational numbers.");
         }
 
         template<>
-        inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalFunction>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool buildFullModel) {
+        inline std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::CUDD, storm::RationalFunction>> buildSymbolicModel(storm::storage::SymbolicModelDescription const& model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas, bool, bool) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "CUDD does not support rational functions.");
         }
 

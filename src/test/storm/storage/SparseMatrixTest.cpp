@@ -710,9 +710,9 @@ TEST(SparseMatrix, Permute) {
 
     std::vector<uint64_t> inversePermutation = {1,4,0,3,2};
     storm::storage::SparseMatrix<double> matrixperm = matrix.permuteRows(inversePermutation);
-    EXPECT_EQ(5, matrixperm.getRowCount());
-    EXPECT_EQ(4, matrixperm.getColumnCount());
-    EXPECT_EQ(8, matrixperm.getEntryCount());
+    EXPECT_EQ(5ul, matrixperm.getRowCount());
+    EXPECT_EQ(4ul, matrixperm.getColumnCount());
+    EXPECT_EQ(8ul, matrixperm.getEntryCount());
     EXPECT_EQ(matrix.getRowSum(1), matrixperm.getRowSum(0));
     EXPECT_EQ(matrix.getRowSum(4), matrixperm.getRowSum(1));
     EXPECT_EQ(matrix.getRowSum(0), matrixperm.getRowSum(2));

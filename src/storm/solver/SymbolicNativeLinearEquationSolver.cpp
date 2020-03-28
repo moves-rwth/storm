@@ -1,17 +1,15 @@
 #include "storm/solver/SymbolicNativeLinearEquationSolver.h"
 
-#include "storm/storage/dd/DdManager.h"
-#include "storm/storage/dd/Add.h"
-
-#include "storm/utility/dd.h"
-#include "storm/utility/constants.h"
-
 #include "storm/environment/solver/NativeSolverEnvironment.h"
-
-#include "storm/utility/KwekMehlhorn.h"
-#include "storm/utility/macros.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/PrecisionExceededException.h"
+#include "storm/storage/dd/DdManager.h"
+#include "storm/storage/dd/Add.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/dd.h"
+#include "storm/utility/KwekMehlhorn.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/SignalHandler.h"
 
 namespace storm {
     namespace solver {
@@ -222,9 +220,12 @@ namespace storm {
                     currentX = result.values;
                     precision /= storm::utility::convertNumber<ValueType, uint64_t>(10);
                 }
+                if (storm::utility::resources::isTerminate()) {
+                    status = SolverStatus::Aborted;
+                }
             }
             
-            if (status == SolverStatus::InProgress) {
+            if (status == SolverStatus::InProgress && overallIterations == maxIter) {
                 status = SolverStatus::MaximalIterationsExceeded;
             }
             

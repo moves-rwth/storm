@@ -26,8 +26,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE  OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+/*
+ * This version has been adapted by the Storm developers so that we are able to parse
+ * floating point numbers using exact arithmetic. The major changes are:
+ *  * A json_value now stores the number_float as a pointer.
+ *  * Conversion operations between number representations are done using storm's utility functions.
+ */
+
 #ifndef NLOHMANN_JSON_HPP
 #define NLOHMANN_JSON_HPP
+
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
 
 #include <algorithm> // all_of, for_each, transform
 #include <array> // array
@@ -142,6 +152,41 @@ and fractional parts.
             }
         };
 
+        
+        template <typename ValueType>
+        void float_to_stream(std::ostream& o, ValueType const& number) {
+            if (storm::utility::isZero(number))
+            {
+                // special case for zero to get "0.0"/"-0.0"
+                o << (std::signbit(number) ? "-0.0" : "0.0");
+            }
+            else
+            {
+                o << number;
+            }
+        }
+        
+        template <>
+        void float_to_stream(std::ostream& o, storm::RationalNumber const& number) {
+            double numberAsDouble = storm::utility::convertNumber<double>(number);
+            std::stringstream ss;
+            ss.precision(std::numeric_limits<double>::digits10);
+            ss << numberAsDouble;
+            auto result = ss.str();
+            // Parse the result again to check for accuracy
+            auto compare = storm::utility::convertNumber<storm::RationalNumber>(result);
+            if (compare != number) {
+                // Retry with increased accuracy
+                ss = std::stringstream();
+                ss.precision(std::numeric_limits<double>::max_digits10 + 2);
+                ss << numberAsDouble;
+                result = ss.str();
+                compare = storm::utility::convertNumber<storm::RationalNumber>(result);
+                STORM_LOG_WARN_COND(compare == number, "Inaccurate JSON export: The number " << number << " will be rounded to " << compare << ". Difference is approx. " << (storm::utility::convertNumber<double, storm::RationalNumber>(number - compare)) << ".");
+            }
+            o << result;
+        }
+        
     }
 
 /*!
@@ -826,8 +871,8 @@ Format](http://rfc7159.net/rfc7159)
             number_integer_t number_integer;
             /// number (unsigned integer)
             number_unsigned_t number_unsigned;
-            /// number (floating-point)
-            number_float_t number_float;
+            /// number (floating-point, stored with pointer to save storage)
+            number_float_t* number_float;
 
             /// default constructor (for null values)
             json_value() = default;
@@ -837,8 +882,7 @@ Format](http://rfc7159.net/rfc7159)
             json_value(number_integer_t v) noexcept : number_integer(v) {}
             /// constructor for numbers (unsigned)
             json_value(number_unsigned_t v) noexcept : number_unsigned(v) {}
-            /// constructor for numbers (floating-point)
-            json_value(number_float_t v) noexcept : number_float(v) {}
+
             /// constructor for empty values of a given type
             json_value(value_t t)
             {
@@ -882,7 +926,7 @@ Format](http://rfc7159.net/rfc7159)
 
                     case value_t::number_float:
                     {
-                        number_float = number_float_t(0.0);
+                        number_float = create<number_float_t>(storm::utility::zero<number_float_t>());
                         break;
                     }
 
@@ -891,6 +935,12 @@ Format](http://rfc7159.net/rfc7159)
                         break;
                     }
                 }
+            }
+
+            /// constructor for strings
+            json_value(const number_float_t & value)
+            {
+                number_float = create<number_float_t>(value);
             }
 
             /// constructor for strings
@@ -1516,7 +1566,7 @@ Format](http://rfc7159.net/rfc7159)
                 : m_type(value_t::number_float), m_value(val)
         {
             // replace infinity and NAN by null
-            if (not std::isfinite(val))
+            if (storm::utility::isInfinity(val))
             {
                 m_type = value_t::null;
                 m_value = json_value();
@@ -1880,7 +1930,7 @@ Format](http://rfc7159.net/rfc7159)
 
                 case value_t::number_float:
                 {
-                    m_value.number_float = first.m_object->m_value.number_float;
+                    m_value = *first.m_object->m_value.number_float;
                     break;
                 }
 
@@ -2024,7 +2074,7 @@ Format](http://rfc7159.net/rfc7159)
 
                 case value_t::number_float:
                 {
-                    m_value = other.m_value.number_float;
+                    m_value = *other.m_value.number_float;
                     break;
                 }
 
@@ -2131,6 +2181,15 @@ Format](http://rfc7159.net/rfc7159)
 
             switch (m_type)
             {
+                
+                case value_t::number_float:
+                {
+                    AllocatorType<number_float_t> alloc;
+                    alloc.destroy(m_value.number_float);
+                    alloc.deallocate(m_value.number_float, 1);
+                    break;
+                }
+                
                 case value_t::object:
                 {
                     AllocatorType<object_t> alloc;
@@ -2208,6 +2267,7 @@ Format](http://rfc7159.net/rfc7159)
             // string->float->string, string->double->string or string->long
             // double->string; to be safe, we read this value from
             // std::numeric_limits<number_float_t>::digits10
+            // Note that other libraries need to be able to read this, so we just stick to the standard double precision.
             ss.precision(std::numeric_limits<double>::digits10);
 
             if (indent >= 0)
@@ -2724,7 +2784,34 @@ Format](http://rfc7159.net/rfc7159)
 
                 case value_t::number_float:
                 {
-                    return static_cast<T>(m_value.number_float);
+                    static_assert(!std::is_same<T, int>::value, "why is this int?");
+                        return storm::utility::convertNumber<T>(*m_value.number_float);
+                }
+
+                default:
+                {
+                    throw std::domain_error("type must be number, but is " + type_name());
+                }
+            }
+        }
+
+        /// get a rational number (explicit)
+        storm::RationalNumber get_impl(storm::RationalNumber*) const {
+            switch (m_type)
+            {
+                case value_t::number_integer:
+                {
+                    return storm::utility::convertNumber<storm::RationalNumber>(m_value.number_integer);
+                }
+
+                case value_t::number_unsigned:
+                {
+                    return storm::utility::convertNumber<storm::RationalNumber>(m_value.number_unsigned);
+                }
+
+                case value_t::number_float:
+                {
+                    return storm::utility::convertNumber<storm::RationalNumber>(*m_value.number_float);
                 }
 
                 default:
@@ -2817,13 +2904,13 @@ Format](http://rfc7159.net/rfc7159)
         /// get a pointer to the value (floating-point number)
         number_float_t* get_impl_ptr(number_float_t*) noexcept
         {
-            return is_number_float() ? &m_value.number_float : nullptr;
+            return is_number_float() ? m_value.number_float : nullptr;
         }
 
         /// get a pointer to the value (floating-point number)
         constexpr const number_float_t* get_impl_ptr(const number_float_t*) const noexcept
         {
-            return is_number_float() ? &m_value.number_float : nullptr;
+            return is_number_float() ? m_value.number_float : nullptr;
         }
 
         /*!
@@ -3948,6 +4035,12 @@ Format](http://rfc7159.net/rfc7159)
             {
                 case value_t::boolean:
                 case value_t::number_float:
+                    if (is_number_float()) {
+                        AllocatorType<number_float_t> alloc;
+                        alloc.destroy(m_value.number_float);
+                        alloc.deallocate(m_value.number_float, 1);
+                        m_value.number_float = nullptr;
+                    }
                 case value_t::number_integer:
                 case value_t::number_unsigned:
                 case value_t::string:
@@ -4055,6 +4148,12 @@ Format](http://rfc7159.net/rfc7159)
             {
                 case value_t::boolean:
                 case value_t::number_float:
+                    if (is_number_float()) {
+                        AllocatorType<number_float_t> alloc;
+                        alloc.destroy(m_value.number_float);
+                        alloc.deallocate(m_value.number_float, 1);
+                        m_value.number_float = nullptr;
+                    }
                 case value_t::number_integer:
                 case value_t::number_unsigned:
                 case value_t::string:
@@ -4834,7 +4933,7 @@ Format](http://rfc7159.net/rfc7159)
 
                 case value_t::number_float:
                 {
-                    m_value.number_float = 0.0;
+                    *m_value.number_float = storm::utility::zero<number_float_t>();
                     break;
                 }
 
@@ -5494,7 +5593,7 @@ Format](http://rfc7159.net/rfc7159)
                     }
                     case value_t::number_float:
                     {
-                        return lhs.m_value.number_float == rhs.m_value.number_float;
+                        return *lhs.m_value.number_float == *rhs.m_value.number_float;
                     }
                     default:
                     {
@@ -5504,19 +5603,19 @@ Format](http://rfc7159.net/rfc7159)
             }
             else if (lhs_type == value_t::number_integer and rhs_type == value_t::number_float)
             {
-                return static_cast<number_float_t>(lhs.m_value.number_integer) == rhs.m_value.number_float;
+                return storm::utility::convertNumber<number_float_t>(lhs.m_value.number_integer) == *rhs.m_value.number_float;
             }
             else if (lhs_type == value_t::number_float and rhs_type == value_t::number_integer)
             {
-                return lhs.m_value.number_float == static_cast<number_float_t>(rhs.m_value.number_integer);
+                return *lhs.m_value.number_float == storm::utility::convertNumber<number_float_t>(rhs.m_value.number_integer);
             }
             else if (lhs_type == value_t::number_unsigned and rhs_type == value_t::number_float)
             {
-                return static_cast<number_float_t>(lhs.m_value.number_unsigned) == rhs.m_value.number_float;
+                return storm::utility::convertNumber<number_float_t>(lhs.m_value.number_unsigned) == *rhs.m_value.number_float;
             }
             else if (lhs_type == value_t::number_float and rhs_type == value_t::number_unsigned)
             {
-                return lhs.m_value.number_float == static_cast<number_float_t>(rhs.m_value.number_unsigned);
+                return *lhs.m_value.number_float == storm::utility::convertNumber<number_float_t>(rhs.m_value.number_unsigned);
             }
             else if (lhs_type == value_t::number_unsigned and rhs_type == value_t::number_integer)
             {
@@ -5679,7 +5778,7 @@ Format](http://rfc7159.net/rfc7159)
                     }
                     case value_t::number_float:
                     {
-                        return lhs.m_value.number_float < rhs.m_value.number_float;
+                        return *lhs.m_value.number_float < *rhs.m_value.number_float;
                     }
                     default:
                     {
@@ -5689,19 +5788,19 @@ Format](http://rfc7159.net/rfc7159)
             }
             else if (lhs_type == value_t::number_integer and rhs_type == value_t::number_float)
             {
-                return static_cast<number_float_t>(lhs.m_value.number_integer) < rhs.m_value.number_float;
+                return storm::utility::convertNumber<number_float_t>(lhs.m_value.number_integer) < *rhs.m_value.number_float;
             }
             else if (lhs_type == value_t::number_float and rhs_type == value_t::number_integer)
             {
-                return lhs.m_value.number_float < static_cast<number_float_t>(rhs.m_value.number_integer);
+                return *lhs.m_value.number_float < storm::utility::convertNumber<number_float_t>(rhs.m_value.number_integer);
             }
             else if (lhs_type == value_t::number_unsigned and rhs_type == value_t::number_float)
             {
-                return static_cast<number_float_t>(lhs.m_value.number_unsigned) < rhs.m_value.number_float;
+                return storm::utility::convertNumber<number_float_t>(lhs.m_value.number_unsigned) < *rhs.m_value.number_float;
             }
             else if (lhs_type == value_t::number_float and rhs_type == value_t::number_unsigned)
             {
-                return lhs.m_value.number_float < static_cast<number_float_t>(rhs.m_value.number_unsigned);
+                return *lhs.m_value.number_float < storm::utility::convertNumber<number_float_t>(rhs.m_value.number_unsigned);
             }
             else if (lhs_type == value_t::number_integer and rhs_type == value_t::number_unsigned)
             {
@@ -6476,15 +6575,7 @@ Format](http://rfc7159.net/rfc7159)
 
                 case value_t::number_float:
                 {
-                    if (m_value.number_float == 0)
-                    {
-                        // special case for zero to get "0.0"/"-0.0"
-                        o << (std::signbit(m_value.number_float) ? "-0.0" : "0.0");
-                    }
-                    else
-                    {
-                        o << m_value.number_float;
-                    }
+                    float_to_stream(o, *m_value.number_float);
                     return;
                 }
 
@@ -8972,14 +9063,19 @@ Format](http://rfc7159.net/rfc7159)
 
         @param[in] type  the @ref number_float_t in use
 
-        @param[in,out] endptr recieves a pointer to the first character after
-        the number
-
         @return the floating point number
         */
-            long double str_to_float_t(long double* /* type */, char** endptr) const
+            storm::RationalNumber str_to_float_t(storm::RationalNumber* /* type */) const {
+                // Use std::strtod to get the position where the number ends. Then parse it as a rational Number
+                char const* strptr = reinterpret_cast<typename string_t::const_pointer>(m_start);
+                char* end_pos;
+                std::strtod(strptr, &end_pos);
+                return storm::utility::convertNumber<storm::RationalNumber, std::string>(std::string(strptr, end_pos - strptr));
+            }
+            
+            long double str_to_float_t(long double* /* type */) const
             {
-                return std::strtold(reinterpret_cast<typename string_t::const_pointer>(m_start), endptr);
+                return std::strtold(reinterpret_cast<typename string_t::const_pointer>(m_start), NULL);
             }
 
             /*!
@@ -8992,14 +9088,11 @@ Format](http://rfc7159.net/rfc7159)
 
         @param[in] type  the @ref number_float_t in use
 
-        @param[in,out] endptr  recieves a pointer to the first character after
-        the number
-
         @return the floating point number
         */
-            double str_to_float_t(double* /* type */, char** endptr) const
+            double str_to_float_t(double* /* type */) const
             {
-                return std::strtod(reinterpret_cast<typename string_t::const_pointer>(m_start), endptr);
+                return std::strtod(reinterpret_cast<typename string_t::const_pointer>(m_start), NULL);
             }
 
             /*!
@@ -9012,15 +9105,14 @@ Format](http://rfc7159.net/rfc7159)
 
         @param[in] type  the @ref number_float_t in use
 
-        @param[in,out] endptr  recieves a pointer to the first character after
-        the number
 
         @return the floating point number
         */
-            float str_to_float_t(float* /* type */, char** endptr) const
+            float str_to_float_t(float* /* type */) const
             {
-                return std::strtof(reinterpret_cast<typename string_t::const_pointer>(m_start), endptr);
+                return std::strtof(reinterpret_cast<typename string_t::const_pointer>(m_start), NULL);
             }
+            
 
             /*!
         @brief return number value for number tokens
@@ -9120,11 +9212,11 @@ Format](http://rfc7159.net/rfc7159)
                 }
                 else
                 {
-                    // parse with strtod
-                    result.m_value.number_float = str_to_float_t(static_cast<number_float_t*>(nullptr), NULL);
+                    // parse float
+                    result.m_value = basic_json::json_value(str_to_float_t(static_cast<number_float_t*>(nullptr)));
 
                     // replace infinity and NAN by null
-                    if (not std::isfinite(result.m_value.number_float))
+                    if (storm::utility::isInfinity(*result.m_value.number_float))
                     {
                         type = value_t::null;
                         result.m_value = basic_json::json_value();
