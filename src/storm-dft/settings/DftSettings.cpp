@@ -27,13 +27,14 @@
 #include "storm/settings/modules/HintSettings.h"
 #include "storm/settings/modules/OviSolverSettings.h"
 #include "storm/settings/modules/TimeBoundedSolverSettings.h"
-
+#include "storm/settings/modules/SylvanSettings.h"
+#include "storm/settings/modules/CuddSettings.h"
 
 namespace storm {
     namespace settings {
         void initializeDftSettings(std::string const& name, std::string const& executableName) {
             storm::settings::mutableManager().setName(name, executableName);
-        
+
             // Register relevant settings modules.
             storm::settings::addModule<storm::settings::modules::GeneralSettings>();
             storm::settings::addModule<storm::settings::modules::DftIOSettings>();
@@ -63,7 +64,11 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::JaniExportSettings>();
             storm::settings::addModule<storm::settings::modules::GSPNSettings>();
             storm::settings::addModule<storm::settings::modules::GSPNExportSettings>();
+
+
+            // For Decision Diagrams
+            storm::settings::addModule<storm::settings::modules::CuddSettings>();
+            storm::settings::addModule<storm::settings::modules::SylvanSettings>();
         }
-    
     }
 }
