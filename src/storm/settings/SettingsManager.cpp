@@ -404,7 +404,7 @@ namespace storm {
             STORM_LOG_THROW(moduleIterator == this->modules.end(), storm::exceptions::IllegalFunctionCallException, "Unable to register module '" << moduleSettings->getModuleName() << "' because a module with the same name already exists.");
             
             // Take over the module settings object.
-            std::string const& moduleName = moduleSettings->getModuleName();
+            std::string moduleName = moduleSettings->getModuleName();
             this->moduleNames.push_back(moduleName);
             this->modules.emplace(moduleSettings->getModuleName(), std::move(moduleSettings));
             auto iterator = this->modules.find(moduleName);
