@@ -276,6 +276,7 @@ namespace storm {
                         case ModelProcessingInformation::ValueType::FinitePrecision:
                             return storm::utility::canHandle<double>(mpi.engine, input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties, input.model.get());
                     }
+                    return false;
                 };
                 mpi.isCompatible = checkCompatibleSettings();
                 if (!mpi.isCompatible) {
