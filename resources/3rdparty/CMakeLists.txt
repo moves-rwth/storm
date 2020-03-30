@@ -496,7 +496,7 @@ add_dependencies(sylvan_STATIC sylvan)
 
 list(APPEND STORM_DEP_TARGETS sylvan_STATIC)
 
-find_package(Hwloc QUIET REQUIRED)
+find_package(HWLOC QUIET REQUIRED)
 if(HWLOC_FOUND)
     message(STATUS "Storm - Linking with hwloc ${HWLOC_VERSION}.")
     add_imported_library(hwloc STATIC ${HWLOC_LIBRARIES} "")
