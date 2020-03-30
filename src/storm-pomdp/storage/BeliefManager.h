@@ -11,8 +11,7 @@ namespace storm {
     namespace storage {
         
         template <typename PomdpType, typename BeliefValueType = typename PomdpType::ValueType, typename StateType = uint64_t>
-        // TODO: Change name. This actually does not only manage grid points.
-        class BeliefGrid {
+        class BeliefManager {
         public:
             
             typedef typename PomdpType::ValueType ValueType;
@@ -20,8 +19,8 @@ namespace storm {
             typedef std::map<StateType, BeliefValueType> BeliefType;
             typedef uint64_t BeliefId;
             
-            BeliefGrid(PomdpType const& pomdp, BeliefValueType const& precision) : pomdp(pomdp), cc(precision, false) {
-                // Intentionally left empty
+            BeliefManager(PomdpType const& pomdp, BeliefValueType const& precision) : pomdp(pomdp), cc(precision, false) {
+                initialBeliefId = computeInitialBelief();
             }
             
             void setRewardModel(boost::optional<std::string> rewardModelName = boost::none) {
@@ -45,13 +44,13 @@ namespace storm {
                 }
             };
             
-            BeliefType const& getGridPoint(BeliefId const& id) const {
-                return gridPoints[id];
+            BeliefType const& getBelief(BeliefId const& id) const {
+                return beliefs[id];
             }
             
-            BeliefId getIdOfGridPoint(BeliefType const& gridPoint) const {
-                auto idIt = gridPointToIdMap.find(gridPoint);
-                STORM_LOG_THROW(idIt != gridPointToIdMap.end(), storm::exceptions::UnexpectedException, "Unknown grid state.");
+            BeliefId getId(BeliefType const& belief) const {
+                auto idIt = beliefToIdMap.find(belief);
+                STORM_LOG_THROW(idIt != beliefToIdMap.end(), storm::exceptions::UnexpectedException, "Unknown Belief.");
                 return idIt->second;
             }
             
@@ -75,7 +74,7 @@ namespace storm {
                 std::stringstream str;
                 str << "(\n";
                 for (uint64_t i = 0; i < t.size(); ++i) {
-                    str << "\t" << t.weights[i] << " * \t" << toString(getGridPoint(t.gridPoints[i])) << "\n";
+                    str << "\t" << t.weights[i] << " * \t" << toString(getBelief(t.gridPoints[i])) << "\n";
                 }
                 str <<")\n";
                 return str.str();
@@ -161,7 +160,7 @@ namespace storm {
                         STORM_LOG_ERROR("Weight greater than one in triangulation.");
                     }
                     weightSum += triangulation.weights[i];
-                    BeliefType const& gridPoint = getGridPoint(triangulation.gridPoints[i]);
+                    BeliefType const& gridPoint = getBelief(triangulation.gridPoints[i]);
                     for (auto const& pointEntry : gridPoint) {
                         BeliefValueType& triangulatedValue = triangulatedBelief.emplace(pointEntry.first, storm::utility::zero<ValueType>()).first->second;
                         triangulatedValue += triangulation.weights[i] * pointEntry.second;
@@ -181,16 +180,8 @@ namespace storm {
                 return true;
             }
             
-            BeliefId getInitialBelief() {
-                STORM_LOG_ASSERT(pomdp.getInitialStates().getNumberOfSetBits() < 2,
-                                 "POMDP contains more than one initial state");
-                STORM_LOG_ASSERT(pomdp.getInitialStates().getNumberOfSetBits() == 1,
-                                 "POMDP does not contain an initial state");
-                BeliefType belief;
-                belief[*pomdp.getInitialStates().begin()] = storm::utility::one<ValueType>();
-                
-                STORM_LOG_ASSERT(assertBelief(belief), "Invalid initial belief.");
-                return getOrAddGridPointId(belief);
+            BeliefId const& getInitialBelief() const {
+                return initialBeliefId;
             }
             
             ValueType getBeliefActionReward(BeliefType const& belief, uint64_t const& localActionIndex) const {
@@ -212,10 +203,10 @@ namespace storm {
             }
             
             uint32_t getBeliefObservation(BeliefId beliefId) {
-                return getBeliefObservation(getGridPoint(beliefId));
+                return getBeliefObservation(getBelief(beliefId));
             }
             
-            
+
             Triangulation triangulateBelief(BeliefType belief, uint64_t resolution) {
                 //TODO this can also be simplified using the sparse vector interpretation
                 //TODO Enable chaching for this method?
@@ -286,12 +277,16 @@ namespace storm {
                         if (!cc.isZero(qsj[nrStates - 1])) {
                             gridPoint[nrStates - 1] = qsj[nrStates - 1] / convResolution;
                         }
-                        result.gridPoints.push_back(getOrAddGridPointId(gridPoint));
+                        result.gridPoints.push_back(getOrAddBeliefId(gridPoint));
                     }
                 }
                 
                 STORM_LOG_ASSERT(assertTriangulation(belief, result), "Incorrect triangulation: " << toString(result));
                 return result;
+            }
+            
+            Triangulation triangulateBelief(BeliefId beliefId, uint64_t resolution) {
+                return triangulateBelief(getBelief(beliefId), resolution);
             }
             
             template<typename DistributionType>
@@ -302,19 +297,19 @@ namespace storm {
                 }
             }
             
-            BeliefId getNumberOfGridPointIds() const {
-                return gridPoints.size();
+            BeliefId getNumberOfBeliefIds() const {
+                return beliefs.size();
             }
             
-            std::map<BeliefId, ValueType> expandInternal(BeliefId const& gridPointId, uint64_t actionIndex, boost::optional<std::vector<uint64_t>> const& observationTriangulationResolutions = boost::none) {
+            std::map<BeliefId, ValueType> expandInternal(BeliefId const& beliefId, uint64_t actionIndex, boost::optional<std::vector<uint64_t>> const& observationTriangulationResolutions = boost::none) {
                 std::map<BeliefId, ValueType> destinations; // The belief ids should be ordered
                 // TODO: Does this make sense? It could be better to order them afterwards because now we rely on the fact that MDP states have the same order than their associated BeliefIds
                 
-                BeliefType gridPoint = getGridPoint(gridPointId);
+                BeliefType belief = getBelief(beliefId);
                 
                 // Find the probability we go to each observation
                 BeliefType successorObs; // This is actually not a belief but has the same type
-                for (auto const& pointEntry : gridPoint) {
+                for (auto const& pointEntry : belief) {
                     uint64_t state = pointEntry.first;
                     for (auto const& pomdpTransition : pomdp.getTransitionMatrix().getRow(state, actionIndex)) {
                         if (!storm::utility::isZero(pomdpTransition.getValue())) {
@@ -327,7 +322,7 @@ namespace storm {
                 // Now for each successor observation we find and potentially triangulate the successor belief
                 for (auto const& successor : successorObs) {
                     BeliefType successorBelief;
-                    for (auto const& pointEntry : gridPoint) {
+                    for (auto const& pointEntry : belief) {
                         uint64_t state = pointEntry.first;
                         for (auto const& pomdpTransition : pomdp.getTransitionMatrix().getRow(state, actionIndex)) {
                             if (pomdp.getObservation(pomdpTransition.getColumn()) == successor.first) {
@@ -344,7 +339,7 @@ namespace storm {
                             addToDistribution(destinations, triangulation.gridPoints[j], triangulation.weights[j] * successor.second);
                         }
                     } else {
-                        addToDistribution(destinations, getOrAddGridPointId(successorBelief), successor.second);
+                        addToDistribution(destinations, getOrAddBeliefId(successorBelief), successor.second);
                     }
                 }
     
@@ -352,21 +347,33 @@ namespace storm {
                 
             }
             
-            std::map<BeliefId, ValueType> expandAndTriangulate(BeliefId const& gridPointId, uint64_t actionIndex, std::vector<uint64_t> const& observationResolutions) {
-                return expandInternal(gridPointId, actionIndex, observationResolutions);
+            std::map<BeliefId, ValueType> expandAndTriangulate(BeliefId const& beliefId, uint64_t actionIndex, std::vector<uint64_t> const& observationResolutions) {
+                return expandInternal(beliefId, actionIndex, observationResolutions);
             }
             
-            std::map<BeliefId, ValueType> expand(BeliefId const& gridPointId, uint64_t actionIndex) {
-                return expandInternal(gridPointId, actionIndex);
+            std::map<BeliefId, ValueType> expand(BeliefId const& beliefId, uint64_t actionIndex) {
+                return expandInternal(beliefId, actionIndex);
             }
             
         private:
             
-            BeliefId getOrAddGridPointId(BeliefType const& gridPoint) {
-                auto insertioRes = gridPointToIdMap.emplace(gridPoint, gridPoints.size());
+            BeliefId computeInitialBelief() {
+                STORM_LOG_ASSERT(pomdp.getInitialStates().getNumberOfSetBits() < 2,
+                                 "POMDP contains more than one initial state");
+                STORM_LOG_ASSERT(pomdp.getInitialStates().getNumberOfSetBits() == 1,
+                                 "POMDP does not contain an initial state");
+                BeliefType belief;
+                belief[*pomdp.getInitialStates().begin()] = storm::utility::one<ValueType>();
+                
+                STORM_LOG_ASSERT(assertBelief(belief), "Invalid initial belief.");
+                return getOrAddBeliefId(belief);
+            }
+            
+            BeliefId getOrAddBeliefId(BeliefType const& belief) {
+                auto insertioRes = beliefToIdMap.emplace(belief, beliefs.size());
                 if (insertioRes.second) {
-                    // There actually was an insertion, so add the new grid state
-                    gridPoints.push_back(gridPoint);
+                    // There actually was an insertion, so add the new belief
+                    beliefs.push_back(belief);
                 }
                 // Return the id
                 return insertioRes.first->second;
@@ -375,8 +382,10 @@ namespace storm {
             PomdpType const& pomdp;
             std::vector<ValueType> pomdpActionRewardVector;
             
-            std::vector<BeliefType> gridPoints;
-            std::map<BeliefType, BeliefId> gridPointToIdMap;
+            std::vector<BeliefType> beliefs;
+            std::map<BeliefType, BeliefId> beliefToIdMap;
+            BeliefId initialBeliefId;
+            
             storm::utility::ConstantsComparator<ValueType> cc;
             
             

@@ -380,9 +380,9 @@ namespace storm {
                     underMap = underApproximationMap.value();
                 }
 
-                storm::storage::BeliefGrid<storm::models::sparse::Pomdp<ValueType>> beliefGrid(pomdp, options.numericPrecision);
+                auto beliefManager = std::make_shared<storm::storage::BeliefManager<storm::models::sparse::Pomdp<ValueType>>>(pomdp, options.numericPrecision);
                 if (computeRewards) {
-                    beliefGrid.setRewardModel();
+                    beliefManager->setRewardModel(); // TODO: get actual name
                 }
                 
                 bsmap_type beliefStateMap;
@@ -391,9 +391,7 @@ namespace storm {
 
                 statistics.overApproximationBuildTime.start();
                 // Initial belief always has belief ID 0
-                auto initialBeliefId = beliefGrid.getInitialBelief();
-                auto const& initialBelief = beliefGrid.getGridPoint(initialBeliefId);
-                auto initialObservation = beliefGrid.getBeliefObservation(initialBelief);
+                auto initialObservation = beliefManager->getBeliefObservation(beliefManager->getInitialBelief());
                 // These are the components to build the MDP from the grid
                 // Reserve states 0 and 1 as always sink/goal states
                 storm::storage::SparseMatrixBuilder<ValueType> mdpTransitionsBuilder(0, 0, 0, true, true);
@@ -419,14 +417,14 @@ namespace storm {
                 std::map<uint64_t, ValueType> weightedSumUnderMap;
 
                 // for the initial belief, add the triangulated initial states
-                auto triangulation = beliefGrid.triangulateBelief(initialBelief, observationResolutionVector[initialObservation]);
+                auto triangulation = beliefManager->triangulateBelief(beliefManager->getInitialBelief(), observationResolutionVector[initialObservation]);
                 uint64_t initialMdpState = nextMdpStateId;
                 ++nextMdpStateId;
                 if (triangulation.size() == 1) {
                     // The initial belief is on the grid itself
                     auto initBeliefId = triangulation.gridPoints.front();
                     if (boundMapsSet) {
-                        auto const& gridPoint = beliefGrid.getGridPoint(initBeliefId);
+                        auto const& gridPoint = beliefManager->getBelief(initBeliefId);
                         weightedSumOverMap[initBeliefId] = getWeightedSum<ValueType>(gridPoint, overMap);
                         weightedSumUnderMap[initBeliefId] = getWeightedSum<ValueType>(gridPoint, underMap);
                     }
@@ -443,7 +441,7 @@ namespace storm {
                         beliefStateMap.insert(bsmap_type::value_type(triangulation.gridPoints[i], nextMdpStateId));
                         ++nextMdpStateId;
                         if (boundMapsSet) {
-                            auto const& gridPoint = beliefGrid.getGridPoint(triangulation.gridPoints[i]);
+                            auto const& gridPoint = beliefManager->getBelief(triangulation.gridPoints[i]);
                             weightedSumOverMap[triangulation.gridPoints[i]] = getWeightedSum<ValueType>(gridPoint, overMap);
                             weightedSumUnderMap[triangulation.gridPoints[i]] = getWeightedSum<ValueType>(gridPoint, underMap);
                         }
@@ -458,7 +456,7 @@ namespace storm {
                 if (options.explorationThreshold > storm::utility::zero<ValueType>()) {
                     STORM_PRINT("Exploration threshold: " << options.explorationThreshold << std::endl)
                 }
-                storm::storage::BitVector foundBeliefs(beliefGrid.getNumberOfGridPointIds(), false);
+                storm::storage::BitVector foundBeliefs(beliefManager->getNumberOfBeliefIds(), false);
                 for (auto const& belId : beliefsToBeExpanded) {
                     foundBeliefs.set(belId, true);
                 }
@@ -467,7 +465,7 @@ namespace storm {
                     beliefsToBeExpanded.pop_front();
                     
                     uint64_t currMdpState = beliefStateMap.left.at(currId);
-                    uint32_t currObservation = beliefGrid.getBeliefObservation(currId);
+                    uint32_t currObservation = beliefManager->getBeliefObservation(currId);
 
                     mdpTransitionsBuilder.newRowGroup(mdpMatrixRow);
                     
@@ -484,17 +482,17 @@ namespace storm {
                     } else {
                         fullyExpandedStates.grow(nextMdpStateId, false);
                         fullyExpandedStates.set(currMdpState, true);
-                        uint64_t someState = beliefGrid.getGridPoint(currId).begin()->first;
+                        uint64_t someState = beliefManager->getBelief(currId).begin()->first;
                         uint64_t numChoices = pomdp.getNumberOfChoices(someState);
 
                         for (uint64_t action = 0; action < numChoices; ++action) {
-                            auto successorGridPoints = beliefGrid.expandAndTriangulate(currId, action, observationResolutionVector);
+                            auto successorGridPoints = beliefManager->expandAndTriangulate(currId, action, observationResolutionVector);
                             // Check for newly found grid points
-                            foundBeliefs.grow(beliefGrid.getNumberOfGridPointIds(), false);
+                            foundBeliefs.grow(beliefManager->getNumberOfBeliefIds(), false);
                             for (auto const& successor : successorGridPoints) {
                                 auto successorId = successor.first;
-                                auto const& successorBelief = beliefGrid.getGridPoint(successorId);
-                                auto successorObservation = beliefGrid.getBeliefObservation(successorBelief);
+                                auto const& successorBelief = beliefManager->getBelief(successorId);
+                                auto successorObservation = beliefManager->getBeliefObservation(successorBelief);
                                 if (!foundBeliefs.get(successorId)) {
                                     foundBeliefs.set(successorId);
                                     beliefsToBeExpanded.push_back(successorId);
@@ -548,11 +546,11 @@ namespace storm {
                     storm::models::sparse::StandardRewardModel<ValueType> mdpRewardModel(boost::none, std::vector<ValueType>(mdpMatrixRow, storm::utility::zero<ValueType>()));
                     for (auto const &iter : beliefStateMap.left) {
                         if (fullyExpandedStates.get(iter.second)) {
-                            auto const& currentBelief = beliefGrid.getGridPoint(iter.first);
+                            auto const& currentBelief = beliefManager->getBelief(iter.first);
                             auto representativeState = currentBelief.begin()->first;
                             for (uint64_t action = 0; action < pomdp.getNumberOfChoices(representativeState); ++action) {
                                 uint64_t mdpChoice = overApproxMdp->getChoiceIndex(storm::storage::StateActionPair(iter.second, action));
-                                mdpRewardModel.setStateActionReward(mdpChoice, beliefGrid.getBeliefActionReward(currentBelief, action));
+                                mdpRewardModel.setStateActionReward(mdpChoice, beliefManager->getBeliefActionReward(currentBelief, action));
                             }
                         }
                     }
@@ -575,16 +573,16 @@ namespace storm {
                 STORM_LOG_ASSERT(res, "Result does not exist.");
                 res->filter(storm::modelchecker::ExplicitQualitativeCheckResult(storm::storage::BitVector(overApproxMdp->getNumberOfStates(), true)));
                 auto overApproxResultMap = res->asExplicitQuantitativeCheckResult<ValueType>().getValueMap();
-                auto overApprox = overApproxResultMap[beliefStateMap.left.at(initialBeliefId)];
+                auto overApprox = overApproxResultMap[initialMdpState];
 
                 STORM_PRINT("Time Overapproximation: " <<  statistics.overApproximationCheckTime << " seconds." << std::endl);
                 STORM_PRINT("Over-Approximation Result: " << overApprox << std::endl);
                 //auto underApprox = weightedSumUnderMap[initialBelief.id];
-                auto underApproxComponents = computeUnderapproximation(beliefGrid, targetObservations, min, computeRewards, maxUaModelSize);
+                auto underApproxComponents = computeUnderapproximation(beliefManager, targetObservations, min, computeRewards, maxUaModelSize);
                 if (storm::utility::resources::isTerminate() && !underApproxComponents) {
                     // TODO: return other components needed for refinement.
                     //return std::make_unique<RefinementComponents<ValueType>>(RefinementComponents<ValueType>{modelPtr, overApprox, 0, overApproxResultMap, {}, beliefList, beliefGrid, beliefIsTarget, beliefStateMap, {}, initialBelief.id});
-                    return std::make_unique<RefinementComponents<ValueType>>(RefinementComponents<ValueType>{modelPtr, overApprox, 0, overApproxResultMap, {}, {}, {}, {}, beliefStateMap, {}, initialBeliefId});
+                    return std::make_unique<RefinementComponents<ValueType>>(RefinementComponents<ValueType>{modelPtr, overApprox, 0, overApproxResultMap, {}, {}, {}, {}, beliefStateMap, {}, beliefManager->getInitialBelief()});
                 }
                 
                 STORM_PRINT("Under-Approximation Result: " << underApproxComponents->underApproxValue << std::endl);
@@ -595,7 +593,7 @@ namespace storm {
                                                         underApproxComponents->underApproxBeliefStateMap, initialBelief.id});
                 */
                 return std::make_unique<RefinementComponents<ValueType>>(RefinementComponents<ValueType>{modelPtr, overApprox, underApproxComponents->underApproxValue, overApproxResultMap,
-                                                                                                         underApproxComponents->underApproxMap, {}, {}, {}, beliefStateMap, underApproxComponents->underApproxBeliefStateMap, initialBeliefId});
+                                                                                                         underApproxComponents->underApproxMap, {}, {}, {}, beliefStateMap, underApproxComponents->underApproxBeliefStateMap, beliefManager->getInitialBelief()});
 
             }
 
@@ -1075,7 +1073,7 @@ namespace storm {
 
             template<typename ValueType, typename RewardModelType>
             std::unique_ptr<UnderApproxComponents<ValueType, RewardModelType>>
-            ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeUnderapproximation(storm::storage::BeliefGrid<storm::models::sparse::Pomdp<ValueType>>& beliefGrid,
+            ApproximatePOMDPModelchecker<ValueType, RewardModelType>::computeUnderapproximation(std::shared_ptr<storm::storage::BeliefManager<storm::models::sparse::Pomdp<ValueType>>> beliefManager,
                                                                                                 std::set<uint32_t> const &targetObservations, bool min,
                                                                                                 bool computeRewards, uint64_t maxModelSize) {
                 // Build the belief MDP until enough states are explored.
@@ -1100,13 +1098,12 @@ namespace storm {
                 bsmap_type beliefStateMap;
                 std::deque<uint64_t> beliefsToBeExpanded;
                 
-                auto initialBeliefId = beliefGrid.getInitialBelief();
-                beliefStateMap.insert(bsmap_type::value_type(initialBeliefId, nextMdpStateId));
-                beliefsToBeExpanded.push_back(initialBeliefId);
+                beliefStateMap.insert(bsmap_type::value_type(beliefManager->getInitialBelief(), nextMdpStateId));
+                beliefsToBeExpanded.push_back(beliefManager->getInitialBelief());
                 ++nextMdpStateId;
 
                 // Expand the believes
-                storm::storage::BitVector foundBeliefs(beliefGrid.getNumberOfGridPointIds(), false);
+                storm::storage::BitVector foundBeliefs(beliefManager->getNumberOfBeliefIds(), false);
                 for (auto const& belId : beliefsToBeExpanded) {
                     foundBeliefs.set(belId, true);
                 }
@@ -1115,8 +1112,8 @@ namespace storm {
                     beliefsToBeExpanded.pop_front();
                     
                     uint64_t currMdpState = beliefStateMap.left.at(currId);
-                    auto const& currBelief = beliefGrid.getGridPoint(currId);
-                    uint32_t currObservation = beliefGrid.getBeliefObservation(currBelief);
+                    auto const& currBelief = beliefManager->getBelief(currId);
+                    uint32_t currObservation = beliefManager->getBeliefObservation(currBelief);
                     
                     mdpTransitionsBuilder.newRowGroup(mdpMatrixRow);
                     
@@ -1147,9 +1144,9 @@ namespace storm {
                         uint64_t someState = currBelief.begin()->first;
                         uint64_t numChoices = pomdp.getNumberOfChoices(someState);
                         for (uint64_t action = 0; action < numChoices; ++action) {
-                            auto successorBeliefs = beliefGrid.expand(currId, action);
+                            auto successorBeliefs = beliefManager->expand(currId, action);
                             // Check for newly found beliefs
-                            foundBeliefs.grow(beliefGrid.getNumberOfGridPointIds(), false);
+                            foundBeliefs.grow(beliefManager->getNumberOfBeliefIds(), false);
                             for (auto const& successor : successorBeliefs) {
                                 auto successorId = successor.first;
                                 if (!foundBeliefs.get(successorId)) {
@@ -1159,7 +1156,7 @@ namespace storm {
                                     ++nextMdpStateId;
                                 }
                                 auto successorMdpState = beliefStateMap.left.at(successorId);
-                                // This assumes that the successor MDP states are given in ascending order, which is indeed the case because the successorGridPoints are sorted.
+                                // This assumes that the successor MDP states are given in ascending order, which is indeed the case because the successorBeliefs are sorted.
                                 mdpTransitionsBuilder.addNextValue(mdpMatrixRow, successorMdpState, successor.second);
                             }
                             ++mdpMatrixRow;
@@ -1179,7 +1176,7 @@ namespace storm {
                 storm::models::sparse::StateLabeling mdpLabeling(nextMdpStateId);
                 mdpLabeling.addLabel("init");
                 mdpLabeling.addLabel("target");
-                mdpLabeling.addLabelToState("init", beliefStateMap.left.at(initialBeliefId));
+                mdpLabeling.addLabelToState("init", beliefStateMap.left.at(beliefManager->getInitialBelief()));
                 for (auto targetState : targetStates) {
                     mdpLabeling.addLabelToState("target", targetState);
                 }
@@ -1190,11 +1187,11 @@ namespace storm {
                     storm::models::sparse::StandardRewardModel<ValueType> mdpRewardModel(boost::none, std::vector<ValueType>(mdpMatrixRow, storm::utility::zero<ValueType>()));
                     for (auto const &iter : beliefStateMap.left) {
                         if (fullyExpandedStates.get(iter.second)) {
-                            auto const& currentBelief = beliefGrid.getGridPoint(iter.first);
+                            auto const& currentBelief = beliefManager->getBelief(iter.first);
                             auto representativeState = currentBelief.begin()->first;
                             for (uint64_t action = 0; action < pomdp.getNumberOfChoices(representativeState); ++action) {
                                 uint64_t mdpChoice = model->getChoiceIndex(storm::storage::StateActionPair(iter.second, action));
-                                mdpRewardModel.setStateActionReward(mdpChoice, beliefGrid.getBeliefActionReward(currentBelief, action));
+                                mdpRewardModel.setStateActionReward(mdpChoice, beliefManager->getBeliefActionReward(currentBelief, action));
                             }
                         }
                     }
@@ -1207,8 +1204,8 @@ namespace storm {
 
                 auto property = createStandardProperty(min, computeRewards);
                 auto task = createStandardCheckTask(property, std::vector<ValueType>());
-                statistics.underApproximationCheckTime.start();
                 
+                statistics.underApproximationCheckTime.start();
                 std::unique_ptr<storm::modelchecker::CheckResult> res(storm::api::verifyWithSparseEngine<ValueType>(model, task));
                 statistics.underApproximationCheckTime.stop();
                 if (storm::utility::resources::isTerminate() && !res) {
@@ -1217,7 +1214,7 @@ namespace storm {
                 STORM_LOG_ASSERT(res, "Result does not exist.");
                 res->filter(storm::modelchecker::ExplicitQualitativeCheckResult(storm::storage::BitVector(model->getNumberOfStates(), true)));
                 auto underApproxResultMap = res->asExplicitQuantitativeCheckResult<ValueType>().getValueMap();
-                auto underApprox = underApproxResultMap[beliefStateMap.left.at(initialBeliefId)];
+                auto underApprox = underApproxResultMap[beliefStateMap.left.at(beliefManager->getInitialBelief())];
 
                 return std::make_unique<UnderApproxComponents<ValueType>>(UnderApproxComponents<ValueType>{underApprox, underApproxResultMap, beliefStateMap});
             }
