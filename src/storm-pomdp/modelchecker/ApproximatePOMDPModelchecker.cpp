@@ -1207,8 +1207,8 @@ namespace storm {
 
                 auto property = createStandardProperty(min, computeRewards);
                 auto task = createStandardCheckTask(property, std::vector<ValueType>());
-                
                 statistics.underApproximationCheckTime.start();
+                
                 std::unique_ptr<storm::modelchecker::CheckResult> res(storm::api::verifyWithSparseEngine<ValueType>(model, task));
                 statistics.underApproximationCheckTime.stop();
                 if (storm::utility::resources::isTerminate() && !res) {
