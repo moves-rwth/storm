@@ -162,7 +162,7 @@ namespace storm {
                                                                                                              uint64_t maxModelSize);
                 std::unique_ptr<UnderApproxComponents<ValueType, RewardModelType>> computeUnderapproximation(std::shared_ptr<storm::storage::BeliefManager<storm::models::sparse::Pomdp<ValueType>>> beliefManager,
                                                                                                              std::set<uint32_t> const &targetObservations, bool min, bool computeReward,
-                                                                                                             uint64_t maxModelSize);
+                                                                                                             uint64_t maxModelSize, std::vector<ValueType> const& lowerPomdpValueBounds, std::vector<ValueType> const& upperPomdpValueBounds);
 
                 /**
                  * Constructs the initial belief for the given POMDP
