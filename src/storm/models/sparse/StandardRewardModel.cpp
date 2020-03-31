@@ -350,11 +350,6 @@ namespace storm {
             }
 
             template<typename ValueType>
-            void StandardRewardModel<ValueType>::setStateActionRewardValue(uint_fast64_t row, ValueType const& value) {
-                this->optionalStateActionRewardVector.get()[row] = value;
-            }
-
-            template<typename ValueType>
             template<typename MatrixValueType>
             void StandardRewardModel<ValueType>::clearRewardAtState(uint_fast64_t state, storm::storage::SparseMatrix<MatrixValueType> const& transitions) {
                 if (hasStateRewards()) {

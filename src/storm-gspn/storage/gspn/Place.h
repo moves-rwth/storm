@@ -56,7 +56,7 @@ namespace storm {
              * @param capacity The capacity of this place. A non-negative number represents the capacity.
              *                 boost::none indicates that the flag is not set.
              */
-            void setCapacity(boost::optional<uint64_t> capacity);
+            void setCapacity(boost::optional<uint64_t> const& capacity);
 
             /*!
              * Returns the capacity of tokens of this place.

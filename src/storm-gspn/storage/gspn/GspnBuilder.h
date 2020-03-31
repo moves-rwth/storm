@@ -25,7 +25,7 @@ namespace storm {
              *                 A capacity of -1 indicates an unbounded place.
              * @param initialTokens The number of inital tokens in the place.
              */
-            uint_fast64_t addPlace(boost::optional<uint64_t> capacity = 1, uint_fast64_t const& initialTokens = 0, std::string const& name = "");
+            uint_fast64_t addPlace(boost::optional<uint64_t> const& capacity = 1, uint_fast64_t const& initialTokens = 0, std::string const& name = "");
             
             void setPlaceLayoutInfo(uint64_t placeId, LayoutInfo const& layoutInfo);
 
@@ -51,7 +51,7 @@ namespace storm {
              * @param rate The rate for the transition.
              * @param numServers The number of servers this transition has (in case of K-Server semantics) or boost::none (in case of Infinite-Server-Semantics).
              */
-            uint_fast64_t addTimedTransition(uint_fast64_t const &priority, RateType const& rate, boost::optional<uint64_t> numServers, std::string const& name = "");
+            uint_fast64_t addTimedTransition(uint_fast64_t const &priority, RateType const& rate, boost::optional<uint64_t> const& numServers, std::string const& name = "");
             
             void setTransitionLayoutInfo(uint64_t transitionId, LayoutInfo const& layoutInfo);
 
