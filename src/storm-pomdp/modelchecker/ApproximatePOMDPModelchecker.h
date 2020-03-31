@@ -117,8 +117,7 @@ namespace storm {
                  */
                 std::shared_ptr<RefinementComponents<ValueType>>
                 computeFirstRefinementStep(std::set<uint32_t> const &targetObservations, bool min, std::vector<uint64_t> &observationResolutionVector,
-                                           bool computeRewards, boost::optional<std::map<uint64_t, ValueType>> overApproximationMap = boost::none,
-                                           boost::optional<std::map<uint64_t, ValueType>> underApproximationMap = boost::none, uint64_t maxUaModelSize = 200);
+                                           bool computeRewards, std::vector<ValueType> const& lowerPomdpValueBounds, std::vector<ValueType> const& upperPomdpValueBounds, uint64_t maxUaModelSize = 200);
 
                 std::shared_ptr<RefinementComponents<ValueType>>
                 computeRefinementStep(std::set<uint32_t> const &targetObservations, bool min, std::vector<uint64_t> &observationResolutionVector,
@@ -140,10 +139,8 @@ namespace storm {
                  * @return A struct containing the overapproximation (overApproxValue) and underapproximation (underApproxValue) values
                  */
                 std::unique_ptr<POMDPCheckResult<ValueType>>
-                computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min,
-                                       std::vector<uint64_t> &observationResolutionVector, bool computeRewards,
-                                       boost::optional<std::map<uint64_t, ValueType>> overApproximationMap = boost::none,
-                                       boost::optional<std::map<uint64_t, ValueType>> underApproximationMap = boost::none, uint64_t maxUaModelSize = 200);
+                computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards,
+                                       std::vector<ValueType> const& lowerPomdpValueBounds, std::vector<ValueType> const& upperPomdpValueBounds, uint64_t maxUaModelSize = 200);
 
                 /**
                  * Helper to compute an underapproximation of the reachability property.

@@ -45,6 +45,8 @@ namespace storm {
             };
             
             BeliefType const& getBelief(BeliefId const& id) const {
+                STORM_LOG_ASSERT(id != noId(), "Tried to get a non-existend belief.");
+                STORM_LOG_ASSERT(id < getNumberOfBeliefIds(), "Belief index " << id << " is out of range.");
                 return beliefs[id];
             }
             
@@ -52,6 +54,10 @@ namespace storm {
                 auto idIt = beliefToIdMap.find(belief);
                 STORM_LOG_THROW(idIt != beliefToIdMap.end(), storm::exceptions::UnexpectedException, "Unknown Belief.");
                 return idIt->second;
+            }
+            
+            BeliefId noId() const {
+                return std::numeric_limits<BeliefId>::max();
             }
             
             std::string toString(BeliefType const& belief) const {
@@ -180,11 +186,22 @@ namespace storm {
                 return true;
             }
             
+            template <typename SummandsType>
+            ValueType getWeightedSum(BeliefId const& beliefId, SummandsType const& summands) {
+                ValueType result = storm::utility::zero<ValueType>();
+                for (auto const& entry : getBelief(beliefId)) {
+                    result += storm::utility::convertNumber<ValueType>(entry.second) * storm::utility::convertNumber<ValueType>(summands.at(entry.first));
+                }
+                return result;
+            }
+            
+            
             BeliefId const& getInitialBelief() const {
                 return initialBeliefId;
             }
             
-            ValueType getBeliefActionReward(BeliefType const& belief, uint64_t const& localActionIndex) const {
+            ValueType getBeliefActionReward(BeliefId const& beliefId, uint64_t const& localActionIndex) const {
+                auto const& belief = getBelief(beliefId);
                 STORM_LOG_ASSERT(!pomdpActionRewardVector.empty(), "Requested a reward although no reward model was specified.");
                 auto result = storm::utility::zero<ValueType>();
                 auto const& choiceIndices = pomdp.getTransitionMatrix().getRowGroupIndices();
@@ -204,6 +221,11 @@ namespace storm {
             
             uint32_t getBeliefObservation(BeliefId beliefId) {
                 return getBeliefObservation(getBelief(beliefId));
+            }
+            
+            uint64_t getBeliefNumberOfChoices(BeliefId beliefId) {
+                auto belief = getBelief(beliefId);
+                return pomdp.getNumberOfChoices(belief.begin()->first);
             }
             
 
