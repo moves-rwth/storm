@@ -144,6 +144,11 @@ namespace storm {
              */
             ValueType getProbability(StateType const& state) const;
             
+            /*!
+             * Normalizes the distribution such that the values sum up to one.
+             */
+            void normalize();
+            
         private:
             // A list of states and the probabilities that are assigned to them.
             container_type distribution;
