@@ -102,7 +102,7 @@ namespace storm {
                 if (pomdpSettings.isGridApproximationSet()) {
                     STORM_PRINT_AND_LOG("Applying grid approximation... ");
                     auto const& gridSettings = storm::settings::getModule<storm::settings::modules::GridApproximationSettings>();
-                    typename storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<ValueType>::Options options;
+                    typename storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::models::sparse::Pomdp<ValueType>>::Options options;
                     options.initialGridResolution = gridSettings.getGridResolution();
                     options.explorationThreshold = storm::utility::convertNumber<ValueType>(gridSettings.getExplorationThreshold());
                     options.doRefinement = gridSettings.isRefineSet();
@@ -117,20 +117,16 @@ namespace storm {
                             STORM_LOG_WARN_COND(storm::utility::isZero(options.numericPrecision), "A non-zero numeric precision was set although exact arithmethic is used. Results might be inexact.");
                         }
                     }
-                    storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<ValueType> checker = storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<ValueType>(*pomdp, options);
-                    std::unique_ptr<storm::pomdp::modelchecker::POMDPCheckResult<ValueType>> result = checker.check(formula);
+                    storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::models::sparse::Pomdp<ValueType>> checker(*pomdp, options);
+                    auto result = checker.check(formula);
                     checker.printStatisticsToStream(std::cout);
-                    if (result) {
-                        if (storm::utility::resources::isTerminate()) {
-                            STORM_PRINT_AND_LOG("\nResult till abort: ")
-                        } else {
-                            STORM_PRINT_AND_LOG("\nResult: ")
-                        }
-                        printResult(result->underApproxValue, result->overApproxValue);
-                        STORM_PRINT_AND_LOG(std::endl);
+                    if (storm::utility::resources::isTerminate()) {
+                        STORM_PRINT_AND_LOG("\nResult till abort: ")
                     } else {
-                        STORM_PRINT_AND_LOG("\nResult: Not available." << std::endl);
+                        STORM_PRINT_AND_LOG("\nResult: ")
                     }
+                    printResult(result.lowerBound, result.upperBound);
+                    STORM_PRINT_AND_LOG(std::endl);
                     analysisPerformed = true;
                 }
                 if (pomdpSettings.isMemlessSearchSet()) {
@@ -263,8 +259,10 @@ namespace storm {
                 STORM_LOG_THROW(model->getType() == storm::models::ModelType::Pomdp && model->isSparseModel(), storm::exceptions::WrongFormatException, "Expected a POMDP in sparse representation.");
             
                 std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> pomdp = model->template as<storm::models::sparse::Pomdp<ValueType>>();
-                storm::transformer::MakePOMDPCanonic<ValueType> makeCanonic(*pomdp);
-                pomdp = makeCanonic.transform();
+                if (!pomdpSettings.isNoCanonicSet()) {
+                    storm::transformer::MakePOMDPCanonic<ValueType> makeCanonic(*pomdp);
+                    pomdp = makeCanonic.transform();
+                }
                 
                 std::shared_ptr<storm::logic::Formula const> formula;
                 if (!symbolicInput.properties.empty()) {

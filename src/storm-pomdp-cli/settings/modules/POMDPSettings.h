@@ -26,6 +26,7 @@ namespace storm {
                 
                 bool isQualitativeReductionSet() const;
 
+                bool isNoCanonicSet() const;
                 bool isGridApproximationSet() const;
                 bool isAnalyzeUniqueObservationsSet() const;
                 bool isMecReductionSet() const;
