@@ -324,8 +324,8 @@ namespace storm {
             }
             
             std::map<BeliefId, ValueType> expandInternal(BeliefId const& beliefId, uint64_t actionIndex, boost::optional<std::vector<uint64_t>> const& observationTriangulationResolutions = boost::none) {
-                std::map<BeliefId, ValueType> destinations; // The belief ids should be ordered
-                // TODO: Does this make sense? It could be better to order them afterwards because now we rely on the fact that MDP states have the same order than their associated BeliefIds
+                std::map<BeliefId, ValueType> destinations;
+                // TODO: Output as vector?
                 
                 BeliefType belief = getBelief(beliefId);
                 
