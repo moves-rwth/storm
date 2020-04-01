@@ -4,6 +4,7 @@
 #include "storm/utility/logging.h"
 #include "storm-pomdp/storage/Belief.h"
 #include "storm-pomdp/storage/BeliefManager.h"
+#include "storm-pomdp/builder/BeliefMdpExplorer.h"
 #include <boost/bimap.hpp>
 
 #include "storm/storage/jani/Property.h"
@@ -16,12 +17,6 @@ namespace storm {
     namespace pomdp {
         namespace modelchecker {
             typedef boost::bimap<uint64_t, uint64_t> bsmap_type;
-
-            template<class ValueType>
-            struct POMDPCheckResult {
-                ValueType overApproxValue;
-                ValueType underApproxValue;
-            };
 
             /**
              *  Struct containing information which is supposed to be persistent over multiple refinement steps
@@ -49,9 +44,13 @@ namespace storm {
                 bsmap_type underApproxBeliefStateMap;
             };
 
-            template<class ValueType, typename RewardModelType = models::sparse::StandardRewardModel<ValueType>>
+            template<typename PomdpModelType, typename BeliefValueType = typename PomdpModelType::ValueType>
             class ApproximatePOMDPModelchecker {
             public:
+                typedef typename PomdpModelType::ValueType ValueType;
+                typedef typename PomdpModelType::RewardModelType RewardModelType;
+                typedef storm::storage::BeliefManager<PomdpModelType, BeliefValueType> BeliefManagerType;
+                typedef storm::builder::BeliefMdpExplorer<PomdpModelType, BeliefValueType> ExplorerType;
                 
                 struct Options {
                     Options();
@@ -63,69 +62,20 @@ namespace storm {
                     bool cacheSubsimplices; /// Enables caching of subsimplices
                 };
                 
-                ApproximatePOMDPModelchecker(storm::models::sparse::Pomdp<ValueType, RewardModelType> const& pomdp, Options options = Options());
+                struct Result {
+                    Result(ValueType lower, ValueType upper);
+                    ValueType lowerBound;
+                    ValueType upperBound;
+                    ValueType diff (bool relative = false) const;
+                };
                 
-                std::unique_ptr<POMDPCheckResult<ValueType>> check(storm::logic::Formula const& formula);
+                ApproximatePOMDPModelchecker(PomdpModelType const& pomdp, Options options = Options());
+                
+                Result check(storm::logic::Formula const& formula);
 
                 void printStatisticsToStream(std::ostream& stream) const;
                 
             private:
-                /**
-                 * Compute the reachability probability of given target observations on a POMDP using the automatic refinement loop
-                 *
-                 * @param targetObservations the set of observations to be reached
-                 * @param min true if minimum probability is to be computed
-                 * @return A struct containing the final overapproximation (overApproxValue) and underapproximation (underApproxValue) values
-                 */
-                std::unique_ptr<POMDPCheckResult<ValueType>>
-                refineReachability(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards);
-
-                /**
-                 * Compute the reachability probability of given target observations on a POMDP for the given resolution only.
-                 * On-the-fly state space generation is used for the overapproximation
-                 *
-                 * @param targetObservations the set of observations to be reached
-                 * @param min true if minimum probability is to be computed
-                 * @return A struct containing the overapproximation (overApproxValue) and underapproximation (underApproxValue) values
-                 */
-                std::unique_ptr<POMDPCheckResult<ValueType>>
-                computeReachabilityProbabilityOTF(std::set<uint32_t> const &targetObservations, bool min);
-
-                /**
-                 * Compute the reachability rewards for given target observations on a POMDP for the given resolution only.
-                 * On-the-fly state space generation is used for the overapproximation
-                 *
-                 * @param targetObservations the set of observations to be reached
-                 * @param min true if minimum rewards are to be computed
-                 * @return A struct containing the overapproximation (overApproxValue) and underapproximation (underApproxValue) values
-                 */
-                std::unique_ptr<POMDPCheckResult<ValueType>>
-                computeReachabilityRewardOTF(std::set<uint32_t> const &targetObservations, bool min);
-
-            private:
-                /**
-                 * Helper method to compute the inital step of the refinement loop
-                 *
-                 * @param targetObservations set of target observations
-                 * @param min true if minimum value is to be computed
-                 * @param observationResolutionVector vector containing the resolution to be used for each observation
-                 * @param computeRewards true if rewards are to be computed, false if probability is computed
-                 * @param overApproximationMap optional mapping of original POMDP states to a naive overapproximation value
-                 * @param underApproximationMap optional mapping of original POMDP states to a naive underapproximation value
-                 * @param maxUaModelSize the maximum size of the underapproximation model to be generated
-                 * @return struct containing components generated during the computation to be used in later refinement iterations
-                 */
-                std::shared_ptr<RefinementComponents<ValueType>>
-                computeFirstRefinementStep(std::set<uint32_t> const &targetObservations, bool min, std::vector<uint64_t> &observationResolutionVector,
-                                           bool computeRewards, std::vector<ValueType> const& lowerPomdpValueBounds, std::vector<ValueType> const& upperPomdpValueBounds, uint64_t maxUaModelSize = 200);
-
-                std::shared_ptr<RefinementComponents<ValueType>>
-                computeRefinementStep(std::set<uint32_t> const &targetObservations, bool min, std::vector<uint64_t> &observationResolutionVector,
-                                      bool computeRewards, std::shared_ptr<RefinementComponents<ValueType>> refinementComponents,
-                                      std::set<uint32_t> changedObservations,
-                                      boost::optional<std::map<uint64_t, ValueType>> overApproximationMap = boost::none,
-                                      boost::optional<std::map<uint64_t, ValueType>> underApproximationMap = boost::none, uint64_t maxUaModelSize = 200);
-
                 /**
                  * Helper method that handles the computation of reachability probabilities and rewards using the on-the-fly state space generation for a fixed grid size
                  *
@@ -138,10 +88,34 @@ namespace storm {
                  * @param maxUaModelSize the maximum size of the underapproximation model to be generated
                  * @return A struct containing the overapproximation (overApproxValue) and underapproximation (underApproxValue) values
                  */
-                std::unique_ptr<POMDPCheckResult<ValueType>>
-                computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards,
-                                       std::vector<ValueType> const& lowerPomdpValueBounds, std::vector<ValueType> const& upperPomdpValueBounds, uint64_t maxUaModelSize = 200);
+                void computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, std::vector<ValueType> const& lowerPomdpValueBounds, std::vector<ValueType> const& upperPomdpValueBounds, Result& result);
+                
+                
+                /**
+                 * Compute the reachability probability of given target observations on a POMDP using the automatic refinement loop
+                 *
+                 * @param targetObservations the set of observations to be reached
+                 * @param min true if minimum probability is to be computed
+                 * @return A struct containing the final overapproximation (overApproxValue) and underapproximation (underApproxValue) values
+                 */
+                void refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, std::vector<ValueType> const& lowerPomdpValueBounds, std::vector<ValueType> const& upperPomdpValueBounds, Result& result);
 
+                /**
+                 * Builds and checks an MDP that over-approximates the POMDP behavior, i.e. provides an upper bound for maximizing and a lower bound for minimizing properties
+                 */
+                std::shared_ptr<ExplorerType> computeOverApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, std::vector<ValueType> const& lowerPomdpValueBounds, std::vector<ValueType> const& upperPomdpValueBounds, std::vector<uint64_t>& observationResolutionVector, std::shared_ptr<BeliefManagerType>& beliefManager);
+
+                void refineOverApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, std::vector<uint64_t>& observationResolutionVector, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& overApproximation);
+
+                /**
+                 * Builds and checks an MDP that under-approximates the POMDP behavior, i.e. provides a lower bound for maximizing and an upper bound for minimizing properties
+                 */
+                std::shared_ptr<ExplorerType> computeUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, std::vector<ValueType> const& lowerPomdpValueBounds, std::vector<ValueType> const& upperPomdpValueBounds, uint64_t maxStateCount, std::shared_ptr<BeliefManagerType>& beliefManager);
+
+                void refineUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, uint64_t maxStateCount, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation);
+
+
+#ifdef REMOVE_THIS
                 /**
                  * Helper to compute an underapproximation of the reachability property.
                  * The implemented method unrolls the belief support of the given POMDP up to a given number of belief states.
@@ -243,7 +217,8 @@ namespace storm {
                  */
                 ValueType getRewardAfterAction(uint64_t action, storm::pomdp::Belief<ValueType> const& belief);
                 ValueType getRewardAfterAction(uint64_t action, std::map<uint64_t, ValueType> const& belief);
-
+#endif //REMOVE_THIS
+                
                 struct Statistics {
                     Statistics();
                     boost::optional<uint64_t> refinementSteps;
@@ -262,7 +237,7 @@ namespace storm {
                 };
                 Statistics statistics;
                 
-                storm::models::sparse::Pomdp<ValueType, RewardModelType> const& pomdp;
+                PomdpModelType const& pomdp;
                 Options options;
                 storm::utility::ConstantsComparator<ValueType> cc;
             };

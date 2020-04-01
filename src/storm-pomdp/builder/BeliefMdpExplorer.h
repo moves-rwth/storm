@@ -6,6 +6,7 @@
 #include <map>
 #include <boost/optional.hpp>
 
+#include "storm-parsers/api/properties.h"
 #include "storm/api/properties.h"
 #include "storm/api/verification.h"
 
@@ -13,20 +14,25 @@
 #include "storm/utility/macros.h"
 #include "storm-pomdp/storage/BeliefManager.h"
 #include "storm/utility/SignalHandler.h"
+#include "storm/modelchecker/results/CheckResult.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/modelchecker/hints/ExplicitModelCheckerHint.cpp"
 
 namespace storm {
     namespace builder {
-        template<typename PomdpType>
+        template<typename PomdpType, typename BeliefValueType = typename PomdpType::ValueType>
         class BeliefMdpExplorer {
         public:
             typedef typename PomdpType::ValueType ValueType;
-            typedef storm::storage::BeliefManager<PomdpType> BeliefManagerType;
+            typedef storm::storage::BeliefManager<PomdpType, BeliefValueType> BeliefManagerType;
             typedef typename BeliefManagerType::BeliefId BeliefId;
             typedef uint64_t MdpStateType;
             
             BeliefMdpExplorer(std::shared_ptr<BeliefManagerType> beliefManager, std::vector<ValueType> const& pomdpLowerValueBounds, std::vector<ValueType> const& pomdpUpperValueBounds) : beliefManager(beliefManager), pomdpLowerValueBounds(pomdpLowerValueBounds), pomdpUpperValueBounds(pomdpUpperValueBounds) {
                 // Intentionally left empty
             }
+            BeliefMdpExplorer(BeliefMdpExplorer&& other) = default;
 
             void startNewExploration(boost::optional<ValueType> extraTargetStateValue = boost::none, boost::optional<ValueType> extraBottomStateValue = boost::none) {
                 // Reset data from potential previous explorations
