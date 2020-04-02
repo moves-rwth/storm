@@ -7,13 +7,16 @@ namespace storm {
 namespace transformations {
 namespace dft {
 
+/*!
+ * Transformator for DFT -> BDD.
+ */
 template <storm::dd::DdType Type, typename ValueType>
 class SftToBddTransformator {
    public:
     SftToBddTransformator(std::shared_ptr<storm::dd::DdManager<Type>> ddManager)
         : ddManager{ddManager} {}
 
-    storm::dd::Bdd<Type> translate(
+    storm::dd::Bdd<Type> transform(
         std::shared_ptr<storm::storage::DFT<ValueType>> dft) {
         // create Variables for the BEs
         // auto basicElements = dft->getBasicElements();

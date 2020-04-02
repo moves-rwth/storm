@@ -26,7 +26,7 @@ class SFTBDDChecker {
         storm::transformations::dft::SftToBddTransformator<Type, ValueType>
             transformer{ddManager};
 
-        return transformer.translate(dft);
+        return transformer.transform(dft);
     }
 
    private:
