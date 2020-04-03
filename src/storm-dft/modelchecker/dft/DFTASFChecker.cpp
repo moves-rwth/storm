@@ -255,7 +255,7 @@ namespace storm {
                 // Construct selected children from combination
                 std::vector<uint64_t> combinationChildren;
                 for (size_t j = 0; j < vot->nrChildren(); ++j) {
-                    if (combination & (1 << j)) {
+                    if (combination & (1ul << j)) {
                         combinationChildren.push_back(childVarIndices.at(j));
                     }
                 }
@@ -270,7 +270,7 @@ namespace storm {
                 // Generate next permutation
                 combination = nextBitPermutation(combination);
                 ++k;
-            } while (combination < (1 << vot->nrChildren()) && combination != 0);
+            } while (combination < (1ul << vot->nrChildren()) && combination != 0);
 
             // Constraint is OR over all possible combinations
             constraints.push_back(std::make_shared<IsMinimum>(timePointVariables.at(i), tmpVars));
