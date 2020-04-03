@@ -43,6 +43,10 @@ namespace storm {
             }
             BeliefMdpExplorer(BeliefMdpExplorer&& other) = default;
 
+            BeliefManagerType const& getBeliefManager() const {
+                return *beliefManager;
+            }
+            
             void startNewExploration(boost::optional<ValueType> extraTargetStateValue = boost::none, boost::optional<ValueType> extraBottomStateValue = boost::none) {
                 status = Status::Exploring;
                 // Reset data from potential previous explorations
@@ -101,7 +105,7 @@ namespace storm {
                 exploredBeliefIds.clear();
                 exploredBeliefIds.grow(beliefManager->getNumberOfBeliefIds(), false);
                 exploredMdpTransitions.clear();
-                exploredMdpTransitions.resize(exploredMdp->getNumberOfChoices);
+                exploredMdpTransitions.resize(exploredMdp->getNumberOfChoices());
                 exploredChoiceIndices = exploredMdp->getNondeterministicChoiceIndices();
                 mdpActionRewards.clear();
                 if (exploredMdp->hasRewardModel()) {
@@ -235,7 +239,7 @@ namespace storm {
                 for (auto const& transition : exploredMdp->getTransitionMatrix().getRow(choiceIndex)) {
                     internalAddTransition(choiceIndex, transition.getColumn(), transition.getValue());
                     // Check whether exploration is needed
-                    auto beliefId = mdpStateToBeliefIdMap[transition.getColumn()];
+                    auto beliefId = getBeliefId(transition.getColumn());
                     if (beliefId != beliefManager->noId()) { // Not the extra target or bottom state
                         if (!exploredBeliefIds.get(beliefId)) {
                             // This belief needs exploration
@@ -397,6 +401,10 @@ namespace storm {
                 status = Status::ModelChecked;
             }
             
+            bool hasComputedValues() const {
+                return status == Status::ModelChecked;
+            }
+            
             std::vector<ValueType> const& getValuesOfExploredMdp() const {
                 STORM_LOG_ASSERT(status == Status::ModelChecked, "Method call is invalid in current status.");
                 return values;
@@ -407,6 +415,51 @@ namespace storm {
                 STORM_LOG_ASSERT(exploredMdp, "Tried to get a value but no MDP was explored.");
                 return getValuesOfExploredMdp()[exploredMdp->getInitialStates().getNextSetIndex(0)];
             }
+            
+            MdpStateType getBeliefId(MdpStateType exploredMdpState) const {
+                STORM_LOG_ASSERT(status != Status::Uninitialized, "Method call is invalid in current status.");
+                return mdpStateToBeliefIdMap[exploredMdpState];
+            }
+            
+            struct SuccessorObservationInformation {
+                SuccessorObservationInformation(ValueType const& obsProb, ValueType const& maxProb, uint64_t const& count) : observationProbability(obsProb), maxProbabilityToSuccessorWithObs(maxProb), successorWithObsCount(count) {
+                    // Intentionally left empty.
+                }
+                
+                void join(SuccessorObservationInformation other) {
+                    observationProbability += other.observationProbability;
+                    maxProbabilityToSuccessorWithObs = std::max(maxProbabilityToSuccessorWithObs, other.maxProbabilityToSuccessorWithObs);
+                    successorWithObsCount += other.successorWithObsCount;
+                }
+                
+                ValueType observationProbability; /// The probability we move to the corresponding observation.
+                ValueType maxProbabilityToSuccessorWithObs; /// The maximal probability to move to a successor with the corresponding observation.
+                uint64_t successorWithObsCount; /// The number of successors with this observation
+            };
+            
+            void gatherSuccessorObservationInformationAtCurrentState(uint64_t localActionIndex, std::map<uint32_t, SuccessorObservationInformation> gatheredSuccessorObservations) {
+                STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
+                STORM_LOG_ASSERT(currentStateHasOldBehavior(), "Method call is invalid since the current state has no old behavior");
+                uint64_t mdpChoice = getStartOfCurrentRowGroup() + localActionIndex;
+                gatherSuccessorObservationInformationAtMdpChoice(mdpChoice, gatheredSuccessorObservations);
+            }
+            
+            void gatherSuccessorObservationInformationAtMdpChoice(uint64_t mdpChoice, std::map<uint32_t, SuccessorObservationInformation> gatheredSuccessorObservations) {
+                STORM_LOG_ASSERT(exploredMdp, "Method call is invalid if no MDP has been explored before");
+                for (auto const& entry : exploredMdp->getTransitionMatrix().getRow(mdpChoice)) {
+                    auto const& beliefId = getBeliefId(entry.getColumn());
+                    if (beliefId != beliefManager->noId()) {
+                        auto const& obs = beliefManager->getBeliefObservation(beliefId);
+                        SuccessorObservationInformation info(entry.getValue(), entry.getValue(), 1);
+                        auto obsInsertion = gatheredSuccessorObservations.emplace(obs, info);
+                        if (!obsInsertion.second) {
+                            // There already is an entry for this observation, so join the two informations
+                            obsInsertion.first->second.join(info);
+                        }
+                    }
+                }
+            }
+            
             
         private:
             MdpStateType noState() const {
@@ -438,7 +491,8 @@ namespace storm {
             }
             
             MdpStateType getCurrentBeliefId() const {
-                return mdpStateToBeliefIdMap[getCurrentMdpState()];
+                STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
+                return getBeliefId(getCurrentMdpState());
             }
             
             void internalAddTransition(uint64_t const& row, MdpStateType const& column, ValueType const& value) {
