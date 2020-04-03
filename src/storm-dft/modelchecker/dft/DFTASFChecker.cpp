@@ -254,6 +254,7 @@ namespace storm {
             do {
                 // Construct selected children from combination
                 std::vector<uint64_t> combinationChildren;
+                STORM_LOG_ASSERT(vot->nrChildren() < 64, "Too many children of a VOT Gate.");
                 for (size_t j = 0; j < vot->nrChildren(); ++j) {
                     if (combination & (1ul << j)) {
                         combinationChildren.push_back(childVarIndices.at(j));
