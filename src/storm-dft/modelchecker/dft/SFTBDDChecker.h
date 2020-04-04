@@ -14,14 +14,18 @@ namespace modelchecker {
  * Main class for the SFTBDDChecker
  *
  */
-template <storm::dd::DdType Type>
+template <typename ValueType, storm::dd::DdType Type>
 class SFTBDDChecker {
    public:
-    SFTBDDChecker()
-        : ddManager{std::make_shared<storm::dd::DdManager<Type>>()} {}
+    using Bdd = storm::dd::Bdd<Type>;
 
-    template <typename ValueType>
-    storm::dd::Bdd<Type> translate(
+    SFTBDDChecker(std::shared_ptr<storm::storage::DFT<ValueType>> dft)
+        : dft{std::move(dft)},
+          ddManager{std::make_shared<storm::dd::DdManager<Type>>()} {
+        // Intentionally left empty.
+    }
+
+    Bdd translate(
         std::shared_ptr<storm::storage::DFT<ValueType>> dft) {
         storm::transformations::dft::SftToBddTransformator<Type, ValueType>
             transformer{ddManager};
@@ -30,6 +34,7 @@ class SFTBDDChecker {
     }
 
    private:
+    std::shared_ptr<storm::storage::DFT<ValueType>> dft;
     std::shared_ptr<storm::dd::DdManager<Type>> ddManager;
 };
 
