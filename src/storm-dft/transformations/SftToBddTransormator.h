@@ -21,9 +21,8 @@ class SftToBddTransformator {
     SftToBddTransformator(std::shared_ptr<storm::dd::DdManager<Type>> ddManager)
         : ddManager{ddManager} {}
 
-    Bdd transform(std::shared_ptr<storm::storage::DFT<ValueType>> dft) {
+    Bdd transform(std::shared_ptr<storm::storage::DFT<ValueType>> const dft) {
         // create Variables for the BEs
-        // auto basicElements = dft->getBasicElements();
         std::vector<storm::expressions::Variable> variables{};
         for (auto const& i : dft->getBasicElements()) {
             auto const& tmpVariables{ddManager->addMetaVariable(i->name(), 1)};
@@ -68,9 +67,8 @@ class SftToBddTransformator {
             }
             return tmpBdd;
         } else if (gate->type() == storm::storage::DFTElementType::VOT) {
-            return translate(
-                std::dynamic_pointer_cast<storm::storage::DFTVot<ValueType> const>(
-                    gate));
+            return translate(std::dynamic_pointer_cast<
+                             storm::storage::DFTVot<ValueType> const>(gate));
         }
         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
                         "Gate is not supported. Probably not a SFT.");
