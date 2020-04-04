@@ -22,6 +22,7 @@
 template<typename ValueType>
 void processOptions() {
 
+    auto const& coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
     auto const& dftIOSettings = storm::settings::getModule<storm::settings::modules::DftIOSettings>();
     auto const& faultTreeSettings = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>();
     auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
@@ -73,6 +74,11 @@ void processOptions() {
     if (dftIOSettings.isExportToSmt()) {
         storm::api::exportDFTToSMT<ValueType>(*dft, dftIOSettings.getExportSmtFilename());
         return;
+    }
+
+    //Export to Bdd Dot
+    if(dftIOSettings.isExportToBddDot()) {
+        storm::api::exportDFTToBddDot<ValueType>(dft, coreSettings.getDdLibraryType(), dftIOSettings.getExportBddDotFilename());
     }
 
     bool useSMT = false;
