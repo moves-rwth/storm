@@ -21,6 +21,14 @@ class SftToBddTransformator {
     SftToBddTransformator(std::shared_ptr<storm::dd::DdManager<Type>> ddManager)
         : ddManager{ddManager} {}
 
+    /**
+     * Transform a sft into a BDD
+     * representing the function of the toplevel gate.
+     *
+     * \exception storm::exceptions::NotSupportedException
+     * Either the DFT is no SFT
+     * or there is a VOT gate with more then 63 children.
+     */
     Bdd transform(std::shared_ptr<storm::storage::DFT<ValueType>> const dft) {
         // create Variables for the BEs
         for (auto const& i : dft->getBasicElements()) {
@@ -31,6 +39,13 @@ class SftToBddTransformator {
     }
 
    private:
+    /**
+     * Translate a simple DFT element into a BDD.
+     *
+     * \exception storm::exceptions::NotSupportedException
+     * Either the DFT is no SFT
+     * or there is a VOT gate with more then 63 children.
+     */
     Bdd translate(
         std::shared_ptr<storm::storage::DFTElement<ValueType> const> element) {
         if (element->isGate()) {
@@ -45,6 +60,13 @@ class SftToBddTransformator {
         }
     }
 
+    /**
+     * Translate a simple DFT gate into a BDD.
+     *
+     * \exception storm::exceptions::NotSupportedException
+     * Either the DFT is no SFT
+     * or there is a VOT gate with more then 63 children.
+     */
     Bdd translate(
         std::shared_ptr<storm::storage::DFTGate<ValueType> const> gate) {
         if (gate->type() == storm::storage::DFTElementType::AND) {
@@ -72,6 +94,13 @@ class SftToBddTransformator {
         return ddManager->getBddZero();
     }
 
+    /**
+     * Translate a DFT VOT gate into a BDD.
+     *
+     * \exception storm::exceptions::NotSupportedException
+     * Either the DFT is no SFT
+     * or there is a VOT gate with more then 63 children.
+     */
     Bdd translate(
         std::shared_ptr<storm::storage::DFTVot<ValueType> const> vot) {
         auto children{vot->children()};
@@ -108,6 +137,12 @@ class SftToBddTransformator {
         return outerBdd;
     }
 
+    /**
+     * Translate a DFT basic element gate into a BDD.
+     *
+     * \note This is the rekursion anker.
+     *
+     */
     Bdd translate(std::shared_ptr<storm::storage::DFTBE<ValueType> const> const
                       basicElement) {
         auto var = ddManager->getMetaVariable(basicElement->name());
