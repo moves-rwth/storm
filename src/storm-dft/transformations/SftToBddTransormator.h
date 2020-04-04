@@ -23,11 +23,8 @@ class SftToBddTransformator {
 
     Bdd transform(std::shared_ptr<storm::storage::DFT<ValueType>> const dft) {
         // create Variables for the BEs
-        std::vector<storm::expressions::Variable> variables{};
         for (auto const& i : dft->getBasicElements()) {
-            auto const& tmpVariables{ddManager->addMetaVariable(i->name(), 1)};
-            variables.insert(variables.end(), tmpVariables.begin(),
-                             tmpVariables.end());
+            ddManager->addMetaVariable(i->name(), 1);
         }
 
         return translate(dft->getTopLevelGate());
