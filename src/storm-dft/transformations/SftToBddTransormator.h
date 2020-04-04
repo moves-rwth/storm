@@ -56,6 +56,8 @@ class SftToBddTransformator {
             return translate(std::dynamic_pointer_cast<
                              storm::storage::DFTBE<ValueType> const>(element));
         } else {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                            "Element is not supported. Probably not a SFT.");
             return ddManager->getBddZero();
         }
     }
