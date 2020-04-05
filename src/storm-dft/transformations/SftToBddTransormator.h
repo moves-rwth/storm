@@ -18,8 +18,9 @@ class SftToBddTransformator {
    public:
     using Bdd = storm::dd::Bdd<Type>;
 
-    SftToBddTransformator(std::shared_ptr<storm::dd::DdManager<Type>> ddManager)
-        : ddManager{ddManager} {}
+    SftToBddTransformator(std::shared_ptr<storm::storage::DFT<ValueType>> dft,
+                          std::shared_ptr<storm::dd::DdManager<Type>> ddManager)
+        : dft{std::move(dft)}, ddManager{std::move(ddManager)} {}
 
     /**
      * Transform a sft into a BDD
@@ -29,7 +30,7 @@ class SftToBddTransformator {
      * Either the DFT is no SFT
      * or there is a VOT gate with more then 63 children.
      */
-    Bdd transform(std::shared_ptr<storm::storage::DFT<ValueType>> const dft) {
+    Bdd transform() {
         // create Variables for the BEs
         for (auto const& i : dft->getBasicElements()) {
             ddManager->addMetaVariable(i->name(), 1);
@@ -152,6 +153,7 @@ class SftToBddTransformator {
         return ddManager->getEncoding(var, 1);
     }
 
+    std::shared_ptr<storm::storage::DFT<ValueType>> dft;
     std::shared_ptr<storm::dd::DdManager<Type>> ddManager;
 };
 

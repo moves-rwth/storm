@@ -27,12 +27,18 @@ class SFTBDDChecker {
 
     Bdd translate() {
         storm::transformations::dft::SftToBddTransformator<Type, ValueType>
-            transformer{ddManager};
+            transformer{dft, ddManager};
 
-        return transformer.transform(dft);
+        return transformer.transform();
     }
 
+
+
    private:
+
+
+
+
     std::shared_ptr<storm::storage::DFT<ValueType>> dft;
     std::shared_ptr<storm::dd::DdManager<Type>> ddManager;
 };
