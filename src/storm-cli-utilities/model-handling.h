@@ -566,6 +566,10 @@ namespace storm {
             if (ioSettings.isExportExplicitSet()) {
                 storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), input.model ? input.model.get().getParameterNames() : std::vector<std::string>());
             }
+
+            if (ioSettings.isExportDdSet()) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exporting in drdd format is only supported for DDs.");
+            }
             
             if (ioSettings.isExportDotSet()) {
                 storm::api::exportSparseModelAsDot(model, ioSettings.getExportDotFilename(), ioSettings.getExportDotMaxWidth());
@@ -575,6 +579,10 @@ namespace storm {
         template <storm::dd::DdType DdType, typename ValueType>
         void exportDdModel(std::shared_ptr<storm::models::symbolic::Model<DdType, ValueType>> const& model, SymbolicInput const& input) {
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+
+            if (ioSettings.isExportExplicitSet()) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Exporting in drn format is only supported for sparse models.");
+            }
 
             if (ioSettings.isExportDdSet()) {
                 storm::api::exportSparseModelAsDrdd(model, ioSettings.getExportDdFilename());
