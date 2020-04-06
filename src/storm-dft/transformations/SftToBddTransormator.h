@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "storm-dft/storage/dft/DFT.h"
 #include "storm/storage/dd/DdManager.h"
@@ -20,7 +21,18 @@ class SftToBddTransformator {
 
     SftToBddTransformator(std::shared_ptr<storm::storage::DFT<ValueType>> dft,
                           std::shared_ptr<storm::dd::DdManager<Type>> ddManager)
-        : dft{std::move(dft)}, ddManager{std::move(ddManager)} {}
+        : dft{std::move(dft)}, ddManager{std::move(ddManager)}, variables{} {
+        // create Variables for the BEs
+        for (auto const& i : this->dft->getBasicElements()) {
+            // Filter constantBeTrigger
+            if (i->name() != "constantBeTrigger") {
+                auto tmpVars{this->ddManager->addMetaVariable(i->name(), 1)};
+
+                variables.insert(variables.end(), tmpVars.begin(),
+                                 tmpVars.end());
+            }
+        }
+    }
 
     /**
      * Transform a sft into a BDD
@@ -30,13 +42,13 @@ class SftToBddTransformator {
      * Either the DFT is no SFT
      * or there is a VOT gate with more then 63 children.
      */
-    Bdd transform() {
-        // create Variables for the BEs
-        for (auto const& i : dft->getBasicElements()) {
-            ddManager->addMetaVariable(i->name(), 1);
-        }
+    Bdd transform() { return translate(dft->getTopLevelGate()); }
 
-        return translate(dft->getTopLevelGate());
+    /**
+     * Get Variables in the order they where inserted
+     */
+    std::vector<storm::expressions::Variable> const& getDdVariables() {
+        return variables;
     }
 
    private:
@@ -155,6 +167,8 @@ class SftToBddTransformator {
 
     std::shared_ptr<storm::storage::DFT<ValueType>> dft;
     std::shared_ptr<storm::dd::DdManager<Type>> ddManager;
+
+    std::vector<storm::expressions::Variable> variables;
 };
 
 }  // namespace dft
