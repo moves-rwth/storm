@@ -419,7 +419,6 @@ namespace storm {
                 
                 overApproximation->finishExploration();
                 statistics.overApproximationBuildTime.stop();
-                STORM_LOG_DEBUG("Explored " << statistics.overApproximationStates.get() << " states.");
                 
                 statistics.overApproximationCheckTime.start();
                 overApproximation->computeValuesOfExploredMdp(min ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize);

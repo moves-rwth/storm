@@ -278,7 +278,7 @@ namespace storm {
 
                 // We are not exploring anymore
                 currentMdpState = noState();
-                
+
                 // If this was a restarted exploration, we might still have unexplored states (which were only reachable and explored in a previous build).
                 // We get rid of these before rebuilding the model
                 if (exploredMdp) {
@@ -323,6 +323,8 @@ namespace storm {
                 storm::storage::sparse::ModelComponents<ValueType> modelComponents(std::move(mdpTransitionMatrix), std::move(mdpLabeling), std::move(mdpRewardModels));
                 exploredMdp = std::make_shared<storm::models::sparse::Mdp<ValueType>>(std::move(modelComponents));
                 status = Status::ModelFinished;
+                STORM_LOG_DEBUG("Explored Mdp with " << exploredMdp->getNumberOfStates() << " states (" << truncatedStates.getNumberOfSetBits() << "of which were flagged as truncated).");
+
             }
 
             void dropUnexploredStates() {
