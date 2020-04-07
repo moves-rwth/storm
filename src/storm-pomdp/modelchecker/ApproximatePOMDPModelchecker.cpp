@@ -264,21 +264,23 @@ namespace storm {
              * Here, 0 means a bad approximation and 1 means a good approximation.
              */
             template<typename PomdpModelType, typename BeliefValueType>
-            typename ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::ValueType ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::rateObservation(typename ExplorerType::SuccessorObservationInformation const& info) {
+            typename ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::ValueType ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::rateObservation(typename ExplorerType::SuccessorObservationInformation const& info, uint64_t const& observationResolution, uint64_t const& maxResolution) {
                 auto n = storm::utility::convertNumber<ValueType>(info.successorWithObsCount);
                 auto one = storm::utility::one<ValueType>();
                 
-                // Create the actual rating for this observation at this choice from the given info
+                // Create the rating for this observation at this choice from the given info
                 ValueType obsChoiceRating = info.maxProbabilityToSuccessorWithObs / info.observationProbability;
                 // At this point, obsRating is the largest triangulation weight (which ranges from 1/n to 1
                 // Normalize the rating so that it ranges from 0 to 1, where
                 // 0 means that the actual belief lies in the middle of the triangulating simplex (i.e. a "bad" approximation) and 1 means that the belief is precisely approximated.
                 obsChoiceRating = (obsChoiceRating * n - one) / (n - one);
+                // Scale the ratings with the resolutions, so that low resolutions get a lower rating (and are thus more likely to be refined)
+                obsChoiceRating *= storm::utility::convertNumber<ValueType>(observationResolution) / storm::utility::convertNumber<ValueType>(maxResolution);
                 return obsChoiceRating;
             }
             
             template<typename PomdpModelType, typename BeliefValueType>
-            std::vector<typename ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::ValueType> ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::getObservationRatings(std::shared_ptr<ExplorerType> const& overApproximation) {
+            std::vector<typename ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::ValueType> ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::getObservationRatings(std::shared_ptr<ExplorerType> const& overApproximation, std::vector<uint64_t> const& observationResolutionVector, uint64_t const& maxResolution) {
                 uint64_t numMdpChoices = overApproximation->getExploredMdp()->getNumberOfChoices();
 
                 std::vector<ValueType> resultingRatings(pomdp.getNrObservations(), storm::utility::one<ValueType>());
@@ -289,7 +291,7 @@ namespace storm {
                     overApproximation->gatherSuccessorObservationInformationAtMdpChoice(mdpChoice, gatheredSuccessorObservations);
                     for (auto const& obsInfo : gatheredSuccessorObservations) {
                         auto const& obs = obsInfo.first;
-                        ValueType obsChoiceRating = rateObservation(obsInfo.second);
+                        ValueType obsChoiceRating = rateObservation(obsInfo.second, observationResolutionVector[obs], maxResolution);
  
                         // The rating of the observation will be the minimum over all choice-based observation ratings
                         resultingRatings[obs] = std::min(resultingRatings[obs], obsChoiceRating);
@@ -303,7 +305,9 @@ namespace storm {
                 STORM_LOG_ASSERT(!refine || refinementAggressiveness != nullptr, "Refinement enabled but no aggressiveness given");
                 STORM_LOG_ASSERT(!refine || *refinementAggressiveness >= storm::utility::zero<ValueType>(), "Can not refine with negative  aggressiveness.");
                 STORM_LOG_ASSERT(!refine || *refinementAggressiveness <= storm::utility::one<ValueType>(), "Refinement with aggressiveness > 1 is invalid.");
-                
+                uint64_t maxResolution = *std::max_element(observationResolutionVector.begin(), observationResolutionVector.end());
+                STORM_LOG_INFO("Refining with maximal resolution " << maxResolution << ".");
+
                 statistics.overApproximationBuildTime.start();
                 storm::storage::BitVector refinedObservations;
                 if (!refine) {
@@ -315,7 +319,7 @@ namespace storm {
                     }
                 } else {
                     // If we refine the existing overApproximation, we need to find out which observation resolutions need refinement.
-                    auto obsRatings = getObservationRatings(overApproximation);
+                    auto obsRatings = getObservationRatings(overApproximation, observationResolutionVector, maxResolution);
                     ValueType minRating = *std::min_element(obsRatings.begin(), obsRatings.end());
                     // Potentially increase the aggressiveness so that at least one observation actually gets refinement.
                     *refinementAggressiveness = std::max(minRating, *refinementAggressiveness);
@@ -356,7 +360,7 @@ namespace storm {
                                 overApproximation->gatherSuccessorObservationInformationAtCurrentState(action, gatheredSuccessorObservations);
                                 for (auto const& obsInfo : gatheredSuccessorObservations) {
                                     if (refinedObservations.get(obsInfo.first)) {
-                                        ValueType obsRating = rateObservation(obsInfo.second);
+                                        ValueType obsRating = rateObservation(obsInfo.second, observationResolutionVector[obsInfo.first], maxResolution);
                                         stateActionRating = std::min(stateActionRating, obsRating);
                                     }
                                 }

@@ -84,9 +84,9 @@ namespace storm {
                  */
                 void buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, uint64_t maxStateCount, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation);
 
-                ValueType rateObservation(typename ExplorerType::SuccessorObservationInformation const& info);
+                ValueType rateObservation(typename ExplorerType::SuccessorObservationInformation const& info, uint64_t const& observationResolution, uint64_t const& maxResolution);
                 
-                std::vector<ValueType> getObservationRatings(std::shared_ptr<ExplorerType> const& overApproximation);
+                std::vector<ValueType> getObservationRatings(std::shared_ptr<ExplorerType> const& overApproximation, std::vector<uint64_t> const& observationResolutionVector, uint64_t const& maxResolution);
                 
                 struct Statistics {
                     Statistics();
