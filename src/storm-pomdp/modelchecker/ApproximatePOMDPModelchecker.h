@@ -96,11 +96,13 @@ namespace storm {
                     bool overApproximationBuildAborted;
                     storm::utility::Stopwatch overApproximationBuildTime;
                     storm::utility::Stopwatch overApproximationCheckTime;
+                    boost::optional<uint64_t> overApproximationMaxResolution;
                     
                     boost::optional<uint64_t> underApproximationStates;
                     bool underApproximationBuildAborted;
                     storm::utility::Stopwatch underApproximationBuildTime;
                     storm::utility::Stopwatch underApproximationCheckTime;
+                    boost::optional<uint64_t> underApproximationStateLimit;
                     
                     bool aborted;
                 };

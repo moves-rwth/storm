@@ -133,6 +133,7 @@ namespace storm {
                         stream << ">=";
                     }
                     stream << statistics.overApproximationStates.get() << std::endl;
+                    stream << "# Maximal resolution for over-approximation: " << statistics.overApproximationMaxResolution.get() << std::endl;
                     stream << "# Time spend for building the over-approx grid MDP(s): " << statistics.overApproximationBuildTime << std::endl;
                     stream << "# Time spend for checking the over-approx grid MDP(s): " << statistics.overApproximationCheckTime << std::endl;
                 }
@@ -148,6 +149,7 @@ namespace storm {
                         stream << ">=";
                     }
                     stream << statistics.underApproximationStates.get() << std::endl;
+                    stream << "# Exploration state limit for under-approximation: " << statistics.underApproximationStateLimit.get() << std::endl;
                     stream << "# Time spend for building the under-approx grid MDP(s): " << statistics.underApproximationBuildTime << std::endl;
                     stream << "# Time spend for checking the under-approx grid MDP(s): " << statistics.underApproximationCheckTime << std::endl;
                 }
@@ -231,14 +233,16 @@ namespace storm {
                 // ValueType lastMinScore = storm::utility::infinity<ValueType>();
                 // Start refinement
                 statistics.refinementSteps = 0;
-                ValueType refinementAggressiveness = storm::utility::zero<ValueType>();
+                ValueType refinementAggressiveness = storm::utility::convertNumber<ValueType>(0.0);
                 while (result.diff() > options.refinementPrecision) {
                     if (storm::utility::resources::isTerminate()) {
                         break;
                     }
+                    ++statistics.refinementSteps.get();
+                    STORM_LOG_INFO("Starting refinement step " << statistics.refinementSteps.get() << ". Current difference between lower and upper bound is " << result.diff() << ".");
                     
                     // Refine over-approximation
-                    refinementAggressiveness *= storm::utility::convertNumber<ValueType>(1.1);;
+                    STORM_LOG_DEBUG("Refining over-approximation with aggressiveness " << refinementAggressiveness << ".");
                     buildOverApproximation(targetObservations, min, rewardModelName.is_initialized(), true, &refinementAggressiveness, observationResolutionVector, overApproxBeliefManager, overApproximation);
                     if (overApproximation->hasComputedValues()) {
                         overApproxValue = overApproximation->getComputedValueAtInitialState();
@@ -246,16 +250,18 @@ namespace storm {
                         break;
                     }
                     
-                    // Refine under-approximation
-                    underApproxSizeThreshold *= storm::utility::convertNumber<uint64_t, ValueType>(storm::utility::convertNumber<ValueType>(underApproxSizeThreshold) * (storm::utility::one<ValueType>() + refinementAggressiveness));
-                    underApproxSizeThreshold = std::max<uint64_t>(underApproxSizeThreshold, overApproximation->getExploredMdp()->getNumberOfStates());
-                    buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), underApproxSizeThreshold, underApproxBeliefManager, underApproximation);
-                    if (underApproximation->hasComputedValues()) {
-                        underApproxValue = underApproximation->getComputedValueAtInitialState();
-                    } else {
-                        break;
+                    if (result.diff() > options.refinementPrecision) {
+                        // Refine under-approximation
+                        underApproxSizeThreshold *= storm::utility::convertNumber<uint64_t, ValueType>(storm::utility::convertNumber<ValueType>(underApproxSizeThreshold) * (storm::utility::one<ValueType>() + refinementAggressiveness));
+                        underApproxSizeThreshold = std::max<uint64_t>(underApproxSizeThreshold, overApproximation->getExploredMdp()->getNumberOfStates());
+                        STORM_LOG_DEBUG("Refining under-approximation with size threshold " << underApproxSizeThreshold << ".");
+                        buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), underApproxSizeThreshold, underApproxBeliefManager, underApproximation);
+                        if (underApproximation->hasComputedValues()) {
+                            underApproxValue = underApproximation->getComputedValueAtInitialState();
+                        } else {
+                            break;
+                        }
                     }
-                    ++statistics.refinementSteps.get();
                 }
             }
 
@@ -305,8 +311,9 @@ namespace storm {
                 STORM_LOG_ASSERT(!refine || refinementAggressiveness != nullptr, "Refinement enabled but no aggressiveness given");
                 STORM_LOG_ASSERT(!refine || *refinementAggressiveness >= storm::utility::zero<ValueType>(), "Can not refine with negative  aggressiveness.");
                 STORM_LOG_ASSERT(!refine || *refinementAggressiveness <= storm::utility::one<ValueType>(), "Refinement with aggressiveness > 1 is invalid.");
-                uint64_t maxResolution = *std::max_element(observationResolutionVector.begin(), observationResolutionVector.end());
-                STORM_LOG_INFO("Refining with maximal resolution " << maxResolution << ".");
+                
+                // current maximal resolution (needed for refinement heuristic)
+                uint64_t oldMaxResolution = *std::max_element(observationResolutionVector.begin(), observationResolutionVector.end());
 
                 statistics.overApproximationBuildTime.start();
                 storm::storage::BitVector refinedObservations;
@@ -319,12 +326,12 @@ namespace storm {
                     }
                 } else {
                     // If we refine the existing overApproximation, we need to find out which observation resolutions need refinement.
-                    auto obsRatings = getObservationRatings(overApproximation, observationResolutionVector, maxResolution);
+                    auto obsRatings = getObservationRatings(overApproximation, observationResolutionVector, oldMaxResolution);
                     ValueType minRating = *std::min_element(obsRatings.begin(), obsRatings.end());
                     // Potentially increase the aggressiveness so that at least one observation actually gets refinement.
                     *refinementAggressiveness = std::max(minRating, *refinementAggressiveness);
                     refinedObservations = storm::utility::vector::filter<ValueType>(obsRatings, [&refinementAggressiveness](ValueType const& r) { return r <= *refinementAggressiveness;});
-                    STORM_PRINT("Refining the resolution of " << refinedObservations.getNumberOfSetBits() << "/" << refinedObservations.size() << " observations.");
+                    STORM_LOG_DEBUG("Refining the resolution of " << refinedObservations.getNumberOfSetBits() << "/" << refinedObservations.size() << " observations.");
                     for (auto const& obs : refinedObservations) {
                         // Heuristically increment the resolution at the refined observations (also based on the refinementAggressiveness)
                         ValueType incrementValue = storm::utility::one<ValueType>() + (*refinementAggressiveness) * storm::utility::convertNumber<ValueType>(observationResolutionVector[obs]);
@@ -332,6 +339,7 @@ namespace storm {
                     }
                     overApproximation->restartExploration();
                 }
+                statistics.overApproximationMaxResolution = *std::max_element(observationResolutionVector.begin(), observationResolutionVector.end());
                 
                 // Start exploration
                 std::map<uint32_t, typename ExplorerType::SuccessorObservationInformation> gatheredSuccessorObservations; // Declare here to avoid reallocations
@@ -360,7 +368,7 @@ namespace storm {
                                 overApproximation->gatherSuccessorObservationInformationAtCurrentState(action, gatheredSuccessorObservations);
                                 for (auto const& obsInfo : gatheredSuccessorObservations) {
                                     if (refinedObservations.get(obsInfo.first)) {
-                                        ValueType obsRating = rateObservation(obsInfo.second, observationResolutionVector[obsInfo.first], maxResolution);
+                                        ValueType obsRating = rateObservation(obsInfo.second, observationResolutionVector[obsInfo.first], oldMaxResolution);
                                         stateActionRating = std::min(stateActionRating, obsRating);
                                     }
                                 }
@@ -411,7 +419,8 @@ namespace storm {
                 
                 overApproximation->finishExploration();
                 statistics.overApproximationBuildTime.stop();
-
+                STORM_LOG_DEBUG("Explored " << statistics.overApproximationStates.get() << " states.");
+                
                 statistics.overApproximationCheckTime.start();
                 overApproximation->computeValuesOfExploredMdp(min ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize);
                 statistics.overApproximationCheckTime.stop();
@@ -421,6 +430,7 @@ namespace storm {
             void ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, uint64_t maxStateCount, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation) {
                 
                 statistics.underApproximationBuildTime.start();
+                statistics.underApproximationStateLimit = maxStateCount;
                 if (!underApproximation->hasComputedValues()) {
                     // Build a new under approximation
                     if (computeRewards) {
