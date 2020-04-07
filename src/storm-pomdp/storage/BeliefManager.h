@@ -120,11 +120,11 @@ namespace storm {
                 return beliefs.size();
             }
             
-            std::map<BeliefId, ValueType> expandAndTriangulate(BeliefId const& beliefId, uint64_t actionIndex, std::vector<uint64_t> const& observationResolutions) {
+            std::vector<std::pair<BeliefId, ValueType>> expandAndTriangulate(BeliefId const& beliefId, uint64_t actionIndex, std::vector<uint64_t> const& observationResolutions) {
                 return expandInternal(beliefId, actionIndex, observationResolutions);
             }
             
-            std::map<BeliefId, ValueType> expand(BeliefId const& beliefId, uint64_t actionIndex) {
+            std::vector<std::pair<BeliefId, ValueType>> expand(BeliefId const& beliefId, uint64_t actionIndex) {
                 return expandInternal(beliefId, actionIndex);
             }
             
@@ -341,8 +341,8 @@ namespace storm {
                 return result;
             }
             
-            std::map<BeliefId, ValueType> expandInternal(BeliefId const& beliefId, uint64_t actionIndex, boost::optional<std::vector<uint64_t>> const& observationTriangulationResolutions = boost::none) {
-                std::map<BeliefId, ValueType> destinations;
+            std::vector<std::pair<BeliefId, ValueType>> expandInternal(BeliefId const& beliefId, uint64_t actionIndex, boost::optional<std::vector<uint64_t>> const& observationTriangulationResolutions = boost::none) {
+                std::vector<std::pair<BeliefId, ValueType>> destinations;
                 // TODO: Output as vector?
                 
                 BeliefType belief = getBelief(beliefId);
@@ -373,13 +373,15 @@ namespace storm {
                     }
                     STORM_LOG_ASSERT(assertBelief(successorBelief), "Invalid successor belief.");
                     
+                    // Insert the destination. We know that destinations have to be disjoined since they have different observations
                     if (observationTriangulationResolutions) {
                         Triangulation triangulation = triangulateBelief(successorBelief, observationTriangulationResolutions.get()[successor.first]);
                         for (size_t j = 0; j < triangulation.size(); ++j) {
-                            addToDistribution(destinations, triangulation.gridPoints[j], triangulation.weights[j] * successor.second);
+                            // Here we additionally assume that triangulation.gridPoints does not contain the same point multiple times
+                            destinations.emplace_back(triangulation.gridPoints[j], triangulation.weights[j] * successor.second);
                         }
                     } else {
-                        addToDistribution(destinations, getOrAddBeliefId(successorBelief), successor.second);
+                        destinations.emplace_back(getOrAddBeliefId(successorBelief), successor.second);
                     }
                 }
     
