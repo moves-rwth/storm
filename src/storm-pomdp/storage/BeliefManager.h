@@ -263,77 +263,93 @@ namespace storm {
                 return pomdp.getObservation(belief.begin()->first);
             }
             
+            struct FreudenthalData {
+                FreudenthalData(StateType const& pomdpState, StateType const& dimension, BeliefValueType const& x) : pomdpState(pomdpState), dimension(dimension), value(storm::utility::floor(x)), diff(x-value) { };
+                StateType pomdpState;
+                StateType dimension; // i
+                BeliefValueType value; // v[i] in the Lovejoy paper
+                BeliefValueType diff; // d[i] in the Lovejoy paper
+            };
+            struct FreudenthalDataComparator {
+                bool operator()(FreudenthalData const& first, FreudenthalData const& second) const {
+                    if (first.diff != second.diff) {
+                        return first.diff > second.diff;
+                    } else {
+                        return first.dimension < second.dimension;
+                    }
+                }
+            };
+            
             Triangulation triangulateBelief(BeliefType belief, uint64_t resolution) {
-                //TODO this can also be simplified using the sparse vector interpretation
                 //TODO Enable chaching for this method?
                 STORM_LOG_ASSERT(assertBelief(belief), "Input belief for triangulation is not valid.");
                 
-                auto nrStates = pomdp.getNumberOfStates();
+                auto convResolution = storm::utility::convertNumber<BeliefValueType>(resolution);
                 
                 // This is the Freudenthal Triangulation as described in Lovejoy (a whole lotta math)
                 // Variable names are based on the paper
-                // TODO avoid reallocations for these vectors
-                std::vector<BeliefValueType> x(nrStates);
-                std::vector<BeliefValueType> v(nrStates);
-                std::vector<BeliefValueType> d(nrStates);
-                auto convResolution = storm::utility::convertNumber<BeliefValueType>(resolution);
-
-                for (size_t i = 0; i < nrStates; ++i) {
-                    for (auto const &probEntry : belief) {
-                        if (probEntry.first >= i) {
-                            x[i] += convResolution * probEntry.second;
-                        }
-                    }
-                    v[i] = storm::utility::floor(x[i]);
-                    d[i] = x[i] - v[i];
+                // However, we speed this up a little by exploiting that belief states usually have sparse support.
+                // TODO: for the sorting, it probably suffices to have a map from diffs to dimensions. The other Freudenthaldata could then also be stored in vectors, which would be a bit more like the original algorithm
+                
+                // Initialize some data
+                std::vector<typename std::set<FreudenthalData, FreudenthalDataComparator>::iterator> dataIterators;
+                dataIterators.reserve(belief.size());
+                // Initialize first row of 'qs' matrix
+                std::vector<BeliefValueType> qsRow;
+                qsRow.reserve(dataIterators.size());
+                std::set<FreudenthalData, FreudenthalDataComparator> freudenthalData;
+                BeliefValueType x = convResolution;
+                for (auto const& entry : belief) {
+                    auto insertionIt = freudenthalData.emplace(entry.first, dataIterators.size(), x).first;
+                    dataIterators.push_back(insertionIt);
+                    qsRow.push_back(dataIterators.back()->value);
+                    x -= entry.second * convResolution;
                 }
-
-                auto p = storm::utility::vector::getSortedIndices(d);
-
-                std::vector<std::vector<BeliefValueType>> qs(nrStates, std::vector<BeliefValueType>(nrStates));
-                for (size_t i = 0; i < nrStates; ++i) {
-                    if (i == 0) {
-                        for (size_t j = 0; j < nrStates; ++j) {
-                            qs[i][j] = v[j];
-                        }
-                    } else {
-                        for (size_t j = 0; j < nrStates; ++j) {
-                            if (j == p[i - 1]) {
-                                qs[i][j] = qs[i - 1][j] + storm::utility::one<BeliefValueType>();
-                            } else {
-                                qs[i][j] = qs[i - 1][j];
-                            }
-                        }
-                    }
-                }
+                qsRow.push_back(storm::utility::zero<BeliefValueType>());
+                assert(!freudenthalData.empty());
                 
                 Triangulation result;
-                // The first weight is 1-sum(other weights). We therefore process the js in reverse order
-                BeliefValueType firstWeight = storm::utility::one<BeliefValueType>();
-                for (size_t j = nrStates; j > 0;) {
-                    --j;
-                    // First create the weights. The weights vector will be reversed at the end.
-                    ValueType weight;
-                    if (j == 0) {
-                        weight = firstWeight;
-                    } else {
-                        weight = d[p[j - 1]] - d[p[j]];
-                        firstWeight -= weight;
+                result.weights.reserve(freudenthalData.size());
+                result.gridPoints.reserve(freudenthalData.size());
+                
+                // Insert first grid point
+                // TODO: this special treatment is actually not necessary.
+                BeliefValueType firstWeight = storm::utility::one<ValueType>() - freudenthalData.begin()->diff + freudenthalData.rbegin()->diff;
+                if (!cc.isZero(firstWeight)) {
+                    result.weights.push_back(firstWeight);
+                    BeliefType gridPoint;
+                    for (StateType j = 0; j < dataIterators.size(); ++j) {
+                        BeliefValueType gridPointEntry = qsRow[j] - qsRow[j + 1];
+                        if (!cc.isZero(gridPointEntry)) {
+                            gridPoint[dataIterators[j]->pomdpState] = gridPointEntry / convResolution;
+                        }
                     }
-                    if (!cc.isZero(weight)) {
-                        result.weights.push_back(weight);
-                        BeliefType gridPoint;
-                        auto const& qsj = qs[j];
-                        for (size_t i = 0; i < nrStates - 1; ++i) {
-                            BeliefValueType gridPointEntry = qsj[i] - qsj[i + 1];
-                            if (!cc.isZero(gridPointEntry)) {
-                                gridPoint[i] = gridPointEntry / convResolution;
+                    result.gridPoints.push_back(getOrAddBeliefId(gridPoint));
+                }
+                
+                if (freudenthalData.size() > 1) {
+                    // Insert remaining grid points
+                    auto currentSortedEntry = freudenthalData.begin();
+                    auto previousSortedEntry = currentSortedEntry++;
+                    for (StateType i = 1; i < dataIterators.size(); ++i) {
+                        // 'compute' the next row of the qs matrix
+                        qsRow[previousSortedEntry->dimension] += storm::utility::one<BeliefValueType>();
+                        
+                        BeliefValueType weight = previousSortedEntry->diff - currentSortedEntry->diff;
+                        if (!cc.isZero(weight)) {
+                            result.weights.push_back(weight);
+                            
+                            BeliefType gridPoint;
+                            for (StateType j = 0; j < dataIterators.size(); ++j) {
+                                BeliefValueType gridPointEntry = qsRow[j] - qsRow[j + 1];
+                                if (!cc.isZero(gridPointEntry)) {
+                                    gridPoint[dataIterators[j]->pomdpState] = gridPointEntry / convResolution;
+                                }
                             }
+                            result.gridPoints.push_back(getOrAddBeliefId(gridPoint));
                         }
-                        if (!cc.isZero(qsj[nrStates - 1])) {
-                            gridPoint[nrStates - 1] = qsj[nrStates - 1] / convResolution;
-                        }
-                        result.gridPoints.push_back(getOrAddBeliefId(gridPoint));
+                        ++previousSortedEntry;
+                        ++currentSortedEntry;
                     }
                 }
                 
