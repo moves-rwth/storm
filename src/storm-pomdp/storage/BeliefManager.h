@@ -44,6 +44,92 @@ namespace storm {
                 }
             };
             
+            BeliefId noId() const {
+                return std::numeric_limits<BeliefId>::max();
+            }
+            
+            bool isEqual(BeliefId const& first, BeliefId const& second) const {
+                return isEqual(getBelief(first), getBelief(second));
+            }
+
+            std::string toString(BeliefId const& beliefId) const {
+                return toString(getBelief(beliefId));
+            }
+
+            
+            std::string toString(Triangulation const& t) const {
+                std::stringstream str;
+                str << "(\n";
+                for (uint64_t i = 0; i < t.size(); ++i) {
+                    str << "\t" << t.weights[i] << " * \t" << toString(getBelief(t.gridPoints[i])) << "\n";
+                }
+                str <<")\n";
+                return str.str();
+            }
+            
+            template <typename SummandsType>
+            ValueType getWeightedSum(BeliefId const& beliefId, SummandsType const& summands) {
+                ValueType result = storm::utility::zero<ValueType>();
+                for (auto const& entry : getBelief(beliefId)) {
+                    result += storm::utility::convertNumber<ValueType>(entry.second) * storm::utility::convertNumber<ValueType>(summands.at(entry.first));
+                }
+                return result;
+            }
+            
+            
+            BeliefId const& getInitialBelief() const {
+                return initialBeliefId;
+            }
+            
+            ValueType getBeliefActionReward(BeliefId const& beliefId, uint64_t const& localActionIndex) const {
+                auto const& belief = getBelief(beliefId);
+                STORM_LOG_ASSERT(!pomdpActionRewardVector.empty(), "Requested a reward although no reward model was specified.");
+                auto result = storm::utility::zero<ValueType>();
+                auto const& choiceIndices = pomdp.getTransitionMatrix().getRowGroupIndices();
+                for (auto const &entry : belief) {
+                    uint64_t choiceIndex = choiceIndices[entry.first] + localActionIndex;
+                    STORM_LOG_ASSERT(choiceIndex < choiceIndices[entry.first + 1], "Invalid local action index.");
+                    STORM_LOG_ASSERT(choiceIndex < pomdpActionRewardVector.size(), "Invalid choice index.");
+                    result += entry.second * pomdpActionRewardVector[choiceIndex];
+                }
+                return result;
+            }
+            
+            uint32_t getBeliefObservation(BeliefId beliefId) {
+                return getBeliefObservation(getBelief(beliefId));
+            }
+            
+            uint64_t getBeliefNumberOfChoices(BeliefId beliefId) {
+                auto belief = getBelief(beliefId);
+                return pomdp.getNumberOfChoices(belief.begin()->first);
+            }
+            
+            Triangulation triangulateBelief(BeliefId beliefId, uint64_t resolution) {
+                return triangulateBelief(getBelief(beliefId), resolution);
+            }
+            
+            template<typename DistributionType>
+            void addToDistribution(DistributionType& distr, StateType const& state, BeliefValueType const& value) {
+                auto insertionRes = distr.emplace(state, value);
+                if (!insertionRes.second) {
+                    insertionRes.first->second += value;
+                }
+            }
+            
+            BeliefId getNumberOfBeliefIds() const {
+                return beliefs.size();
+            }
+            
+            std::map<BeliefId, ValueType> expandAndTriangulate(BeliefId const& beliefId, uint64_t actionIndex, std::vector<uint64_t> const& observationResolutions) {
+                return expandInternal(beliefId, actionIndex, observationResolutions);
+            }
+            
+            std::map<BeliefId, ValueType> expand(BeliefId const& beliefId, uint64_t actionIndex) {
+                return expandInternal(beliefId, actionIndex);
+            }
+            
+        private:
+            
             BeliefType const& getBelief(BeliefId const& id) const {
                 STORM_LOG_ASSERT(id != noId(), "Tried to get a non-existend belief.");
                 STORM_LOG_ASSERT(id < getNumberOfBeliefIds(), "Belief index " << id << " is out of range.");
@@ -54,10 +140,6 @@ namespace storm {
                 auto idIt = beliefToIdMap.find(belief);
                 STORM_LOG_THROW(idIt != beliefToIdMap.end(), storm::exceptions::UnexpectedException, "Unknown Belief.");
                 return idIt->second;
-            }
-            
-            BeliefId noId() const {
-                return std::numeric_limits<BeliefId>::max();
             }
             
             std::string toString(BeliefType const& belief) const {
@@ -73,16 +155,6 @@ namespace storm {
                     str << entry.first << ": " << entry.second;
                 }
                 str << " }";
-                return str.str();
-            }
-            
-            std::string toString(Triangulation const& t) const {
-                std::stringstream str;
-                str << "(\n";
-                for (uint64_t i = 0; i < t.size(); ++i) {
-                    str << "\t" << t.weights[i] << " * \t" << toString(getBelief(t.gridPoints[i])) << "\n";
-                }
-                str <<")\n";
                 return str.str();
             }
             
@@ -186,49 +258,11 @@ namespace storm {
                 return true;
             }
             
-            template <typename SummandsType>
-            ValueType getWeightedSum(BeliefId const& beliefId, SummandsType const& summands) {
-                ValueType result = storm::utility::zero<ValueType>();
-                for (auto const& entry : getBelief(beliefId)) {
-                    result += storm::utility::convertNumber<ValueType>(entry.second) * storm::utility::convertNumber<ValueType>(summands.at(entry.first));
-                }
-                return result;
-            }
-            
-            
-            BeliefId const& getInitialBelief() const {
-                return initialBeliefId;
-            }
-            
-            ValueType getBeliefActionReward(BeliefId const& beliefId, uint64_t const& localActionIndex) const {
-                auto const& belief = getBelief(beliefId);
-                STORM_LOG_ASSERT(!pomdpActionRewardVector.empty(), "Requested a reward although no reward model was specified.");
-                auto result = storm::utility::zero<ValueType>();
-                auto const& choiceIndices = pomdp.getTransitionMatrix().getRowGroupIndices();
-                for (auto const &entry : belief) {
-                    uint64_t choiceIndex = choiceIndices[entry.first] + localActionIndex;
-                    STORM_LOG_ASSERT(choiceIndex < choiceIndices[entry.first + 1], "Invalid local action index.");
-                    STORM_LOG_ASSERT(choiceIndex < pomdpActionRewardVector.size(), "Invalid choice index.");
-                    result += entry.second * pomdpActionRewardVector[choiceIndex];
-                }
-                return result;
-            }
-            
             uint32_t getBeliefObservation(BeliefType belief) {
                 STORM_LOG_ASSERT(assertBelief(belief), "Invalid belief.");
                 return pomdp.getObservation(belief.begin()->first);
             }
             
-            uint32_t getBeliefObservation(BeliefId beliefId) {
-                return getBeliefObservation(getBelief(beliefId));
-            }
-            
-            uint64_t getBeliefNumberOfChoices(BeliefId beliefId) {
-                auto belief = getBelief(beliefId);
-                return pomdp.getNumberOfChoices(belief.begin()->first);
-            }
-            
-
             Triangulation triangulateBelief(BeliefType belief, uint64_t resolution) {
                 //TODO this can also be simplified using the sparse vector interpretation
                 //TODO Enable chaching for this method?
@@ -307,22 +341,6 @@ namespace storm {
                 return result;
             }
             
-            Triangulation triangulateBelief(BeliefId beliefId, uint64_t resolution) {
-                return triangulateBelief(getBelief(beliefId), resolution);
-            }
-            
-            template<typename DistributionType>
-            void addToDistribution(DistributionType& distr, StateType const& state, BeliefValueType const& value) {
-                auto insertionRes = distr.emplace(state, value);
-                if (!insertionRes.second) {
-                    insertionRes.first->second += value;
-                }
-            }
-            
-            BeliefId getNumberOfBeliefIds() const {
-                return beliefs.size();
-            }
-            
             std::map<BeliefId, ValueType> expandInternal(BeliefId const& beliefId, uint64_t actionIndex, boost::optional<std::vector<uint64_t>> const& observationTriangulationResolutions = boost::none) {
                 std::map<BeliefId, ValueType> destinations;
                 // TODO: Output as vector?
@@ -368,16 +386,6 @@ namespace storm {
                 return destinations;
                 
             }
-            
-            std::map<BeliefId, ValueType> expandAndTriangulate(BeliefId const& beliefId, uint64_t actionIndex, std::vector<uint64_t> const& observationResolutions) {
-                return expandInternal(beliefId, actionIndex, observationResolutions);
-            }
-            
-            std::map<BeliefId, ValueType> expand(BeliefId const& beliefId, uint64_t actionIndex) {
-                return expandInternal(beliefId, actionIndex);
-            }
-            
-        private:
             
             BeliefId computeInitialBelief() {
                 STORM_LOG_ASSERT(pomdp.getInitialStates().getNumberOfSetBits() < 2,
