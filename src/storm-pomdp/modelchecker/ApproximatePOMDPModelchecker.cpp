@@ -252,7 +252,7 @@ namespace storm {
                     
                     if (result.diff() > options.refinementPrecision) {
                         // Refine under-approximation
-                        underApproxSizeThreshold *= storm::utility::convertNumber<uint64_t, ValueType>(storm::utility::convertNumber<ValueType>(underApproxSizeThreshold) * (storm::utility::one<ValueType>() + refinementAggressiveness));
+                        underApproxSizeThreshold = storm::utility::convertNumber<uint64_t, ValueType>(storm::utility::convertNumber<ValueType>(underApproxSizeThreshold) * (storm::utility::one<ValueType>() + refinementAggressiveness));
                         underApproxSizeThreshold = std::max<uint64_t>(underApproxSizeThreshold, overApproximation->getExploredMdp()->getNumberOfStates());
                         STORM_LOG_DEBUG("Refining under-approximation with size threshold " << underApproxSizeThreshold << ".");
                         buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), underApproxSizeThreshold, underApproxBeliefManager, underApproximation);
