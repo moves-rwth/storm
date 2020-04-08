@@ -34,6 +34,7 @@ namespace storm {
                     ValueType refinementPrecision; /// Used to decide when the refinement should terminate
                     ValueType numericPrecision; /// Used to decide whether two values are equal
                     bool cacheSubsimplices; /// Enables caching of subsimplices
+                    boost::optional<uint64_t> beliefMdpSizeThreshold; /// Sets the (initial) size of the unfolded belief MDP. 0 means auto selection.
                 };
                 
                 struct Result {

@@ -35,6 +35,7 @@ namespace storm {
                 refinementPrecision = storm::utility::convertNumber<ValueType>(1e-4);
                 numericPrecision = storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(1e-9);
                 cacheSubsimplices = false;
+                beliefMdpSizeThreshold = 0ull;
             }
             
             template<typename PomdpModelType, typename BeliefValueType>
@@ -180,7 +181,7 @@ namespace storm {
                         approx->getExploredMdp()->printModelInformationToStream(std::cout);
                         ValueType& resultValue = min ? result.lowerBound : result.upperBound;
                         resultValue = approx->getComputedValueAtInitialState();
-                        underApproxSizeThreshold = approx->getExploredMdp()->getNumberOfStates();
+                        underApproxSizeThreshold = std::max(approx->getExploredMdp()->getNumberOfStates(), underApproxSizeThreshold);
                     }
                 }
                 { // Underapproximation (Uses a fresh Belief manager)
@@ -189,6 +190,12 @@ namespace storm {
                         manager->setRewardModel(rewardModelName);
                     }
                     auto approx = std::make_shared<ExplorerType>(manager, lowerPomdpValueBounds, upperPomdpValueBounds);
+                    if (options.beliefMdpSizeThreshold) {
+                        underApproxSizeThreshold = options.beliefMdpSizeThreshold.get();
+                    }
+                    if (underApproxSizeThreshold == 0) {
+                        underApproxSizeThreshold = pomdp.getNumberOfStates() * pomdp.getMaxNrStatesWithSameObservation(); // Heuristically select this (only relevant if the over-approx could not be build)
+                    }
                     buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), underApproxSizeThreshold, manager, approx);
                     if (approx->hasComputedValues()) {
                         STORM_PRINT_AND_LOG("Explored and checked Under-Approximation MDP:\n");
@@ -221,7 +228,12 @@ namespace storm {
                 overApproxValue = overApproximation->getComputedValueAtInitialState();
                 
                 // UnderApproximation
-                uint64_t underApproxSizeThreshold = std::max<uint64_t>(overApproximation->getExploredMdp()->getNumberOfStates(), 10);
+                uint64_t underApproxSizeThreshold;
+                if (options.beliefMdpSizeThreshold && options.beliefMdpSizeThreshold.get() > 0ull) {
+                    underApproxSizeThreshold = options.beliefMdpSizeThreshold.get();
+                } else {
+                    underApproxSizeThreshold = overApproximation->getExploredMdp()->getNumberOfStates();
+                }
                 auto underApproximation = std::make_shared<ExplorerType>(underApproxBeliefManager, lowerPomdpValueBounds, upperPomdpValueBounds);
                 buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), underApproxSizeThreshold, underApproxBeliefManager, underApproximation);
                 if (!underApproximation->hasComputedValues()) {

@@ -109,6 +109,7 @@ namespace storm {
                     options.refinementPrecision = storm::utility::convertNumber<ValueType>(gridSettings.getRefinementPrecision());
                     options.numericPrecision = storm::utility::convertNumber<ValueType>(gridSettings.getNumericPrecision());
                     options.cacheSubsimplices = gridSettings.isCacheSimplicesSet();
+                    options.beliefMdpSizeThreshold = gridSettings.getUnfoldBeliefMdpSizeThreshold();
                     if (storm::NumberTraits<ValueType>::IsExact) {
                         if (gridSettings.isNumericPrecisionSetFromDefault()) {
                             STORM_LOG_WARN_COND(storm::utility::isZero(options.numericPrecision), "Setting numeric precision to zero because exact arithmethic is used.");

@@ -19,6 +19,7 @@ namespace storm {
             const std::string limitBeliefExplorationOption = "limit-exploration";
             const std::string numericPrecisionOption = "numeric-precision";
             const std::string cacheSimplicesOption = "cache-simplices";
+            const std::string unfoldBeliefMdpOption = "unfold-belief-mdp";
 
             GridApproximationSettings::GridApproximationSettings() : ModuleSettings(moduleName) {
                 
@@ -35,6 +36,7 @@ namespace storm {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, cacheSimplicesOption, false,"Enables caching of simplices which requires more memory but can be faster.").build());
                 
+                this->addOption(storm::settings::OptionBuilder(moduleName, unfoldBeliefMdpOption, false,"Sets the (initial-) size threshold of the unfolded belief MDP (higher means more precise results, 0 means automatic choice)").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("value","the maximal number of states").setDefaultValueUnsignedInteger(0).build()).build());
             }
 
             bool GridApproximationSettings::isRefineSet() const {
@@ -63,6 +65,14 @@ namespace storm {
             
             bool GridApproximationSettings::isCacheSimplicesSet() const {
                 return this->getOption(cacheSimplicesOption).getHasOptionBeenSet();
+            }
+            
+            bool GridApproximationSettings::isUnfoldBeliefMdpSizeThresholdSet() const {
+                return this->getOption(unfoldBeliefMdpOption).getHasOptionBeenSet();
+            }
+            
+            uint64_t GridApproximationSettings::getUnfoldBeliefMdpSizeThreshold() const {
+                return this->getOption(unfoldBeliefMdpOption).getArgumentByName("value").getValueAsUnsignedInteger();
             }
             
         } // namespace modules
