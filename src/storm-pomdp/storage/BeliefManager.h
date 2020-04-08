@@ -1,9 +1,9 @@
 #pragma once
 
-#include <map>
+#include <unordered_map>
 #include <boost/optional.hpp>
-//#include <boost/container/flat_map.hpp>
-
+#include <boost/container/flat_map.hpp>
+#include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/UnexpectedException.h"
 
@@ -15,8 +15,7 @@ namespace storm {
         public:
             
             typedef typename PomdpType::ValueType ValueType;
-            //typedef boost::container::flat_map<StateType, BeliefValueType> BeliefType
-            typedef std::map<StateType, BeliefValueType> BeliefType;
+            typedef boost::container::flat_map<StateType, BeliefValueType> BeliefType; // iterating over this shall be ordered (for correct hash computation)
             typedef uint64_t BeliefId;
             
             BeliefManager(PomdpType const& pomdp, BeliefValueType const& precision) : pomdp(pomdp), cc(precision, false) {
@@ -343,7 +342,6 @@ namespace storm {
             
             std::vector<std::pair<BeliefId, ValueType>> expandInternal(BeliefId const& beliefId, uint64_t actionIndex, boost::optional<std::vector<uint64_t>> const& observationTriangulationResolutions = boost::none) {
                 std::vector<std::pair<BeliefId, ValueType>> destinations;
-                // TODO: Output as vector?
                 
                 BeliefType belief = getBelief(beliefId);
                 
@@ -411,11 +409,23 @@ namespace storm {
                 return insertioRes.first->second;
             }
             
+            struct BeliefHash {
+                std::size_t operator()(const BeliefType& belief) const {
+                    std::size_t seed = 0;
+                    // Assumes that beliefs are ordered
+                    for (auto const& entry : belief) {
+                        boost::hash_combine(seed, entry.first);
+                        boost::hash_combine(seed, entry.second);
+                    }
+                    return seed;
+                }
+            };
+            
             PomdpType const& pomdp;
             std::vector<ValueType> pomdpActionRewardVector;
             
             std::vector<BeliefType> beliefs;
-            std::map<BeliefType, BeliefId> beliefToIdMap;
+            std::unordered_map<BeliefType, BeliefId, BeliefHash> beliefToIdMap;
             BeliefId initialBeliefId;
             
             storm::utility::ConstantsComparator<ValueType> cc;
