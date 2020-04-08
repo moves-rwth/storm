@@ -410,7 +410,7 @@ namespace storm {
                                 if (isStateReachable(modelState, memoryState)) {
                                     if (scheduler && scheduler->getChoice(modelState, memoryState).isDefined()) {
                                         ValueType factor = scheduler->getChoice(modelState, memoryState).getChoiceAsDistribution().getProbability(rowOffset);
-                                        stateActionRewards.get()[resultTransitionMatrix.getRowGroupIndices()[getResultState(modelState, memoryState)]] = factor * modelStateActionReward;
+                                        stateActionRewards.get()[resultTransitionMatrix.getRowGroupIndices()[getResultState(modelState, memoryState)]] += factor * modelStateActionReward;
                                     } else {
                                         stateActionRewards.get()[resultTransitionMatrix.getRowGroupIndices()[getResultState(modelState, memoryState)] + rowOffset] = modelStateActionReward;
                                     }
