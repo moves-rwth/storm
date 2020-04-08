@@ -35,7 +35,7 @@ namespace storm {
                 refinementPrecision = storm::utility::convertNumber<ValueType>(1e-4);
                 numericPrecision = storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(1e-9);
                 cacheSubsimplices = false;
-                beliefMdpSizeThreshold = 0ull;
+                beliefMdpSizeThreshold = boost::none;
             }
             
             template<typename PomdpModelType, typename BeliefValueType>
@@ -190,7 +190,7 @@ namespace storm {
                         manager->setRewardModel(rewardModelName);
                     }
                     auto approx = std::make_shared<ExplorerType>(manager, lowerPomdpValueBounds, upperPomdpValueBounds);
-                    if (options.beliefMdpSizeThreshold) {
+                    if (options.beliefMdpSizeThreshold && options.beliefMdpSizeThreshold.get() > 0) {
                         underApproxSizeThreshold = options.beliefMdpSizeThreshold.get();
                     }
                     if (underApproxSizeThreshold == 0) {
