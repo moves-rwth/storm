@@ -323,7 +323,7 @@ namespace storm {
                 storm::storage::sparse::ModelComponents<ValueType> modelComponents(std::move(mdpTransitionMatrix), std::move(mdpLabeling), std::move(mdpRewardModels));
                 exploredMdp = std::make_shared<storm::models::sparse::Mdp<ValueType>>(std::move(modelComponents));
                 status = Status::ModelFinished;
-                STORM_LOG_DEBUG("Explored Mdp with " << exploredMdp->getNumberOfStates() << " states (" << truncatedStates.getNumberOfSetBits() << "of which were flagged as truncated).");
+                STORM_LOG_DEBUG("Explored Mdp with " << exploredMdp->getNumberOfStates() << " states (" << truncatedStates.getNumberOfSetBits() << " of which were flagged as truncated).");
 
             }
 
@@ -368,7 +368,8 @@ namespace storm {
                 { // beliefIdToMdpStateMap
                     for (auto belIdToMdpStateIt = beliefIdToMdpStateMap.begin(); belIdToMdpStateIt != beliefIdToMdpStateMap.end();) {
                         if (relevantMdpStates.get(belIdToMdpStateIt->second)) {
-                            // Keep current entry and move on to the next one.
+                            // Translate current entry and move on to the next one.
+                            belIdToMdpStateIt->second = toRelevantStateIndexMap[belIdToMdpStateIt->second];
                             ++belIdToMdpStateIt;
                         } else {
                             STORM_LOG_ASSERT(!exploredBeliefIds.get(belIdToMdpStateIt->first), "Inconsistent exploration information: Unexplored MDPState corresponds to explored beliefId");
@@ -619,7 +620,7 @@ namespace storm {
                             return findRes->second;
                         }
                     }
-                    // At this poind we need to add a new MDP state
+                    // At this point we need to add a new MDP state
                     MdpStateType result = getCurrentNumberOfMdpStates();
                     assert(getCurrentNumberOfMdpStates() == mdpStateToBeliefIdMap.size());
                     mdpStateToBeliefIdMap.push_back(beliefId);
