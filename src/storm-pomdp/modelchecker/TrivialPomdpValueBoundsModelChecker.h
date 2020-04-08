@@ -88,6 +88,7 @@ namespace storm {
                             pomdpScheduler.setChoice(choiceDistribution, state);
                         }
                     }
+                    STORM_LOG_ASSERT(!pomdpScheduler.isPartialScheduler(), "Expected a fully defined scheduler.");
                     auto scheduledModel = underlyingMdp->applyScheduler(pomdpScheduler, false);
                     
                     auto resultPtr2 = storm::api::verifyWithSparseEngine<ValueType>(scheduledModel, storm::api::createTask<ValueType>(formula.asSharedPointer(), false));
@@ -104,6 +105,7 @@ namespace storm {
                         result.lower = std::move(pomdpSchedulerResult);
                         result.upper = std::move(fullyObservableResult);
                     }
+                    STORM_LOG_WARN_COND_DEBUG(storm::utility::vector::compareElementWise(result.lower, result.upper, std::less_equal<ValueType>()), "Lower bound is larger than upper bound");
                     return result;
                 }
     

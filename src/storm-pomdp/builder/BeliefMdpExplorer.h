@@ -473,6 +473,8 @@ namespace storm {
                 std::unique_ptr<storm::modelchecker::CheckResult> res(storm::api::verifyWithSparseEngine<ValueType>(exploredMdp, task));
                 if (res) {
                     values = std::move(res->asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
+                    STORM_LOG_WARN_COND_DEBUG(storm::utility::vector::compareElementWise(lowerValueBounds, values, std::less_equal<ValueType>()), "Computed values are smaller than the lower bound.");
+                    STORM_LOG_WARN_COND_DEBUG(storm::utility::vector::compareElementWise(upperValueBounds, values, std::greater_equal<ValueType>()), "Computed values are larger than the upper bound.");
                 } else {
                     STORM_LOG_ASSERT(storm::utility::resources::isTerminate(), "Empty check result!");
                     STORM_LOG_ERROR("No result obtained while checking.");
