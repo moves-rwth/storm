@@ -12,6 +12,9 @@ namespace storm {
         
         template <typename ValueType>
         class MaximalEndComponentDecomposition;
+        
+        template <typename ValueType>
+        class Scheduler;
     }
     
     namespace modelchecker {
@@ -50,11 +53,12 @@ namespace storm {
 
                 uint64_t getNotInEcMarker() const;
 
-                static SparseMdpEndComponentInformation<ValueType> eliminateEndComponents(storm::storage::MaximalEndComponentDecomposition<ValueType> const& endComponentDecomposition, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const* sumColumns, storm::storage::BitVector const* selectedChoices, std::vector<ValueType> const* summand, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>* columnSumVector, std::vector<ValueType>* summandResultVector);
+                static SparseMdpEndComponentInformation<ValueType> eliminateEndComponents(storm::storage::MaximalEndComponentDecomposition<ValueType> const& endComponentDecomposition, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const* sumColumns, storm::storage::BitVector const* selectedChoices, std::vector<ValueType> const* summand, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>* columnSumVector, std::vector<ValueType>* summandResultVector, bool gatherExitChoices = false);
                 
-                static SparseMdpEndComponentInformation<ValueType> eliminateEndComponents(storm::storage::MaximalEndComponentDecomposition<ValueType> const& endComponentDecomposition, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType>& rhsVector, storm::storage::BitVector const& maybeStates, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& subvector);
+                static SparseMdpEndComponentInformation<ValueType> eliminateEndComponents(storm::storage::MaximalEndComponentDecomposition<ValueType> const& endComponentDecomposition, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType>& rhsVector, storm::storage::BitVector const& maybeStates, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& subvector, bool gatherExitChoices = false);
                 
                 void setValues(std::vector<ValueType>& result, storm::storage::BitVector const& maybeStates, std::vector<ValueType> const& fromResult);
+                void setScheduler(storm::storage::Scheduler<ValueType>& scheduler, storm::storage::BitVector const& maybeStates, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<uint64_t> const& fromResult);
                 
             private:
                 // A constant that marks that a state is not contained in any EC.
@@ -70,6 +74,7 @@ namespace storm {
                 uint64_t numberOfMaybeStatesNotInEc;
                 uint64_t numberOfEc;
                 std::vector<uint64_t> maybeStateToEc;
+                std::vector<std::vector<uint64_t>> ecToExitChoicesBefore; // Only available, if gatherExitChoices was enabled. Empty otherwise.
             };
                         
         }

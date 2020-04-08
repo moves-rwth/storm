@@ -2,6 +2,8 @@
 
 #include "storm/storage/BitVector.h"
 #include "storm/storage/MaximalEndComponentDecomposition.h"
+#include "storm/storage/Scheduler.h"
+#include "storm/utility/graph.h"
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
@@ -11,7 +13,7 @@ namespace storm {
         namespace helper {
         
             template<typename ValueType>
-            SparseMdpEndComponentInformation<ValueType>::SparseMdpEndComponentInformation(storm::storage::MaximalEndComponentDecomposition<ValueType> const& endComponentDecomposition, storm::storage::BitVector const& maybeStates) : NOT_IN_EC(std::numeric_limits<uint64_t>::max()), eliminatedEndComponents(false), numberOfMaybeStatesInEc(0), numberOfMaybeStatesNotInEc(0), numberOfEc(endComponentDecomposition.size()) {
+            SparseMdpEndComponentInformation<ValueType>::SparseMdpEndComponentInformation(storm::storage::MaximalEndComponentDecomposition<ValueType> const& endComponentDecomposition, storm::storage::BitVector const& maybeStates) : NOT_IN_EC(std::numeric_limits<uint64_t>::max()), eliminatedEndComponents(!endComponentDecomposition.empty()), numberOfMaybeStatesInEc(0), numberOfMaybeStatesNotInEc(0), numberOfEc(endComponentDecomposition.size()) {
                 
                 // (1) Compute how many maybe states there are before each other maybe state.
                 maybeStatesBefore = maybeStates.getNumberOfSetBitsBeforeIndices();
@@ -90,7 +92,7 @@ namespace storm {
             }
 
             template<typename ValueType>
-            SparseMdpEndComponentInformation<ValueType> SparseMdpEndComponentInformation<ValueType>::eliminateEndComponents(storm::storage::MaximalEndComponentDecomposition<ValueType> const& endComponentDecomposition, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const* sumColumns, storm::storage::BitVector const* selectedChoices, std::vector<ValueType> const* summand, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>* columnSumVector, std::vector<ValueType>* summandResultVector) {
+            SparseMdpEndComponentInformation<ValueType> SparseMdpEndComponentInformation<ValueType>::eliminateEndComponents(storm::storage::MaximalEndComponentDecomposition<ValueType> const& endComponentDecomposition, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& maybeStates, storm::storage::BitVector const* sumColumns, storm::storage::BitVector const* selectedChoices, std::vector<ValueType> const* summand, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>* columnSumVector, std::vector<ValueType>* summandResultVector, bool gatherExitChoices) {
                 
                 SparseMdpEndComponentInformation<ValueType> result(endComponentDecomposition, maybeStates);
                 
@@ -163,7 +165,7 @@ namespace storm {
                 // (3) Create the parts of the submatrix and vector b that belong to states contained in ECs.
                 for (auto const& mec : endComponentDecomposition) {
                     builder.newRowGroup(currentRow);
-                    
+                    std::vector<uint64_t> exitChoices;
                     for (auto const& stateActions : mec) {
                         uint64_t const& state = stateActions.first;
                         for (uint64_t row = transitionMatrix.getRowGroupIndices()[state], endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row < endRow; ++row) {
@@ -207,8 +209,15 @@ namespace storm {
                                 }
                             }
                             
+                            if (gatherExitChoices) {
+                                exitChoices.push_back(row);
+                            }
+                            
                             ++currentRow;
                         }
+                    }
+                    if (gatherExitChoices) {
+                        result.ecToExitChoicesBefore.push_back(std::move(exitChoices));
                     }
                 }
                 
@@ -217,7 +226,7 @@ namespace storm {
             }
             
             template<typename ValueType>
-            SparseMdpEndComponentInformation<ValueType> SparseMdpEndComponentInformation<ValueType>::eliminateEndComponents(storm::storage::MaximalEndComponentDecomposition<ValueType> const& endComponentDecomposition, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType>& rhsVector, storm::storage::BitVector const& maybeStates, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& subvector) {
+            SparseMdpEndComponentInformation<ValueType> SparseMdpEndComponentInformation<ValueType>::eliminateEndComponents(storm::storage::MaximalEndComponentDecomposition<ValueType> const& endComponentDecomposition, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType>& rhsVector, storm::storage::BitVector const& maybeStates, storm::storage::SparseMatrix<ValueType>& submatrix, std::vector<ValueType>& subvector, bool gatherExitChoices) {
                 
                 SparseMdpEndComponentInformation<ValueType> result(endComponentDecomposition, maybeStates);
                 
@@ -271,7 +280,7 @@ namespace storm {
                 // (3) Create the parts of the submatrix and vector b that belong to states contained in ECs.
                 for (auto const& mec : endComponentDecomposition) {
                     builder.newRowGroup(currentRow);
-                    
+                    std::vector<uint64_t> exitChoices;
                     for (auto const& stateActions : mec) {
                         uint64_t const& state = stateActions.first;
                         for (uint64_t row = transitionMatrix.getRowGroupIndices()[state], endRow = transitionMatrix.getRowGroupIndices()[state + 1]; row < endRow; ++row) {
@@ -304,8 +313,15 @@ namespace storm {
                                 }
                             }
                             
+                            if (gatherExitChoices) {
+                                exitChoices.push_back(row);
+                            }
+                            
                             ++currentRow;
                         }
+                    }
+                    if (gatherExitChoices) {
+                        result.ecToExitChoicesBefore.push_back(std::move(exitChoices));
                     }
                 }
                 
@@ -315,23 +331,65 @@ namespace storm {
             
             template<typename ValueType>
             void SparseMdpEndComponentInformation<ValueType>::setValues(std::vector<ValueType>& result, storm::storage::BitVector const& maybeStates, std::vector<ValueType> const& fromResult) {
-                auto notInEcResultIt = result.begin();
+                // The following assumes that row groups associated to EC states are at the very end.
+                auto notInEcResultIt = fromResult.begin();
                 for (auto state : maybeStates) {
                     if (this->isStateInEc(state)) {
-                        result[state] = result[this->getRowGroupAfterElimination(state)];
+                        STORM_LOG_ASSERT(this->getRowGroupAfterElimination(state) >= this->getNumberOfMaybeStatesNotInEc(), "Expected introduced EC states to be located at the end of the matrix.");
+                        result[state] = fromResult[this->getRowGroupAfterElimination(state)];
                     } else {
                         result[state] = *notInEcResultIt;
                         ++notInEcResultIt;
                     }
                 }
-                STORM_LOG_ASSERT(notInEcResultIt == result.begin() + this->getNumberOfMaybeStatesNotInEc(), "Mismatching iterators.");
+                STORM_LOG_ASSERT(notInEcResultIt == fromResult.begin() + this->getNumberOfMaybeStatesNotInEc(), "Mismatching iterators.");
+            }
+            
+            template<typename ValueType>
+            void SparseMdpEndComponentInformation<ValueType>::setScheduler(storm::storage::Scheduler<ValueType>& scheduler, storm::storage::BitVector const& maybeStates, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, std::vector<uint64_t> const& fromResult) {
+                // The following assumes that row groups associated to EC states are at the very end.
+                storm::storage::BitVector maybeStatesWithoutChoice(maybeStates.size(), false);
+                storm::storage::BitVector ecStayChoices(transitionMatrix.getRowCount(), false);
+                auto notInEcResultIt = fromResult.begin();
+                for (auto const& state : maybeStates) {
+                    if (this->isStateInEc(state)) {
+                        STORM_LOG_ASSERT(this->getRowGroupAfterElimination(state) >= this->getNumberOfMaybeStatesNotInEc(), "Expected introduced EC states to be located at the end of the matrix.");
+                        STORM_LOG_ASSERT(!ecToExitChoicesBefore.empty(), "No EC exit choices available. End Components have probably been build without.");
+                        uint64_t ec = getEc(state);
+                        auto const& exitChoices = ecToExitChoicesBefore[ec];
+                        uint64_t afterEliminationChoice = fromResult[this->getRowGroupAfterElimination(state)];
+                        uint64_t beforeEliminationGlobalChoiceIndex = exitChoices[afterEliminationChoice];
+                        bool noChoice = true;
+                        for (uint64_t globalChoice = transitionMatrix.getRowGroupIndices()[state]; globalChoice < transitionMatrix.getRowGroupIndices()[state+1]; ++globalChoice) {
+                            // Is this the selected exit choice?
+                            if (globalChoice == beforeEliminationGlobalChoiceIndex) {
+                                scheduler.setChoice(beforeEliminationGlobalChoiceIndex - transitionMatrix.getRowGroupIndices()[state], state);
+                                noChoice = false;
+                            } else {
+                                // Check if this is an exit choice
+                                if (std::find(exitChoices.begin(), exitChoices.end(), globalChoice) == exitChoices.end()) {
+                                    ecStayChoices.set(globalChoice, true);
+                                }
+                            }
+                        }
+                        maybeStatesWithoutChoice.set(state, noChoice);
+                    } else {
+                        scheduler.setChoice(*notInEcResultIt, state);
+                        ++notInEcResultIt;
+                    }
+                }
+                
+                STORM_LOG_ASSERT(notInEcResultIt == fromResult.begin() + this->getNumberOfMaybeStatesNotInEc(), "Mismatching iterators.");
+                // The maybeStates without a choice shall reach maybeStates with a choice with probability 1
+                storm::utility::graph::computeSchedulerProb1E(maybeStates, transitionMatrix, backwardTransitions, maybeStatesWithoutChoice, ~maybeStatesWithoutChoice, scheduler, ecStayChoices);
+
             }
             
             template class SparseMdpEndComponentInformation<double>;
             
 #ifdef STORM_HAVE_CARL
             template class SparseMdpEndComponentInformation<storm::RationalNumber>;
-            template class SparseMdpEndComponentInformation<storm::RationalFunction>;
+            //template class SparseMdpEndComponentInformation<storm::RationalFunction>;
 #endif
             
         }
