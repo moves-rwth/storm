@@ -108,6 +108,54 @@ namespace storm {
                 STORM_LOG_DEBUG("Generated the following names for the choice origins: " << storm::utility::vector::toString(this->identifierToInfo));
                 STORM_LOG_ASSERT(storm::utility::vector::isUnique(this->identifierToInfo), "The generated names for the prism choice origins are not unique.");
             }
+            
+            void PrismChoiceOrigins::computeIdentifierJson() const {
+                this->identifierToJson.clear();
+                this->identifierToJson.reserve(this->getNumberOfIdentifiers());
+                for (CommandSet const& set : identifierToCommandSet) {
+                    // Get a string representation of this command set.
+                    Json setJson;
+                    if (set.empty()) {
+                        setJson = "No origin";
+                    } else {
+                        bool first = true;
+                        std::vector<Json> commandsJson;
+                        for (auto const& commandIndex : set) {
+                            Json commandJson;
+                            auto moduleCommandPair = program->getModuleCommandIndexByGlobalCommandIndex(commandIndex);
+                            storm::prism::Module const& module = program->getModule(moduleCommandPair.first);
+                            storm::prism::Command const& command = module.getCommand(moduleCommandPair.second);
+                            if (first) {
+                                setJson["action-label"] = command.getActionName();
+                                first = false;
+                            }
+                            commandJson["module"] = module.getName();
+                            commandJson["guard"] = command.getGuardExpression().toString();
+                            std::vector<Json> updatesJson;
+                            for (auto const& update : command.getUpdates()) {
+                                Json updateJson;
+                                updateJson["prob"] = update.getLikelihoodExpression().toString();
+                                std::stringstream assignmentsString;
+                                bool firstAssignment = true;
+                                for (auto const& a : update.getAssignments()) {
+                                    if (firstAssignment) {
+                                        firstAssignment = false;
+                                    } else {
+                                        assignmentsString << " & ";
+                                    }
+                                    assignmentsString << a;
+                                }
+                                updateJson["result"] = assignmentsString.str();
+                                updatesJson.push_back(std::move(updateJson));
+                            }
+                            commandJson["updates"] = updatesJson;
+                            commandsJson.push_back(std::move(commandJson));
+                        }
+                        setJson["commands"] = commandsJson;
+                    }
+                    this->identifierToJson.push_back(std::move(setJson));
+                }
+            }
         }
     }
 }

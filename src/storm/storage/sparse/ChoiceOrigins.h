@@ -5,6 +5,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/models/sparse/ChoiceLabeling.h"
 
+#include "storm/adapters/JsonAdapter.h"
 
 namespace storm {
     namespace storage {
@@ -19,6 +20,7 @@ namespace storm {
              */
             class ChoiceOrigins {
             public:
+                typedef storm::json<storm::RationalNumber> Json;
                 
                 virtual ~ChoiceOrigins() = default;
                 
@@ -64,6 +66,16 @@ namespace storm {
                 std::string const& getChoiceInfo(uint_fast64_t choiceIndex) const;
                 
                 /*
+                 * Returns the information for the given choice origin identifier as a (human readable) string
+                 */
+                Json const& getIdentifierAsJson(uint_fast64_t identifier) const;
+                
+                /*
+                 * Returns the choice origin information as a (human readable) string.
+                 */
+                Json const& getChoiceAsJson(uint_fast64_t choiceIndex) const;
+                
+                /*
                  * Derive new choice origins from this by selecting the given choices.
                  */
                 std::shared_ptr<ChoiceOrigins> selectChoices(storm::storage::BitVector const& selectedChoices) const;
@@ -95,10 +107,18 @@ namespace storm {
                  */
                 virtual void computeIdentifierInfos() const = 0;
                 
+                /*
+                 * Computes the identifier infos (i.e., human readable strings representing the choice origins).
+                 */
+                virtual void computeIdentifierJson() const = 0;
+                
                 std::vector<uint_fast64_t> indexToIdentifier;
                 
                 // cached identifier infos might be empty if identifiers have not been generated yet.
                 mutable std::vector<std::string> identifierToInfo;
+                
+                // cached identifier infos might be empty if identifiers have not been generated yet.
+                mutable std::vector<Json> identifierToJson;
 
             };
         }

@@ -62,6 +62,11 @@ namespace storm {
                  */
                 virtual void computeIdentifierInfos() const override;
                 
+                /*
+                 * Computes the identifier infos as json (i.e., a machine readable representation of the choice origins).
+                 */
+                virtual void computeIdentifierJson() const override;
+                
                 std::shared_ptr<storm::prism::Program const> program;
                 std::vector<CommandSet> identifierToCommandSet;
             };

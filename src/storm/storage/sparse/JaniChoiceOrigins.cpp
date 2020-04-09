@@ -1,6 +1,7 @@
 #include "storm/storage/sparse/JaniChoiceOrigins.h"
 
 #include "storm/storage/jani/Model.h"
+#include "storm/storage/jani/JSONExporter.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -52,6 +53,32 @@ namespace storm {
                 }
             }
             
+            void JaniChoiceOrigins::computeIdentifierJson() const {
+                this->identifierToJson.clear();
+                this->identifierToJson.reserve(this->getNumberOfIdentifiers());
+                for (auto const& set : identifierToEdgeIndexSet) {
+                    Json setJson;
+                    if (set.empty()) {
+                        setJson = "No origin";
+                    } else {
+                        bool first = true;
+                        std::vector<Json> edgesJson;
+                        for (auto const& edgeIndex : set) {
+                            auto autAndEdgeOffset = model->decodeAutomatonAndEdgeIndices(edgeIndex);
+                            auto const& automaton = model->getAutomaton(autAndEdgeOffset.first);
+                            auto const& edge = automaton.getEdge(autAndEdgeOffset.second);
+                            if (first) {
+                                setJson["action-label"] = model->getAction(edge.getActionIndex()).getName();
+                                first = false;
+                            }
+                            edgesJson.push_back(storm::jani::JsonExporter::getEdgeAsJson(*model, autAndEdgeOffset.first, autAndEdgeOffset.second));
+                            edgesJson.back()["automaton"] = automaton.getName();
+                        }
+                        setJson["edges"] = std::move(edgesJson);
+                    }
+                    this->identifierToJson.push_back(std::move(setJson));
+                }
+            }
         }
     }
 }
