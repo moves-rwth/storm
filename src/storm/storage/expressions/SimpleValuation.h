@@ -18,7 +18,7 @@ namespace storm {
         public:
             friend class SimpleValuationPointerHash;
             friend class SimpleValuationPointerLess;
-            typedef storm::json<double> Json;
+            typedef storm::json<storm::RationalNumber> Json;
 
 
             /*!

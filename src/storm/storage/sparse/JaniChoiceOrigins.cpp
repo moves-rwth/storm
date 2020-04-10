@@ -74,7 +74,7 @@ namespace storm {
                             edgesJson.push_back(storm::jani::JsonExporter::getEdgeAsJson(*model, autAndEdgeOffset.first, autAndEdgeOffset.second));
                             edgesJson.back()["automaton"] = automaton.getName();
                         }
-                        setJson["edges"] = std::move(edgesJson);
+                        setJson["transitions"] = std::move(edgesJson);
                     }
                     this->identifierToJson.push_back(std::move(setJson));
                 }

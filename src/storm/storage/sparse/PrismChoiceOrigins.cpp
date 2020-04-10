@@ -151,7 +151,7 @@ namespace storm {
                             commandJson["updates"] = updatesJson;
                             commandsJson.push_back(std::move(commandJson));
                         }
-                        setJson["commands"] = commandsJson;
+                        setJson["transitions"] = commandsJson;
                     }
                     this->identifierToJson.push_back(std::move(setJson));
                 }

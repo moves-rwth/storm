@@ -70,7 +70,7 @@ namespace storm {
 			typename ChoiceOrigins::Json const& ChoiceOrigins::getIdentifierAsJson(uint_fast64_t identifier) const {
                 STORM_LOG_ASSERT(identifier < this->getNumberOfIdentifiers(), "Invalid choice origin identifier: " << identifier);
                 if (identifierToJson.empty()) {
-                    computeIdentifierInfos();
+                    computeIdentifierJson();
                 }
 				return identifierToJson[identifier];
             }
