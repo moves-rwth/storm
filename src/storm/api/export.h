@@ -48,7 +48,12 @@ namespace storm {
         void exportScheduler(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::storage::Scheduler<ValueType> const& scheduler, std::string const& filename) {
             std::ofstream stream;
             storm::utility::openFile(filename, stream);
-            scheduler.printToStream(stream, model);
+            std::string jsonFileExtension = ".json";
+            if (filename.size() > 4 && std::equal(jsonFileExtension.rbegin(), jsonFileExtension.rend(), filename.rbegin())) {
+                scheduler.printJsonToStream(stream, model);
+            } else {
+                scheduler.printToStream(stream, model);
+            }
             storm::utility::closeFile(stream);
         }
         
