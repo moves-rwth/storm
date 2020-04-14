@@ -20,76 +20,28 @@ std::string const AndOrBdd =
 std::string const VotBdd =
     R"|({"nodes":[{"classes":"be_const","data":{"distribution":"const","failed":false,"id":"0","name":"x1","type":"be_const"},"group":"nodes"},{"classes":"be_const","data":{"distribution":"const","failed":false,"id":"1","name":"x2","type":"be_const"},"group":"nodes"},{"classes":"be_const","data":{"distribution":"const","failed":false,"id":"2","name":"x3","type":"be_const"},"group":"nodes"},{"classes":"be_const","data":{"distribution":"const","failed":false,"id":"3","name":"x4","type":"be_const"},"group":"nodes"},{"classes":"vot","data":{"children":["0","1","2","3"],"id":"4","name":"F","type":"vot","voting":2},"group":"nodes"},{"classes":"be_const","data":{"distribution":"const","failed":true,"id":"5","name":"constantBeTrigger","type":"be_const"},"group":"nodes"},{"classes":"pdep","data":{"children":["5","0"],"id":"6","name":"x1_pdep","probability":"0.5","type":"pdep"},"group":"nodes"},{"classes":"pdep","data":{"children":["5","1"],"id":"7","name":"x2_pdep","probability":"0.5","type":"pdep"},"group":"nodes"},{"classes":"pdep","data":{"children":["5","2"],"id":"8","name":"x3_pdep","probability":"0.5","type":"pdep"},"group":"nodes"},{"classes":"pdep","data":{"children":["5","3"],"id":"9","name":"x4_pdep","probability":"0.5","type":"pdep"},"group":"nodes"}],"toplevel":"4"})|";
 
-TEST(TestTest, CUDDAdd) {
+TEST(TestTest, And) {
     auto dft = storm::api::loadDFTJsonString<double>(AndBdd);
-    storm::modelchecker::SFTBDDChecker<double, storm::dd::DdType::CUDD> checker{
-        dft};
+    storm::modelchecker::SFTBDDChecker<double> checker{dft};
     auto result = checker.translate();
-
-    result.template toAdd<double>().exportToDot("./andCUDD.dot");
 }
 
-TEST(TestTest, CUDDOr) {
+TEST(TestTest, Or) {
     auto dft = storm::api::loadDFTJsonString<double>(OrBdd);
-    storm::modelchecker::SFTBDDChecker<double, storm::dd::DdType::CUDD> checker{
-        dft};
+    storm::modelchecker::SFTBDDChecker<double> checker{dft};
     auto result = checker.translate();
-
-    result.template toAdd<double>().exportToDot("./orCUDD.dot");
 }
 
-TEST(TestTest, CUDDAndOr) {
+TEST(TestTest, AndOr) {
     auto dft = storm::api::loadDFTJsonString<double>(AndOrBdd);
-    storm::modelchecker::SFTBDDChecker<double, storm::dd::DdType::CUDD> checker{
-        dft};
+    storm::modelchecker::SFTBDDChecker<double> checker{dft};
     auto result = checker.translate();
-
-    result.template toAdd<double>().exportToDot("./andOrCUDD.dot");
 }
 
-TEST(TestTest, CUDDVot) {
+TEST(TestTest, Vot) {
     auto dft = storm::api::loadDFTJsonString<double>(VotBdd);
-    storm::modelchecker::SFTBDDChecker<double, storm::dd::DdType::CUDD> checker{
-        dft};
+    storm::modelchecker::SFTBDDChecker<double> checker{dft};
     auto result = checker.translate();
-
-    result.template toAdd<double>().exportToDot("./VotCUDD.dot");
-}
-
-TEST(TestTest, SylvanAdd) {
-    auto dft = storm::api::loadDFTJsonString<double>(AndBdd);
-    storm::modelchecker::SFTBDDChecker<double, storm::dd::DdType::Sylvan>
-        checker{dft};
-    auto result = checker.translate();
-
-    result.template toAdd<double>().exportToDot("./andSylvan.dot");
-}
-
-TEST(TestTest, SylvanOr) {
-    auto dft = storm::api::loadDFTJsonString<double>(OrBdd);
-    storm::modelchecker::SFTBDDChecker<double, storm::dd::DdType::Sylvan>
-        checker{dft};
-    auto result = checker.translate();
-
-    result.template toAdd<double>().exportToDot("./orSylvan.dot");
-}
-
-TEST(TestTest, SylvanAndOr) {
-    auto dft = storm::api::loadDFTJsonString<double>(AndOrBdd);
-    storm::modelchecker::SFTBDDChecker<double, storm::dd::DdType::Sylvan>
-        checker{dft};
-    auto result = checker.translate();
-
-    result.template toAdd<double>().exportToDot("./andOrSylvan.dot");
-}
-
-TEST(TestTest, SylvanVot) {
-    auto dft = storm::api::loadDFTJsonString<double>(VotBdd);
-    storm::modelchecker::SFTBDDChecker<double, storm::dd::DdType::Sylvan>
-        checker{dft};
-    auto result = checker.translate();
-
-    result.template toAdd<double>().exportToDot("./VotSylvan.dot");
 }
 
 }  // namespace

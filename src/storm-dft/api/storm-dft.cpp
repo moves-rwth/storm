@@ -13,16 +13,9 @@ namespace storm {
 
         template<>
         void exportDFTToBddDot(std::shared_ptr<storm::storage::DFT<double>> const& dft, storm::dd::DdType const type, std::string const& file) {
-            if(type == storm::dd::DdType::CUDD) {
-                storm::modelchecker::SFTBDDChecker<double, storm::dd::DdType::CUDD> checker{dft};
-                checker.translate().template toAdd<uint64_t>().exportToDot(file);
-            }
-            else if(type == storm::dd::DdType::Sylvan) {
-                storm::modelchecker::SFTBDDChecker<double, storm::dd::DdType::Sylvan> checker{dft};
-                checker.translate().template toAdd<uint64_t>().exportToDot(file);
-            } else {
+                storm::modelchecker::SFTBDDChecker<double> checker{dft};
+                checker.translate();
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export to Bdd Dot not supported for this dd library.");
-            }
         }
 
         template<>
