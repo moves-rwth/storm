@@ -132,8 +132,20 @@ namespace pomdp {
 
         void analyzeForInitialStates(uint64_t k) {
             stats.totalTimer.start();
-            analyze(k, pomdp.getInitialStates(), pomdp.getInitialStates());
+            STORM_LOG_TRACE("Bad states: " << surelyReachSinkStates);
+            STORM_LOG_TRACE("Target states: " << targetStates);
+            STORM_LOG_TRACE("Questionmark states: " <<  (~surelyReachSinkStates & ~targetStates));
+            bool result = analyze(k, ~surelyReachSinkStates & ~targetStates, pomdp.getInitialStates());
             stats.totalTimer.stop();
+            if (result) {
+                STORM_PRINT_AND_LOG("From initial state, one can almost-surely reach the target.");
+            } else {
+                if (k == pomdp.getNumberOfStates()) {
+                    STORM_PRINT_AND_LOG("From initial state, one cannot almost-surely reach the target.");
+                } else {
+                    STORM_PRINT_AND_LOG("From initial state, one may not almost-surely reach the target.");
+                }
+            }
         }
 
         void findNewStrategyForSomeState(uint64_t k) {
@@ -157,7 +169,7 @@ namespace pomdp {
 
         void initialize(uint64_t k);
 
-        bool smtCheck(uint64_t iteration);
+        bool smtCheck(uint64_t iteration, std::set<storm::expressions::Expression> const& assumptions = {});
 
 
         std::unique_ptr<storm::solver::SmtSolver> smtSolver;
