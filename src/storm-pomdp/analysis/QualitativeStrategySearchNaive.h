@@ -3,6 +3,7 @@
 #include "storm/solver/SmtSolver.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/utility/solver.h"
+#include "storm/utility/Stopwatch.h"
 #include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
@@ -10,8 +11,15 @@ namespace storm {
 
         template<typename ValueType>
         class QualitativeStrategySearchNaive {
-            // Implements an extension to the Chatterjee, Chmelik, Davies (AAAI-16) paper.
+            // Implements  to the Chatterjee, Chmelik, Davies (AAAI-16) paper.
+            class Statistics {
+            public:
+                Statistics() = default;
 
+                storm::utility::Stopwatch totalTimer;
+                storm::utility::Stopwatch smtCheckTimer;
+                storm::utility::Stopwatch initializeSolverTimer;
+            };
 
         public:
             QualitativeStrategySearchNaive(storm::models::sparse::Pomdp<ValueType> const& pomdp,
@@ -33,16 +41,15 @@ namespace storm {
             }
 
             void analyzeForInitialStates(uint64_t k) {
-                analyze(k, pomdp.getInitialStates(), pomdp.getInitialStates());
-            }
-
-            void findNewStrategyForSomeState(uint64_t k) {
-                std::cout << surelyReachSinkStates << std::endl;
-                std::cout << targetStates << std::endl;
-                std::cout << (~surelyReachSinkStates & ~targetStates) << std::endl;
-                analyze(k, ~surelyReachSinkStates & ~targetStates);
-
-
+                STORM_LOG_TRACE("Bad states: " << surelyReachSinkStates);
+                STORM_LOG_TRACE("Target states: " << targetStates);
+                STORM_LOG_TRACE("Questionmark states: " <<  (~surelyReachSinkStates & ~targetStates));
+                bool result = analyze(k, ~surelyReachSinkStates & ~targetStates, pomdp.getInitialStates());
+                if (result) {
+                    STORM_PRINT_AND_LOG("From initial state, one can almost-surely reach the target.");
+                } else {
+                    STORM_PRINT_AND_LOG("From initial state, one may not almost-surely reach the target .");
+                }
             }
 
             bool analyze(uint64_t k, storm::storage::BitVector const& oneOfTheseStates, storm::storage::BitVector const& allOfTheseStates = storm::storage::BitVector());
@@ -51,6 +58,7 @@ namespace storm {
             void initialize(uint64_t k);
 
 
+            Statistics stats;
             std::unique_ptr<storm::solver::SmtSolver> smtSolver;
             storm::models::sparse::Pomdp<ValueType> const& pomdp;
             std::shared_ptr<storm::expressions::ExpressionManager> expressionManager;

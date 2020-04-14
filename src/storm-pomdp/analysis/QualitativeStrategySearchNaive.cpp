@@ -1,4 +1,4 @@
-
+#include "storm/utility/file.h"
 
 #include "storm-pomdp/analysis/QualitativeStrategySearchNaive.h"
 
@@ -46,7 +46,27 @@ namespace storm {
                 assert(false);
             }
 
+            for (auto const& actionVars : actionSelectionVarExpressions) {
+                smtSolver->add(storm::expressions::disjunction(actionVars));
+            }
+
+
             uint64_t rowindex = 0;
+            for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
+                for (uint64_t action = 0; action < pomdp.getNumberOfChoices(state); ++action) {
+                    std::vector<storm::expressions::Expression> subexprreach;
+                    subexprreach.push_back(!reachVarExpressions[state]);
+                    subexprreach.push_back(!actionSelectionVarExpressions[pomdp.getObservation(state)][action]);
+                    for (auto const &entries : pomdp.getTransitionMatrix().getRow(rowindex)) {
+                        subexprreach.push_back(reachVarExpressions.at(entries.getColumn()));
+                        smtSolver->add(storm::expressions::disjunction(subexprreach));
+                        subexprreach.pop_back();
+                    }
+                    rowindex++;
+                }
+            }
+
+            rowindex = 0;
             for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
                 if (targetStates.get(state)) {
                     smtSolver->add(pathVars[state][0]);
@@ -56,7 +76,10 @@ namespace storm {
 
                 if (surelyReachSinkStates.get(state)) {
                     smtSolver->add(!reachVarExpressions[state]);
+                    rowindex += pomdp.getNumberOfChoices(state);
                 } else if(!targetStates.get(state)) {
+                    std::cout << state << " is not a target state" << std::endl;
+
                     std::vector<std::vector<std::vector<storm::expressions::Expression>>> pathsubsubexprs;
                     for (uint64_t j = 1; j < k; ++j) {
                         pathsubsubexprs.push_back(std::vector<std::vector<storm::expressions::Expression>>());
@@ -67,13 +90,6 @@ namespace storm {
 
                     for (uint64_t action = 0; action < pomdp.getNumberOfChoices(state); ++action) {
                         std::vector<storm::expressions::Expression> subexprreach;
-
-                        subexprreach.push_back(!reachVarExpressions.at(state));
-                        subexprreach.push_back(!actionSelectionVarExpressions.at(pomdp.getObservation(state)).at(action));
-                        for (auto const &entries : pomdp.getTransitionMatrix().getRow(rowindex)) {
-                            subexprreach.push_back(reachVarExpressions.at(entries.getColumn()));
-                        }
-                        smtSolver->add(storm::expressions::disjunction(subexprreach));
                         for (auto const &entries : pomdp.getTransitionMatrix().getRow(rowindex)) {
                             for (uint64_t j = 1; j < k; ++j) {
                                 pathsubsubexprs[j - 1][action].push_back(pathVars[entries.getColumn()][j - 1]);
@@ -81,7 +97,6 @@ namespace storm {
                         }
                         rowindex++;
                     }
-                    smtSolver->add(storm::expressions::implies(reachVarExpressions.at(state), pathVars.at(state).back()));
 
                     for (uint64_t j = 1; j < k; ++j) {
                         std::vector<storm::expressions::Expression> pathsubexprs;
@@ -91,16 +106,21 @@ namespace storm {
                         }
                         smtSolver->add(storm::expressions::iff(pathVars[state][j], storm::expressions::disjunction(pathsubexprs)));
                     }
+
+
+                    smtSolver->add(storm::expressions::implies(reachVarExpressions.at(state), pathVars.at(state).back()));
+
+                } else {
+                    rowindex += pomdp.getNumberOfChoices(state);
                 }
             }
 
-            for (auto const& actionVars : actionSelectionVarExpressions) {
-                smtSolver->add(storm::expressions::disjunction(actionVars));
-            }
         }
 
         template <typename ValueType>
         bool QualitativeStrategySearchNaive<ValueType>::analyze(uint64_t k, storm::storage::BitVector const& oneOfTheseStates, storm::storage::BitVector const& allOfTheseStates) {
+
+            STORM_LOG_TRACE("Use lookahead of "<<k);
             if (k < maxK) {
                 initialize(k);
             }
@@ -119,66 +139,63 @@ namespace storm {
 
 
 
-            std::cout << smtSolver->getSmtLibString() << std::endl;
+            STORM_LOG_TRACE(smtSolver->getSmtLibString());
 
+            STORM_LOG_DEBUG("Call to SMT Solver");
+            stats.smtCheckTimer.start();
             auto result = smtSolver->check();
-            uint64_t  i = 0;
-            smtSolver->push();
-
-
+            stats.smtCheckTimer.stop();
 
             if (result == storm::solver::SmtSolver::CheckResult::Unknown) {
                 STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "SMT solver yielded an unexpected result");
-            } else if(result == storm::solver::SmtSolver::CheckResult::Unsat) {
-                std::cout << std::endl << "Unsatisfiable!" << std::endl;
+            } else if (result == storm::solver::SmtSolver::CheckResult::Unsat) {
+                STORM_LOG_DEBUG("Unsatisfiable!");
                 return false;
-            } else {
+            }
 
-                std::cout << std::endl << "Satisfying assignment: " << std::endl << smtSolver->getModelAsValuation().toString(true) << std::endl;
-                auto model = smtSolver->getModel();
-                std::cout << "states that are okay" << std::endl;
-                storm::storage::BitVector observations(pomdp.getNrObservations());
-                storm::storage::BitVector remainingstates(pomdp.getNumberOfStates());
-                for (auto rv : reachVars) {
-                    if (model->getBooleanValue(rv)) {
-                        std::cout << i << " " << std::endl;
-                        observations.set(pomdp.getObservation(i));
-                    } else {
-                        remainingstates.set(i);
-                    }
-                    //std::cout << i << ": " << model->getBooleanValue(rv) << ", ";
-                    ++i;
+            STORM_LOG_DEBUG("Satisfying assignment: ");
+            auto model = smtSolver->getModel();
+            size_t i = 0;
+            storm::storage::BitVector observations(pomdp.getNrObservations());
+            storm::storage::BitVector remainingstates(pomdp.getNumberOfStates());
+            for (auto rv : reachVars) {
+                if (model->getBooleanValue(rv)) {
+                    std::cout << i << " " << std::endl;
+                    observations.set(pomdp.getObservation(i));
+                } else {
+                    remainingstates.set(i);
                 }
-                std::vector <std::set<uint64_t>> scheduler;
-                for (auto const &actionSelectionVarsForObs : actionSelectionVars) {
-                    uint64_t act = 0;
-                    scheduler.push_back(std::set<uint64_t>());
-                    for (auto const &asv : actionSelectionVarsForObs) {
-                        if (model->getBooleanValue(asv)) {
-                            scheduler.back().insert(act);
-                        }
-                        act++;
+                ++i;
+            }
+            std::vector <std::set<uint64_t>> scheduler;
+            for (auto const &actionSelectionVarsForObs : actionSelectionVars) {
+                uint64_t act = 0;
+                scheduler.push_back(std::set<uint64_t>());
+                for (auto const &asv : actionSelectionVarsForObs) {
+                    if (model->getBooleanValue(asv)) {
+                        scheduler.back().insert(act);
                     }
+                    act++;
                 }
-                std::cout << "the scheduler: " << std::endl;
-                for (uint64_t obs = 0; obs < scheduler.size(); ++obs) {
-                    if (observations.get(obs)) {
-                        std::cout << "observation: " << obs << std::endl;
-                        std::cout << "actions:";
-                        for (auto act : scheduler[obs]) {
-                            std::cout << " " << act;
-                        }
-                        std::cout << std::endl;
-                    }
-                }
+            }
 
-
-                return true;
+            // TODO move this into a print scheduler function.
+            //STORM_LOG_TRACE("the scheduler: ");
+            for (uint64_t obs = 0; obs < scheduler.size(); ++obs) {
+                if (observations.get(obs)) {
+                    //STORM_LOG_TRACE("observation: " << obs);
+                    //std::cout << "actions:";
+                    //for (auto act : scheduler[obs]) {
+                    //    std::cout << " " << act;
+                    //}
+                    //std::cout << std::endl;
+                }
             }
 
 
-
+            return true;
         }
+
 
         template class QualitativeStrategySearchNaive<double>;
         template class QualitativeStrategySearchNaive<storm::RationalNumber>;
