@@ -24,98 +24,7 @@
 #include "storm-pomdp/analysis/FormulaInformation.h"
 #include "storm-pomdp/analysis/MemlessStrategySearchQualitative.h"
 #include "storm-pomdp/analysis/QualitativeStrategySearchNaive.h"
-//
-//template<typename ValueType>
-//bool extractTargetAndSinkObservationSets(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& pomdp, storm::logic::Formula const& subformula, std::set<uint32_t>& targetObservationSet, storm::storage::BitVector&  targetStates, storm::storage::BitVector&  badStates) {
-//    //TODO refactor (use model checker to determine the states, then transform into observations).
-//    //TODO rename into appropriate function name.
-//    bool validFormula = false;
-//    if (subformula.isEventuallyFormula()) {
-//        storm::logic::EventuallyFormula const &eventuallyFormula = subformula.asEventuallyFormula();
-//        storm::logic::Formula const &subformula2 = eventuallyFormula.getSubformula();
-//        if (subformula2.isAtomicLabelFormula()) {
-//            storm::logic::AtomicLabelFormula const &alFormula = subformula2.asAtomicLabelFormula();
-//            validFormula = true;
-//            std::string targetLabel = alFormula.getLabel();
-//            auto labeling = pomdp->getStateLabeling();
-//            for (size_t state = 0; state < pomdp->getNumberOfStates(); ++state) {
-//                if (labeling.getStateHasLabel(targetLabel, state)) {
-//                    targetObservationSet.insert(pomdp->getObservation(state));
-//                    targetStates.set(state);
-//                }
-//            }
-//        } else if (subformula2.isAtomicExpressionFormula()) {
-//            validFormula = true;
-//            std::stringstream stream;
-//            stream << subformula2.asAtomicExpressionFormula().getExpression();
-//            storm::logic::AtomicLabelFormula formula3 = storm::logic::AtomicLabelFormula(stream.str());
-//            std::string targetLabel = formula3.getLabel();
-//            auto labeling = pomdp->getStateLabeling();
-//            for (size_t state = 0; state < pomdp->getNumberOfStates(); ++state) {
-//                if (labeling.getStateHasLabel(targetLabel, state)) {
-//                    targetObservationSet.insert(pomdp->getObservation(state));
-//                    targetStates.set(state);
-//                }
-//            }
-//        }
-//    } else if (subformula.isUntilFormula()) {
-//        storm::logic::UntilFormula const &untilFormula = subformula.asUntilFormula();
-//        storm::logic::Formula const &subformula1 = untilFormula.getLeftSubformula();
-//        if (subformula1.isAtomicLabelFormula()) {
-//            storm::logic::AtomicLabelFormula const &alFormula = subformula1.asAtomicLabelFormula();
-//            std::string targetLabel = alFormula.getLabel();
-//            auto labeling = pomdp->getStateLabeling();
-//            for (size_t state = 0; state < pomdp->getNumberOfStates(); ++state) {
-//                if (!labeling.getStateHasLabel(targetLabel, state)) {
-//                    badStates.set(state);
-//                }
-//            }
-//        } else if (subformula1.isAtomicExpressionFormula()) {
-//            std::stringstream stream;
-//            stream << subformula1.asAtomicExpressionFormula().getExpression();
-//            storm::logic::AtomicLabelFormula formula3 = storm::logic::AtomicLabelFormula(stream.str());
-//            std::string targetLabel = formula3.getLabel();
-//            auto labeling = pomdp->getStateLabeling();
-//            for (size_t state = 0; state < pomdp->getNumberOfStates(); ++state) {
-//                if (!labeling.getStateHasLabel(targetLabel, state)) {
-//                    badStates.set(state);
-//                }
-//            }
-//        } else {
-//            return false;
-//        }
-//        storm::logic::Formula const &subformula2 = untilFormula.getRightSubformula();
-//        if (subformula2.isAtomicLabelFormula()) {
-//            storm::logic::AtomicLabelFormula const &alFormula = subformula2.asAtomicLabelFormula();
-//            validFormula = true;
-//            std::string targetLabel = alFormula.getLabel();
-//            auto labeling = pomdp->getStateLabeling();
-//            for (size_t state = 0; state < pomdp->getNumberOfStates(); ++state) {
-//                if (labeling.getStateHasLabel(targetLabel, state)) {
-//                    targetObservationSet.insert(pomdp->getObservation(state));
-//                    targetStates.set(state);
-//                }
-//
-//            }
-//        } else if (subformula2.isAtomicExpressionFormula()) {
-//            validFormula = true;
-//            std::stringstream stream;
-//            stream << subformula2.asAtomicExpressionFormula().getExpression();
-//            storm::logic::AtomicLabelFormula formula3 = storm::logic::AtomicLabelFormula(stream.str());
-//            std::string targetLabel = formula3.getLabel();
-//            auto labeling = pomdp->getStateLabeling();
-//            for (size_t state = 0; state < pomdp->getNumberOfStates(); ++state) {
-//                if (labeling.getStateHasLabel(targetLabel, state)) {
-//                    targetObservationSet.insert(pomdp->getObservation(state));
-//                    targetStates.set(state);
-//                }
-//
-//            }
-//        }
-//    }
-//    return validFormula;
-//}
-//
+
 template<typename ValueType>
 std::set<uint32_t> extractObservations(storm::models::sparse::Pomdp<ValueType> const& pomdp, storm::storage::BitVector const& states) {
     // TODO move.
@@ -125,85 +34,6 @@ std::set<uint32_t> extractObservations(storm::models::sparse::Pomdp<ValueType> c
     }
     return observations;
 }
-//
-///*!
-// * Entry point for the pomdp backend.
-// *
-// * @param argc The argc argument of main().
-// * @param argv The argv argument of main().
-// * @return Return code, 0 if successfull, not 0 otherwise.
-// */
-//int main(const int argc, const char** argv) {
-//    //try {
-//        storm::utility::setUp();
-//        storm::cli::printHeader("Storm-pomdp", argc, argv);
-//        initializeSettings();
-//
-//        bool optionsCorrect = storm::cli::parseOptions(argc, argv);
-//        if (!optionsCorrect) {
-//            return -1;
-//        }
-//        storm::cli::setUrgentOptions();
-//
-//        auto const& coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
-//        auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
-//        auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-//        auto const &general = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
-//        auto const &debug = storm::settings::getModule<storm::settings::modules::DebugSettings>();
-//        auto const& pomdpQualSettings = storm::settings::getModule<storm::settings::modules::QualitativePOMDPAnalysisSettings>();
-//
-//        if (general.isVerboseSet()) {
-//            storm::utility::setLogLevel(l3pp::LogLevel::INFO);
-//        }
-//        if (debug.isDebugSet()) {
-//            storm::utility::setLogLevel(l3pp::LogLevel::DEBUG);
-//        }
-//        if (debug.isTraceSet()) {
-//            storm::utility::setLogLevel(l3pp::LogLevel::TRACE);
-//        }
-//        if (debug.isLogfileSet()) {
-//            storm::utility::initializeFileLogging();
-//        }
-//
-//        // For several engines, no model building step is performed, but the verification is started right away.
-//        storm::settings::modules::CoreSettings::Engine engine = coreSettings.getEngine();
-//
-//        storm::cli::SymbolicInput symbolicInput = storm::cli::parseAndPreprocessSymbolicInput();
-//        // We should not export here if we are going to do some processing first.
-//        auto model = storm::cli::buildPreprocessExportModelWithValueTypeAndDdlib<storm::dd::DdType::Sylvan, double>(symbolicInput, engine);
-//        STORM_LOG_THROW(model && model->getType() == storm::models::ModelType::Pomdp, storm::exceptions::WrongFormatException, "Expected a POMDP.");
-//        std::shared_ptr<storm::models::sparse::Pomdp<storm::RationalNumber>> pomdp = model->template as<storm::models::sparse::Pomdp<storm::RationalNumber>>();
-//        storm::transformer::MakePOMDPCanonic<storm::RationalNumber> makeCanonic(*pomdp);
-//        pomdp = makeCanonic.transform();
-//
-//        std::shared_ptr<storm::logic::Formula const> formula;
-//        if (!symbolicInput.properties.empty()) {
-//            formula = symbolicInput.properties.front().getRawFormula();
-//            STORM_PRINT_AND_LOG("Analyzing property '" << *formula << "'" << std::endl);
-//            STORM_LOG_WARN_COND(symbolicInput.properties.size() == 1, "There is currently no support for multiple properties. All other properties will be ignored.");
-//        }
-//
-//        if (pomdpSettings.isAnalyzeUniqueObservationsSet()) {
-//            STORM_PRINT_AND_LOG("Analyzing states with unique observation ..." << std::endl);
-//            storm::analysis::UniqueObservationStates<double> uniqueAnalysis(*pomdp);
-//            std::cout << uniqueAnalysis.analyse() << std::endl;
-//        }
-//
-//        if (formula) {
-//            storm::logic::ProbabilityOperatorFormula const &probFormula = formula->asProbabilityOperatorFormula();
-//            storm::logic::Formula const &subformula1 = probFormula.getSubformula();
-//
-//
-//            if (formula->isProbabilityOperatorFormula()) {
-//                boost::optional<storm::storage::BitVector> prob1States;
-//                boost::optional<storm::storage::BitVector> prob0States;
-//                if (pomdpSettings.isSelfloopReductionSet() && !storm::solver::minimize(formula->asProbabilityOperatorFormula().getOptimalityType())) {
-//                    STORM_PRINT_AND_LOG("Eliminating self-loop choices ...");
-//                    uint64_t oldChoiceCount = pomdp->getNumberOfChoices();
-//                    storm::transformer::GlobalPOMDPSelfLoopEliminator<double> selfLoopEliminator(*pomdp);
-//                    pomdp = selfLoopEliminator.transform();
-//                    STORM_PRINT_AND_LOG(oldChoiceCount - pomdp->getNumberOfChoices() << " choices eliminated through self-loop elimination." << std::endl);
-//=======
 
 #include "storm/api/storm.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -352,13 +182,16 @@ namespace storm {
                 if (pomdpSettings.isGridApproximationSet()) {
                     STORM_PRINT_AND_LOG("Applying grid approximation... ");
                     auto const& gridSettings = storm::settings::getModule<storm::settings::modules::GridApproximationSettings>();
-                    typename storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<ValueType>::Options options;
+                    typename storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::models::sparse::Pomdp<ValueType>>::Options options;
                     options.initialGridResolution = gridSettings.getGridResolution();
                     options.explorationThreshold = storm::utility::convertNumber<ValueType>(gridSettings.getExplorationThreshold());
                     options.doRefinement = gridSettings.isRefineSet();
                     options.refinementPrecision = storm::utility::convertNumber<ValueType>(gridSettings.getRefinementPrecision());
                     options.numericPrecision = storm::utility::convertNumber<ValueType>(gridSettings.getNumericPrecision());
                     options.cacheSubsimplices = gridSettings.isCacheSimplicesSet();
+                    if (gridSettings.isUnfoldBeliefMdpSizeThresholdSet()) {
+                        options.beliefMdpSizeThreshold = gridSettings.getUnfoldBeliefMdpSizeThreshold();
+                    }
                     if (storm::NumberTraits<ValueType>::IsExact) {
                         if (gridSettings.isNumericPrecisionSetFromDefault()) {
                             STORM_LOG_WARN_COND(storm::utility::isZero(options.numericPrecision), "Setting numeric precision to zero because exact arithmethic is used.");
@@ -367,20 +200,16 @@ namespace storm {
                             STORM_LOG_WARN_COND(storm::utility::isZero(options.numericPrecision), "A non-zero numeric precision was set although exact arithmethic is used. Results might be inexact.");
                         }
                     }
-                    storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<ValueType> checker = storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<ValueType>(*pomdp, options);
-                    std::unique_ptr<storm::pomdp::modelchecker::POMDPCheckResult<ValueType>> result = checker.check(formula);
+                    storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::models::sparse::Pomdp<ValueType>> checker(*pomdp, options);
+                    auto result = checker.check(formula);
                     checker.printStatisticsToStream(std::cout);
-                    if (result) {
-                        if (storm::utility::resources::isTerminate()) {
-                            STORM_PRINT_AND_LOG("\nResult till abort: ")
-                        } else {
-                            STORM_PRINT_AND_LOG("\nResult: ")
-                        }
-                        printResult(result->underApproxValue, result->overApproxValue);
-                        STORM_PRINT_AND_LOG(std::endl);
+                    if (storm::utility::resources::isTerminate()) {
+                        STORM_PRINT_AND_LOG("\nResult till abort: ")
                     } else {
-                        STORM_PRINT_AND_LOG("\nResult: Not available." << std::endl);
+                        STORM_PRINT_AND_LOG("\nResult: ")
                     }
+                    printResult(result.lowerBound, result.upperBound);
+                    STORM_PRINT_AND_LOG(std::endl);
                     analysisPerformed = true;
                 }
                 if (pomdpSettings.isMemlessSearchSet()) {
@@ -498,9 +327,11 @@ namespace storm {
                 STORM_LOG_THROW(model->getType() == storm::models::ModelType::Pomdp && model->isSparseModel(), storm::exceptions::WrongFormatException, "Expected a POMDP in sparse representation.");
             
                 std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> pomdp = model->template as<storm::models::sparse::Pomdp<ValueType>>();
-                storm::transformer::MakePOMDPCanonic<ValueType> makeCanonic(*pomdp);
-                pomdp = makeCanonic.transform();
-
+                if (!pomdpSettings.isNoCanonicSet()) {
+                    storm::transformer::MakePOMDPCanonic<ValueType> makeCanonic(*pomdp);
+                    pomdp = makeCanonic.transform();
+                }
+                
                 std::shared_ptr<storm::logic::Formula const> formula;
                 if (!symbolicInput.properties.empty()) {
                     formula = symbolicInput.properties.front().getRawFormula();

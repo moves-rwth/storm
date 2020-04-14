@@ -32,7 +32,7 @@ set(Z3_SOLVER ${Z3_EXEC})
 # set the LIBZ3_FOUND variable by utilizing the following macro
 # (which also handles the REQUIRED and QUIET arguments)
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(z3 DEFAULT_MSG
+find_package_handle_standard_args(Z3 DEFAULT_MSG
                                   Z3_LIBRARY Z3_INCLUDE_DIR)
 
 IF (NOT Z3_FIND_QUIETLY)

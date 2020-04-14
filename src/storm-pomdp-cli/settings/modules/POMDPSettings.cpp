@@ -13,6 +13,7 @@ namespace storm {
         namespace modules {
             
             const std::string POMDPSettings::moduleName = "pomdp";
+            const std::string noCanonicOption = "nocanonic";
             const std::string exportAsParametricModelOption = "parametric-drn";
             const std::string gridApproximationOption = "gridapproximation";
             const std::string qualitativeReductionOption = "qualitativereduction";
@@ -31,6 +32,7 @@ namespace storm {
             const std::string checkFullyObservableOption = "check-fully-observable";
 
             POMDPSettings::POMDPSettings() : ModuleSettings(moduleName) {
+                this->addOption(storm::settings::OptionBuilder(moduleName, noCanonicOption, false, "If this is set, actions will not be ordered canonically. Could yield incorrect results.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportAsParametricModelOption, false, "Export the parametric file.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which to write the model.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, qualitativeReductionOption, false, "Reduces the model size by performing qualitative analysis (E.g. merge states with prob. 1.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, analyzeUniqueObservationsOption, false, "Computes the states with a unique observation").build());
@@ -45,6 +47,10 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, memlessSearchOption, false, "Search for a qualitative memoryless scheuler").addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "method name").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(memlessSearchMethods)).setDefaultValueString("none").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, checkFullyObservableOption, false, "Performs standard model checking on the underlying MDP").build());
 
+            }
+
+            bool POMDPSettings::isNoCanonicSet() const {
+                return this->getOption(noCanonicOption).getHasOptionBeenSet();
             }
 
             bool POMDPSettings::isExportToParametricSet() const {

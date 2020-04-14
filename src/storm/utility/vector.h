@@ -142,6 +142,12 @@ namespace storm {
                 return true;
             }
             
+            template<typename T, typename Comparator>
+            bool compareElementWise(std::vector<T> const& left, std::vector<T> const& right, Comparator comp = std::less<T>()) {
+                STORM_LOG_ASSERT(left.size() == right.size(), "Expected that vectors for comparison have equal size");
+                return std::equal(left.begin(), left.end(), right.begin(), comp);
+            }
+            
             /*!
              * Selects the elements from a vector at the specified positions and writes them consecutively into another vector.
              * @param vector The vector into which the selected elements are to be written.

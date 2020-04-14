@@ -86,81 +86,9 @@ namespace storm {
         storm::storage::BitVector QualitativeAnalysis<ValueType>::analyseProb1Max(storm::logic::UntilFormula const& formula) const {
             // We consider the states that satisfy the formula with prob.1 under arbitrary schedulers as goal states.
             storm::storage::BitVector goalStates = storm::utility::graph::performProb1A(pomdp.getTransitionMatrix(), pomdp.getTransitionMatrix().getRowGroupIndices(), pomdp.getBackwardTransitions(), checkPropositionalFormula(formula.getLeftSubformula()), checkPropositionalFormula(formula.getRightSubformula()));
-            
+            STORM_LOG_TRACE("Prob1A states according to MDP: " << goalStates);
             // Now find a set of observations such that there is a memoryless scheduler inducing prob. 1 for each state whose observation is in the set.
-            storm::storage::BitVector candidateStates = goalStates | checkPropositionalFormula(formula.getLeftSubformula());
-            storm::storage::BitVector candidateActions = pomdp.getTransitionMatrix().getRowFilter(candidateStates);
-            storm::storage::BitVector candidateObservations(pomdp.getNrObservations(), true);
-            
-            
-            bool converged = false;
-            while (!converged) {
-                converged = true;
-                
-                // Get the candidate states that can reach the goal with prob1 via candidate actions
-                storm::storage::BitVector newCandidates;
-                if (candidateActions.full()) {
-                    newCandidates = storm::utility::graph::performProb1E(pomdp.getTransitionMatrix(), pomdp.getTransitionMatrix().getRowGroupIndices(), pomdp.getBackwardTransitions(), candidateStates, goalStates);
-                } else {
-                    storm::storage::SparseMatrix<ValueType> filteredTransitions(pomdp.getTransitionMatrix().filterEntries(candidateActions));
-                    newCandidates = storm::utility::graph::performProb1E(filteredTransitions, filteredTransitions.getRowGroupIndices(), filteredTransitions.transpose(true), candidateStates, goalStates);
-                }
-                if (candidateStates != newCandidates) {
-                    converged = false;
-                    candidateStates = std::move(newCandidates);
-                }
-                
-                // Unselect all observations that have a non-candidate state
-                for (uint64_t state = candidateStates.getNextUnsetIndex(0); state < candidateStates.size(); state = candidateStates.getNextUnsetIndex(state + 1)) {
-                    candidateObservations.set(pomdp.getObservation(state), false);
-                }
-                
-                // update the candidate actions to the set of actions that stay inside the candidate state set
-                std::vector<storm::storage::BitVector> candidateActionsPerObservation(pomdp.getNrObservations());
-                for (auto const& state : candidateStates) {
-                    auto& candidateActionsAtState = candidateActionsPerObservation[pomdp.getObservation(state)];
-                    if (candidateActionsAtState.size() == 0) {
-                        candidateActionsAtState.resize(pomdp.getNumberOfChoices(state), true);
-                    }
-                    STORM_LOG_ASSERT(candidateActionsAtState.size() == pomdp.getNumberOfChoices(state), "State " + std::to_string(state) + " has " + std::to_string(pomdp.getNumberOfChoices(state)) + " actions, different from other with same observation (" + std::to_string(candidateActionsAtState.size()) + ")." );
-                    for (auto const& action : candidateActionsAtState) {
-                        for (auto const& entry : pomdp.getTransitionMatrix().getRow(state, action)) {
-                            if (!candidateStates.get(entry.getColumn())) {
-                                candidateActionsAtState.set(action, false);
-                                break;
-                            }
-                        }
-                    }
-                }
-                
-                // Unselect all observations without such an action
-                for (auto const& o : candidateObservations) {
-                    if (candidateActionsPerObservation[o].empty()) {
-                        candidateObservations.set(o, false);
-                    }
-                }
-                
-                // only keep the candidate states with a candidateObservation
-                for (auto const& state : candidateStates) {
-                    if (!candidateObservations.get(pomdp.getObservation(state)) && !goalStates.get(state)) {
-                        candidateStates.set(state, false);
-                        converged = false;
-                    }
-                }
-                
-                // Only keep the candidate actions originating from a candidateState. Also transform the representation of candidate actions
-                candidateActions.clear();
-                for (auto const& state : candidateStates) {
-                    uint64_t offset = pomdp.getTransitionMatrix().getRowGroupIndices()[state];
-                    for (auto const& action : candidateActionsPerObservation[pomdp.getObservation(state)]) {
-                        candidateActions.set(offset + action);
-                    }
-                }
-            }
-            
-            assert(goalStates.isSubsetOf(candidateStates));
-            
-            return candidateStates;
+            return goalStates;
             
         }
         

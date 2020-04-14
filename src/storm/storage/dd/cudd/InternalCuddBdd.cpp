@@ -196,7 +196,7 @@ namespace storm {
             
             // Open the file, dump the DD and close it again.
             std::vector<cudd::BDD> cuddBddVector = { this->getCuddBdd() };
-            FILE* filePointer = fopen(filename.c_str() , "w");
+            FILE* filePointer = fopen(filename.c_str() , "a+");
             if (showVariablesIfPossible) {
                 ddManager->getCuddManager().DumpDot(cuddBddVector, ddVariableNames.data(), &ddNames[0], filePointer);
             } else {

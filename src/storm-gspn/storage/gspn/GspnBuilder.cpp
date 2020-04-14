@@ -13,7 +13,7 @@ namespace storm {
             gspnName = name;
         }
         
-        uint_fast64_t GspnBuilder::addPlace(boost::optional<uint64_t> capacity, uint_fast64_t const& initialTokens, std::string const& name) {
+        uint_fast64_t GspnBuilder::addPlace(boost::optional<uint64_t> const& capacity, uint_fast64_t const& initialTokens, std::string const& name) {
             auto newId = places.size();
             auto place = storm::gspn::Place(newId);
             place.setCapacity(capacity);
@@ -70,7 +70,7 @@ namespace storm {
             return addTimedTransition(priority, rate, 1, name);
         }
         
-        uint_fast64_t GspnBuilder::addTimedTransition(uint_fast64_t const &priority, double const &rate, boost::optional<uint64_t> numServers, std::string const& name) {
+        uint_fast64_t GspnBuilder::addTimedTransition(uint_fast64_t const &priority, double const &rate, boost::optional<uint64_t> const& numServers, std::string const& name) {
             auto trans = storm::gspn::TimedTransition<double>();
             auto newId = GSPN::timedTransitionIdToTransitionId(timedTransitions.size());
             trans.setName(name);

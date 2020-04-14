@@ -27,7 +27,8 @@ namespace storm {
                 bool isNumericPrecisionSetFromDefault() const;
                 double getNumericPrecision() const;
                 bool isCacheSimplicesSet() const;
-                
+                bool isUnfoldBeliefMdpSizeThresholdSet() const;
+                uint64_t getUnfoldBeliefMdpSizeThreshold() const;
                 // The name of the module.
                 static const std::string moduleName;
 
