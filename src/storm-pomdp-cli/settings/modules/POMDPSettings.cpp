@@ -27,7 +27,7 @@ namespace storm {
             const std::string transformBinaryOption = "transformbinary";
             const std::string transformSimpleOption = "transformsimple";
             const std::string memlessSearchOption = "memlesssearch";
-            std::vector<std::string> memlessSearchMethods = {"none", "ccdmemless", "ccdmemory", "iterative"};
+            std::vector<std::string> memlessSearchMethods = {"none", "ccd-memless", "ccd-memory", "iterative"};
             const std::string checkFullyObservableOption = "check-fully-observable";
 
             POMDPSettings::POMDPSettings() : ModuleSettings(moduleName) {

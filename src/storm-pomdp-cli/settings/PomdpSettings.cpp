@@ -32,6 +32,7 @@
 
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
 #include "storm-pomdp-cli/settings/modules/GridApproximationSettings.h"
+#include "storm-pomdp-cli/settings/modules/QualitativePOMDPAnalysisSettings.h"
 
 namespace storm {
     namespace settings {
@@ -46,7 +47,9 @@ namespace storm {
         
             storm::settings::addModule<storm::settings::modules::POMDPSettings>();
             storm::settings::addModule<storm::settings::modules::GridApproximationSettings>();
-        
+            storm::settings::addModule<storm::settings::modules::QualitativePOMDPAnalysisSettings>();
+
+
             storm::settings::addModule<storm::settings::modules::TransformationSettings>();
             storm::settings::addModule<storm::settings::modules::GmmxxEquationSolverSettings>();
             storm::settings::addModule<storm::settings::modules::EigenEquationSolverSettings>();

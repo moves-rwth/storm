@@ -13,15 +13,17 @@ namespace storm {
         namespace modules {
 
             const std::string QualitativePOMDPAnalysisSettings::moduleName = "pomdpQualitative";
-            const std::string exportSATCallsOption = "exportSATCallsPath";
-            const std::string lookaheadHorizonOption = "lookaheadHorizon";
-            const std::string onlyDeterministicOption = "onlyDeterministic";
+            const std::string exportSATCallsOption = "exportSATcallspath";
+            const std::string lookaheadHorizonOption = "lookaheadhorizon";
+            const std::string onlyDeterministicOption = "onlydeterministic";
+            const std::string winningRegionOption = "winningregion";
 
 
             QualitativePOMDPAnalysisSettings::QualitativePOMDPAnalysisSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportSATCallsOption, false, "Export the SAT calls?.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("path", "The name of the file to which to write the model.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, lookaheadHorizonOption, false, "In reachability in combination with a discrete ranking function, a lookahead is necessary.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("bound", "The lookahead. Use 0 for the number of states.").setDefaultValueUnsignedInteger(0).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, onlyDeterministicOption, false, "Search only for deterministic schedulers").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, winningRegionOption, false, "Search for the winning region").build());
             }
 
             uint64_t QualitativePOMDPAnalysisSettings::getLookahead() const {
@@ -39,6 +41,9 @@ namespace storm {
                 return this->getOption(onlyDeterministicOption).getHasOptionBeenSet();
             }
 
+            bool QualitativePOMDPAnalysisSettings::isWinningRegionSet() const {
+                return this->getOption(winningRegionOption).getHasOptionBeenSet();
+            }
 
             void QualitativePOMDPAnalysisSettings::finalize() {
             }
