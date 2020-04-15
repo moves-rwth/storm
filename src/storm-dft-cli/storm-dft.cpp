@@ -78,7 +78,7 @@ void processOptions() {
 
     //Export to Bdd Dot
     if(dftIOSettings.isExportToBddDot()) {
-        storm::api::exportDFTToBddDot<ValueType>(dft, coreSettings.getDdLibraryType(), dftIOSettings.getExportBddDotFilename());
+        storm::api::exportDFTToBddDot<ValueType>(dft, dftIOSettings.getExportBddDotFilename());
     }
 
     bool useSMT = false;

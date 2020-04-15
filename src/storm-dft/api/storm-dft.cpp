@@ -12,14 +12,13 @@ namespace storm {
     namespace api {
 
         template<>
-        void exportDFTToBddDot(std::shared_ptr<storm::storage::DFT<double>> const& dft, storm::dd::DdType const type, std::string const& file) {
+        void exportDFTToBddDot(std::shared_ptr<storm::storage::DFT<double>> const& dft, std::string const& file) {
                 storm::modelchecker::SFTBDDChecker<double> checker{dft};
-                checker.translate();
-                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export to Bdd Dot not supported for this dd library.");
+                checker.exportBddToDot(file);
         }
 
         template<>
-        void exportDFTToBddDot(std::shared_ptr<storm::storage::DFT<storm::RationalFunction>> const& dft, storm::dd::DdType const type, std::string const& file) {
+        void exportDFTToBddDot(std::shared_ptr<storm::storage::DFT<storm::RationalFunction>> const& dft, std::string const& file) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export to Bdd Dot not supported for this data type.");
         }
 
