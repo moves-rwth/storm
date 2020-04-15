@@ -10,7 +10,7 @@ namespace storm {
         }
 
         RandomProbabilityGenerator<double>::RandomProbabilityGenerator(uint64_t seed)
-        : engine(seed), distribution(0.0, 1.0)
+        : distribution(0.0, 1.0), engine(seed)
         {
 
         }
