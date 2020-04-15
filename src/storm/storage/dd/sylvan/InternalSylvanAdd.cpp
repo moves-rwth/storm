@@ -803,16 +803,26 @@ namespace storm {
         void InternalAdd<DdType::Sylvan, ValueType>::exportToDot(std::string const& filename, std::vector<std::string> const&, bool) const {
             // Open the file, dump the DD and close it again.
             FILE* filePointer = fopen(filename.c_str() , "a+");
-            this->sylvanMtbdd.PrintDot(filePointer);
-            fclose(filePointer);
+            // fopen returns a nullptr on failure
+            if (filePointer == nullptr) {
+                STORM_LOG_ERROR("Failure to open file: " << filename);
+            } else {
+                this->sylvanMtbdd.PrintDot(filePointer);
+                fclose(filePointer);
+            }
         }
 
         template<typename ValueType>
         void InternalAdd<DdType::Sylvan, ValueType>::exportToText(std::string const& filename) const {
             // Open the file, dump the DD and close it again.
             FILE* filePointer = fopen(filename.c_str() , "a+");
-            this->sylvanMtbdd.PrintText(filePointer);
-            fclose(filePointer);
+            // fopen returns a nullptr on failure
+            if (filePointer == nullptr) {
+                STORM_LOG_ERROR("Failure to open file: " << filename);
+            } else {
+                this->sylvanMtbdd.PrintText(filePointer);
+                fclose(filePointer);
+            }
         }
 
         template<typename ValueType>
