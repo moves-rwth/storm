@@ -76,9 +76,32 @@ void processOptions() {
         return;
     }
 
-    //Export to Bdd Dot
-    if(dftIOSettings.isExportToBddDot()) {
-        storm::api::exportDFTToBddDot<ValueType>(dft, dftIOSettings.getExportBddDotFilename());
+    // BDD Analysis
+    if(dftIOSettings.isExportToBddDot() ||
+            dftIOSettings.isAnalyzeWithBdds() ||
+            dftIOSettings.isMinimimCutSets()) {
+
+        bool const isExportToBddDot{dftIOSettings.isExportToBddDot()};
+        bool const isAnalyzeWithBdds{dftIOSettings.isAnalyzeWithBdds()};
+        bool const isTimebound{isAnalyzeWithBdds &&
+            dftIOSettings.usePropTimebound()};
+
+        double timebound{0};
+        if (isTimebound) {
+            timebound = dftIOSettings.getPropTimebound();
+        }
+
+        std::string filename{""};
+        if(isExportToBddDot) {
+            filename = dftIOSettings.getExportBddDotFilename();
+        }
+
+        storm::api::analyzeDFTBdd<ValueType>(dft, true, filename, false, isTimebound, timebound);
+
+        //don't perform other analysis if analyzeWithBdds is set
+        if(isAnalyzeWithBdds) {
+            return;
+        }
     }
 
     bool useSMT = false;

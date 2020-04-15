@@ -116,6 +116,20 @@ namespace storm {
                 bool isExportToSmt() const;
 
                 /*!
+                 * Retrieves whether the analyze with Bdds option was set.
+                 *
+                 * @return True if the analyze with Bdds option was set.
+                 */
+                bool isAnalyzeWithBdds() const;
+
+                /*!
+                 * Retrieves whether the minimum cut sets option was set.
+                 *
+                 * @return True if the minimum cut sets option was set.
+                 */
+                bool isMinimimCutSets() const;
+
+                /*!
                  * Retrieves whether the export to Bdd Dot file option was set.
                  *
                  * @return True if the export to Bdd Dot file option was set.
@@ -169,6 +183,8 @@ namespace storm {
                 static const std::string propTimepointsOptionName;
                 static const std::string minValueOptionName;
                 static const std::string maxValueOptionName;
+                static const std::string analyzeWithBdds;
+                static const std::string minimalCutSets;
                 static const std::string exportToJsonOptionName;
                 static const std::string exportToSmtOptionName;
                 static const std::string exportToBddDotOptionName;

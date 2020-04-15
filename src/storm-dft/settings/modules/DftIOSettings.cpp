@@ -24,6 +24,8 @@ namespace storm {
             const std::string DftIOSettings::propTimepointsOptionName = "timepoints";
             const std::string DftIOSettings::minValueOptionName = "min";
             const std::string DftIOSettings::maxValueOptionName = "max";
+            const std::string DftIOSettings::analyzeWithBdds = "bdd";
+            const std::string DftIOSettings::minimalCutSets = "mcs";
             const std::string DftIOSettings::exportToJsonOptionName = "export-json";
             const std::string DftIOSettings::exportToSmtOptionName = "export-smt";
             const std::string DftIOSettings::exportToBddDotOptionName = "export-bdd-dot";
@@ -55,6 +57,15 @@ namespace storm {
                                         .build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, minValueOptionName, false, "Compute minimal value in case of non-determinism.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, maxValueOptionName, false, "Compute maximal value in case of non-determinism.").build());
+
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, analyzeWithBdds, false,
+                                                               "Try to use Bdds for the analysis. Unsupportet properties will be ignored")
+                                        .build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, minimalCutSets, false,
+                                                               "Calculate minimum cut sets.")
+                                        .build());
+
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportToJsonOptionName, false, "Export the model to the Cytoscape JSON format.")
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the JSON file to export to.").build())
                                         .build());
@@ -124,6 +135,14 @@ namespace storm {
 
             bool DftIOSettings::isComputeMaximalValue() const {
                 return this->getOption(maxValueOptionName).getHasOptionBeenSet();
+            }
+
+            bool DftIOSettings::isAnalyzeWithBdds() const {
+                return this->getOption(analyzeWithBdds).getHasOptionBeenSet();
+            }
+
+            bool DftIOSettings::isMinimimCutSets() const {
+                return this->getOption(minimalCutSets).getHasOptionBeenSet();
             }
 
             bool DftIOSettings::isExportToJson() const {

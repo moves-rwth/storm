@@ -10,16 +10,49 @@
 
 namespace storm {
     namespace api {
-
         template<>
-        void exportDFTToBddDot(std::shared_ptr<storm::storage::DFT<double>> const& dft, std::string const& file) {
-                storm::modelchecker::SFTBDDChecker<double> checker{dft};
-                checker.exportBddToDot(file);
+        void analyzeDFTBdd(
+                std::shared_ptr<storm::storage::DFT<double>> const &dft,
+                bool const exportToDot,
+                std::string const &filename,
+                bool const calculateMCS,
+                bool const calculateProbability,
+                double const timebound) {
+            storm::modelchecker::SFTBDDChecker<double> checker{dft};
+            if(exportToDot) {
+                checker.exportBddToDot(filename);
+            }
+
+            if(calculateMCS) {
+                auto const minimalCutSets {checker.getMinimalCutSets()};
+
+                std::cout << "{\n";
+                for(auto const &minimalCutSet : minimalCutSets) {
+                    std::cout << '{';
+                    for(auto const &be : minimalCutSet) {
+                        std::cout << be << ' ';
+                    }
+                    std::cout << "},";
+                }
+                std::cout << "}\n";
+            }
+
+            if(calculateProbability) {
+                auto const probability{
+                    checker.getProbabilityAtTimebound(timebound)};
+                std::cout << "Systemfailure Probability at Timebound " << timebound << " is " << probability << '\n';
+            }
         }
 
         template<>
-        void exportDFTToBddDot(std::shared_ptr<storm::storage::DFT<storm::RationalFunction>> const& dft, std::string const& file) {
-            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export to Bdd Dot not supported for this data type.");
+        void analyzeDFTBdd(
+                std::shared_ptr<storm::storage::DFT<storm::RationalFunction>> const &dft,
+                bool const exportToDot,
+                std::string const &filename,
+                bool const calculateMCS,
+                bool const calculateProbability,
+                double const timebound) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BDD analysis is not supportet for this data type.");
         }
 
         template<>

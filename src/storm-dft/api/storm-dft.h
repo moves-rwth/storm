@@ -151,6 +151,37 @@ namespace storm {
             return results;
         }
 
+
+        /*!
+         * Analyze the DFT using BDDs
+         *
+         * @param dft DFT
+         *
+         * @param calculateMCS
+         * If true exports the bdd representing the top level gate of the dft
+         * in the dot format
+         *
+         * @param filename
+         * The name of the file for exporting to dot
+         *
+         * @param calculateMCS
+         * If true calculates the minimum cut sets
+         *
+         * @param calculateProbability
+         * If true calculates the system failure propbability
+         *
+         * @param timebound
+         * The timebound for probability calculations
+         */
+        template<typename ValueType>
+        void analyzeDFTBdd(
+                std::shared_ptr<storm::storage::DFT<ValueType>> const &dft,
+                bool const exportToDot,
+                std::string const &filename,
+                bool const calculateMCS,
+                bool const calculateProbability,
+                double const timebound);
+
         /*!
          * Analyze the DFT using the SMT encoding
          *
@@ -187,16 +218,6 @@ namespace storm {
          */
         template<typename ValueType>
         void exportDFTToSMT(storm::storage::DFT<ValueType> const& dft, std::string const& file);
-
-        /*!
-         * Export DFT to Bdd Graph in the dot format
-         *
-         * @param dft DFT.
-         * @param type The Type of the preferred dd library.
-         * @param file Filename.
-         */
-        template<typename ValueType>
-        void exportDFTToBddDot(std::shared_ptr<storm::storage::DFT<ValueType>> const& dft, std::string const& file);
 
         /*!
          * Transform DFT to GSPN.
