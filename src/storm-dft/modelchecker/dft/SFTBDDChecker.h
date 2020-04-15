@@ -1,6 +1,8 @@
 #pragma once
 
+#include <map>
 #include <memory>
+#include <set>
 #include <unordered_map>
 #include <vector>
 
@@ -37,7 +39,7 @@ class SFTBDDChecker {
      */
     Bdd translate() { return topLevelGateBdd; }
 
-    std::set<std::set<std::string>> getMinimalCutSets() {
+    std::set<std::set<std::string>> getMinimalCutSets() const {
         auto bdd{minsol(topLevelGateBdd)};
 
         std::set<std::set<std::string>> rval{};
@@ -47,7 +49,75 @@ class SFTBDDChecker {
         return rval;
     }
 
+    /**
+     * \return
+     * The Probability that the top level gate fails.
+     *
+     * \note
+     * Works only with exponential distributions and no spares.
+     * Otherwise the function returns an arbitrary value
+     */
+    double getProbabilityAtTimebound(double timebound) const {
+        std::map<uint32_t, double> indexToProbability{};
+        for (auto const &be : dft->getBasicElements()) {
+            if (be->type() == storm::storage::DFTElementType::BE_EXP) {
+                auto const failureRate{
+                    std::static_pointer_cast<
+                        storm::storage::BEExponential<ValueType>>(be)
+                        ->activeFailureRate()};
+
+                // exponential distribution
+                // p(T <= t) = 1 - exp(-lambda*t)
+                auto const failurePropability{
+                    1 - std::exp(-failureRate * timebound)};
+
+                auto const currentIndex{sylvanBddManager->getIndex(be->name())};
+                indexToProbability[currentIndex] = failurePropability;
+            } else {
+                STORM_LOG_ERROR("Basic Element Type not supported.");
+                return 1;
+            }
+        }
+
+        return recursiveProbability(topLevelGateBdd, indexToProbability);
+    }
+
    private:
+    /**
+     * \returns
+     * The probability that the bdd is true
+     * given the probabilities that the variables are true.
+     *
+     * \param bdd
+     * The bdd for which to calculate the probability
+     *
+     * \param indexToProbability
+     * A reference to a mapping
+     * that must map every variable in the bdd to a probability
+     */
+    double recursiveProbability(
+        Bdd const bdd,
+        std::map<uint32_t, double> const &indexToProbability) const {
+        if (bdd.isOne()) {
+            return 1;
+        } else if (bdd.isZero()) {
+            return 0;
+        }
+
+        auto const currentVar{bdd.TopVar()};
+        auto const currentProbability{indexToProbability.at(currentVar)};
+
+        auto const thenProbability{
+            recursiveProbability(bdd.Then(), indexToProbability)};
+        auto const elseProbability{
+            recursiveProbability(bdd.Else(), indexToProbability)};
+
+        // P(Ite(x, f1, f2)) = P(x) * P(f1) + P(!x) * P(f2)
+        auto const propability{currentProbability * thenProbability +
+                               (1 - currentProbability) * elseProbability};
+        return propability;
+    }
+
     /**
      * The without operator as defined by Rauzy93
      * https://doi.org/10.1016/0951-8320(93)90060-C
