@@ -29,8 +29,6 @@ class SFTBDDChecker {
             transformer{this->dft, this->sylvanBddManager};
 
         topLevelGateBdd = transformer.transform();
-
-        STORM_LOG_ERROR("MCS: " << getMinimalCutSets());
     }
 
     /**
