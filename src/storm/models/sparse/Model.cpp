@@ -417,7 +417,7 @@ namespace storm {
             bool Model<ValueType, RewardModelType>::isSinkState(uint64_t state) const {
                 for (auto const& entry : this->getTransitionMatrix().getRowGroup(state)) {
                     if (entry.getColumn() != state) { return false; }
-                    if (storm::utility::isOne(entry.getValue())) { return false; }
+                    if (!storm::utility::isOne(entry.getValue())) { return false; }
                 }
                 return true;
             }
