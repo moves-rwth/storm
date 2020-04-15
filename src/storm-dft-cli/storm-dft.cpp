@@ -80,7 +80,7 @@ void processOptions() {
     if(dftIOSettings.isExportToBddDot() ||
             dftIOSettings.isAnalyzeWithBdds() ||
             dftIOSettings.isMinimimCutSets()) {
-
+        bool const isMinimimCutSets{dftIOSettings.isMinimimCutSets()};
         bool const isExportToBddDot{dftIOSettings.isExportToBddDot()};
         bool const isAnalyzeWithBdds{dftIOSettings.isAnalyzeWithBdds()};
         bool const isTimebound{isAnalyzeWithBdds &&
@@ -96,7 +96,12 @@ void processOptions() {
             filename = dftIOSettings.getExportBddDotFilename();
         }
 
-        storm::api::analyzeDFTBdd<ValueType>(dft, true, filename, false, isTimebound, timebound);
+        storm::api::analyzeDFTBdd<ValueType>(dft,
+                isExportToBddDot,
+                filename,
+                isMinimimCutSets,
+                isTimebound,
+                timebound);
 
         //don't perform other analysis if analyzeWithBdds is set
         if(isAnalyzeWithBdds) {
