@@ -8,6 +8,7 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.5.x
 -------------
 ## Version 1.5.x (Under development)
+- Scheduler export: Properly handle models with end components. Added export in .json format.
 - CMake: Search for Gurobi prefers new versions
 - Tests: Enabled tests for permissive schedulers
 

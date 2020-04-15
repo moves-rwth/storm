@@ -89,7 +89,7 @@ namespace storm {
             static void toFile(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::string const& filepath, bool checkValid = true, bool compact = false);
             static void toStream(storm::jani::Model const& janiModel, std::vector<storm::jani::Property> const& formulas, std::ostream& ostream, bool checkValid = false, bool compact = false);
             
-            
+            static ExportJsonType getEdgeAsJson(storm::jani::Model const& janiModel, uint64_t automatonIndex, uint64_t edgeIndex, bool commentExpressions = true);
         private:
             void convertModel(storm::jani::Model const& model, bool commentExpressions = true);
             void convertProperties(std::vector<storm::jani::Property> const& formulas, storm::jani::Model const& model);

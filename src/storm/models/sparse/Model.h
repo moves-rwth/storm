@@ -318,6 +318,8 @@ namespace storm {
                  * @param out The stream the information is to be printed to.
                  */
                 virtual void printModelInformationToStream(std::ostream& out) const override;
+
+                bool isSinkState(uint64_t sink) const;
                 
                 /*!
                  * Exports the model to the dot-format and prints the result to the given stream.

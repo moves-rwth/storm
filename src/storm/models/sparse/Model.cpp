@@ -419,7 +419,16 @@ namespace storm {
             void Model<ValueType, RewardModelType>::setTransitionMatrix(storm::storage::SparseMatrix<ValueType>&& transitionMatrix) {
                 this->transitionMatrix = std::move(transitionMatrix);
             }
-            
+
+            template<typename ValueType, typename RewardModelType>
+            bool Model<ValueType, RewardModelType>::isSinkState(uint64_t state) const {
+                for (auto const& entry : this->getTransitionMatrix().getRowGroup(state)) {
+                    if (entry.getColumn() != state) { return false; }
+                    if (storm::utility::isOne(entry.getValue())) { return false; }
+                }
+                return true;
+            }
+
             template<typename ValueType, typename RewardModelType>
             bool Model<ValueType, RewardModelType>::isSparseModel() const {
                 return true;

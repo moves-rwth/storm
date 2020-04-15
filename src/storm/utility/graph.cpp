@@ -552,7 +552,9 @@ namespace storm {
                 // set an arbitrary (valid) choice for the psi states.
                 for (auto const& psiState : psiStates) {
                     for (uint_fast64_t memState = 0; memState < scheduler.getNumberOfMemoryStates(); ++memState) {
-                        scheduler.setChoice(0, psiState, memState);
+                        if (!scheduler.getChoice(psiState, memState).isDefined()) {
+                            scheduler.setChoice(0, psiState, memState);
+                        }
                     }
                 }
                 

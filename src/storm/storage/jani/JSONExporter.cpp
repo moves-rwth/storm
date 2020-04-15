@@ -995,36 +995,39 @@ namespace storm {
             return destDeclarations;
         }
         
+        ExportJsonType buildEdge(Edge const& edge , std::map<uint64_t, std::string> const& actionNames, std::map<uint64_t, std::string> const& locationNames, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, bool commentExpressions) {
+            STORM_LOG_THROW(edge.getDestinations().size() > 0, storm::exceptions::InvalidJaniException, "An edge without destinations is not allowed.");
+            ExportJsonType edgeEntry;
+            edgeEntry["location"] = locationNames.at(edge.getSourceLocationIndex());
+            if (!edge.hasSilentAction()) {
+                edgeEntry["action"] = actionNames.at(edge.getActionIndex());
+            }
+            if (edge.hasRate()) {
+                edgeEntry["rate"]["exp"] = buildExpression(edge.getRate(), constants, globalVariables, localVariables);
+                if (commentExpressions) {
+                    edgeEntry["rate"]["comment"] = edge.getRate().toString();
+                }
+            }
+            if (!edge.getGuard().isTrue()) {
+                edgeEntry["guard"]["exp"] = buildExpression(edge.getGuard(), constants, globalVariables, localVariables);
+                if (commentExpressions) {
+                    edgeEntry["guard"]["comment"] = edge.getGuard().toString();
+                }
+            }
+            edgeEntry["destinations"] = buildDestinations(edge.getDestinations(), locationNames, constants, globalVariables, localVariables, commentExpressions);
+            if (!edge.getAssignments().empty()) {
+                edgeEntry["assignments"] = buildAssignmentArray(edge.getAssignments(), constants, globalVariables, localVariables, commentExpressions);
+            }
+            return edgeEntry;
+        }
+        
         ExportJsonType buildEdges(std::vector<Edge> const& edges , std::map<uint64_t, std::string> const& actionNames, std::map<uint64_t, std::string> const& locationNames, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables, bool commentExpressions) {
             ExportJsonType edgeDeclarations = std::vector<ExportJsonType>();
             for(auto const& edge : edges) {
                 if (edge.getGuard().isFalse()) {
                     continue;
                 }
-                STORM_LOG_THROW(edge.getDestinations().size() > 0, storm::exceptions::InvalidJaniException, "An edge without destinations is not allowed.");
-                ExportJsonType edgeEntry;
-                edgeEntry["location"] = locationNames.at(edge.getSourceLocationIndex());
-                if(!edge.hasSilentAction()) {
-                    edgeEntry["action"] = actionNames.at(edge.getActionIndex());
-                }
-                if(edge.hasRate()) {
-                    edgeEntry["rate"]["exp"] = buildExpression(edge.getRate(), constants, globalVariables, localVariables);
-                    if (commentExpressions) {
-                        edgeEntry["rate"]["comment"] = edge.getRate().toString();
-                    }
-                }
-                if (!edge.getGuard().isTrue()) {
-                    edgeEntry["guard"]["exp"] = buildExpression(edge.getGuard(), constants, globalVariables, localVariables);
-                    if (commentExpressions) {
-                        edgeEntry["guard"]["comment"] = edge.getGuard().toString();
-                    }
-                }
-                edgeEntry["destinations"] = buildDestinations(edge.getDestinations(), locationNames, constants, globalVariables, localVariables, commentExpressions);
-                if (!edge.getAssignments().empty()) {
-                    edgeEntry["assignments"] = buildAssignmentArray(edge.getAssignments(), constants, globalVariables, localVariables, commentExpressions);
-                }
-                
-                edgeDeclarations.push_back(std::move(edgeEntry));
+                edgeDeclarations.push_back(buildEdge(edge, actionNames, locationNames, constants, globalVariables, localVariables, commentExpressions));
             }
             return edgeDeclarations;
         }
@@ -1063,6 +1066,11 @@ namespace storm {
             jsonStruct["restrict-initial"]["exp"] = buildExpression(janiModel.getInitialStatesRestriction(), janiModel.getConstants(), janiModel.getGlobalVariables());
             jsonStruct["automata"] = buildAutomataArray(janiModel.getAutomata(), janiModel.getActionIndexToNameMap(), janiModel.getConstants(), janiModel.getGlobalVariables(), commentExpressions);
             jsonStruct["system"] = CompositionJsonExporter::translate(janiModel.getSystemComposition());
+        }
+        
+        ExportJsonType JsonExporter::getEdgeAsJson(storm::jani::Model const& janiModel, uint64_t automatonIndex, uint64_t edgeIndex, bool commentExpressions) {
+            auto const& automaton = janiModel.getAutomaton(automatonIndex);
+            return buildEdge(automaton.getEdge(edgeIndex), janiModel.getActionIndexToNameMap(), automaton.buildIdToLocationNameMap(), janiModel.getConstants(), janiModel.getGlobalVariables(), automaton.getVariables(), commentExpressions);
         }
         
         std::string janiFilterTypeString(storm::modelchecker::FilterType const& ft) {

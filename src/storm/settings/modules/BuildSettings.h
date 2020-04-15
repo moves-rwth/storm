@@ -99,7 +99,12 @@ namespace storm {
                  * @return
                  */
                 bool isBuildOutOfBoundsStateSet() const;
-                
+
+                /*!
+                 * Retrieves whether to build the overlapping label
+                 */
+                 bool isAddOverlappingGuardsLabelSet() const;
+
                 /*!
                  * Retrieves the number of bits that should be used to represent unbounded integer variables
                  * @return

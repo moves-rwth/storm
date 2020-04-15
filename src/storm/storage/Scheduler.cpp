@@ -1,7 +1,8 @@
-#include <storm/utility/vector.h>
+#include "storm/utility/vector.h"
 #include "storm/storage/Scheduler.h"
 
 #include "storm/utility/macros.h"
+#include "storm/adapters/JsonAdapter.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include <boost/algorithm/string/join.hpp>
 
@@ -220,6 +221,54 @@ namespace storm {
                 out << "Skipped " << numOfSkippedStatesWithUniqueChoice << " deterministic states with unique choice." << std::endl;
             }
             out << "___________________________________________________________________" << std::endl;
+        }
+
+        template <>
+        void Scheduler<float>::printJsonToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<float>> model, bool skipUniqueChoices) const {
+            STORM_LOG_THROW(isMemorylessScheduler(), storm::exceptions::NotImplementedException, "Json export of schedulers not implemented for this value type.");
+        }
+
+        template <typename ValueType>
+        void Scheduler<ValueType>::printJsonToStream(std::ostream& out, std::shared_ptr<storm::models::sparse::Model<ValueType>> model, bool skipUniqueChoices) const {
+            STORM_LOG_THROW(model == nullptr || model->getNumberOfStates() == schedulerChoices.front().size(), storm::exceptions::InvalidOperationException, "The given model is not compatible with this scheduler.");
+            STORM_LOG_WARN_COND(!(skipUniqueChoices && model == nullptr), "Can not skip unique choices if the model is not given.");
+            STORM_LOG_THROW(isMemorylessScheduler(), storm::exceptions::NotImplementedException, "Json export of schedulers with memory not implemented.");
+            storm::json<storm::RationalNumber> output;
+            for (uint64_t state = 0; state < schedulerChoices.front().size(); ++state) {
+                // Check whether the state is skipped
+                if (skipUniqueChoices && model != nullptr && model->getTransitionMatrix().getRowGroupSize(state) == 1) {
+                    continue;
+                }
+                storm::json<storm::RationalNumber> stateChoicesJson;
+                if (model && model->hasStateValuations()) {
+                    stateChoicesJson["s"] = model->getStateValuations().getStateValuation(state).toJson();
+                } else {
+                    stateChoicesJson["s"] = state;
+                }
+                auto const& choice = schedulerChoices.front()[state];
+                storm::json<storm::RationalNumber> choicesJson;
+                if (choice.isDefined()) {
+                    for (auto const& choiceProbPair : choice.getChoiceAsDistribution()) {
+                        uint64_t globalChoiceIndex = model->getTransitionMatrix().getRowGroupIndices()[state] + choiceProbPair.first;
+                        storm::json<storm::RationalNumber> choiceJson;
+                        if (model && model->hasChoiceOrigins() && model->getChoiceOrigins()->getIdentifier(globalChoiceIndex) != model->getChoiceOrigins()->getIdentifierForChoicesWithNoOrigin()) {
+                            choiceJson["origin"] = model->getChoiceOrigins()->getChoiceAsJson(globalChoiceIndex);
+                        }
+                        if (model && model->hasChoiceLabeling()) {
+                            auto choiceLabels = model->getChoiceLabeling().getLabelsOfChoice(globalChoiceIndex);
+                            choiceJson["labels"] = std::vector<std::string>(choiceLabels.begin(), choiceLabels.end());
+                        }
+                        choiceJson["index"] = globalChoiceIndex;
+                        choiceJson["prob"] = storm::utility::convertNumber<storm::RationalNumber>(choiceProbPair.second);
+                        choicesJson.push_back(std::move(choiceJson));
+                    }
+                } else {
+                    choicesJson = "undefined";
+                }
+                stateChoicesJson["c"] = std::move(choicesJson);
+                output.push_back(std::move(stateChoicesJson));
+            }
+            out << output.dump(4);
         }
 
         template class Scheduler<double>;
