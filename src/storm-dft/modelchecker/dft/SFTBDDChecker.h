@@ -40,7 +40,7 @@ class SFTBDDChecker {
      * \param filename
      * The name of the file the dot graph is written to
      */
-    void exportBddToDot(std::string const filename) {
+    void exportBddToDot(std::string const &filename) {
         FILE *filePointer = fopen(filename.c_str(), "w+");
 
         // fopen returns a nullptr on failure
