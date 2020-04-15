@@ -32,7 +32,7 @@ namespace storm {
                     for(auto const &be : minimalCutSet) {
                         std::cout << be << ' ';
                     }
-                    std::cout << "},";
+                    std::cout << "},\n";
                 }
                 std::cout << "}\n";
             }
