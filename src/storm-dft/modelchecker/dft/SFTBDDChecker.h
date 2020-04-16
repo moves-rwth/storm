@@ -58,6 +58,11 @@ class SFTBDDChecker {
      */
     Bdd translate() { return topLevelGateBdd; }
 
+    /**
+     * \return
+     * A set of minimal cut sets,
+     * where the basic events are identified by their name
+     */
     std::set<std::set<std::string>> getMinimalCutSets() const {
         auto bdd{minsol(topLevelGateBdd)};
 
