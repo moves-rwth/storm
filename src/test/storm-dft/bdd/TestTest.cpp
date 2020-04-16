@@ -23,25 +23,32 @@ std::string const VotBdd =
 TEST(TestTest, And) {
     auto dft = storm::api::loadDFTJsonString<double>(AndBdd);
     storm::modelchecker::SFTBDDChecker<double> checker{dft};
-    auto result = checker.translate();
+
+    checker.exportBddToDot("/tmp/test/and.dot");
 }
 
 TEST(TestTest, Or) {
     auto dft = storm::api::loadDFTJsonString<double>(OrBdd);
     storm::modelchecker::SFTBDDChecker<double> checker{dft};
-    auto result = checker.translate();
+    auto result = checker.getBdd();
+
+    checker.exportBddToDot("/tmp/test/or.dot");
 }
 
 TEST(TestTest, AndOr) {
     auto dft = storm::api::loadDFTJsonString<double>(AndOrBdd);
     storm::modelchecker::SFTBDDChecker<double> checker{dft};
-    auto result = checker.translate();
+    auto result = checker.getBdd();
+
+    checker.exportBddToDot("/tmp/test/andOr.dot");
 }
 
 TEST(TestTest, Vot) {
     auto dft = storm::api::loadDFTJsonString<double>(VotBdd);
     storm::modelchecker::SFTBDDChecker<double> checker{dft};
-    auto result = checker.translate();
+    auto result = checker.getBdd();
+
+    checker.exportBddToDot("/tmp/test/vot.dot");
 }
 
 }  // namespace

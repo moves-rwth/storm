@@ -56,7 +56,7 @@ class SFTBDDChecker {
      * \return
      * Generated Bdd that represents the formula of the top level gate
      */
-    Bdd translate() { return topLevelGateBdd; }
+    Bdd getBdd() { return topLevelGateBdd; }
 
     /**
      * \return
