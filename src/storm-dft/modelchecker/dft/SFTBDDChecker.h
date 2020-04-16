@@ -103,7 +103,10 @@ class SFTBDDChecker {
             }
         }
 
-        return recursiveProbability(topLevelGateBdd, indexToProbability);
+        std::map<uint64_t, double> bddToProbability{};
+        auto const probability{recursiveProbability(
+            topLevelGateBdd, indexToProbability, bddToProbability)};
+        return probability;
     }
 
    private:
@@ -118,28 +121,39 @@ class SFTBDDChecker {
      * \param indexToProbability
      * A reference to a mapping
      * that must map every variable in the bdd to a probability
+     *
+     * \param bddToProbability
+     * A cache for common sub Bdds.
+     * Must be empty or from an earlier call with a bdd that is an
+     * ancestor of the current one.
      */
     double recursiveProbability(
-        Bdd const bdd,
-        std::map<uint32_t, double> const &indexToProbability) const {
+        Bdd const bdd, std::map<uint32_t, double> const &indexToProbability,
+        std::map<uint64_t, double> &bddToProbability) const {
         if (bdd.isOne()) {
             return 1;
         } else if (bdd.isZero()) {
             return 0;
         }
 
+        auto const it{bddToProbability.find(bdd.GetBDD())};
+        if (it != bddToProbability.end()) {
+            return it->second;
+        }
+
         auto const currentVar{bdd.TopVar()};
         auto const currentProbability{indexToProbability.at(currentVar)};
 
-        auto const thenProbability{
-            recursiveProbability(bdd.Then(), indexToProbability)};
-        auto const elseProbability{
-            recursiveProbability(bdd.Else(), indexToProbability)};
+        auto const thenProbability{recursiveProbability(
+            bdd.Then(), indexToProbability, bddToProbability)};
+        auto const elseProbability{recursiveProbability(
+            bdd.Else(), indexToProbability, bddToProbability)};
 
         // P(Ite(x, f1, f2)) = P(x) * P(f1) + P(!x) * P(f2)
-        auto const propability{currentProbability * thenProbability +
+        auto const probability{currentProbability * thenProbability +
                                (1 - currentProbability) * elseProbability};
-        return propability;
+        bddToProbability[bdd.GetBDD()] = probability;
+        return probability;
     }
 
     /**
