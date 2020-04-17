@@ -63,7 +63,7 @@ class SFTBDDChecker {
      * A set of minimal cut sets,
      * where the basic events are identified by their name
      */
-    std::set<std::set<std::string>> getMinimalCutSets() const {
+    std::set<std::set<std::string>> getMinimalCutSets() {
         auto bdd{minsol(topLevelGateBdd)};
 
         std::set<std::set<std::string>> rval{};
@@ -156,6 +156,7 @@ class SFTBDDChecker {
         return probability;
     }
 
+    std::map<uint64_t, std::map<uint64_t, Bdd>> withoutCache{};
     /**
      * The without operator as defined by Rauzy93
      * https://doi.org/10.1016/0951-8320(93)90060-C
@@ -166,13 +167,22 @@ class SFTBDDChecker {
      * \return
      * f without paths that are included in a path in g
      */
-    Bdd without(Bdd const f, Bdd const g) const {
+    Bdd without(Bdd const f, Bdd const g) {
         if (f.isZero() || g.isOne()) {
             return sylvanBddManager->getZero();
         } else if (g.isZero()) {
             return f;
         } else if (f.isOne()) {
             return sylvanBddManager->getOne();
+        }
+
+        auto const it1{withoutCache.find(f.GetBDD())};
+        if (it1 != withoutCache.end()) {
+            auto const &fCache{it1->second};
+            auto const it2{fCache.find(g.GetBDD())};
+            if (it2 != fCache.end()) {
+                return it2->second;
+            }
         }
 
         // f = Ite(x, f1, f2)
@@ -205,10 +215,13 @@ class SFTBDDChecker {
             auto const u{without(f1, g1)};
             auto const v{without(f2, g2)};
 
-            return varOne.Ite(u, v);
+            auto const result{varOne.Ite(u, v)};
+            withoutCache[f.GetBDD()][g.GetBDD()] = result;
+            return result;
         }
     }
 
+    std::map<uint64_t, Bdd> minsolCache{};
     /**
      * The minsol algorithm as defined by Rauzy93
      * https://doi.org/10.1016/0951-8320(93)90060-C
@@ -219,8 +232,13 @@ class SFTBDDChecker {
      * \return
      * A bdd encoding the minmal solutions of f
      */
-    Bdd minsol(Bdd const f) const {
+    Bdd minsol(Bdd const f) {
         if (f.isTerminal()) return f;
+
+        auto const it{minsolCache.find(f.GetBDD())};
+        if (it != minsolCache.end()) {
+            return it->second;
+        }
 
         // f = Ite(x, g, h)
 
@@ -232,7 +250,10 @@ class SFTBDDChecker {
 
         auto const currentVar{f.TopVar()};
         auto const varOne{sylvanBddManager->getPositiveLiteral(currentVar)};
-        return varOne.Ite(u, v);
+
+        auto const result{varOne.Ite(u, v)};
+        minsolCache[result.GetBDD()] = result;
+        return result;
     }
 
     /**
