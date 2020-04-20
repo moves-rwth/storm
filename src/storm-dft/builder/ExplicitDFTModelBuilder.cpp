@@ -59,14 +59,14 @@ namespace storm {
                     // Consider all children of the top level gate
                     std::vector<size_t> isubdft;
                     if (child->nrParents() > 1 || child->hasOutgoingDependencies()) {
-                        STORM_LOG_TRACE("child " << child->name() << "does not allow modularisation.");
+                        STORM_LOG_TRACE("child " << child->name() << " does not allow modularisation.");
                         isubdft.clear();
                     } else if (dft.isGate(child->id())) {
                         isubdft = dft.getGate(child->id())->independentSubDft(false);
                     } else {
                         STORM_LOG_ASSERT(dft.isBasicElement(child->id()), "Child is no BE.");
                         if(dft.getBasicElement(child->id())->hasIngoingDependencies()) {
-                            STORM_LOG_TRACE("child " << child->name() << "does not allow modularisation.");
+                            STORM_LOG_TRACE("child " << child->name() << " does not allow modularisation.");
                             isubdft.clear();
                         } else {
                             isubdft = {child->id()};
