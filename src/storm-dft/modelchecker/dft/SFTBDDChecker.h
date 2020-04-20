@@ -99,7 +99,7 @@ class SFTBDDChecker {
                 indexToProbability[currentIndex] = failurePropability;
             } else {
                 STORM_LOG_ERROR("Basic Element Type not supported.");
-                return 1;
+                return -1;
             }
         }
 
