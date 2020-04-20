@@ -7,6 +7,7 @@
 
 #include "storm-dft/modelchecker/dft/SFTBDDChecker.h"
 #include <memory>
+#include <vector>
 
 namespace storm {
     namespace api {
@@ -17,7 +18,7 @@ namespace storm {
                 std::string const &filename,
                 bool const calculateMCS,
                 bool const calculateProbability,
-                double const timebound) {
+                std::vector<double> const timepoints) {
             storm::modelchecker::SFTBDDChecker<double> checker{dft};
             if(exportToDot) {
                 checker.exportBddToDot(filename);
@@ -38,9 +39,11 @@ namespace storm {
             }
 
             if(calculateProbability) {
-                auto const probability{
-                    checker.getProbabilityAtTimebound(timebound)};
-                std::cout << "Systemfailure Probability at Timebound " << timebound << " is " << probability << '\n';
+                for(auto const& timebound : timepoints) {
+                    auto const probability{
+                        checker.getProbabilityAtTimebound(timebound)};
+                    std::cout << "Systemfailure Probability at Timebound " << timebound << " is " << probability << '\n';
+                }
             }
         }
 
@@ -51,7 +54,7 @@ namespace storm {
                 std::string const &filename,
                 bool const calculateMCS,
                 bool const calculateProbability,
-                double const timebound) {
+                std::vector<double> const timepoints) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BDD analysis is not supportet for this data type.");
         }
 

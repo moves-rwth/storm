@@ -83,12 +83,19 @@ void processOptions() {
         bool const isMinimimCutSets{dftIOSettings.isMinimimCutSets()};
         bool const isExportToBddDot{dftIOSettings.isExportToBddDot()};
         bool const isAnalyzeWithBdds{dftIOSettings.isAnalyzeWithBdds()};
+
         bool const isTimebound{isAnalyzeWithBdds &&
             dftIOSettings.usePropTimebound()};
+        bool const isTimepoints{isAnalyzeWithBdds &&
+            dftIOSettings.usePropTimepoints()};
+        bool const probabilityAnalysis {isTimebound || isTimepoints};
 
-        double timebound{0};
+        std::vector<double> timepoints{};
+        if(isTimepoints) {
+            timepoints = dftIOSettings.getPropTimepoints();
+        }
         if (isTimebound) {
-            timebound = dftIOSettings.getPropTimebound();
+            timepoints.push_back(dftIOSettings.getPropTimebound());
         }
 
         std::string filename{""};
@@ -100,10 +107,10 @@ void processOptions() {
                 isExportToBddDot,
                 filename,
                 isMinimimCutSets,
-                isTimebound,
-                timebound);
+                probabilityAnalysis,
+                timepoints);
 
-        //don't perform other analysis if analyzeWithBdds is set
+        // don't perform other analysis if analyzeWithBdds is set
         if(isAnalyzeWithBdds) {
             return;
         }

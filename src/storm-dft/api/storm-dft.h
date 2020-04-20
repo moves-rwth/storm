@@ -2,6 +2,7 @@
 
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "storm-dft/parser/DFTGalileoParser.h"
 #include "storm-dft/parser/DFTJsonParser.h"
@@ -170,8 +171,8 @@ namespace storm {
          * @param calculateProbability
          * If true calculates the system failure propbability
          *
-         * @param timebound
-         * The timebound for probability calculations
+         * @param timepoints
+         * The timebounds for probability calculations
          */
         template<typename ValueType>
         void analyzeDFTBdd(
@@ -180,7 +181,7 @@ namespace storm {
                 std::string const &filename,
                 bool const calculateMCS,
                 bool const calculateProbability,
-                double const timebound);
+                std::vector<double> const timepoints);
 
         /*!
          * Analyze the DFT using the SMT encoding
