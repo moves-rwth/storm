@@ -582,28 +582,6 @@ namespace storm {
 
             STORM_LOG_THROW(model || input.properties.empty(), storm::exceptions::InvalidSettingsException, "No input model.");
 
-
-
-            if (model) {
-                auto preprocessingResult = storm::pars::preprocessModel<DdType, ValueType>(model, input, mpi);
-                if (preprocessingResult.changed) {
-                    model = preprocessingResult.model;
-
-                    if (preprocessingResult.formulas) {
-                        std::vector<storm::jani::Property> newProperties;
-                        for (size_t i = 0; i < preprocessingResult.formulas.get().size(); ++i) {
-                            auto formula = preprocessingResult.formulas.get().at(i);
-                            STORM_LOG_ASSERT(i < input.properties.size(), "Index " << i << " greater than number of properties.");
-                            storm::jani::Property property = input.properties.at(i);
-                            newProperties.push_back(storm::jani::Property(property.getName(), formula, property.getUndefinedConstants(), property.getComment()));
-                        }
-                        input.properties = newProperties;
-                    }
-
-                    model->printModelInformationToStream(std::cout);
-                }
-            }
-
             if (monSettings.isMonotonicityAnalysisSet()) {
                 // Simplify the model
                 storm::utility::Stopwatch simplifyingWatch(true);

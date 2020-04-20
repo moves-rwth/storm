@@ -144,6 +144,23 @@ namespace storm {
             }
         }
         
+        typename SimpleValuation::Json SimpleValuation::toJson() const {
+            Json result;
+            for (auto const& variable : getManager()) {
+                if (variable.second.isBooleanType()) {
+                    result[variable.first.getName()] = this->getBooleanValue(variable.first);
+                } else if (variable.second.isIntegerType()) {
+                    result[variable.first.getName()] = this->getIntegerValue(variable.first);
+                } else if (variable.second.isRationalType()) {
+                    result[variable.first.getName()] = this->getRationalValue(variable.first);
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unexpected variable type.");
+                }
+            }
+            return result;
+        }
+        
+        
         std::ostream& operator<<(std::ostream& out, SimpleValuation const& valuation) {
             out << valuation.toString(false) << std::endl;
             return out;

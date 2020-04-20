@@ -33,6 +33,7 @@ namespace storm {
             const std::string buildChoiceOriginsOptionName = "buildchoiceorig";
             const std::string buildStateValuationsOptionName = "buildstateval";
             const std::string buildOutOfBoundsStateOptionName = "buildoutofboundsstate";
+            const std::string buildOverlappingGuardsLabelOptionName = "overlappingguardslabel";
             const std::string bitsForUnboundedVariablesOptionName = "int-bits";
 
             BuildSettings::BuildSettings() : ModuleSettings(moduleName) {
@@ -51,6 +52,7 @@ namespace storm {
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the exploration order to choose.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(explorationOrders)).setDefaultValueString("bfs").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, explorationChecksOptionName, false, "If set, additional checks (if available) are performed during model exploration to debug the model.").setShortName(explorationChecksOptionShortName).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, buildOutOfBoundsStateOptionName, false, "If set, a state for out-of-bounds valuations is added").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, buildOverlappingGuardsLabelOptionName, false, "For states where multiple guards are enabled, we add a label (for debugging DTMCs)").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, bitsForUnboundedVariablesOptionName, false, "Sets the number of bits that is used for unbounded integer variables.").setIsAdvanced()
                                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("number", "The number of bits.").addValidatorUnsignedInteger(ArgumentValidatorFactory::createUnsignedRangeValidatorExcluding(0,63)).setDefaultValueUnsignedInteger(32).build()).build());
             }
@@ -97,6 +99,10 @@ namespace storm {
 
             bool BuildSettings::isBuildOutOfBoundsStateSet() const {
                 return this->getOption(buildOutOfBoundsStateOptionName).getHasOptionBeenSet();
+            }
+
+            bool BuildSettings::isAddOverlappingGuardsLabelSet() const {
+                return this->getOption(buildOverlappingGuardsLabelOptionName).getHasOptionBeenSet();
             }
 
             storm::builder::ExplorationOrder BuildSettings::getExplorationOrder() const {

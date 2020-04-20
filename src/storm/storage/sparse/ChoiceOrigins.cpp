@@ -66,6 +66,18 @@ namespace storm {
 			std::string const& ChoiceOrigins::getChoiceInfo(uint_fast64_t choiceIndex) const {
 				return getIdentifierInfo(getIdentifier(choiceIndex));
 			}
+   
+			typename ChoiceOrigins::Json const& ChoiceOrigins::getIdentifierAsJson(uint_fast64_t identifier) const {
+                STORM_LOG_ASSERT(identifier < this->getNumberOfIdentifiers(), "Invalid choice origin identifier: " << identifier);
+                if (identifierToJson.empty()) {
+                    computeIdentifierJson();
+                }
+				return identifierToJson[identifier];
+            }
+            
+            typename ChoiceOrigins::Json const& ChoiceOrigins::getChoiceAsJson(uint_fast64_t choiceIndex) const {
+                return getIdentifierAsJson(getIdentifier(choiceIndex));
+            }
             
             std::shared_ptr<ChoiceOrigins> ChoiceOrigins::selectChoices(storm::storage::BitVector const& selectedChoices) const {
                 std::vector<uint_fast64_t> indexToIdentifierMapping(selectedChoices.getNumberOfSetBits());

@@ -448,6 +448,11 @@ namespace storm {
                 options.setBuildAllLabels(true);
                 options.setBuildAllRewardModels(true);
             }
+
+            if (buildSettings.isAddOverlappingGuardsLabelSet()) {
+                options.setAddOverlappingGuardsLabel(true);
+            }
+
             return storm::api::buildSparseModel<ValueType>(input.model.get(), options, useJit, storm::settings::getModule<storm::settings::modules::JitBuilderSettings>().isDoctorSet());
         }
         
