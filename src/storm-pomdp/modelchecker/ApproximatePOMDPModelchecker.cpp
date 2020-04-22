@@ -255,6 +255,11 @@ namespace storm {
                     
                     // Refine over-approximation
                     STORM_LOG_DEBUG("Refining over-approximation with aggressiveness " << refinementAggressiveness << ".");
+                    if (min) {
+                        overApproximation->takeCurrentValuesAsLowerBounds();
+                    } else {
+                        overApproximation->takeCurrentValuesAsUpperBounds();
+                    }
                     buildOverApproximation(targetObservations, min, rewardModelName.is_initialized(), true, &refinementAggressiveness, observationResolutionVector, overApproxBeliefManager, overApproximation);
                     if (overApproximation->hasComputedValues()) {
                         overApproxValue = overApproximation->getComputedValueAtInitialState();

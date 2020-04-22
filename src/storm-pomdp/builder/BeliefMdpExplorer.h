@@ -548,6 +548,15 @@ namespace storm {
                 }
             }
             
+            void takeCurrentValuesAsUpperBounds() {
+                STORM_LOG_ASSERT(status == Status::ModelChecked, "Method call is invalid in current status.");
+                upperValueBounds = values;
+            }
+            
+            void takeCurrentValuesAsLowerBounds() {
+                STORM_LOG_ASSERT(status == Status::ModelChecked, "Method call is invalid in current status.");
+                lowerValueBounds = values;
+            }
             
         private:
             MdpStateType noState() const {
