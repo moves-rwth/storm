@@ -283,18 +283,23 @@ namespace storm {
              */
             template<typename PomdpModelType, typename BeliefValueType>
             typename ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::ValueType ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::rateObservation(typename ExplorerType::SuccessorObservationInformation const& info, uint64_t const& observationResolution, uint64_t const& maxResolution) {
-                auto n = storm::utility::convertNumber<ValueType>(info.successorWithObsCount);
+                auto n = storm::utility::convertNumber<ValueType, uint64_t>(info.support.size());
                 auto one = storm::utility::one<ValueType>();
-                
-                // Create the rating for this observation at this choice from the given info
-                ValueType obsChoiceRating = info.maxProbabilityToSuccessorWithObs / info.observationProbability;
-                // At this point, obsRating is the largest triangulation weight (which ranges from 1/n to 1
-                // Normalize the rating so that it ranges from 0 to 1, where
-                // 0 means that the actual belief lies in the middle of the triangulating simplex (i.e. a "bad" approximation) and 1 means that the belief is precisely approximated.
-                obsChoiceRating = (obsChoiceRating * n - one) / (n - one);
-                // Scale the ratings with the resolutions, so that low resolutions get a lower rating (and are thus more likely to be refined)
-                obsChoiceRating *= storm::utility::convertNumber<ValueType>(observationResolution) / storm::utility::convertNumber<ValueType>(maxResolution);
-                return obsChoiceRating;
+                if (storm::utility::isOne(n)) {
+                    // If the belief is Dirac, it has to be approximated precisely.
+                    // In this case, we return the best possible rating
+                    return one;
+                } else {
+                    // Create the rating for this observation at this choice from the given info
+                    ValueType obsChoiceRating = info.maxProbabilityToSuccessorWithObs / info.observationProbability;
+                    // At this point, obsRating is the largest triangulation weight (which ranges from 1/n to 1
+                    // Normalize the rating so that it ranges from 0 to 1, where
+                    // 0 means that the actual belief lies in the middle of the triangulating simplex (i.e. a "bad" approximation) and 1 means that the belief is precisely approximated.
+                    obsChoiceRating = (obsChoiceRating * n - one) / (n - one);
+                    // Scale the ratings with the resolutions, so that low resolutions get a lower rating (and are thus more likely to be refined)
+                    obsChoiceRating *= storm::utility::convertNumber<ValueType>(observationResolution) / storm::utility::convertNumber<ValueType>(maxResolution);
+                    return obsChoiceRating;
+                }
             }
             
             template<typename PomdpModelType, typename BeliefValueType>
@@ -487,6 +492,9 @@ namespace storm {
                                         STORM_LOG_ASSERT(stopExploration, "Didn't add a transition although exploration shouldn't be stopped.");
                                         // We did not explore this successor state. Get a bound on the "missing" value
                                         truncationProbability += successor.second;
+                                        // Some care has to be taken here: Essentially, we are triangulating a value for the under-approximation out of other
+                                        // under-approximation values. In general, this does not yield a sound underapproximation anymore.
+                                        // However, in our case this is still the case as the under-approximation values are based on a memoryless scheduler.
                                         truncationValueBound += successor.second * (min ? underApproximation->computeUpperValueBoundAtBelief(successor.first) : underApproximation->computeLowerValueBoundAtBelief(successor.first));
                                     }
                                 }

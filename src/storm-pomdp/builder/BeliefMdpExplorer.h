@@ -456,10 +456,14 @@ namespace storm {
                 return upperValueBounds[getCurrentMdpState()];
             }
 
+            /// This requires that we either over-approximate the scheduler behavior in this direction (e.g. grid approximation for minimizing properties)
+            /// Or that the pomdpLowerValueBounds are based on a memoryless scheduler. Otherwise, such a triangulation would not be valid.
             ValueType computeLowerValueBoundAtBelief(BeliefId const& beliefId) const {
                 return beliefManager->getWeightedSum(beliefId, pomdpLowerValueBounds);
             }
-
+ 
+            /// This requires that we either over-approximate the scheduler behavior in this direction (e.g. grid approximation for maximizing properties)
+            /// Or that the pomdpUpperValueBounds are based on a memoryless scheduler. Otherwise, such a triangulation would not be valid.
             ValueType computeUpperValueBoundAtBelief(BeliefId const& beliefId) const {
                  return beliefManager->getWeightedSum(beliefId, pomdpUpperValueBounds);
             }
@@ -507,7 +511,7 @@ namespace storm {
                     // Intentionally left empty.
                 }
                 
-                void join(SuccessorObservationInformation other) {
+                void join(SuccessorObservationInformation other) { /// Does not join support (for performance reasons)
                     observationProbability += other.observationProbability;
                     maxProbabilityToSuccessorWithObs = std::max(maxProbabilityToSuccessorWithObs, other.maxProbabilityToSuccessorWithObs);
                     successorWithObsCount += other.successorWithObsCount;
@@ -515,17 +519,19 @@ namespace storm {
                 
                 ValueType observationProbability; /// The probability we move to the corresponding observation.
                 ValueType maxProbabilityToSuccessorWithObs; /// The maximal probability to move to a successor with the corresponding observation.
-                uint64_t successorWithObsCount; /// The number of successors with this observation
+                uint64_t successorWithObsCount; /// The number of successor beliefstates with this observation
+                typename BeliefManagerType::BeliefSupportType support;
             };
             
-            void gatherSuccessorObservationInformationAtCurrentState(uint64_t localActionIndex, std::map<uint32_t, SuccessorObservationInformation> gatheredSuccessorObservations) {
+            void gatherSuccessorObservationInformationAtCurrentState(uint64_t localActionIndex, std::map<uint32_t, SuccessorObservationInformation>& gatheredSuccessorObservations) {
                 STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
                 STORM_LOG_ASSERT(currentStateHasOldBehavior(), "Method call is invalid since the current state has no old behavior");
                 uint64_t mdpChoice = getStartOfCurrentRowGroup() + localActionIndex;
                 gatherSuccessorObservationInformationAtMdpChoice(mdpChoice, gatheredSuccessorObservations);
+                
             }
             
-            void gatherSuccessorObservationInformationAtMdpChoice(uint64_t mdpChoice, std::map<uint32_t, SuccessorObservationInformation> gatheredSuccessorObservations) {
+            void gatherSuccessorObservationInformationAtMdpChoice(uint64_t mdpChoice, std::map<uint32_t, SuccessorObservationInformation>& gatheredSuccessorObservations) {
                 STORM_LOG_ASSERT(exploredMdp, "Method call is invalid if no MDP has been explored before");
                 for (auto const& entry : exploredMdp->getTransitionMatrix().getRow(mdpChoice)) {
                     auto const& beliefId = getBeliefId(entry.getColumn());
@@ -537,6 +543,7 @@ namespace storm {
                             // There already is an entry for this observation, so join the two informations
                             obsInsertion.first->second.join(info);
                         }
+                        beliefManager->joinSupport(beliefId, obsInsertion.first->second.support);
                     }
                 }
             }

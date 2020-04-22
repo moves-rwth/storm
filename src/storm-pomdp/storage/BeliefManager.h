@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <boost/optional.hpp>
 #include <boost/container/flat_map.hpp>
+#include <boost/container/flat_set.hpp>
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/UnexpectedException.h"
@@ -16,6 +17,7 @@ namespace storm {
             
             typedef typename PomdpType::ValueType ValueType;
             typedef boost::container::flat_map<StateType, BeliefValueType> BeliefType; // iterating over this shall be ordered (for correct hash computation)
+            typedef boost::container::flat_set<StateType> BeliefSupportType;
             typedef uint64_t BeliefId;
             
             BeliefManager(PomdpType const& pomdp, BeliefValueType const& precision) : pomdp(pomdp), cc(precision, false) {
@@ -99,7 +101,7 @@ namespace storm {
             }
             
             uint64_t getBeliefNumberOfChoices(BeliefId beliefId) {
-                auto belief = getBelief(beliefId);
+                auto const& belief = getBelief(beliefId);
                 return pomdp.getNumberOfChoices(belief.begin()->first);
             }
             
@@ -112,6 +114,13 @@ namespace storm {
                 auto insertionRes = distr.emplace(state, value);
                 if (!insertionRes.second) {
                     insertionRes.first->second += value;
+                }
+            }
+            
+            void joinSupport(BeliefId const& beliefId, BeliefSupportType& support) {
+                auto const& belief = getBelief(beliefId);
+                for (auto const& entry : belief) {
+                    support.insert(entry.first);
                 }
             }
             
