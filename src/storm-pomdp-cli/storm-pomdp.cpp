@@ -103,14 +103,17 @@ namespace storm {
                     STORM_PRINT_AND_LOG("Applying grid approximation... ");
                     auto const& gridSettings = storm::settings::getModule<storm::settings::modules::GridApproximationSettings>();
                     typename storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::models::sparse::Pomdp<ValueType>>::Options options;
-                    options.initialGridResolution = gridSettings.getGridResolution();
-                    options.explorationThreshold = storm::utility::convertNumber<ValueType>(gridSettings.getExplorationThreshold());
-                    options.doRefinement = gridSettings.isRefineSet();
-                    options.refinementPrecision = storm::utility::convertNumber<ValueType>(gridSettings.getRefinementPrecision());
-                    options.numericPrecision = storm::utility::convertNumber<ValueType>(gridSettings.getNumericPrecision());
-                    options.cacheSubsimplices = gridSettings.isCacheSimplicesSet();
+                    std::cout << "TODO: create and read from new settings!" << std::endl;
+                    // options.initialGridResolution = gridSettings.getGridResolution();
+                    // options.explorationThreshold = storm::utility::convertNumber<ValueType>(gridSettings.getExplorationThreshold());
+                    options.refine = gridSettings.isRefineSet();
+                    options.unfold = true;
+                    options.discretize = true;
+                    // options.refinementPrecision = storm::utility::convertNumber<ValueType>(gridSettings.getRefinementPrecision());
+                    // options.numericPrecision = storm::utility::convertNumber<ValueType>(gridSettings.getNumericPrecision());
+                    // options.cacheSubsimplices = gridSettings.isCacheSimplicesSet();
                     if (gridSettings.isUnfoldBeliefMdpSizeThresholdSet()) {
-                        options.beliefMdpSizeThreshold = gridSettings.getUnfoldBeliefMdpSizeThreshold();
+                        //options.beliefMdpSizeThreshold = gridSettings.getUnfoldBeliefMdpSizeThreshold();
                     }
                     if (storm::NumberTraits<ValueType>::IsExact) {
                         if (gridSettings.isNumericPrecisionSetFromDefault()) {

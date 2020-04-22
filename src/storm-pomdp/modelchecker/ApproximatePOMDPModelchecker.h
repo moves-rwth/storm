@@ -28,13 +28,30 @@ namespace storm {
                 
                 struct Options {
                     Options();
-                    uint64_t  initialGridResolution; /// Decides how precise the bounds are
-                    ValueType explorationThreshold; /// the threshold for exploration stopping. If the difference between over- and underapproximation for a state is smaller than the threshold, stop exploration of the state
-                    bool doRefinement; /// Sets whether the bounds should be refined automatically until the refinement precision is reached
-                    ValueType refinementPrecision; /// Used to decide when the refinement should terminate
-                    ValueType numericPrecision; /// Used to decide whether two values are equal
-                    bool cacheSubsimplices; /// Enables caching of subsimplices
-                    boost::optional<uint64_t> beliefMdpSizeThreshold; /// Sets the (initial) size of the unfolded belief MDP. 0 means auto selection.
+                    bool discretize;
+                    bool unfold;
+                    bool refine;
+                    boost::optional<uint64_t> refineStepLimit;
+                    boost::optional<ValueType> refinePrecision;
+                    
+                    // Controlparameters for the refinement heuristic
+                    // Discretization Resolution
+                    uint64_t  resolutionInit;
+                    ValueType resolutionFactor;
+                    // The maximal number of newly expanded MDP states in a refinement step
+                    uint64_t sizeThresholdInit;
+                    uint64_t sizeThresholdFactor;
+                    // Controls how large the gap between known lower- and upper bounds at a beliefstate needs to be in order to explore
+                    ValueType gapThresholdInit;
+                    ValueType gapThresholdFactor;
+                    // Controls whether "almost optimal" choices will be considered optimal
+                    ValueType optimalChoiceValueThresholdInit;
+                    ValueType optimalChoiceValueThresholdFactor;
+                    // Controls which observations are refined.
+                    ValueType obsThresholdInit;
+                    ValueType obsThresholdIncrementFactor;
+                    
+                    ValueType numericPrecision; /// Used to decide whether two beliefs are equal
                 };
                 
                 struct Result {
@@ -85,12 +102,12 @@ namespace storm {
                 /**
                  * Builds and checks an MDP that over-approximates the POMDP behavior, i.e. provides an upper bound for maximizing and a lower bound for minimizing properties
                  */
-                void buildOverApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters& heuristicParameters, std::vector<uint64_t>& observationResolutionVector, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& overApproximation);
+                void buildOverApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::vector<uint64_t>& observationResolutionVector, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& overApproximation);
 
                 /**
                  * Builds and checks an MDP that under-approximates the POMDP behavior, i.e. provides a lower bound for maximizing and an upper bound for minimizing properties
                  */
-                void buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, uint64_t maxStateCount, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation);
+                void buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation);
 
                 ValueType rateObservation(typename ExplorerType::SuccessorObservationInformation const& info, uint64_t const& observationResolution, uint64_t const& maxResolution);
                 
