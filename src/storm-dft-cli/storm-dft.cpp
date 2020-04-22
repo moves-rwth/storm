@@ -87,6 +87,7 @@ void processOptions() {
     // Apply transformations
     // TODO transform later before actual analysis
     dft = storm::api::applyTransformations(*dft, faultTreeSettings.isUniqueFailedBE(), true);
+    STORM_LOG_DEBUG(dft->getElementsString());
 
 
     dft->setDynamicBehaviorInfo();
