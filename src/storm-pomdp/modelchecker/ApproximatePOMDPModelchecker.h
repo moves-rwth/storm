@@ -74,11 +74,18 @@ namespace storm {
                  * @return A struct containing the final overapproximation (overApproxValue) and underapproximation (underApproxValue) values
                  */
                 void refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, std::vector<ValueType> const& lowerPomdpValueBounds, std::vector<ValueType> const& upperPomdpValueBounds, Result& result);
-
+                
+                struct HeuristicParameters {
+                    ValueType gapThreshold;
+                    ValueType observationThreshold;
+                    uint64_t sizeThreshold;
+                    ValueType optimalChoiceValueEpsilon;
+                };
+                
                 /**
                  * Builds and checks an MDP that over-approximates the POMDP behavior, i.e. provides an upper bound for maximizing and a lower bound for minimizing properties
                  */
-                void buildOverApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, ValueType* refinementAggressiveness, std::vector<uint64_t>& observationResolutionVector, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& overApproximation);
+                void buildOverApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters& heuristicParameters, std::vector<uint64_t>& observationResolutionVector, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& overApproximation);
 
                 /**
                  * Builds and checks an MDP that under-approximates the POMDP behavior, i.e. provides a lower bound for maximizing and an upper bound for minimizing properties

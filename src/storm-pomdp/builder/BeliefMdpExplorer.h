@@ -61,7 +61,10 @@ namespace storm {
                 exploredMdpTransitions.clear();
                 exploredChoiceIndices.clear();
                 mdpActionRewards.clear();
-                optimalMdpChoices = boost::none;
+                targetStates.clear();
+                truncatedStates.clear();
+                delayedExplorationChoices.clear();
+                optimalChoices = boost::none;
                 optimalChoicesReachableMdpStates = boost::none;
                 exploredMdp = nullptr;
                 internalAddRowGroupIndex(); // Mark the start of the first row group
@@ -120,6 +123,7 @@ namespace storm {
                 }
                 targetStates = storm::storage::BitVector(getCurrentNumberOfMdpStates(), false);
                 truncatedStates = storm::storage::BitVector(getCurrentNumberOfMdpStates(), false);
+                delayedExplorationChoices.clear();
                 mdpStatesToExplore.clear();
 
                 // The extra states are not changed
@@ -226,17 +230,51 @@ namespace storm {
                 truncatedStates.set(getCurrentMdpState(), true);
             }
             
-            bool currentStateHasOldBehavior() {
+            void setCurrentChoiceIsDelayed(uint64_t const& localActionIndex) {
+                STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
+                delayedExplorationChoices.grow(getCurrentNumberOfMdpChoices(), false);
+                delayedExplorationChoices.set(getStartOfCurrentRowGroup() + localActionIndex, true);
+            }
+            
+            bool currentStateHasOldBehavior() const {
                 STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
                 STORM_LOG_ASSERT(getCurrentMdpState() != noState(), "Method 'currentStateHasOldBehavior' called but there is no current state.");
                 return exploredMdp && getCurrentMdpState() < exploredMdp->getNumberOfStates();
+            }
+            
+            bool getCurrentStateWasTruncated() const {
+                STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
+                STORM_LOG_ASSERT(getCurrentMdpState() != noState(), "Method 'actionAtCurrentStateWasOptimal' called but there is no current state.");
+                STORM_LOG_ASSERT(currentStateHasOldBehavior(), "Method 'actionAtCurrentStateWasOptimal' called but current state has no old behavior");
+                STORM_LOG_ASSERT(exploredMdp, "No 'old' mdp available");
+                return exploredMdp->getStateLabeling().getStateHasLabel("truncated", getCurrentMdpState());
+            }
+            
+            /*!
+             * Retrieves whether the current state can be reached under an optimal scheduler
+             * This requires a previous call of computeOptimalChoicesAndReachableMdpStates.
+             */
+            bool stateIsOptimalSchedulerReachable(MdpStateType mdpState) const {
+                STORM_LOG_ASSERT(status == Status::ModelChecked, "Method call is invalid in current status.");
+                STORM_LOG_ASSERT(optimalChoicesReachableMdpStates.is_initialized(), "Method 'stateIsOptimalSchedulerReachable' called but 'computeOptimalChoicesAndReachableMdpStates' was not called before.");
+                return optimalChoicesReachableMdpStates->get(mdpState);
+            }
+            
+            /*!
+             * Retrieves whether the given action at the current state was optimal in the most recent check.
+             * This requires a previous call of computeOptimalChoicesAndReachableMdpStates.
+             */
+            bool actionIsOptimal(uint64_t const& globalActionIndex) const {
+                STORM_LOG_ASSERT(status == Status::ModelChecked, "Method call is invalid in current status.");
+                STORM_LOG_ASSERT(optimalChoices.is_initialized(), "Method 'actionIsOptimal' called but 'computeOptimalChoicesAndReachableMdpStates' was not called before.");
+                return optimalChoices->get(globalActionIndex);
             }
             
             /*!
              * Retrieves whether the current state can be reached under a scheduler that was optimal in the most recent check.
              * This requires (i) a previous call of computeOptimalChoicesAndReachableMdpStates and (ii) that the current state has old behavior.
              */
-            bool currentStateIsOptimalSchedulerReachable() {
+            bool currentStateIsOptimalSchedulerReachable() const {
                 STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
                 STORM_LOG_ASSERT(getCurrentMdpState() != noState(), "Method 'currentStateIsOptimalSchedulerReachable' called but there is no current state.");
                 STORM_LOG_ASSERT(currentStateHasOldBehavior(), "Method 'currentStateIsOptimalSchedulerReachable' called but current state has no old behavior");
@@ -248,13 +286,22 @@ namespace storm {
              * Retrieves whether the given action at the current state was optimal in the most recent check.
              * This requires (i) a previous call of computeOptimalChoicesAndReachableMdpStates and (ii) that the current state has old behavior.
              */
-            bool actionAtCurrentStateWasOptimal(uint64_t const& localActionIndex) {
+            bool actionAtCurrentStateWasOptimal(uint64_t const& localActionIndex) const {
                 STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
                 STORM_LOG_ASSERT(getCurrentMdpState() != noState(), "Method 'actionAtCurrentStateWasOptimal' called but there is no current state.");
                 STORM_LOG_ASSERT(currentStateHasOldBehavior(), "Method 'actionAtCurrentStateWasOptimal' called but current state has no old behavior");
                 STORM_LOG_ASSERT(optimalChoices.is_initialized(), "Method 'currentStateIsOptimalSchedulerReachable' called but 'computeOptimalChoicesAndReachableMdpStates' was not called before.");
-                uint64_t row = getStartOfCurrentRowGroup() + localActionIndex;
-                return optimalChoices->get(row);
+                uint64_t choice = getStartOfCurrentRowGroup() + localActionIndex;
+                return optimalChoices->get(choice);
+            }
+            
+            bool getCurrentStateActionExplorationWasDelayed(uint64_t const& localActionIndex) const {
+                STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
+                STORM_LOG_ASSERT(getCurrentMdpState() != noState(), "Method 'actionAtCurrentStateWasOptimal' called but there is no current state.");
+                STORM_LOG_ASSERT(currentStateHasOldBehavior(), "Method 'actionAtCurrentStateWasOptimal' called but current state has no old behavior");
+                STORM_LOG_ASSERT(exploredMdp, "No 'old' mdp available");
+                uint64_t choice = exploredMdp->getNondeterministicChoiceIndices()[getCurrentMdpState()] + localActionIndex;
+                return exploredMdp->hasChoiceLabeling() && exploredMdp->getChoiceLabeling().getChoiceHasLabel("delayed", choice);
             }
             
             /*!
@@ -351,7 +398,17 @@ namespace storm {
                                             storm::models::sparse::StandardRewardModel<ValueType>(boost::optional<std::vector<ValueType>>(), std::move(mdpActionRewards)));
                 }
 
+                // Create model components
                 storm::storage::sparse::ModelComponents<ValueType> modelComponents(std::move(mdpTransitionMatrix), std::move(mdpLabeling), std::move(mdpRewardModels));
+                
+                // Potentially create a choice labeling
+                if (!delayedExplorationChoices.empty()) {
+                    modelComponents.choiceLabeling = storm::models::sparse::ChoiceLabeling(getCurrentNumberOfMdpChoices());
+                    delayedExplorationChoices.resize(getCurrentNumberOfMdpChoices(), false);
+                    modelComponents.choiceLabeling->addLabel("delayed", std::move(delayedExplorationChoices));
+                }
+                
+                // Create the final model.
                 exploredMdp = std::make_shared<storm::models::sparse::Mdp<ValueType>>(std::move(modelComponents));
                 status = Status::ModelFinished;
                 STORM_LOG_DEBUG("Explored Mdp with " << exploredMdp->getNumberOfStates() << " states (" << truncatedStates.getNumberOfSetBits() << " of which were flagged as truncated).");
@@ -579,6 +636,19 @@ namespace storm {
                 }
             }
             
+            bool currentStateHasSuccessorObservationInObservationSet(uint64_t localActionIndex, storm::storage::BitVector const& observationSet) {
+                STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
+                STORM_LOG_ASSERT(currentStateHasOldBehavior(), "Method call is invalid since the current state has no old behavior");
+                uint64_t mdpChoice = getStartOfCurrentRowGroup() + localActionIndex;
+                for (auto const& entry : exploredMdp->getTransitionMatrix().getRow(mdpChoice)) {
+                    auto const& beliefId = getBeliefId(entry.getColumn());
+                    if (observationSet.get(beliefManager->getBeliefObservation(beliefId))) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            
             void takeCurrentValuesAsUpperBounds() {
                 STORM_LOG_ASSERT(status == Status::ModelChecked, "Method call is invalid in current status.");
                 upperValueBounds = values;
@@ -735,12 +805,13 @@ namespace storm {
             std::vector<ValueType> mdpActionRewards;
             uint64_t currentMdpState;
             
-            // Special states during exploration
+            // Special states and choices during exploration
             boost::optional<MdpStateType> extraTargetState;
             boost::optional<MdpStateType> extraBottomState;
             storm::storage::BitVector targetStates;
             storm::storage::BitVector truncatedStates;
             MdpStateType initialMdpState;
+            storm::storage::BitVector delayedExplorationChoices;
 
             // Final Mdp
             std::shared_ptr<storm::models::sparse::Mdp<ValueType>> exploredMdp;
@@ -751,7 +822,7 @@ namespace storm {
             std::vector<ValueType> lowerValueBounds;
             std::vector<ValueType> upperValueBounds;
             std::vector<ValueType> values; // Contains an estimate during building and the actual result after a check has performed
-            boost::optional<storm::storage::BitVector> optimalMdpChoices;
+            boost::optional<storm::storage::BitVector> optimalChoices;
             boost::optional<storm::storage::BitVector> optimalChoicesReachableMdpStates;
             
             // The current status of this explorer
