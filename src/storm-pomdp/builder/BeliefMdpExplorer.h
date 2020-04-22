@@ -61,6 +61,8 @@ namespace storm {
                 exploredMdpTransitions.clear();
                 exploredChoiceIndices.clear();
                 mdpActionRewards.clear();
+                optimalMdpChoices = boost::none;
+                optimalChoicesReachableMdpStates = boost::none;
                 exploredMdp = nullptr;
                 internalAddRowGroupIndex(); // Mark the start of the first row group
 
@@ -231,6 +233,31 @@ namespace storm {
             }
             
             /*!
+             * Retrieves whether the current state can be reached under a scheduler that was optimal in the most recent check.
+             * This requires (i) a previous call of computeOptimalChoicesAndReachableMdpStates and (ii) that the current state has old behavior.
+             */
+            bool currentStateIsOptimalSchedulerReachable() {
+                STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
+                STORM_LOG_ASSERT(getCurrentMdpState() != noState(), "Method 'currentStateIsOptimalSchedulerReachable' called but there is no current state.");
+                STORM_LOG_ASSERT(currentStateHasOldBehavior(), "Method 'currentStateIsOptimalSchedulerReachable' called but current state has no old behavior");
+                STORM_LOG_ASSERT(optimalChoicesReachableMdpStates.is_initialized(), "Method 'currentStateIsOptimalSchedulerReachable' called but 'computeOptimalChoicesAndReachableMdpStates' was not called before.");
+                return optimalChoicesReachableMdpStates->get(getCurrentMdpState());
+            }
+            
+            /*!
+             * Retrieves whether the given action at the current state was optimal in the most recent check.
+             * This requires (i) a previous call of computeOptimalChoicesAndReachableMdpStates and (ii) that the current state has old behavior.
+             */
+            bool actionAtCurrentStateWasOptimal(uint64_t const& localActionIndex) {
+                STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
+                STORM_LOG_ASSERT(getCurrentMdpState() != noState(), "Method 'actionAtCurrentStateWasOptimal' called but there is no current state.");
+                STORM_LOG_ASSERT(currentStateHasOldBehavior(), "Method 'actionAtCurrentStateWasOptimal' called but current state has no old behavior");
+                STORM_LOG_ASSERT(optimalChoices.is_initialized(), "Method 'currentStateIsOptimalSchedulerReachable' called but 'computeOptimalChoicesAndReachableMdpStates' was not called before.");
+                uint64_t row = getStartOfCurrentRowGroup() + localActionIndex;
+                return optimalChoices->get(row);
+            }
+            
+            /*!
              * Inserts transitions and rewards at the given action as in the MDP of the previous exploration.
              * Does NOT set whether the state is truncated and/or target.
              * Will add "old" states that have not been considered before into the exploration queue
@@ -284,6 +311,10 @@ namespace storm {
                 if (exploredMdp) {
                     dropUnexploredStates();
                 }
+                
+                // The potentially computed optimal choices and the set of states that are reachable under these choices are not valid anymore.
+                optimalChoices = boost::none;
+                optimalChoicesReachableMdpStates = boost::none;
                 
                 // Create the tranistion matrix
                 uint64_t entryCount = 0;
@@ -558,6 +589,48 @@ namespace storm {
                 lowerValueBounds = values;
             }
             
+            /*!
+             *
+             * Computes the set of states that are reachable via a path that is consistent with an optimal MDP scheduler.
+             * States that are only reachable via target states will not be in this set.
+             * @param ancillaryChoicesEpsilon if the difference of a 1-step value of a choice is only epsilon away from the optimal value, the choice will be included.
+             * @param relative if set, we consider the relative difference to detect ancillaryChoices
+             */
+            void computeOptimalChoicesAndReachableMdpStates(ValueType const& ancillaryChoicesEpsilon, bool relativeDifference) {
+                STORM_LOG_ASSERT(status == Status::ModelChecked, "Method call is invalid in current status.");
+                STORM_LOG_ASSERT(exploredMdp, "Method call is invalid in if no MDP is available.");
+                STORM_LOG_ASSERT(!optimalChoices.is_initialized(), "Tried to compute optimal scheduler but this has already been done before.");
+                STORM_LOG_ASSERT(!optimalChoicesReachableMdpStates.is_initialized(), "Tried to compute states that are reachable under an optimal scheduler but this has already been done before.");
+                
+                // First find the choices that are optimal
+                optimalChoices = storm::storage::BitVector(exploredMdp->getNumberOfChoices(), false);
+                auto const& choiceIndices = exploredMdp->getNondeterministicChoiceIndices();
+                auto const& transitions = exploredMdp->getTransitionMatrix();
+                auto const& targetStates = exploredMdp->getStates("target");
+                for (uint64_t mdpState = 0; mdpState < exploredMdp->getNumberOfStates(); ++mdpState) {
+                    if (targetStates.get(mdpState)) {
+                        // Target states can be skipped.
+                        continue;
+                    } else {
+                        auto const& stateValue = values[mdpState];
+                        for (uint64_t globalChoice = choiceIndices[mdpState]; globalChoice < choiceIndices[mdpState + 1]; ++globalChoice) {
+                            ValueType choiceValue = transitions.multiplyRowWithVector(globalChoice, values);
+                            if (exploredMdp->hasRewardModel()) {
+                                choiceValue += exploredMdp->getUniqueRewardModel().getStateActionReward(globalChoice);
+                            }
+                            ValueType absDiff = storm::utility::abs<ValueType>((choiceValue - stateValue));
+                            if ((relativeDifference && absDiff <= ancillaryChoicesEpsilon * stateValue) || (!relativeDifference && absDiff <= ancillaryChoicesEpsilon)) {
+                                optimalChoices->set(globalChoice, true);
+                            }
+                        }
+                        STORM_LOG_ASSERT(optimalChoices->getNextSetIndex(choiceIndices[mdpState]) < optimalChoices->size(), "Could not find an optimal choice.");
+                    }
+                }
+                
+                // Then, find the states that are reachable via these choices
+                optimalChoicesReachableMdpStates = storm::utility::graph::getReachableStates(transitions, exploredMdp->getInitialStates(), ~targetStates, targetStates, false, 0, optimalChoices.get());
+            }
+            
         private:
             MdpStateType noState() const {
                 return std::numeric_limits<MdpStateType>::max();
@@ -672,12 +745,14 @@ namespace storm {
             // Final Mdp
             std::shared_ptr<storm::models::sparse::Mdp<ValueType>> exploredMdp;
             
-            // Value related information
+            // Value and scheduler related information
             std::vector<ValueType> const& pomdpLowerValueBounds;
             std::vector<ValueType> const& pomdpUpperValueBounds;
             std::vector<ValueType> lowerValueBounds;
             std::vector<ValueType> upperValueBounds;
             std::vector<ValueType> values; // Contains an estimate during building and the actual result after a check has performed
+            boost::optional<storm::storage::BitVector> optimalMdpChoices;
+            boost::optional<storm::storage::BitVector> optimalChoicesReachableMdpStates;
             
             // The current status of this explorer
             Status status;
