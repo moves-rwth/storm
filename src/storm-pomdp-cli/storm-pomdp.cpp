@@ -84,7 +84,20 @@ namespace storm {
             template<typename ValueType>
             void printResult(ValueType const& lowerBound, ValueType const& upperBound) {
                 if (lowerBound == upperBound) {
-                    STORM_PRINT_AND_LOG(lowerBound);
+                    if (storm::utility::isInfinity(lowerBound)) {
+                        STORM_PRINT_AND_LOG("inf");
+                    } else {
+                        STORM_PRINT_AND_LOG(lowerBound);
+                    }
+                } else if (storm::utility::isInfinity<ValueType>(-lowerBound)) {
+                    if (storm::utility::isInfinity(upperBound)) {
+                        STORM_PRINT_AND_LOG("[-inf, inf] (width=inf)");
+                    } else {
+                        // Only upper bound is known
+                        STORM_PRINT_AND_LOG("≤ " << upperBound);
+                    }
+                } else if (storm::utility::isInfinity(upperBound)) {
+                    STORM_PRINT_AND_LOG("≥ " << lowerBound);
                 } else {
                     STORM_PRINT_AND_LOG("[" << lowerBound << ", " << upperBound << "] (width=" << ValueType(upperBound - lowerBound) << ")");
                 }

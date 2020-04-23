@@ -111,6 +111,14 @@ namespace storm {
                 } else {
                     computeReachabilityOTF(formulaInfo.getTargetStates().observations, formulaInfo.minimize(), rewardModelName, initialPomdpValueBounds.lower, initialPomdpValueBounds.upper, result);
                 }
+                // "clear" results in case they were actually not requested (this will make the output a bit more clear)
+                if ((formulaInfo.minimize() && !options.discretize) || (formulaInfo.maximize() && !options.unfold)) {
+                    result.lowerBound = -storm::utility::infinity<ValueType>();
+                }
+                if ((formulaInfo.maximize() && !options.discretize) || (formulaInfo.minimize() && !options.unfold)) {
+                    result.upperBound = storm::utility::infinity<ValueType>();
+                }
+                
                 if (storm::utility::resources::isTerminate()) {
                     statistics.aborted = true;
                 }
