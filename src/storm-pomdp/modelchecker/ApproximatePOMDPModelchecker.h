@@ -30,6 +30,8 @@ namespace storm {
                     ValueType lowerBound;
                     ValueType upperBound;
                     ValueType diff (bool relative = false) const;
+                    bool updateLowerBound(ValueType const& value);
+                    bool updateUpperBound(ValueType const& value);
                 };
                 
                 ApproximatePOMDPModelchecker(PomdpModelType const& pomdp, Options options = Options());
@@ -87,6 +89,7 @@ namespace storm {
                 struct Statistics {
                     Statistics();
                     boost::optional<uint64_t> refinementSteps;
+                    storm::utility::Stopwatch totalTime;
                     
                     boost::optional<uint64_t> overApproximationStates;
                     bool overApproximationBuildAborted;

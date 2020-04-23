@@ -48,6 +48,24 @@ namespace storm {
             }
             
             template<typename PomdpModelType, typename BeliefValueType>
+            bool ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::Result::updateLowerBound(ValueType const& value) {
+                if (value > lowerBound) {
+                    lowerBound = value;
+                    return true;
+                }
+                return false;
+            }
+            
+            template<typename PomdpModelType, typename BeliefValueType>
+            bool ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::Result::updateUpperBound(ValueType const& value) {
+                if (value < upperBound) {
+                    upperBound = value;
+                    return true;
+                }
+                return false;
+            }
+            
+            template<typename PomdpModelType, typename BeliefValueType>
             ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::Statistics::Statistics() :  overApproximationBuildAborted(false), underApproximationBuildAborted(false), aborted(false) {
                 // intentionally left empty;
             }
@@ -62,13 +80,15 @@ namespace storm {
                 STORM_LOG_ASSERT(options.unfold || options.discretize, "Invoked belief exploration but no task (unfold or discretize) given.");
                 // Reset all collected statistics
                 statistics = Statistics();
+                statistics.totalTime.start();
                 // Extract the relevant information from the formula
                 auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(pomdp, formula);
                 
                 // Compute some initial bounds on the values for each state of the pomdp
                 auto initialPomdpValueBounds = TrivialPomdpValueBoundsModelChecker<storm::models::sparse::Pomdp<ValueType>>(pomdp).getValueBounds(formula, formulaInfo);
                 Result result(initialPomdpValueBounds.lower[pomdp.getInitialStates().getNextSetIndex(0)], initialPomdpValueBounds.upper[pomdp.getInitialStates().getNextSetIndex(0)]);
-                
+                STORM_PRINT_AND_LOG("Initial value bounds are [" << result.lowerBound << ", " <<  result.upperBound << "]" << std::endl);
+
                 boost::optional<std::string> rewardModelName;
                 if (formulaInfo.isNonNestedReachabilityProbability() || formulaInfo.isNonNestedExpectedRewardFormula()) {
                     // FIXME: Instead of giving up, introduce a new observation for target states and make sink states absorbing.
@@ -103,6 +123,7 @@ namespace storm {
                 if (storm::utility::resources::isTerminate()) {
                     statistics.aborted = true;
                 }
+                statistics.totalTime.stop();
                 return result;
             }
             
@@ -116,6 +137,8 @@ namespace storm {
                 if (statistics.aborted) {
                     stream << "# Computation aborted early" << std::endl;
                 }
+                
+                stream << "# Total check time: " << statistics.totalTime << std::endl;
                 
                 // Refinement information:
                 if (statistics.refinementSteps) {
@@ -208,9 +231,6 @@ namespace storm {
             template<typename PomdpModelType, typename BeliefValueType>
             void ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, std::vector<ValueType> const& lowerPomdpValueBounds, std::vector<ValueType> const& upperPomdpValueBounds, Result& result) {
                 
-                ValueType& overApproxValue = min ? result.lowerBound : result.upperBound;
-                ValueType& underApproxValue = min ? result.upperBound : result.lowerBound;
-
                 // Set up exploration data
                 std::vector<uint64_t> observationResolutionVector;
                 std::shared_ptr<BeliefManagerType> overApproxBeliefManager;
@@ -231,7 +251,9 @@ namespace storm {
                     if (!overApproximation->hasComputedValues()) {
                         return;
                     }
-                    overApproxValue = overApproximation->getComputedValueAtInitialState();
+                    ValueType const& newValue = overApproximation->getComputedValueAtInitialState();
+                    bool betterBound = min ? result.updateLowerBound(newValue) : result.updateUpperBound(newValue);
+                    STORM_PRINT_AND_LOG("Over-approx result for refinement step #0 is '" << newValue << "' which " << std::string(betterBound ? "improves" : "does not improve") << " the old value. Current runtime is " << statistics.totalTime << " seconds." << std::endl);
                 }
                 
                 std::shared_ptr<BeliefManagerType> underApproxBeliefManager;
@@ -254,7 +276,9 @@ namespace storm {
                     if (!underApproximation->hasComputedValues()) {
                         return;
                     }
-                    underApproxValue = underApproximation->getComputedValueAtInitialState();
+                    ValueType const& newValue = underApproximation->getComputedValueAtInitialState();
+                    bool betterBound = min ? result.updateUpperBound(newValue) : result.updateLowerBound(newValue);
+                    STORM_PRINT_AND_LOG("Under-approx result for refinement step #0 is '" << newValue << "' which " << std::string(betterBound ? "improves" : "does not improve") << " the old value. Current runtime is " << statistics.totalTime << " seconds." << std::endl);
                 }
                 
                 // Start refinement
@@ -281,7 +305,9 @@ namespace storm {
                         overApproxHeuristicPar.optimalChoiceValueEpsilon *= options.optimalChoiceValueThresholdFactor;
                         buildOverApproximation(targetObservations, min, rewardModelName.is_initialized(), true, overApproxHeuristicPar, observationResolutionVector, overApproxBeliefManager, overApproximation);
                         if (overApproximation->hasComputedValues()) {
-                            overApproxValue = overApproximation->getComputedValueAtInitialState();
+                            ValueType const& newValue = overApproximation->getComputedValueAtInitialState();
+                            bool betterBound = min ? result.updateLowerBound(newValue) : result.updateUpperBound(newValue);
+                            STORM_PRINT_AND_LOG("Over-approx result for refinement step #" << statistics.refinementSteps.get() << " is '" << newValue << "' which " << std::string(betterBound ? "improves" : "does not improve") << " the old value. Current runtime is " << statistics.totalTime << " seconds." << std::endl);
                         } else {
                             break;
                         }
@@ -294,7 +320,9 @@ namespace storm {
                         overApproxHeuristicPar.optimalChoiceValueEpsilon *= options.optimalChoiceValueThresholdFactor;
                         buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), true, underApproxHeuristicPar, underApproxBeliefManager, underApproximation);
                         if (underApproximation->hasComputedValues()) {
-                            underApproxValue = underApproximation->getComputedValueAtInitialState();
+                            ValueType const& newValue = underApproximation->getComputedValueAtInitialState();
+                            bool betterBound = min ? result.updateUpperBound(newValue) : result.updateLowerBound(newValue);
+                            STORM_PRINT_AND_LOG("Under-approx result for refinement step #" << statistics.refinementSteps.get() << " is '" << newValue << "' which " << std::string(betterBound ? "improves" : "does not improve") << " the old value. Current runtime is " << statistics.totalTime << " seconds." << std::endl);
                         } else {
                             break;
                         }
