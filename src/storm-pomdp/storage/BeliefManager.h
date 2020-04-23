@@ -200,12 +200,13 @@ namespace storm {
                     } else {
                         observation = entryObservation;
                     }
-                    if (cc.isZero(entry.second)) {
+                    // Don't use cc for these checks, because computations with zero are usually fine
+                    if (storm::utility::isZero(entry.second)) {
                         // We assume that beliefs only consider their support.
                         STORM_LOG_ERROR("Zero belief probability.");
                         return false;
                     }
-                    if (cc.isLess(entry.second, storm::utility::zero<BeliefValueType>())) {
+                    if (entry.second < storm::utility::zero<BeliefValueType>()) {
                         STORM_LOG_ERROR("Negative belief probability.");
                         return false;
                     }
@@ -216,7 +217,7 @@ namespace storm {
                     sum += entry.second;
                 }
                 if (!cc.isOne(sum)) {
-                    STORM_LOG_ERROR("Belief does not sum up to one.");
+                    STORM_LOG_ERROR("Belief does not sum up to one. (" << sum << " instead).");
                     return false;
                 }
                 return true;
