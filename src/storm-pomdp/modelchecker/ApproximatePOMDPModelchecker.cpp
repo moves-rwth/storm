@@ -215,8 +215,12 @@ namespace storm {
                     heuristicParameters.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
                     heuristicParameters.sizeThreshold = options.sizeThresholdInit;
                     if (heuristicParameters.sizeThreshold == 0) {
-                        // Select a decent value automatically
-                        heuristicParameters.sizeThreshold = pomdp.getNumberOfStates() * pomdp.getMaxNrStatesWithSameObservation();
+                        if (options.explorationTimeLimit) {
+                            heuristicParameters.sizeThreshold = std::numeric_limits<uint64_t>::max();
+                        } else {
+                            heuristicParameters.sizeThreshold = pomdp.getNumberOfStates() * pomdp.getMaxNrStatesWithSameObservation();
+                            STORM_PRINT_AND_LOG("Heuristically selected an under-approximation mdp size threshold of " << heuristicParameters.sizeThreshold << "." << std::endl);
+                        }
                     }
                     buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, heuristicParameters, manager, approx);
                     if (approx->hasComputedValues()) {
@@ -419,9 +423,19 @@ namespace storm {
                 statistics.overApproximationMaxResolution = *std::max_element(observationResolutionVector.begin(), observationResolutionVector.end());
                 
                 // Start exploration
+                storm::utility::Stopwatch explorationTime;
+                if (options.explorationTimeLimit) {
+                    explorationTime.start();
+                }
+                bool timeLimitExceeded = false;
                 std::map<uint32_t, typename ExplorerType::SuccessorObservationInformation> gatheredSuccessorObservations; // Declare here to avoid reallocations
                 uint64_t numRewiredOrExploredStates = 0;
                 while (overApproximation->hasUnexploredState()) {
+                    if (!timeLimitExceeded && options.explorationTimeLimit && static_cast<uint64_t>(explorationTime.getTimeInSeconds()) > options.explorationTimeLimit.get()) {
+                        STORM_LOG_INFO("Exploration time limit exceeded.");
+                        timeLimitExceeded = true;
+                    }
+
                     uint64_t currId = overApproximation->exploreNextState();
                     
                     uint32_t currObservation = beliefManager->getBeliefObservation(currId);
@@ -451,7 +465,7 @@ namespace storm {
                         if (!refine || !overApproximation->currentStateHasOldBehavior()) {
                             // Case 1
                             // If we explore this state and if it has no old behavior, it is clear that an "old" optimal scheduler can be extended to a scheduler that reaches this state
-                            if (gap > heuristicParameters.gapThreshold && numRewiredOrExploredStates < heuristicParameters.sizeThreshold) {
+                            if (!timeLimitExceeded && gap > heuristicParameters.gapThreshold && numRewiredOrExploredStates < heuristicParameters.sizeThreshold) {
                                 exploreAllActions = true; // Case 1.1
                             } else {
                                 truncateAllActions = true; // Case 1.2
@@ -460,7 +474,7 @@ namespace storm {
                         } else {
                             if (overApproximation->getCurrentStateWasTruncated()) {
                                 // Case 2
-                                if (overApproximation->currentStateIsOptimalSchedulerReachable() && gap > heuristicParameters.gapThreshold && numRewiredOrExploredStates < heuristicParameters.sizeThreshold) {
+                                if (!timeLimitExceeded && overApproximation->currentStateIsOptimalSchedulerReachable() && gap > heuristicParameters.gapThreshold && numRewiredOrExploredStates < heuristicParameters.sizeThreshold) {
                                     exploreAllActions = true; // Case 2.1
                                 } else {
                                     truncateAllActions = true; // Case 2.2
@@ -469,7 +483,7 @@ namespace storm {
                             } else {
                                 // Case 3
                                 // The decision for rewiring also depends on the corresponding action, but we have some criteria that lead to case 3.2 (independent of the action)
-                                if (overApproximation->currentStateIsOptimalSchedulerReachable() && gap > heuristicParameters.gapThreshold && numRewiredOrExploredStates < heuristicParameters.sizeThreshold) {
+                                if (!timeLimitExceeded && overApproximation->currentStateIsOptimalSchedulerReachable() && gap > heuristicParameters.gapThreshold && numRewiredOrExploredStates < heuristicParameters.sizeThreshold) {
                                     checkRewireForAllActions = true; // Case 3.1 or Case 3.2
                                 } else {
                                     restoreAllActions = true; // Definitely Case 3.2
@@ -580,7 +594,16 @@ namespace storm {
                 
                 // Expand the beliefs
                 uint64_t newlyExploredStates = 0;
+                storm::utility::Stopwatch explorationTime;
+                if (options.explorationTimeLimit) {
+                    explorationTime.start();
+                }
+                bool timeLimitExceeded = false;
                 while (underApproximation->hasUnexploredState()) {
+                    if (!timeLimitExceeded && options.explorationTimeLimit && static_cast<uint64_t>(explorationTime.getTimeInSeconds()) > options.explorationTimeLimit.get()) {
+                        STORM_LOG_INFO("Exploration time limit exceeded.");
+                        timeLimitExceeded = true;
+                    }
                     uint64_t currId = underApproximation->exploreNextState();
                     
                     uint32_t currObservation = beliefManager->getBeliefObservation(currId);
@@ -590,7 +613,10 @@ namespace storm {
                     } else {
                         bool stopExploration = false;
                         bool stateAlreadyExplored = refine && underApproximation->currentStateHasOldBehavior() && !underApproximation->getCurrentStateWasTruncated();
-                        if (!stateAlreadyExplored) {
+                        if (timeLimitExceeded) {
+                            stopExploration = true;
+                            underApproximation->setCurrentStateIsTruncated();
+                        } else if (!stateAlreadyExplored) {
                             // Check whether we want to explore the state now!
                             if (storm::utility::abs<ValueType>(underApproximation->getUpperValueBoundAtCurrentState() - underApproximation->getLowerValueBoundAtCurrentState()) < heuristicParameters.gapThreshold) {
                                 stopExploration = true;

@@ -20,6 +20,7 @@ namespace storm {
             const std::string BeliefExplorationSettings::moduleName = "belexpl";
             
             const std::string refineOption = "refine";
+            const std::string explorationTimeLimitOption = "exploration-time";
             const std::string resolutionOption = "resolution";
             const std::string sizeThresholdOption = "size-threshold";
             const std::string gapThresholdOption = "gap-threshold";
@@ -30,6 +31,8 @@ namespace storm {
             BeliefExplorationSettings::BeliefExplorationSettings() : ModuleSettings(moduleName) {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, refineOption, false,"Refines the result bounds until reaching either the goal precision or the refinement step limit").addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("prec","The goal precision.").setDefaultValueDouble(1e-4).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0)).build()).addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("steps","The number of allowed refinement steps (0 means no limit).").setDefaultValueUnsignedInteger(0).makeOptional().build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, explorationTimeLimitOption, false, "Sets after which time no further states shall be explored.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("time","In seconds.").build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, resolutionOption, false,"Sets the resolution of the discretization and how it is increased in case of refinement").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("init","the initial resolution (higher means more precise)").setDefaultValueUnsignedInteger(12).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor","Multiplied to the resolution of refined observations (higher means more precise).").setDefaultValueDouble(2).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterValidator(1)).build()).build());
                 
@@ -60,6 +63,14 @@ namespace storm {
             uint64_t BeliefExplorationSettings::getRefineStepLimit() const {
                 assert(isRefineStepLimitSet());
                 return this->getOption(refineOption).getArgumentByName("steps").getValueAsUnsignedInteger();
+            }
+            
+            bool BeliefExplorationSettings::isExplorationTimeLimitSet() const {
+                return this->getOption(explorationTimeLimitOption).getHasOptionBeenSet();
+            }
+            
+            uint64_t BeliefExplorationSettings::getExplorationTimeLimit() const {
+                return this->getOption(explorationTimeLimitOption).getArgumentByName("time").getValueAsUnsignedInteger();
             }
             
             uint64_t BeliefExplorationSettings::getResolutionInit() const {
@@ -116,8 +127,14 @@ namespace storm {
                 options.refinePrecision = getRefinePrecision();
                 if (isRefineStepLimitSet()) {
                     options.refineStepLimit = getRefineStepLimit();
+                } else {
+                    options.refineStepLimit = boost::none;
                 }
-                
+                if (isExplorationTimeLimitSet()) {
+                    options.explorationTimeLimit = getExplorationTimeLimit();
+                } else {
+                    options.explorationTimeLimit = boost::none;
+                }
                 options.resolutionInit = getResolutionInit();
                 options.resolutionFactor = storm::utility::convertNumber<ValueType>(getResolutionFactor());
                 options.sizeThresholdInit = getSizeThresholdInit();

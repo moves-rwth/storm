@@ -32,6 +32,9 @@ namespace storm {
                 bool isRefineStepLimitSet() const;
                 uint64_t getRefineStepLimit() const;
                 
+                bool isExplorationTimeLimitSet() const;
+                uint64_t getExplorationTimeLimit() const;
+                
                 /// Discretization Resolution
                 uint64_t getResolutionInit() const;
                 double getResolutionFactor() const;

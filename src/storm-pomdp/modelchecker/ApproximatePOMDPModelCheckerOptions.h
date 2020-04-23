@@ -18,6 +18,7 @@ namespace storm {
                 bool refine = false;
                 boost::optional<uint64_t> refineStepLimit;
                 ValueType refinePrecision = storm::utility::zero<ValueType>();
+                boost::optional<uint64_t> explorationTimeLimit;
                 
                 // Controlparameters for the refinement heuristic
                 // Discretization Resolution
