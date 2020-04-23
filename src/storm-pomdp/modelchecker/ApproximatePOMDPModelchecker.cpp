@@ -27,25 +27,6 @@
 namespace storm {
     namespace pomdp {
         namespace modelchecker {
-            template<typename PomdpModelType, typename BeliefValueType>
-            ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::Options::Options() {
-                discretize = false;
-                unfold = false;
-                refine = false;
-                
-                resolutionInit = 2;
-                resolutionFactor = storm::utility::convertNumber<ValueType,uint64_t>(2);
-                sizeThresholdInit = 0; // automatic
-                sizeThresholdFactor = 4;
-                gapThresholdInit = storm::utility::convertNumber<ValueType>(0.1);
-                gapThresholdFactor = storm::utility::convertNumber<ValueType>(0.25);
-                optimalChoiceValueThresholdInit = storm::utility::convertNumber<ValueType>(1e-3);
-                optimalChoiceValueThresholdFactor = storm::utility::one<ValueType>();
-                obsThresholdInit = storm::utility::convertNumber<ValueType>(0.1);
-                obsThresholdIncrementFactor = storm::utility::convertNumber<ValueType>(0.1);
-                
-                numericPrecision = storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(1e-9);
-            }
             
             template<typename PomdpModelType, typename BeliefValueType>
             ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::Result::Result(ValueType lower, ValueType upper) : lowerBound(lower), upperBound(upper) {
@@ -278,9 +259,9 @@ namespace storm {
                 
                 // Start refinement
                 statistics.refinementSteps = 0;
-                STORM_LOG_WARN_COND(options.refineStepLimit.is_initialized() || options.refinePrecision.is_initialized(), "No termination criterion for refinement given. Consider to specify a steplimit, precisionlimit or timeout");
-                STORM_LOG_WARN_COND(!options.refinePrecision.is_initialized() || (options.unfold && options.discretize), "Refinement goal precision is given, but only one bound is going to be refined.");
-                while ((!options.refineStepLimit.is_initialized() || statistics.refinementSteps < options.refineStepLimit.get()) && (!options.refinePrecision.is_initialized() || result.diff() > options.refinePrecision.get())) {
+                STORM_LOG_WARN_COND(options.refineStepLimit.is_initialized() || !storm::utility::isZero(options.refinePrecision), "No termination criterion for refinement given. Consider to specify a steplimit, a non-zero precisionlimit, or a timeout");
+                STORM_LOG_WARN_COND(storm::utility::isZero(options.refinePrecision) || (options.unfold && options.discretize), "Refinement goal precision is given, but only one bound is going to be refined.");
+                while ((!options.refineStepLimit.is_initialized() || statistics.refinementSteps < options.refineStepLimit.get()) && result.diff() > options.refinePrecision) {
                     if (storm::utility::resources::isTerminate()) {
                         break;
                     }
@@ -295,7 +276,7 @@ namespace storm {
                             overApproximation->takeCurrentValuesAsUpperBounds();
                         }
                         overApproxHeuristicPar.gapThreshold *= options.gapThresholdFactor;
-                        overApproxHeuristicPar.sizeThreshold = overApproximation->getExploredMdp()->getNumberOfStates() * options.sizeThresholdFactor;
+                        overApproxHeuristicPar.sizeThreshold = storm::utility::convertNumber<uint64_t, ValueType>(storm::utility::convertNumber<ValueType, uint64_t>(overApproximation->getExploredMdp()->getNumberOfStates()) * options.sizeThresholdFactor);
                         overApproxHeuristicPar.observationThreshold += options.obsThresholdIncrementFactor * (storm::utility::one<ValueType>() - overApproxHeuristicPar.observationThreshold);
                         overApproxHeuristicPar.optimalChoiceValueEpsilon *= options.optimalChoiceValueThresholdFactor;
                         buildOverApproximation(targetObservations, min, rewardModelName.is_initialized(), true, overApproxHeuristicPar, observationResolutionVector, overApproxBeliefManager, overApproximation);
@@ -306,10 +287,10 @@ namespace storm {
                         }
                     }
                     
-                    if (options.unfold && (!options.refinePrecision.is_initialized() || result.diff() > options.refinePrecision.get())) {
+                    if (options.unfold && result.diff() > options.refinePrecision) {
                         // Refine under-approximation
                         overApproxHeuristicPar.gapThreshold *= options.gapThresholdFactor;
-                        underApproxHeuristicPar.sizeThreshold = underApproximation->getExploredMdp()->getNumberOfStates() * options.sizeThresholdFactor;
+                        overApproxHeuristicPar.sizeThreshold = storm::utility::convertNumber<uint64_t, ValueType>(storm::utility::convertNumber<ValueType, uint64_t>(underApproximation->getExploredMdp()->getNumberOfStates()) * options.sizeThresholdFactor);
                         overApproxHeuristicPar.optimalChoiceValueEpsilon *= options.optimalChoiceValueThresholdFactor;
                         buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), true, underApproxHeuristicPar, underApproxBeliefManager, underApproximation);
                         if (underApproximation->hasComputedValues()) {
@@ -403,7 +384,7 @@ namespace storm {
                     STORM_LOG_DEBUG("Refining the resolution of " << refinedObservations.getNumberOfSetBits() << "/" << refinedObservations.size() << " observations.");
                     for (auto const& obs : refinedObservations) {
                         // Increment the resolution at the refined observations
-                        observationResolutionVector[obs] *= 2;
+                        observationResolutionVector[obs] = storm::utility::convertNumber<uint64_t, ValueType>(storm::utility::convertNumber<ValueType>(observationResolutionVector[obs]) * options.resolutionFactor);
                     }
                     overApproximation->restartExploration();
                 }

@@ -31,7 +31,7 @@
 #include "storm/settings/modules/HintSettings.h"
 
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
-#include "storm-pomdp-cli/settings/modules/GridApproximationSettings.h"
+#include "storm-pomdp-cli/settings/modules/BeliefExplorationSettings.h"
 
 namespace storm {
     namespace settings {
@@ -45,7 +45,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::BuildSettings>();
         
             storm::settings::addModule<storm::settings::modules::POMDPSettings>();
-            storm::settings::addModule<storm::settings::modules::GridApproximationSettings>();
+            storm::settings::addModule<storm::settings::modules::BeliefExplorationSettings>();
         
             storm::settings::addModule<storm::settings::modules::TransformationSettings>();
             storm::settings::addModule<storm::settings::modules::GmmxxEquationSolverSettings>();

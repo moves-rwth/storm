@@ -1,11 +1,10 @@
-#include <cstdlib>
 #include "storm/api/storm.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/utility/logging.h"
 #include "storm-pomdp/storage/Belief.h"
 #include "storm-pomdp/storage/BeliefManager.h"
+#include "storm-pomdp/modelchecker/ApproximatePOMDPModelCheckerOptions.h"
 #include "storm-pomdp/builder/BeliefMdpExplorer.h"
-#include <boost/bimap.hpp>
 
 #include "storm/storage/jani/Property.h"
 
@@ -16,8 +15,7 @@ namespace storm {
     
     namespace pomdp {
         namespace modelchecker {
-            typedef boost::bimap<uint64_t, uint64_t> bsmap_type;
-
+            
             template<typename PomdpModelType, typename BeliefValueType = typename PomdpModelType::ValueType>
             class ApproximatePOMDPModelchecker {
             public:
@@ -25,34 +23,7 @@ namespace storm {
                 typedef typename PomdpModelType::RewardModelType RewardModelType;
                 typedef storm::storage::BeliefManager<PomdpModelType, BeliefValueType> BeliefManagerType;
                 typedef storm::builder::BeliefMdpExplorer<PomdpModelType, BeliefValueType> ExplorerType;
-                
-                struct Options {
-                    Options();
-                    bool discretize;
-                    bool unfold;
-                    bool refine;
-                    boost::optional<uint64_t> refineStepLimit;
-                    boost::optional<ValueType> refinePrecision;
-                    
-                    // Controlparameters for the refinement heuristic
-                    // Discretization Resolution
-                    uint64_t  resolutionInit;
-                    ValueType resolutionFactor;
-                    // The maximal number of newly expanded MDP states in a refinement step
-                    uint64_t sizeThresholdInit;
-                    uint64_t sizeThresholdFactor;
-                    // Controls how large the gap between known lower- and upper bounds at a beliefstate needs to be in order to explore
-                    ValueType gapThresholdInit;
-                    ValueType gapThresholdFactor;
-                    // Controls whether "almost optimal" choices will be considered optimal
-                    ValueType optimalChoiceValueThresholdInit;
-                    ValueType optimalChoiceValueThresholdFactor;
-                    // Controls which observations are refined.
-                    ValueType obsThresholdInit;
-                    ValueType obsThresholdIncrementFactor;
-                    
-                    ValueType numericPrecision; /// Used to decide whether two beliefs are equal
-                };
+                typedef ApproximatePOMDPModelCheckerOptions<ValueType> Options;
                 
                 struct Result {
                     Result(ValueType lower, ValueType upper);

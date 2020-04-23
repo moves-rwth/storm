@@ -5,7 +5,7 @@
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
-#include "storm-pomdp-cli/settings/modules/GridApproximationSettings.h"
+#include "storm-pomdp-cli/settings/modules/BeliefExplorationSettings.h"
 #include "storm-pomdp-cli/settings/PomdpSettings.h"
 
 #include "storm/analysis/GraphConditions.h"
@@ -114,28 +114,9 @@ namespace storm {
                 bool analysisPerformed = false;
                 if (pomdpSettings.isBeliefExplorationSet()) {
                     STORM_PRINT_AND_LOG("Exploring the belief MDP... ");
-                    auto const& gridSettings = storm::settings::getModule<storm::settings::modules::GridApproximationSettings>();
-                    typename storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::models::sparse::Pomdp<ValueType>>::Options options;
-                    std::cout << "TODO: create and read from new settings!" << std::endl;
-                    // options.initialGridResolution = gridSettings.getGridResolution();
-                    // options.explorationThreshold = storm::utility::convertNumber<ValueType>(gridSettings.getExplorationThreshold());
-                    options.refine = gridSettings.isRefineSet();
-                    options.unfold = pomdpSettings.isBeliefExplorationUnfoldSet();
-                    options.discretize = pomdpSettings.isBeliefExplorationDiscretizeSet();
-                    // options.refinementPrecision = storm::utility::convertNumber<ValueType>(gridSettings.getRefinementPrecision());
-                    // options.numericPrecision = storm::utility::convertNumber<ValueType>(gridSettings.getNumericPrecision());
-                    // options.cacheSubsimplices = gridSettings.isCacheSimplicesSet();
-                    if (gridSettings.isUnfoldBeliefMdpSizeThresholdSet()) {
-                        //options.beliefMdpSizeThreshold = gridSettings.getUnfoldBeliefMdpSizeThreshold();
-                    }
-                    if (storm::NumberTraits<ValueType>::IsExact) {
-                        if (gridSettings.isNumericPrecisionSetFromDefault()) {
-                            STORM_LOG_WARN_COND(storm::utility::isZero(options.numericPrecision), "Setting numeric precision to zero because exact arithmethic is used.");
-                            options.numericPrecision = storm::utility::zero<ValueType>();
-                        } else {
-                            STORM_LOG_WARN_COND(storm::utility::isZero(options.numericPrecision), "A non-zero numeric precision was set although exact arithmethic is used. Results might be inexact.");
-                        }
-                    }
+                    auto options = storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<ValueType>(pomdpSettings.isBeliefExplorationDiscretizeSet(), pomdpSettings.isBeliefExplorationUnfoldSet());
+                    auto const& beliefExplorationSettings = storm::settings::getModule<storm::settings::modules::BeliefExplorationSettings>();
+                    beliefExplorationSettings.setValuesInOptionsStruct(options);
                     storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::models::sparse::Pomdp<ValueType>> checker(*pomdp, options);
                     auto result = checker.check(formula);
                     checker.printStatisticsToStream(std::cout);
