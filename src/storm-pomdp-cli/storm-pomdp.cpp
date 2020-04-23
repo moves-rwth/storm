@@ -103,7 +103,9 @@ namespace storm {
                 }
                 if (storm::NumberTraits<ValueType>::IsExact) {
                     STORM_PRINT_AND_LOG(" (approx. ");
-                    printResult(storm::utility::convertNumber<double>(lowerBound), storm::utility::convertNumber<double>(upperBound));
+                    double roundedLowerBound = storm::utility::isInfinity<ValueType>(-lowerBound) ? -storm::utility::infinity<double>() : storm::utility::convertNumber<double>(lowerBound);
+                    double roundedUpperBound = storm::utility::isInfinity(upperBound) ? storm::utility::infinity<double>() : storm::utility::convertNumber<double>(upperBound);
+                    printResult(roundedLowerBound, roundedUpperBound);
                     STORM_PRINT_AND_LOG(")");
                 }
             }
