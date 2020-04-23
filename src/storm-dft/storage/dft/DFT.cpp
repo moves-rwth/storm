@@ -416,7 +416,7 @@ namespace storm {
                 } else {
                     STORM_LOG_ASSERT(isBasicElement(child->id()), "Child is no BE.");
                     if (getBasicElement(child->id())->hasIngoingDependencies()) {
-                        STORM_LOG_TRACE("child " << child->name() << "does not allow modularisation.");
+                        STORM_LOG_TRACE("child " << child->name() << " does not allow modularisation.");
                         return {*this};
                     } else {
                         isubdft = {child->id()};

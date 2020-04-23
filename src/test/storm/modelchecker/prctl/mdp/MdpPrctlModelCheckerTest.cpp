@@ -1,8 +1,6 @@
 #include "test/storm_gtest.h"
 #include "storm-config.h"
 
-#include "test/storm_gtest.h"
-
 #include "storm/api/builder.h"
 #include "storm-conv/api/storm-conv.h"
 #include "storm-parsers/api/model_descriptions.h"
