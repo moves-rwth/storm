@@ -136,7 +136,9 @@ namespace storm {
                                                                                newRewardModels,
                                                                                false, boost::none);
             modelcomponents.observabilityClasses = pomdp.getObservations();
-            //modelcomponents.choiceLabeling = pomdp.getChoiceLabeling();
+            modelcomponents.stateValuations = pomdp.getOptionalStateValuations();
+            modelcomponents.choiceLabeling = pomdp.getChoiceLabeling();
+            modelcomponents.choiceLabeling->permuteItems(permutation);
             return std::make_shared<storm::models::sparse::Pomdp<ValueType>>(modelcomponents, true);
         }
 
