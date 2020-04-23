@@ -15,7 +15,8 @@ namespace storm {
             const std::string POMDPSettings::moduleName = "pomdp";
             const std::string noCanonicOption = "nocanonic";
             const std::string exportAsParametricModelOption = "parametric-drn";
-            const std::string gridApproximationOption = "gridapproximation";
+            const std::string beliefExplorationOption = "belief-exploration";
+            std::vector<std::string> beliefExplorationModes = {"both", "discretize", "unfold"};
             const std::string qualitativeReductionOption = "qualitativereduction";
             const std::string analyzeUniqueObservationsOption = "uniqueobservations";
             const std::string mecReductionOption = "mecreduction";
@@ -43,7 +44,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, fscmode, false, "Sets the way the pMC is obtained").addArgument(storm::settings::ArgumentBuilder::createStringArgument("type", "type name").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(fscModes)).setDefaultValueString("standard").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, transformBinaryOption, false, "Transforms the pomdp to a binary pomdp.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, transformSimpleOption, false, "Transforms the pomdp to a binary and simple pomdp.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, gridApproximationOption, false,"Analyze the POMDP using grid approximation.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, beliefExplorationOption, false,"Analyze the POMDP by exploring the belief state-space.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "Sets whether lower, upper, or interval result bounds are computed.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(beliefExplorationModes)).setDefaultValueString("both").makeOptional().build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, memlessSearchOption, false, "Search for a qualitative memoryless scheuler").addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "method name").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(memlessSearchMethods)).setDefaultValueString("none").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, checkFullyObservableOption, false, "Performs standard model checking on the underlying MDP").build());
 
@@ -77,8 +78,18 @@ namespace storm {
                 return this->getOption(selfloopReductionOption).getHasOptionBeenSet();
             }
 
-            bool POMDPSettings::isGridApproximationSet() const {
-                return this->getOption(gridApproximationOption).getHasOptionBeenSet();
+            bool POMDPSettings::isBeliefExplorationSet() const {
+                return this->getOption(beliefExplorationOption).getHasOptionBeenSet();
+            }
+            
+            bool POMDPSettings::isBeliefExplorationDiscretizeSet() const {
+                std::string arg = this->getOption(beliefExplorationOption).getArgumentByName("mode").getValueAsString();
+                return isBeliefExplorationSet() && (arg == "discretize" || arg == "both");
+            }
+
+            bool POMDPSettings::isBeliefExplorationUnfoldSet() const {
+                std::string arg = this->getOption(beliefExplorationOption).getArgumentByName("mode").getValueAsString();
+                return isBeliefExplorationSet() && (arg == "unfold" || arg == "both");
             }
 
             bool POMDPSettings::isMemlessSearchSet() const {

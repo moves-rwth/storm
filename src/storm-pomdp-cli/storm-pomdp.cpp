@@ -99,16 +99,16 @@ namespace storm {
             bool performAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& pomdp, storm::pomdp::analysis::FormulaInformation const& formulaInfo, storm::logic::Formula const& formula) {
                 auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
                 bool analysisPerformed = false;
-                if (pomdpSettings.isGridApproximationSet()) {
-                    STORM_PRINT_AND_LOG("Applying grid approximation... ");
+                if (pomdpSettings.isBeliefExplorationSet()) {
+                    STORM_PRINT_AND_LOG("Exploring the belief MDP... ");
                     auto const& gridSettings = storm::settings::getModule<storm::settings::modules::GridApproximationSettings>();
                     typename storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::models::sparse::Pomdp<ValueType>>::Options options;
                     std::cout << "TODO: create and read from new settings!" << std::endl;
                     // options.initialGridResolution = gridSettings.getGridResolution();
                     // options.explorationThreshold = storm::utility::convertNumber<ValueType>(gridSettings.getExplorationThreshold());
                     options.refine = gridSettings.isRefineSet();
-                    options.unfold = true;
-                    options.discretize = true;
+                    options.unfold = pomdpSettings.isBeliefExplorationUnfoldSet();
+                    options.discretize = pomdpSettings.isBeliefExplorationDiscretizeSet();
                     // options.refinementPrecision = storm::utility::convertNumber<ValueType>(gridSettings.getRefinementPrecision());
                     // options.numericPrecision = storm::utility::convertNumber<ValueType>(gridSettings.getNumericPrecision());
                     // options.cacheSubsimplices = gridSettings.isCacheSimplicesSet();
