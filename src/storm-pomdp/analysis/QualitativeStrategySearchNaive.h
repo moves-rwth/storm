@@ -10,6 +10,16 @@ namespace storm {
     namespace pomdp {
 
         template<typename ValueType>
+        std::set<uint32_t> extractObservations(storm::models::sparse::Pomdp<ValueType> const& pomdp, storm::storage::BitVector const& states) {
+            // TODO move.
+            std::set<uint32_t> observations;
+            for(auto state : states) {
+                observations.insert(pomdp.getObservation(state));
+            }
+            return observations;
+        }
+
+        template<typename ValueType>
         class QualitativeStrategySearchNaive {
             // Implements  to the Chatterjee, Chmelik, Davies (AAAI-16) paper.
             class Statistics {
@@ -23,12 +33,11 @@ namespace storm {
 
         public:
             QualitativeStrategySearchNaive(storm::models::sparse::Pomdp<ValueType> const& pomdp,
-                                             std::set<uint32_t> const& targetObservationSet,
                                              storm::storage::BitVector const& targetStates,
                                              storm::storage::BitVector const& surelyReachSinkStates,
                                              std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory) :
                     pomdp(pomdp),
-                    targetObservations(targetObservationSet),
+                    targetObservations(extractObservations(pomdp, targetStates)),
                     targetStates(targetStates),
                     surelyReachSinkStates(surelyReachSinkStates) {
                 this->expressionManager = std::make_shared<storm::expressions::ExpressionManager>();

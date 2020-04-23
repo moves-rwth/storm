@@ -1,6 +1,8 @@
 #include "storm-pomdp/analysis/MemlessStrategySearchQualitative.h"
 #include "storm/utility/file.h"
 
+#include "storm-pomdp/analysis/QualitativeStrategySearchNaive.h"
+#include "storm-pomdp/analysis/QualitativeAnalysis.h"
 
 namespace storm {
     namespace pomdp {
@@ -45,14 +47,13 @@ namespace storm {
 
         template <typename ValueType>
         MemlessStrategySearchQualitative<ValueType>::MemlessStrategySearchQualitative(storm::models::sparse::Pomdp<ValueType> const& pomdp,
-                                                                                      std::set<uint32_t> const& targetObservationSet,
                     storm::storage::BitVector const& targetStates,
                     storm::storage::BitVector const& surelyReachSinkStates,
                     std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory,
                     MemlessSearchOptions const& options) :
             pomdp(pomdp),
             surelyReachSinkStates(surelyReachSinkStates),
-            targetObservations(targetObservationSet),
+            targetObservations(storm::pomdp::extractObservations(pomdp, targetStates)),
             targetStates(targetStates),
             options(options)
         {
@@ -79,8 +80,12 @@ namespace storm {
         template <typename ValueType>
         void MemlessStrategySearchQualitative<ValueType>::initialize(uint64_t k) {
             STORM_LOG_INFO("Start intializing solver...");
-            // TODO fix this
-            bool lookaheadConstraintsRequired = options.lookaheadRequired;
+            bool lookaheadConstraintsRequired;
+            if (options.forceLookahead) {
+                lookaheadConstraintsRequired = true;
+            } else {
+                lookaheadConstraintsRequired = qualitative::isLookaheadRequired(pomdp,  targetStates, surelyReachSinkStates);
+            }
             if (maxK == std::numeric_limits<uint64_t>::max()) {
                 // not initialized at all.
                 // Create some data structures.

@@ -44,7 +44,7 @@ namespace pomdp {
         }
 
         bool onlyDeterministicStrategies = false;
-        bool lookaheadRequired = true;
+        bool forceLookahead = true;
 
     private:
         std::string exportSATcalls = "";
@@ -123,7 +123,6 @@ namespace pomdp {
         };
 
         MemlessStrategySearchQualitative(storm::models::sparse::Pomdp<ValueType> const& pomdp,
-                                         std::set<uint32_t> const& targetObservationSet,
                                          storm::storage::BitVector const& targetStates,
                                          storm::storage::BitVector const& surelyReachSinkStates,
 
@@ -148,13 +147,17 @@ namespace pomdp {
             }
         }
 
-        void findNewStrategyForSomeState(uint64_t k) {
+        void computeWinningRegion(uint64_t k) {
             std::cout << surelyReachSinkStates << std::endl;
             std::cout << targetStates << std::endl;
             std::cout << (~surelyReachSinkStates & ~targetStates) << std::endl;
             stats.totalTimer.start();
             analyze(k, ~surelyReachSinkStates & ~targetStates);
             stats.totalTimer.stop();
+        }
+
+        WinningRegion const& getLastWinningRegion() const {
+            return winningRegion;
         }
 
         bool analyze(uint64_t k, storm::storage::BitVector const& oneOfTheseStates, storm::storage::BitVector const& allOfTheseStates = storm::storage::BitVector());
