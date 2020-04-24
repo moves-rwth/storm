@@ -234,7 +234,8 @@ namespace storm {
             
             template<typename PomdpModelType, typename BeliefValueType>
             void ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, std::vector<ValueType> const& lowerPomdpValueBounds, std::vector<ValueType> const& upperPomdpValueBounds, Result& result) {
-                
+                statistics.refinementSteps = 0;
+
                 // Set up exploration data
                 std::vector<uint64_t> observationResolutionVector;
                 std::shared_ptr<BeliefManagerType> overApproxBeliefManager;
@@ -257,7 +258,9 @@ namespace storm {
                     }
                     ValueType const& newValue = overApproximation->getComputedValueAtInitialState();
                     bool betterBound = min ? result.updateLowerBound(newValue) : result.updateUpperBound(newValue);
-                    STORM_PRINT_AND_LOG("Over-approx result for refinement step #0 is '" << newValue << "' which " << std::string(betterBound ? "improves" : "does not improve") << " the old value. Current runtime is " << statistics.totalTime << " seconds." << std::endl);
+                    if (betterBound) {
+                        STORM_PRINT_AND_LOG("Over-approx result for refinement improved after " << statistics.totalTime << " seconds in refinement step #" << statistics.refinementSteps.get() << ". New value is '" << newValue << "'." << std::endl);
+                    }
                 }
                 
                 std::shared_ptr<BeliefManagerType> underApproxBeliefManager;
@@ -282,19 +285,19 @@ namespace storm {
                     }
                     ValueType const& newValue = underApproximation->getComputedValueAtInitialState();
                     bool betterBound = min ? result.updateUpperBound(newValue) : result.updateLowerBound(newValue);
-                    STORM_PRINT_AND_LOG("Under-approx result for refinement step #0 is '" << newValue << "' which " << std::string(betterBound ? "improves" : "does not improve") << " the old value. Current runtime is " << statistics.totalTime << " seconds." << std::endl);
+                    if (betterBound) {
+                        STORM_PRINT_AND_LOG("Under-approx result for refinement improved after " << statistics.totalTime << " seconds in refinement step #" << statistics.refinementSteps.get() << ". New value is '" << newValue << "'." << std::endl);
+                    }
                 }
                 
                 // Start refinement
-                statistics.refinementSteps = 0;
                 STORM_LOG_WARN_COND(options.refineStepLimit.is_initialized() || !storm::utility::isZero(options.refinePrecision), "No termination criterion for refinement given. Consider to specify a steplimit, a non-zero precisionlimit, or a timeout");
                 STORM_LOG_WARN_COND(storm::utility::isZero(options.refinePrecision) || (options.unfold && options.discretize), "Refinement goal precision is given, but only one bound is going to be refined.");
-                while ((!options.refineStepLimit.is_initialized() || statistics.refinementSteps < options.refineStepLimit.get()) && result.diff() > options.refinePrecision) {
+                while ((!options.refineStepLimit.is_initialized() || statistics.refinementSteps.get() < options.refineStepLimit.get()) && result.diff() > options.refinePrecision) {
                     if (storm::utility::resources::isTerminate()) {
                         break;
                     }
                     ++statistics.refinementSteps.get();
-                    STORM_PRINT_AND_LOG("Starting refinement step " << statistics.refinementSteps.get() << ". Current difference between lower and upper bound is " << result.diff() << "." << std::endl);
                     
                     if (options.discretize) {
                         // Refine over-approximation
@@ -311,7 +314,9 @@ namespace storm {
                         if (overApproximation->hasComputedValues()) {
                             ValueType const& newValue = overApproximation->getComputedValueAtInitialState();
                             bool betterBound = min ? result.updateLowerBound(newValue) : result.updateUpperBound(newValue);
-                            STORM_PRINT_AND_LOG("Over-approx result for refinement step #" << statistics.refinementSteps.get() << " is '" << newValue << "' which " << std::string(betterBound ? "improves" : "does not improve") << " the old value. Current runtime is " << statistics.totalTime << " seconds." << std::endl);
+                            if (betterBound) {
+                                STORM_PRINT_AND_LOG("Over-approx result for refinement improved after " << statistics.totalTime << " seconds in refinement step #" << statistics.refinementSteps.get() << ". New value is '" << newValue << "'." << std::endl);
+                            }
                         } else {
                             break;
                         }
@@ -326,7 +331,9 @@ namespace storm {
                         if (underApproximation->hasComputedValues()) {
                             ValueType const& newValue = underApproximation->getComputedValueAtInitialState();
                             bool betterBound = min ? result.updateUpperBound(newValue) : result.updateLowerBound(newValue);
-                            STORM_PRINT_AND_LOG("Under-approx result for refinement step #" << statistics.refinementSteps.get() << " is '" << newValue << "' which " << std::string(betterBound ? "improves" : "does not improve") << " the old value. Current runtime is " << statistics.totalTime << " seconds." << std::endl);
+                            if (betterBound) {
+                                STORM_PRINT_AND_LOG("Under-approx result for refinement improved after " << statistics.totalTime << " seconds in refinement step #" << statistics.refinementSteps.get() << ". New value is '" << newValue << "'." << std::endl);
+                            }
                         } else {
                             break;
                         }
@@ -415,8 +422,14 @@ namespace storm {
                     refinedObservations = storm::utility::vector::filter<ValueType>(obsRatings, [&heuristicParameters](ValueType const& r) { return r <= heuristicParameters.observationThreshold;});
                     STORM_LOG_DEBUG("Refining the resolution of " << refinedObservations.getNumberOfSetBits() << "/" << refinedObservations.size() << " observations.");
                     for (auto const& obs : refinedObservations) {
-                        // Increment the resolution at the refined observations
-                        observationResolutionVector[obs] = storm::utility::convertNumber<uint64_t, ValueType>(storm::utility::convertNumber<ValueType>(observationResolutionVector[obs]) * options.resolutionFactor);
+                        // Increment the resolution at the refined observations.
+                        // Detect overflows properly.
+                        storm::RationalNumber newObsResolutionAsRational = storm::utility::convertNumber<storm::RationalNumber>(observationResolutionVector[obs]) * storm::utility::convertNumber<storm::RationalNumber>(options.resolutionFactor);
+                        if (newObsResolutionAsRational > storm::utility::convertNumber<storm::RationalNumber>(std::numeric_limits<uint64_t>::max())) {
+                            observationResolutionVector[obs] = std::numeric_limits<uint64_t>::max();
+                        } else {
+                            observationResolutionVector[obs] = storm::utility::convertNumber<uint64_t>(newObsResolutionAsRational);
+                        }
                     }
                     overApproximation->restartExploration();
                 }
