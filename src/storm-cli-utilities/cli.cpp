@@ -202,7 +202,7 @@ namespace storm {
             
             // If we were given a time limit, we put it in place now.
             if (resources.isTimeoutSet()) {
-                storm::utility::resources::setCPULimit(resources.getTimeoutInSeconds());
+                storm::utility::resources::setTimeoutAlarm(resources.getTimeoutInSeconds());
             }
 
             // register signal handler to handle aborts
