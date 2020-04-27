@@ -287,20 +287,20 @@ namespace storm {
                     // Note that formulaInfo contains state-based information which potentially needs to be updated during preprocessing
                     if (performPreprocessing<ValueType, DdType>(pomdp, formulaInfo, *formula)) {
                         sw.stop();
-                        STORM_PRINT_AND_LOG("Time for graph-based POMDP (pre-)processing: " << sw << "s." << std::endl);
+                        STORM_PRINT_AND_LOG("Time for graph-based POMDP (pre-)processing: " << sw << "." << std::endl);
                         pomdp->printModelInformationToStream(std::cout);
                     }
                     
                     sw.restart();
                     if (performAnalysis<ValueType, DdType>(pomdp, formulaInfo, *formula)) {
                         sw.stop();
-                        STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << "s." << std::endl);
+                        STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << "." << std::endl);
                     }
                     
                     sw.restart();
                     if (performTransformation<ValueType, DdType>(pomdp, *formula)) {
                         sw.stop();
-                        STORM_PRINT_AND_LOG("Time for POMDP transformation(s): " << sw << "s." << std::endl);
+                        STORM_PRINT_AND_LOG("Time for POMDP transformation(s): " << sw << "." << std::endl);
                     }
                 } else {
                     STORM_LOG_WARN("Nothing to be done. Did you forget to specify a formula?");
