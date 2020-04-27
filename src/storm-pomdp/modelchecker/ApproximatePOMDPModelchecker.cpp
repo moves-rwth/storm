@@ -324,9 +324,9 @@ namespace storm {
                     
                     if (options.unfold && result.diff() > options.refinePrecision) {
                         // Refine under-approximation
-                        overApproxHeuristicPar.gapThreshold *= options.gapThresholdFactor;
-                        overApproxHeuristicPar.sizeThreshold = storm::utility::convertNumber<uint64_t, ValueType>(storm::utility::convertNumber<ValueType, uint64_t>(underApproximation->getExploredMdp()->getNumberOfStates()) * options.sizeThresholdFactor);
-                        overApproxHeuristicPar.optimalChoiceValueEpsilon *= options.optimalChoiceValueThresholdFactor;
+                        underApproxHeuristicPar.gapThreshold *= options.gapThresholdFactor;
+                        underApproxHeuristicPar.sizeThreshold = storm::utility::convertNumber<uint64_t, ValueType>(storm::utility::convertNumber<ValueType, uint64_t>(underApproximation->getExploredMdp()->getNumberOfStates()) * options.sizeThresholdFactor);
+                        underApproxHeuristicPar.optimalChoiceValueEpsilon *= options.optimalChoiceValueThresholdFactor;
                         buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), true, underApproxHeuristicPar, underApproxBeliefManager, underApproximation);
                         if (underApproximation->hasComputedValues()) {
                             ValueType const& newValue = underApproximation->getComputedValueAtInitialState();
@@ -570,15 +570,20 @@ namespace storm {
                     }
                     
                     if (storm::utility::resources::isTerminate()) {
-                        statistics.overApproximationBuildAborted = true;
                         break;
                     }
                 }
-                statistics.overApproximationStates = overApproximation->getCurrentNumberOfMdpStates();
+                
                 if (storm::utility::resources::isTerminate()) {
+                    // don't overwrite statistics of a previous, successful computation
+                    if (!statistics.overApproximationStates) {
+                        statistics.overApproximationBuildAborted = true;
+                        statistics.overApproximationStates = overApproximation->getCurrentNumberOfMdpStates();
+                    }
                     statistics.overApproximationBuildTime.stop();
                     return;
                 }
+                statistics.overApproximationStates = overApproximation->getCurrentNumberOfMdpStates();
                 
                 overApproximation->finishExploration();
                 statistics.overApproximationBuildTime.stop();
@@ -592,7 +597,9 @@ namespace storm {
             void ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation) {
                 
                 statistics.underApproximationBuildTime.start();
-                statistics.underApproximationStateLimit = heuristicParameters.sizeThreshold;
+                if (heuristicParameters.sizeThreshold != std::numeric_limits<uint64_t>::max()) {
+                    statistics.underApproximationStateLimit = heuristicParameters.sizeThreshold;
+                }
                 if (!refine) {
                     // Build a new under approximation
                     if (computeRewards) {
@@ -606,7 +613,6 @@ namespace storm {
                 }
                 
                 // Expand the beliefs
-                uint64_t newlyExploredStates = 0;
                 storm::utility::Stopwatch explorationTime;
                 if (options.explorationTimeLimit) {
                     explorationTime.start();
@@ -634,14 +640,10 @@ namespace storm {
                             if (storm::utility::abs<ValueType>(underApproximation->getUpperValueBoundAtCurrentState() - underApproximation->getLowerValueBoundAtCurrentState()) < heuristicParameters.gapThreshold) {
                                 stopExploration = true;
                                 underApproximation->setCurrentStateIsTruncated();
-                            } else if (newlyExploredStates >= heuristicParameters.sizeThreshold) {
+                            } else if (underApproximation->getCurrentNumberOfMdpStates() >= heuristicParameters.sizeThreshold) {
                                 stopExploration = true;
                                 underApproximation->setCurrentStateIsTruncated();
                             }
-                        }
-                        if (!stopExploration) {
-                            // We are going to explore one more state
-                            ++newlyExploredStates;
                         }
                         for (uint64 action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                             // Always restore old behavior if available
@@ -678,15 +680,20 @@ namespace storm {
                         }
                     }
                     if (storm::utility::resources::isTerminate()) {
-                        statistics.underApproximationBuildAborted = true;
                         break;
                     }
                 }
-                statistics.underApproximationStates = underApproximation->getCurrentNumberOfMdpStates();
+                
                 if (storm::utility::resources::isTerminate()) {
+                    // don't overwrite statistics of a previous, successful computation
+                    if (!statistics.underApproximationStates) {
+                        statistics.underApproximationBuildAborted = true;
+                        statistics.underApproximationStates = underApproximation->getCurrentNumberOfMdpStates();
+                    }
                     statistics.underApproximationBuildTime.stop();
                     return;
                 }
+                statistics.underApproximationStates = underApproximation->getCurrentNumberOfMdpStates();
                 
                 underApproximation->finishExploration();
                 statistics.underApproximationBuildTime.stop();
