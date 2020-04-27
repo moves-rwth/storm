@@ -29,6 +29,7 @@
 #include "storm/settings/modules/TransformationSettings.h"
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/settings/modules/HintSettings.h"
+#include "storm/settings/modules/OviSolverSettings.h"
 
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
 #include "storm-pomdp-cli/settings/modules/BeliefExplorationSettings.h"
@@ -63,6 +64,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::ModelCheckerSettings>();
             storm::settings::addModule<storm::settings::modules::MultiplierSettings>();
             storm::settings::addModule<storm::settings::modules::HintSettings>();
+            storm::settings::addModule<storm::settings::modules::OviSolverSettings>();
         }
     }
 }
