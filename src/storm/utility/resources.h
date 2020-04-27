@@ -14,27 +14,6 @@ namespace storm {
         namespace resources {
 
             /*!
-             * Get CPU limit.
-             * @return CPU limit in seconds.
-             */
-            inline std::size_t getCPULimit() {
-                rlimit rl;
-                getrlimit(RLIMIT_CPU, &rl);
-                return rl.rlim_cur;
-            }
-
-            /*!
-             * Set CPU limit.
-             * @param seconds CPU limit in seconds.
-             */
-            inline void setCPULimit(std::size_t seconds) {
-                rlimit rl;
-                getrlimit(RLIMIT_CPU, &rl);
-                rl.rlim_cur = seconds;
-                setrlimit(RLIMIT_CPU, &rl);
-            }
-
-            /*!
              * Get used CPU time.
              * @return CPU time in seconds.
              */
