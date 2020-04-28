@@ -2,6 +2,7 @@
 
 #include "storm/utility/macros.h"
 #include "storm/utility/graph.h"
+#include "storm/utility/constants.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/modelchecker/propositional/SparsePropositionalModelChecker.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -85,9 +86,69 @@ namespace storm {
         template<typename ValueType>
         storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProb1Max(storm::logic::UntilFormula const& formula) const {
             // We consider the states that satisfy the formula with prob.1 under arbitrary schedulers as goal states.
-            storm::storage::BitVector goalStates = storm::utility::graph::performProb1A(pomdp.getTransitionMatrix(), pomdp.getTransitionMatrix().getRowGroupIndices(), pomdp.getBackwardTransitions(), checkPropositionalFormula(formula.getLeftSubformula()), checkPropositionalFormula(formula.getRightSubformula()));
-            STORM_LOG_TRACE("Prob1A states according to MDP: " << goalStates);
+            storm::storage::BitVector newGoalStates = storm::utility::graph::performProb1A(pomdp.getTransitionMatrix(), pomdp.getTransitionMatrix().getRowGroupIndices(), pomdp.getBackwardTransitions(), checkPropositionalFormula(formula.getLeftSubformula()), checkPropositionalFormula(formula.getRightSubformula()));
+            STORM_LOG_TRACE("Prob1A states according to MDP: " << newGoalStates);
             // Now find a set of observations such that there is a memoryless scheduler inducing prob. 1 for each state whose observation is in the set.
+            storm::storage::BitVector potentialGoalStates = storm::utility::graph::performProb1E(pomdp.getTransitionMatrix(), pomdp.getTransitionMatrix().getRowGroupIndices(), pomdp.getBackwardTransitions(), checkPropositionalFormula(formula.getLeftSubformula()), newGoalStates);
+            storm::storage::BitVector notGoalStates = ~potentialGoalStates;
+            storm::storage::BitVector potentialGoalObservations(pomdp.getNrObservations(), true);
+            for (uint64_t observation = 0; observation < pomdp.getNrObservations(); ++observation) {
+                for (uint64_t state : notGoalStates) {
+                    potentialGoalObservations.set(pomdp.getObservation(state), false);
+                }
+            }
+            std::vector<std::vector<uint64_t>> statesPerObservation(pomdp.getNrObservations(), std::vector<uint64_t>());
+            for (uint64_t state : potentialGoalStates) {
+                statesPerObservation[pomdp.getObservation(state)].push_back(state);
+            }
+
+            storm::storage::BitVector goalStates(pomdp.getNumberOfStates());
+            while (goalStates != newGoalStates) {
+                goalStates = storm::utility::graph::performProb1A(pomdp.getTransitionMatrix(), pomdp.getTransitionMatrix().getRowGroupIndices(), pomdp.getBackwardTransitions(), checkPropositionalFormula(formula.getLeftSubformula()), newGoalStates);
+                newGoalStates = goalStates;
+                STORM_LOG_TRACE("Prob1A states according to MDP: " << newGoalStates);
+                for (uint64_t observation : potentialGoalObservations) {
+                    uint64_t actsForObservation = pomdp.getTransitionMatrix().getRowGroupSize(statesPerObservation[observation][0]);
+                    // Search whether we find an action that works for this observation.
+                    for (uint64_t act = 0; act < actsForObservation; act++) {
+                        bool isGoalAction = true; // Assume that this works, then check whether we find a violation.
+                        for (uint64_t state : statesPerObservation[observation]) {
+                            if (newGoalStates.get(state)) {
+                                // A state is only a goal state if all actions work,
+                                // or if all states with the same observation are goal states (and then, it does not matter which action is a goal action).
+                                // Notice that this can mean that we wrongly conclude that some action is okay even if this is not the correct action (but then some other action exists which is okay for all states).
+                                continue;
+                            }
+                            uint64_t row = pomdp.getNondeterministicChoiceIndices()[state] + act;
+                            // Check whether all actions lead with a positive probabilty to a goal, and with zero probability to another (non-goal) state.
+                            bool hasGoalEntry = false;
+                            for (auto const& entry : pomdp.getTransitionMatrix().getRow(row)) {
+                                assert(!storm::utility::isZero(entry.getValue()));
+                                if(newGoalStates.get(entry.getColumn())) {
+                                    hasGoalEntry = true;
+                                }
+                                else if(pomdp.getObservation(entry.getColumn()) != observation) {
+                                    isGoalAction = false;
+                                    break;
+                                }
+                            }
+                            if (!isGoalAction || !hasGoalEntry) {
+                                // Action is definitiely not a goal action, no need to check further states.
+                                isGoalAction = false;
+                                break;
+                            }
+                        }
+                        if (isGoalAction) {
+                            for (uint64_t state : statesPerObservation[observation]) {
+                                newGoalStates.set(state);
+                            }
+                            // No need to check other actions.
+                            break;
+                        }
+                    }
+                }
+            }
+            // Notice that the goal states are not observable, i.e., the observations may not be sufficient to decide whether we are in a goal state.
             return goalStates;
 
         }
