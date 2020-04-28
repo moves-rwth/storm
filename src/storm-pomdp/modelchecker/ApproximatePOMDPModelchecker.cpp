@@ -294,11 +294,8 @@ namespace storm {
                 STORM_LOG_WARN_COND(options.refineStepLimit.is_initialized() || !storm::utility::isZero(options.refinePrecision), "No termination criterion for refinement given. Consider to specify a steplimit, a non-zero precisionlimit, or a timeout");
                 STORM_LOG_WARN_COND(storm::utility::isZero(options.refinePrecision) || (options.unfold && options.discretize), "Refinement goal precision is given, but only one bound is going to be refined.");
                 while ((!options.refineStepLimit.is_initialized() || statistics.refinementSteps.get() < options.refineStepLimit.get()) && result.diff() > options.refinePrecision) {
-                    if (storm::utility::resources::isTerminate()) {
-                        break;
-                    }
-                    ++statistics.refinementSteps.get();
-                    
+                    bool overApproxFixPoint = true;
+                    bool underApproxFixPoint = true;
                     if (options.discretize) {
                         // Refine over-approximation
                         if (min) {
@@ -310,12 +307,12 @@ namespace storm {
                         overApproxHeuristicPar.sizeThreshold = storm::utility::convertNumber<uint64_t, ValueType>(storm::utility::convertNumber<ValueType, uint64_t>(overApproximation->getExploredMdp()->getNumberOfStates()) * options.sizeThresholdFactor);
                         overApproxHeuristicPar.observationThreshold += options.obsThresholdIncrementFactor * (storm::utility::one<ValueType>() - overApproxHeuristicPar.observationThreshold);
                         overApproxHeuristicPar.optimalChoiceValueEpsilon *= options.optimalChoiceValueThresholdFactor;
-                        buildOverApproximation(targetObservations, min, rewardModelName.is_initialized(), true, overApproxHeuristicPar, observationResolutionVector, overApproxBeliefManager, overApproximation);
-                        if (overApproximation->hasComputedValues()) {
+                        overApproxFixPoint = buildOverApproximation(targetObservations, min, rewardModelName.is_initialized(), true, overApproxHeuristicPar, observationResolutionVector, overApproxBeliefManager, overApproximation);
+                        if (overApproximation->hasComputedValues() && !storm::utility::resources::isTerminate()) {
                             ValueType const& newValue = overApproximation->getComputedValueAtInitialState();
                             bool betterBound = min ? result.updateLowerBound(newValue) : result.updateUpperBound(newValue);
                             if (betterBound) {
-                                STORM_PRINT_AND_LOG("Over-approx result for refinement improved after " << statistics.totalTime << " seconds in refinement step #" << statistics.refinementSteps.get() << ". New value is '" << newValue << "'." << std::endl);
+                                STORM_PRINT_AND_LOG("Over-approx result for refinement improved after " << statistics.totalTime << " in refinement step #" << (statistics.refinementSteps.get() + 1) << ". New value is '" << newValue << "'." << std::endl);
                             }
                         } else {
                             break;
@@ -327,16 +324,49 @@ namespace storm {
                         underApproxHeuristicPar.gapThreshold *= options.gapThresholdFactor;
                         underApproxHeuristicPar.sizeThreshold = storm::utility::convertNumber<uint64_t, ValueType>(storm::utility::convertNumber<ValueType, uint64_t>(underApproximation->getExploredMdp()->getNumberOfStates()) * options.sizeThresholdFactor);
                         underApproxHeuristicPar.optimalChoiceValueEpsilon *= options.optimalChoiceValueThresholdFactor;
-                        buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), true, underApproxHeuristicPar, underApproxBeliefManager, underApproximation);
-                        if (underApproximation->hasComputedValues()) {
+                        underApproxFixPoint = buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), true, underApproxHeuristicPar, underApproxBeliefManager, underApproximation);
+                        if (underApproximation->hasComputedValues() && !storm::utility::resources::isTerminate()) {
                             ValueType const& newValue = underApproximation->getComputedValueAtInitialState();
                             bool betterBound = min ? result.updateUpperBound(newValue) : result.updateLowerBound(newValue);
                             if (betterBound) {
-                                STORM_PRINT_AND_LOG("Under-approx result for refinement improved after " << statistics.totalTime << " seconds in refinement step #" << statistics.refinementSteps.get() << ". New value is '" << newValue << "'." << std::endl);
+                                STORM_PRINT_AND_LOG("Under-approx result for refinement improved after " << statistics.totalTime << " in refinement step #" << (statistics.refinementSteps.get() + 1) << ". New value is '" << newValue << "'." << std::endl);
                             }
                         } else {
                             break;
                         }
+                    }
+                    
+                    if (storm::utility::resources::isTerminate()) {
+                        break;
+                    } else {
+                        ++statistics.refinementSteps.get();
+                        // Don't make too many outputs (to avoid logfile clutter)
+                        if (statistics.refinementSteps.get() <= 1000) {
+                            STORM_PRINT_AND_LOG("Completed iteration #" << statistics.refinementSteps.get() << ". Current checktime is " << statistics.totalTime << ".");
+                            bool computingLowerBound = false;
+                            bool computingUpperBound = false;
+                            if (options.discretize) {
+                                STORM_PRINT_AND_LOG(" Over-approx MDP has size " << overApproximation->getExploredMdp()->getNumberOfStates() << ".");
+                                (min ? computingLowerBound : computingUpperBound) = true;
+                            }
+                            if (options.unfold) {
+                                STORM_PRINT_AND_LOG(" Under-approx MDP has size " << underApproximation->getExploredMdp()->getNumberOfStates() << ".");
+                                (min ? computingUpperBound : computingLowerBound) = true;
+                            }
+                            if (computingLowerBound && computingUpperBound) {
+                                STORM_PRINT_AND_LOG(" Current result is [" << result.lowerBound << ", " << result.upperBound << "].");
+                            } else if (computingLowerBound) {
+                                STORM_PRINT_AND_LOG(" Current result is ≥" << result.lowerBound << ".");
+                            } else if (computingUpperBound) {
+                                STORM_PRINT_AND_LOG(" Current result is ≤" << result.upperBound << ".");
+                            }
+                            STORM_PRINT_AND_LOG(std::endl);
+                            STORM_LOG_WARN_COND(statistics.refinementSteps.get() == 1000, "Refinement requires  more than 1000 iterations.");
+                        }
+                    }
+                    if (overApproxFixPoint && underApproxFixPoint) {
+                        STORM_PRINT_AND_LOG("Refinement fixpoint reached after " << statistics.refinementSteps.get() << " iterations." << std::endl);
+                        break;
                     }
                 }
             }
@@ -399,7 +429,10 @@ namespace storm {
             }
             
             template<typename PomdpModelType, typename BeliefValueType>
-            void ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::buildOverApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::vector<uint64_t>& observationResolutionVector, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& overApproximation) {
+            bool ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::buildOverApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::vector<uint64_t>& observationResolutionVector, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& overApproximation) {
+                
+                // Detect whether the refinement reached a fixpoint.
+                bool fixPoint = true;
                 
                 // current maximal resolution (needed for refinement heuristic)
                 uint64_t oldMaxResolution = *std::max_element(observationResolutionVector.begin(), observationResolutionVector.end());
@@ -418,7 +451,10 @@ namespace storm {
                     overApproximation->computeOptimalChoicesAndReachableMdpStates(heuristicParameters.optimalChoiceValueEpsilon, true);
                     // We also need to find out which observation resolutions needs refinement.
                     auto obsRatings = getObservationRatings(overApproximation, observationResolutionVector, oldMaxResolution);
-                    // Potentially increase the observationThreshold so that at least one observation actually gets refinement.
+                    // If there is a score < 1, we have not reached a fixpoint, yet
+                    if (std::any_of(obsRatings.begin(), obsRatings.end(), [](ValueType const& value){return value < storm::utility::one<ValueType>();})) {
+                        fixPoint = false;
+                    }
                     refinedObservations = storm::utility::vector::filter<ValueType>(obsRatings, [&heuristicParameters](ValueType const& r) { return r <= heuristicParameters.observationThreshold;});
                     STORM_LOG_DEBUG("Refining the resolution of " << refinedObservations.getNumberOfSetBits() << "/" << refinedObservations.size() << " observations.");
                     for (auto const& obs : refinedObservations) {
@@ -447,10 +483,14 @@ namespace storm {
                     if (!timeLimitExceeded && options.explorationTimeLimit && static_cast<uint64_t>(explorationTime.getTimeInSeconds()) > options.explorationTimeLimit.get()) {
                         STORM_LOG_INFO("Exploration time limit exceeded.");
                         timeLimitExceeded = true;
+                        fixPoint = false;
                     }
 
                     uint64_t currId = overApproximation->exploreNextState();
-                    
+                    bool hasOldBehavior = refine && overApproximation->currentStateHasOldBehavior();
+                    if (!hasOldBehavior) {
+                        fixPoint = false; // Exploring a new state!
+                    }
                     uint32_t currObservation = beliefManager->getBeliefObservation(currId);
                     if (targetObservations.count(currObservation) != 0) {
                         overApproximation->setCurrentStateIsTarget();
@@ -475,7 +515,7 @@ namespace storm {
                         bool restoreAllActions = false;
                         bool checkRewireForAllActions = false;
                         ValueType gap = storm::utility::abs<ValueType>(overApproximation->getUpperValueBoundAtCurrentState() - overApproximation->getLowerValueBoundAtCurrentState());
-                        if (!refine || !overApproximation->currentStateHasOldBehavior()) {
+                        if (!hasOldBehavior) {
                             // Case 1
                             // If we explore this state and if it has no old behavior, it is clear that an "old" optimal scheduler can be extended to a scheduler that reaches this state
                             if (!timeLimitExceeded && gap > heuristicParameters.gapThreshold && numRewiredOrExploredStates < heuristicParameters.sizeThreshold) {
@@ -489,9 +529,19 @@ namespace storm {
                                 // Case 2
                                 if (!timeLimitExceeded && overApproximation->currentStateIsOptimalSchedulerReachable() && gap > heuristicParameters.gapThreshold && numRewiredOrExploredStates < heuristicParameters.sizeThreshold) {
                                     exploreAllActions = true; // Case 2.1
+                                    fixPoint = false;
                                 } else {
                                     truncateAllActions = true; // Case 2.2
                                     overApproximation->setCurrentStateIsTruncated();
+                                    if (fixPoint) {
+                                        // Properly check whether this can still be a fixpoint
+                                        if (overApproximation->currentStateIsOptimalSchedulerReachable()) {
+                                            fixPoint = false;
+                                        }
+                                        //} else {
+                                            // In this case we truncated a state that is not reachable under optimal schedulers.
+                                            // If no other state is explored (i.e. fixPoint remaints true), these states should still not be reachable in subsequent iterations
+                                    }
                                 }
                             } else {
                                 // Case 3
@@ -516,6 +566,7 @@ namespace storm {
                                 // First, check whether this action has been rewired since the last refinement of one of the successor observations (i.e. whether rewiring would actually change the successor states)
                                 assert(overApproximation->currentStateHasOldBehavior());
                                 if (overApproximation->getCurrentStateActionExplorationWasDelayed(action) || overApproximation->currentStateHasSuccessorObservationInObservationSet(action, refinedObservations)) {
+                                    fixPoint = false;
                                     // Then, check whether the other criteria for rewiring are satisfied
                                     if (!restoreAllActions && overApproximation->actionAtCurrentStateWasOptimal(action)) {
                                         // Do the rewiring now! (Case 3.1)
@@ -581,9 +632,8 @@ namespace storm {
                         statistics.overApproximationStates = overApproximation->getCurrentNumberOfMdpStates();
                     }
                     statistics.overApproximationBuildTime.stop();
-                    return;
+                    return false;
                 }
-                statistics.overApproximationStates = overApproximation->getCurrentNumberOfMdpStates();
                 
                 overApproximation->finishExploration();
                 statistics.overApproximationBuildTime.stop();
@@ -591,12 +641,18 @@ namespace storm {
                 statistics.overApproximationCheckTime.start();
                 overApproximation->computeValuesOfExploredMdp(min ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize);
                 statistics.overApproximationCheckTime.stop();
+                
+                // don't overwrite statistics of a previous, successful computation
+                if (!storm::utility::resources::isTerminate() || !statistics.overApproximationStates) {
+                    statistics.overApproximationStates = overApproximation->getExploredMdp()->getNumberOfStates();
+                }
+                return fixPoint;
             }
 
             template<typename PomdpModelType, typename BeliefValueType>
-            void ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation) {
-                
+            bool ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation) {
                 statistics.underApproximationBuildTime.start();
+                bool fixPoint = true;
                 if (heuristicParameters.sizeThreshold != std::numeric_limits<uint64_t>::max()) {
                     statistics.underApproximationStateLimit = heuristicParameters.sizeThreshold;
                 }
@@ -626,12 +682,15 @@ namespace storm {
                     uint64_t currId = underApproximation->exploreNextState();
                     
                     uint32_t currObservation = beliefManager->getBeliefObservation(currId);
+                    bool stateAlreadyExplored = refine && underApproximation->currentStateHasOldBehavior() && !underApproximation->getCurrentStateWasTruncated();
+                    if (!stateAlreadyExplored || timeLimitExceeded) {
+                        fixPoint = false;
+                    }
                     if (targetObservations.count(currObservation) != 0) {
                         underApproximation->setCurrentStateIsTarget();
                         underApproximation->addSelfloopTransition();
                     } else {
                         bool stopExploration = false;
-                        bool stateAlreadyExplored = refine && underApproximation->currentStateHasOldBehavior() && !underApproximation->getCurrentStateWasTruncated();
                         if (timeLimitExceeded) {
                             stopExploration = true;
                             underApproximation->setCurrentStateIsTruncated();
@@ -691,9 +750,8 @@ namespace storm {
                         statistics.underApproximationStates = underApproximation->getCurrentNumberOfMdpStates();
                     }
                     statistics.underApproximationBuildTime.stop();
-                    return;
+                    return false;
                 }
-                statistics.underApproximationStates = underApproximation->getCurrentNumberOfMdpStates();
                 
                 underApproximation->finishExploration();
                 statistics.underApproximationBuildTime.stop();
@@ -701,6 +759,12 @@ namespace storm {
                 statistics.underApproximationCheckTime.start();
                 underApproximation->computeValuesOfExploredMdp(min ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize);
                 statistics.underApproximationCheckTime.stop();
+                
+                // don't overwrite statistics of a previous, successful computation
+                if (!storm::utility::resources::isTerminate() || !statistics.underApproximationStates) {
+                    statistics.underApproximationStates = underApproximation->getExploredMdp()->getNumberOfStates();
+                }
+                return fixPoint;
 
             }
 
