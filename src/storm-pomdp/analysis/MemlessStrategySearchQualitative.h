@@ -117,9 +117,26 @@ namespace pomdp {
             void incrementSmtChecks() {
                 satCalls++;
             }
+
+                uint64_t getChecks() {
+                    return satCalls;
+                }
+
+                uint64_t getIterations() {
+                    return outerIterations;
+                }
+
+                uint64_t getGraphBasedwinningObservations() {
+                    return graphBasedAnalysisWinOb;
+                }
+
+                void incrementGraphBasedWinningObservations() {
+                    graphBasedAnalysisWinOb++;
+                }
         private:
                 uint64_t satCalls = 0;
                 uint64_t outerIterations = 0;
+                uint64_t graphBasedAnalysisWinOb = 0;
         };
 
         MemlessStrategySearchQualitative(storm::models::sparse::Pomdp<ValueType> const& pomdp,
@@ -167,6 +184,13 @@ namespace pomdp {
     private:
         storm::expressions::Expression const& getDoneActionExpression(uint64_t obs) const;
 
+        void reset () {
+            schedulerForObs.clear();
+            finalSchedulers.clear();
+            smtSolver->reset();
+
+
+        }
         void printScheduler(std::vector<InternalObservationScheduler> const& );
         void printCoveredStates(storm::storage::BitVector const& remaining) const;
 
@@ -181,7 +205,6 @@ namespace pomdp {
         uint64_t maxK = std::numeric_limits<uint64_t>::max();
 
         storm::storage::BitVector surelyReachSinkStates;
-        std::set<uint32_t> targetObservations;
         storm::storage::BitVector targetStates;
         std::vector<std::vector<uint64_t>> statesPerObservation;
 
@@ -199,6 +222,8 @@ namespace pomdp {
 
         std::vector<storm::expressions::Variable> switchVars;
         std::vector<storm::expressions::Expression> switchVarExpressions;
+        std::vector<storm::expressions::Variable> followVars;
+        std::vector<storm::expressions::Expression> followVarExpressions;
         std::vector<storm::expressions::Variable> continuationVars;
         std::vector<storm::expressions::Expression> continuationVarExpressions;
         std::vector<std::vector<storm::expressions::Expression>> pathVars;
@@ -209,6 +234,8 @@ namespace pomdp {
 
         MemlessSearchOptions options;
         Statistics stats;
+
+        std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory;
 
 
     };

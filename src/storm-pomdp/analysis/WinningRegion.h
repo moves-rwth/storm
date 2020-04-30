@@ -12,6 +12,8 @@ namespace storm {
             bool update(uint64_t observation, storm::storage::BitVector const& winning);
             bool query(uint64_t observation, storm::storage::BitVector const& currently) const;
 
+            void setObservationIsWinning(uint64_t observation);
+
             bool observationIsWinning(uint64_t observation) const;
             storm::expressions::Expression extensionExpression(uint64_t observation, std::vector<storm::expressions::Expression>& varsForStates) const;
 

@@ -84,12 +84,11 @@ namespace storm {
         }
 
         template<typename ValueType>
-        storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProb1Max(storm::logic::UntilFormula const& formula) const {
-            // We consider the states that satisfy the formula with prob.1 under arbitrary schedulers as goal states.
-            storm::storage::BitVector newGoalStates = storm::utility::graph::performProb1A(pomdp.getTransitionMatrix(), pomdp.getTransitionMatrix().getRowGroupIndices(), pomdp.getBackwardTransitions(), checkPropositionalFormula(formula.getLeftSubformula()), checkPropositionalFormula(formula.getRightSubformula()));
+        storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProb1Max(storm::storage::BitVector const& okay, storm::storage::BitVector const& good) const {
+            storm::storage::BitVector newGoalStates = storm::utility::graph::performProb1A(pomdp.getTransitionMatrix(), pomdp.getTransitionMatrix().getRowGroupIndices(), pomdp.getBackwardTransitions(), okay, good);
             STORM_LOG_TRACE("Prob1A states according to MDP: " << newGoalStates);
             // Now find a set of observations such that there is a memoryless scheduler inducing prob. 1 for each state whose observation is in the set.
-            storm::storage::BitVector potentialGoalStates = storm::utility::graph::performProb1E(pomdp.getTransitionMatrix(), pomdp.getTransitionMatrix().getRowGroupIndices(), pomdp.getBackwardTransitions(), checkPropositionalFormula(formula.getLeftSubformula()), newGoalStates);
+            storm::storage::BitVector potentialGoalStates = storm::utility::graph::performProb1E(pomdp.getTransitionMatrix(), pomdp.getTransitionMatrix().getRowGroupIndices(), pomdp.getBackwardTransitions(), okay, newGoalStates);
             storm::storage::BitVector notGoalStates = ~potentialGoalStates;
             storm::storage::BitVector potentialGoalObservations(pomdp.getNrObservations(), true);
             for (uint64_t observation = 0; observation < pomdp.getNrObservations(); ++observation) {
@@ -104,9 +103,9 @@ namespace storm {
 
             storm::storage::BitVector goalStates(pomdp.getNumberOfStates());
             while (goalStates != newGoalStates) {
-                goalStates = storm::utility::graph::performProb1A(pomdp.getTransitionMatrix(), pomdp.getTransitionMatrix().getRowGroupIndices(), pomdp.getBackwardTransitions(), checkPropositionalFormula(formula.getLeftSubformula()), newGoalStates);
+                goalStates = storm::utility::graph::performProb1A(pomdp.getTransitionMatrix(), pomdp.getTransitionMatrix().getRowGroupIndices(), pomdp.getBackwardTransitions(), okay, newGoalStates);
                 newGoalStates = goalStates;
-                STORM_LOG_TRACE("Prob1A states according to MDP: " << newGoalStates);
+                STORM_LOG_INFO("Prob1A states according to MDP: " << newGoalStates);
                 for (uint64_t observation : potentialGoalObservations) {
                     uint64_t actsForObservation = pomdp.getTransitionMatrix().getRowGroupSize(statesPerObservation[observation][0]);
                     // Search whether we find an action that works for this observation.
@@ -151,6 +150,13 @@ namespace storm {
             // Notice that the goal states are not observable, i.e., the observations may not be sufficient to decide whether we are in a goal state.
             return goalStates;
 
+        }
+
+        template<typename ValueType>
+        storm::storage::BitVector QualitativeAnalysisOnGraphs<ValueType>::analyseProb1Max(storm::logic::UntilFormula const& formula) const {
+            // We consider the states that satisfy the formula with prob.1 under arbitrary schedulers as goal states.
+            return this->analyseProb1Max(checkPropositionalFormula(formula.getLeftSubformula()),
+                                         checkPropositionalFormula(formula.getRightSubformula()));
         }
 
         template<typename ValueType>

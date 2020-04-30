@@ -12,6 +12,24 @@ namespace pomdp {
         }
     }
 
+    void WinningRegion::setObservationIsWinning(uint64_t observation) {
+        winningRegion[observation] = { storm::storage::BitVector(observationSizes[observation], true) };
+    }
+
+//    void WinningRegion::addTargetState(uint64_t observation, uint64_t offset) {
+//        std::vector<storm::storage::BitVector> newWinningSupport = std::vector<storm::storage::BitVector>();
+//        bool changed = true;
+//        for (auto const& support : winningRegion[observation]) {
+//            newWinningSupport.push_back(storm::storage::BitVector(support));
+//            if(!support.get(offset)) {
+//                changed = true;
+//                newWinningSupport.back().set(offset);
+//            }
+//        }
+//
+//
+//    }
+
     bool WinningRegion::update(uint64_t observation, storm::storage::BitVector const& winning) {
         std::vector<storm::storage::BitVector> newWinningSupport = std::vector<storm::storage::BitVector>();
         bool changed = false;
@@ -87,14 +105,24 @@ namespace pomdp {
 
     void WinningRegion::print() const {
         uint64_t observation = 0;
+        std::vector<uint64_t> winningObservations;
         for (auto const& winningSupport : winningRegion) {
-            std::cout << "***** observation" << observation << std::endl;
-            for (auto const& support : winningSupport) {
-                std::cout << " " << support;
+            if (observationIsWinning(observation)) {
+                winningObservations.push_back(observation);
+            } else {
+                std::cout << "***** observation" << observation << std::endl;
+                for (auto const& support : winningSupport) {
+                    std::cout << " " << support;
+                }
+                std::cout << std::endl;
             }
-            std::cout << std::endl;
             observation++;
         }
+        std::cout << " and " << winningObservations.size() << " winning observations: (";
+        for (auto const& obs : winningObservations) {
+            std::cout << obs << " ";
+        }
+        std::cout << ")" << std::endl;
     }
 
     /**
