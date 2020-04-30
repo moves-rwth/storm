@@ -11,6 +11,7 @@ Version 1.5.x
 - Scheduler export: Properly handle models with end components. Added export in .json format.
 - CMake: Search for Gurobi prefers new versions
 - Tests: Enabled tests for permissive schedulers
+- `storm-dft`: Renamed setting `--show-dft-stats` to `dft-statistics` and added approximation information to statistics.
 
 ## Version 1.5.1 (2020/03)
 - Jani models are now parsed using exact arithmetic.
