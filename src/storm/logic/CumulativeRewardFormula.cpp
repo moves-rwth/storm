@@ -99,7 +99,6 @@ namespace storm {
         double CumulativeRewardFormula::getBound(unsigned i) const {
             checkNoVariablesInBound(bounds.at(i).getBound());
             double value = bounds.at(i).getBound().evaluateAsDouble();
-            STORM_LOG_THROW(value >= 0.0, storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
             return value;
         }
 
@@ -107,7 +106,6 @@ namespace storm {
         storm::RationalNumber CumulativeRewardFormula::getBound(unsigned i) const {
             checkNoVariablesInBound(bounds.at(i).getBound());
             storm::RationalNumber value = bounds.at(i).getBound().evaluateAsRational();
-            STORM_LOG_THROW(value >= storm::utility::zero<storm::RationalNumber>(), storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
             return value;
         }
 
@@ -115,7 +113,6 @@ namespace storm {
         uint64_t CumulativeRewardFormula::getBound(unsigned i) const {
             checkNoVariablesInBound(bounds.at(i).getBound());
             uint64_t value = bounds.at(i).getBound().evaluateAsInt();
-            STORM_LOG_THROW(value >= 0, storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
             return value;
         }
         
