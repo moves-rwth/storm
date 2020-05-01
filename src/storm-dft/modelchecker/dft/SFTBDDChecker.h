@@ -4,12 +4,14 @@
 #include <memory>
 #include <set>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "storm-dft/storage/SylvanBddManager.h"
 #include "storm-dft/storage/dft/DFT.h"
 #include "storm-dft/transformations/SftToBddTransformator.h"
 #include "storm/storage/dd/DdManager.h"
+#include "storm/utility/eigen.h"
 
 namespace storm {
 namespace modelchecker {
@@ -109,6 +111,92 @@ class SFTBDDChecker {
         return probability;
     }
 
+    /**
+     * \return
+     * The Probabilities that the top level gate fails at the given timepoints.
+     *
+     * \param timepoints
+     * Array of timebounds to calculate the failure probabilities for.
+     *
+     * \param chunksize
+     * Splits the timepoints array into chunksize chunks.
+     * A value of 0 represents to calculate the whole array at once.
+     *
+     * \note
+     * Works only with exponential distributions and no spares.
+     * Otherwise the function returns an arbitrary value
+     */
+    std::vector<double> getProbabilitiesAtTimepoints(
+        std::vector<double> const &timepoints, size_t chunksize = 0) const {
+        if (chunksize == 0) {
+            chunksize = timepoints.size();
+        }
+
+        // caches
+        auto const basicElemets{dft->getBasicElements()};
+        std::map<uint32_t, StormEigen::ArrayXd> indexToProbabilities{};
+        std::unordered_map<uint64_t, std::pair<bool, StormEigen::ArrayXd>>
+            bddToProbabilities{};
+
+        // The current timepoints we calculate with
+        StormEigen::ArrayXd timepointsArray{chunksize};
+
+        // The Return vector
+        std::vector<double> resultProbabilities{};
+        resultProbabilities.reserve(timepoints.size());
+
+        for (size_t currentIndex{}; currentIndex < timepoints.size();
+             currentIndex += chunksize) {
+            auto const sizeLeft{timepoints.size() - currentIndex};
+            if (sizeLeft < chunksize) {
+                chunksize = sizeLeft;
+                timepointsArray = StormEigen::ArrayXd{chunksize};
+            }
+
+            // Update current timepoints
+            for (size_t i{currentIndex}; i < currentIndex + chunksize; ++i) {
+                timepointsArray(i - currentIndex) = timepoints[i];
+            }
+
+            // Update the probabilities of the basic elements
+            for (auto const &be : basicElemets) {
+                if (be->type() == storm::storage::DFTElementType::BE_EXP) {
+                    auto const failureRate{
+                        std::static_pointer_cast<
+                            storm::storage::BEExponential<ValueType>>(be)
+                            ->activeFailureRate()};
+
+                    // exponential distribution
+                    // p(T <= t) = 1 - exp(-lambda*t)
+                    auto const beIndex{sylvanBddManager->getIndex(be->name())};
+                    indexToProbabilities[beIndex] =
+                        1 - (-failureRate * timepointsArray).exp();
+                } else {
+                    STORM_LOG_ERROR("Basic Element Type not supported.");
+                    return {};
+                }
+            }
+
+            // Invalidate bdd cache
+            for (auto &i : bddToProbabilities) {
+                i.second.first = false;
+            }
+
+            // Great care was made so that the pointer returned is always valid
+            // and points to an element in bddToProbabilities
+            auto const &probabilitiesArray{*recursiveProbabilities(
+                chunksize, topLevelGateBdd, indexToProbabilities,
+                bddToProbabilities)};
+
+            // Update result Probabilities
+            for (size_t i{0}; i < chunksize; ++i) {
+                resultProbabilities.push_back(probabilitiesArray(i));
+            }
+        }
+
+        return resultProbabilities;
+    }
+
    private:
     /**
      * \returns
@@ -154,6 +242,71 @@ class SFTBDDChecker {
                                (1 - currentProbability) * elseProbability};
         bddToProbability[bdd.GetBDD()] = probability;
         return probability;
+    }
+
+    /**
+     * \returns
+     * The probabilities that the bdd is true
+     * given the probabilities that the variables are true.
+     *
+     * \param chunksize
+     * The width of the Eigen Arrays
+     *
+     * \param bdd
+     * The bdd for which to calculate the probabilities
+     *
+     * \param indexToProbabilities
+     * A reference to a mapping
+     * that must map every variable in the bdd to probabilities
+     *
+     * \param bddToProbabilities
+     * A cache for common sub Bdds.
+     * Must be empty or from an earlier call with a bdd that is an
+     * ancestor of the current one.
+     *
+     * \note
+     * Great care was made that all pointers
+     * are valid elements in bddToProbabilities.
+     *
+     */
+    StormEigen::ArrayXd const *recursiveProbabilities(
+        size_t const chunksize, Bdd const bdd,
+        std::map<uint32_t, StormEigen::ArrayXd> const &indexToProbabilities,
+        std::unordered_map<uint64_t, std::pair<bool, StormEigen::ArrayXd>>
+            &bddToProbabilities) const {
+        auto const bddId{bdd.GetBDD()};
+        auto const it{bddToProbabilities.find(bddId)};
+        if (it != bddToProbabilities.end() && it->second.first) {
+            return &it->second.second;
+        }
+
+        auto &bddToProbabilitiesElement{bddToProbabilities[bddId]};
+        if (bdd.isOne()) {
+            bddToProbabilitiesElement.first = true;
+            bddToProbabilitiesElement.second =
+                StormEigen::ArrayXd::Constant(chunksize, 1);
+            return &bddToProbabilitiesElement.second;
+        } else if (bdd.isZero()) {
+            bddToProbabilitiesElement.first = true;
+            bddToProbabilitiesElement.second =
+                StormEigen::ArrayXd::Constant(chunksize, 0);
+            return &bddToProbabilitiesElement.second;
+        }
+
+        auto const &thenProbabilities{*recursiveProbabilities(
+            chunksize, bdd.Then(), indexToProbabilities, bddToProbabilities)};
+        auto const &elseProbabilities{*recursiveProbabilities(
+            chunksize, bdd.Else(), indexToProbabilities, bddToProbabilities)};
+
+        auto const currentVar{bdd.TopVar()};
+        auto const &currentProbabilities{indexToProbabilities.at(currentVar)};
+
+        // P(Ite(x, f1, f2)) = P(x) * P(f1) + P(!x) * P(f2)
+        bddToProbabilitiesElement.first = true;
+        bddToProbabilitiesElement.second =
+            currentProbabilities * thenProbabilities +
+            (1 - currentProbabilities) * elseProbabilities;
+        return &bddToProbabilitiesElement.second;
     }
 
     std::map<uint64_t, std::map<uint64_t, Bdd>> withoutCache{};
