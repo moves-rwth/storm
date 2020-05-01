@@ -556,7 +556,7 @@ namespace storm {
                                     overApproximation->setCurrentStateIsTruncated();
                                     if (fixPoint) {
                                         // Properly check whether this can still be a fixpoint
-                                        if (overApproximation->currentStateIsOptimalSchedulerReachable()) {
+                                        if (overApproximation->currentStateIsOptimalSchedulerReachable() && !storm::utility::isZero(gap)) {
                                             fixPoint = false;
                                         }
                                         //} else {
