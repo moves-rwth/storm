@@ -92,11 +92,11 @@ class SFTBDDChecker {
 
                 // exponential distribution
                 // p(T <= t) = 1 - exp(-lambda*t)
-                auto const failurePropability{
+                auto const failureProbability{
                     1 - std::exp(-failureRate * timebound)};
 
                 auto const currentIndex{sylvanBddManager->getIndex(be->name())};
-                indexToProbability[currentIndex] = failurePropability;
+                indexToProbability[currentIndex] = failureProbability;
             } else {
                 STORM_LOG_ERROR("Basic Element Type not supported.");
                 return -1;
