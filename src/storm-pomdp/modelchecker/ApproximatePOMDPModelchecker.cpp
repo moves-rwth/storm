@@ -266,7 +266,7 @@ namespace storm {
                 std::shared_ptr<BeliefManagerType> underApproxBeliefManager;
                 std::shared_ptr<ExplorerType> underApproximation;
                 HeuristicParameters underApproxHeuristicPar;
-                if (options.unfold) { // Setup and build first OverApproximation
+                if (options.unfold) { // Setup and build first UnderApproximation
                     underApproxBeliefManager = std::make_shared<BeliefManagerType>(pomdp, options.numericPrecision);
                     if (rewardModelName) {
                         underApproxBeliefManager->setRewardModel(rewardModelName);
@@ -289,6 +289,27 @@ namespace storm {
                         STORM_PRINT_AND_LOG("Under-approx result for refinement improved after " << statistics.totalTime << " seconds in refinement step #" << statistics.refinementSteps.get() << ". New value is '" << newValue << "'." << std::endl);
                     }
                 }
+                
+                // Do some output
+                STORM_PRINT_AND_LOG("Completed iteration #" << statistics.refinementSteps.get() << ". Current checktime is " << statistics.totalTime << ".");
+                bool computingLowerBound = false;
+                bool computingUpperBound = false;
+                if (options.discretize) {
+                    STORM_PRINT_AND_LOG(" Over-approx MDP has size " << overApproximation->getExploredMdp()->getNumberOfStates() << ".");
+                    (min ? computingLowerBound : computingUpperBound) = true;
+                }
+                if (options.unfold) {
+                    STORM_PRINT_AND_LOG(" Under-approx MDP has size " << underApproximation->getExploredMdp()->getNumberOfStates() << ".");
+                    (min ? computingUpperBound : computingLowerBound) = true;
+                }
+                if (computingLowerBound && computingUpperBound) {
+                    STORM_PRINT_AND_LOG(" Current result is [" << result.lowerBound << ", " << result.upperBound << "].");
+                } else if (computingLowerBound) {
+                    STORM_PRINT_AND_LOG(" Current result is ≥" << result.lowerBound << ".");
+                } else if (computingUpperBound) {
+                    STORM_PRINT_AND_LOG(" Current result is ≤" << result.upperBound << ".");
+                }
+                STORM_PRINT_AND_LOG(std::endl);
                 
                 // Start refinement
                 STORM_LOG_WARN_COND(options.refineStepLimit.is_initialized() || !storm::utility::isZero(options.refinePrecision), "No termination criterion for refinement given. Consider to specify a steplimit, a non-zero precisionlimit, or a timeout");
@@ -361,7 +382,7 @@ namespace storm {
                                 STORM_PRINT_AND_LOG(" Current result is ≤" << result.upperBound << ".");
                             }
                             STORM_PRINT_AND_LOG(std::endl);
-                            STORM_LOG_WARN_COND(statistics.refinementSteps.get() == 1000, "Refinement requires  more than 1000 iterations.");
+                            STORM_LOG_WARN_COND(statistics.refinementSteps.get() < 1000, "Refinement requires  more than 1000 iterations.");
                         }
                     }
                     if (overApproxFixPoint && underApproxFixPoint) {
