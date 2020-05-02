@@ -30,6 +30,7 @@ namespace storm {
 #ifdef STORM_HAVE_Z3
             const std::string FaultTreeSettings::solveWithSmtOptionName = "smt";
 #endif
+            const std::string FaultTreeSettings::chunksizeOptionName = "chunksize";
 
             FaultTreeSettings::FaultTreeSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, noSymmetryReductionOptionName, false, "Do not exploit symmetric structure of model.").setShortName(
@@ -59,6 +60,8 @@ namespace storm {
 #ifdef STORM_HAVE_Z3
                 this->addOption(storm::settings::OptionBuilder(moduleName, solveWithSmtOptionName, true, "Solve the DFT with SMT.").build());
 #endif
+                this->addOption(storm::settings::OptionBuilder(moduleName, chunksizeOptionName, false, "Calculate probabilies in chunks.").addArgument(
+                        storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("chunksize", "The size of the chunks used to calculate probabilities. Set to 0 for maximal size.").setDefaultValueUnsignedInteger(1).build()).build());
             }
 
             bool FaultTreeSettings::useSymmetryReduction() const {
@@ -129,6 +132,14 @@ namespace storm {
             }
 
 #endif
+
+            bool FaultTreeSettings::isChunksizeSet() const {
+                return this->getOption(chunksizeOptionName).getHasOptionBeenSet();
+            }
+
+            size_t FaultTreeSettings::getChunksize() const {
+                return this->getOption(chunksizeOptionName).getArgumentByName("chunksize").getValueAsUnsignedInteger();
+            }
 
             void FaultTreeSettings::finalize() {
             }

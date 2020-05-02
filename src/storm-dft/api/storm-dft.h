@@ -181,7 +181,8 @@ namespace storm {
                 std::string const &filename,
                 bool const calculateMCS,
                 bool const calculateProbability,
-                std::vector<double> const timepoints);
+                std::vector<double> const timepoints,
+                size_t const chunksize);
 
         /*!
          * Analyze the DFT using the SMT encoding

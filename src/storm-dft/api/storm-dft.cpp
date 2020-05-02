@@ -18,7 +18,8 @@ namespace storm {
                 std::string const &filename,
                 bool const calculateMCS,
                 bool const calculateProbability,
-                std::vector<double> const timepoints) {
+                std::vector<double> const timepoints,
+                size_t const chunksize) {
             storm::modelchecker::SFTBDDChecker<double> checker{dft};
             if(exportToDot) {
                 checker.exportBddToDot(filename);
@@ -39,10 +40,19 @@ namespace storm {
             }
 
             if(calculateProbability) {
-                for(auto const& timebound : timepoints) {
-                    auto const probability{
-                        checker.getProbabilityAtTimebound(timebound)};
-                    std::cout << "Systemfailure Probability at Timebound " << timebound << " is " << probability << '\n';
+                if(chunksize == 1) {
+                    for(auto const& timebound : timepoints) {
+                        auto const probability{
+                            checker.getProbabilityAtTimebound(timebound)};
+                        std::cout << "Systemfailure Probability at Timebound " << timebound << " is " << probability << '\n';
+                    }
+                } else {
+                    auto const probabilities{checker.getProbabilitiesAtTimepoints(timepoints, chunksize)};
+                    for(size_t i{0}; i < timepoints.size(); ++i) {
+                        auto const timebound{timepoints[i]};
+                        auto const probability{probabilities[i]};
+                        std::cout << "Systemfailure Probability at Timebound " << timebound << " is " << probability << '\n';
+                    }
                 }
             }
         }
@@ -54,7 +64,8 @@ namespace storm {
                 std::string const &filename,
                 bool const calculateMCS,
                 bool const calculateProbability,
-                std::vector<double> const timepoints) {
+                std::vector<double> const timepoints,
+                size_t const chunksize) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BDD analysis is not supportet for this data type.");
         }
 

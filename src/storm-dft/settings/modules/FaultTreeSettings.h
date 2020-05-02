@@ -121,6 +121,15 @@ namespace storm {
 
 #endif
 
+                /*!
+                 * Retrieves whether to calculate probabilities in chunks.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isChunksizeSet() const;
+
+                size_t getChunksize() const;
+
                 bool check() const override;
 
                 void finalize() override;
@@ -145,6 +154,7 @@ namespace storm {
 #ifdef STORM_HAVE_Z3
                 static const std::string solveWithSmtOptionName;
 #endif
+                static const std::string chunksizeOptionName;
 
             };
 

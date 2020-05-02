@@ -89,6 +89,7 @@ void processOptions() {
         bool const isTimepoints{isAnalyzeWithBdds &&
             dftIOSettings.usePropTimepoints()};
         bool const probabilityAnalysis {isTimebound || isTimepoints};
+        size_t const chunksize{faultTreeSettings.getChunksize()};
 
         std::vector<double> timepoints{};
         if(isTimepoints) {
@@ -108,7 +109,8 @@ void processOptions() {
                 filename,
                 isMinimimCutSets,
                 probabilityAnalysis,
-                timepoints);
+                timepoints,
+                chunksize);
 
         // don't perform other analysis if analyzeWithBdds is set
         if(isAnalyzeWithBdds) {
