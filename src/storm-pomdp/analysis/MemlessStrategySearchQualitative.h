@@ -231,7 +231,7 @@ namespace pomdp {
         std::vector<std::vector<storm::expressions::Expression>> pathVars;
 
         std::vector<InternalObservationScheduler> finalSchedulers;
-        std::vector<std::vector<uint64_t>> schedulerForObs;
+        std::vector<uint64_t> schedulerForObs;
         WinningRegion winningRegion;
 
         MemlessSearchOptions options;
