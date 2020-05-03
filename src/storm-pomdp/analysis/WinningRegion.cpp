@@ -1,4 +1,6 @@
 #include <iostream>
+#include <boost/algorithm/string.hpp>
+#include "storm/utility/file.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm-pomdp/analysis/WinningRegion.h"
@@ -157,6 +159,61 @@ namespace pomdp {
         return result;
     }
 
+    void WinningRegion::storeToFile(std::string const& path) const {
+        std::ofstream file;
+        storm::utility::openFile(path, file);
+        bool firstLine = true;
+        for (auto const& i : observationSizes) {
+            if(!firstLine) {
+                file << " ";
+            } else {
+                firstLine = false;
+            }
+            file << i;
+        }
+        file << std::endl;
+        for (auto const& obsWr : winningRegion) {
+            for (auto const& bv : obsWr) {
+                bv.store(file);
+                file << ";";
+            }
+            file << std::endl;
+        }
+        storm::utility::closeFile(file);
+    }
+
+
+    WinningRegion WinningRegion::loadFromFile(std::string const& path) {
+        std::ifstream file;
+        std::vector<uint64_t> observationSizes;
+        storm::utility::openFile(path, file);
+        std::string line;
+        bool firstLine = true;
+        uint64_t observation = 0;
+        WinningRegion wr({1});
+        while (std::getline(file, line))
+        {
+            std::vector<std::string> entries;
+            if(firstLine) {
+                boost::split(entries, line, boost::is_space());
+                std::vector<uint64_t> observationSizes;
+                for(auto const& entry : entries) {
+                    observationSizes.push_back(std::stoul(entry));
+                }
+                wr = WinningRegion(observationSizes);
+                firstLine = false;
+            } else {
+                boost::split(entries, line, boost::is_any_of(";"));
+                entries.pop_back();
+                for (std::string const& bvString : entries) {
+                    wr.update(observation, storm::storage::BitVector::load(bvString));
+                }
+                ++observation;
+            }
+        }
+        storm::utility::closeFile(file);
+        return wr;
+    }
 
 }
 }
