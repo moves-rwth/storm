@@ -55,7 +55,7 @@ namespace storm {
         template <>
         uint64_t InstantaneousRewardFormula::getBound() const {
             checkNoVariablesInBound(bound);
-            uint64_t value = bound.evaluateAsInt();
+            int64_t value = bound.evaluateAsInt();
             STORM_LOG_THROW(value >= 0, storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
             return value;
         }

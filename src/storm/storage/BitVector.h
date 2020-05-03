@@ -538,6 +538,9 @@ namespace storm {
 
             friend std::ostream& operator<<(std::ostream& out, BitVector const& bitVector);
 
+            void store(std::ostream&) const;
+            static BitVector load(std::string const& description);
+
             friend struct std::hash<storm::storage::BitVector>;
             friend struct FNV1aBitVectorHash;
 

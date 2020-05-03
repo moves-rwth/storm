@@ -40,9 +40,10 @@ void processOptions() {
         STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model given.");
     }
 
-    // DFT statistics
-    if (dftIOSettings.isDisplayStatsSet()) {
+    // Show statistics about DFT (number of gates, etc.)
+    if (dftIOSettings.isShowDftStatisticsSet()) {
         dft->writeStatsToStream(std::cout);
+        std::cout << std::endl;
     }
 
     // Export to json
