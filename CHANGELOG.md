@@ -10,7 +10,9 @@ Version 1.5.x
 ## Version 1.5.x (Under development)
 - Scheduler export: Properly handle models with end components. Added export in .json format.
 - CMake: Search for Gurobi prefers new versions
+- CMake: We no longer ship xerces-c. If xerces-c is not found on the system, storm-gspn will not be able to parse xml-based GSPN formats 
 - Tests: Enabled tests for permissive schedulers
+- `storm-counterexamples`: fix when computing multiple counterexamples in debug mode
 - `storm-dft`: Renamed setting `--show-dft-stats` to `dft-statistics` and added approximation information to statistics.
 
 ## Version 1.5.1 (2020/03)
