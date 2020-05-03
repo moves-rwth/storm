@@ -24,8 +24,10 @@ namespace storm {
         class DFTBuilder {
 
             using DFTElementPointer = std::shared_ptr<storm::storage::DFTElement<ValueType>>;
+            using DFTElementCPointer = std::shared_ptr<storm::storage::DFTElement<ValueType> const>;
             using DFTElementVector = std::vector<DFTElementPointer>;
             using DFTGatePointer = std::shared_ptr<storm::storage::DFTGate<ValueType>>;
+            using DFTGateCPointer = std::shared_ptr<storm::storage::DFTGate<ValueType> const>;
             using DFTGateVector = std::vector<DFTGatePointer>;
             using DFTDependencyPointer = std::shared_ptr<storm::storage::DFTDependency<ValueType>>;
             using DFTRestrictionPointer = std::shared_ptr<storm::storage::DFTRestriction<ValueType>>;
@@ -212,7 +214,7 @@ namespace storm {
              *
              * @param element Element to copy.
              */
-            void copyElement(DFTElementPointer element);
+            void copyElement(DFTElementCPointer element);
 
             /**
              * Copy gate with given children and insert it again in the builder. The current children of the element
@@ -221,7 +223,7 @@ namespace storm {
              * @param gate Gate to copy.
              * @param children New children of copied element.
              */
-            void copyGate(DFTGatePointer gate, std::vector<std::string> const& children);
+            void copyGate(DFTGateCPointer gate, std::vector<std::string> const& children);
 
         private:
             
