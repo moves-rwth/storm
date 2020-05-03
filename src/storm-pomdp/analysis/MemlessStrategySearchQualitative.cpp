@@ -200,6 +200,7 @@ namespace storm {
             uint64_t rowindex = 0;
             for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
                 if (targetStates.get(state) || surelyReachSinkStates.get(state)) {
+                    rowindex += pomdp.getNumberOfChoices(state);
                     continue;
                 }
                 for (uint64_t action = 0; action < pomdp.getNumberOfChoices(state); ++action) {
