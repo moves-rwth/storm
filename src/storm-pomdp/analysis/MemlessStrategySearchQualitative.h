@@ -8,6 +8,7 @@
 #include "storm/exceptions/UnexpectedException.h"
 
 #include "storm-pomdp/analysis/WinningRegion.h"
+#include "storm-pomdp/analysis/WinningRegionQueryInterface.h"
 
 namespace storm {
 namespace pomdp {
@@ -45,6 +46,7 @@ namespace pomdp {
 
         bool onlyDeterministicStrategies = false;
         bool forceLookahead = true;
+        bool validateEveryStep = false;
 
     private:
         std::string exportSATcalls = "";
@@ -236,6 +238,7 @@ namespace pomdp {
         Statistics stats;
 
         std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory;
+        std::shared_ptr<WinningRegionQueryInterface<ValueType>> validator;
 
 
     };

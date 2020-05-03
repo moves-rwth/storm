@@ -1,3 +1,4 @@
+#pragma once
 #include "storm/models/sparse/Pomdp.h"
 #include "storm-pomdp/analysis/WinningRegion.h"
 
@@ -13,6 +14,7 @@ namespace storm {
 
             bool staysInWinningRegion(storm::storage::BitVector const& beliefSupport, uint64_t actionIndex) const;
 
+            void validate() const;
         private:
             storm::models::sparse::Pomdp<ValueType> const& pomdp;
             WinningRegion const& winningRegion;

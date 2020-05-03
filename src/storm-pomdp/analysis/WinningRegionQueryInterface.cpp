@@ -40,7 +40,7 @@ namespace storm {
         template<typename ValueType>
         bool WinningRegionQueryInterface<ValueType>::staysInWinningRegion(storm::storage::BitVector const& currentBeliefSupport, uint64_t actionIndex) const {
             std::map<uint32_t, storm::storage::BitVector> successors;
-
+            STORM_LOG_DEBUG("Stays in winning region? (" << currentBeliefSupport << ", " << actionIndex << ")");
             for (uint64_t oldState : currentBeliefSupport) {
                 uint64_t row = pomdp.getTransitionMatrix().getRowGroupIndices()[oldState] + actionIndex;
                 for (auto const& successor : pomdp.getTransitionMatrix().getRow(row)) {
@@ -55,14 +55,39 @@ namespace storm {
             }
 
             for (auto const& entry : successors) {
+
                 if(!isInWinningRegion(entry.second)) {
+                    STORM_LOG_DEBUG("Belief support " << entry.second << " is not winning");
                     return false;
+                } else {
+                    STORM_LOG_DEBUG("Belief support " << entry.second << " is winning");
                 }
             }
             return true;
         }
 
+        template<typename ValueType>
+        void WinningRegionQueryInterface<ValueType>::validate() const {
+            for (uint64_t obs = 0; obs < pomdp.getNrObservations(); ++obs) {
+                for(auto const& winningBelief : winningRegion.getWinningSetsPerObservation(obs))   {
+                    storm::storage::BitVector states(pomdp.getNumberOfStates());
+                    for (uint64_t offset : winningBelief) {
+                        states.set(statesPerObservation[obs][offset]);
+                    }
+                    bool safeActionExists = false;
+                    for(uint64_t actionIndex = 0; actionIndex <  pomdp.getTransitionMatrix().getRowGroupSize(statesPerObservation[obs][0]); ++actionIndex) {
+                        if (staysInWinningRegion(states,actionIndex)) {
+                            safeActionExists = true;
+                            break;
+                        }
+                    }
+                    STORM_LOG_ASSERT(safeActionExists, "Observation " << obs << " with associated states: " << statesPerObservation[obs] << " , support " << states);
+                }
+            }
+        }
+
         template class WinningRegionQueryInterface<double>;
+        template class WinningRegionQueryInterface<storm::RationalNumber>;
     }
 
 }

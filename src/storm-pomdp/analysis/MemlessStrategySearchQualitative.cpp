@@ -75,6 +75,10 @@ namespace storm {
                 nrStatesPerObservation.push_back(states.size());
             }
             winningRegion = WinningRegion(nrStatesPerObservation);
+            if(options.validateEveryStep) {
+                STORM_LOG_WARN("The validator should only be created when the option is set.");
+                validator = std::make_shared<WinningRegionQueryInterface<ValueType>>(pomdp, winningRegion);
+            }
 
         }
 
@@ -586,14 +590,13 @@ namespace storm {
                 }
                 // TODO temporarily switched off due to intiialization issues when restartin.
                 STORM_LOG_ASSERT(!updated.empty(), "The strategy should be new in at least one place");
-
-
-
-
                 if(options.computeDebugOutput()) {
                     winningRegion.print();
                 }
-
+                if(options.validateEveryStep) {
+                    STORM_LOG_WARN("Validating every step, for debug purposes only!");
+                    validator->validate();
+                }
                 stats.updateNewStrategySolverTime.start();
                 for(uint64_t observation : updated) {
                     updateForObservationExpressions[observation] = winningRegion.extensionExpression(observation, reachVarExpressionsPerObservation[observation]);

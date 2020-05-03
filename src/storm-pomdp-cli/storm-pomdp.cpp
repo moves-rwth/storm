@@ -108,6 +108,7 @@ namespace storm {
                 }
                 else if(storm::utility::getLogLevel() == l3pp::LogLevel::TRACE) {
                     loglevel = 3;
+                    options.validateEveryStep = true;
                 }
                 options.setDebugLevel(loglevel);
 

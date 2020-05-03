@@ -12,6 +12,8 @@ namespace storm {
             bool update(uint64_t observation, storm::storage::BitVector const& winning);
             bool query(uint64_t observation, storm::storage::BitVector const& currently) const;
 
+            std::vector<storm::storage::BitVector> const& getWinningSetsPerObservation(uint64_t observation) const;
+
             void setObservationIsWinning(uint64_t observation);
 
             bool observationIsWinning(uint64_t observation) const;
@@ -20,6 +22,7 @@ namespace storm {
 
                 uint64_t getStorageSize() const;
             uint64_t getNumberOfObservations() const;
+            bool empty() const;
             void print() const;
         private:
             std::vector<std::vector<storm::storage::BitVector>> winningRegion;

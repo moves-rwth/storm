@@ -130,7 +130,23 @@ namespace pomdp {
      * @return
      */
     uint64_t WinningRegion::getNumberOfObservations() const {
+        assert(winningRegion.size() == observationSizes.size());
         return observationSizes.size();
+    }
+
+    bool WinningRegion::empty() const {
+        for (auto const& ob : winningRegion) {
+            if (!ob.empty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    std::vector<storm::storage::BitVector> const& WinningRegion::getWinningSetsPerObservation(uint64_t observation) const {
+
+        assert(observation < getNumberOfObservations());
+        return winningRegion[observation];
     }
 
     uint64_t WinningRegion::getStorageSize() const {
