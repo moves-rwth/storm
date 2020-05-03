@@ -24,6 +24,11 @@ namespace storm {
             uint64_t getNumberOfObservations() const;
             bool empty() const;
             void print() const;
+
+            void storeToFile(std::string const& path) const;
+            static WinningRegion loadFromFile(std::string const& path);
+
+
         private:
             std::vector<std::vector<storm::storage::BitVector>> winningRegion;
             std::vector<uint64_t> observationSizes;
