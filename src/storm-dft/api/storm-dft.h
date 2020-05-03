@@ -181,6 +181,7 @@ namespace storm {
                 std::string const &filename,
                 bool const calculateMCS,
                 bool const calculateProbability,
+                bool const useModularisation,
                 std::vector<double> const timepoints,
                 size_t const chunksize);
 

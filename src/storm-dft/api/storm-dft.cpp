@@ -6,6 +6,7 @@
 #include "storm-conv/api/storm-conv.h"
 
 #include "storm-dft/modelchecker/dft/SFTBDDChecker.h"
+#include "storm-dft/modelchecker/dft/DFTModularizer.h"
 #include <memory>
 #include <vector>
 
@@ -18,8 +19,19 @@ namespace storm {
                 std::string const &filename,
                 bool const calculateMCS,
                 bool const calculateProbability,
+                bool const useModularisation,
                 std::vector<double> const timepoints,
                 size_t const chunksize) {
+            if(useModularisation && calculateProbability) {
+                storm::modelchecker::DFTModularizer<double> checker{dft};
+                    for(auto const& timebound : timepoints) {
+                        auto const probability{
+                            checker.getProbabilityAtTimebound(timebound)};
+                        std::cout << "Systemfailure Probability at Timebound " << timebound << " is " << probability << '\n';
+                    }
+                return;
+            }
+
             storm::modelchecker::SFTBDDChecker<double> checker{dft};
             if(exportToDot) {
                 checker.exportBddToDot(filename);
@@ -64,6 +76,7 @@ namespace storm {
                 std::string const &filename,
                 bool const calculateMCS,
                 bool const calculateProbability,
+                bool const useModularisation,
                 std::vector<double> const timepoints,
                 size_t const chunksize) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BDD analysis is not supportet for this data type.");

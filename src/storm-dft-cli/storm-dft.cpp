@@ -90,6 +90,7 @@ void processOptions() {
             dftIOSettings.usePropTimepoints()};
         bool const probabilityAnalysis {isTimebound || isTimepoints};
         size_t const chunksize{faultTreeSettings.getChunksize()};
+        bool const isModularisation{faultTreeSettings.useModularisation()};
 
         std::vector<double> timepoints{};
         if(isTimepoints) {
@@ -109,6 +110,7 @@ void processOptions() {
                 filename,
                 isMinimimCutSets,
                 probabilityAnalysis,
+                isModularisation,
                 timepoints,
                 chunksize);
 
