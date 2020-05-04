@@ -21,6 +21,7 @@ namespace storm {
             typedef uint64_t BeliefId;
             
             BeliefManager(PomdpType const& pomdp, BeliefValueType const& precision) : pomdp(pomdp), cc(precision, false) {
+                beliefToIdMap.resize(pomdp.getNrObservations());
                 initialBeliefId = computeInitialBelief();
             }
             
@@ -145,8 +146,10 @@ namespace storm {
             }
             
             BeliefId getId(BeliefType const& belief) const {
-                auto idIt = beliefToIdMap.find(belief);
-                STORM_LOG_THROW(idIt != beliefToIdMap.end(), storm::exceptions::UnexpectedException, "Unknown Belief.");
+                uint32_t obs = getBeliefObservation(belief);
+                STORM_LOG_ASSERT(obs < beliefToIdMap.size(), "Belief has unknown observation.");
+                auto idIt = beliefToIdMap[obs].find(belief);
+                STORM_LOG_ASSERT(idIt != beliefToIdMap.end(), "Unknown Belief.");
                 return idIt->second;
             }
             
@@ -410,7 +413,9 @@ namespace storm {
             }
             
             BeliefId getOrAddBeliefId(BeliefType const& belief) {
-                auto insertioRes = beliefToIdMap.emplace(belief, beliefs.size());
+                uint32_t obs = getBeliefObservation(belief);
+                STORM_LOG_ASSERT(obs < beliefToIdMap.size(), "Belief has unknown observation.");
+                auto insertioRes = beliefToIdMap[obs].emplace(belief, beliefs.size());
                 if (insertioRes.second) {
                     // There actually was an insertion, so add the new belief
                     beliefs.push_back(belief);
@@ -435,7 +440,7 @@ namespace storm {
             std::vector<ValueType> pomdpActionRewardVector;
             
             std::vector<BeliefType> beliefs;
-            std::unordered_map<BeliefType, BeliefId, BeliefHash> beliefToIdMap;
+            std::vector<std::unordered_map<BeliefType, BeliefId, BeliefHash>> beliefToIdMap;
             BeliefId initialBeliefId;
             
             storm::utility::ConstantsComparator<ValueType> cc;
