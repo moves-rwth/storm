@@ -185,7 +185,7 @@ namespace storm {
                 
                 if (options.discretize) {
                     std::vector<uint64_t> observationResolutionVector(pomdp.getNrObservations(), options.resolutionInit);
-                    auto manager = std::make_shared<BeliefManagerType>(pomdp, options.numericPrecision);
+                    auto manager = std::make_shared<BeliefManagerType>(pomdp, options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
                     if (rewardModelName) {
                         manager->setRewardModel(rewardModelName);
                     }
@@ -205,7 +205,7 @@ namespace storm {
                     }
                 }
                 if (options.unfold) { // Underapproximation (uses a fresh Belief manager)
-                    auto manager = std::make_shared<BeliefManagerType>(pomdp, options.numericPrecision);
+                    auto manager = std::make_shared<BeliefManagerType>(pomdp, options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
                     if (rewardModelName) {
                         manager->setRewardModel(rewardModelName);
                     }
@@ -243,7 +243,7 @@ namespace storm {
                 HeuristicParameters overApproxHeuristicPar;
                 if (options.discretize) { // Setup and build first OverApproximation
                     observationResolutionVector = std::vector<uint64_t>(pomdp.getNrObservations(), options.resolutionInit);
-                    overApproxBeliefManager = std::make_shared<BeliefManagerType>(pomdp, options.numericPrecision);
+                    overApproxBeliefManager = std::make_shared<BeliefManagerType>(pomdp, options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
                     if (rewardModelName) {
                         overApproxBeliefManager->setRewardModel(rewardModelName);
                     }
@@ -267,7 +267,7 @@ namespace storm {
                 std::shared_ptr<ExplorerType> underApproximation;
                 HeuristicParameters underApproxHeuristicPar;
                 if (options.unfold) { // Setup and build first UnderApproximation
-                    underApproxBeliefManager = std::make_shared<BeliefManagerType>(pomdp, options.numericPrecision);
+                    underApproxBeliefManager = std::make_shared<BeliefManagerType>(pomdp, options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
                     if (rewardModelName) {
                         underApproxBeliefManager->setRewardModel(rewardModelName);
                     }

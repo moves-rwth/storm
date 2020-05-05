@@ -38,6 +38,7 @@ namespace storm {
                 ValueType obsThresholdIncrementFactor = storm::utility::convertNumber<ValueType>(0.1);
                 
                 ValueType numericPrecision = storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(1e-9); /// Used to decide whether two beliefs are equal
+                bool dynamicTriangulation = true; // Sets whether the triangulation is done in a dynamic way (yielding more precise triangulations)
             };
         }
     }
