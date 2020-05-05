@@ -27,6 +27,7 @@ namespace storm {
             const std::string schedulerThresholdOption = "scheduler-threshold";
             const std::string observationThresholdOption = "obs-threshold";
             const std::string numericPrecisionOption = "numeric-precision";
+            const std::string triangulationModeOption = "triangulationmode";
 
             BeliefExplorationSettings::BeliefExplorationSettings() : ModuleSettings(moduleName) {
                 
@@ -46,6 +47,9 @@ namespace storm {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, numericPrecisionOption, false,"Sets the precision used to determine whether two belief-states are equal.").setIsAdvanced().addArgument(
                         storm::settings::ArgumentBuilder::createDoubleArgument("value","the precision").setDefaultValueDouble(1e-9).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0, 1)).build()).build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, triangulationModeOption, false,"Sets how to triangulate beliefs when discretizing.").setIsAdvanced().addArgument(
+                        storm::settings::ArgumentBuilder::createStringArgument("value","the triangulation mode").setDefaultValueString("dynamic").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"dynamic", "static"})).build()).build());
             }
 
             bool BeliefExplorationSettings::isRefineSet() const {
@@ -121,6 +125,14 @@ namespace storm {
                 return this->getOption(numericPrecisionOption).getArgumentByName("value").getValueAsDouble();
             }
             
+            bool BeliefExplorationSettings::isDynamicTriangulationModeSet() const {
+                return this->getOption(triangulationModeOption).getArgumentByName("value").getValueAsString() == "dynamic";
+                
+            }
+            bool BeliefExplorationSettings::isStaticTriangulationModeSet() const {
+                return this->getOption(triangulationModeOption).getArgumentByName("value").getValueAsString() == "static";
+            }
+            
             template<typename ValueType>
             void BeliefExplorationSettings::setValuesInOptionsStruct(storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<ValueType>& options) const {
                 options.refine = isRefineSet();
@@ -155,6 +167,7 @@ namespace storm {
                         STORM_LOG_WARN_COND(storm::utility::isZero(options.numericPrecision), "A non-zero numeric precision was set although exact arithmethic is used. Results might be inexact.");
                     }
                 }
+                options.dynamicTriangulation = isDynamicTriangulationModeSet();
             }
             
             template void BeliefExplorationSettings::setValuesInOptionsStruct<double>(storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<double>& options) const;

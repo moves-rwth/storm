@@ -57,6 +57,9 @@ namespace storm {
                 /// Used to determine whether two beliefs are equal
                 bool isNumericPrecisionSetFromDefault() const;
                 double getNumericPrecision() const;
+                
+                bool isDynamicTriangulationModeSet() const;
+                bool isStaticTriangulationModeSet() const;
     
                 template<typename ValueType>
                 void setValuesInOptionsStruct(storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<ValueType>& options) const;
