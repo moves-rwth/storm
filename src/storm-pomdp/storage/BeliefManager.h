@@ -351,28 +351,30 @@ namespace storm {
             void triangulateBeliefDynamic(BeliefType const& belief, uint64_t const& resolution, Triangulation& result) {
                 // Find the best resolution for this belief, i.e., N such that the largest distance between one of the belief values to a value in {i/N | 0 ≤ i ≤ N} is minimal
                 uint64_t finalResolution = resolution;
-                BeliefValueType finalResolutionDist = storm::utility::one<BeliefValueType>();
+                uint64_t finalResolutionMisses = belief.size() + 1;
                 // We don't need to check resolutions that are smaller than the maximal resolution divided by 2 (as we already checked multiples of these)
                 for (uint64_t currResolution = resolution; currResolution > resolution / 2; --currResolution) {
-                    BeliefValueType currResDist = storm::utility::zero<ValueType>();
+                    uint64_t currResMisses = 0;
                     BeliefValueType currResolutionConverted = storm::utility::convertNumber<BeliefValueType>(currResolution);
                     bool continueWithNextResolution = false;
                     for (auto const& belEntry : belief) {
                         BeliefValueType product = belEntry.second * currResolutionConverted;
-                        BeliefValueType dist = storm::utility::abs<BeliefValueType>(product - storm::utility::round(product)) / currResolutionConverted;
-                        if (dist > currResDist) {
-                            if (dist > finalResolutionDist) {
-                                // This resolution is worse than a previous resolution
+                        if (!cc.isZero(product - storm::utility::round(product))) {
+                            ++currResMisses;
+                            if (currResMisses >= finalResolutionMisses) {
+                                // This resolution is not better than a previous resolution
                                 continueWithNextResolution = true;
                                 break;
                             }
-                            currResDist = dist;
                         }
                     }
-                    STORM_LOG_ASSERT(continueWithNextResolution || currResDist <= finalResolutionDist, "Distance for this resolution should not be larger than a previously checked one.");
                     if (!continueWithNextResolution) {
+                        STORM_LOG_ASSERT(currResMisses < finalResolutionMisses, "Distance for this resolution should not be larger than a previously checked one.");
                         finalResolution = currResolution;
-                        finalResolutionDist = currResDist;
+                        finalResolutionMisses = currResMisses;
+                        if (currResMisses == 0) {
+                            break;
+                        }
                     }
                 }
                 
