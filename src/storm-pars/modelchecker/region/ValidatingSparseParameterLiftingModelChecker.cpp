@@ -25,7 +25,7 @@ namespace storm {
         template <typename SparseModelType, typename ImpreciseType, typename PreciseType>
         bool ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const {
             return getImpreciseChecker().canHandle(parametricModel, checkTask) && getPreciseChecker().canHandle(parametricModel, checkTask);
-        };
+        }
  
         template <typename SparseModelType, typename ImpreciseType, typename PreciseType>
         RegionResult ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::analyzeRegion(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResultHypothesis const& hypothesis, RegionResult const& initialResult, bool sampleVerticesOfRegion) {

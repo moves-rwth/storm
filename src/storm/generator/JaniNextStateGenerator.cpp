@@ -169,7 +169,7 @@ namespace storm {
         template<typename ValueType, typename StateType>
         bool JaniNextStateGenerator<ValueType, StateType>::isPartiallyObservable() const {
             return false;
-        };
+        }
         
         template<typename ValueType, typename StateType>
         uint64_t JaniNextStateGenerator<ValueType, StateType>::getLocation(CompressedState const& state, LocationVariableInformation const& locationVariable) const {
@@ -1201,7 +1201,7 @@ namespace storm {
         storm::storage::BitVector JaniNextStateGenerator<ValueType, StateType>::evaluateObservationLabels(CompressedState const& state) const {
             STORM_LOG_WARN("There are no observation labels in JANI currenty");
             return storm::storage::BitVector(0);
-        };
+        }
 
 
         template<typename ValueType, typename StateType>

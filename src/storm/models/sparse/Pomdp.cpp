@@ -97,7 +97,7 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             bool Pomdp<ValueType, RewardModelType>::isCanonic() const {
                 return canonicFlag;
-            };
+            }
 
 
 

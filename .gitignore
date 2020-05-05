@@ -50,6 +50,7 @@ src/storm/utility/storm-version.cpp
 nbproject/
 .DS_Store
 .idea
+.vscode
 *.out
 resources/3rdparty/cudd-3.0.0/Makefile.in
 resources/3rdparty/cudd-3.0.0/aclocal.m4

@@ -13,6 +13,7 @@
 #include "storm-dft/api/storm-dft.h"
 #include "storm-dft/builder/ExplicitDFTModelBuilder.h"
 #include "storm-dft/storage/dft/DFTIsomorphism.h"
+#include "storm-dft/settings/modules/DftIOSettings.h"
 #include "storm-dft/settings/modules/FaultTreeSettings.h"
 
 
@@ -305,6 +306,8 @@ namespace storm {
                                              storm::builder::ApproximationHeuristic approximationHeuristic,
                                              bool eliminateChains, storm::transformer::EliminationLabelBehavior labelBehavior) {
             explorationTimer.start();
+            auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+            auto dftIOSettings = storm::settings::getModule<storm::settings::modules::DftIOSettings>();
 
             // Find symmetries
             std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
@@ -355,12 +358,12 @@ namespace storm {
                     STORM_LOG_DEBUG("Getting model for lower bound...");
                     model = builder.getModelApproximation(true, !probabilityFormula);
                     // We only output the info from the lower bound as the info for the upper bound is the same
-                    if (printInfo) {
+                    if (printInfo && dftIOSettings.isShowDftStatisticsSet()) {
+                        std::cout << "Model in iteration " << (iteration + 1) << ":" << std::endl;
                         model->printModelInformationToStream(std::cout);
                     }
                     buildingTimer.stop();
 
-                    auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
                     if (ioSettings.isExportExplicitSet()) {
                         std::vector<std::string> parameterNames;
                         // TODO fill parameter names
@@ -388,24 +391,33 @@ namespace storm {
                                                                << approxResult.second);
                     approxResult.second = newResult[0];
 
-                    ++iteration;
                     STORM_LOG_ASSERT(comparator.isLess(approxResult.first, approxResult.second) ||
                                      comparator.isEqual(approxResult.first, approxResult.second),
                                      "Under-approximation " << approxResult.first
                                                             << " is greater than over-approximation "
                                                             << approxResult.second);
-                    STORM_LOG_DEBUG("Result after iteration " << iteration << ": (" << std::setprecision(10) << approxResult.first << ", " << approxResult.second << ")");
                     totalTimer.stop();
-                    printTimings();
+                    if (printInfo && dftIOSettings.isShowDftStatisticsSet()) {
+                        std::cout << "Result after iteration " << (iteration + 1) << ": (" << std::setprecision(10) << approxResult.first << ", " << approxResult.second << ")" << std::endl;
+                        printTimings();
+                        std::cout << std::endl;
+                    } else {
+                        STORM_LOG_DEBUG("Result after iteration " << (iteration + 1) << ": (" << std::setprecision(10) << approxResult.first << ", " << approxResult.second << ")");
+                    }
+                    
                     totalTimer.start();
                     STORM_LOG_THROW(!storm::utility::isInfinity<ValueType>(approxResult.first) &&
                                     !storm::utility::isInfinity<ValueType>(approxResult.second),
                                     storm::exceptions::NotSupportedException,
                                     "Approximation does not work if result might be infinity.");
+                    ++iteration;
                 } while (!isApproximationSufficient(approxResult.first, approxResult.second, approximationError,
                                                     probabilityFormula));
 
                 //STORM_LOG_INFO("Finished approximation after " << iteration << " iteration" << (iteration > 1 ? "s." : "."));
+                if (printInfo) {
+                    model->printModelInformationToStream(std::cout);
+                }
                 dft_results results;
                 results.push_back(approxResult);
                 return results;

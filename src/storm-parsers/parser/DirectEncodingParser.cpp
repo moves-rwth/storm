@@ -164,7 +164,6 @@ namespace storm {
             // Iterate over all lines
             std::string line;
             size_t row = 0;
-            size_t firstRowOfState = 0;
             size_t state = 0;
             bool firstState = true;
             bool firstActionForState = true;
@@ -197,7 +196,6 @@ namespace storm {
                         STORM_LOG_TRACE("new Row Group starts at " << row << ".");
                         builder.newRowGroup(row);
                     }
-                    firstRowOfState = row;
 
                     if (continuousTime) {
                         // Parse exit rate for CTMC or MA

@@ -94,7 +94,7 @@ namespace storm {
                 }
             }
             return nullptr;
-        };
+        }
         
         storm::gspn::Place* GSPN::getPlace(std::string const& name) {
             for (auto& place : places) {
@@ -103,7 +103,7 @@ namespace storm {
                 }
             }
             return nullptr;
-        };
+        }
 
         storm::gspn::TimedTransition<GSPN::RateType> const* GSPN::getTimedTransition(std::string const& name) const {
             for (auto& trans : timedTransitions) {

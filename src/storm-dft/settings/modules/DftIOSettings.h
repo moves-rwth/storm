@@ -130,11 +130,11 @@ namespace storm {
                 std::string getExportSmtFilename() const;
 
                 /*!
-                 * Retrieves whether statistics for the DFT should be displayed.
+                 * Retrieves whether statistics about the DFT analysis should be displayed.
                  *
                  * @return True if the statistics option was set.
                  */
-                bool isDisplayStatsSet() const;
+                bool isShowDftStatisticsSet() const;
                 
                 bool check() const override;
                 void finalize() override;
@@ -157,7 +157,8 @@ namespace storm {
                 static const std::string maxValueOptionName;
                 static const std::string exportToJsonOptionName;
                 static const std::string exportToSmtOptionName;
-                static const std::string displayStatsOptionName;
+                static const std::string dftStatisticsOptionName;
+                static const std::string dftStatisticsOptionShortName;
 
             };
 
