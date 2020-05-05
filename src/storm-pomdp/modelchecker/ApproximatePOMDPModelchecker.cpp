@@ -587,14 +587,20 @@ namespace storm {
                                 // First, check whether this action has been rewired since the last refinement of one of the successor observations (i.e. whether rewiring would actually change the successor states)
                                 assert(overApproximation->currentStateHasOldBehavior());
                                 if (overApproximation->getCurrentStateActionExplorationWasDelayed(action) || overApproximation->currentStateHasSuccessorObservationInObservationSet(action, refinedObservations)) {
-                                    fixPoint = false;
                                     // Then, check whether the other criteria for rewiring are satisfied
                                     if (!restoreAllActions && overApproximation->actionAtCurrentStateWasOptimal(action)) {
                                         // Do the rewiring now! (Case 3.1)
                                         expandCurrentAction = true;
+                                        fixPoint = false;
                                     } else {
                                         // Delay the rewiring (Case 3.2.2)
                                         overApproximation->setCurrentChoiceIsDelayed(action);
+                                        if (fixPoint) {
+                                            // Check whether this delay means that a fixpoint has not been reached
+                                            if (!overApproximation->getCurrentStateActionExplorationWasDelayed(action) || (overApproximation->currentStateIsOptimalSchedulerReachable() && overApproximation->actionAtCurrentStateWasOptimal(action) && !storm::utility::isZero(gap))) {
+                                                fixPoint = false;
+                                            }
+                                        }
                                     }
                                 } // else { Case 3.2.1 }
                             }
