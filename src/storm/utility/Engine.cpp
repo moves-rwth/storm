@@ -120,6 +120,7 @@ namespace storm {
                         case ModelType::POMDP:
                             return false;
                     }
+                    break;
                 case Engine::Hybrid:
                     switch (modelType) {
                         case ModelType::DTMC:
@@ -133,6 +134,7 @@ namespace storm {
                         case ModelType::POMDP:
                             return false;
                     }
+                    break;
                 case Engine::Dd:
                     switch (modelType) {
                         case ModelType::DTMC:
@@ -144,6 +146,7 @@ namespace storm {
                         case ModelType::POMDP:
                             return false;
                     }
+                    break;
                 default:
                     STORM_LOG_ERROR("The selected engine" << engine << " is not considered.");
             }
@@ -171,6 +174,7 @@ namespace storm {
                         case ModelType::POMDP:
                             return false;
                     }
+                    break;
                 case Engine::Hybrid:
                     switch (modelType) {
                         case ModelType::DTMC:
@@ -182,6 +186,7 @@ namespace storm {
                         case ModelType::POMDP:
                             return false;
                     }
+                    break;
                 case Engine::Dd:
                     switch (modelType) {
                         case ModelType::DTMC:
@@ -192,6 +197,7 @@ namespace storm {
                         case ModelType::POMDP:
                             return false;
                     }
+                    break;
                 default:
                     STORM_LOG_ERROR("The selected engine" << engine << " is not considered.");
             }
