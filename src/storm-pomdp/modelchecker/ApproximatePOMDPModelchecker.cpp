@@ -536,6 +536,8 @@ namespace storm {
                         bool restoreAllActions = false;
                         bool checkRewireForAllActions = false;
                         ValueType gap = storm::utility::abs<ValueType>(overApproximation->getUpperValueBoundAtCurrentState() - overApproximation->getLowerValueBoundAtCurrentState());
+                        // Get the relative gap
+                        gap = gap * storm::utility::convertNumber<ValueType, uint64_t>(2) / (storm::utility::abs<ValueType>(overApproximation->getLowerValueBoundAtCurrentState()) + storm::utility::abs<ValueType>(overApproximation->getUpperValueBoundAtCurrentState()));
                         if (!hasOldBehavior) {
                             // Case 1
                             // If we explore this state and if it has no old behavior, it is clear that an "old" optimal scheduler can be extended to a scheduler that reaches this state
@@ -723,7 +725,10 @@ namespace storm {
                             underApproximation->setCurrentStateIsTruncated();
                         } else if (!stateAlreadyExplored) {
                             // Check whether we want to explore the state now!
-                            if (storm::utility::abs<ValueType>(underApproximation->getUpperValueBoundAtCurrentState() - underApproximation->getLowerValueBoundAtCurrentState()) < heuristicParameters.gapThreshold) {
+                            ValueType gap = storm::utility::abs<ValueType>(underApproximation->getUpperValueBoundAtCurrentState() - underApproximation->getLowerValueBoundAtCurrentState());
+                            // Get the relative gap
+                            gap = gap * storm::utility::convertNumber<ValueType, uint64_t>(2) / (storm::utility::abs<ValueType>(underApproximation->getLowerValueBoundAtCurrentState()) + storm::utility::abs<ValueType>(underApproximation->getUpperValueBoundAtCurrentState()));
+                            if (gap < heuristicParameters.gapThreshold) {
                                 stopExploration = true;
                                 underApproximation->setCurrentStateIsTruncated();
                             } else if (underApproximation->getCurrentNumberOfMdpStates() >= heuristicParameters.sizeThreshold) {
