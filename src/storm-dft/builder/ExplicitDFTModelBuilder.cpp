@@ -59,14 +59,14 @@ namespace storm {
                     // Consider all children of the top level gate
                     std::vector<size_t> isubdft;
                     if (child->nrParents() > 1 || child->hasOutgoingDependencies()) {
-                        STORM_LOG_TRACE("child " << child->name() << "does not allow modularisation.");
+                        STORM_LOG_TRACE("child " << child->name() << " does not allow modularisation.");
                         isubdft.clear();
                     } else if (dft.isGate(child->id())) {
                         isubdft = dft.getGate(child->id())->independentSubDft(false);
                     } else {
                         STORM_LOG_ASSERT(dft.isBasicElement(child->id()), "Child is no BE.");
                         if(dft.getBasicElement(child->id())->hasIngoingDependencies()) {
-                            STORM_LOG_TRACE("child " << child->name() << "does not allow modularisation.");
+                            STORM_LOG_TRACE("child " << child->name() << " does not allow modularisation.");
                             isubdft.clear();
                         } else {
                             isubdft = {child->id()};
@@ -745,37 +745,35 @@ namespace storm {
                 storm::storage::BitVector coldBEs(subtree.size(), false);
                 for (size_t i = 0; i < subtree.size(); ++i) {
                     size_t id = subtree[i];
+                    // Consider only still operational BEs
                     if (state->isOperational(id)) {
-                        // Get BE rate
-                        ValueType rate = state->getBERate(id);
-                        if (storm::utility::isZero<ValueType>(rate)) {
-                            // Get active failure rate for cold BE
-                            auto be = dft.getBasicElement(id);
-                            switch (be->type()) {
-                                case storm::storage::DFTElementType::BE_EXP:
-                                {
+                        auto be = dft.getBasicElement(id);
+                        switch (be->type()) {
+                            case storm::storage::DFTElementType::BE_EXP:
+                            {
+                                // Get BE rate
+                                ValueType rate = state->getBERate(id);
+                                if (storm::utility::isZero<ValueType>(rate)) {
+                                    // Get active failure rate for cold BE
                                     auto beExp = std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(be);
                                     rate = beExp->activeFailureRate();
                                     STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(rate), "Failure rate should not be zero.");
                                     // Mark BE as cold
                                     coldBEs.set(i, true);
-                                    break;
                                 }
-                                case storm::storage::DFTElementType::BE_CONST:
-                                {
-                                    // Ignore BE which cannot fail
-                                    continue;
-                                }
-                                default:
-                                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << be->type() << "' is not known.");
-                                    break;
+                                rates.push_back(rate);
+                                rateSum += rate;
+                                break;
                             }
+                            case storm::storage::DFTElementType::BE_CONST:
+                                // Ignore BE which cannot fail
+                                continue;
+                            default:
+                                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << be->type() << "' is not known.");
+                                break;
                         }
-                        rates.push_back(rate);
-                        rateSum += rate;
                     }
                 }
-
                 STORM_LOG_ASSERT(rates.size() > 0, "No rates failable");
 
                 // Sort rates

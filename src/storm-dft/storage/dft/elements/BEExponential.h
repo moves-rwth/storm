@@ -67,7 +67,8 @@ namespace storm {
             }
 
             bool canFail() const override {
-                return !storm::utility::isZero(this->activeFailureRate());
+                STORM_LOG_ASSERT(!storm::utility::isZero(this->activeFailureRate()), "BEExp should have failure rate > 0");
+                return true;
             }
 
             /*!

@@ -563,6 +563,7 @@ namespace storm {
                             if (rowLeadsToDefinedScheduler && (rowStaysInEC || !statesThatShouldStayInTheirEC.get(state))) {
                                 originalOptimalChoices[state] = row - transitionMatrix.getRowGroupIndices()[state];
                                 statesWithUndefSched.set(state, false);
+                                break;
                             }
                         }
                     }

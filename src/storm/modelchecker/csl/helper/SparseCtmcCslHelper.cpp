@@ -831,7 +831,7 @@ namespace storm {
                 auto subEnv = env;
                 if (subEnv.solver().getLinearEquationSolverType() == storm::solver::EquationSolverType::Topological) {
                     // Topological solver does not make any sense since the BSCC is connected.
-                    subEnv.solver().setLinearEquationSolverType(subEnv.solver().topological().getUnderlyingEquationSolverType());
+                    subEnv.solver().setLinearEquationSolverType(subEnv.solver().topological().getUnderlyingEquationSolverType(), subEnv.solver().topological().isUnderlyingEquationSolverTypeSetFromDefault());
                 }
                 subEnv.solver().setLinearEquationSolverPrecision(env.solver().lra().getPrecision(), env.solver().lra().getRelativeTerminationCriterion());
                 
@@ -926,7 +926,7 @@ namespace storm {
                 auto subEnv = env;
                 if (subEnv.solver().getLinearEquationSolverType() == storm::solver::EquationSolverType::Topological) {
                     // Topological solver does not make any sense since the BSCC is connected.
-                    subEnv.solver().setLinearEquationSolverType(subEnv.solver().topological().getUnderlyingEquationSolverType());
+                    subEnv.solver().setLinearEquationSolverType(subEnv.solver().topological().getUnderlyingEquationSolverType(), subEnv.solver().topological().isUnderlyingEquationSolverTypeSetFromDefault());
                 }
                 subEnv.solver().setLinearEquationSolverPrecision(env.solver().lra().getPrecision(), env.solver().lra().getRelativeTerminationCriterion());
                 

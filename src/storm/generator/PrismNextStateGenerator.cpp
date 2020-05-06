@@ -734,7 +734,7 @@ namespace storm {
                 result.setFromInt(64*i,64,this->evaluator->asInt(program.getObservationLabels()[i].getStatePredicateExpression()));
             }
             return result;
-        };
+        }
 
 
         template<typename ValueType, typename StateType>

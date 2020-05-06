@@ -47,7 +47,7 @@ namespace storm {
                     ++it2;
                 }
                 return it1 == end1 && it2 == end2;
-            };
+            }
 
 
             bool operator<(ActionIdentifier const& lhs, ActionIdentifier const& rhs) {
