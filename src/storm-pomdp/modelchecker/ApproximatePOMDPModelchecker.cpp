@@ -5,6 +5,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include "storm-pomdp/analysis/FormulaInformation.h"
+#include "storm-pomdp/analysis/FiniteBeliefMdpDetection.h"
 
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/NumberTraits.h"
@@ -106,6 +107,9 @@ namespace storm {
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unsupported formula '" << formula << "'.");
                 }
+                if (storm::pomdp::detectFiniteBeliefMdp(pomdp, formulaInfo.getTargetStates().states)) {
+                    STORM_PRINT_AND_LOG("Detected that the belief MDP is finite." << std::endl);
+                }
                 
                 if (options.refine) {
                     refineReachability(formulaInfo.getTargetStates().observations, formulaInfo.minimize(), rewardModelName, initialPomdpValueBounds.lower, initialPomdpValueBounds.upper, result);
@@ -172,7 +176,9 @@ namespace storm {
                         stream << ">=";
                     }
                     stream << statistics.underApproximationStates.get() << std::endl;
-                    stream << "# Exploration state limit for under-approximation: " << statistics.underApproximationStateLimit.get() << std::endl;
+                    if (statistics.underApproximationStateLimit) {
+                        stream << "# Exploration state limit for under-approximation: " << statistics.underApproximationStateLimit.get() << std::endl;
+                    }
                     stream << "# Time spend for building the under-approx grid MDP(s): " << statistics.underApproximationBuildTime << std::endl;
                     stream << "# Time spend for checking the under-approx grid MDP(s): " << statistics.underApproximationCheckTime << std::endl;
                 }
