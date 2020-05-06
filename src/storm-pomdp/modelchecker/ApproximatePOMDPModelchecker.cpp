@@ -253,7 +253,7 @@ namespace storm {
                     overApproxHeuristicPar.sizeThreshold = options.sizeThresholdInit == 0 ? std::numeric_limits<uint64_t>::max() : options.sizeThresholdInit;
                     overApproxHeuristicPar.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
                     buildOverApproximation(targetObservations, min, rewardModelName.is_initialized(), false, overApproxHeuristicPar, observationResolutionVector, overApproxBeliefManager, overApproximation);
-                    if (!overApproximation->hasComputedValues()) {
+                    if (!overApproximation->hasComputedValues() || storm::utility::resources::isTerminate()) {
                         return;
                     }
                     ValueType const& newValue = overApproximation->getComputedValueAtInitialState();
@@ -280,7 +280,7 @@ namespace storm {
                         underApproxHeuristicPar.sizeThreshold = pomdp.getNumberOfStates() * pomdp.getMaxNrStatesWithSameObservation();
                     }
                     buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, underApproxHeuristicPar, underApproxBeliefManager, underApproximation);
-                    if (!underApproximation->hasComputedValues()) {
+                    if (!underApproximation->hasComputedValues() || storm::utility::resources::isTerminate()) {
                         return;
                     }
                     ValueType const& newValue = underApproximation->getComputedValueAtInitialState();
