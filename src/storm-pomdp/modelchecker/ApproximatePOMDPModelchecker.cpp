@@ -455,6 +455,25 @@ namespace storm {
                 return resultingRatings;
             }
             
+            template<typename ValueType>
+            ValueType getGap(ValueType const& l, ValueType const& u) {
+                STORM_LOG_ASSERT(l >= storm::utility::zero<ValueType>() && u >= storm::utility::zero<ValueType>(), "Gap computation currently does not handle negative values.");
+                if (storm::utility::isInfinity(u)) {
+                    if (storm::utility::isInfinity(l)) {
+                        return storm::utility::zero<ValueType>();
+                    } else {
+                        return u;
+                    }
+                } else if (storm::utility::isZero(u)) {
+                    STORM_LOG_ASSERT(storm::utility::isZero(l), "Upper bound is zero but lower bound is " << l << ".");
+                    return u;
+                } else {
+                    STORM_LOG_ASSERT(!storm::utility::isInfinity(l), "Lower bound is infinity, but upper bound is " << u << ".");
+                    // get the relative gap
+                    return storm::utility::abs<ValueType>(u-l) * storm::utility::convertNumber<ValueType, uint64_t>(2) / (l+u);
+                }
+            }
+            
             template<typename PomdpModelType, typename BeliefValueType>
             bool ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::buildOverApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::vector<uint64_t>& observationResolutionVector, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& overApproximation) {
                 
@@ -541,9 +560,8 @@ namespace storm {
                         bool truncateAllActions = false;
                         bool restoreAllActions = false;
                         bool checkRewireForAllActions = false;
-                        ValueType gap = storm::utility::abs<ValueType>(overApproximation->getUpperValueBoundAtCurrentState() - overApproximation->getLowerValueBoundAtCurrentState());
                         // Get the relative gap
-                        gap = gap * storm::utility::convertNumber<ValueType, uint64_t>(2) / (storm::utility::abs<ValueType>(overApproximation->getLowerValueBoundAtCurrentState()) + storm::utility::abs<ValueType>(overApproximation->getUpperValueBoundAtCurrentState()));
+                        ValueType gap = getGap(overApproximation->getLowerValueBoundAtCurrentState(), overApproximation->getUpperValueBoundAtCurrentState());
                         if (!hasOldBehavior) {
                             // Case 1
                             // If we explore this state and if it has no old behavior, it is clear that an "old" optimal scheduler can be extended to a scheduler that reaches this state
@@ -731,9 +749,7 @@ namespace storm {
                             underApproximation->setCurrentStateIsTruncated();
                         } else if (!stateAlreadyExplored) {
                             // Check whether we want to explore the state now!
-                            ValueType gap = storm::utility::abs<ValueType>(underApproximation->getUpperValueBoundAtCurrentState() - underApproximation->getLowerValueBoundAtCurrentState());
-                            // Get the relative gap
-                            gap = gap * storm::utility::convertNumber<ValueType, uint64_t>(2) / (storm::utility::abs<ValueType>(underApproximation->getLowerValueBoundAtCurrentState()) + storm::utility::abs<ValueType>(underApproximation->getUpperValueBoundAtCurrentState()));
+                            ValueType gap = getGap(underApproximation->getLowerValueBoundAtCurrentState(), underApproximation->getUpperValueBoundAtCurrentState());
                             if (gap < heuristicParameters.gapThreshold) {
                                 stopExploration = true;
                                 underApproximation->setCurrentStateIsTruncated();
