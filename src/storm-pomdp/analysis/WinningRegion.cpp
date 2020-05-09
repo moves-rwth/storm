@@ -108,9 +108,13 @@ namespace pomdp {
     void WinningRegion::print() const {
         uint64_t observation = 0;
         std::vector<uint64_t> winningObservations;
+        std::vector<uint64_t> loosingObservations;
+
         for (auto const& winningSupport : winningRegion) {
             if (observationIsWinning(observation)) {
                 winningObservations.push_back(observation);
+            } else if(winningRegion[observation].empty()) {
+                loosingObservations.push_back(observation);
             } else {
                 std::cout << "***** observation" << observation << std::endl;
                 for (auto const& support : winningSupport) {
@@ -120,11 +124,15 @@ namespace pomdp {
             }
             observation++;
         }
-        std::cout << " and " << winningObservations.size() << " winning observations: (";
+        std::cout << "and  " << winningObservations.size() << " winning observations: (";
         for (auto const& obs : winningObservations) {
             std::cout << obs << " ";
         }
-        std::cout << ")" << std::endl;
+        std::cout << ") and " << loosingObservations.size() << " loosing observations: (";
+        for (auto const& obs : loosingObservations) {
+            std::cout << obs << " ";
+        }
+
     }
 
     /**
