@@ -47,6 +47,7 @@ namespace pomdp {
         bool onlyDeterministicStrategies = false;
         bool forceLookahead = true;
         bool validateEveryStep = false;
+        bool validateResult = false;
 
     private:
         std::string exportSATcalls = "";

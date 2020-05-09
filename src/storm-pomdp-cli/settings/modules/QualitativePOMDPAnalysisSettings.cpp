@@ -17,6 +17,7 @@ namespace storm {
             const std::string lookaheadHorizonOption = "lookaheadhorizon";
             const std::string onlyDeterministicOption = "onlydeterministic";
             const std::string winningRegionOption = "winningregion";
+            const std::string validationLevel = "validate";
 
 
             QualitativePOMDPAnalysisSettings::QualitativePOMDPAnalysisSettings() : ModuleSettings(moduleName) {
@@ -24,6 +25,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, lookaheadHorizonOption, false, "In reachability in combination with a discrete ranking function, a lookahead is necessary.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("bound", "The lookahead. Use 0 for the number of states.").setDefaultValueUnsignedInteger(0).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, onlyDeterministicOption, false, "Search only for deterministic schedulers").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, winningRegionOption, false, "Search for the winning region").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, validationLevel, false, "Validate algorithm during runtime (for debugging)").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("level", "how regular to apply this validation. Use 0 for never, 1 for the end, and >=2 within computation steps.").setDefaultValueUnsignedInteger(0).build()).build());
             }
 
             uint64_t QualitativePOMDPAnalysisSettings::getLookahead() const {
@@ -43,6 +45,13 @@ namespace storm {
 
             bool QualitativePOMDPAnalysisSettings::isWinningRegionSet() const {
                 return this->getOption(winningRegionOption).getHasOptionBeenSet();
+            }
+
+            bool QualitativePOMDPAnalysisSettings::validateIntermediateSteps() const {
+                return this->getOption(validationLevel).getArgumentByName("level").getValueAsUnsignedInteger() >= 2;
+            }
+            bool QualitativePOMDPAnalysisSettings::validateFinalResult() const {
+                return this->getOption(validationLevel).getArgumentByName("level").getValueAsUnsignedInteger() >= 1;
             }
 
             void QualitativePOMDPAnalysisSettings::finalize() {

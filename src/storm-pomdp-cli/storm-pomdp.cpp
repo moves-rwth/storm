@@ -99,7 +99,7 @@ namespace storm {
 
                 options.onlyDeterministicStrategies = qualSettings.isOnlyDeterministicSet();
                 uint64_t loglevel = 0;
-                // TODO a big ugly, but we have our own loglevels.
+                // TODO a big ugly, but we have our own loglevels (for technical reasons)
                 if(storm::utility::getLogLevel() == l3pp::LogLevel::INFO) {
                     loglevel = 1;
                 }
@@ -108,9 +108,10 @@ namespace storm {
                 }
                 else if(storm::utility::getLogLevel() == l3pp::LogLevel::TRACE) {
                     loglevel = 3;
-                    options.validateEveryStep = true;
                 }
                 options.setDebugLevel(loglevel);
+                options.validateEveryStep = qualSettings.validateIntermediateSteps();
+                options.validateResult = qualSettings.validateFinalResult();
 
                 if (qualSettings.isExportSATCallsSet()) {
                     options.setExportSATCalls(qualSettings.getExportSATCallsPath());

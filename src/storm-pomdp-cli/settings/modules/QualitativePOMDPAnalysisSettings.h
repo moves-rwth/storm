@@ -25,6 +25,8 @@ namespace storm {
                 std::string getExportSATCallsPath() const;
                 bool isOnlyDeterministicSet() const;
                 bool isWinningRegionSet() const;
+                bool validateIntermediateSteps() const;
+                bool validateFinalResult() const;
 
 
                 virtual ~QualitativePOMDPAnalysisSettings() = default;
