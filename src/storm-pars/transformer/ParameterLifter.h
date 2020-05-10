@@ -11,6 +11,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/solver/OptimizationDirection.h"
+#include "storm-pars/analysis/Order.h"
 
 namespace storm {
     namespace transformer {
@@ -42,7 +43,23 @@ namespace storm {
             ParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix, std::vector<ParametricType> const& pVector, storm::storage::BitVector const& selectedRows, storm::storage::BitVector const& selectedColumns,  bool generateRowLabels = false);
             
             void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
-            
+
+            /*!
+             * Specifies the region for the parameterlifter, the Bitvector works as a fixed (partial) scheduler, this might not give sound results!
+             * @param region the region
+             * @param dirForParameters the optimization direction 
+             * @param selectedRows a Bitvector that specifies which rows of the matrix and the vector are considered.
+             */
+            void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::storage::BitVector const& selectedRows);
+
+            /*!
+             * Specifies the region for the parameterlifter, the reachability order is used to see if there is local monotonicity, such that a fixed (partial) scheduler can be used
+             * @param region the region
+             * @param dirForParameters the optimization direction
+             * @param reachabilityOrder a (possibly insufficient) reachability order, used for local monotonicity
+             */
+            void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::analysis::Order const& reachabilityOrder);
+
             // Returns the resulting matrix. Should only be called AFTER specifying a region
             storm::storage::SparseMatrix<ConstantType> const& getMatrix() const;
             
@@ -130,11 +147,20 @@ namespace storm {
             
             std::vector<AbstractValuation> rowLabels;
 
+            std::vector<uint_fast64_t> oldToNewColumnIndexMapping; // Mapping from old to new columnIndex used for monotonicity
+
+            std::vector<std::set<VariableType>> occurringVariablesAtState; // Used for monotonicity
+
             storm::storage::SparseMatrix<ConstantType> matrix; //The resulting matrix;
             std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>> matrixAssignment; // Connection of matrix entries with placeholders
             
             std::vector<ConstantType> vector; //The resulting vector
             std::vector<std::pair<typename std::vector<ConstantType>::iterator, ConstantType&>> vectorAssignment; // Connection of vector entries with placeholders
+
+            std::vector<ConstantType> specifiedVector; //The resulting vector, in which possibly some entries are deleted. Used for monotonicity
+            storm::storage::SparseMatrix<ConstantType> specifiedMatrix; // The resulting matrix, in which possibly some rows are deleted. Used for monotonicity
+
+            bool useMonotonicity = false;
                 
         };
 

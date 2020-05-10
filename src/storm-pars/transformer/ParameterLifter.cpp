@@ -13,14 +13,16 @@ namespace storm {
 
         template<typename ParametricType, typename ConstantType>
         ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix, std::vector<ParametricType> const& pVector, storm::storage::BitVector const& selectedRows, storm::storage::BitVector const& selectedColumns, bool generateRowLabels) {
-        
-            
+
             // get a mapping from old column indices to new ones
-            std::vector<uint_fast64_t> oldToNewColumnIndexMapping(selectedColumns.size(), selectedColumns.size());
+            oldToNewColumnIndexMapping = std::vector<uint_fast64_t>(selectedColumns.size(), selectedColumns.size());
             uint_fast64_t newIndex = 0;
             for (auto const& oldColumn : selectedColumns) {
                 oldToNewColumnIndexMapping[oldColumn] = newIndex++;
             }
+
+            // create vector, such that the occuringVariables for all states can be stored
+            occurringVariablesAtState = std::vector<std::set<VariableType>>(pMatrix.getColumnCount());
             
             // Stores which entries of the original matrix/vector are non-constant. Entries for non-selected rows/columns are omitted
             storm::storage::BitVector nonConstMatrixEntries(pMatrix.getEntryCount(), false); //this vector has to be resized later
@@ -100,6 +102,8 @@ namespace storm {
 
                     ++newRowIndex;
                 }
+                // Safe the occuringVariables of a state, needed if we want to use monotonicity
+                occurringVariablesAtState[rowIndex] = std::move(occurringVariables);
             }
             
             // Matrix and vector are now filled with constant results from constant functions and place holders for non-constant functions.
@@ -137,6 +141,7 @@ namespace storm {
     
         template<typename ParametricType, typename ConstantType>
         void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
+            useMonotonicity = false;
             // write the evaluation result of each function,evaluation pair into the placeholders
             functionValuationCollector.evaluateCollectedFunctions(region, dirForParameters);
             
@@ -150,15 +155,53 @@ namespace storm {
                 *assignment.first = assignment.second;
             }
         }
+
+        template<typename ParametricType, typename ConstantType>
+        void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::storage::BitVector const& selectedRows) {
+            useMonotonicity = true;
+            // write the evaluation result of each function,evaluation pair into the placeholders
+            functionValuationCollector.evaluateCollectedFunctions(region, dirForParameters);
+
+            //apply the matrix and vector assignments to write the contents of the placeholder into the matrix/vector
+
+            for(auto& assignment : matrixAssignment) {
+                STORM_LOG_WARN_COND(!storm::utility::isZero(assignment.second), "Parameter lifting on region " << region.toString() << " affects the underlying graph structure (the region is not strictly well defined). The result for this region might be incorrect.");
+                assignment.first->setValue(assignment.second);
+            }
+            for(auto& assignment : vectorAssignment) {
+                *assignment.first = assignment.second;
+            }
+            auto selectedColumns = storm::storage::BitVector(matrix.getColumnCount(), true);
+            specifiedMatrix = storm::storage::SparseMatrix<ConstantType>(std::move(matrix.getSubmatrix(false, selectedRows, selectedColumns)));
+            for (auto rowIndex : selectedRows) {
+                specifiedVector.push_back(vector[rowIndex]);
+            }
+        }
+
+        template<typename ParametricType, typename ConstantType>
+        void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::analysis::Order const& reachabilityOrder) {
+            storm::storage::BitVector selectedRows(matrix.getRowCount(), true);
+            // TODO: check for local monotonicity
+            STORM_LOG_WARN("specifying a region with a reachability order is not yet implemented, continueing as if no reachability order was given");
+            specifyRegion(region, dirForParameters);
+        }
     
         template<typename ParametricType, typename ConstantType>
         storm::storage::SparseMatrix<ConstantType> const& ParameterLifter<ParametricType, ConstantType>::getMatrix() const {
-            return matrix;
+            if (useMonotonicity) {
+                return specifiedMatrix;
+            } else {
+                return matrix;
+            }
         }
     
         template<typename ParametricType, typename ConstantType>
         std::vector<ConstantType> const& ParameterLifter<ParametricType, ConstantType>::getVector() const {
-            return vector;
+            if (useMonotonicity) {
+                return specifiedVector;
+            } else {
+                return vector;
+            }
         }
         
         template<typename ParametricType, typename ConstantType>
