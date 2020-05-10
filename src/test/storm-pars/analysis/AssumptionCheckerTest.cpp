@@ -12,8 +12,7 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/api/builder.h"
 
-#include "storm-pars/analysis/AssumptionChecker.h"
-#include "storm-pars/analysis/Order.h"
+#include "storm-pars/api/analysis.h"
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 #include "storm-pars/storage/ParameterRegion.h"
@@ -52,7 +51,7 @@ TEST(AssumptionCheckerTest, Brp_no_bisimulation) {
     auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= pK <= 0.00001, 0.00001 <= pL <= 0.99999", vars);
 
-    auto checker = storm::analysis::AssumptionChecker<storm::RationalFunction>(formulas[0], dtmc, region, 3);
+    auto checker = storm::analysis::AssumptionChecker<storm::RationalFunction, double>(formulas[0], dtmc, region, 3);
 
     // Check on samples
     auto expressionManager = std::make_shared<storm::expressions::ExpressionManager>(storm::expressions::ExpressionManager());
@@ -86,14 +85,12 @@ TEST(AssumptionCheckerTest, Brp_no_bisimulation) {
     above.set(0);
     storm::storage::BitVector below(8);
     below.set(1);
-    storm::storage::BitVector initialMiddle(8);
 
     std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
 
-    auto dummyOrder = new storm::analysis::Order(&above, &below, &initialMiddle, 8, &statesSorted);
+    auto dummyOrder = new storm::analysis::Order(&above, &below, 8, &statesSorted);
     // Validate assumption
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, dummyOrder));
-//    EXPECT_FALSE(checker.validated(assumption));
 
     expressionManager->declareRationalVariable("6");
     expressionManager->declareRationalVariable("8");
@@ -106,13 +103,10 @@ TEST(AssumptionCheckerTest, Brp_no_bisimulation) {
     above.set(12);
     below = storm::storage::BitVector(13);
     below.set(9);
-    initialMiddle = storm::storage::BitVector(13);
 
-    dummyOrder = new storm::analysis::Order(&above, &below, &initialMiddle, 13, &statesSorted);
+    dummyOrder = new storm::analysis::Order(&above, &below, 13, &statesSorted);
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.checkOnSamples(assumption));
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, dummyOrder));
-//    EXPECT_EQ(checker.validated(assumption));
-//    EXPECT_FALSE(checker.valid(assumption));
 }
 
 TEST(AssumptionCheckerTest, Simple1) {
@@ -138,7 +132,7 @@ TEST(AssumptionCheckerTest, Simple1) {
     auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= p <= 0.99999", vars);
 
-    auto checker = storm::analysis::AssumptionChecker<storm::RationalFunction>(formulas[0], dtmc, region, 3);
+    auto checker = storm::analysis::AssumptionChecker<storm::RationalFunction, double>(formulas[0], dtmc, region, 3);
 
     auto expressionManager = std::make_shared<storm::expressions::ExpressionManager>(storm::expressions::ExpressionManager());
     expressionManager->declareRationalVariable("1");
@@ -190,7 +184,7 @@ TEST(AssumptionCheckerTest, Simple2) {
     auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= p <= 0.99999", vars);
 
-    auto checker = storm::analysis::AssumptionChecker<storm::RationalFunction>(formulas[0], dtmc, region, 3);
+    auto checker = storm::analysis::AssumptionChecker<storm::RationalFunction, double>(formulas[0], dtmc, region, 3);
 
     auto expressionManager = std::make_shared<storm::expressions::ExpressionManager>(storm::expressions::ExpressionManager());
     expressionManager->declareRationalVariable("1");
@@ -200,11 +194,10 @@ TEST(AssumptionCheckerTest, Simple2) {
     above.set(3);
     storm::storage::BitVector below(5);
     below.set(4);
-    storm::storage::BitVector initialMiddle(5);
 
     std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
 
-    auto order = new storm::analysis::Order(&above, &below, &initialMiddle, 5, &statesSorted);
+    auto order = new storm::analysis::Order(&above, &below, 5, &statesSorted);
 
     // Checking on samples and validate
     auto assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
@@ -256,7 +249,7 @@ TEST(AssumptionCheckerTest, Simple3) {
     auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= p <= 0.99999", vars);
 
-    auto checker = storm::analysis::AssumptionChecker<storm::RationalFunction>(formulas[0], dtmc, region, 3);
+    auto checker = storm::analysis::AssumptionChecker<storm::RationalFunction, double>(formulas[0], dtmc, region, 3);
 
     auto expressionManager = std::make_shared<storm::expressions::ExpressionManager>(storm::expressions::ExpressionManager());
     expressionManager->declareRationalVariable("1");
@@ -266,11 +259,10 @@ TEST(AssumptionCheckerTest, Simple3) {
     above.set(4);
     storm::storage::BitVector below(6);
     below.set(5);
-    storm::storage::BitVector initialMiddle(6);
 
     std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
 
-    auto order = new storm::analysis::Order(&above, &below, &initialMiddle, 6, &statesSorted);
+    auto order = new storm::analysis::Order(&above, &below, 6, &statesSorted);
     order->add(3);
 
     // Checking on samples and validate
@@ -325,7 +317,7 @@ TEST(AssumptionCheckerTest, Simple4) {
     auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
     auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= p <= 0.4", vars);
 
-    auto checker = storm::analysis::AssumptionChecker<storm::RationalFunction>(formulas[0], dtmc, region, 3);
+    auto checker = storm::analysis::AssumptionChecker<storm::RationalFunction, double>(formulas[0], dtmc, region, 3);
 
     auto expressionManager = std::make_shared<storm::expressions::ExpressionManager>(storm::expressions::ExpressionManager());
     expressionManager->declareRationalVariable("1");
@@ -336,10 +328,9 @@ TEST(AssumptionCheckerTest, Simple4) {
     above.set(3);
     storm::storage::BitVector below(5);
     below.set(4);
-    storm::storage::BitVector initialMiddle(5);
     std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
 
-    auto order = new storm::analysis::Order(&above, &below, &initialMiddle, 5, &statesSorted);
+    auto order = new storm::analysis::Order(&above, &below, 5, &statesSorted);
 
     auto assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
             storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),

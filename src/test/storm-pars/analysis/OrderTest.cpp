@@ -1,7 +1,7 @@
 #include "test/storm_gtest.h"
 #include "storm-config.h"
 #include "test/storm_gtest.h"
-#include "storm-pars/analysis/Order.h"
+#include "storm-pars/api/analysis.h"
 #include "storm/storage/BitVector.h"
 
 TEST(OrderTest, Simple) {
@@ -10,10 +10,9 @@ TEST(OrderTest, Simple) {
     above.set(0);
     auto below = storm::storage::BitVector(numberOfStates);
     below.set(1);
-    auto initialMiddle = storm::storage::BitVector(numberOfStates);
     std::vector<uint_fast64_t> statesSorted;
 
-    auto order = storm::analysis::Order(&above, &below, &initialMiddle, numberOfStates, &statesSorted);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, &statesSorted);
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0,1));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1,0));
     EXPECT_EQ(nullptr, order.getNode(2));
@@ -77,10 +76,9 @@ TEST(OrderTest, copy_order) {
     above.set(0);
     auto below = storm::storage::BitVector(numberOfStates);
     below.set(1);
-    auto initialMiddle = storm::storage::BitVector(numberOfStates);
     std::vector<uint_fast64_t> statesSorted;
 
-    auto order = storm::analysis::Order(&above, &below, &initialMiddle, numberOfStates, &statesSorted);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, &statesSorted);
     order.add(2);
     order.add(3);
     order.addToNode(4, order.getNode(2));
@@ -143,10 +141,9 @@ TEST(OrderTest, merge_nodes) {
     above.set(0);
     auto below = storm::storage::BitVector(numberOfStates);
     below.set(1);
-    auto initialMiddle = storm::storage::BitVector(numberOfStates);
     std::vector<uint_fast64_t> statesSorted;
 
-    auto order = storm::analysis::Order(&above, &below, &initialMiddle, numberOfStates, &statesSorted);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, &statesSorted);
     order.add(2);
     order.add(3);
     order.addToNode(4, order.getNode(2));
@@ -170,4 +167,52 @@ TEST(OrderTest, merge_nodes) {
     EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1,2));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1,4));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1,5));
+}
+
+TEST(OrderTest, sort_states) {
+    auto numberOfStates = 7;
+    auto above = storm::storage::BitVector(numberOfStates);
+    above.set(0);
+    auto below = storm::storage::BitVector(numberOfStates);
+    below.set(1);
+    std::vector<uint_fast64_t> statesSorted;
+
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, &statesSorted);
+    order.add(2);
+    order.add(3);
+    order.addToNode(4, order.getNode(2));
+    order.addBetween(5, order.getNode(0), order.getNode(3));
+    order.addBetween(6, order.getNode(5), order.getNode(3));
+
+    std::vector<uint_fast64_t> statesToSort = std::vector<uint_fast64_t> {0,1,5,6};
+    auto sortedStates = order.sortStates(&statesToSort);
+    EXPECT_EQ(sortedStates.size(), 4);
+
+    auto itr = sortedStates.begin();
+    EXPECT_EQ(*itr, 0);
+    EXPECT_EQ(*(++itr), 5);
+    EXPECT_EQ(*(++itr), 6);
+    EXPECT_EQ(*(++itr), 1);
+
+    statesToSort = std::vector<uint_fast64_t> {0,1,5,6,2};
+    sortedStates = order.sortStates(&statesToSort);
+    EXPECT_EQ(sortedStates.size(), 5);
+
+    itr = sortedStates.begin();
+    EXPECT_EQ(*itr, 0);
+    EXPECT_EQ(*(++itr), 5);
+    EXPECT_EQ(*(++itr), 6);
+    EXPECT_EQ(*(++itr), 1);
+    EXPECT_EQ(*(++itr), 7);
+
+    statesToSort = std::vector<uint_fast64_t> {0,2,1,5,6};
+    sortedStates = order.sortStates(&statesToSort);
+    EXPECT_EQ(sortedStates.size(), 5);
+
+    itr = sortedStates.begin();
+    EXPECT_EQ(*itr, 0);
+    EXPECT_EQ(*(++itr), 2);
+    EXPECT_EQ(*(++itr), 1);
+    EXPECT_EQ(*(++itr), 7);
+    EXPECT_EQ(*(++itr), 7);
 }

@@ -99,7 +99,6 @@ namespace storm {
                 }
             }
             return monResults;
-
         }
 
         template <typename ValueType, typename ConstantType>
@@ -164,7 +163,6 @@ namespace storm {
                             auto orderCopy = new Order(order);
                             auto assumptionsCopy = std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>(assumptions);
                             auto monResCopy = monRes->copy();
-
 
                             if (assumption.second == AssumptionStatus::UNKNOWN) {
                                 // only add assumption to the set of assumptions if it is unknown whether it holds or not

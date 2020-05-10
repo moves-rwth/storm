@@ -35,13 +35,13 @@ namespace storm {
             this->params = storm::models::sparse::getProbabilityParameters(*model);
 
             // Build stateMap
-            for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-                auto row = matrix.getRow(i);
-                stateMap[i] = std::vector<uint_fast64_t>(row.getNumberOfEntries());
+            for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
+                auto row = matrix.getRow(state);
+                stateMap[state] = std::vector<uint_fast64_t>();
                 for (auto rowItr = row.begin(); rowItr != row.end(); ++rowItr) {
                     // ignore self-loops when there are more transitions
-                    if (i != rowItr->getColumn() || row.getNumberOfEntries() == 1) {
-                        stateMap[i].push_back(rowItr->getColumn());
+                    if (state != rowItr->getColumn() || row.getNumberOfEntries() == 1) {
+                        stateMap[state].push_back(rowItr->getColumn());
                     }
                 }
             }
@@ -203,6 +203,7 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(Order *order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors) {
+            order->toDotOutput();
             if (!cyclic && order->isOnlyBottomTopOrder()) {
                 order->add(currentState);
 

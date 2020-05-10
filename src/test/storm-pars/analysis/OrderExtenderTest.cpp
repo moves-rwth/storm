@@ -12,14 +12,15 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/api/builder.h"
 
-#include "storm-pars/analysis/Order.h"
-#include "storm-pars/analysis/OrderExtender.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
 
 #include "storm-pars/api/storm-pars.h"
 #include "storm/api/storm.h"
 
 #include "storm-parsers/api/storm-parsers.h"
+
+#include "storm-pars/analysis/MonotonicityResult.h"
+
 
 TEST(OrderExtenderTest, Brp_with_bisimulation) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
@@ -47,8 +48,12 @@ TEST(OrderExtenderTest, Brp_with_bisimulation) {
     ASSERT_EQ(dtmc->getNumberOfStates(), 99ull);
     ASSERT_EQ(dtmc->getNumberOfTransitions(), 195ull);
 
-    auto *extender = new storm::analysis::OrderExtender<storm::RationalFunction>(dtmc);
-    auto criticalTuple = extender->toOrder(formulas);
+    auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
+    auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= pK <= 0.999999, 0.00001 <= pL <= 0.999999", vars);
+
+    auto *extender = new storm::analysis::OrderExtender<storm::RationalFunction, double>(dtmc, formulas[0], region);
+    auto monRes = new storm::analysis::MonotonicityResult<typename storm::analysis::OrderExtender<storm::RationalFunction, double>::VariableType>;
+    auto criticalTuple = extender->toOrder(make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::OrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
     EXPECT_EQ(dtmc->getNumberOfStates(), std::get<1>(criticalTuple));
     EXPECT_EQ(dtmc->getNumberOfStates(), std::get<2>(criticalTuple));
 
@@ -84,8 +89,12 @@ TEST(OrderExtenderTest, Brp_without_bisimulation) {
     ASSERT_EQ(dtmc->getNumberOfStates(), 193ull);
     ASSERT_EQ(dtmc->getNumberOfTransitions(), 383ull);
 
-    auto *extender = new storm::analysis::OrderExtender<storm::RationalFunction>(dtmc);
-    auto criticalTuple = extender->toOrder(formulas);
+    auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
+    auto region = storm::api::parseRegion<storm::RationalFunction>("0.00001 <= pK <= 0.999999, 0.00001 <= pL <= 0.999999", vars);
+
+    auto *extender = new storm::analysis::OrderExtender<storm::RationalFunction, double>(dtmc, formulas[0], region);
+    auto monRes = new storm::analysis::MonotonicityResult<typename storm::analysis::OrderExtender<storm::RationalFunction, double>::VariableType>;
+    auto criticalTuple = extender->toOrder(make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::OrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
     EXPECT_EQ(183ul, std::get<1>(criticalTuple));
     EXPECT_EQ(186ul, std::get<2>(criticalTuple));
 }
