@@ -13,7 +13,7 @@
 #include "storm-pars/api/region.h"
 #include "storm-pars/api/export.h"
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
-#include "storm-pars/analysis/MonotonicityChecker.h"
+#include "storm-pars/analysis/MonotonicityHelper.h"
 
 
 namespace storm {
@@ -203,10 +203,8 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(Order *order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors) {
-            order->toDotOutput();
             if (!cyclic && order->isOnlyBottomTopOrder()) {
                 order->add(currentState);
-
                 return std::pair<uint_fast64_t, uint_fast64_t>(numberOfStates, numberOfStates);
             } else if (successors.size() == 1) {
                 assert (order->contains(successors[0]));
@@ -385,7 +383,7 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         typename OrderExtender<ValueType, ConstantType>::Monotonicity OrderExtender<ValueType, ConstantType>::checkTransitionMonRes(ValueType function, typename OrderExtender<ValueType, ConstantType>::VariableType param) {
-                std::pair<bool, bool> res = MonotonicityChecker<ValueType, ConstantType>::checkDerivative(getDerivative(function, param), region);
+                std::pair<bool, bool> res = MonotonicityHelper<ValueType, ConstantType>::checkDerivative(getDerivative(function, param), region);
                 if (res.first && !res.second) {
                     return Monotonicity::Incr;
                 } else if (!res.first && res.second) {

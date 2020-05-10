@@ -37,6 +37,8 @@ namespace storm {
              */
             void updateMonotonicityResult(VariableType var, Monotonicity mon);
 
+            Monotonicity getMonotonicity(VariableType var);
+
             /*!
              * Returns the results so far
              * @return the variable / Monotonicity map

@@ -66,6 +66,8 @@ namespace storm {
             //returns the region as string in the format 0.3<=p<=0.4,0.2<=q<=0.5;
             std::string toString(bool boundariesAsDouble = false) const;
 
+            bool isSubRegion(ParameterRegion<ParametricType> region);
+
         private:
 
             void init();

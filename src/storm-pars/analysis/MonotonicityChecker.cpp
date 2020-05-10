@@ -1,198 +1,93 @@
 #include "MonotonicityChecker.h"
-#include "storm/api/verification.h"
-
-#include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/InvalidOperationException.h"
-
-#include "storm/models/ModelType.h"
-
-#include "storm/modelchecker/results/CheckResult.h"
-
-#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-
-#include "storm-pars/analysis/AssumptionChecker.h"
-
 
 namespace storm {
     namespace analysis {
-        template <typename ValueType, typename ConstantType>
-        MonotonicityChecker<ValueType, ConstantType>::MonotonicityChecker(std::shared_ptr<models::ModelBase> model, std::vector<std::shared_ptr<logic::Formula const>> formulas,  std::vector<storage::ParameterRegion<ValueType>> regions, uint_fast64_t numberOfSamples, double const& precision, bool dotOutput) {
-            assert (model != nullptr);
-            STORM_LOG_THROW(regions.size() <= 1, exceptions::NotSupportedException, "Monotonicity checking is not (yet) supported for multiple regions");
-            STORM_LOG_THROW(formulas.size() <= 1, exceptions::NotSupportedException, "Monotonicity checking is not (yet) supported for multiple formulas");
-
-            this->model = model;
-            this->formulas = formulas;
-            this->precision = utility::convertNumber<ConstantType>(precision);
-            std::shared_ptr<models::sparse::Model<ValueType>> sparseModel = model->as<models::sparse::Model<ValueType>>();
-            this->matrix = sparseModel->getTransitionMatrix();
-            this->dotOutput = dotOutput;
-
-            if (regions.size() == 1) {
-                this->region = *(regions.begin());
-            } else {
-                typename storage::ParameterRegion<ValueType>::Valuation lowerBoundaries;
-                typename storage::ParameterRegion<ValueType>::Valuation upperBoundaries;
-                std::set<VariableType> vars;
-                vars = models::sparse::getProbabilityParameters(*sparseModel);
-                for (auto var : vars) {
-                    typename storage::ParameterRegion<ValueType>::CoefficientType lb = utility::convertNumber<CoefficientType>(0 + precision) ;
-                    typename storage::ParameterRegion<ValueType>::CoefficientType ub = utility::convertNumber<CoefficientType>(1 - precision) ;
-                    lowerBoundaries.insert(std::make_pair(var, lb));
-                    upperBoundaries.insert(std::make_pair(var, ub));
-                }
-                this->region =  storage::ParameterRegion<ValueType>(std::move(lowerBoundaries), std::move(upperBoundaries));
-            }
-
-            if (numberOfSamples > 2) {
-                // sampling
-                if (model->isOfType(models::ModelType::Dtmc)) {
-                    this->resultCheckOnSamples = std::map<VariableType, std::pair<bool, bool>>(
-                            checkMonotonicityOnSamples(model->as<models::sparse::Dtmc<ValueType>>(), numberOfSamples));
-                } else if (model->isOfType(models::ModelType::Mdp)) {
-                    this->resultCheckOnSamples = std::map<VariableType, std::pair<bool, bool>>(
-                            checkMonotonicityOnSamples(model->as<models::sparse::Mdp<ValueType>>(), numberOfSamples));
-                }
-                checkSamples= true;
-            } else {
-                if (numberOfSamples > 0) {
-                    STORM_LOG_WARN("At least 3 sample points are needed to check for monotonicity on samples, not using samples for now");
-                }
-                checkSamples= false;
-            }
-
-            this->extender = new analysis::OrderExtender<ValueType, ConstantType>(sparseModel, formulas[0], region);
+        /*** Constructor ***/
+        template <typename ValueType>
+        MonotonicityChecker<ValueType>::MonotonicityChecker(storage::SparseMatrix<ValueType> matrix) {
+            this->matrix = matrix;
         }
 
+        /*** Public methods ***/
+        template <typename ValueType>
+        typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueType>::checkLocalMonotonicity(Order* order, uint_fast64_t state, VariableType var, storage::ParameterRegion<ValueType> region) {
+            // Create + fill Vector containing the Monotonicity of the transitions to the succs
+            auto row = matrix.getRow(state);
+            std::vector<uint_fast64_t> succs;
+            std::vector<Monotonicity> succsMonUnsorted(row.getNumberOfEntries());
+            for (auto entry : row) {
+                auto succState = entry.getColumn();
+                succsMonUnsorted.push_back(checkTransitionMonRes(entry.getValue(), var, region));
+                succs.push_back(succState);
+            }
+            auto succsSorted = order->sortStates(&succs);
 
-        template <typename ValueType, typename ConstantType>
-        std::map<analysis::Order*, std::pair<std::shared_ptr<MonotonicityResult<typename MonotonicityChecker<ValueType, ConstantType>::VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> MonotonicityChecker<ValueType, ConstantType>::checkMonotonicityInBuild(std::ostream& outfile, std::string dotOutfileName) {
-            createOrder();
+            uint_fast64_t index = 0;
+            Monotonicity localMonotonicity = Monotonicity::Constant;
 
-            //output of results
-            for(auto itr : monResults) {
-                std::string temp = itr.second.first->toString();
-                outfile << temp << std::endl;
+            uint_fast64_t succSize = succs.size();
+            if (succSize == 2) {
+                // In this case we can ignore the last entry, as this will have a probability of 1 - the other
+                succSize = 1;
             }
 
-            //dotoutput
-            if (dotOutput) {
-                STORM_LOG_WARN_COND(monResults.size() <= 10, "Too many Reachability Orders. Dot Output will only be created for 10.");
-                int i = 0;
-                auto orderItr = monResults.begin();
-                while (i < 10 && orderItr != monResults.end()) {
-                    std::ofstream dotOutfile;
-                    std::string name = dotOutfileName + std::to_string(i);
-                    utility::openFile(name, dotOutfile);
-                    dotOutfile << "Assumptions:" << std::endl;
-                    auto assumptionItr = orderItr->second.second.begin();
-                    while (assumptionItr != orderItr->second.second.end()) {
-                        dotOutfile << *assumptionItr << std::endl;
-                        dotOutfile << std::endl;
-                        assumptionItr++;
-                    }
-                    dotOutfile << std::endl;
-                    orderItr->first->dotOutputToFile(dotOutfile);
-                    utility::closeFile(dotOutfile);
-                    i++;
-                    orderItr++;
-                }
-            }
-            return monResults;
-        }
-
-        template <typename ValueType, typename ConstantType>
-        void MonotonicityChecker<ValueType, ConstantType>::createOrder() {
-            // Transform to Orders
-            std::tuple<analysis::Order *, uint_fast64_t, uint_fast64_t> criticalTuple;
-
-            // Create initial order
-            auto monRes = std::make_shared<MonotonicityResult<VariableType>>(MonotonicityResult<VariableType>());
-            criticalTuple = extender->toOrder(monRes);
-            // Continue based on not (yet) sorted states
-            std::map<analysis::Order*, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
-
-            auto val1 = std::get<1>(criticalTuple);
-            auto val2 = std::get<2>(criticalTuple);
-            auto numberOfStates = model->getNumberOfStates();
-            std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions;
-
-            if (val1 == numberOfStates && val2 == numberOfStates) {
-                auto resAssumptionPair = std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>(monRes, assumptions);
-                monResults.insert(std::pair<Order*, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>(std::get<0>(criticalTuple), resAssumptionPair));
-            } else if (val1 != numberOfStates && val2 != numberOfStates) {
-                analysis::AssumptionChecker<ValueType, ConstantType> *assumptionChecker;
-                if (model->isOfType(models::ModelType::Dtmc)) {
-                    auto dtmc = model->as<models::sparse::Dtmc<ValueType>>();
-                    assumptionChecker = new analysis::AssumptionChecker<ValueType, ConstantType>(formulas[0], dtmc, region, 3);
-                } else if (model->isOfType(models::ModelType::Mdp)) {
-                    auto mdp = model->as<models::sparse::Mdp<ValueType>>();
-                    assumptionChecker = new analysis::AssumptionChecker<ValueType, ConstantType>(formulas[0], mdp, 3);
+            // First check as long as it stays constant and either incr or decr
+            bool allowedToSwap = true;
+            while (index < succSize && localMonotonicity == Monotonicity::Constant) {
+                auto itr = std::find(succs.begin(), succs.end(), succsSorted[index]);
+                auto newIndex = std::distance(succs.begin(), itr);
+                auto transitionMon = succsMonUnsorted[newIndex];
+                if (transitionMon != Monotonicity::Not) {
+                    localMonotonicity = transitionMon;
                 } else {
-                    STORM_LOG_THROW(false, exceptions::InvalidOperationException,"Unable to perform monotonicity analysis on the provided model type.");
+                    localMonotonicity = Monotonicity::Unknown;
                 }
-                auto assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(assumptionChecker, numberOfStates);
-                extendOrderWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, val1, val2, assumptions, monRes);
-            } else {
-                assert (false);
+                index++;
             }
-        }
 
-        template <typename ValueType, typename ConstantType>
-        void MonotonicityChecker<ValueType, ConstantType>::extendOrderWithAssumptions(analysis::Order* order, analysis::AssumptionMaker<ValueType, ConstantType>* assumptionMaker, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
-            std::map<analysis::Order*, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
+            while (index < succSize && localMonotonicity != Monotonicity::Not && localMonotonicity != Monotonicity::Unknown) {
+                // We get here as soon as we have seen incr/decr once
+                auto itr = std::find(succs.begin(), succs.end(), succsSorted[index]);
+                auto newIndex = std::distance(succs.begin(), itr);
+                auto transitionMon = succsMonUnsorted[newIndex];
 
-            auto numberOfStates = model->getNumberOfStates();
-            if (val1 == numberOfStates || val2 == numberOfStates) {
-                assert (val1 == val2);
-                assert (order->getAddedStates()->size() == order->getAddedStates()->getNumberOfSetBits());
-                auto resAssumptionPair = std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>(monRes, assumptions);
-                monResults.insert(std::pair<Order*, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>(std::move(order), std::move(resAssumptionPair)));
-            } else {
-                // Make the three assumptions
-                auto newAssumptions = assumptionMaker->createAndCheckAssumptions(val1, val2, order);
-                assert (newAssumptions.size() == 3);
-                auto itr = newAssumptions.begin();
-
-                while (itr != newAssumptions.end()) {
-                    auto assumption = *itr;
-                    ++itr;
-                    if (assumption.second != AssumptionStatus::INVALID) {
-                        if (itr != newAssumptions.end()) {
-                            // We make a copy of the order and the assumptions
-                            auto orderCopy = new Order(order);
-                            auto assumptionsCopy = std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>(assumptions);
-                            auto monResCopy = monRes->copy();
-
-                            if (assumption.second == AssumptionStatus::UNKNOWN) {
-                                // only add assumption to the set of assumptions if it is unknown whether it holds or not
-                                assumptionsCopy.push_back(std::move(assumption.first));
-                            }
-
-                            auto criticalTuple = extender->extendOrder(orderCopy, std::make_shared<MonotonicityResult<VariableType>>(*monResCopy), assumption.first);
-                            if (monResCopy->isSomewhereMonotonicity()) {
-                                extendOrderWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptionsCopy, std::make_shared<MonotonicityResult<VariableType>>(*monResCopy));
-                            }
-                        } else {
-                            // It is the last one, so we don't need to create a copy.
-
-                            if (assumption.second == AssumptionStatus::UNKNOWN) {
-                                // only add assumption to the set of assumptions if it is unknown whether it holds or not
-                                assumptions.push_back(std::move(assumption.first));
-                            }
-
-                            auto criticalTuple = extender->extendOrder(order, std::make_shared<MonotonicityResult<VariableType>>(*monRes), assumption.first);
-                            if (monRes->isSomewhereMonotonicity()) {
-                                extendOrderWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptions, std::make_shared<MonotonicityResult<VariableType>>(*monRes));
-                            }
-                        }
+                if (transitionMon == Monotonicity::Not || transitionMon == Monotonicity::Unknown) {
+                    return Monotonicity::Unknown;
+                }
+                if (allowedToSwap) {
+                    // So far we have only seen constant and either incr or decr, but not both
+                    if (transitionMon != Monotonicity::Constant && transitionMon != localMonotonicity) {
+                        allowedToSwap = false;
+                    }
+                } else if (!allowedToSwap) {
+                    // So we have been at the point where we changed from incr to decr (or decr to incr)
+                    if (transitionMon == localMonotonicity || transitionMon == Monotonicity::Not || transitionMon == Monotonicity::Unknown) {
+                        localMonotonicity = Monotonicity::Unknown;
                     }
                 }
+                index++;
+            }
+            // TODO: save this somewhere?
+            return localMonotonicity;
+        }
+
+        /*** Private methods ***/
+        template <typename ValueType>
+        typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueType>::checkTransitionMonRes(ValueType function, typename MonotonicityChecker<ValueType>::VariableType param, typename MonotonicityChecker<ValueType>::Region region) {
+            std::pair<bool, bool> res = MonotonicityChecker<ValueType>::checkDerivative(getDerivative(function, param), region);
+            if (res.first && !res.second) {
+                return Monotonicity::Incr;
+            } else if (!res.first && res.second) {
+                return Monotonicity::Decr;
+            } else if (res.first && res.second) {
+                return Monotonicity::Constant;
+            } else {
+                return Monotonicity::Not;
             }
         }
 
-        template <typename ValueType, typename ConstantType>
-        ValueType MonotonicityChecker<ValueType, ConstantType>::getDerivative(ValueType function, typename MonotonicityChecker<ValueType, ConstantType>::VariableType var) {
+        template <typename ValueType>
+        ValueType MonotonicityChecker<ValueType>::getDerivative(ValueType function, typename MonotonicityChecker<ValueType>::VariableType var) {
             if (function.isConstant()) {
                 return utility::zero<ValueType>();
             }
@@ -202,151 +97,6 @@ namespace storm {
             return (derivatives[function])[var];
         }
 
-        template <typename ValueType, typename ConstantType>
-        std::map<typename MonotonicityChecker<ValueType, ConstantType>::VariableType, std::pair<bool, bool>> MonotonicityChecker<ValueType, ConstantType>::checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples) {
-            assert (numberOfSamples > 2);
-            std::map<VariableType, std::pair<bool, bool>> result;
-
-            auto instantiator = utility::ModelInstantiator<models::sparse::Dtmc<ValueType>, models::sparse::Dtmc<ConstantType>>(*model);
-            std::set<VariableType> variables =  models::sparse::getProbabilityParameters(*model);
-
-            // For each of the variables create a model in which we only change the value for this specific variable
-            for (auto itr = variables.begin(); itr != variables.end(); ++itr) {
-                ConstantType previous = -1;
-                bool monDecr = true;
-                bool monIncr = true;
-
-                // Check monotonicity in variable (*itr) by instantiating the model
-                // all other variables fixed on lb, only increasing (*itr)
-                for (uint_fast64_t i = 0; (monDecr || monIncr) && i < numberOfSamples; ++i) {
-                    // Create valuation
-                    auto valuation = utility::parametric::Valuation<ValueType>();
-                    for (auto itr2 = variables.begin(); itr2 != variables.end(); ++itr2) {
-                        // Only change value for current variable
-                        if ((*itr) == (*itr2)) {
-                            auto lb = region.getLowerBoundary(itr->name());
-                            auto ub = region.getUpperBoundary(itr->name());
-                            // Creates samples between lb and ub, that is: lb, lb + (ub-lb)/(#samples -1), lb + 2* (ub-lb)/(#samples -1), ..., ub
-                            valuation[*itr2] = utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(lb + i*(ub-lb)/(numberOfSamples-1));
-                        } else {
-                            auto lb = region.getLowerBoundary(itr->name());
-                            valuation[*itr2] = utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(lb);
-                        }
-                    }
-
-                    // Instantiate model and get result
-                    models::sparse::Dtmc<ConstantType> sampleModel = instantiator.instantiate(valuation);
-                    auto checker = modelchecker::SparseDtmcPrctlModelChecker<models::sparse::Dtmc<ConstantType>>(sampleModel);
-                    std::unique_ptr<modelchecker::CheckResult> checkResult;
-                    auto formula = formulas[0];
-                    if (formula->isProbabilityOperatorFormula() && formula->asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
-                        const modelchecker::CheckTask<logic::UntilFormula, ConstantType> checkTask = modelchecker::CheckTask<logic::UntilFormula, ConstantType>((*formula).asProbabilityOperatorFormula().getSubformula().asUntilFormula());
-                        checkResult = checker.computeUntilProbabilities(Environment(), checkTask);
-                    } else if (formula->isProbabilityOperatorFormula() && formula->asProbabilityOperatorFormula().getSubformula().isEventuallyFormula()) {
-                        const modelchecker::CheckTask<logic::EventuallyFormula, ConstantType> checkTask = modelchecker::CheckTask<logic::EventuallyFormula, ConstantType>((*formula).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula());
-                        checkResult = checker.computeReachabilityProbabilities(Environment(), checkTask);
-                    } else {
-                        STORM_LOG_THROW(false, exceptions::NotSupportedException, "Expecting until or eventually formula");
-                    }
-
-                    auto quantitativeResult = checkResult->asExplicitQuantitativeCheckResult<ConstantType>();
-                    std::vector<ConstantType> values = quantitativeResult.getValueVector();
-                    auto initialStates = model->getInitialStates();
-                    ConstantType initial = 0;
-                    // Get total probability from initial states
-                    for (auto j = initialStates.getNextSetIndex(0); j < model->getNumberOfStates(); j = initialStates.getNextSetIndex(j + 1)) {
-                        initial += values[j];
-                    }
-                    // Calculate difference with result for previous valuation
-                    assert (initial >= 0 - precision && initial <= 1 + precision);
-                    ConstantType diff = previous - initial;
-                    assert (previous == -1 || diff >= -1 - precision && diff <= 1 + precision);
-
-                    if (previous != -1 && (diff > precision || diff < -precision)) {
-                        monDecr &= diff > precision; // then previous value is larger than the current value from the initial states
-                        monIncr &= diff < -precision;
-                    }
-                    previous = initial;
-                }
-                result.insert(std::pair<VariableType,  std::pair<bool, bool>>(*itr, std::pair<bool,bool>(monIncr, monDecr)));
-            }
-            resultCheckOnSamples = result;
-            return result;
-        }
-
-        template <typename ValueType, typename ConstantType>
-        std::map<typename MonotonicityChecker<ValueType, ConstantType>::VariableType, std::pair<bool, bool>> MonotonicityChecker<ValueType, ConstantType>::checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples) {
-            assert(numberOfSamples > 2);
-            std::map<VariableType, std::pair<bool, bool>> result;
-
-            auto instantiator = utility::ModelInstantiator<models::sparse::Mdp<ValueType>, models::sparse::Mdp<ConstantType>>(*model);
-            std::set<VariableType> variables =  models::sparse::getProbabilityParameters(*model);
-
-            // For each of the variables create a model in which we only change the value for this specific variable
-            for (auto itr = variables.begin(); itr != variables.end(); ++itr) {
-                ConstantType previous = -1;
-                bool monDecr = true;
-                bool monIncr = true;
-
-                // Check monotonicity in variable (*itr) by instantiating the model
-                // all other variables fixed on lb, only increasing (*itr)
-                for (uint_fast64_t i = 0; (monDecr || monIncr) && i < numberOfSamples; ++i) {
-                    // Create valuation
-                    auto valuation = utility::parametric::Valuation<ValueType>();
-                    for (auto itr2 = variables.begin(); itr2 != variables.end(); ++itr2) {
-                        // Only change value for current variable
-                        if ((*itr) == (*itr2)) {
-                            auto lb = region.getLowerBoundary(itr->name());
-                            auto ub = region.getUpperBoundary(itr->name());
-                            // Creates samples between lb and ub, that is: lb, lb + (ub-lb)/(#samples -1), lb + 2* (ub-lb)/(#samples -1), ..., ub
-                            valuation[*itr2] = utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(lb + i*(ub-lb)/(numberOfSamples-1));
-                        } else {
-                            auto lb = region.getLowerBoundary(itr->name());
-                            valuation[*itr2] = utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(lb);
-                        }
-                    }
-
-                    // Instantiate model and get result
-                    models::sparse::Mdp<ConstantType> sampleModel = instantiator.instantiate(valuation);
-                    auto checker = modelchecker::SparseMdpPrctlModelChecker<models::sparse::Mdp<ConstantType>>(sampleModel);
-                    std::unique_ptr<modelchecker::CheckResult> checkResult;
-                    auto formula = formulas[0];
-                    if (formula->isProbabilityOperatorFormula() && formula->asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
-                        const modelchecker::CheckTask<logic::UntilFormula, ConstantType> checkTask = modelchecker::CheckTask<logic::UntilFormula, ConstantType>((*formula).asProbabilityOperatorFormula().getSubformula().asUntilFormula());
-                        checkResult = checker.computeUntilProbabilities(Environment(), checkTask);
-                    } else if (formula->isProbabilityOperatorFormula() && formula->asProbabilityOperatorFormula().getSubformula().isEventuallyFormula()) {
-                        const modelchecker::CheckTask<logic::EventuallyFormula, ConstantType> checkTask = modelchecker::CheckTask<logic::EventuallyFormula, ConstantType>((*formula).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula());
-                        checkResult = checker.computeReachabilityProbabilities(Environment(), checkTask);
-                    } else {
-                        STORM_LOG_THROW(false, exceptions::NotSupportedException, "Expecting until or eventually formula");
-                    }
-
-                    auto quantitativeResult = checkResult->asExplicitQuantitativeCheckResult<ConstantType>();
-                    std::vector<ConstantType> values = quantitativeResult.getValueVector();
-                    auto initialStates = model->getInitialStates();
-                    ConstantType initial = 0;
-                    // Get total probability from initial states
-                    for (auto j = initialStates.getNextSetIndex(0); j < model->getNumberOfStates(); j = initialStates.getNextSetIndex(j + 1)) {
-                        initial += values[j];
-                    }
-                    // Calculate difference with result for previous valuation
-                    assert (initial >= 0 - precision && initial <= 1 + precision);
-                    ConstantType diff = previous - initial;
-                    assert (previous == -1 || diff >= -1 - precision && diff <= 1 + precision);
-
-                    if (previous != -1 && (diff > precision || diff < -precision)) {
-                        monDecr &= diff > precision; // then previous value is larger than the current value from the initial states
-                        monIncr &= diff < -precision;
-                    }
-                    previous = initial;
-                }
-                result.insert(std::pair<VariableType,  std::pair<bool, bool>>(*itr, std::pair<bool,bool>(monIncr, monDecr)));
-            }
-            resultCheckOnSamples = result;
-            return result;
-        }
-
-        template class MonotonicityChecker<RationalFunction, double>;
-        template class MonotonicityChecker<RationalFunction, RationalNumber>;
+        template class MonotonicityChecker<RationalFunction>;
     }
 }

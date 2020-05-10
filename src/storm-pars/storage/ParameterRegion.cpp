@@ -188,6 +188,22 @@ namespace storm {
             regionstring = regionstring.substr(0, regionstring.length() - 1) + ";";
             return regionstring;
         }
+
+        template <typename ParametricType>
+        bool ParameterRegion<ParametricType>::isSubRegion(ParameterRegion<ParametricType> subRegion) {
+            auto varsRegion = getVariables();
+            auto varsSubRegion = subRegion.getVariables();
+            for (auto var : varsRegion) {
+                if (std::find(varsSubRegion.begin(), varsSubRegion.end(), var) != varsSubRegion.end()) {
+                    if (getLowerBoundary(var) > subRegion.getLowerBoundary(var) || getUpperBoundary(var) < getUpperBoundary(var)) {
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            }
+            return true;
+        }
         
         template <typename ParametricType>
         std::ostream& operator<<(std::ostream& out, ParameterRegion<ParametricType> const& region) {

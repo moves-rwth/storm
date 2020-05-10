@@ -31,19 +31,19 @@ TEST(MonotonicityCheckerTest, Derivative_checker) {
 
     // Derivative 0
     auto constFunction = storm::RationalFunction(0);
-    auto constFunctionRes = storm::analysis::MonotonicityChecker<storm::RationalFunction, double>::checkDerivative(constFunction, region);
+    auto constFunctionRes = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>::checkDerivative(constFunction, region);
     EXPECT_TRUE(constFunctionRes.first);
     EXPECT_TRUE(constFunctionRes.second);
 
     // Derivative 5
     constFunction = storm::RationalFunction(5);
-    constFunctionRes = storm::analysis::MonotonicityChecker<storm::RationalFunction, double>::checkDerivative(constFunction, region);
+    constFunctionRes = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>::checkDerivative(constFunction, region);
     EXPECT_TRUE(constFunctionRes.first);
     EXPECT_FALSE(constFunctionRes.second);
 
     // Derivative -4
     constFunction = storm::RationalFunction(storm::RationalFunction(1)-constFunction);
-    constFunctionRes = storm::analysis::MonotonicityChecker<storm::RationalFunction, double>::checkDerivative(constFunction, region);
+    constFunctionRes = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>::checkDerivative(constFunction, region);
     EXPECT_FALSE(constFunctionRes.first);
     EXPECT_TRUE(constFunctionRes.second);
 
@@ -75,31 +75,31 @@ TEST(MonotonicityCheckerTest, Derivative_checker) {
 
     // Derivative p
     auto function = functionP;
-    auto functionRes = storm::analysis::MonotonicityChecker<storm::RationalFunction, double>::checkDerivative(function, region);
+    auto functionRes = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>::checkDerivative(function, region);
     EXPECT_TRUE(functionRes.first);
     EXPECT_FALSE(functionRes.second);
 
     // Derivative 1-p
     auto functionDecr = storm::RationalFunction(storm::RationalFunction(1)-function);
-    auto functionDecrRes = storm::analysis::MonotonicityChecker<storm::RationalFunction, double>::checkDerivative(functionDecr, region);
+    auto functionDecrRes = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>::checkDerivative(functionDecr, region);
     EXPECT_TRUE(functionDecrRes.first);
     EXPECT_FALSE(functionDecrRes.second);
 
     // Derivative 1-2p
     auto functionNonMonotonic = storm::RationalFunction(storm::RationalFunction(1)-storm::RationalFunction(2)*function);
-    auto functionNonMonotonicRes = storm::analysis::MonotonicityChecker<storm::RationalFunction, double>::checkDerivative(functionNonMonotonic, region);
+    auto functionNonMonotonicRes = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>::checkDerivative(functionNonMonotonic, region);
     EXPECT_FALSE(functionNonMonotonicRes.first);
     EXPECT_FALSE(functionNonMonotonicRes.second);
 
     // Derivative -p
     functionDecr = storm::RationalFunction(storm::RationalFunction(0)-function);
-    functionDecrRes = storm::analysis::MonotonicityChecker<storm::RationalFunction, double>::checkDerivative(functionDecr, region);
+    functionDecrRes = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>::checkDerivative(functionDecr, region);
     EXPECT_FALSE(functionDecrRes.first);
     EXPECT_TRUE(functionDecrRes.second);
 
     // Derivative p*q
     function = functionP * functionQ ;
-    functionRes = storm::analysis::MonotonicityChecker<storm::RationalFunction, double>::checkDerivative(function, region);
+    functionRes = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>::checkDerivative(function, region);
     EXPECT_TRUE(functionRes.first);
     EXPECT_FALSE(functionRes.second);
 }
@@ -144,7 +144,7 @@ TEST(MonotonicityCheckerTest, Brp_with_bisimulation_no_samples) {
     ASSERT_EQ(dtmc->getNumberOfStates(), 99ull);
     ASSERT_EQ(dtmc->getNumberOfTransitions(), 195ull);
 
-    storm::analysis::MonotonicityChecker<storm::RationalFunction, double> monotonicityChecker = storm::analysis::MonotonicityChecker<storm::RationalFunction, double>(dtmc, formulas, regions, true);
+    storm::analysis::MonotonicityHelper<storm::RationalFunction, double> monotonicityChecker = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(dtmc, formulas, regions, true);
     auto result = monotonicityChecker.checkMonotonicityInBuild(std::cout);
     EXPECT_EQ(1, result.size());
     auto order = result.begin()->first;
@@ -200,7 +200,7 @@ TEST(MonotonicityCheckerTest, Brp_with_bisimulation_samples) {
     ASSERT_EQ(dtmc->getNumberOfStates(), 99ull);
     ASSERT_EQ(dtmc->getNumberOfTransitions(), 195ull);
 
-    auto monotonicityChecker = storm::analysis::MonotonicityChecker<storm::RationalFunction, double>(dtmc, formulas, regions, true, 50);
+    auto monotonicityChecker = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(dtmc, formulas, regions, true, 50);
     auto result = monotonicityChecker.checkMonotonicityInBuild(std::cout);
 
     EXPECT_EQ(1, result.size());

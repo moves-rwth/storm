@@ -13,6 +13,8 @@
 #include "storm/solver/OptimizationDirection.h"
 #include "storm-pars/analysis/Order.h"
 
+#include "storm-pars/analysis/MonotonicityChecker.h"
+
 namespace storm {
     namespace transformer {
 
@@ -58,7 +60,7 @@ namespace storm {
              * @param dirForParameters the optimization direction
              * @param reachabilityOrder a (possibly insufficient) reachability order, used for local monotonicity
              */
-            void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::analysis::Order const& reachabilityOrder);
+            void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::analysis::Order reachabilityOrder);
 
             // Returns the resulting matrix. Should only be called AFTER specifying a region
             storm::storage::SparseMatrix<ConstantType> const& getMatrix() const;
@@ -161,7 +163,8 @@ namespace storm {
             storm::storage::SparseMatrix<ConstantType> specifiedMatrix; // The resulting matrix, in which possibly some rows are deleted. Used for monotonicity
 
             bool useMonotonicity = false;
-                
+
+            storm::analysis::MonotonicityChecker<ParametricType>* monotonicityChecker; // MonotonicityChecker object, on the original pMatrix
         };
 
     }

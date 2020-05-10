@@ -13,6 +13,7 @@ namespace storm {
 
         template<typename ParametricType, typename ConstantType>
         ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix, std::vector<ParametricType> const& pVector, storm::storage::BitVector const& selectedRows, storm::storage::BitVector const& selectedColumns, bool generateRowLabels) {
+            monotonicityChecker = new storm::analysis::MonotonicityChecker<ParametricType>(pMatrix);
 
             // get a mapping from old column indices to new ones
             oldToNewColumnIndexMapping = std::vector<uint_fast64_t>(selectedColumns.size(), selectedColumns.size());
@@ -179,11 +180,19 @@ namespace storm {
         }
 
         template<typename ParametricType, typename ConstantType>
-        void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::analysis::Order const& reachabilityOrder) {
+        void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::analysis::Order reachabilityOrder) {
             storm::storage::BitVector selectedRows(matrix.getRowCount(), true);
+            auto statesAdded = reachabilityOrder.getAddedStates();
+            for (auto state : *statesAdded) {
+
+            }
+            // Go over all ordered states
+            // Check for local monotonicity
+            // map this to new matrix (mdp matrix)
+            // decide which rows to keep based on optimization direction
             // TODO: check for local monotonicity
             STORM_LOG_WARN("specifying a region with a reachability order is not yet implemented, continueing as if no reachability order was given");
-            specifyRegion(region, dirForParameters);
+            specifyRegion(region, dirForParameters, selectedRows);
         }
     
         template<typename ParametricType, typename ConstantType>

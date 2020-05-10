@@ -5,4 +5,6 @@
 #include "storm-pars/analysis/AssumptionChecker.h"
 #include "storm-pars/analysis/AssumptionMaker.h"
 #include "storm-pars/analysis/MonotonicityResult.h"
-#include "storm-pars/analysis/MonotonicityChecker.h"
+#include "storm-pars/analysis/MonotonicityHelper.h"
+#include "storm-pars/analysis/LocalMonotonicityResult.h"
+

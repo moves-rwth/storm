@@ -5,7 +5,7 @@
 
 #include "storm-pars/api/storm-pars.h"
 #include "storm-pars/api/region.h"
-#include "storm-pars/analysis/MonotonicityChecker.h"
+#include "storm-pars/analysis/MonotonicityHelper.h"
 
 
 #include "storm-pars/modelchecker/instantiation/SparseCtmcInstantiationModelChecker.h"
@@ -718,14 +718,14 @@ namespace storm {
 
                 STORM_LOG_THROW(regions.size() <= 1, storm::exceptions::InvalidArgumentException, "Monotonicity analysis only allowed on single region");
                 // TODO: type, should this be double?
-                storm::analysis::MonotonicityChecker<ValueType, double> monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType, double>(model, formulas, regions, monSettings.getNumberOfSamples(), monSettings.getMonotonicityAnalysisPrecision(), monSettings.isDotOutputSet());
+                storm::analysis::MonotonicityHelper<ValueType, double> monotonicityHelper = storm::analysis::MonotonicityHelper<ValueType, double>(model, formulas, regions, monSettings.getNumberOfSamples(), monSettings.getMonotonicityAnalysisPrecision(), monSettings.isDotOutputSet());
                 if (monSettings.isExportMonotonicitySet()) {
                     std::ofstream outfile;
                     utility::openFile(monSettings.getExportMonotonicityFilename(), outfile);
-                    monotonicityChecker.checkMonotonicityInBuild(outfile, monSettings.getDotOutputFilename());
+                    monotonicityHelper.checkMonotonicityInBuild(outfile, monSettings.getDotOutputFilename());
                     utility::closeFile(outfile);
                 } else {
-                    monotonicityChecker.checkMonotonicityInBuild(std::cout, monSettings.getDotOutputFilename());
+                    monotonicityHelper.checkMonotonicityInBuild(std::cout, monSettings.getDotOutputFilename());
                 }
                 monotonicityWatch.stop();
                 STORM_PRINT(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl

@@ -16,10 +16,10 @@ namespace storm {
         }
 
         template <typename VariableType>
-        void MonotonicityResult<VariableType>::addMonotonicityResult(VariableType var,
-                                                                     MonotonicityResult<VariableType>::Monotonicity mon) {
+        void MonotonicityResult<VariableType>::addMonotonicityResult(VariableType var,  MonotonicityResult<VariableType>::Monotonicity mon) {
             monotonicityResult.insert(std::pair<VariableType, MonotonicityResult<VariableType>::Monotonicity>(std::move(var), std::move(mon)));
         }
+
 
         template <typename VariableType>
         void MonotonicityResult<VariableType>::updateMonotonicityResult(VariableType var,
@@ -52,6 +52,15 @@ namespace storm {
                 setSomewhereMonotonicity(true);
             }
 
+        }
+
+        template <typename VariableType>
+        typename MonotonicityResult<VariableType>::Monotonicity MonotonicityResult<VariableType>::getMonotonicity(VariableType var) {
+            auto itr = monotonicityResult.find(var);
+            if (itr != monotonicityResult.end()) {
+                return itr->second;
+            }
+            return Monotonicity::Unknown;
         }
 
         template <typename VariableType>
