@@ -20,6 +20,7 @@ namespace storm {
         public:
             typedef typename utility::parametric::CoefficientType<ValueType>::type CoefficientType;
             typedef typename utility::parametric::VariableType<ValueType>::type VariableType;
+            typedef typename MonotonicityResult<VariableType>::Monotonicity Monotonicity;
 
            /*!
             * Constructs OrderExtender which can extend an order
@@ -67,9 +68,9 @@ namespace storm {
 
             std::tuple<Order*, uint_fast64_t, uint_fast64_t> extendOrder(Order* order, bool useAssumptions, std::shared_ptr<MonotonicityResult<VariableType>> monRes);
 
-            std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(Order* order, uint_fast64_t currentState, storage::BitVector* successors);
+            std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(Order* order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors);
 
-            std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(Order* order, uint_fast64_t currentState, storage::BitVector* successors);
+            std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(Order* order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors);
 
             Order* bottomTopOrder = nullptr;
 
@@ -85,7 +86,7 @@ namespace storm {
 
             std::shared_ptr<models::sparse::Model<ValueType>> model;
 
-            std::map<uint_fast64_t, storage::BitVector*> stateMap;
+            std::map<uint_fast64_t, std::vector<uint_fast64_t>> stateMap;
 
             bool usePLA;
 
@@ -97,11 +98,7 @@ namespace storm {
 
             uint_fast64_t numberOfStates;
 
-            ValueType getMatrixEntry(uint_fast64_t rowIndex, uint_fast64_t columnIndex);
-
-            typename MonotonicityResult<typename OrderExtender<ValueType, ConstantType>::VariableType>::Monotonicity checkTransitionMonRes(uint_fast64_t from, uint_fast64_t to, typename OrderExtender<ValueType, ConstantType>::VariableType param);
-
-            typename MonotonicityResult<typename OrderExtender<ValueType, ConstantType>::VariableType>::Monotonicity checkTransitionMonRes(ValueType function, typename OrderExtender<ValueType, ConstantType>::VariableType param);
+            Monotonicity checkTransitionMonRes(ValueType function, typename OrderExtender<ValueType, ConstantType>::VariableType param);
 
             void checkParOnStateMonRes(uint_fast64_t s, const std::vector<uint_fast64_t>& succ, typename OrderExtender<ValueType, ConstantType>::VariableType param, std::shared_ptr<MonotonicityResult<VariableType>> monResult);
 

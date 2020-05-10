@@ -29,12 +29,6 @@ namespace storm {
              */
             void addMonotonicityResult(VariableType var, Monotonicity mon);
 
-            /*!
-             * Sets the Monotonicity of a variable to a specific value
-             * @param var the variable whose Monotonicty is to be changed
-             * @param mon the Monotonicity to which it is to be set
-             */
-            void setMonotonicityResult(VariableType var, Monotonicity mon);
 
             /*!
              * Updates the Monotonicity of a variable based on its value so far and a new value
@@ -54,9 +48,6 @@ namespace storm {
              * @return Results so far
              */
             std::string toString();
-
-            //TODO what about documentation of this one?
-            friend std::ostream& operator<<(std::ostream& os, MonotonicityResult const& regionMonotonicityResult);
 
             /*!
              * Checks if the result is complete

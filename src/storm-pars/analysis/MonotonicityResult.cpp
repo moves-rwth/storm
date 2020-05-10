@@ -22,12 +22,6 @@ namespace storm {
         }
 
         template <typename VariableType>
-        void MonotonicityResult<VariableType>::setMonotonicityResult(VariableType var,
-                                                                     MonotonicityResult<VariableType>::Monotonicity mon) {
-            monotonicityResult[var] = mon;
-        }
-
-        template <typename VariableType>
         void MonotonicityResult<VariableType>::updateMonotonicityResult(VariableType var,
                                                                         MonotonicityResult<VariableType>::Monotonicity mon) {
 
@@ -132,15 +126,12 @@ namespace storm {
         }
 
         template <typename VariableType>
-        std::ostream& operator<<(std::ostream& os, MonotonicityResult<VariableType> const& regionMonotonicityResult) {
-            os << regionMonotonicityResult.toString();
-            return os;
-        }
-
-        template <typename VariableType>
         MonotonicityResult<VariableType>* MonotonicityResult<VariableType>::copy(){
             MonotonicityResult<VariableType>* copy = new MonotonicityResult<VariableType>();
             copy->monotonicityResult = *(new std::map<VariableType, Monotonicity>(monotonicityResult));
+            copy->setAllMonotonicity(allMonotonicity);
+            copy->setSomewhereMonotonicity(somewhereMonotonicity);
+            copy->setDone(done);
             return copy;
         }
 

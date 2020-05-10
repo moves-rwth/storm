@@ -5,6 +5,8 @@
 #include "Order.h"
 #include "OrderExtender.h"
 #include "AssumptionMaker.h"
+#include "MonotonicityResult.h"
+
 
 #include "storm/logic/Formula.h"
 
@@ -22,10 +24,6 @@
 #include "storm/utility/constants.h"
 
 #include "storm-pars/api/region.h"
-#include "MonotonicityResult.h"
-
-// TODO: Use monotonicityResult instead of pair of bools
-// TODO: Update monotonicity while creating the order
 
 namespace storm {
     namespace analysis {
@@ -46,20 +44,6 @@ namespace storm {
              * @param precision precision on which the samples are compared
              */
             MonotonicityChecker(std::shared_ptr<models::ModelBase> model, std::vector<std::shared_ptr<logic::Formula const>> formulas, std::vector<storage::ParameterRegion<ValueType>> regions, uint_fast64_t numberOfSamples=0, double const& precision=0.000001, bool dotOutput = false);
-
-            /*!
-             * Checks for given min/maxValues monotonicity
-             * Will not make any assumptions
-             * @param minValues lower bound on probabilities for the states
-             * @param maxValues upper bound on probabilities for the states
-             * @return a map with for each parameter the monotonicity result
-             */
-            MonotonicityResult<VariableType> checkMonotonicity(std::vector<ConstantType> minValues, std::vector<ConstantType> maxValues);
-
-            /*!
-             * Checks if monotonicity can be found in this order. Unordered states are not checked
-             */
-            bool somewhereMonotonicity(analysis::Order* order) ;
 
             /*!
              * Checks if a derivative >=0 or/and <=0
@@ -118,15 +102,7 @@ namespace storm {
 
 
         private:
-            std::map<analysis::Order*, std::map<VariableType, std::pair<bool, bool>>> checkMonotonicity(std::ostream& outfile, std::map<analysis::Order*, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> map);
-
-            std::map<VariableType, std::pair<bool, bool>> analyseMonotonicity(uint_fast64_t i, Order* order) ;
-
-            MonotonicityResult<VariableType> analyseMonotonicity(Order* order) ;
-
             void createOrder();
-
-            Order* createOrder(std::vector<ConstantType> minValues, std::vector<ConstantType> maxValues);
 
             std::map<VariableType, std::pair<bool, bool>> checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples);
 
@@ -158,13 +134,6 @@ namespace storm {
 
             storage::SparseMatrix<ValueType> matrix;
 
-            void checkParOnStateMonRes(uint_fast64_t s, const std::vector<uint_fast64_t>& succ, VariableType param, std::shared_ptr<MonotonicityResult<VariableType>> monResult);
-
-            typename MonotonicityResult<VariableType>::Monotonicity checkTransitionMonRes(uint_fast64_t from, uint_fast64_t to, VariableType param);
-
-            std::pair<std::vector<double>, std::vector<double>> getMinMaxValues();
-
-            ValueType getMatrixEntry(uint_fast64_t rowIndex, uint_fast64_t columnIndex);
         };
     }
 }

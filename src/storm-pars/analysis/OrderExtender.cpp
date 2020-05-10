@@ -36,13 +36,12 @@ namespace storm {
 
             // Build stateMap
             for (uint_fast64_t i = 0; i < numberOfStates; ++i) {
-                // TODO: geen bitvector maar normale vector
-                stateMap[i] = new storage::BitVector(numberOfStates, false);
                 auto row = matrix.getRow(i);
+                stateMap[i] = std::vector<uint_fast64_t>(row.getNumberOfEntries());
                 for (auto rowItr = row.begin(); rowItr != row.end(); ++rowItr) {
                     // ignore self-loops when there are more transitions
                     if (i != rowItr->getColumn() || row.getNumberOfEntries() == 1) {
-                        stateMap[i]->set(rowItr->getColumn(), true);
+                        stateMap[i].push_back(rowItr->getColumn());
                     }
                 }
             }
@@ -150,8 +149,7 @@ namespace storm {
             while ((*order->getAddedStates())[currentState]) {
                 currentState = order->getNextSortedState();
             }
-            if (cyclic && order->getAddedStates()->getNumberOfSetBits() == 2) {
-                // TODO: hiervoor een bool maken
+            if (cyclic && order->isOnlyBottomTopOrder()) {
                 order->add(currentState);
             }
             while (currentState != numberOfStates ) {
@@ -159,7 +157,7 @@ namespace storm {
                 // Check if position of all successor states is known
                 auto successors = stateMap[currentState];
                 // If it is cyclic, first do forward reasoning
-                if (cyclic && order->contains(currentState) && successors->getNumberOfSetBits() == 2) {
+                if (cyclic && order->contains(currentState) && successors.size() == 2) {
                     extendByForwardReasoning(order, currentState, successors);
                 }
                 // Also do normal backward reasoning if the state is not yet in the order
@@ -171,8 +169,6 @@ namespace storm {
                     stateSucc2 = backwardResult.second;
                 }
 
-
-                // TODO: wat als ie nog niet is toegevoegd
                 // We only do this if it is cyclic, because than forward reasoning makes sense
                 if (stateSucc1 != numberOfStates) {
                     assert (stateSucc2 != numberOfStates);
@@ -187,12 +183,10 @@ namespace storm {
                     }
                 }
 
-                assert (currentState == numberOfStates || order->getNode(currentState) != nullptr);
-                assert (currentState == numberOfStates || order->contains(currentState));
-                
-                auto succsOrdered = order->sortStates(stateMap[currentState]);
+                assert (order->contains(currentState) && order->getNode(currentState) != nullptr);
 
-                for(auto param : params){
+                auto succsOrdered = order->sortStates(&stateMap[currentState]);
+                for(auto param : params) {
                     checkParOnStateMonRes(currentState, succsOrdered, param, monRes);
                 }
 
@@ -208,20 +202,19 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(Order *order, uint_fast64_t currentState, storage::BitVector *successors) {
-            if (!cyclic && order->getAddedStates()->getNumberOfSetBits() == 2) {
-                // TODO: hiervoor een bool maken
+        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(Order *order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors) {
+            if (!cyclic && order->isOnlyBottomTopOrder()) {
                 order->add(currentState);
 
                 return std::pair<uint_fast64_t, uint_fast64_t>(numberOfStates, numberOfStates);
-            } else if (successors->getNumberOfSetBits() == 1) {
-                assert (order->contains(successors->getNextSetIndex(0)));
+            } else if (successors.size() == 1) {
+                assert (order->contains(successors[0]));
                 // As there is only one successor the current state and its successor must be at the same nodes.
-                order->addToNode(currentState, order->getNode(successors->getNextSetIndex(0)));
-            } else if (successors->getNumberOfSetBits() == 2) {
+                order->addToNode(currentState, order->getNode(successors[0]));
+            } else if (successors.size() == 2) {
                 // Otherwise, check how the two states compare, and add if the comparison is possible.
-                uint_fast64_t succ1 = successors->getNextSetIndex(0);
-                uint_fast64_t succ2 = successors->getNextSetIndex(succ1 + 1);
+                uint_fast64_t succ1 = successors[0];
+                uint_fast64_t succ2 = successors[1];
 
                 int compareResult = order->compare(succ1, succ2);
                 if (!cyclic && !usePLA && compareResult == Order::UNKNOWN) {
@@ -246,10 +239,10 @@ namespace storm {
                     return std::pair<uint_fast64_t, uint_fast64_t>(succ1, succ2);
                 }
             } else {
-                assert (successors->getNumberOfSetBits() >= 2);
-                auto highest = successors->getNextSetIndex(0);
+                assert (successors.size() >= 2);
+                auto highest = successors[0];
                 auto lowest = highest;
-                for (auto i = successors->getNextSetIndex(highest+1); i < numberOfStates; i = successors->getNextSetIndex(i+1)) {
+                for (auto i = 1 ; i < successors.size(); ++i) {
                     auto compareWithHighest = order->compare(i, highest);
                     if (!cyclic && !usePLA && compareWithHighest == Order::UNKNOWN) {
                         // Only use pla for acyclic models
@@ -288,24 +281,23 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByForwardReasoning(Order *order, uint_fast64_t currentState, storage::BitVector *successors) {
+        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByForwardReasoning(Order *order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors) {
             // If this is the first state to add, we add it between =) and =(.
-            auto succ1 = successors->getNextSetIndex(0);
+            auto succ1 = successors[0];
             auto compareSucc1 = order->compare(succ1, currentState);
-            auto succ2 = successors->getNextSetIndex(succ1 + 1);
+            auto succ2 = successors[1];
             auto compareSucc2 = order->compare(succ2, currentState);
 
             if (compareSucc1 == Order::UNKNOWN && compareSucc2 == Order::UNKNOWN) {
                 // ordering of succ1 and succ2 and currentState is unknown, as we have a cyclic pMC pla will not help
                 return std::pair<uint_fast64_t, uint_fast8_t>(succ1, succ2);
-            } else if (compareSucc1 == Order::UNKNOWN || compareSucc2 == Order::UNKNOWN){
+            } else if (compareSucc1 == Order::UNKNOWN || compareSucc2 == Order::UNKNOWN) {
                 if (compareSucc2 != Order::UNKNOWN) {
                     // swap them for easier implementation
                     std::swap(succ1, succ2);
                     std::swap(compareSucc1, compareSucc2);
                 }
                 if (compareSucc1 == Order::ABOVE) {
-                    // TODO: do this for the scc?
                     // Succ1 is above currentState, so we should add succ2 below current state
                     if (order->getNumberOfAddedStates() != numberOfStates) {
                         order->addBelow(succ2, order->getNode(currentState));
@@ -314,7 +306,6 @@ namespace storm {
                     }
                     order->addStateToHandle(succ2);
                 } else if (compareSucc1 == Order::BELOW) {
-                    // TODO: do this for the scc, if the scc is fully added, then add the relation for the last two items of the scc
                     if (order->getNumberOfAddedStates() != numberOfStates) {
                         order->addAbove(succ2, order->getNode(currentState));
                     } else {
@@ -326,10 +317,8 @@ namespace storm {
             return std::pair<uint_fast64_t, uint_fast8_t>(numberOfStates, numberOfStates);
         }
 
-
         template <typename ValueType, typename ConstantType>
-        Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMinMax(Order *order, uint_fast64_t state1,
-                                                              uint_fast64_t state2) {
+        Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMinMax(Order *order, uint_fast64_t state1, uint_fast64_t state2) {
             assert (order->compare(state1, state2) == Order::UNKNOWN);
             if (minValues[state1] > maxValues[state2]) {
                 // state 1 will always be larger than state2
@@ -360,7 +349,6 @@ namespace storm {
                 // Couldn't add relation between state1 and state 2 based on min/max values;
                 return Order::UNKNOWN;
             }
-
         }
 
         template <typename ValueType, typename ConstantType>
@@ -383,44 +371,6 @@ namespace storm {
             usePLA = true;
         }
 
-        // Returns a specific matrix entry
-        template <typename ValueType, typename ConstantType>
-        ValueType OrderExtender<ValueType, ConstantType>::getMatrixEntry(uint_fast64_t rowIndex, uint_fast64_t columnIndex){
-            // Check if indices are out of bounds
-            assert (rowIndex < matrix.getRowCount() && columnIndex < matrix.getColumnCount());
-
-            auto row = matrix.getRow(rowIndex);
-            for(auto itr = row.begin(); itr!=row.end(); itr++){
-                if(itr->getColumn() == columnIndex){
-                    return itr->getValue();
-                }
-            }
-
-            return ValueType(0);
-        }
-
-
-        template <typename ValueType, typename ConstantType>
-        typename MonotonicityResult<typename OrderExtender<ValueType, ConstantType>::VariableType>::Monotonicity OrderExtender<ValueType, ConstantType>::checkTransitionMonRes(uint_fast64_t from, uint_fast64_t to, typename OrderExtender<ValueType, ConstantType>::VariableType param){
-            if (to < matrix.getColumnCount()) {
-                ValueType function = getMatrixEntry(from, to);
-                std::pair<bool, bool> res = MonotonicityChecker<ValueType, ConstantType>::checkDerivative(getDerivative(function, param), region);
-                if(res.first && !res.second){
-                    return MonotonicityResult<VariableType>::Monotonicity::Incr;
-                }
-                else if(!res.first && res.second){
-                    return MonotonicityResult<VariableType>::Monotonicity::Decr;
-                }
-                else if(res.first && res.second){
-                    return MonotonicityResult<VariableType>::Monotonicity::Constant;
-                }
-                else{
-                    return MonotonicityResult<VariableType>::Monotonicity::Not;
-                }
-
-            }
-        }
-
         template <typename ValueType, typename ConstantType>
         ValueType OrderExtender<ValueType, ConstantType>::getDerivative(ValueType function, typename OrderExtender<ValueType, ConstantType>::VariableType var) {
             if (function.isConstant()) {
@@ -433,41 +383,29 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        typename MonotonicityResult<typename OrderExtender<ValueType, ConstantType>::VariableType>::Monotonicity OrderExtender<ValueType, ConstantType>::checkTransitionMonRes(ValueType function, typename OrderExtender<ValueType, ConstantType>::VariableType param){
+        typename OrderExtender<ValueType, ConstantType>::Monotonicity OrderExtender<ValueType, ConstantType>::checkTransitionMonRes(ValueType function, typename OrderExtender<ValueType, ConstantType>::VariableType param) {
                 std::pair<bool, bool> res = MonotonicityChecker<ValueType, ConstantType>::checkDerivative(getDerivative(function, param), region);
-                if(res.first && !res.second){
-                    return MonotonicityResult<VariableType>::Monotonicity::Incr;
-                }
-                else if(!res.first && res.second){
-                    return MonotonicityResult<VariableType>::Monotonicity::Decr;
-                }
-                else if(res.first && res.second){
-                    return MonotonicityResult<VariableType>::Monotonicity::Constant;
-                }
-                else {
-                    return MonotonicityResult<VariableType>::Monotonicity::Not;
+                if (res.first && !res.second) {
+                    return Monotonicity::Incr;
+                } else if (!res.first && res.second) {
+                    return Monotonicity::Decr;
+                } else if (res.first && res.second) {
+                    return Monotonicity::Constant;
+                } else {
+                    return Monotonicity::Not;
                 }
         }
 
         template <typename ValueType, typename ConstantType>
-        void OrderExtender<ValueType, ConstantType>::checkParOnStateMonRes(uint_fast64_t s, const std::vector<uint_fast64_t>& succ, typename OrderExtender<ValueType, ConstantType>::VariableType param, std::shared_ptr<MonotonicityResult<VariableType>> monResult){
-//            uint_fast64_t succSize = succ.size();
-//
-//            // Create + fill Vector containing the Monotonicity of the transitions to the succs
-//            std::vector<typename MonotonicityResult<typename MonotonicityChecker<ValueType, ConstantType>::VariableType>::Monotonicity> succsMon;
-//            for (auto &&itr:succ) {
-//                auto temp = checkTransitionMonRes(s, itr, param);
-//                succsMon.push_back(temp);
-//            }
+        void OrderExtender<ValueType, ConstantType>::checkParOnStateMonRes(uint_fast64_t s, const std::vector<uint_fast64_t>& succ, typename OrderExtender<ValueType, ConstantType>::VariableType param, std::shared_ptr<MonotonicityResult<VariableType>> monResult) {
             uint_fast64_t succSize = succ.size();
             if (succSize == 2) {
                 // In this case we can ignore the last entry, as this will have a probability of 1 - the other
                 succSize = 1;
             }
 
-
             // Create + fill Vector containing the Monotonicity of the transitions to the succs
-            std::vector<typename MonotonicityResult<typename MonotonicityChecker<ValueType, ConstantType>::VariableType>::Monotonicity> succsMon(succSize);
+            std::vector<Monotonicity> succsMon(succSize);
             auto row = matrix.getRow(s);
             for (auto entry : row) {
                 auto succState = entry.getColumn();
@@ -479,18 +417,17 @@ namespace storm {
                 }
             }
 
-
             uint_fast64_t index = 0;
-            typename MonotonicityResult<typename MonotonicityChecker<ValueType, ConstantType>::VariableType>::Monotonicity monCandidate = MonotonicityResult<VariableType>::Monotonicity::Constant;
-            typename MonotonicityResult<typename MonotonicityChecker<ValueType, ConstantType>::VariableType>::Monotonicity temp;
+            Monotonicity monCandidate = Monotonicity::Constant;
+            Monotonicity temp;
 
             //go to first inc / dec
-            while(index < succSize && monCandidate == MonotonicityResult<VariableType>::Monotonicity::Constant){
+            while (index < succSize && monCandidate == Monotonicity::Constant) {
                 temp = succsMon[index];
-                if(temp != MonotonicityResult<VariableType>::Monotonicity::Not){
+                if (temp != Monotonicity::Not) {
                     monCandidate = temp;
                 } else {
-                    monResult->updateMonotonicityResult(param, MonotonicityResult<VariableType>::Monotonicity::Unknown);
+                    monResult->updateMonotonicityResult(param, Monotonicity::Unknown);
                     return;
                 }
                 index++;
@@ -501,40 +438,34 @@ namespace storm {
             }
 
             //go to first non-inc / non-dec
-            while(index < succSize){
+            while (index < succSize) {
                 temp = succsMon[index];
-                if(temp == MonotonicityResult<VariableType>::Monotonicity::Not){
-                    monResult->updateMonotonicityResult(param, MonotonicityResult<VariableType>::Monotonicity::Unknown);
+                if (temp == Monotonicity::Not) {
+                    monResult->updateMonotonicityResult(param, Monotonicity::Unknown);
                     return;
-                }
-                else if(temp == MonotonicityResult<VariableType>::Monotonicity::Constant || temp == monCandidate){
+                } else if (temp == Monotonicity::Constant || temp == monCandidate) {
                     index++;
-                }
-                else{
+                } else {
                     monCandidate = temp;
                     break;
                 }
             }
 
             //check if it doesn't change until the end of vector
-            while(index < succSize){
+            while (index < succSize) {
                 temp = succsMon[index];
-                if(temp == MonotonicityResult<VariableType>::Monotonicity::Constant || temp == monCandidate){
+                if (temp == Monotonicity::Constant || temp == monCandidate) {
                     index++;
-                }
-                else{
-                    monResult->updateMonotonicityResult(param, MonotonicityResult<VariableType>::Monotonicity::Unknown);
+                } else {
+                    monResult->updateMonotonicityResult(param, Monotonicity::Unknown);
                     return;
                 }
             }
 
-            if(monCandidate == MonotonicityResult<VariableType>::Monotonicity::Incr){
-                monResult->updateMonotonicityResult(param, MonotonicityResult<VariableType>::Monotonicity::Decr);
-                return;
-            }
-            else{
-                monResult->updateMonotonicityResult(param, MonotonicityResult<VariableType>::Monotonicity::Incr);
-                return;
+            if (monCandidate == Monotonicity::Incr) {
+                monResult->updateMonotonicityResult(param, Monotonicity::Decr);
+            } else {
+                monResult->updateMonotonicityResult(param, Monotonicity::Incr);
             }
         }
 
