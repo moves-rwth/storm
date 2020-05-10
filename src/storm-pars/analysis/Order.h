@@ -1,11 +1,9 @@
 #ifndef ORDER_ORDER_H
 #define ORDER_ORDER_H
 
-#include <iostream>
-#include <set>
-#include <vector>
-#include <unordered_map>
 #include <boost/container/flat_set.hpp>
+#include <iostream>
+#include <vector>
 
 #include "storm/storage/BitVector.h"
 
@@ -37,7 +35,6 @@ namespace storm {
                      */
                     Order(storm::storage::BitVector* topStates,
                             storm::storage::BitVector* bottomStates,
-                            storm::storage::BitVector* initialMiddleStates,
                             uint_fast64_t numberOfStates,
                             std::vector<uint_fast64_t>* statesSorted);
 
@@ -89,6 +86,14 @@ namespace storm {
                      * @param state The given state
                      */
                     void add(uint_fast64_t state);
+
+                    /*!
+                    * Adds a node with the given state below the given node
+                    * @param state The state which is added.
+                    * @param node The pointer to the node below which the state is added, should not be nullptr.
+                    */
+                    void addBelow(uint_fast64_t state, Node *node);
+                    void addAbove(uint_fast64_t state, Node *node);
 
                     /*!
                      * Adds a new relation between two nodes to the order
@@ -179,6 +184,15 @@ namespace storm {
                     /*!
                      * Sorts the given stats if possible.
                      *
+                     * @param states vector of the states to sort
+                     * @return Vector with states sorted, length equals number of states to sort.
+                     * If states cannot be sorted, last state of the vector will always equal the length of the BitVector
+                     */
+                    std::vector<uint_fast64_t> sortStates(std::vector<uint_fast64_t>* states);
+
+                    /*!
+                     * Sorts the given stats if possible.
+                     *
                      * @param states Bitvector of the states to sort
                      * @return Vector with states sorted, length equals number of states to sort.
                      * If states cannot be sorted, last state of the vector will always equal the length of the BitVector
@@ -188,7 +202,7 @@ namespace storm {
                     /*!
                      * If the order is fully build, this can be set to true.
                      */
-                    void setDoneBuilding(bool done);
+                    void setDoneBuilding(bool done = true);
 
                     /*!
                      * Prints a string representation of the order to the output stream.
@@ -210,23 +224,28 @@ namespace storm {
                      */
                     void merge(uint_fast64_t var1, uint_fast64_t var2);
 
-                    storm::storage::BitVector* statesToHandle;
-
                     uint_fast64_t getNextSortedState();
+
+                    uint_fast64_t getNumberOfAddedStates();
 
                     bool containsStatesSorted(uint_fast64_t state);
 
-                    void removeFirstStatesSorted();
+                    void addStateToHandle(uint_fast64_t state);
 
-                    void removeStatesSorted(uint_fast64_t state);
+                    void toDotOutput();
+
+                    void dotOutputToFile(std::ofstream& dotOutfile);
 
                 protected:
                     std::vector<uint_fast64_t> getStatesSorted();
+                    std::vector<uint_fast64_t> getStatesToHandle();
 
                 private:
                     std::vector<Node*> nodes;
 
                     std::vector<uint_fast64_t> statesSorted;
+
+                    std::vector<uint_fast64_t> statesToHandle;
 
                     storm::storage::BitVector* addedStates;
 
@@ -238,9 +257,22 @@ namespace storm {
 
                     bool above(Node * node1, Node * node2);
 
+                    bool aboveFast(Node * node1, Node * node2);
+
                     bool above(Node * node1, Node * node2, storm::analysis::Order::Node *nodePrev, storm::storage::BitVector *statesSeen);
 
                     bool doneBuilding;
+
+                    std::string nodeName(Node n);
+
+                    std::string nodeLabel(Node n);
+
+                    uint_fast64_t numberOfAddedStates;
+
+                    void nodeOutput();
+
+                    void init(uint_fast64_t numberOfStates, std::vector<uint_fast64_t>* statesSorted, bool doneBuilding = false);
+
                 };
             }
 }

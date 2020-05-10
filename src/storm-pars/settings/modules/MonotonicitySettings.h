@@ -29,9 +29,14 @@ namespace storm {
                 bool isSccEliminationSet() const;
 
                 /*!
-                 * Retrieves whether assumptions in monotonicity analysis should be validated
+                 * Retrieves whether a dot output of the reachability orders should be given
                  */
-                bool isValidateAssumptionsSet() const;
+                bool isDotOutputSet() const;
+
+                /*!
+                 * R
+                 */
+                std::string getDotOutputFilename() const;
 
                 /*!
                  * Retrieves the number of samples used for sampling in the monotonicity analysis
@@ -43,14 +48,28 @@ namespace storm {
 				 */
                 double getMonotonicityAnalysisPrecision() const;
 
+                /*!
+               *
+               */
+                bool isExportMonotonicitySet() const;
+
+                /*!
+                 *
+                 */
+                std::string getExportMonotonicityFilename() const;
+
+
                 const static std::string moduleName;
 
             private:
                 const static std::string monotonicityAnalysis;
                 const static std::string sccElimination;
-                const static std::string validateAssumptions;
                 const static std::string samplesMonotonicityAnalysis;
                 const static std::string precision;
+                const static std::string dotOutput;
+                const static std::string dotOutputName;
+                static const std::string exportMonotonicityName;
+
             };
 
         } // namespace modules

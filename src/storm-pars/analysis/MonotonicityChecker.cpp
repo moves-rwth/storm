@@ -1,84 +1,117 @@
 #include "MonotonicityChecker.h"
-#include "storm-pars/analysis/AssumptionMaker.h"
-#include "storm-pars/analysis/AssumptionChecker.h"
-#include "storm-pars/analysis/Order.h"
-#include "storm-pars/analysis/OrderExtender.h"
+#include "storm/api/verification.h"
 
 #include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/InvalidOperationException.h"
 
-#include "storm/utility/Stopwatch.h"
 #include "storm/models/ModelType.h"
 
-#include "storm/api/verification.h"
-#include "storm-pars/api/storm-pars.h"
-
 #include "storm/modelchecker/results/CheckResult.h"
-#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+
+#include "storm-pars/analysis/AssumptionChecker.h"
 
 
 namespace storm {
     namespace analysis {
-        template <typename ValueType>
-        MonotonicityChecker<ValueType>::MonotonicityChecker(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> formulas,  std::vector<storm::storage::ParameterRegion<ValueType>> regions, bool validate, uint_fast64_t numberOfSamples, double const& precision) {
+        template <typename ValueType, typename ConstantType>
+        MonotonicityChecker<ValueType, ConstantType>::MonotonicityChecker(std::shared_ptr<models::ModelBase> model, std::vector<std::shared_ptr<logic::Formula const>> formulas,  std::vector<storage::ParameterRegion<ValueType>> regions, uint_fast64_t numberOfSamples, double const& precision, bool dotOutput) {
             assert (model != nullptr);
+            STORM_LOG_THROW(regions.size() <= 1, exceptions::NotSupportedException, "Monotonicity checking is not (yet) supported for multiple regions");
+            STORM_LOG_THROW(formulas.size() <= 1, exceptions::NotSupportedException, "Monotonicity checking is not (yet) supported for multiple formulas");
+
             this->model = model;
             this->formulas = formulas;
-            this->validate = validate;
-            this->precision = precision;
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
+            this->precision = utility::convertNumber<ConstantType>(precision);
+            std::shared_ptr<models::sparse::Model<ValueType>> sparseModel = model->as<models::sparse::Model<ValueType>>();
+            this->matrix = sparseModel->getTransitionMatrix();
+            this->dotOutput = dotOutput;
 
             if (regions.size() == 1) {
                 this->region = *(regions.begin());
             } else {
-                assert (regions.size() == 0);
-                typename storm::storage::ParameterRegion<ValueType>::Valuation lowerBoundaries;
-                typename storm::storage::ParameterRegion<ValueType>::Valuation upperBoundaries;
-                std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> vars;
-                vars = storm::models::sparse::getProbabilityParameters(*sparseModel);
+                typename storage::ParameterRegion<ValueType>::Valuation lowerBoundaries;
+                typename storage::ParameterRegion<ValueType>::Valuation upperBoundaries;
+                std::set<VariableType> vars;
+                vars = models::sparse::getProbabilityParameters(*sparseModel);
                 for (auto var : vars) {
-                    typename storm::storage::ParameterRegion<ValueType>::CoefficientType lb = storm::utility::convertNumber<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>(0 + precision);
-                    typename storm::storage::ParameterRegion<ValueType>::CoefficientType ub = storm::utility::convertNumber<typename storm::storage::ParameterRegion<ValueType>::CoefficientType>(1 - precision);
+                    typename storage::ParameterRegion<ValueType>::CoefficientType lb = utility::convertNumber<CoefficientType>(0 + precision) ;
+                    typename storage::ParameterRegion<ValueType>::CoefficientType ub = utility::convertNumber<CoefficientType>(1 - precision) ;
                     lowerBoundaries.insert(std::make_pair(var, lb));
                     upperBoundaries.insert(std::make_pair(var, ub));
                 }
-                this->region =  storm::storage::ParameterRegion<ValueType>(std::move(lowerBoundaries), std::move(upperBoundaries));
+                this->region =  storage::ParameterRegion<ValueType>(std::move(lowerBoundaries), std::move(upperBoundaries));
             }
 
-            if (numberOfSamples > 0) {
+            if (numberOfSamples > 2) {
                 // sampling
-                if (model->isOfType(storm::models::ModelType::Dtmc)) {
-                    this->resultCheckOnSamples = std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>(
-                            checkOnSamples(model->as<storm::models::sparse::Dtmc<ValueType>>(), numberOfSamples));
-                } else if (model->isOfType(storm::models::ModelType::Mdp)) {
-                    this->resultCheckOnSamples = std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>(
-                            checkOnSamples(model->as<storm::models::sparse::Mdp<ValueType>>(), numberOfSamples));
-
+                if (model->isOfType(models::ModelType::Dtmc)) {
+                    this->resultCheckOnSamples = std::map<VariableType, std::pair<bool, bool>>(
+                            checkMonotonicityOnSamples(model->as<models::sparse::Dtmc<ValueType>>(), numberOfSamples));
+                } else if (model->isOfType(models::ModelType::Mdp)) {
+                    this->resultCheckOnSamples = std::map<VariableType, std::pair<bool, bool>>(
+                            checkMonotonicityOnSamples(model->as<models::sparse::Mdp<ValueType>>(), numberOfSamples));
                 }
                 checkSamples= true;
             } else {
+                if (numberOfSamples > 0) {
+                    STORM_LOG_WARN("At least 3 sample points are needed to check for monotonicity on samples, not using samples for now");
+                }
                 checkSamples= false;
             }
 
-            this->extender = new storm::analysis::OrderExtender<ValueType>(sparseModel);
+            this->extender = new analysis::OrderExtender<ValueType, ConstantType>(sparseModel, formulas[0], region);
         }
 
-        template <typename ValueType>
-        std::map<storm::analysis::Order*, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> MonotonicityChecker<ValueType>::checkMonotonicity(std::ostream& outfile) {
-            auto map = createOrder();
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
-            auto matrix = sparseModel->getTransitionMatrix();
-            return checkMonotonicity(outfile, map, matrix);
+
+        template <typename ValueType, typename ConstantType>
+        std::map<analysis::Order*, std::pair<std::shared_ptr<MonotonicityResult<typename MonotonicityChecker<ValueType, ConstantType>::VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> MonotonicityChecker<ValueType, ConstantType>::checkMonotonicityInBuild(std::ostream& outfile, std::string dotOutfileName){
+            createOrder();
+
+            //output of results
+            for(auto itr : monResults){
+                std::string temp = itr.second.first->toString();
+                outfile << temp << std::endl;
+            }
+
+            //dotoutput
+            if(dotOutput){
+                STORM_LOG_WARN_COND(monResults.size() <= 10, "Too many Reachability Orders. Dot Output will only be created for 10.");
+                int i = 0;
+                auto orderItr = monResults.begin();
+                while(i < 10 && orderItr != monResults.end()){
+                    std::ofstream dotOutfile;
+                    std::string name = dotOutfileName + std::to_string(i);
+                    utility::openFile(name, dotOutfile);
+                    dotOutfile << "Assumptions:" << std::endl;
+                    auto assumptionItr = orderItr->second.second.begin();
+                    while(assumptionItr != orderItr->second.second.end()){
+                        dotOutfile << *assumptionItr << std::endl;
+                        dotOutfile << std::endl;
+                        assumptionItr++;
+                    }
+                    dotOutfile << std::endl;
+                    orderItr->first->dotOutputToFile(dotOutfile);
+                    utility::closeFile(dotOutfile);
+                    i++;
+                    orderItr++;
+                }
+            }
+            return monResults;
+
         }
 
-        template <typename ValueType>
-        std::map<storm::analysis::Order*, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> MonotonicityChecker<ValueType>::checkMonotonicity(std::ostream& outfile, std::map<storm::analysis::Order*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix) {
-            storm::utility::Stopwatch monotonicityCheckWatch(true);
-            std::map<storm::analysis::Order *, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> result;
 
+        template <typename ValueType, typename ConstantType>
+        MonotonicityResult<typename MonotonicityChecker<ValueType, ConstantType>::VariableType> MonotonicityChecker<ValueType, ConstantType>::checkMonotonicity(std::vector<ConstantType> minValues, std::vector<ConstantType> maxValues) {
+            auto order = createOrder(minValues, maxValues);
+            return analyseMonotonicity(order);
+        }
+
+        template <typename ValueType, typename ConstantType>
+        std::map<analysis::Order*, std::map<typename MonotonicityChecker<ValueType, ConstantType>::VariableType, std::pair<bool, bool>>> MonotonicityChecker<ValueType, ConstantType>::checkMonotonicity(std::ostream& outfile, std::map<analysis::Order*, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> map) {
+            std::map<analysis::Order *, std::map<VariableType, std::pair<bool, bool>>> result;
 
             if (map.size() == 0) {
                 // Nothing is known
@@ -104,13 +137,14 @@ namespace storm {
 
             } else {
                 size_t i = 0;
+                // For each order
                 for (auto itr = map.begin(); i < map.size() && itr != map.end(); ++itr) {
                     auto order = itr->first;
 
                     auto addedStates = order->getAddedStates()->getNumberOfSetBits();
                     assert (addedStates == order->getAddedStates()->size());
-                    std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> varsMonotone = analyseMonotonicity(i, order,
-                                                                                                      matrix);
+                    // Get monotonicity result for this order
+                    std::map<VariableType, std::pair<bool, bool>> varsMonotone = analyseMonotonicity(i, order);
 
                     auto assumptions = itr->second;
                     if (assumptions.size() > 0) {
@@ -137,15 +171,22 @@ namespace storm {
                                 resultCheckOnSamples.find(itr2->first) != resultCheckOnSamples.end() &&
                                 (!resultCheckOnSamples[itr2->first].first &&
                                  !resultCheckOnSamples[itr2->first].second)) {
+                                // Not monotone
                                 outfile << "X " << itr2->first;
                             } else {
+                                // itr2->first == parameter
+                                // itr2->second == boolean pair
                                 if (itr2->second.first && itr2->second.second) {
+                                    // Constant
                                     outfile << "C " << itr2->first;
                                 } else if (itr2->second.first) {
+                                    // Increasing
                                     outfile << "I " << itr2->first;
                                 } else if (itr2->second.second) {
+                                    // Decreasing
                                     outfile << "D " << itr2->first;
                                 } else {
+                                    // Don't know
                                     outfile << "? " << itr2->first;
                                 }
                             }
@@ -155,7 +196,7 @@ namespace storm {
                             }
                         }
                         result.insert(
-                                std::pair<storm::analysis::Order *, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>>(
+                                std::pair<analysis::Order *, std::map<VariableType, std::pair<bool, bool>>>(
                                         order, varsMonotone));
                     }
                     ++i;
@@ -164,156 +205,120 @@ namespace storm {
             }
             outfile << ", ";
 
-            monotonicityCheckWatch.stop();
             return result;
         }
 
-        template <typename ValueType>
-        std::map<storm::analysis::Order*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> MonotonicityChecker<ValueType>::createOrder() {
+        template <typename ValueType, typename ConstantType>
+        void MonotonicityChecker<ValueType, ConstantType>::createOrder() {
             // Transform to Orders
-            storm::utility::Stopwatch orderWatch(true);
+            std::tuple<analysis::Order *, uint_fast64_t, uint_fast64_t> criticalTuple;
 
-            // Use parameter lifting modelchecker to get initial min/max values for order creation
-            storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ValueType>, double> plaModelChecker;
-            std::unique_ptr<storm::modelchecker::CheckResult> checkResult;
-            auto env = Environment();
-
-            auto formula = formulas[0];
-            const storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> checkTask
-                = storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*formula);
-            STORM_LOG_THROW(plaModelChecker.canHandle(model, checkTask), storm::exceptions::NotSupportedException,
-                           "Cannot handle this formula");
-            plaModelChecker.specify(env, model, checkTask);
-
-            std::unique_ptr<storm::modelchecker::CheckResult> minCheck = plaModelChecker.check(env, region,storm::solver::OptimizationDirection::Minimize);
-            std::unique_ptr<storm::modelchecker::CheckResult> maxCheck = plaModelChecker.check(env, region,storm::solver::OptimizationDirection::Maximize);
-            auto minRes = minCheck->asExplicitQuantitativeCheckResult<double>();
-            auto maxRes = maxCheck->asExplicitQuantitativeCheckResult<double>();
-
-            std::vector<double> minValues = minRes.getValueVector();
-            std::vector<double> maxValues = maxRes.getValueVector();
             // Create initial order
-            std::tuple<storm::analysis::Order*, uint_fast64_t, uint_fast64_t> criticalTuple = extender->toOrder(formulas, minValues, maxValues);
+            auto monRes = std::make_shared<MonotonicityResult<VariableType>>(MonotonicityResult<VariableType>());
+            criticalTuple = extender->toOrder(monRes);
             // Continue based on not (yet) sorted states
-            std::map<storm::analysis::Order*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> result;
+            std::map<analysis::Order*, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
 
             auto val1 = std::get<1>(criticalTuple);
             auto val2 = std::get<2>(criticalTuple);
             auto numberOfStates = model->getNumberOfStates();
-            std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions;
+            std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions;
 
             if (val1 == numberOfStates && val2 == numberOfStates) {
-                result.insert(std::pair<storm::analysis::Order*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>>(std::get<0>(criticalTuple), assumptions));
+                auto resAssumptionPair = std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>(monRes, assumptions);
+                monResults.insert(std::pair<Order*, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>(std::get<0>(criticalTuple), resAssumptionPair));
             } else if (val1 != numberOfStates && val2 != numberOfStates) {
-
-                storm::analysis::AssumptionChecker<ValueType> *assumptionChecker;
-                if (model->isOfType(storm::models::ModelType::Dtmc)) {
-                    auto dtmc = model->as<storm::models::sparse::Dtmc<ValueType>>();
-                    assumptionChecker = new storm::analysis::AssumptionChecker<ValueType>(formulas[0], dtmc, region, 3);
-                } else if (model->isOfType(storm::models::ModelType::Mdp)) {
-                    auto mdp = model->as<storm::models::sparse::Mdp<ValueType>>();
-                    assumptionChecker = new storm::analysis::AssumptionChecker<ValueType>(formulas[0], mdp, 3);
+                analysis::AssumptionChecker<ValueType, ConstantType> *assumptionChecker;
+                if (model->isOfType(models::ModelType::Dtmc)) {
+                    auto dtmc = model->as<models::sparse::Dtmc<ValueType>>();
+                    assumptionChecker = new analysis::AssumptionChecker<ValueType, ConstantType>(formulas[0], dtmc, region, 3);
+                } else if (model->isOfType(models::ModelType::Mdp)) {
+                    auto mdp = model->as<models::sparse::Mdp<ValueType>>();
+                    assumptionChecker = new analysis::AssumptionChecker<ValueType, ConstantType>(formulas[0], mdp, 3);
                 } else {
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException,
-                                    "Unable to perform monotonicity analysis on the provided model type.");
+                    STORM_LOG_THROW(false, exceptions::InvalidOperationException,"Unable to perform monotonicity analysis on the provided model type.");
                 }
-                auto assumptionMaker = new storm::analysis::AssumptionMaker<ValueType>(assumptionChecker, numberOfStates, validate);
-                result = extendOrderWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, val1, val2, assumptions);
+                auto assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(assumptionChecker, numberOfStates);
+                extendOrderWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, val1, val2, assumptions, monRes);
             } else {
-                assert(false);
+                assert (false);
             }
-            orderWatch.stop();
-            return result;
         }
 
-        template <typename ValueType>
-        std::map<storm::analysis::Order*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> MonotonicityChecker<ValueType>::extendOrderWithAssumptions(storm::analysis::Order* order, storm::analysis::AssumptionMaker<ValueType>* assumptionMaker, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions) {
-            std::map<storm::analysis::Order*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> result;
+        template <typename ValueType, typename ConstantType>
+        Order * MonotonicityChecker<ValueType, ConstantType>::createOrder(std::vector<ConstantType> minValues, std::vector<ConstantType> maxValues) {
+            auto monRes = std::make_shared<MonotonicityResult<VariableType>>(MonotonicityResult<VariableType>());
+            return extender->toOrder(minValues, maxValues, monRes);
+        }
+
+        template <typename ValueType, typename ConstantType>
+        void MonotonicityChecker<ValueType, ConstantType>::extendOrderWithAssumptions(analysis::Order* order, analysis::AssumptionMaker<ValueType, ConstantType>* assumptionMaker, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
+            std::map<analysis::Order*, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
 
             auto numberOfStates = model->getNumberOfStates();
             if (val1 == numberOfStates || val2 == numberOfStates) {
                 assert (val1 == val2);
                 assert (order->getAddedStates()->size() == order->getAddedStates()->getNumberOfSetBits());
-                result.insert(std::pair<storm::analysis::Order*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>>(order, assumptions));
+                auto resAssumptionPair = std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>(monRes, assumptions);
+                monResults.insert(std::pair<Order*, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>(std::move(order), std::move(resAssumptionPair)));
             } else {
                 // Make the three assumptions
-                auto assumptionTriple = assumptionMaker->createAndCheckAssumption(val1, val2, order);
-                assert (assumptionTriple.size() == 3);
-                auto itr = assumptionTriple.begin();
-                auto assumption1 = *itr;
-                ++itr;
-                auto assumption2 = *itr;
-                ++itr;
-                auto assumption3 = *itr;
+                auto newAssumptions = assumptionMaker->createAndCheckAssumptions(val1, val2, order);
+                assert (newAssumptions.size() == 3);
+                auto itr = newAssumptions.begin();
 
-                if (assumption1.second != AssumptionStatus::INVALID) {
-                    auto orderCopy = new Order(order);
-                    auto assumptionsCopy = std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>(assumptions);
+                while (itr != newAssumptions.end()) {
+                    auto assumption = *itr;
+                    ++itr;
+                    if (assumption.second != AssumptionStatus::INVALID) {
+                        if (itr != newAssumptions.end()) {
+                            // We make a copy of the order and the assumptions
+                            auto orderCopy = new Order(order);
+                            auto assumptionsCopy = std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>(assumptions);
+                            auto monResCopy = monRes->copy();
 
-                    if (assumption1.second == AssumptionStatus::UNKNOWN) {
-                        // only add assumption to the set of assumptions if it is unknown if it is valid
-                        assumptionsCopy.push_back(assumption1.first);
-                    }
 
-                    auto criticalTuple = extender->extendOrder(orderCopy, assumption1.first);
-                    if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
-                        auto map = extendOrderWithAssumptions(std::get<0>(criticalTuple), assumptionMaker,
-                                                                std::get<1>(criticalTuple), std::get<2>(criticalTuple),
-                                                                assumptionsCopy);
-                        result.insert(map.begin(), map.end());
-                    }
-                }
+                            if (assumption.second == AssumptionStatus::UNKNOWN) {
+                                // only add assumption to the set of assumptions if it is unknown whether it holds or not
+                                assumptionsCopy.push_back(std::move(assumption.first));
+                            }
 
-                if (assumption2.second != AssumptionStatus::INVALID) {
-                    auto orderCopy = new Order(order);
-                    auto assumptionsCopy = std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>(assumptions);
+                            auto criticalTuple = extender->extendOrder(orderCopy, std::make_shared<MonotonicityResult<VariableType>>(*monResCopy), assumption.first);
+                            if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
+                                extendOrderWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptionsCopy, std::make_shared<MonotonicityResult<VariableType>>(*monResCopy));
+                            }
+                        } else {
+                            // It is the last one, so we don't need to create a copy.
 
-                    if (assumption2.second == AssumptionStatus::UNKNOWN) {
-                        assumptionsCopy.push_back(assumption2.first);
-                    }
+                            if (assumption.second == AssumptionStatus::UNKNOWN) {
+                                // only add assumption to the set of assumptions if it is unknown whether it holds or not
+                                assumptions.push_back(std::move(assumption.first));
+                            }
 
-                    auto criticalTuple = extender->extendOrder(orderCopy, assumption2.first);
-                    if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
-                        auto map = extendOrderWithAssumptions(std::get<0>(criticalTuple), assumptionMaker,
-                                                                std::get<1>(criticalTuple), std::get<2>(criticalTuple),
-                                                                assumptionsCopy);
-                        result.insert(map.begin(), map.end());
-                    }
-                }
-
-                if (assumption3.second != AssumptionStatus::INVALID) {
-                    // Here we can use the original order and assumptions set
-                    if (assumption3.second == AssumptionStatus::UNKNOWN) {
-                        assumptions.push_back(assumption3.first);
-                    }
-
-                    auto criticalTuple = extender->extendOrder(order, assumption3.first);
-                    if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
-                        auto map = extendOrderWithAssumptions(std::get<0>(criticalTuple), assumptionMaker,
-                                                                std::get<1>(criticalTuple), std::get<2>(criticalTuple),
-                                                                assumptions);
-                        result.insert(map.begin(), map.end());
+                            auto criticalTuple = extender->extendOrder(order, std::make_shared<MonotonicityResult<VariableType>>(*monRes), assumption.first);
+                            if (somewhereMonotonicity(std::get<0>(criticalTuple))) {
+                                extendOrderWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptions, std::make_shared<MonotonicityResult<VariableType>>(*monRes));
+                            }
+                        }
                     }
                 }
             }
-            return result;
         }
 
-        template <typename ValueType>
-        ValueType MonotonicityChecker<ValueType>::getDerivative(ValueType function, typename utility::parametric::VariableType<ValueType>::type var) {
+        template <typename ValueType, typename ConstantType>
+        ValueType MonotonicityChecker<ValueType, ConstantType>::getDerivative(ValueType function, typename MonotonicityChecker<ValueType, ConstantType>::VariableType var) {
             if (function.isConstant()) {
-                return storm::utility::zero<ValueType>();
+                return utility::zero<ValueType>();
             }
             if ((derivatives[function]).find(var) == (derivatives[function]).end()) {
                 (derivatives[function])[var] = function.derivative(var);
             }
-
             return (derivatives[function])[var];
         }
 
-        template <typename ValueType>
-        std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> MonotonicityChecker<ValueType>::analyseMonotonicity(uint_fast64_t j, storm::analysis::Order* order, storm::storage::SparseMatrix<ValueType> matrix) {
-            std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> varsMonotone;
+        template <typename ValueType, typename ConstantType>
+        std::map<typename MonotonicityChecker<ValueType, ConstantType>::VariableType, std::pair<bool, bool>> MonotonicityChecker<ValueType, ConstantType>::analyseMonotonicity(uint_fast64_t j, analysis::Order* order) {
+            std::map<VariableType, std::pair<bool, bool>> varsMonotone;
 
             // go over all rows, check for each row local monotonicity
             for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {
@@ -324,20 +329,19 @@ namespace storm {
                     std::map<uint_fast64_t, ValueType> transitions;
 
                     // Gather all states which are reached with a non constant probability
-                    auto states = new storm::storage::BitVector(matrix.getColumnCount());
-                    std::set<typename utility::parametric::VariableType<ValueType>::type> vars;
+                    std::vector<uint_fast64_t> states;
+                    std::set<VariableType> vars;
                     for (auto const& entry : row) {
                         if (!entry.getValue().isConstant()) {
-                            // only analyse take non constant transitions
                             transitions.insert(std::pair<uint_fast64_t, ValueType>(entry.getColumn(), entry.getValue()));
-                            for (auto const& var:entry.getValue().gatherVariables()) {
-                                vars.insert(var);
-                                states->set(entry.getColumn());
-                            }
+                            auto varsRow = entry.getValue().gatherVariables();
+                            vars.insert(varsRow.begin(), varsRow.end());
+                            // Used to set the states we need to sort
+                            states.push_back(entry.getColumn());
                         }
                     }
 
-                    // Copy info from checkOnSamples
+                    // Copy info from checkMonotonicityOnSamples
                     if (checkSamples) {
                         for (auto var : vars) {
                             assert (resultCheckOnSamples.find(var) != resultCheckOnSamples.end());
@@ -358,10 +362,8 @@ namespace storm {
                         }
                     }
 
-
-
                     // Sort the states based on the order
-                    auto sortedStates = order->sortStates(states);
+                    auto sortedStates = order->sortStates(&states);
                     if (sortedStates[sortedStates.size() - 1] == matrix.getColumnCount()) {
                     // If the states are not all sorted, we still might obtain some monotonicity
                         for (auto var: vars) {
@@ -374,25 +376,20 @@ namespace storm {
                                 for (auto itr3 = transitions.begin(); (value->first || value->second)
                                         && itr3 != transitions.end(); ++itr3) {
                                     if (itr2->first < itr3->first) {
-
                                         auto derivative2 = getDerivative(itr2->second, var);
                                         auto derivative3 = getDerivative(itr3->second, var);
-
                                         auto compare = order->compare(itr2->first, itr3->first);
 
                                         if (compare == Order::ABOVE) {
                                             // As the first state (itr2) is above the second state (itr3) it
                                             // is sufficient to look at the derivative of itr2.
-                                            std::pair<bool, bool> mon2;
-                                            mon2 = checkDerivative(derivative2, region);
+                                            std::pair<bool, bool> mon2 = checkDerivative(derivative2, region);
                                             value->first &= mon2.first;
                                             value->second &= mon2.second;
                                         } else if (compare == Order::BELOW) {
                                             // As the second state (itr3) is above the first state (itr2) it
                                             // is sufficient to look at the derivative of itr3.
-                                            std::pair<bool, bool> mon3;
-
-                                            mon3 = checkDerivative(derivative3, region);
+                                            std::pair<bool, bool> mon3 = checkDerivative(derivative3, region);
                                             value->first &= mon3.first;
                                             value->second &= mon3.second;
                                         } else if (compare == Order::SAME) {
@@ -441,12 +438,134 @@ namespace storm {
             return varsMonotone;
         }
 
-        template <typename ValueType>
-        bool MonotonicityChecker<ValueType>::somewhereMonotonicity(Order* order) {
-            std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
-            auto matrix = sparseModel->getTransitionMatrix();
+        template <typename ValueType, typename ConstantType>
+        MonotonicityResult<typename MonotonicityChecker<ValueType, ConstantType>::VariableType> MonotonicityChecker<ValueType, ConstantType>::analyseMonotonicity(analysis::Order *order) {
+            // TODO: @Svenja, when your implementation is working, you could also use this here
+            std::shared_ptr<MonotonicityResult<VariableType>> varsMonotone = std::make_shared<MonotonicityResult<VariableType>>(MonotonicityResult<VariableType>());
+            if (order->getAddedStates()->getNumberOfSetBits() == matrix.getColumnCount()) {
+                varsMonotone->setDone();
+            }
 
-            std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> varsMonotone;
+            // go over all rows, check for each row local monotonicity
+            std::set<VariableType> vars;
+
+            for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {
+                auto row = matrix.getRow(i);
+                // only enter if you are in a state with at least two successors (so there must be successors,
+                // and first prob shouldn't be 1)
+                if (row.begin() != row.end() && !row.begin()->getValue().isOne()) {
+                    std::map<uint_fast64_t, ValueType> transitions;
+
+                    // Gather all states which are reached with a non constant probability
+                    std::vector<uint_fast64_t> states;
+                    // = models::sparse::getProbabilityParameters(*model);
+                    for (auto const& entry : row) {
+                        if (!entry.getValue().isConstant()) {
+                            // only analyse take non constant transitions
+                            transitions.insert(std::pair<uint_fast64_t, ValueType>(entry.getColumn(), entry.getValue()));
+                            auto varsRow = entry.getValue().gatherVariables();
+                            vars.insert(varsRow.begin(), varsRow.end());
+                            // Used to set the states we need to sort
+                            states.push_back(entry.getColumn());
+                        }
+
+                    }
+
+                    // Sort the states based on the order
+                    auto sortedStates = order->sortStates(&states);
+                    // if the last entry in sorted states equals the number of states in the model, we know that not all states are sorted
+                    if (sortedStates.size() == 0 || sortedStates[sortedStates.size() - 1] == matrix.getColumnCount()) {
+                        // If the states are not all sorted, we still might obtain some monotonicity
+                        for (auto var: vars) {
+                            // current value of monotonicity is constant
+                            auto monRes = varsMonotone->getMonotonicityResult();
+                            typename MonotonicityResult<VariableType>::Monotonicity value;
+
+                            auto itr = monRes.find(var);
+                            if (itr != monRes.end()) {
+                                value = itr->second;
+                            } else {
+                                value = MonotonicityResult<VariableType>::Monotonicity::Constant;
+                            }
+
+                            if ((value == MonotonicityResult<VariableType>::Monotonicity::Not ||
+                                 value == MonotonicityResult<VariableType>::Monotonicity::Unknown)) {
+                                continue;
+                            }
+
+                            // Go over all transitions to successor states, compare all of them
+                            for (auto itr2 = transitions.begin(); (value != MonotonicityResult<VariableType>::Monotonicity::Not &&
+                                                                    value != MonotonicityResult<VariableType>::Monotonicity::Unknown)
+                                                                  && itr2 != transitions.end(); ++itr2) {
+                                for (auto itr3 = transitions.begin(); (value != MonotonicityResult<VariableType>::Monotonicity::Not &&
+                                                                       value != MonotonicityResult<VariableType>::Monotonicity::Unknown)
+                                                                      && itr3 != transitions.end(); ++itr3) {
+                                    if (itr2->first < itr3->first) {
+                                        auto derivative2 = getDerivative(itr2->second, var);
+                                        auto derivative3 = getDerivative(itr3->second, var);
+
+                                        auto compare = order->compare(itr2->first, itr3->first);
+
+                                        std::pair<bool, bool> mon = std::make_pair(false, false);
+
+                                        if (compare == Order::ABOVE) {
+                                            // As the first state (itr2) is above the second state (itr3) it
+                                            // is sufficient to look at the derivative of itr2.
+                                            mon = checkDerivative(derivative2, region);
+                                        } else if (compare == Order::BELOW) {
+                                            // As the second state (itr3) is above the first state (itr2) it
+                                            // is sufficient to look at the derivative of itr3.
+                                            mon = checkDerivative(derivative3, region);
+                                        }
+
+                                        if(mon.first && !mon.second){
+                                            value = MonotonicityResult<VariableType>::Monotonicity::Incr;
+                                        }
+                                        else if(!mon.first && mon.second){
+                                            value = MonotonicityResult<VariableType>::Monotonicity::Decr;
+                                        }
+                                        else if(mon.first && mon.second){
+                                            value = MonotonicityResult<VariableType>::Monotonicity::Constant;
+                                        }
+                                        else{
+                                            value = MonotonicityResult<VariableType>::Monotonicity::Unknown;
+                                        }
+                                        varsMonotone->updateMonotonicityResult(var, value);
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // The states are all sorted
+                        for (auto var : vars) {
+                            checkParOnStateMonRes(i, sortedStates, var, varsMonotone);
+                        }
+                    }
+                }
+            }
+            varsMonotone->setAllMonotonicity();
+            for (auto var : vars) {
+                auto varRes = varsMonotone->getMonotonicityResult()[var];
+                if ( varRes != MonotonicityResult<VariableType>::Monotonicity::Unknown
+                    && varRes != MonotonicityResult<VariableType>::Monotonicity::Not) {
+                    varsMonotone->setSomewhereMonotonicity();
+                }
+                if ( varRes == MonotonicityResult<VariableType>::Monotonicity::Unknown
+                     || varRes == MonotonicityResult<VariableType>::Monotonicity::Not) {
+                    varsMonotone->setAllMonotonicity(false);
+                }
+                if (varsMonotone->isSomewhereMonotonicity() && !varsMonotone->isAllMonotonicity()) {
+                    break;
+                }
+            }
+            return *varsMonotone;
+        }
+
+        template <typename ValueType, typename ConstantType>
+        bool MonotonicityChecker<ValueType, ConstantType>::somewhereMonotonicity(Order* order) {
+            // TODO: @Svenja, when your implementation is working, you could also use this here?
+            // TODO: @Svenja, right now this method is calles sometimes to see if we can stop already (if there is no monotonicity). Does it make sense to update the monotonicity while creating the order? so if all successors of a state are added, we check for local monotonicity for this state, and update the general monotonicity list with this.
+            std::map<VariableType, std::pair<bool, bool>> varsMonotone;
 
             for (uint_fast64_t i = 0; i < matrix.getColumnCount(); ++i) {
                 // go over all rows
@@ -461,7 +580,7 @@ namespace storm {
 
                     auto val = first.getValue();
                     auto vars = val.gatherVariables();
-                    // Copy info from checkOnSamples
+                    // Copy info from checkMonotonicityOnSamples
                     if (checkSamples) {
                         for (auto var : vars) {
                             assert (resultCheckOnSamples.find(var) != resultCheckOnSamples.end());
@@ -533,19 +652,17 @@ namespace storm {
             return result;
         }
 
-        template <typename ValueType>
-        std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> MonotonicityChecker<ValueType>::checkOnSamples(std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples) {
-            storm::utility::Stopwatch samplesWatch(true);
+        template <typename ValueType, typename ConstantType>
+        std::map<typename MonotonicityChecker<ValueType, ConstantType>::VariableType, std::pair<bool, bool>> MonotonicityChecker<ValueType, ConstantType>::checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples) {
+            assert (numberOfSamples > 2);
+            std::map<VariableType, std::pair<bool, bool>> result;
 
-            std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> result;
-
-            auto instantiator = storm::utility::ModelInstantiator<storm::models::sparse::Dtmc<ValueType>, storm::models::sparse::Dtmc<double>>(*model);
-            auto matrix = model->getTransitionMatrix();
-            std::set<typename utility::parametric::VariableType<ValueType>::type> variables =  storm::models::sparse::getProbabilityParameters(*model);
+            auto instantiator = utility::ModelInstantiator<models::sparse::Dtmc<ValueType>, models::sparse::Dtmc<ConstantType>>(*model);
+            std::set<VariableType> variables =  models::sparse::getProbabilityParameters(*model);
 
             // For each of the variables create a model in which we only change the value for this specific variable
             for (auto itr = variables.begin(); itr != variables.end(); ++itr) {
-                double previous = -1;
+                ConstantType previous = -1;
                 bool monDecr = true;
                 bool monIncr = true;
 
@@ -553,7 +670,7 @@ namespace storm {
                 // all other variables fixed on lb, only increasing (*itr)
                 for (uint_fast64_t i = 0; (monDecr || monIncr) && i < numberOfSamples; ++i) {
                     // Create valuation
-                    auto valuation = storm::utility::parametric::Valuation<ValueType>();
+                    auto valuation = utility::parametric::Valuation<ValueType>();
                     for (auto itr2 = variables.begin(); itr2 != variables.end(); ++itr2) {
                         // Only change value for current variable
                         if ((*itr) == (*itr2)) {
@@ -568,123 +685,262 @@ namespace storm {
                     }
 
                     // Instantiate model and get result
-                    storm::models::sparse::Dtmc<double> sampleModel = instantiator.instantiate(valuation);
-                    auto checker = storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>>(sampleModel);
-                    std::unique_ptr<storm::modelchecker::CheckResult> checkResult;
+                    models::sparse::Dtmc<ConstantType> sampleModel = instantiator.instantiate(valuation);
+                    auto checker = modelchecker::SparseDtmcPrctlModelChecker<models::sparse::Dtmc<ConstantType>>(sampleModel);
+                    std::unique_ptr<modelchecker::CheckResult> checkResult;
                     auto formula = formulas[0];
-                    if (formula->isProbabilityOperatorFormula() &&
-                        formula->asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
-                        const storm::modelchecker::CheckTask<storm::logic::UntilFormula, double> checkTask = storm::modelchecker::CheckTask<storm::logic::UntilFormula, double>(
-                                (*formula).asProbabilityOperatorFormula().getSubformula().asUntilFormula());
+                    if (formula->isProbabilityOperatorFormula() && formula->asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
+                        const modelchecker::CheckTask<logic::UntilFormula, ConstantType> checkTask = modelchecker::CheckTask<logic::UntilFormula, ConstantType>((*formula).asProbabilityOperatorFormula().getSubformula().asUntilFormula());
                         checkResult = checker.computeUntilProbabilities(Environment(), checkTask);
-                    } else if (formula->isProbabilityOperatorFormula() &&
-                               formula->asProbabilityOperatorFormula().getSubformula().isEventuallyFormula()) {
-                        const storm::modelchecker::CheckTask<storm::logic::EventuallyFormula, double> checkTask = storm::modelchecker::CheckTask<storm::logic::EventuallyFormula, double>(
-                                (*formula).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula());
+                    } else if (formula->isProbabilityOperatorFormula() && formula->asProbabilityOperatorFormula().getSubformula().isEventuallyFormula()) {
+                        const modelchecker::CheckTask<logic::EventuallyFormula, ConstantType> checkTask = modelchecker::CheckTask<logic::EventuallyFormula, ConstantType>((*formula).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula());
                         checkResult = checker.computeReachabilityProbabilities(Environment(), checkTask);
                     } else {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                                        "Expecting until or eventually formula");
+                        STORM_LOG_THROW(false, exceptions::NotSupportedException, "Expecting until or eventually formula");
                     }
-                    auto quantitativeResult = checkResult->asExplicitQuantitativeCheckResult<double>();
-                    std::vector<double> values = quantitativeResult.getValueVector();
+
+                    auto quantitativeResult = checkResult->asExplicitQuantitativeCheckResult<ConstantType>();
+                    std::vector<ConstantType> values = quantitativeResult.getValueVector();
                     auto initialStates = model->getInitialStates();
-                    double initial = 0;
+                    ConstantType initial = 0;
                     // Get total probability from initial states
-                    for (auto j = initialStates.getNextSetIndex(0); j < model->getNumberOfStates(); j = initialStates.getNextSetIndex(j+1)) {
+                    for (auto j = initialStates.getNextSetIndex(0); j < model->getNumberOfStates(); j = initialStates.getNextSetIndex(j + 1)) {
                         initial += values[j];
                     }
                     // Calculate difference with result for previous valuation
-                    assert (initial >= 0-precision && initial <= 1+precision);
-                    double diff = previous - initial;
-                    assert (previous == -1 || diff >= -1-precision && diff <= 1 + precision);
+                    assert (initial >= 0 - precision && initial <= 1 + precision);
+                    ConstantType diff = previous - initial;
+                    assert (previous == -1 || diff >= -1 - precision && diff <= 1 + precision);
+
                     if (previous != -1 && (diff > precision || diff < -precision)) {
                         monDecr &= diff > precision; // then previous value is larger than the current value from the initial states
                         monIncr &= diff < -precision;
                     }
                     previous = initial;
                 }
-                result.insert(std::pair<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>(*itr, std::pair<bool,bool>(monIncr, monDecr)));
+                result.insert(std::pair<VariableType,  std::pair<bool, bool>>(*itr, std::pair<bool,bool>(monIncr, monDecr)));
             }
-
-            samplesWatch.stop();
             resultCheckOnSamples = result;
             return result;
         }
 
-        template <typename ValueType>
-        std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> MonotonicityChecker<ValueType>::checkOnSamples(std::shared_ptr<storm::models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples) {
-            storm::utility::Stopwatch samplesWatch(true);
+        template <typename ValueType, typename ConstantType>
+        std::map<typename MonotonicityChecker<ValueType, ConstantType>::VariableType, std::pair<bool, bool>> MonotonicityChecker<ValueType, ConstantType>::checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples) {
+            assert(numberOfSamples > 2);
+            std::map<VariableType, std::pair<bool, bool>> result;
 
-            std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> result;
+            auto instantiator = utility::ModelInstantiator<models::sparse::Mdp<ValueType>, models::sparse::Mdp<ConstantType>>(*model);
+            std::set<VariableType> variables =  models::sparse::getProbabilityParameters(*model);
 
-            auto instantiator = storm::utility::ModelInstantiator<storm::models::sparse::Mdp<ValueType>, storm::models::sparse::Mdp<double>>(*model);
-            auto matrix = model->getTransitionMatrix();
-            std::set<typename utility::parametric::VariableType<ValueType>::type> variables =  storm::models::sparse::getProbabilityParameters(*model);
-
+            // For each of the variables create a model in which we only change the value for this specific variable
             for (auto itr = variables.begin(); itr != variables.end(); ++itr) {
-                double previous = -1;
+                ConstantType previous = -1;
                 bool monDecr = true;
                 bool monIncr = true;
 
-                for (uint_fast64_t i = 0; i < numberOfSamples; ++i) {
-                    auto valuation = storm::utility::parametric::Valuation<ValueType>();
+                // Check monotonicity in variable (*itr) by instantiating the model
+                // all other variables fixed on lb, only increasing (*itr)
+                for (uint_fast64_t i = 0; (monDecr || monIncr) && i < numberOfSamples; ++i) {
+                    // Create valuation
+                    auto valuation = utility::parametric::Valuation<ValueType>();
                     for (auto itr2 = variables.begin(); itr2 != variables.end(); ++itr2) {
                         // Only change value for current variable
                         if ((*itr) == (*itr2)) {
-                            auto val = std::pair<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>(
-                                    (*itr2), storm::utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(
-                                            boost::lexical_cast<std::string>((i + 1) / (double(numberOfSamples + 1)))));
-                            valuation.insert(val);
+                            auto lb = region.getLowerBoundary(itr->name());
+                            auto ub = region.getUpperBoundary(itr->name());
+                            // Creates samples between lb and ub, that is: lb, lb + (ub-lb)/(#samples -1), lb + 2* (ub-lb)/(#samples -1), ..., ub
+                            valuation[*itr2] = utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(lb + i*(ub-lb)/(numberOfSamples-1));
                         } else {
-                            auto val = std::pair<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>(
-                                    (*itr2), storm::utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(
-                                            boost::lexical_cast<std::string>((1) / (double(numberOfSamples + 1)))));
-                            valuation.insert(val);
+                            auto lb = region.getLowerBoundary(itr->name());
+                            valuation[*itr2] = utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(lb);
                         }
                     }
-                    storm::models::sparse::Mdp<double> sampleModel = instantiator.instantiate(valuation);
-                    auto checker = storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<double>>(sampleModel);
-                    std::unique_ptr<storm::modelchecker::CheckResult> checkResult;
+
+                    // Instantiate model and get result
+                    models::sparse::Mdp<ConstantType> sampleModel = instantiator.instantiate(valuation);
+                    auto checker = modelchecker::SparseMdpPrctlModelChecker<models::sparse::Mdp<ConstantType>>(sampleModel);
+                    std::unique_ptr<modelchecker::CheckResult> checkResult;
                     auto formula = formulas[0];
-                    if (formula->isProbabilityOperatorFormula() &&
-                        formula->asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
-                        const storm::modelchecker::CheckTask<storm::logic::UntilFormula, double> checkTask = storm::modelchecker::CheckTask<storm::logic::UntilFormula, double>(
-                                (*formula).asProbabilityOperatorFormula().getSubformula().asUntilFormula());
+                    if (formula->isProbabilityOperatorFormula() && formula->asProbabilityOperatorFormula().getSubformula().isUntilFormula()) {
+                        const modelchecker::CheckTask<logic::UntilFormula, ConstantType> checkTask = modelchecker::CheckTask<logic::UntilFormula, ConstantType>((*formula).asProbabilityOperatorFormula().getSubformula().asUntilFormula());
                         checkResult = checker.computeUntilProbabilities(Environment(), checkTask);
-                    } else if (formula->isProbabilityOperatorFormula() &&
-                               formula->asProbabilityOperatorFormula().getSubformula().isEventuallyFormula()) {
-                        const storm::modelchecker::CheckTask<storm::logic::EventuallyFormula, double> checkTask = storm::modelchecker::CheckTask<storm::logic::EventuallyFormula, double>(
-                                (*formula).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula());
+                    } else if (formula->isProbabilityOperatorFormula() && formula->asProbabilityOperatorFormula().getSubformula().isEventuallyFormula()) {
+                        const modelchecker::CheckTask<logic::EventuallyFormula, ConstantType> checkTask = modelchecker::CheckTask<logic::EventuallyFormula, ConstantType>((*formula).asProbabilityOperatorFormula().getSubformula().asEventuallyFormula());
                         checkResult = checker.computeReachabilityProbabilities(Environment(), checkTask);
                     } else {
-                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
-                                        "Expecting until or eventually formula");
+                        STORM_LOG_THROW(false, exceptions::NotSupportedException, "Expecting until or eventually formula");
                     }
-                    auto quantitativeResult = checkResult->asExplicitQuantitativeCheckResult<double>();
-                    std::vector<double> values = quantitativeResult.getValueVector();
+
+                    auto quantitativeResult = checkResult->asExplicitQuantitativeCheckResult<ConstantType>();
+                    std::vector<ConstantType> values = quantitativeResult.getValueVector();
                     auto initialStates = model->getInitialStates();
-                    double initial = 0;
-                    for (auto i = initialStates.getNextSetIndex(0); i < model->getNumberOfStates(); i = initialStates.getNextSetIndex(i+1)) {
-                        initial += values[i];
+                    ConstantType initial = 0;
+                    // Get total probability from initial states
+                    for (auto j = initialStates.getNextSetIndex(0); j < model->getNumberOfStates(); j = initialStates.getNextSetIndex(j + 1)) {
+                        initial += values[j];
                     }
-                    assert (initial >= precision && initial <= 1+precision);
-                    double diff = previous - initial;
-                    assert (previous == -1 || diff >= -1-precision && diff <= 1 + precision);
+                    // Calculate difference with result for previous valuation
+                    assert (initial >= 0 - precision && initial <= 1 + precision);
+                    ConstantType diff = previous - initial;
+                    assert (previous == -1 || diff >= -1 - precision && diff <= 1 + precision);
+
                     if (previous != -1 && (diff > precision || diff < -precision)) {
                         monDecr &= diff > precision; // then previous value is larger than the current value from the initial states
                         monIncr &= diff < -precision;
                     }
                     previous = initial;
                 }
-                result.insert(std::pair<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>(*itr, std::pair<bool,bool>(monIncr, monDecr)));
+                result.insert(std::pair<VariableType,  std::pair<bool, bool>>(*itr, std::pair<bool,bool>(monIncr, monDecr)));
             }
-
-            samplesWatch.stop();
             resultCheckOnSamples = result;
             return result;
         }
 
-        template class MonotonicityChecker<storm::RationalFunction>;
+        // Checks if a transition (from -> to) is monotonic increasing / decreasing in param on region
+        template <typename ValueType, typename ConstantType>
+        typename MonotonicityResult<typename MonotonicityChecker<ValueType, ConstantType>::VariableType>::Monotonicity MonotonicityChecker<ValueType, ConstantType>::checkTransitionMonRes(uint_fast64_t from, uint_fast64_t to, typename MonotonicityChecker<ValueType, ConstantType>::VariableType param){
+            if (to < matrix.getColumnCount()) {
+                ValueType function = getMatrixEntry(from, to);
+                function = getDerivative(function, param);
+                std::pair<bool, bool> res = checkDerivative(function, region);
+                if(res.first && !res.second){
+                    return MonotonicityResult<VariableType>::Monotonicity::Incr;
+                }
+                else if(!res.first && res.second){
+                    return MonotonicityResult<VariableType>::Monotonicity::Decr;
+                }
+                else if(res.first && res.second){
+                    return MonotonicityResult<VariableType>::Monotonicity::Constant;
+                }
+                else{
+                    return MonotonicityResult<VariableType>::Monotonicity::Not;
+                }
+
+            } /*else {
+                auto row = matrix.getRow(from);
+                for (auto column : row) {
+                    auto vars = column.getValue().gatherVariables();
+                    if (std::find(vars.begin(), vars.end(), param) != vars.end()) {
+                        return MonotonicityResult<VariableType>::Monotonicity::Unknown;
+                    }
+                }
+                return MonotonicityResult<VariableType>::Monotonicity::Constant;
+
+            }*/
+        }
+
+
+        // Checks the local monotonicity in param at state s (succ has to be sorted already) and adjusts Monotonicity Array accordingly
+        template <typename ValueType, typename ConstantType>
+        void MonotonicityChecker<ValueType, ConstantType>::checkParOnStateMonRes(uint_fast64_t s, const std::vector<uint_fast64_t>& succ, typename MonotonicityChecker<ValueType, ConstantType>::VariableType param, std::shared_ptr<MonotonicityResult<typename MonotonicityChecker<ValueType, ConstantType>::VariableType>> monResult){
+            uint_fast64_t succSize = succ.size();
+
+            // Create + fill Vector containing the Monotonicity of the transitions to the succs
+            std::vector<typename MonotonicityResult<typename MonotonicityChecker<ValueType, ConstantType>::VariableType>::Monotonicity> succsMon;
+            for (auto &&itr:succ) {
+                auto temp = checkTransitionMonRes(s, itr, param);
+                succsMon.push_back(temp);
+            }
+
+            uint_fast64_t index = 0;
+            typename MonotonicityResult<typename MonotonicityChecker<ValueType, ConstantType>::VariableType>::Monotonicity monCandidate = MonotonicityResult<VariableType>::Monotonicity::Constant;
+            typename MonotonicityResult<typename MonotonicityChecker<ValueType, ConstantType>::VariableType>::Monotonicity temp;
+
+            //go to first inc / dec
+            while(index < succSize && monCandidate == MonotonicityResult<VariableType>::Monotonicity::Constant){
+                temp = succsMon[index];
+                if(temp != MonotonicityResult<VariableType>::Monotonicity::Not){
+                    monCandidate = temp;
+                }
+                else{
+                    monResult->updateMonotonicityResult(param, MonotonicityResult<VariableType>::Monotonicity::Unknown);
+                    return;
+                }
+                index++;
+            }
+            if(index == succSize){
+                monResult->updateMonotonicityResult(param, monCandidate);
+                return;
+            }
+
+            //go to first non-inc / non-dec
+            while(index < succSize){
+                temp = succsMon[index];
+                if(temp == MonotonicityResult<VariableType>::Monotonicity::Not){
+                    monResult->updateMonotonicityResult(param, MonotonicityResult<VariableType>::Monotonicity::Unknown);
+                    return;
+                }
+                else if(temp == MonotonicityResult<VariableType>::Monotonicity::Constant || temp == monCandidate){
+                    index++;
+                }
+                else{
+                    monCandidate = temp;
+                    break;
+                }
+            }
+
+            //check if it doesn't change until the end of vector
+            while(index < succSize){
+                temp = succsMon[index];
+                if(temp == MonotonicityResult<VariableType>::Monotonicity::Constant || temp == monCandidate){
+                    index++;
+                }
+                else{
+                    monResult->updateMonotonicityResult(param, MonotonicityResult<VariableType>::Monotonicity::Unknown);
+                    return;
+                }
+            }
+
+            if(monCandidate == MonotonicityResult<VariableType>::Monotonicity::Incr){
+                monResult->updateMonotonicityResult(param, MonotonicityResult<VariableType>::Monotonicity::Decr);
+                return;
+            }
+            else{
+                monResult->updateMonotonicityResult(param, MonotonicityResult<VariableType>::Monotonicity::Incr);
+                return;
+            }
+
+
+        }
+                
+        // Returns a specific matrix entry
+        template <typename ValueType, typename ConstantType>
+        ValueType MonotonicityChecker<ValueType, ConstantType>::getMatrixEntry(uint_fast64_t rowIndex, uint_fast64_t columnIndex){
+            // Check if indices are out of bounds
+            assert (rowIndex < matrix.getRowCount() && columnIndex < matrix.getColumnCount());
+
+            auto row = matrix.getRow(rowIndex);
+            for(auto itr = row.begin(); itr!=row.end(); itr++){
+                if(itr->getColumn() == columnIndex){
+                    return itr->getValue();
+                }
+            }
+            //Change to ValueType?
+            return ValueType(0);
+        }
+
+        template class MonotonicityChecker<RationalFunction, double>;
+        template class MonotonicityChecker<RationalFunction, RationalNumber>;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

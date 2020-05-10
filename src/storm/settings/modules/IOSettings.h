@@ -107,16 +107,6 @@ namespace storm {
                  std::string getExportSchedulerFilename() const;
 
                 /*!
-                * Retrieves whether an optimal scheduler is to be exported
-                */
-                bool isExportMonotonicitySet() const;
-
-                /*!
-                 * Retrieves a filename to which an optimal scheduler will be exported.
-                 */
-                std::string getExportMonotonicityFilename() const;
-                
-                /*!
                  * Retrieves whether the explicit option was set.
                  *
                  * @return True if the explicit option was set.
@@ -349,7 +339,6 @@ namespace storm {
                 static const std::string exportCdfOptionName;
                 static const std::string exportCdfOptionShortName;
                 static const std::string exportSchedulerOptionName;
-                static const std::string exportMonotonicityName;
                 static const std::string explicitOptionName;
                 static const std::string explicitOptionShortName;
                 static const std::string explicitDrnOptionName;

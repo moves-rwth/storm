@@ -141,10 +141,10 @@ namespace storm {
         }
         
         template <typename ValueType>
-        std::shared_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRegionModelChecker(Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine) {
+        std::shared_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRegionModelChecker(Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine, bool allowModelSimplification = true) {
             switch (engine) {
                     case storm::modelchecker::RegionCheckEngine::ParameterLifting:
-                            return initializeParameterLiftingRegionModelChecker<ValueType, double>(env, model, task);
+                            return initializeParameterLiftingRegionModelChecker<ValueType, double>(env, model, task, false, allowModelSimplification);
                     case storm::modelchecker::RegionCheckEngine::ExactParameterLifting:
                             return initializeParameterLiftingRegionModelChecker<ValueType, storm::RationalNumber>(env, model, task);
                     case storm::modelchecker::RegionCheckEngine::ValidatingParameterLifting:
@@ -180,12 +180,18 @@ namespace storm {
          * @param coverageThreshold if given, the refinement stops as soon as the fraction of the area of the subregions with inconclusive result is less then this threshold
          * @param refinementDepthThreshold if given, the refinement stops at the given depth. depth=0 means no refinement.
          * @param hypothesis if not 'unknown', it is only checked whether the hypothesis holds (and NOT the complementary result).
+         * @param useMonotonicity if
          */
         template <typename ValueType>
-        std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> checkAndRefineRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, boost::optional<ValueType> const& coverageThreshold, boost::optional<uint64_t> const& refinementDepthThreshold = boost::none, storm::modelchecker::RegionResultHypothesis hypothesis = storm::modelchecker::RegionResultHypothesis::Unknown) {
+        std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> checkAndRefineRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, boost::optional<ValueType> const& coverageThreshold, boost::optional<uint64_t> const& refinementDepthThreshold = boost::none, storm::modelchecker::RegionResultHypothesis hypothesis = storm::modelchecker::RegionResultHypothesis::Unknown, bool useMonotonicity = false) {
             Environment env;
-            auto regionChecker = initializeRegionModelChecker(env, model, task, engine);
-            return regionChecker->performRegionRefinement(env, region, coverageThreshold, refinementDepthThreshold, hypothesis);
+            // If using monotonicity, we don't want more simplification, as this is already done in storm-pars.cpp
+            auto regionChecker = initializeRegionModelChecker(env, model, task, engine, !useMonotonicity);
+            if (useMonotonicity) {
+                return regionChecker->performRegionRefinementWithMonotonicity(env, region, coverageThreshold, refinementDepthThreshold, hypothesis);
+            } else {
+                return regionChecker->performRegionRefinement(env, region, coverageThreshold, refinementDepthThreshold, hypothesis);
+            }
         }
     
         /*!

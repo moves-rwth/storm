@@ -5,55 +5,68 @@
 #include "Order.h"
 #include "OrderExtender.h"
 #include "AssumptionMaker.h"
-#include "storm/storage/expressions/BinaryRelationExpression.h"
-#include "storm/storage/expressions/ExpressionManager.h"
 
-#include "storm/storage/expressions/RationalFunctionToExpression.h"
-#include "storm/utility/constants.h"
+#include "storm/logic/Formula.h"
+
 #include "storm/models/ModelBase.h"
 #include "storm/models/sparse/Dtmc.h"
 #include "storm/models/sparse/Mdp.h"
-#include "storm/logic/Formula.h"
-#include "storm/storage/SparseMatrix.h"
-#include "storm-pars/api/region.h"
+
 #include "storm/solver/Z3SmtSolver.h"
 
+#include "storm/storage/SparseMatrix.h"
+#include "storm/storage/expressions/BinaryRelationExpression.h"
+#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/expressions/RationalFunctionToExpression.h"
+
+#include "storm/utility/constants.h"
+
+#include "storm-pars/api/region.h"
+#include "MonotonicityResult.h"
+
+// TODO: Use monotonicityResult instead of pair of bools
+// TODO: Update monotonicity while creating the order
 
 namespace storm {
     namespace analysis {
 
-        template <typename ValueType>
+        template <typename ValueType, typename ConstantType>
         class MonotonicityChecker {
 
         public:
+            typedef typename utility::parametric::VariableType<ValueType>::type VariableType;
+            typedef typename utility::parametric::CoefficientType<ValueType>::type CoefficientType;
             /*!
              * Constructor of MonotonicityChecker
              * @param model the model considered
              * @param formula the formula considered
              * @param regions the regions to consider
-             * @param validate whether or not assumptions are to be validated
              * @param numberOfSamples number of samples taken for monotonicity checking, default 0,
              *          if 0 then no check on samples is executed
              * @param precision precision on which the samples are compared
              */
-            MonotonicityChecker(std::shared_ptr<storm::models::ModelBase> model, std::vector<std::shared_ptr<storm::logic::Formula const>> formulas, std::vector<storm::storage::ParameterRegion<ValueType>> regions, bool validate, uint_fast64_t numberOfSamples=0, double const& precision=0.000001);
+            MonotonicityChecker(std::shared_ptr<models::ModelBase> model, std::vector<std::shared_ptr<logic::Formula const>> formulas, std::vector<storage::ParameterRegion<ValueType>> regions, uint_fast64_t numberOfSamples=0, double const& precision=0.000001, bool dotOutput = false);
 
             /*!
-             * Checks for model and formula as provided in constructor for monotonicity
+             * Checks for given min/maxValues monotonicity
+             * Will not make any assumptions
+             * @param minValues lower bound on probabilities for the states
+             * @param maxValues upper bound on probabilities for the states
+             * @return a map with for each parameter the monotonicity result
              */
-            std::map<storm::analysis::Order*, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> checkMonotonicity(std::ostream& outfile);
+            MonotonicityResult<VariableType> checkMonotonicity(std::vector<ConstantType> minValues, std::vector<ConstantType> maxValues);
 
             /*!
              * Checks if monotonicity can be found in this order. Unordered states are not checked
              */
-            bool somewhereMonotonicity(storm::analysis::Order* order) ;
+            bool somewhereMonotonicity(analysis::Order* order) ;
 
             /*!
              * Checks if a derivative >=0 or/and <=0
              * @param derivative The derivative you want to check
              * @return pair of bools, >= 0 and <= 0
              */
-            static std::pair<bool, bool> checkDerivative(ValueType derivative, storm::storage::ParameterRegion<ValueType> reg) {
+            static std::pair<bool, bool> checkDerivative(ValueType derivative, storage::ParameterRegion<ValueType> reg) {
                 bool monIncr = false;
                 bool monDecr = false;
 
@@ -65,85 +78,93 @@ namespace storm {
                     monDecr = derivative.constantPart() <= 0;
                 } else {
 
-                    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::MathsatSmtSolverFactory>();
-                    std::shared_ptr<storm::expressions::ExpressionManager> manager(
-                            new storm::expressions::ExpressionManager());
+                    std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
+                    std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
+                    solver::Z3SmtSolver s(*manager);
+                    std::set<VariableType> variables = derivative.gatherVariables();
 
-                    storm::solver::Z3SmtSolver s(*manager);
-
-                    std::set<typename utility::parametric::VariableType<ValueType>::type> variables = derivative.gatherVariables();
-
-
+                    expressions::Expression exprBounds = manager->boolean(true);
                     for (auto variable : variables) {
-                        manager->declareRationalVariable(variable.name());
-
+                        auto managerVariable = manager->declareRationalVariable(variable.name());
+                        auto lb = utility::convertNumber<RationalNumber>(reg.getLowerBoundary(variable));
+                        auto ub = utility::convertNumber<RationalNumber>(reg.getUpperBoundary(variable));
+                        exprBounds = exprBounds && manager->rational(lb) < managerVariable && managerVariable < manager->rational(ub);
                     }
-                    storm::expressions::Expression exprBounds = manager->boolean(true);
-                    auto managervars = manager->getVariables();
-                    for (auto var : managervars) {
-                        auto lb = storm::utility::convertNumber<storm::RationalNumber>(reg.getLowerBoundary(var.getName()));
-                        auto ub = storm::utility::convertNumber<storm::RationalNumber>(reg.getUpperBoundary(var.getName()));
-                        exprBounds = exprBounds && manager->rational(lb) < var && var < manager->rational(ub);
-                    }
-                    assert (s.check() == storm::solver::SmtSolver::CheckResult::Sat);
 
-                    auto converter = storm::expressions::RationalFunctionToExpression<ValueType>(manager);
+                    auto converter = expressions::RationalFunctionToExpression<ValueType>(manager);
 
-                    // < 0 so not monotone increasing
-                    storm::expressions::Expression exprToCheck =
-                            converter.toExpression(derivative) < manager->rational(0);
+                    // < 0, so not monotone increasing. If this is unsat, then it should be monotone increasing.
+                    expressions::Expression exprToCheck = converter.toExpression(derivative) < manager->rational(0);
                     s.add(exprBounds);
                     s.add(exprToCheck);
-                    // If it is unsatisfiable then it should be monotone increasing
-                    monIncr = s.check() == storm::solver::SmtSolver::CheckResult::Unsat;
+                    monIncr = s.check() == solver::SmtSolver::CheckResult::Unsat;
 
-                    // > 0 so not monotone decreasing
-                    exprToCheck =
-                            converter.toExpression(derivative) > manager->rational(0);
-
+                    // > 0, so not monotone decreasing. If this is unsat it should be monotone decreasing.
+                    exprToCheck = converter.toExpression(derivative) > manager->rational(0);
                     s.reset();
                     s.add(exprBounds);
-                    assert (s.check() == storm::solver::SmtSolver::CheckResult::Sat);
                     s.add(exprToCheck);
-                    monDecr = s.check() == storm::solver::SmtSolver::CheckResult::Unsat;
+                    monDecr = s.check() == solver::SmtSolver::CheckResult::Unsat;
                 }
                 assert (!(monIncr && monDecr) || derivative.isZero());
 
                 return std::pair<bool, bool>(monIncr, monDecr);
             }
 
+            /*!
+             * Builds Reachability Orders for the given model and simultaneously uses them to check for Monotonicity
+             */
+            std::map<analysis::Order*, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> checkMonotonicityInBuild(std::ostream& outfile, std::string dotOutfileName = "dotOutput");
+
+
         private:
-            std::map<storm::analysis::Order*, std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>>> checkMonotonicity(std::ostream& outfile, std::map<storm::analysis::Order*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> map, storm::storage::SparseMatrix<ValueType> matrix);
+            std::map<analysis::Order*, std::map<VariableType, std::pair<bool, bool>>> checkMonotonicity(std::ostream& outfile, std::map<analysis::Order*, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> map);
 
-            std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> analyseMonotonicity(uint_fast64_t i, Order* order, storm::storage::SparseMatrix<ValueType> matrix) ;
+            std::map<VariableType, std::pair<bool, bool>> analyseMonotonicity(uint_fast64_t i, Order* order) ;
 
-            std::map<Order*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> createOrder();
+            MonotonicityResult<VariableType> analyseMonotonicity(Order* order) ;
 
-            std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> checkOnSamples(std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples);
+            void createOrder();
 
-            std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> checkOnSamples(std::shared_ptr<storm::models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples);
+            Order* createOrder(std::vector<ConstantType> minValues, std::vector<ConstantType> maxValues);
 
-            std::unordered_map<ValueType, std::unordered_map<typename utility::parametric::VariableType<ValueType>::type, ValueType>> derivatives;
+            std::map<VariableType, std::pair<bool, bool>> checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples);
 
-            ValueType getDerivative(ValueType function, typename utility::parametric::VariableType<ValueType>::type var);
+            std::map<VariableType, std::pair<bool, bool>> checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples);
 
-            std::map<Order*, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>>> extendOrderWithAssumptions(Order* order, AssumptionMaker<ValueType>* assumptionMaker, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<storm::expressions::BinaryRelationExpression>> assumptions);
+            std::unordered_map<ValueType, std::unordered_map<VariableType, ValueType>> derivatives;
 
-            std::shared_ptr<storm::models::ModelBase> model;
+            ValueType getDerivative(ValueType function, VariableType var);
 
-            std::vector<std::shared_ptr<storm::logic::Formula const>> formulas;
+            void extendOrderWithAssumptions(Order* order, AssumptionMaker<ValueType, ConstantType>* assumptionMaker, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions, std::shared_ptr<MonotonicityResult<VariableType>> monRes);
 
-            bool validate;
+            std::shared_ptr<models::ModelBase> model;
+
+            std::vector<std::shared_ptr<logic::Formula const>> formulas;
+
+            bool dotOutput;
 
             bool checkSamples;
 
-            std::map<typename utility::parametric::VariableType<ValueType>::type, std::pair<bool, bool>> resultCheckOnSamples;
+            std::map<VariableType, std::pair<bool, bool>> resultCheckOnSamples;
 
-            OrderExtender<ValueType> *extender;
+            std::map<analysis::Order*, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> monResults;
 
-            double precision;
+            OrderExtender<ValueType, ConstantType> *extender;
 
-            storm::storage::ParameterRegion<ValueType> region;
+            ConstantType precision;
+
+            storage::ParameterRegion<ValueType> region;
+
+            storage::SparseMatrix<ValueType> matrix;
+
+            void checkParOnStateMonRes(uint_fast64_t s, const std::vector<uint_fast64_t>& succ, VariableType param, std::shared_ptr<MonotonicityResult<VariableType>> monResult);
+
+            typename MonotonicityResult<VariableType>::Monotonicity checkTransitionMonRes(uint_fast64_t from, uint_fast64_t to, VariableType param);
+
+            std::pair<std::vector<double>, std::vector<double>> getMinMaxValues();
+
+            ValueType getMatrixEntry(uint_fast64_t rowIndex, uint_fast64_t columnIndex);
         };
     }
 }

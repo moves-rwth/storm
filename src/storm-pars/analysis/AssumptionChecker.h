@@ -19,10 +19,11 @@ namespace storm {
             INVALID,
             UNKNOWN,
         };
-        template<typename ValueType>
+        template<typename ValueType, typename ConstantType>
         class AssumptionChecker {
         public:
-
+            typedef typename utility::parametric::VariableType<ValueType>::type VariableType;
+            typedef typename utility::parametric::CoefficientType<ValueType>::type CoefficientType;
             /*!
              * Constructs an AssumptionChecker based on the number of samples, for the given formula and model.
              *
@@ -30,7 +31,7 @@ namespace storm {
              * @param model The dtmc model to check the formula on.
              * @param numberOfSamples Number of sample points.
              */
-            AssumptionChecker(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Dtmc<ValueType>> model, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t numberOfSamples);
+            AssumptionChecker(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Dtmc<ValueType>> model, storage::ParameterRegion<ValueType> region, uint_fast64_t numberOfSamples);
 
             /*!
              * Constructs an AssumptionChecker based on the number of samples, for the given formula and model.
@@ -72,18 +73,9 @@ namespace storm {
 
             storage::SparseMatrix<ValueType> matrix;
 
-            std::vector<std::vector<double>> samples;
+            std::vector<std::vector<ConstantType>> samples;
 
-            void createSamples();
-
-            AssumptionStatus validateAssumptionFunction(Order* order,
-                    typename storage::SparseMatrix<ValueType>::iterator state1succ1,
-                    typename storage::SparseMatrix<ValueType>::iterator state1succ2,
-                    typename storage::SparseMatrix<ValueType>::iterator state2succ1,
-                    typename storage::SparseMatrix<ValueType>::iterator state2succ2);
-
-            storm::storage::ParameterRegion<ValueType> region;
-
+            storage::ParameterRegion<ValueType> region;
         };
     }
 }

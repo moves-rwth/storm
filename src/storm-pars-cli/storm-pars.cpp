@@ -1,11 +1,12 @@
 
-#include "storm-pars/analysis/MonotonicityChecker.h"
 
 #include "storm-cli-utilities/cli.h"
 #include "storm-cli-utilities/model-handling.h"
 
 #include "storm-pars/api/storm-pars.h"
 #include "storm-pars/api/region.h"
+#include "storm-pars/analysis/MonotonicityChecker.h"
+
 
 #include "storm-pars/modelchecker/instantiation/SparseCtmcInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
@@ -453,7 +454,7 @@ namespace storm {
         }
         
         template <typename ValueType>
-        void verifyRegionsWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions) {
+        void verifyRegionsWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, bool const& useMonotonicity = false) {
             STORM_LOG_ASSERT(!regions.empty(), "Can not analyze an empty set of regions.");
 
             auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
@@ -486,7 +487,7 @@ namespace storm {
                     if (regionSettings.isDepthLimitSet()) {
                         optionalDepthLimit = regionSettings.getDepthLimit();
                     }
-                    std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true), regions.front(), engine, refinementThreshold, optionalDepthLimit, regionSettings.getHypothesis());
+                    std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true), regions.front(), engine, refinementThreshold, optionalDepthLimit, regionSettings.getHypothesis(), useMonotonicity);
                     return result;
                 };
             } else {
@@ -507,7 +508,7 @@ namespace storm {
         }
 
         template <typename ValueType>
-        void verifyWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, SampleInformation<ValueType> const& samples) {
+        void verifyWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, SampleInformation<ValueType> const& samples, bool const& useMonotonicity=false) {
             if (regions.empty()) {
                 storm::pars::verifyPropertiesWithSparseEngine(model, input, samples);
             } else {
@@ -515,7 +516,7 @@ namespace storm {
                 if (regionSettings.isExtremumSet()) {
                     storm::pars::computeRegionExtremumWithSparseEngine(model, input, regions);
                 } else {
-                    storm::pars::verifyRegionsWithSparseEngine(model, input, regions);
+                    storm::pars::verifyRegionsWithSparseEngine(model, input, regions, useMonotonicity);
                 }
             }
         }
@@ -554,9 +555,9 @@ namespace storm {
         }
 
         template <storm::dd::DdType DdType, typename ValueType>
-        void verifyParametricModel(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, SampleInformation<ValueType> const& samples) {
+        void verifyParametricModel(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, SampleInformation<ValueType> const& samples, bool const& useMonotonicity=false) {
             if (model->isSparseModel()) {
-                storm::pars::verifyWithSparseEngine<ValueType>(model->as<storm::models::sparse::Model<ValueType>>(), input, regions, samples);
+                storm::pars::verifyWithSparseEngine<ValueType>(model->as<storm::models::sparse::Model<ValueType>>(), input, regions, samples, useMonotonicity);
             } else {
                 storm::pars::verifyWithDdEngine<DdType, ValueType>(model->as<storm::models::symbolic::Model<DdType, ValueType>>(), input, regions, samples);
             }
@@ -582,8 +583,10 @@ namespace storm {
 
             STORM_LOG_THROW(model || input.properties.empty(), storm::exceptions::InvalidSettingsException, "No input model.");
 
-            if (monSettings.isMonotonicityAnalysisSet()) {
-                // Simplify the model
+
+            if (model && (monSettings.isMonotonicityAnalysisSet() || parSettings.isUseMonotonicitySet())) {
+                // Simplify the model for monotonicity analysis
+
                 storm::utility::Stopwatch simplifyingWatch(true);
                 if (model->isOfType(storm::models::ModelType::Dtmc)) {
                     auto consideredModel = (model->as<storm::models::sparse::Dtmc<ValueType>>());
@@ -708,20 +711,21 @@ namespace storm {
 
             std::vector<storm::storage::ParameterRegion<ValueType>> regions = parseRegions<ValueType>(model);
 
-            if (monSettings.isMonotonicityAnalysisSet()) {
+            if (model && monSettings.isMonotonicityAnalysisSet()) {
                 std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
                 // Monotonicity
                 storm::utility::Stopwatch monotonicityWatch(true);
 
                 STORM_LOG_THROW(regions.size() <= 1, storm::exceptions::InvalidArgumentException, "Monotonicity analysis only allowed on single region");
-                storm::analysis::MonotonicityChecker<ValueType> monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType>(model, formulas, regions, monSettings.isValidateAssumptionsSet(), monSettings.getNumberOfSamples(), monSettings.getMonotonicityAnalysisPrecision());
-                if (ioSettings.isExportMonotonicitySet()) {
+                // TODO: type, should this be double?
+                storm::analysis::MonotonicityChecker<ValueType, double> monotonicityChecker = storm::analysis::MonotonicityChecker<ValueType, double>(model, formulas, regions, monSettings.getNumberOfSamples(), monSettings.getMonotonicityAnalysisPrecision(), monSettings.isDotOutputSet());
+                if (monSettings.isExportMonotonicitySet()) {
                     std::ofstream outfile;
-                    utility::openFile(ioSettings.getExportMonotonicityFilename(), outfile);
-                    monotonicityChecker.checkMonotonicity(outfile);
+                    utility::openFile(monSettings.getExportMonotonicityFilename(), outfile);
+                    monotonicityChecker.checkMonotonicityInBuild(outfile, monSettings.getDotOutputFilename());
                     utility::closeFile(outfile);
                 } else {
-                    monotonicityChecker.checkMonotonicity(std::cout);
+                    monotonicityChecker.checkMonotonicityInBuild(std::cout, monSettings.getDotOutputFilename());
                 }
                 monotonicityWatch.stop();
                 STORM_PRINT(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl
@@ -747,7 +751,7 @@ namespace storm {
             }
 
             if (model) {
-                verifyParametricModel<DdType, ValueType>(model, input, regions, samples);
+                verifyParametricModel<DdType, ValueType>(model, input, regions, samples, parSettings.isUseMonotonicitySet());
             }
         }
 
