@@ -188,7 +188,9 @@ namespace storm {
             // If using monotonicity, we don't want more simplification, as this is already done in storm-pars.cpp
             auto regionChecker = initializeRegionModelChecker(env, model, task, engine, !useMonotonicity);
             if (useMonotonicity) {
-                return regionChecker->performRegionRefinementWithMonotonicity(env, region, coverageThreshold, refinementDepthThreshold, hypothesis);
+                STORM_LOG_WARN("Not yet implemented, using normal region refinement");
+                return regionChecker->performRegionRefinement(env, region, coverageThreshold, refinementDepthThreshold, hypothesis);
+//                return regionChecker->performRegionRefinementWithMonotonicity(env, region, coverageThreshold, refinementDepthThreshold, hypothesis);
             } else {
                 return regionChecker->performRegionRefinement(env, region, coverageThreshold, refinementDepthThreshold, hypothesis);
             }
