@@ -23,8 +23,8 @@ namespace storm {
                 // Intentionally empty
             }
 
-            DFTElementType type() const override {
-                return DFTElementType::BE_CONST;
+            BEType beType() const override {
+                return BEType::CONSTANT;
             }
 
             /*!

@@ -35,21 +35,30 @@ namespace storm {
                 varNames.push_back("t_" + element->name());
                 timePointVariables.emplace(i, varNames.size() - 1);
                 switch (element->type()) {
-                    case storm::storage::DFTElementType::BE_EXP:
-                        beVariables.push_back(varNames.size() - 1);
-                        break;
-                    case storm::storage::DFTElementType::BE_CONST: {
-                        STORM_LOG_WARN("Constant BEs are only experimentally supported in the SMT encoding");
-                        // Constant BEs are initially either failed or failsafe, treat them differently
-                        auto be = std::static_pointer_cast<storm::storage::BEConst<double> const>(element);
-                        if (be->failed()) {
-                            STORM_LOG_THROW(!failedBeIsSet, storm::exceptions::NotSupportedException,
-                                            "DFTs containing more than one constantly failed BE are not supported");
-                            notFailed = dft.nrBasicElements();
-                            failedBeVariables = varNames.size() - 1;
-                            failedBeIsSet = true;
-                        } else {
-                            failsafeBeVariables.push_back(varNames.size() - 1);
+                    case storm::storage::DFTElementType::BE: {
+                        auto be = std::static_pointer_cast<storm::storage::DFTBE<double> const>(element);
+                        switch (be->beType()) {
+                            case storm::storage::BEType::EXPONENTIAL:
+                                beVariables.push_back(varNames.size() - 1);
+                                break;
+                            case storm::storage::BEType::CONSTANT: {
+                                STORM_LOG_WARN("Constant BEs are only experimentally supported in the SMT encoding");
+                                // Constant BEs are initially either failed or failsafe, treat them differently
+                                auto be = std::static_pointer_cast<storm::storage::BEConst<double> const>(element);
+                                if (be->failed()) {
+                                    STORM_LOG_THROW(!failedBeIsSet, storm::exceptions::NotSupportedException,
+                                                    "DFTs containing more than one constantly failed BE are not supported");
+                                    notFailed = dft.nrBasicElements();
+                                    failedBeVariables = varNames.size() - 1;
+                                    failedBeIsSet = true;
+                                } else {
+                                    failsafeBeVariables.push_back(varNames.size() - 1);
+                                }
+                                break;
+                            }
+                            default:
+                                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "BE type '" << be->beType() << "' not known.");
+                                break;
                         }
                         break;
                     }
@@ -146,8 +155,7 @@ namespace storm {
                 }
 
                 switch (element->type()) {
-                    case storm::storage::DFTElementType::BE_EXP:
-                    case storm::storage::DFTElementType::BE_CONST:
+                    case storm::storage::DFTElementType::BE:
                         // BEs were already considered before
                         break;
                     case storm::storage::DFTElementType::AND:
@@ -208,19 +216,17 @@ namespace storm {
             std::vector<std::shared_ptr<SmtConstraint>> triggerConstraints;
             for (size_t i = 0; i < dft.nrElements(); ++i) {
                 std::shared_ptr<storm::storage::DFTElement<ValueType> const> element = dft.getElement(i);
-                if (element->type() == storm::storage::DFTElementType::BE_CONST) {
+                if (element->isBasicElement()) {
                     auto be = std::static_pointer_cast<storm::storage::DFTBE<double> const>(element);
-                    triggerConstraints.clear();
-                    for (auto const &dependency : be->ingoingDependencies()) {
-                        triggerConstraints.push_back(std::make_shared<IsConstantValue>(
-                                timePointVariables.at(dependency->triggerEvent()->id()), notFailed));
-                    }
-                    if (!triggerConstraints.empty()) {
-                        constraints.push_back(std::make_shared<Implies>(
-                                std::make_shared<IsConstantValue>(timePointVariables.at(be->id()), notFailed),
-                                std::make_shared<And>(triggerConstraints)));
-                        constraints.back()->setDescription(
-                                "Failsafe BE " + be->name() + " stays failsafe if no trigger fails");
+                    if (be->beType() == storm::storage::BEType::CONSTANT) {
+                        triggerConstraints.clear();
+                        for (auto const &dependency : be->ingoingDependencies()) {
+                            triggerConstraints.push_back(std::make_shared<IsConstantValue>(timePointVariables.at(dependency->triggerEvent()->id()), notFailed));
+                        }
+                        if (!triggerConstraints.empty()) {
+                            constraints.push_back(std::make_shared<Implies>(std::make_shared<IsConstantValue>(timePointVariables.at(be->id()), notFailed), std::make_shared<And>(triggerConstraints)));
+                            constraints.back()->setDescription("Failsafe BE " + be->name() + " stays failsafe if no trigger fails");
+                        }
                     }
                 }
             }

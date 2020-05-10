@@ -206,8 +206,6 @@ namespace storm {
                         break;
                     }
                         //BEs
-                    case storage::DFTElementType::BE_EXP:
-                    case storage::DFTElementType::BE_CONST:
                     case storage::DFTElementType::BE: {
                         auto be = std::static_pointer_cast<storm::storage::DFTBE<ValueType>>(currentElement);
                         dynamicBehaviorVector[be->id()] = true;
@@ -506,8 +504,7 @@ namespace storm {
                     case DFTElementType::OR:
                         builder.addOrElement(newParentName, childrenNames);
                         break;
-                    case DFTElementType::BE_EXP:
-                    case DFTElementType::BE_CONST:
+                    case DFTElementType::BE:
                     case DFTElementType::VOT:
                     case DFTElementType::PAND:
                     case DFTElementType::SPARE:
@@ -548,8 +545,7 @@ namespace storm {
                     case DFTElementType::AND:
                     case DFTElementType::OR:
                     case DFTElementType::VOT:
-                    case DFTElementType::BE_EXP:
-                    case DFTElementType::BE_CONST:
+                    case DFTElementType::BE:
                         break;
                     case DFTElementType::PAND:
                     case DFTElementType::SPARE:
@@ -577,8 +573,7 @@ namespace storm {
                     case DFTElementType::VOT:
                         ++noStatic;
                         break;
-                    case DFTElementType::BE_EXP:
-                    case DFTElementType::BE_CONST:
+                    case DFTElementType::BE:
                     case DFTElementType::PAND:
                     case DFTElementType::SPARE:
                     case DFTElementType::POR:
@@ -1089,8 +1084,7 @@ namespace storm {
             size_t noRestriction = 0;
             for (auto const& elem : mElements) {
                 switch (elem->type()) {
-                    case DFTElementType::BE_EXP:
-                    case DFTElementType::BE_CONST:
+                    case DFTElementType::BE:
                         ++noBE;
                         break;
                     case DFTElementType::AND:

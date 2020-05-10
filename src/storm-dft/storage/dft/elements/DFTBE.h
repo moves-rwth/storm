@@ -22,6 +22,16 @@ namespace storm {
                 // Intentionally empty
             }
 
+            DFTElementType type() const override {
+                return DFTElementType::BE;
+            }
+
+            /*!
+             * Get type of BE (constant, exponential, etc.).
+             * @return BE type.
+             */
+            virtual BEType beType() const = 0;
+
             size_t nrChildren() const override {
                 return 0;
             }

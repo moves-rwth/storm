@@ -25,8 +25,8 @@ namespace storm {
                 STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(failureRate), "Exponential failure rate should not be zero.");
             }
 
-            DFTElementType type() const override {
-                return DFTElementType::BE_EXP;
+            BEType beType() const override {
+                return BEType::EXPONENTIAL;
             }
 
             /*!

@@ -187,8 +187,7 @@ namespace storm {
                 case storm::storage::DFTElementType::SPARE:
                    element = std::make_shared<storm::storage::DFTSpare<ValueType>>(mNextId++, name);
                    break;
-                case storm::storage::DFTElementType::BE_EXP:
-                case storm::storage::DFTElementType::BE_CONST:
+                case storm::storage::DFTElementType::BE:
                 case storm::storage::DFTElementType::VOT:
                 case storm::storage::DFTElementType::PDEP:
                     // Handled separately
@@ -254,6 +253,9 @@ namespace storm {
         void DFTBuilder<ValueType>::copyElement(DFTElementPointer element) {
             std::vector<std::string> children;
             switch (element->type()) {
+                case storm::storage::DFTElementType::BE:
+                    copyBE(std::static_pointer_cast<storm::storage::DFTBE<ValueType>>(element));
+                    break;
                 case storm::storage::DFTElementType::AND:
                 case storm::storage::DFTElementType::OR:
                 case storm::storage::DFTElementType::PAND:
@@ -265,18 +267,6 @@ namespace storm {
                         children.push_back(elem->name());
                     }
                     copyGate(std::static_pointer_cast<storm::storage::DFTGate<ValueType>>(element), children);
-                    break;
-                }
-                case storm::storage::DFTElementType::BE_EXP:
-                {
-                    auto beExp = std::static_pointer_cast<storm::storage::BEExponential<ValueType>>(element);
-                    addBasicElementExponential(beExp->name(), beExp->activeFailureRate(), beExp->dormancyFactor(), beExp->isTransient());
-                    break;
-                }
-                case storm::storage::DFTElementType::BE_CONST:
-                {
-                    auto beConst = std::static_pointer_cast<storm::storage::BEConst<ValueType>>(element);
-                    addBasicElementConst(beConst->name(), beConst->failed());
                     break;
                 }
                 case storm::storage::DFTElementType::PDEP:
@@ -300,6 +290,27 @@ namespace storm {
                 }
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "DFT type '" << element->type() << "' not known.");
+                    break;
+            }
+        }
+
+        template<typename ValueType>
+        void DFTBuilder<ValueType>::copyBE(DFTBEPointer be) {
+            switch (be->beType()) {
+                case storm::storage::BEType::CONSTANT:
+                {
+                    auto beConst = std::static_pointer_cast<storm::storage::BEConst<ValueType>>(be);
+                    addBasicElementConst(beConst->name(), beConst->failed());
+                    break;
+                }
+                case storm::storage::BEType::EXPONENTIAL:
+                {
+                    auto beExp = std::static_pointer_cast<storm::storage::BEExponential<ValueType>>(be);
+                    addBasicElementExponential(beExp->name(), beExp->activeFailureRate(), beExp->dormancyFactor(), beExp->isTransient());
+                    break;
+                }
+                default:
+                    STORM_LOG_ASSERT(false, "BE type not known.");
                     break;
             }
         }

@@ -160,17 +160,17 @@ namespace storm {
                     if (elem->isBasicElement()) {
                         std::shared_ptr<DFTBE<ValueType>> be = std::static_pointer_cast<DFTBE<ValueType>>(elem);
                         if (be->canFail()) {
-                            switch (be->type()) {
-                                case storm::storage::DFTElementType::BE_EXP: {
+                            switch (be->beType()) {
+                                case storm::storage::BEType::CONSTANT:
+                                    result.push_back(be->id());
+                                    break;
+                                case storm::storage::BEType::EXPONENTIAL: {
                                     auto beExp = std::static_pointer_cast<BEExponential<ValueType>>(be);
                                     if (!beExp->isColdBasicElement()) {
                                         result.push_back(be->id());
                                     }
                                     break;
                                 }
-                                case storm::storage::DFTElementType::BE_CONST:
-                                    result.push_back(be->id());
-                                    break;
                                 default:
                                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BE type '" << be->type() << "' is not supported.");
                             }

@@ -88,8 +88,16 @@ namespace storm {
             } else if (element->isBasicElement()) {
                 std::shared_ptr<DFTBE<ValueType> const> be = std::static_pointer_cast<DFTBE<ValueType> const>(element);
                 // Set BE specific data
-                switch (element->type()) {
-                    case storm::storage::DFTElementType::BE_EXP:
+                switch (be->beType()) {
+                    case storm::storage::BEType::CONSTANT:
+                    {
+                        auto beConst = std::static_pointer_cast<BEConst<ValueType> const>(be);
+                        std::stringstream stream;
+                        nodeData["distribution"] = "const";
+                        nodeData["failed"] = beConst->failed();
+                        break;
+                    }
+                    case storm::storage::BEType::EXPONENTIAL:
                     {
                         auto beExp = std::static_pointer_cast<BEExponential<ValueType> const>(be);
                         std::stringstream stream;
@@ -101,16 +109,8 @@ namespace storm {
                         nodeData["dorm"] = stream.str();
                         break;
                     }
-                    case storm::storage::DFTElementType::BE_CONST:
-                    {
-                        auto beConst = std::static_pointer_cast<BEConst<ValueType> const>(be);
-                        std::stringstream stream;
-                        nodeData["distribution"] = "const";
-                        nodeData["failed"] = beConst->failed();
-                        break;
-                    }
                     default:
-                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << be->type() << "' is not known.");
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << be->beType() << "' is not known.");
                         break;
                 }
             } else {

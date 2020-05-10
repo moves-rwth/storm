@@ -9,9 +9,8 @@ namespace storm {
          * Element types in a DFT.
          */
         enum class DFTElementType {
-            BE_EXP, BE_CONST,
-            AND, OR, VOT,
             BE,
+            AND, OR, VOT,
             PAND,
             POR,
             SPARE,
@@ -19,6 +18,15 @@ namespace storm {
             SEQ,
             MUTEX
         };
+
+        /*!
+         * BE types in a DFT.
+         */
+        enum class BEType {
+            CONSTANT,
+            EXPONENTIAL
+        };
+
 
         inline bool isGateType(DFTElementType const& type) {
             switch (type) {
@@ -29,8 +37,7 @@ namespace storm {
                 case DFTElementType::POR:
                 case DFTElementType::SPARE:
                     return true;
-                case DFTElementType::BE_EXP:
-                case DFTElementType::BE_CONST:
+                case DFTElementType::BE:
                 case DFTElementType::PDEP:
                 case DFTElementType::SEQ:
                 case DFTElementType::MUTEX:
@@ -60,12 +67,10 @@ namespace storm {
             }
         }
 
-        inline std::string toString(DFTElementType const& tp) {
-            switch (tp) {
-                case DFTElementType::BE_EXP:
-                    return "BE_EXP";
-                case DFTElementType::BE_CONST:
-                    return "BE_CONST";
+        inline std::string toString(DFTElementType const& type) {
+            switch (type) {
+                case DFTElementType::BE:
+                    return "BE";
                 case DFTElementType::AND:
                     return "AND";
                 case DFTElementType::OR:
@@ -90,7 +95,23 @@ namespace storm {
             }
         }
 
+        inline std::string toString(BEType const& type) {
+            switch (type) {
+                case BEType::CONSTANT:
+                    return "CONST";
+                case BEType::EXPONENTIAL:
+                    return "EXPONENTIAL";
+                default:
+                    STORM_LOG_ASSERT(false, "BE type not known.");
+                    return "";
+            }
+        }
+
         inline std::ostream& operator<<(std::ostream& os, DFTElementType const& type) {
+            return os << toString(type);
+        }
+
+        inline std::ostream& operator<<(std::ostream& os, BEType const& type) {
             return os << toString(type);
         }
 

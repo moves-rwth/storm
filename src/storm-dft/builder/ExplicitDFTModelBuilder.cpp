@@ -748,8 +748,11 @@ namespace storm {
                     // Consider only still operational BEs
                     if (state->isOperational(id)) {
                         auto be = dft.getBasicElement(id);
-                        switch (be->type()) {
-                            case storm::storage::DFTElementType::BE_EXP:
+                        switch (be->beType()) {
+                            case storm::storage::BEType::CONSTANT:
+                                // Ignore BE which cannot fail
+                                continue;
+                            case storm::storage::BEType::EXPONENTIAL:
                             {
                                 // Get BE rate
                                 ValueType rate = state->getBERate(id);
@@ -765,9 +768,6 @@ namespace storm {
                                 rateSum += rate;
                                 break;
                             }
-                            case storm::storage::DFTElementType::BE_CONST:
-                                // Ignore BE which cannot fail
-                                continue;
                             default:
                                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << be->type() << "' is not known.");
                                 break;
