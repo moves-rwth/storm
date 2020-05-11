@@ -14,6 +14,7 @@
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/macros.h"
 #include "storm-pomdp/storage/BeliefManager.h"
+#include "storm-pomdp/modelchecker/TrivialPomdpValueBoundsModelChecker.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
@@ -38,7 +39,7 @@ namespace storm {
                 ModelChecked
             };
             
-            BeliefMdpExplorer(std::shared_ptr<BeliefManagerType> beliefManager, std::vector<ValueType> const& pomdpLowerValueBounds, std::vector<ValueType> const& pomdpUpperValueBounds) : beliefManager(beliefManager), pomdpLowerValueBounds(pomdpLowerValueBounds), pomdpUpperValueBounds(pomdpUpperValueBounds), status(Status::Uninitialized) {
+            BeliefMdpExplorer(std::shared_ptr<BeliefManagerType> beliefManager, storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const& pomdpValueBounds) : beliefManager(beliefManager), pomdpValueBounds(pomdpValueBounds), status(Status::Uninitialized) {
                 // Intentionally left empty
             }
             BeliefMdpExplorer(BeliefMdpExplorer&& other) = default;
@@ -544,16 +545,24 @@ namespace storm {
                 return upperValueBounds[getCurrentMdpState()];
             }
 
-            /// This requires that we either over-approximate the scheduler behavior in this direction (e.g. grid approximation for minimizing properties)
-            /// Or that the pomdpLowerValueBounds are based on a memoryless scheduler. Otherwise, such a triangulation would not be valid.
             ValueType computeLowerValueBoundAtBelief(BeliefId const& beliefId) const {
-                return beliefManager->getWeightedSum(beliefId, pomdpLowerValueBounds);
+                STORM_LOG_ASSERT(!pomdpValueBounds.lower.empty(), "Requested lower value bounds but none were available.");
+                auto it = pomdpValueBounds.lower.begin();
+                ValueType result = beliefManager->getWeightedSum(beliefId, *it);
+                for (++it; it != pomdpValueBounds.lower.end(); ++it) {
+                        result = std::max(result, beliefManager->getWeightedSum(beliefId, *it));
+                    }
+                return result;
             }
  
-            /// This requires that we either over-approximate the scheduler behavior in this direction (e.g. grid approximation for maximizing properties)
-            /// Or that the pomdpUpperValueBounds are based on a memoryless scheduler. Otherwise, such a triangulation would not be valid.
             ValueType computeUpperValueBoundAtBelief(BeliefId const& beliefId) const {
-                 return beliefManager->getWeightedSum(beliefId, pomdpUpperValueBounds);
+                STORM_LOG_ASSERT(!pomdpValueBounds.upper.empty(), "Requested upper value bounds but none were available.");
+                auto it = pomdpValueBounds.upper.begin();
+                ValueType result = beliefManager->getWeightedSum(beliefId, *it);
+                for (++it; it != pomdpValueBounds.upper.end(); ++it) {
+                        result = std::min(result, beliefManager->getWeightedSum(beliefId, *it));
+                    }
+                return result;
             }
             
             void computeValuesOfExploredMdp(storm::solver::OptimizationDirection const& dir) {
@@ -817,8 +826,7 @@ namespace storm {
             std::shared_ptr<storm::models::sparse::Mdp<ValueType>> exploredMdp;
             
             // Value and scheduler related information
-            std::vector<ValueType> const& pomdpLowerValueBounds;
-            std::vector<ValueType> const& pomdpUpperValueBounds;
+            storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> pomdpValueBounds;
             std::vector<ValueType> lowerValueBounds;
             std::vector<ValueType> upperValueBounds;
             std::vector<ValueType> values; // Contains an estimate during building and the actual result after a check has performed

@@ -87,7 +87,8 @@ namespace storm {
                 
                 // Compute some initial bounds on the values for each state of the pomdp
                 auto initialPomdpValueBounds = TrivialPomdpValueBoundsModelChecker<storm::models::sparse::Pomdp<ValueType>>(pomdp).getValueBounds(formula, formulaInfo);
-                Result result(initialPomdpValueBounds.lower[pomdp.getInitialStates().getNextSetIndex(0)], initialPomdpValueBounds.upper[pomdp.getInitialStates().getNextSetIndex(0)]);
+                uint64_t initialPomdpState = pomdp.getInitialStates().getNextSetIndex(0);
+                Result result(initialPomdpValueBounds.getHighestLowerBound(initialPomdpState), initialPomdpValueBounds.getSmallestUpperBound(initialPomdpState));
                 STORM_PRINT_AND_LOG("Initial value bounds are [" << result.lowerBound << ", " <<  result.upperBound << "]" << std::endl);
 
                 boost::optional<std::string> rewardModelName;
@@ -112,9 +113,9 @@ namespace storm {
                 }
                 
                 if (options.refine) {
-                    refineReachability(formulaInfo.getTargetStates().observations, formulaInfo.minimize(), rewardModelName, initialPomdpValueBounds.lower, initialPomdpValueBounds.upper, result);
+                    refineReachability(formulaInfo.getTargetStates().observations, formulaInfo.minimize(), rewardModelName, initialPomdpValueBounds, result);
                 } else {
-                    computeReachabilityOTF(formulaInfo.getTargetStates().observations, formulaInfo.minimize(), rewardModelName, initialPomdpValueBounds.lower, initialPomdpValueBounds.upper, result);
+                    computeReachabilityOTF(formulaInfo.getTargetStates().observations, formulaInfo.minimize(), rewardModelName, initialPomdpValueBounds, result);
                 }
                 // "clear" results in case they were actually not requested (this will make the output a bit more clear)
                 if ((formulaInfo.minimize() && !options.discretize) || (formulaInfo.maximize() && !options.unfold)) {
@@ -187,7 +188,7 @@ namespace storm {
             }
             
             template<typename PomdpModelType, typename BeliefValueType>
-            void ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, std::vector<ValueType> const& lowerPomdpValueBounds, std::vector<ValueType> const& upperPomdpValueBounds, Result& result) {
+            void ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const& pomdpValueBounds, Result& result) {
                 
                 if (options.discretize) {
                     std::vector<uint64_t> observationResolutionVector(pomdp.getNrObservations(), options.resolutionInit);
@@ -195,7 +196,7 @@ namespace storm {
                     if (rewardModelName) {
                         manager->setRewardModel(rewardModelName);
                     }
-                    auto approx = std::make_shared<ExplorerType>(manager, lowerPomdpValueBounds, upperPomdpValueBounds);
+                    auto approx = std::make_shared<ExplorerType>(manager, pomdpValueBounds);
                     HeuristicParameters heuristicParameters;
                     heuristicParameters.gapThreshold = options.gapThresholdInit;
                     heuristicParameters.observationThreshold = options.obsThresholdInit; // Actually not relevant without refinement
@@ -215,7 +216,7 @@ namespace storm {
                     if (rewardModelName) {
                         manager->setRewardModel(rewardModelName);
                     }
-                    auto approx = std::make_shared<ExplorerType>(manager, lowerPomdpValueBounds, upperPomdpValueBounds);
+                    auto approx = std::make_shared<ExplorerType>(manager, pomdpValueBounds);
                     HeuristicParameters heuristicParameters;
                     heuristicParameters.gapThreshold = options.gapThresholdInit;
                     heuristicParameters.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
@@ -239,7 +240,7 @@ namespace storm {
             }
             
             template<typename PomdpModelType, typename BeliefValueType>
-            void ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, std::vector<ValueType> const& lowerPomdpValueBounds, std::vector<ValueType> const& upperPomdpValueBounds, Result& result) {
+            void ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const& pomdpValueBounds, Result& result) {
                 statistics.refinementSteps = 0;
 
                 // Set up exploration data
@@ -253,7 +254,7 @@ namespace storm {
                     if (rewardModelName) {
                         overApproxBeliefManager->setRewardModel(rewardModelName);
                     }
-                    overApproximation = std::make_shared<ExplorerType>(overApproxBeliefManager, lowerPomdpValueBounds, upperPomdpValueBounds);
+                    overApproximation = std::make_shared<ExplorerType>(overApproxBeliefManager, pomdpValueBounds);
                     overApproxHeuristicPar.gapThreshold = options.gapThresholdInit;
                     overApproxHeuristicPar.observationThreshold = options.obsThresholdInit;
                     overApproxHeuristicPar.sizeThreshold = options.sizeThresholdInit == 0 ? std::numeric_limits<uint64_t>::max() : options.sizeThresholdInit;
@@ -277,7 +278,7 @@ namespace storm {
                     if (rewardModelName) {
                         underApproxBeliefManager->setRewardModel(rewardModelName);
                     }
-                    underApproximation = std::make_shared<ExplorerType>(underApproxBeliefManager, lowerPomdpValueBounds, upperPomdpValueBounds);
+                    underApproximation = std::make_shared<ExplorerType>(underApproxBeliefManager, pomdpValueBounds);
                     underApproxHeuristicPar.gapThreshold = options.gapThresholdInit;
                     underApproxHeuristicPar.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
                     underApproxHeuristicPar.sizeThreshold = options.sizeThresholdInit;

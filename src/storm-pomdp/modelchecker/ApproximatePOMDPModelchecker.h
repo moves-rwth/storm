@@ -16,6 +16,9 @@ namespace storm {
     namespace pomdp {
         namespace modelchecker {
             
+            template<typename ValueType>
+            struct TrivialPomdpValueBounds;
+            
             template<typename PomdpModelType, typename BeliefValueType = typename PomdpModelType::ValueType>
             class ApproximatePOMDPModelchecker {
             public:
@@ -53,7 +56,7 @@ namespace storm {
                  * @param maxUaModelSize the maximum size of the underapproximation model to be generated
                  * @return A struct containing the overapproximation (overApproxValue) and underapproximation (underApproxValue) values
                  */
-                void computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, std::vector<ValueType> const& lowerPomdpValueBounds, std::vector<ValueType> const& upperPomdpValueBounds, Result& result);
+                void computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const& pomdpValueBounds, Result& result);
                 
                 
                 /**
@@ -63,7 +66,7 @@ namespace storm {
                  * @param min true if minimum probability is to be computed
                  * @return A struct containing the final overapproximation (overApproxValue) and underapproximation (underApproxValue) values
                  */
-                void refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, std::vector<ValueType> const& lowerPomdpValueBounds, std::vector<ValueType> const& upperPomdpValueBounds, Result& result);
+                void refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const& pomdpValueBounds, Result& result);
                 
                 struct HeuristicParameters {
                     ValueType gapThreshold;
