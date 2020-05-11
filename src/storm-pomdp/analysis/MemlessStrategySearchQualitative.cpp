@@ -13,7 +13,7 @@ namespace storm {
                 uint64_t i = 0;
                 std::stringstream ss;
                 STORM_LOG_TRACE("states which we have now: ");
-                for (auto rv : reachVars) {
+                for (auto const& rv : reachVars) {
                     if (model->getBooleanValue(rv)) {
                         ss << " " << i;
                     }
@@ -23,14 +23,13 @@ namespace storm {
                 i = 0;
                 STORM_LOG_TRACE("states from which we continue: ");
                 std::stringstream ss2;
-                for (auto rv : continuationVars) {
+                for (auto const& rv : continuationVars) {
                     if (model->getBooleanValue(rv)) {
                         ss2 << " " << i;
                     }
                     ++i;
                 }
                 STORM_LOG_TRACE(ss2.str());
-
             }
         }
 
@@ -641,7 +640,6 @@ namespace storm {
                     scheduler.printForObservations(observations,observationsAfterSwitch);
                 }
 
-
                 stats.winningRegionUpdatesTimer.start();
                 storm::storage::BitVector updated(observations.size());
                 uint64_t newTargetObservations = 0;
@@ -665,6 +663,7 @@ namespace storm {
                                 ++newTargetObservations;
                                 for (uint64_t state : statesPerObservation[observation]) {
                                     targetStates.set(state);
+                                    assert(!surelyReachSinkStates.get(state));
                                 }
                             }
                             updated.set(observation);
@@ -863,7 +862,7 @@ namespace storm {
                 return false;
             }
 
-            STORM_LOG_DEBUG("Satisfying assignment: ");
+            STORM_LOG_TRACE("Satisfying assignment: ");
             STORM_LOG_TRACE(smtSolver->getModelAsValuation().toString(true));
             return true;
         }
