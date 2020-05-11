@@ -532,12 +532,14 @@ namespace storm {
                     if (!timeLimitExceeded && options.explorationTimeLimit && static_cast<uint64_t>(explorationTime.getTimeInSeconds()) > options.explorationTimeLimit.get()) {
                         STORM_LOG_INFO("Exploration time limit exceeded.");
                         timeLimitExceeded = true;
+                        STORM_LOG_INFO_COND(!fixPoint, "Not reaching a refinement fixpoint because the exploration time limit is exceeded.");
                         fixPoint = false;
                     }
 
                     uint64_t currId = overApproximation->exploreNextState();
                     bool hasOldBehavior = refine && overApproximation->currentStateHasOldBehavior();
                     if (!hasOldBehavior) {
+                        STORM_LOG_INFO_COND(!fixPoint, "Not reaching a refinement fixpoint because a new state is explored");
                         fixPoint = false; // Exploring a new state!
                     }
                     uint32_t currObservation = beliefManager->getBeliefObservation(currId);
@@ -579,6 +581,7 @@ namespace storm {
                                 // Case 2
                                 if (!timeLimitExceeded && overApproximation->currentStateIsOptimalSchedulerReachable() && gap > heuristicParameters.gapThreshold && numRewiredOrExploredStates < heuristicParameters.sizeThreshold) {
                                     exploreAllActions = true; // Case 2.1
+                                    STORM_LOG_INFO_COND(!fixPoint, "Not reaching a refinement fixpoint because a previously truncated state is now explored.");
                                     fixPoint = false;
                                 } else {
                                     truncateAllActions = true; // Case 2.2
@@ -586,6 +589,7 @@ namespace storm {
                                     if (fixPoint) {
                                         // Properly check whether this can still be a fixpoint
                                         if (overApproximation->currentStateIsOptimalSchedulerReachable() && !storm::utility::isZero(gap)) {
+                                            STORM_LOG_INFO_COND(!fixPoint, "Not reaching a refinement fixpoint because we truncate a state with non-zero gap " << gap << " that is reachable via an optimal sched.");
                                             fixPoint = false;
                                         }
                                         //} else {
@@ -620,6 +624,7 @@ namespace storm {
                                     if (!restoreAllActions && overApproximation->actionAtCurrentStateWasOptimal(action)) {
                                         // Do the rewiring now! (Case 3.1)
                                         expandCurrentAction = true;
+                                        STORM_LOG_INFO_COND(!fixPoint, "Not reaching a refinement fixpoint because we rewire a state.");
                                         fixPoint = false;
                                     } else {
                                         // Delay the rewiring (Case 3.2.2)
@@ -627,6 +632,7 @@ namespace storm {
                                         if (fixPoint) {
                                             // Check whether this delay means that a fixpoint has not been reached
                                             if (!overApproximation->getCurrentStateActionExplorationWasDelayed(action) || (overApproximation->currentStateIsOptimalSchedulerReachable() && overApproximation->actionAtCurrentStateWasOptimal(action) && !storm::utility::isZero(gap))) {
+                                                STORM_LOG_INFO_COND(!fixPoint, "Not reaching a refinement fixpoint because we delay a rewiring of a state with non-zero gap " << gap << " that is reachable via an optimal scheduler.");
                                                 fixPoint = false;
                                             }
                                         }
