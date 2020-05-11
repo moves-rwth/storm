@@ -108,8 +108,10 @@ namespace pomdp {
                 storm::utility::Stopwatch totalTimer;
                 storm::utility::Stopwatch smtCheckTimer;
                 storm::utility::Stopwatch initializeSolverTimer;
-                storm::utility::Stopwatch updateExtensionSolverTime;
+                storm::utility::Stopwatch evaluateExtensionSolverTime;
+                storm::utility::Stopwatch encodeExtensionSolverTime;
                 storm::utility::Stopwatch updateNewStrategySolverTime;
+                storm::utility::Stopwatch graphSearchTime;
 
                 storm::utility::Stopwatch winningRegionUpdatesTimer;
 
@@ -168,9 +170,6 @@ namespace pomdp {
         }
 
         void computeWinningRegion(uint64_t k) {
-            std::cout << surelyReachSinkStates << std::endl;
-            std::cout << targetStates << std::endl;
-            std::cout << (~surelyReachSinkStates & ~targetStates) << std::endl;
             stats.totalTimer.start();
             analyze(k, ~surelyReachSinkStates & ~targetStates);
             stats.totalTimer.stop();
@@ -179,6 +178,8 @@ namespace pomdp {
         WinningRegion const& getLastWinningRegion() const {
             return winningRegion;
         }
+
+        uint64_t getOffsetFromObservation(uint64_t state, uint64_t observation) const;
 
         bool analyze(uint64_t k, storm::storage::BitVector const& oneOfTheseStates, storm::storage::BitVector const& allOfTheseStates = storm::storage::BitVector());
 
@@ -240,6 +241,8 @@ namespace pomdp {
 
         std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory;
         std::shared_ptr<WinningRegionQueryInterface<ValueType>> validator;
+
+        mutable  bool useFindOffset = false;
 
 
     };

@@ -18,19 +18,24 @@ namespace pomdp {
         winningRegion[observation] = { storm::storage::BitVector(observationSizes[observation], true) };
     }
 
-//    void WinningRegion::addTargetState(uint64_t observation, uint64_t offset) {
-//        std::vector<storm::storage::BitVector> newWinningSupport = std::vector<storm::storage::BitVector>();
-//        bool changed = true;
-//        for (auto const& support : winningRegion[observation]) {
-//            newWinningSupport.push_back(storm::storage::BitVector(support));
-//            if(!support.get(offset)) {
-//                changed = true;
-//                newWinningSupport.back().set(offset);
-//            }
-//        }
-//
-//
-//    }
+    void WinningRegion::addTargetStates(uint64_t observation, storm::storage::BitVector const& offsets) {
+        assert(!offsets.empty());
+        if(winningRegion[observation].empty()) {
+            winningRegion[observation].push_back(offsets);
+            return;
+        }
+        std::vector<storm::storage::BitVector> newWinningSupport = std::vector<storm::storage::BitVector>();
+
+        for (auto const& support : winningRegion[observation]) {
+            newWinningSupport.push_back(support | offsets);
+        }
+        // TODO it may be worthwhile to check whether something changed. If nothing changed, there is no need for the next routine.
+        // TODO the following code is  bit naive.
+        winningRegion[observation].clear(); // This prevents some overhead.
+        for (auto const& newWinning : newWinningSupport) {
+            update(observation, newWinning);
+        }
+    }
 
     bool WinningRegion::update(uint64_t observation, storm::storage::BitVector const& winning) {
         std::vector<storm::storage::BitVector> newWinningSupport = std::vector<storm::storage::BitVector>();

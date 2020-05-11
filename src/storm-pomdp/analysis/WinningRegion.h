@@ -19,6 +19,7 @@ namespace storm {
 
             std::vector<storm::storage::BitVector> const& getWinningSetsPerObservation(uint64_t observation) const;
 
+            void addTargetStates(uint64_t observation, storm::storage::BitVector const& offsets);
             void setObservationIsWinning(uint64_t observation);
 
             bool observationIsWinning(uint64_t observation) const;
