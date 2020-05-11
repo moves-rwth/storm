@@ -191,7 +191,7 @@ namespace storm {
             void ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const& pomdpValueBounds, Result& result) {
                 
                 if (options.discretize) {
-                    std::vector<uint64_t> observationResolutionVector(pomdp.getNrObservations(), options.resolutionInit);
+                    std::vector<BeliefValueType> observationResolutionVector(pomdp.getNrObservations(), storm::utility::convertNumber<BeliefValueType>(options.resolutionInit));
                     auto manager = std::make_shared<BeliefManagerType>(pomdp, options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
                     if (rewardModelName) {
                         manager->setRewardModel(rewardModelName);
@@ -244,12 +244,12 @@ namespace storm {
                 statistics.refinementSteps = 0;
 
                 // Set up exploration data
-                std::vector<uint64_t> observationResolutionVector;
+                std::vector<BeliefValueType> observationResolutionVector;
                 std::shared_ptr<BeliefManagerType> overApproxBeliefManager;
                 std::shared_ptr<ExplorerType> overApproximation;
                 HeuristicParameters overApproxHeuristicPar;
                 if (options.discretize) { // Setup and build first OverApproximation
-                    observationResolutionVector = std::vector<uint64_t>(pomdp.getNrObservations(), options.resolutionInit);
+                    observationResolutionVector = std::vector<BeliefValueType>(pomdp.getNrObservations(), storm::utility::convertNumber<BeliefValueType>(options.resolutionInit));
                     overApproxBeliefManager = std::make_shared<BeliefManagerType>(pomdp, options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
                     if (rewardModelName) {
                         overApproxBeliefManager->setRewardModel(rewardModelName);
@@ -404,32 +404,33 @@ namespace storm {
              * Here, 0 means a bad approximation and 1 means a good approximation.
              */
             template<typename PomdpModelType, typename BeliefValueType>
-            typename ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::ValueType ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::rateObservation(typename ExplorerType::SuccessorObservationInformation const& info, uint64_t const& observationResolution, uint64_t const& maxResolution) {
-                auto n = storm::utility::convertNumber<ValueType, uint64_t>(info.support.size());
-                auto one = storm::utility::one<ValueType>();
+            BeliefValueType ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::rateObservation(typename ExplorerType::SuccessorObservationInformation const& info, BeliefValueType const& observationResolution, BeliefValueType const& maxResolution) {
+                auto n = storm::utility::convertNumber<BeliefValueType, uint64_t>(info.support.size());
+                auto one = storm::utility::one<BeliefValueType>();
                 if (storm::utility::isOne(n)) {
                     // If the belief is Dirac, it has to be approximated precisely.
                     // In this case, we return the best possible rating
                     return one;
                 } else {
                     // Create the rating for this observation at this choice from the given info
-                    ValueType obsChoiceRating = info.maxProbabilityToSuccessorWithObs / info.observationProbability;
+                    BeliefValueType obsChoiceRating = storm::utility::convertNumber<BeliefValueType, ValueType>(info.maxProbabilityToSuccessorWithObs / info.observationProbability);
                     // At this point, obsRating is the largest triangulation weight (which ranges from 1/n to 1
                     // Normalize the rating so that it ranges from 0 to 1, where
                     // 0 means that the actual belief lies in the middle of the triangulating simplex (i.e. a "bad" approximation) and 1 means that the belief is precisely approximated.
                     obsChoiceRating = (obsChoiceRating * n - one) / (n - one);
                     // Scale the ratings with the resolutions, so that low resolutions get a lower rating (and are thus more likely to be refined)
-                    obsChoiceRating *= storm::utility::convertNumber<ValueType>(observationResolution) / storm::utility::convertNumber<ValueType>(maxResolution);
+                    obsChoiceRating *= observationResolution / maxResolution;
                     return obsChoiceRating;
                 }
             }
             
             template<typename PomdpModelType, typename BeliefValueType>
-            std::vector<typename ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::ValueType> ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::getObservationRatings(std::shared_ptr<ExplorerType> const& overApproximation, std::vector<uint64_t> const& observationResolutionVector, uint64_t const& maxResolution) {
+            std::vector<BeliefValueType> ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::getObservationRatings(std::shared_ptr<ExplorerType> const& overApproximation, std::vector<BeliefValueType> const& observationResolutionVector) {
                 uint64_t numMdpStates = overApproximation->getExploredMdp()->getNumberOfStates();
                 auto const& choiceIndices = overApproximation->getExploredMdp()->getNondeterministicChoiceIndices();
+                BeliefValueType maxResolution = *std::max_element(observationResolutionVector.begin(), observationResolutionVector.end());
 
-                std::vector<ValueType> resultingRatings(pomdp.getNrObservations(), storm::utility::one<ValueType>());
+                std::vector<BeliefValueType> resultingRatings(pomdp.getNrObservations(), storm::utility::one<BeliefValueType>());
                 
                 std::map<uint32_t, typename ExplorerType::SuccessorObservationInformation> gatheredSuccessorObservations; // Declare here to avoid reallocations
                 for (uint64_t mdpState = 0; mdpState < numMdpStates; ++mdpState) {
@@ -444,7 +445,7 @@ namespace storm {
                                 overApproximation->gatherSuccessorObservationInformationAtMdpChoice(mdpChoice, gatheredSuccessorObservations);
                                 for (auto const& obsInfo : gatheredSuccessorObservations) {
                                     auto const& obs = obsInfo.first;
-                                    ValueType obsChoiceRating = rateObservation(obsInfo.second, observationResolutionVector[obs], maxResolution);
+                                    BeliefValueType obsChoiceRating = rateObservation(obsInfo.second, observationResolutionVector[obs], maxResolution);
              
                                     // The rating of the observation will be the minimum over all choice-based observation ratings
                                     resultingRatings[obs] = std::min(resultingRatings[obs], obsChoiceRating);
@@ -476,14 +477,11 @@ namespace storm {
             }
             
             template<typename PomdpModelType, typename BeliefValueType>
-            bool ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::buildOverApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::vector<uint64_t>& observationResolutionVector, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& overApproximation) {
+            bool ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::buildOverApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::vector<BeliefValueType>& observationResolutionVector, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& overApproximation) {
                 
                 // Detect whether the refinement reached a fixpoint.
                 bool fixPoint = true;
                 
-                // current maximal resolution (needed for refinement heuristic)
-                uint64_t oldMaxResolution = *std::max_element(observationResolutionVector.begin(), observationResolutionVector.end());
-
                 statistics.overApproximationBuildTime.start();
                 storm::storage::BitVector refinedObservations;
                 if (!refine) {
@@ -497,7 +495,8 @@ namespace storm {
                     // If we refine the existing overApproximation, our heuristic also wants to know which states are reachable under an optimal policy
                     overApproximation->computeOptimalChoicesAndReachableMdpStates(heuristicParameters.optimalChoiceValueEpsilon, true);
                     // We also need to find out which observation resolutions needs refinement.
-                    auto obsRatings = getObservationRatings(overApproximation, observationResolutionVector, oldMaxResolution);
+                    // current maximal resolution (needed for refinement heuristic)
+                    auto obsRatings = getObservationRatings(overApproximation, observationResolutionVector);
                     // If there is a score < 1, we have not reached a fixpoint, yet
                     if (std::any_of(obsRatings.begin(), obsRatings.end(), [](ValueType const& value){return value < storm::utility::one<ValueType>();})) {
                         fixPoint = false;
@@ -506,17 +505,17 @@ namespace storm {
                     STORM_LOG_DEBUG("Refining the resolution of " << refinedObservations.getNumberOfSetBits() << "/" << refinedObservations.size() << " observations.");
                     for (auto const& obs : refinedObservations) {
                         // Increment the resolution at the refined observations.
-                        // Detect overflows properly.
+                        // Use storm's rational number to detect overflows properly.
                         storm::RationalNumber newObsResolutionAsRational = storm::utility::convertNumber<storm::RationalNumber>(observationResolutionVector[obs]) * storm::utility::convertNumber<storm::RationalNumber>(options.resolutionFactor);
-                        if (newObsResolutionAsRational > storm::utility::convertNumber<storm::RationalNumber>(std::numeric_limits<uint64_t>::max())) {
-                            observationResolutionVector[obs] = std::numeric_limits<uint64_t>::max();
+                        if (newObsResolutionAsRational > storm::utility::convertNumber<storm::RationalNumber, uint64_t>(std::numeric_limits<uint32_t>::max())) {
+                            observationResolutionVector[obs] = storm::utility::convertNumber<BeliefValueType, uint64_t>(std::numeric_limits<uint32_t>::max());
                         } else {
-                            observationResolutionVector[obs] = storm::utility::convertNumber<uint64_t>(newObsResolutionAsRational);
+                            observationResolutionVector[obs] = storm::utility::convertNumber<BeliefValueType>(newObsResolutionAsRational);
                         }
                     }
                     overApproximation->restartExploration();
                 }
-                statistics.overApproximationMaxResolution = *std::max_element(observationResolutionVector.begin(), observationResolutionVector.end());
+                statistics.overApproximationMaxResolution = storm::utility::convertNumber<uint64_t>(storm::utility::ceil(*std::max_element(observationResolutionVector.begin(), observationResolutionVector.end())));
                 
                 // Start exploration
                 storm::utility::Stopwatch explorationTime;

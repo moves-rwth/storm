@@ -49,7 +49,6 @@ namespace storm {
                  *
                  * @param targetObservations set of target observations
                  * @param min true if minimum value is to be computed
-                 * @param observationResolutionVector vector containing the resolution to be used for each observation
                  * @param computeRewards true if rewards are to be computed, false if probability is computed
                  * @param overApproximationMap optional mapping of original POMDP states to a naive overapproximation value
                  * @param underApproximationMap optional mapping of original POMDP states to a naive underapproximation value
@@ -79,7 +78,7 @@ namespace storm {
                  * Builds and checks an MDP that over-approximates the POMDP behavior, i.e. provides an upper bound for maximizing and a lower bound for minimizing properties
                  * Returns true if a fixpoint for the refinement has been detected (i.e. if further refinement steps would not change the mdp)
                  */
-                bool buildOverApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::vector<uint64_t>& observationResolutionVector, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& overApproximation);
+                bool buildOverApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::vector<BeliefValueType>& observationResolutionVector, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& overApproximation);
 
                 /**
                  * Builds and checks an MDP that under-approximates the POMDP behavior, i.e. provides a lower bound for maximizing and an upper bound for minimizing properties
@@ -87,9 +86,9 @@ namespace storm {
                  */
                 bool buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation);
 
-                ValueType rateObservation(typename ExplorerType::SuccessorObservationInformation const& info, uint64_t const& observationResolution, uint64_t const& maxResolution);
+                BeliefValueType rateObservation(typename ExplorerType::SuccessorObservationInformation const& info, BeliefValueType const& observationResolution, BeliefValueType const& maxResolution);
                 
-                std::vector<ValueType> getObservationRatings(std::shared_ptr<ExplorerType> const& overApproximation, std::vector<uint64_t> const& observationResolutionVector, uint64_t const& maxResolution);
+                std::vector<BeliefValueType> getObservationRatings(std::shared_ptr<ExplorerType> const& overApproximation, std::vector<BeliefValueType> const& observationResolutionVector);
                 
                 struct Statistics {
                     Statistics();

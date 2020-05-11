@@ -111,7 +111,7 @@ namespace storm {
                 return pomdp.getNumberOfChoices(belief.begin()->first);
             }
             
-            Triangulation triangulateBelief(BeliefId beliefId, uint64_t resolution) {
+            Triangulation triangulateBelief(BeliefId beliefId, BeliefValueType resolution) {
                 return triangulateBelief(getBelief(beliefId), resolution);
             }
             
@@ -134,7 +134,7 @@ namespace storm {
                 return beliefs.size();
             }
             
-            std::vector<std::pair<BeliefId, ValueType>> expandAndTriangulate(BeliefId const& beliefId, uint64_t actionIndex, std::vector<uint64_t> const& observationResolutions) {
+            std::vector<std::pair<BeliefId, ValueType>> expandAndTriangulate(BeliefId const& beliefId, uint64_t actionIndex, std::vector<BeliefValueType> const& observationResolutions) {
                 return expandInternal(beliefId, actionIndex, observationResolutions);
             }
             
@@ -293,10 +293,10 @@ namespace storm {
                 }
             };
             
-            void triangulateBeliefFreudenthal(BeliefType const& belief, uint64_t const& resolution, Triangulation& result) {
+            void triangulateBeliefFreudenthal(BeliefType const& belief, BeliefValueType const& resolution, Triangulation& result) {
                 STORM_LOG_ASSERT(resolution != 0, "Invalid resolution: 0");
+                STORM_LOG_ASSERT(storm::utility::isInteger(resolution), "Expected an integer resolution");
                 StateType numEntries = belief.size();
-                auto convResolution = storm::utility::convertNumber<BeliefValueType>(resolution);
                 // This is the Freudenthal Triangulation as described in Lovejoy (a whole lotta math)
                 // Probabilities will be triangulated to values in 0/N, 1/N, 2/N, ..., N/N
                 // Variable names are mostly based on the paper
@@ -307,12 +307,12 @@ namespace storm {
                 qsRow.reserve(numEntries);
                 std::vector<StateType> toOriginalIndicesMap; // Maps 'local' indices to the original pomdp state indices
                 toOriginalIndicesMap.reserve(numEntries);
-                BeliefValueType x = convResolution;
+                BeliefValueType x = resolution;
                 for (auto const& entry : belief) {
                     qsRow.push_back(storm::utility::floor(x)); // v
                     sorted_diffs.emplace(toOriginalIndicesMap.size(), x - qsRow.back()); // x-v
                     toOriginalIndicesMap.push_back(entry.first);
-                    x -= entry.second * convResolution;
+                    x -= entry.second * resolution;
                 }
                 // Insert a dummy 0 column in the qs matrix so the loops below are a bit simpler
                 qsRow.push_back(storm::utility::zero<BeliefValueType>());
@@ -339,7 +339,7 @@ namespace storm {
                         for (StateType j = 0; j < numEntries; ++j) {
                             BeliefValueType gridPointEntry = qsRow[j] - qsRow[j + 1];
                             if (!cc.isZero(gridPointEntry)) {
-                                gridPoint[toOriginalIndicesMap[j]] = gridPointEntry / convResolution;
+                                gridPoint[toOriginalIndicesMap[j]] = gridPointEntry / resolution;
                             }
                         }
                         result.gridPoints.push_back(getOrAddBeliefId(gridPoint));
@@ -348,17 +348,17 @@ namespace storm {
                 }
             }
             
-            void triangulateBeliefDynamic(BeliefType const& belief, uint64_t const& resolution, Triangulation& result) {
+            void triangulateBeliefDynamic(BeliefType const& belief, BeliefValueType const& resolution, Triangulation& result) {
                 // Find the best resolution for this belief, i.e., N such that the largest distance between one of the belief values to a value in {i/N | 0 ≤ i ≤ N} is minimal
-                uint64_t finalResolution = resolution;
+                STORM_LOG_ASSERT(storm::utility::isInteger(resolution), "Expected an integer resolution");
+                BeliefValueType finalResolution = resolution;
                 uint64_t finalResolutionMisses = belief.size() + 1;
                 // We don't need to check resolutions that are smaller than the maximal resolution divided by 2 (as we already checked multiples of these)
-                for (uint64_t currResolution = resolution; currResolution > resolution / 2; --currResolution) {
+                for (BeliefValueType currResolution = resolution; currResolution > resolution / 2; --currResolution) {
                     uint64_t currResMisses = 0;
-                    BeliefValueType currResolutionConverted = storm::utility::convertNumber<BeliefValueType>(currResolution);
                     bool continueWithNextResolution = false;
                     for (auto const& belEntry : belief) {
-                        BeliefValueType product = belEntry.second * currResolutionConverted;
+                        BeliefValueType product = belEntry.second * currResolution;
                         if (!cc.isZero(product - storm::utility::round(product))) {
                             ++currResMisses;
                             if (currResMisses >= finalResolutionMisses) {
@@ -384,7 +384,7 @@ namespace storm {
                 triangulateBeliefFreudenthal(belief, finalResolution, result);
             }
             
-            Triangulation triangulateBelief(BeliefType const& belief, uint64_t const& resolution) {
+            Triangulation triangulateBelief(BeliefType const& belief, BeliefValueType const& resolution) {
                 STORM_LOG_ASSERT(assertBelief(belief), "Input belief for triangulation is not valid.");
                 Triangulation result;
                 // Quickly triangulate Dirac beliefs
@@ -392,12 +392,13 @@ namespace storm {
                     result.weights.push_back(storm::utility::one<BeliefValueType>());
                     result.gridPoints.push_back(getOrAddBeliefId(belief));
                 } else {
+                    auto ceiledResolution = storm::utility::ceil<BeliefValueType>(resolution);
                     switch (triangulationMode) {
                         case TriangulationMode::Static:
-                            triangulateBeliefFreudenthal(belief, resolution, result);
+                            triangulateBeliefFreudenthal(belief, ceiledResolution, result);
                             break;
                         case TriangulationMode::Dynamic:
-                            triangulateBeliefDynamic(belief, resolution, result);
+                            triangulateBeliefDynamic(belief, ceiledResolution, result);
                             break;
                         default:
                             STORM_LOG_ASSERT(false, "Invalid triangulation mode.");
@@ -407,7 +408,7 @@ namespace storm {
                 return result;
             }
             
-            std::vector<std::pair<BeliefId, ValueType>> expandInternal(BeliefId const& beliefId, uint64_t actionIndex, boost::optional<std::vector<uint64_t>> const& observationTriangulationResolutions = boost::none) {
+            std::vector<std::pair<BeliefId, ValueType>> expandInternal(BeliefId const& beliefId, uint64_t actionIndex, boost::optional<std::vector<BeliefValueType>> const& observationTriangulationResolutions = boost::none) {
                 std::vector<std::pair<BeliefId, ValueType>> destinations;
                 
                 BeliefType belief = getBelief(beliefId);
