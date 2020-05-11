@@ -50,13 +50,11 @@ namespace storm {
              * @return Dormancy factor.
              */
             ValueType dormancyFactor() const {
-                if (storm::utility::isZero<ValueType>(this->activeFailureRate())) {
-                    // Return default value of 1
-                    return storm::utility::one<ValueType>();
-                } else {
-                    return this->passiveFailureRate() / this->activeFailureRate();
-                }
+                STORM_LOG_ASSERT(!storm::utility::isZero<ValueType>(this->activeFailureRate()), "Active failure rate of non-const BE should not be zero.");
+                return this->passiveFailureRate() / this->activeFailureRate();
             }
+
+            ValueType getUnreliability(ValueType time) const override;
 
             /*!
              * Return whether the BE experiences transient failures.

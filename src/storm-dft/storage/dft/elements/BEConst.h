@@ -39,6 +39,8 @@ namespace storm {
                 return this->failed();
             }
 
+            ValueType getUnreliability(ValueType time) const override;
+
             bool isTypeEqualTo(DFTElement<ValueType> const& other) const override {
                 if (!DFTElement<ValueType>::isTypeEqualTo(other)) {
                     return false;
