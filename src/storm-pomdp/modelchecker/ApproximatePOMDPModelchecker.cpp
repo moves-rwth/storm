@@ -498,7 +498,9 @@ namespace storm {
                     // current maximal resolution (needed for refinement heuristic)
                     auto obsRatings = getObservationRatings(overApproximation, observationResolutionVector);
                     // If there is a score < 1, we have not reached a fixpoint, yet
-                    if (std::any_of(obsRatings.begin(), obsRatings.end(), [](ValueType const& value){return value < storm::utility::one<ValueType>();})) {
+                    BeliefValueType numericPresicion = storm::utility::convertNumber<BeliefValueType>(options.numericPrecision);
+                    if (std::any_of(obsRatings.begin(), obsRatings.end(), [&numericPresicion](ValueType const& value){return value + numericPresicion < storm::utility::one<ValueType>();})) {
+                        STORM_LOG_INFO_COND(!fixPoint, "Not reaching a refinement fixpoint because there are still observations to refine.");
                         fixPoint = false;
                     }
                     refinedObservations = storm::utility::vector::filter<ValueType>(obsRatings, [&heuristicParameters](ValueType const& r) { return r <= heuristicParameters.observationThreshold;});
@@ -507,15 +509,16 @@ namespace storm {
                         // Increment the resolution at the refined observations.
                         // Use storm's rational number to detect overflows properly.
                         storm::RationalNumber newObsResolutionAsRational = storm::utility::convertNumber<storm::RationalNumber>(observationResolutionVector[obs]) * storm::utility::convertNumber<storm::RationalNumber>(options.resolutionFactor);
-                        if (newObsResolutionAsRational > storm::utility::convertNumber<storm::RationalNumber, uint64_t>(std::numeric_limits<uint32_t>::max())) {
-                            observationResolutionVector[obs] = storm::utility::convertNumber<BeliefValueType, uint64_t>(std::numeric_limits<uint32_t>::max());
+                        static_assert(storm::NumberTraits<BeliefValueType>::IsExact || std::is_same<BeliefValueType, double>::value, "Unhandled belief value type");
+                        if (!storm::NumberTraits<BeliefValueType>::IsExact && newObsResolutionAsRational > storm::utility::convertNumber<storm::RationalNumber>(std::numeric_limits<double>::max())) {
+                            observationResolutionVector[obs] = storm::utility::convertNumber<BeliefValueType>(std::numeric_limits<double>::max());
                         } else {
                             observationResolutionVector[obs] = storm::utility::convertNumber<BeliefValueType>(newObsResolutionAsRational);
                         }
                     }
                     overApproximation->restartExploration();
                 }
-                statistics.overApproximationMaxResolution = storm::utility::convertNumber<uint64_t>(storm::utility::ceil(*std::max_element(observationResolutionVector.begin(), observationResolutionVector.end())));
+                statistics.overApproximationMaxResolution = storm::utility::ceil(*std::max_element(observationResolutionVector.begin(), observationResolutionVector.end()));
                 
                 // Start exploration
                 storm::utility::Stopwatch explorationTime;
