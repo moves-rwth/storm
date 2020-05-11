@@ -423,7 +423,7 @@ namespace storm {
             if (!atLeastOneOfStates.empty()) {
                 smtSolver->add(storm::expressions::disjunction(atLeastOneOfStates));
             }
-            smtSolver->push();
+
 
             std::set<storm::expressions::Expression> allOfTheseAssumption;
 
@@ -447,11 +447,13 @@ namespace storm {
                 for (auto const &statesForObservation : statesPerObservation) {
                     schedulerForObs.push_back(0);
                     for (auto const& winningSet : winningRegion.getWinningSetsPerObservation(obs)) {
+                        assert(!winningSet.empty());
+                        assert(obs < schedulerForObs.size());
+                        ++(schedulerForObs[obs]);
+                        auto constant = expressionManager->integer(schedulerForObs[obs]);
                         for (auto const &stateOffset : ~winningSet) {
                             uint64_t state = statesForObservation[stateOffset];
-                            assert(obs < schedulerForObs.size());
-                            ++(schedulerForObs[obs]);
-                            auto constant = expressionManager->integer(schedulerForObs[obs]);
+                            STORM_LOG_TRACE("State " << state << " with observation " << obs << " does not allow scheduler " << constant);
                             // PAPER COMMENT 14:
                             smtSolver->add(!(continuationVarExpressions[state] &&
                                              (schedulerVariableExpressions[obs] == constant)));
@@ -473,13 +475,12 @@ namespace storm {
 
             }
 
+            smtSolver->push();
             for (uint64_t obs = 0; obs < pomdp.getNrObservations(); ++obs) {
                 auto constant = expressionManager->integer(schedulerForObs[obs]);
                 smtSolver->add(schedulerVariableExpressions[obs] <= constant);
                 smtSolver->add(storm::expressions::iff(observationUpdatedExpressions[obs], updateForObservationExpressions[obs]));
             }
-
-
 
             assert(pomdp.getNrObservations() == schedulerForObs.size());
 
