@@ -70,11 +70,9 @@ namespace storm {
                         auto& choiceDistribution = choiceDistributions[pomdp.getObservation(state)];
                         ValueType const& stateValue = stateValues[state];
                         assert(stateValue >= storm::utility::zero<ValueType>());
-                        std::cout << state << ": " << stateValue << "\t t=" << scoreThreshold << " rel=" << relativeScore << std::endl;
                         for (auto choice = choiceIndices[state]; choice < choiceIndices[state + 1]; ++choice) {
                             ValueType const& choiceValue = choiceValues[choice];
                             assert(choiceValue >= storm::utility::zero<ValueType>());
-                            std::cout << "\t" << (choice - choiceIndices[state]) << ": " << choiceValue << std::endl;
                             // Rate this choice by considering the relative difference between the choice value and the (optimal) state value
                             // A high score shall mean that the choice is "good"
                             if (storm::utility::isInfinity(stateValue)) {
