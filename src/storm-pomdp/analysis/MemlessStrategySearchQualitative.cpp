@@ -75,11 +75,10 @@ namespace storm {
                 nrStatesPerObservation.push_back(states.size());
             }
             winningRegion = WinningRegion(nrStatesPerObservation);
-            if(options.validateEveryStep) {
+            if(options.validateResult || options.validateEveryStep) {
                 STORM_LOG_WARN("The validator should only be created when the option is set.");
                 validator = std::make_shared<WinningRegionQueryInterface<ValueType>>(pomdp, winningRegion);
             }
-
         }
 
         template <typename ValueType>
@@ -638,14 +637,13 @@ namespace storm {
                     }
 
                 }
-                // TODO temporarily switched off due to intiialization issues when restartin.
                 STORM_LOG_ASSERT(!updated.empty(), "The strategy should be new in at least one place");
                 if(options.computeDebugOutput()) {
                     winningRegion.print();
                 }
                 if(options.validateEveryStep) {
                     STORM_LOG_WARN("Validating every step, for debug purposes only!");
-                    validator->validate();
+                    validator->validate(surelyReachSinkStates);
                 }
                 stats.updateNewStrategySolverTime.start();
                 for(uint64_t observation : updated) {
@@ -685,6 +683,12 @@ namespace storm {
                 stats.updateNewStrategySolverTime.stop();
 
                 STORM_LOG_INFO("... after iteration " << stats.getIterations() << " so far " << stats.getChecks() << " checks." );
+            }
+            if(options.validateResult) {
+                STORM_LOG_WARN("Validating result is a winning region, only for debugging purposes.");
+                validator->validate(surelyReachSinkStates);
+                STORM_LOG_WARN("Validating result is a maximal winning region, only for debugging purposes.");
+                validator->validateIsMaximal(surelyReachSinkStates);
             }
             winningRegion.print();
 

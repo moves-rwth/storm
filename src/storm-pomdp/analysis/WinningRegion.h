@@ -11,6 +11,11 @@ namespace storm {
 
             bool update(uint64_t observation, storm::storage::BitVector const& winning);
             bool query(uint64_t observation, storm::storage::BitVector const& currently) const;
+            bool isWinning(uint64_t observation, uint64_t offset) const {
+                storm::storage::BitVector currently(observationSizes[observation]);
+                currently.set(offset);
+                return query(observation,currently);
+            }
 
             std::vector<storm::storage::BitVector> const& getWinningSetsPerObservation(uint64_t observation) const;
 

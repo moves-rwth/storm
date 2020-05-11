@@ -14,7 +14,9 @@ namespace storm {
 
             bool staysInWinningRegion(storm::storage::BitVector const& beliefSupport, uint64_t actionIndex) const;
 
-            void validate() const;
+            void validate(storm::storage::BitVector const& badStates) const;
+
+            void validateIsMaximal(storm::storage::BitVector const& badStates) const;
         private:
             storm::models::sparse::Pomdp<ValueType> const& pomdp;
             WinningRegion const& winningRegion;
