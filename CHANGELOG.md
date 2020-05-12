@@ -14,6 +14,7 @@ Version 1.5.x
 - Tests: Enabled tests for permissive schedulers
 - `storm-counterexamples`: fix when computing multiple counterexamples in debug mode
 - `storm-dft`: Renamed setting `--show-dft-stats` to `dft-statistics` and added approximation information to statistics.
+- `storm-pomdp`: Implemented approximation algorithms that explore (a discritization of) the belief MDP, allowing to compute safe lower- and upper bounds for a given property.
 
 ## Version 1.5.1 (2020/03)
 - Jani models are now parsed using exact arithmetic.
