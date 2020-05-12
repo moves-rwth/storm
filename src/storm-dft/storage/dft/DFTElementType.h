@@ -24,7 +24,8 @@ namespace storm {
          */
         enum class BEType {
             CONSTANT,
-            EXPONENTIAL
+            EXPONENTIAL,
+            SAMPLES
         };
 
 
