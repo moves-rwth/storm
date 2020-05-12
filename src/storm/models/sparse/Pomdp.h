@@ -59,13 +59,25 @@ namespace storm {
 
                 uint64_t getNrObservations() const;
 
+                /*!
+                 * Returns the number of hidden values, i.e. the maximum number of states with the same observation
+                 */
+                uint64_t getMaxNrStatesWithSameObservation() const;
+                
                 std::vector<uint32_t> const& getObservations() const;
 
+                std::vector<uint64_t> getStatesWithObservation(uint32_t observation) const;
+                
                 bool isCanonic() const;
 
-
-
             protected:
+                /*!
+                 * Return a string that is additonally added to the state information in the dot stream.
+                 * @param state
+                 * @return
+                 */
+                virtual std::string additionalDotStateInfo(uint64_t state) const override;
+
                 // TODO: consider a bitvector based presentation (depending on our needs).
                 std::vector<uint32_t> observations;
 

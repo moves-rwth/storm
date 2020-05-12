@@ -40,6 +40,11 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
         }
 
+        std::string SmtlibSmtSolver::SmtlibModelReference::toString() const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "functionality not (yet) implemented");
+        }
+
+
         SmtlibSmtSolver::SmtlibSmtSolver(storm::expressions::ExpressionManager& manager, bool useCarlExpressions) : SmtSolver(manager), isCommandFileOpen(false), expressionAdapter(nullptr), useCarlExpressions(useCarlExpressions) {
 #ifndef STORM_HAVE_CARL
             STORM_LOG_THROW(!useCarlExpressions, storm::exceptions::IllegalArgumentException, "Tried to use carl expressions but storm is not linked with CARL");

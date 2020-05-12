@@ -37,8 +37,7 @@ namespace storm {
                     result = result && assertion;
                 }
                 additionalAssertions.clear();
-
-                return result;
+                return result.simplify();
             }
             
             z3::expr Z3ExpressionAdapter::translateExpression(storm::expressions::Variable const& variable) {

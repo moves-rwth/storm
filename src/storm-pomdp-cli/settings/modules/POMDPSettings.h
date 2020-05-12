@@ -25,13 +25,22 @@ namespace storm {
                 std::string getExportToParametricFilename() const;
                 
                 bool isQualitativeReductionSet() const;
+
+                bool isNoCanonicSet() const;
+                bool isBeliefExplorationSet() const;
+                bool isBeliefExplorationDiscretizeSet() const;
+                bool isBeliefExplorationUnfoldSet() const;
                 bool isAnalyzeUniqueObservationsSet() const;
                 bool isMecReductionSet() const;
                 bool isSelfloopReductionSet() const;
                 bool isTransformSimpleSet() const;
                 bool isTransformBinarySet() const;
+                bool isMemlessSearchSet() const;
+                bool isCheckFullyObservableSet() const;
+                std::string getMemlessSearchMethod() const;
                 std::string getFscApplicationTypeString() const;
                 uint64_t getMemoryBound() const;
+
                 storm::storage::PomdpMemoryPattern getMemoryPattern() const;
                 
                 bool check() const override;

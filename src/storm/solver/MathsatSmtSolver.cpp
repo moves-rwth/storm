@@ -32,6 +32,22 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unable to retrieve double value from model that only contains boolean values.");
         }
         
+        std::string MathsatSmtSolver::MathsatAllsatModelReference::toString() const {
+            std::stringstream str;
+            bool first = true;
+            str << "[";
+            for (auto const& varSlot : variableToSlotMapping) {
+                if (first) {
+                    first = false;
+                } else {
+                    str << ", ";
+                }
+                str << varSlot.first.getName() << "=" << std::boolalpha << getBooleanValue(varSlot.first);
+            }
+            str << "]";
+            return str.str();
+        }
+        
         MathsatSmtSolver::MathsatModelReference::MathsatModelReference(storm::expressions::ExpressionManager const& manager, msat_env const& env, storm::adapters::MathsatExpressionAdapter& expressionAdapter) : ModelReference(manager), env(env), expressionAdapter(expressionAdapter) {
             // Intentionally left empty.
         }
@@ -62,6 +78,25 @@ namespace storm {
             storm::expressions::Expression value = expressionAdapter.translateExpression(msatValue);
             return value.evaluateAsDouble();
         }
+        
+        std::string MathsatSmtSolver::MathsatModelReference::toString() const {
+            std::stringstream str;
+            bool first = true;
+            str << "[";
+            for (auto const& varDecl : expressionAdapter.getAllDeclaredVariables()) {
+                if (first) {
+                    first = false;
+                } else {
+                    str << ", ";
+                }
+                msat_term msatValue = msat_get_model_value(env, expressionAdapter.translateExpression(varDecl.first));
+                STORM_LOG_ASSERT(!MSAT_ERROR_TERM(msatValue), "Unable to retrieve value of variable in model. This could be caused by calls to the solver between checking for satisfiability and model retrieval.");
+                str << varDecl.first.getName() << "=" << expressionAdapter.translateExpression(msatValue);
+            }
+            str << "]";
+            return str.str();
+        }
+        
 #endif
 
 		MathsatSmtSolver::MathsatSmtSolver(storm::expressions::ExpressionManager& manager, Options const& options) : SmtSolver(manager)

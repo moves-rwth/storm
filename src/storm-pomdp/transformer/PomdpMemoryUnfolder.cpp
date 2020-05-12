@@ -185,5 +185,8 @@ namespace storm {
             }
 
             template class PomdpMemoryUnfolder<storm::RationalNumber>;
+
+        template
+        class PomdpMemoryUnfolder<double>;
     }
 }
