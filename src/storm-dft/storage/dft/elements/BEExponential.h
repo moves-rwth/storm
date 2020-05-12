@@ -78,7 +78,7 @@ namespace storm {
             }
 
             bool isTypeEqualTo(DFTElement<ValueType> const& other) const override {
-                if (!DFTElement<ValueType>::isTypeEqualTo(other)) {
+                if (!DFTBE<ValueType>::isTypeEqualTo(other)) {
                     return false;
                 }
                 auto& otherBE = static_cast<BEExponential<ValueType> const&>(other);

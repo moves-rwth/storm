@@ -92,6 +92,14 @@ namespace storm {
                 return false;
             }
 
+            bool isTypeEqualTo(DFTElement<ValueType> const& other) const override {
+                if (!DFTElement<ValueType>::isTypeEqualTo(other)) {
+                    return false;
+                }
+                auto& otherBE = static_cast<DFTBE<ValueType> const&>(other);
+                return this->beType() == otherBE.beType();
+            }
+
         private:
             std::vector<std::shared_ptr<DFTDependency<ValueType>>> mIngoingDependencies;
 
