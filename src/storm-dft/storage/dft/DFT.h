@@ -287,7 +287,25 @@ namespace storm {
             bool isFailsafe(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo) const {
                 return storm::storage::DFTState<ValueType>::isFailsafe(state, stateGenerationInfo.getStateIndex(mTopLevelIndex));
             }
-            
+
+            /*!
+             * Return id of used child for a given spare gate.
+             * If no child is used the id of the spare gate is returned.
+             *
+             * @param state DFT state.
+             * @param stateGenerationInfo State generation information.
+             * @param id Id of spare gate.
+             * @return Id of used child. Id of spare gate if no child is used.
+             */
+            size_t uses(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) const {
+                size_t nrUsedChild = storm::storage::DFTState<ValueType>::usesIndex(state, stateGenerationInfo, id);
+                if (nrUsedChild == getMaxSpareChildCount()) {
+                    return id;
+                } else {
+                    return getChild(id, nrUsedChild);
+                }
+            }
+
             size_t getChild(size_t spareId, size_t nrUsedChild) const;
             
             size_t getNrChild(size_t spareId, size_t childId) const;

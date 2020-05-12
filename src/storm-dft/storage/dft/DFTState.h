@@ -259,6 +259,17 @@ namespace storm {
              * the spare.
              */
             uint_fast64_t uses(size_t id) const;
+
+            /**
+             * Returns the index of the used child for a spare gate.
+             * If no element is used, the maximal spare count is returned.
+             *
+             * @param state DFT state.
+             * @param stateGenerationInfo State generation info.
+             * @param id Id of spare gate.
+             * @return Index of used child. Maximal spare count if no child is usde.
+             */
+            static uint_fast64_t usesIndex(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo, size_t id);
             
             /**
              * This method is commonly used to get the usage information for spares. 

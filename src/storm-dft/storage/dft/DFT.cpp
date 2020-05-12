@@ -696,13 +696,7 @@ namespace storm {
                     stream << storm::storage::toChar(DFTState<ValueType>::getElementState(status, stateGenerationInfo, elem->id()));
                     if (elem->isSpareGate()) {
                         stream << "[";
-                        size_t nrUsedChild = status.getAsInt(stateGenerationInfo.getSpareUsageIndex(elem->id()), stateGenerationInfo.usageInfoBits());
-                        size_t useId;
-                        if (nrUsedChild == getMaxSpareChildCount()) {
-                            useId = elem->id();
-                        } else {
-                            useId = getChild(elem->id(), nrUsedChild);
-                        }
+                        size_t useId = this->uses(status, stateGenerationInfo, elem->id());
                         if (useId == elem->id() || status[stateGenerationInfo.getSpareActivationIndex(useId)]) {
                             stream << "actively ";
                         }

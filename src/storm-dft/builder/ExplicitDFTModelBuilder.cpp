@@ -495,6 +495,8 @@ namespace storm {
 
         template<typename ValueType, typename StateType>
         void ExplicitDFTModelBuilder<ValueType, StateType>::buildLabeling() {
+            bool isAddLabelsClaiming = storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isAddLabelsClaiming();
+
             // Build state labeling
             modelComponents.stateLabeling = storm::models::sparse::StateLabeling(modelComponents.transitionMatrix.getRowGroupCount());
             // Initial state
@@ -511,6 +513,17 @@ namespace storm {
                 if (element->isRelevant()) {
                     modelComponents.stateLabeling.addLabel(element->name() + "_failed");
                     modelComponents.stateLabeling.addLabel(element->name() + "_dc");
+                }
+            }
+            std::vector<std::shared_ptr<storm::storage::DFTGate<ValueType> const>> spares; // Only filled if needed
+            if (isAddLabelsClaiming) {
+                // Collect labels for claiming
+                for (size_t spareId : dft.getSpareIndices()) {
+                    auto const& spare = dft.getGate(spareId);
+                    spares.push_back(spare);
+                    for (auto const& child : spare->children()) {
+                        modelComponents.stateLabeling.addLabel(spare->name() + "_claimed_" + child->name());
+                    }
                 }
             }
 
@@ -543,6 +556,14 @@ namespace storm {
                                 break;
                             default:
                                 STORM_LOG_ASSERT(false, "Unknown element state " << elementState);
+                        }
+                    }
+                }
+                if (isAddLabelsClaiming) {
+                    for (auto const& spare : spares) {
+                        size_t claimedChildId = dft.uses(state, *stateGenerationInfo, spare->id());
+                        if (claimedChildId != spare->id()) {
+                            modelComponents.stateLabeling.addLabelToState(spare->name() + "_claimed_" + dft.getElement(claimedChildId)->name(), stateId);
                         }
                     }
                 }

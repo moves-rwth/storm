@@ -413,6 +413,11 @@ namespace storm {
         }
 
         template<typename ValueType>
+        uint_fast64_t DFTState<ValueType>::usesIndex(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) {
+            return state.getAsInt(stateGenerationInfo.getSpareUsageIndex(id), stateGenerationInfo.usageInfoBits());
+        }
+
+        template<typename ValueType>
         uint_fast64_t DFTState<ValueType>::extractUses(size_t from) const {
             STORM_LOG_ASSERT(mStateGenerationInfo.usageInfoBits() < 64, "UsageInfoBit size too large.");
             return mStatus.getAsInt(from, mStateGenerationInfo.usageInfoBits());
