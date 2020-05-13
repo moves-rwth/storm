@@ -1,21 +1,19 @@
 #include <sstream>
 #include <queue>
 
+#include "storm-pars/analysis/OrderExtender.cpp"
 #include "storm-pars/modelchecker/region/RegionModelChecker.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 
-
-#include "storm/utility/vector.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/sparse/Dtmc.h"
-#include "storm/models/sparse/Mdp.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
+
 #include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/NotSupportedException.h"
-#include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 
 
@@ -50,7 +48,7 @@ namespace storm {
             }
         
             template <typename ParametricType>
-            std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> RegionModelChecker<ParametricType>::performRegionRefinement(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, boost::optional<ParametricType> const& coverageThreshold, boost::optional<uint64_t> depthThreshold, RegionResultHypothesis const& hypothesis) {
+            std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> RegionModelChecker<ParametricType>::performRegionRefinement(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, boost::optional<ParametricType> const& coverageThreshold, boost::optional<uint64_t> depthThreshold, RegionResultHypothesis const& hypothesis, bool const& useMonotonicity) {
                 STORM_LOG_INFO("Applying refinement on region: " << region.toString(true) << " .");
                 
                 auto thresholdAsCoefficient = coverageThreshold ? storm::utility::convertNumber<CoefficientType>(coverageThreshold.get()) : storm::utility::zero<CoefficientType>();
@@ -64,10 +62,12 @@ namespace storm {
                 
                 // FIFO queues storing the data for the regions that we still need to process.
                 std::queue<std::pair<storm::storage::ParameterRegion<ParametricType>, RegionResult>> unprocessedRegions;
+                std::queue<storm::analysis::Order*> orders;
                 std::queue<uint64_t> refinementDepths;
                 unprocessedRegions.emplace(region, RegionResult::Unknown);
                 refinementDepths.push(0);
-                
+                orders.emplace(extendOrder(nullptr, region));
+
                 uint_fast64_t numOfAnalyzedRegions = 0;
                 CoefficientType displayedProgress = storm::utility::zero<CoefficientType>();
                 if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
@@ -90,7 +90,14 @@ namespace storm {
                     STORM_LOG_INFO("Analyzing region #" << numOfAnalyzedRegions << " (Refinement depth " << currentDepth << "; " << storm::utility::convertNumber<double>(fractionOfUndiscoveredArea) * 100 << "% still unknown)");
                     auto& currentRegion = unprocessedRegions.front().first;
                     auto& res = unprocessedRegions.front().second;
-                    res = analyzeRegion(env, currentRegion, hypothesis, res, false);
+                    auto order = orders.front();
+                    if (useMonotonicity) {
+                        extendOrder(order, currentRegion);
+                        res = analyzeRegion(env, currentRegion, hypothesis, res, false, order);
+                    } else {
+                        res = analyzeRegion(env, currentRegion, hypothesis, res, false);
+                    }
+
                     switch (res) {
                         case RegionResult::AllSat:
                             fractionOfUndiscoveredArea -= currentRegion.area() / areaOfParameterSpace;
@@ -110,7 +117,16 @@ namespace storm {
                                 RegionResult initResForNewRegions = (res == RegionResult::CenterSat) ? RegionResult::ExistsSat :
                                                                          ((res == RegionResult::CenterViolated) ? RegionResult::ExistsViolated :
                                                                           RegionResult::Unknown);
+                                bool first = true;
+                                // TODO: dit kan stuk gaan?
+                                orders.pop();
                                 for (auto& newRegion : newRegions) {
+                                    if (useMonotonicity && (!first && !order->getDoneBuilding())) {
+                                        orders.emplace(new storm::analysis::Order(order));
+                                    } else if (useMonotonicity){
+                                        orders.emplace(order);
+                                        first = false;
+                                    }
                                     unprocessedRegions.emplace(std::move(newRegion), initResForNewRegions);
                                     refinementDepths.push(currentDepth + 1);
                                 }
@@ -123,6 +139,7 @@ namespace storm {
                     ++numOfAnalyzedRegions;
                     unprocessedRegions.pop();
                     refinementDepths.pop();
+                    orders.pop();
                     if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
                         while (displayedProgress < storm::utility::one<CoefficientType>() - fractionOfUndiscoveredArea) {
                             STORM_PRINT_AND_LOG("#");
@@ -170,6 +187,12 @@ namespace storm {
             return std::map<typename RegionModelChecker<ParametricType>::VariableType, double>();
         }
 
+        template <typename ParametricType>
+        storm::analysis::Order* RegionModelChecker<ParametricType>::extendOrder(storm::analysis::Order* order, storm::storage::ParameterRegion<ParametricType> region) {
+            STORM_LOG_WARN("Extending order for RegionModelChecker not implemented");
+            // Does nothing
+            return order;
+        }
     
 #ifdef STORM_HAVE_CARL
             template class RegionModelChecker<storm::RationalFunction>;

@@ -186,14 +186,9 @@ namespace storm {
         std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> checkAndRefineRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, boost::optional<ValueType> const& coverageThreshold, boost::optional<uint64_t> const& refinementDepthThreshold = boost::none, storm::modelchecker::RegionResultHypothesis hypothesis = storm::modelchecker::RegionResultHypothesis::Unknown, bool useMonotonicity = false) {
             Environment env;
             // If using monotonicity, we don't want more simplification, as this is already done in storm-pars.cpp
-            auto regionChecker = initializeRegionModelChecker(env, model, task, engine, !useMonotonicity);
-            if (useMonotonicity) {
-                STORM_LOG_WARN("Not yet implemented, using normal region refinement");
-                return regionChecker->performRegionRefinement(env, region, coverageThreshold, refinementDepthThreshold, hypothesis);
-//                return regionChecker->performRegionRefinementWithMonotonicity(env, region, coverageThreshold, refinementDepthThreshold, hypothesis);
-            } else {
-                return regionChecker->performRegionRefinement(env, region, coverageThreshold, refinementDepthThreshold, hypothesis);
-            }
+            bool doSimplification = !useMonotonicity;
+            auto regionChecker = initializeRegionModelChecker(env, model, task, engine, doSimplification);
+            return regionChecker->performRegionRefinement(env, region, coverageThreshold, refinementDepthThreshold, hypothesis, useMonotonicity);
         }
     
         /*!

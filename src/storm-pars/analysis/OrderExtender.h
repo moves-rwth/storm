@@ -22,20 +22,23 @@ namespace storm {
             typedef typename utility::parametric::VariableType<ValueType>::type VariableType;
             typedef typename MonotonicityResult<VariableType>::Monotonicity Monotonicity;
 
+            // TODO: documentation
            /*!
             * Constructs OrderExtender which can extend an order
             *
             * @param model The model for which the order should be extended.
             */
-           OrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula,  storage::ParameterRegion<ValueType> region);
+           OrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, storage::ParameterRegion<ValueType> region);
 
-           /*!
-            * Creates an order based on the given formula.
-            *
-            * @return A triple with a pointer to the order and two states of which the current place in the order
-            *         is unknown but needed. When the states have as number the number of states, no states are
-            *         unplaced but needed.
-            */
+           OrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix);
+
+            /*!
+             * Creates an order based on the given formula.
+             *
+             * @return A triple with a pointer to the order and two states of which the current place in the order
+             *         is unknown but needed. When the states have as number the number of states, no states are
+             *         unplaced but needed.
+             */
             std::tuple<Order*, uint_fast64_t, uint_fast64_t> toOrder(std::shared_ptr<MonotonicityResult<VariableType>> monRes);
 
             /*!
@@ -58,6 +61,7 @@ namespace storm {
              *         unplaced but needed.
              */
             std::tuple<Order*, uint_fast64_t, uint_fast64_t> extendOrder(Order* order, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr);
+            Order* extendOrder(Order* order, storm::storage::ParameterRegion<ValueType> region);
 
         private:
             void init(std::shared_ptr<models::sparse::Model<ValueType>> model);

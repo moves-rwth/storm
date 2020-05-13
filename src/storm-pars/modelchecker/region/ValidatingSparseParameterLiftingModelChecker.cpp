@@ -28,7 +28,7 @@ namespace storm {
         }
  
         template <typename SparseModelType, typename ImpreciseType, typename PreciseType>
-        RegionResult ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::analyzeRegion(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResultHypothesis const& hypothesis, RegionResult const& initialResult, bool sampleVerticesOfRegion) {
+        RegionResult ValidatingSparseParameterLiftingModelChecker<SparseModelType, ImpreciseType, PreciseType>::analyzeRegion(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResultHypothesis const& hypothesis, RegionResult const& initialResult, bool sampleVerticesOfRegion, storm::analysis::Order* reachabilityOrder) {
 
         
             RegionResult currentResult = getImpreciseChecker().analyzeRegion(env, region, hypothesis, initialResult, false);

@@ -32,6 +32,8 @@ namespace storm {
 
             virtual bool isRegionSplitEstimateSupported() const override;
             virtual std::map<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType, double> getRegionSplitEstimate() const override;
+
+            virtual storm::analysis::Order* extendOrder(storm::analysis::Order* order, storm::storage::ParameterRegion<typename SparseModelType::ValueType> region) override;
             
         protected:
                 
@@ -42,15 +44,13 @@ namespace storm {
 
             virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationChecker() override;
                 
-            virtual std::unique_ptr<CheckResult> computeQuantitativeValues(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) override;
+            virtual std::unique_ptr<CheckResult> computeQuantitativeValues(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::analysis::Order* reachabilityOrder = nullptr) override;
             
             void computeRegionSplitEstimates(std::vector<ConstantType> const& quantitativeResult, std::vector<uint_fast64_t> const& schedulerChoices, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
             
             virtual void reset() override;
-                
-        private:
 
-            
+        private:
             storm::storage::BitVector maybeStates;
             std::vector<ConstantType> resultsForNonMaybeStates;
             boost::optional<uint_fast64_t> stepBound;
@@ -68,6 +68,10 @@ namespace storm {
             
             bool regionSplitEstimationsEnabled;
             std::map<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType, double> regionSplitEstimates;
+
+            // Used for monotonicity
+            storm::analysis::OrderExtender<typename SparseModelType::ValueType, ConstantType>* orderExtender;
+            bool useOrderExtender;
         };
     }
 }

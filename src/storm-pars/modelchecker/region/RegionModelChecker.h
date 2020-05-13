@@ -2,6 +2,8 @@
 
 #include <memory>
 
+#include "storm-pars/analysis/Order.h"
+#include "storm-pars/analysis/OrderExtender.h"
 #include "storm-pars/modelchecker/results/RegionCheckResult.h"
 #include "storm-pars/modelchecker/results/RegionRefinementCheckResult.h"
 #include "storm-pars/modelchecker/region/RegionResult.h"
@@ -37,7 +39,7 @@ namespace storm {
              * @param initialResult encodes what is already known about this region
              * @param sampleVerticesOfRegion enables sampling of the vertices of the region in cases where AllSat/AllViolated could not be shown.
              */
-            virtual RegionResult analyzeRegion(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown, RegionResult const& initialResult = RegionResult::Unknown, bool sampleVerticesOfRegion = false) = 0;
+            virtual RegionResult analyzeRegion(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown, RegionResult const& initialResult = RegionResult::Unknown, bool sampleVerticesOfRegion = false, storm::analysis::Order* reachabilityOrder = nullptr) = 0;
             
              /*!
              * Analyzes the given regions.
@@ -57,7 +59,7 @@ namespace storm {
              * @param hypothesis if not 'unknown', it is only checked whether the hypothesis holds within the given region.
              *
              */
-            std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> performRegionRefinement(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, boost::optional<ParametricType> const& coverageThreshold, boost::optional<uint64_t> depthThreshold = boost::none, RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown);
+            std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> performRegionRefinement(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, boost::optional<ParametricType> const& coverageThreshold, boost::optional<uint64_t> depthThreshold = boost::none, RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown, bool const& useMonotonicity = false);
             
             /*!
              * Finds the extremal value within the given region and with the given precision.
@@ -76,7 +78,9 @@ namespace storm {
              * If a parameter is assigned a high value, we should prefer splitting with respect to this parameter.
              */
             virtual std::map<VariableType, double> getRegionSplitEstimate() const;
-            
+
+            virtual storm::analysis::Order* extendOrder(storm::analysis::Order* order, storm::storage::ParameterRegion<ParametricType> region);
+
         };
 
     } //namespace modelchecker

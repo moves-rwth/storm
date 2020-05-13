@@ -78,7 +78,6 @@ namespace storm {
         
         template <typename SparseModelType, typename ConstantType>
         void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula(Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ConstantType> const& checkTask) {
-            
             // get the step bound
             STORM_LOG_THROW(!checkTask.getFormula().hasLowerBound(), storm::exceptions::NotSupportedException, "Lower step bounds are not supported.");
             STORM_LOG_THROW(checkTask.getFormula().hasUpperBound(), storm::exceptions::NotSupportedException, "Expected a bounded until formula with an upper bound.");
@@ -118,11 +117,14 @@ namespace storm {
             upperResultBound = storm::utility::one<ConstantType>();
             // No requirements for bounded formulas
             solverFactory->setRequirementsChecked(true);
+
+            useOrderExtender = true;
+            std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->parametricModel->getBackwardTransitions(), phiStates, psiStates);
+            this->orderExtender = new storm::analysis::OrderExtender<typename SparseModelType::ValueType,ConstantType>(&statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
         }
 
         template <typename SparseModelType, typename ConstantType>
         void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyUntilFormula(Environment const& env, CheckTask<storm::logic::UntilFormula, ConstantType> const& checkTask) {
-            
             // get the results for the subformulas
             storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(*this->parametricModel);
             STORM_LOG_THROW(propositionalChecker.canHandle(checkTask.getFormula().getLeftSubformula()) && propositionalChecker.canHandle(checkTask.getFormula().getRightSubformula()), storm::exceptions::NotSupportedException, "Parameter lifting with non-propositional subformulas is not supported");
@@ -154,11 +156,14 @@ namespace storm {
             req.clearBounds();
             STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
             solverFactory->setRequirementsChecked(true);
+
+            useOrderExtender = true;
+            this->orderExtender = new storm::analysis::OrderExtender<typename SparseModelType::ValueType,ConstantType>(&statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
         }
 
         template <typename SparseModelType, typename ConstantType>
         void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyReachabilityRewardFormula(Environment const& env, CheckTask<storm::logic::EventuallyFormula, ConstantType> const& checkTask) {
-            
+            useOrderExtender = false;
             // get the results for the subformula
             storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(*this->parametricModel);
             STORM_LOG_THROW(propositionalChecker.canHandle(checkTask.getFormula().getSubformula()), storm::exceptions::NotSupportedException, "Parameter lifting with non-propositional subformulas is not supported");
@@ -203,7 +208,7 @@ namespace storm {
 
         template <typename SparseModelType, typename ConstantType>
         void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(Environment const& env, CheckTask<storm::logic::CumulativeRewardFormula, ConstantType> const& checkTask) {
-            
+            useOrderExtender = false;
             // Obtain the stepBound
             stepBound = checkTask.getFormula().getBound().evaluateAsInt();
             if (checkTask.getFormula().isBoundStrict()) {
@@ -242,13 +247,17 @@ namespace storm {
         }
         
         template <typename SparseModelType, typename ConstantType>
-        std::unique_ptr<CheckResult> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
+        std::unique_ptr<CheckResult> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::analysis::Order* reachabilityOrder) {
             
             if (maybeStates.empty()) {
                 return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(resultsForNonMaybeStates);
             }
-            
-            parameterLifter->specifyRegion(region, dirForParameters);
+
+            if (reachabilityOrder == nullptr) {
+                parameterLifter->specifyRegion(region, dirForParameters);
+            } else {
+                parameterLifter->specifyRegion(region, dirForParameters, reachabilityOrder);
+            }
             
             if (stepBound) {
                 assert(*stepBound > 0);
@@ -437,7 +446,16 @@ namespace storm {
             return regionSplitEstimates;
         }
 
-        
+        template<typename SparseModelType, typename ConstantType>
+        storm::analysis::Order*  SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::extendOrder(storm::analysis::Order* order, storm::storage::ParameterRegion<typename SparseModelType::ValueType> region) {
+            if (useOrderExtender) {
+                return orderExtender->extendOrder(order, region);
+            } else {
+                STORM_LOG_WARN("Extending order for RegionModelChecker not implemented");
+            }
+        }
+
+
         template class SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
         template class SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber>;
 

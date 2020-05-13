@@ -28,6 +28,14 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
+        OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix) {
+            this->matrix = matrix;
+            std::vector<uint_fast64_t> statesSorted = utility::graph::getTopologicalSort(matrix);
+            std::reverse(statesSorted.begin(),statesSorted.end());
+            this->bottomTopOrder = new Order(topStates, bottomStates, matrix.getColumnCount(), &statesSorted);
+        }
+
+        template <typename ValueType, typename ConstantType>
         void OrderExtender<ValueType, ConstantType>::init(std::shared_ptr<models::sparse::Model<ValueType>> model) {
             this->model = model;
             this->matrix = model->getTransitionMatrix();
@@ -143,13 +151,15 @@ namespace storm {
             return extendOrder(order, true, monRes);
         }
 
+
+        // TODO: remove the use Assumption boolean
         template <typename ValueType, typename ConstantType>
         std::tuple<Order*, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendOrder(Order *order, bool useAssumption, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
             auto currentState = order->getNextSortedState();
             while ((*order->getAddedStates())[currentState]) {
                 currentState = order->getNextSortedState();
             }
-            if (cyclic && order->isOnlyBottomTopOrder()) {
+            if (order->isOnlyBottomTopOrder()) {
                 order->add(currentState);
             }
             while (currentState != numberOfStates ) {
@@ -185,9 +195,11 @@ namespace storm {
 
                 assert (order->contains(currentState) && order->getNode(currentState) != nullptr);
 
-                auto succsOrdered = order->sortStates(&stateMap[currentState]);
-                for(auto param : params) {
-                    checkParOnStateMonRes(currentState, succsOrdered, param, monRes);
+                if (monRes != nullptr) {
+                    auto succsOrdered = order->sortStates(&stateMap[currentState]);
+                    for (auto param : params) {
+                        checkParOnStateMonRes(currentState, succsOrdered, param, monRes);
+                    }
                 }
 
                 // Remove current state number from the list and get new one
@@ -199,6 +211,48 @@ namespace storm {
                 monRes.get()->setDone(true);
             }
             return std::make_tuple(order, numberOfStates, numberOfStates);
+        }
+
+        template <typename ValueType, typename ConstantType>
+        storm::analysis::Order* OrderExtender<ValueType, ConstantType>::extendOrder(Order *order, storm::storage::ParameterRegion<ValueType> region) {
+            if (order == nullptr) {
+                order = getBottomTopOrder();
+            }
+            auto currentState = order->getNextSortedState();
+            while ((*order->getAddedStates())[currentState]) {
+                currentState = order->getNextSortedState();
+            }
+            if (order->isOnlyBottomTopOrder()) {
+                order->add(currentState);
+            }
+            while (currentState != numberOfStates ) {
+                auto successors = stateMap[currentState];
+                // If it is cyclic, first do forward reasoning
+                if (cyclic && order->contains(currentState) && successors.size() == 2) {
+                    extendByForwardReasoning(order, currentState, successors);
+                }
+                // Also do normal backward reasoning if the state is not yet in the order
+                auto stateSucc1 = numberOfStates;
+                auto stateSucc2 = numberOfStates;
+                if (!order->contains(currentState)) {
+                    auto backwardResult = extendByBackwardReasoning(order, currentState, successors);
+                    stateSucc1 = backwardResult.first;
+                    stateSucc2 = backwardResult.second;
+                }
+
+                if (stateSucc1 == numberOfStates) {
+                    assert (stateSucc2 == numberOfStates);
+                    currentState = order->getNextSortedState();
+                } else {
+                    break;
+                    // TODO: make assumptions here if there is only 1 assumption -->then we can continue building order, use region for this
+                    order->addStateToHandle(currentState);
+                }
+            }
+
+            if (currentState == numberOfStates) {
+                order->setDoneBuilding();
+            }
         }
 
         template <typename ValueType, typename ConstantType>
