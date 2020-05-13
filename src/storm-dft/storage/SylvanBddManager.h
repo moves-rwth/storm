@@ -30,10 +30,10 @@ class SylvanBddManager {
     SylvanBddManager() = default;
 
     // We can only initialize Sylvan once therefore no copy semantics
-    SylvanBddManager(SylvanBddManager const&) = delete;
+    SylvanBddManager(SylvanBddManager const &) = delete;
 
-    SylvanBddManager(SylvanBddManager&&) = default;
-    SylvanBddManager& operator=(SylvanBddManager&&) = default;
+    SylvanBddManager(SylvanBddManager &&) = default;
+    SylvanBddManager &operator=(SylvanBddManager &&) = default;
 
     /**
      * Destroys Sylvan
@@ -118,6 +118,28 @@ class SylvanBddManager {
      */
     std::string getName(uint32_t const index) const {
         return indexToName.at(index);
+    }
+
+    /**
+     * Exports the given Bdd to a file
+     * in the dot format.
+     *
+     * \param bdd
+     * The Bdd.
+     * \param filename
+     * The name of the file the dot graph is written to
+     */
+    static void exportBddToDot(sylvan::Bdd const &bdd,
+                               std::string const &filename) {
+        FILE *filePointer = fopen(filename.c_str(), "w+");
+
+        // fopen returns a nullptr on failure
+        if (filePointer == nullptr) {
+            STORM_LOG_ERROR("Failure to open file: " << filename);
+        } else {
+            bdd.PrintDot(filePointer);
+            fclose(filePointer);
+        }
     }
 
    private:

@@ -43,15 +43,7 @@ class SFTBDDChecker {
      * The name of the file the dot graph is written to
      */
     void exportBddToDot(std::string const &filename) {
-        FILE *filePointer = fopen(filename.c_str(), "w+");
-
-        // fopen returns a nullptr on failure
-        if (filePointer == nullptr) {
-            STORM_LOG_ERROR("Failure to open file: " << filename);
-        } else {
-            topLevelGateBdd.PrintDot(filePointer);
-            fclose(filePointer);
-        }
+        sylvanBddManager->exportBddToDot(topLevelGateBdd, filename);
     }
 
     /**
