@@ -119,38 +119,45 @@ class SftToBddTransformator {
      */
     Bdd translate(
         std::shared_ptr<storm::storage::DFTVot<ValueType> const> vot) {
-        auto children{vot->children()};
+        std::vector<Bdd> bdds;
+        bdds.reserve(vot->children().size());
 
-        /*
-         * We can only support up to 63 children
-         * As we permute a 64 bit integer
-         * Most likely would result in a state exoplosion anyways
-         */
-        STORM_LOG_THROW(children.size() < 64,
-                        storm::exceptions::NotSupportedException,
-                        "Too many children of a VOT Gate.");
-
-        // used only in disjunctions therefore neutral element -> 0
-        Bdd outerBdd{sylvanBddManager->getZero()};
-        const Bdd one{sylvanBddManager->getOne()};
-
-        // generate all permutations
-        for (uint64_t combination{smallestIntWithNBitsSet(vot->threshold())};
-             (combination < (1ul << children.size())) && (combination != 0);
-             combination = nextBitPermutation(combination)) {
-            // used only in conjunctions therefore neutral element -> 1
-            Bdd innerBdd{one};
-
-            for (uint8_t i{}; i < static_cast<uint8_t>(children.size()); ++i) {
-                if ((combination & (1ul << i)) != 0) {
-                    // Rangecheck children.size() < 64
-                    innerBdd &= translate(children[i]);
-                }
-            }
-            outerBdd |= innerBdd;
+        for (auto const& child : vot->children()) {
+            bdds.push_back(translate(child));
         }
 
-        return outerBdd;
+        auto const rval{translateVot(0, vot->threshold(), bdds)};
+        return rval;
+    }
+
+    /**
+     * Helper function to translate a Vot gate into a BDD
+     *
+     * Performs a shannon decomposition
+     *
+     * \param currentIndex
+     * The index of the child we currently look at.
+     *
+     * \param threshold
+     * How many children still need to be chosen.
+     *
+     * \param bdds
+     * A reference to all children of the vot gate as Bdds.
+     */
+    Bdd translateVot(size_t const currentIndex, size_t const threshold,
+                     std::vector<Bdd> const& bdds) const {
+        if (threshold == 0) {
+            return sylvanBddManager->getOne();
+        } else if (currentIndex >= bdds.size()) {
+            return sylvanBddManager->getZero();
+        }
+
+        auto const notChosenBdd{
+            translateVot(currentIndex + 1, threshold, bdds)};
+        auto const chosenBdd{
+            translateVot(currentIndex + 1, threshold - 1, bdds)};
+
+        return bdds[currentIndex].Ite(chosenBdd, notChosenBdd);
     }
 
     /**
