@@ -34,7 +34,8 @@ namespace storm {
             
             typedef typename storm::utility::parametric::VariableType<ParametricType>::type VariableType;
             typedef typename storm::utility::parametric::CoefficientType<ParametricType>::type CoefficientType;
-            
+            typedef typename storm::analysis::MonotonicityResult<VariableType>::Monotonicity Monotonicity;
+
             /*!
              * Lifts the parameter choices to nondeterminisim. The computation is performed on the submatrix specified by the selected rows and columns
              * @param pMatrix the parametric matrix

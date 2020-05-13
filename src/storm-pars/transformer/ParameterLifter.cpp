@@ -182,15 +182,44 @@ namespace storm {
         void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::analysis::Order reachabilityOrder) {
             storm::storage::BitVector selectedRows(matrix.getRowCount(), true);
             auto statesAdded = reachabilityOrder.getAddedStates();
-            for (auto state : *statesAdded) {
 
+            for (auto state : *statesAdded) {
+                auto stateNumberInNewMatrix = oldToNewColumnIndexMapping[state];
+                auto variables = occurringVariablesAtState[state];
+                // point at which we start with rows for this state
+                auto rowGroupIndex = matrix.getRowGroupIndices()[stateNumberInNewMatrix];
+                // number of rows (= #transitions) for this state
+                auto numberOfRows = matrix.getRowGroupSize(stateNumberInNewMatrix);
+                // variable at pos. index, changes lower/upperbound at 2^index
+                auto index = 0;
+                for (auto var : variables) {
+                    auto monotonicity = monotonicityChecker->checkLocalMonotonicity(&reachabilityOrder, state, var, region);
+                    bool lowerbound = monotonicity == Monotonicity::Constant
+                            || (monotonicity == Monotonicity::Incr && dirForParameters == storm::solver::OptimizationDirection::Maximize)
+                            || (monotonicity == Monotonicity::Decr && dirForParameters == storm::solver::OptimizationDirection::Maximize);
+                    bool upperbound = !lowerbound
+                            && ((monotonicity == Monotonicity::Incr && dirForParameters == storm::solver::OptimizationDirection::Minimize)
+                                || (monotonicity == Monotonicity::Decr && dirForParameters == storm::solver::OptimizationDirection::Minimize));
+
+                    if (lowerbound) {
+                        auto stepSize = std::pow(2, index);
+                        for (auto j = 0; j < numberOfRows; j = j + 2*stepSize) {
+                            for (auto i = 0; i < stepSize; ++i) {
+                                selectedRows.set(rowGroupIndex + j + i, false);
+                            }
+                        }
+                    } else if (upperbound) {
+                        // We ignore all upperbounds, so we start at index 2^index
+                        auto stepSize = 2^index;
+                        for (auto j = stepSize; j < numberOfRows; j = j + 2*stepSize) {
+                            for (auto i = 0; i < stepSize; ++i) {
+                                selectedRows.set(rowGroupIndex + i+j, false);
+                            }
+                        }
+                    }
+                    ++index;
+                }
             }
-            // Go over all ordered states
-            // Check for local monotonicity
-            // map this to new matrix (mdp matrix)
-            // decide which rows to keep based on optimization direction
-            // TODO: check for local monotonicity
-            STORM_LOG_WARN("specifying a region with a reachability order is not yet implemented, continueing as if no reachability order was given");
             specifyRegion(region, dirForParameters, selectedRows);
         }
     
