@@ -162,7 +162,7 @@ namespace storm {
             std::vector<ConstantType> specifiedVector; //The resulting vector, in which possibly some entries are deleted. Used for monotonicity
             storm::storage::SparseMatrix<ConstantType> specifiedMatrix; // The resulting matrix, in which possibly some rows are deleted. Used for monotonicity
 
-            bool useMonotonicity = false;
+            bool usePartialScheduler = false;
 
             storm::analysis::MonotonicityChecker<ParametricType>* monotonicityChecker; // MonotonicityChecker object, on the original pMatrix
         };

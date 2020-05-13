@@ -142,7 +142,7 @@ namespace storm {
     
         template<typename ParametricType, typename ConstantType>
         void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
-            useMonotonicity = false;
+            usePartialScheduler = false;
             // write the evaluation result of each function,evaluation pair into the placeholders
             functionValuationCollector.evaluateCollectedFunctions(region, dirForParameters);
             
@@ -159,12 +159,11 @@ namespace storm {
 
         template<typename ParametricType, typename ConstantType>
         void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::storage::BitVector const& selectedRows) {
-            useMonotonicity = true;
+            usePartialScheduler = true;
             // write the evaluation result of each function,evaluation pair into the placeholders
             functionValuationCollector.evaluateCollectedFunctions(region, dirForParameters);
 
             //apply the matrix and vector assignments to write the contents of the placeholder into the matrix/vector
-
             for(auto& assignment : matrixAssignment) {
                 STORM_LOG_WARN_COND(!storm::utility::isZero(assignment.second), "Parameter lifting on region " << region.toString() << " affects the underlying graph structure (the region is not strictly well defined). The result for this region might be incorrect.");
                 assignment.first->setValue(assignment.second);
@@ -197,7 +196,7 @@ namespace storm {
     
         template<typename ParametricType, typename ConstantType>
         storm::storage::SparseMatrix<ConstantType> const& ParameterLifter<ParametricType, ConstantType>::getMatrix() const {
-            if (useMonotonicity) {
+            if (usePartialScheduler) {
                 return specifiedMatrix;
             } else {
                 return matrix;
@@ -206,7 +205,7 @@ namespace storm {
     
         template<typename ParametricType, typename ConstantType>
         std::vector<ConstantType> const& ParameterLifter<ParametricType, ConstantType>::getVector() const {
-            if (useMonotonicity) {
+            if (usePartialScheduler) {
                 return specifiedVector;
             } else {
                 return vector;
