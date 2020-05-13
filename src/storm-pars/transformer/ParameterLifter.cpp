@@ -179,9 +179,10 @@ namespace storm {
         }
 
         template<typename ParametricType, typename ConstantType>
-        void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::analysis::Order reachabilityOrder) {
+        void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::analysis::Order* reachabilityOrder) {
             storm::storage::BitVector selectedRows(matrix.getRowCount(), true);
-            auto statesAdded = reachabilityOrder.getAddedStates();
+            auto statesAdded = reachabilityOrder->getAddedStates();
+            // TODO: maybe store the already found localMonotonicityResult
 
             for (auto state : *statesAdded) {
                 auto stateNumberInNewMatrix = oldToNewColumnIndexMapping[state];
@@ -193,7 +194,7 @@ namespace storm {
                 // variable at pos. index, changes lower/upperbound at 2^index
                 auto index = 0;
                 for (auto var : variables) {
-                    auto monotonicity = monotonicityChecker->checkLocalMonotonicity(&reachabilityOrder, state, var, region);
+                    auto monotonicity = monotonicityChecker->checkLocalMonotonicity(reachabilityOrder, state, var, region);
                     bool lowerbound = monotonicity == Monotonicity::Constant
                             || (monotonicity == Monotonicity::Incr && dirForParameters == storm::solver::OptimizationDirection::Maximize)
                             || (monotonicity == Monotonicity::Decr && dirForParameters == storm::solver::OptimizationDirection::Maximize);

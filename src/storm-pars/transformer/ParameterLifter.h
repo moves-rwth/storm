@@ -61,7 +61,7 @@ namespace storm {
              * @param dirForParameters the optimization direction
              * @param reachabilityOrder a (possibly insufficient) reachability order, used for local monotonicity
              */
-            void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::analysis::Order reachabilityOrder);
+            void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::analysis::Order* reachabilityOrder);
 
             // Returns the resulting matrix. Should only be called AFTER specifying a region
             storm::storage::SparseMatrix<ConstantType> const& getMatrix() const;
