@@ -250,12 +250,13 @@ namespace storm {
             std::vector<uint64_t> tmpVars;
             size_t k = 0;
             // Generate all permutations of k out of n
-            size_t combination = smallestIntWithNBitsSet(static_cast<size_t>(vot->threshold()));
+            uint64_t combination = smallestIntWithNBitsSet(static_cast<uint64_t>(vot->threshold()));
             do {
                 // Construct selected children from combination
                 std::vector<uint64_t> combinationChildren;
-                for (size_t j = 0; j < vot->nrChildren(); ++j) {
-                    if (combination & (1 << j)) {
+                STORM_LOG_ASSERT(vot->nrChildren() < 64, "Too many children of a VOT Gate.");
+                for (uint8_t j = 0; j < static_cast<uint8_t>(vot->nrChildren()); ++j) {
+                    if (combination & (1ul << j)) {
                         combinationChildren.push_back(childVarIndices.at(j));
                     }
                 }
@@ -270,7 +271,7 @@ namespace storm {
                 // Generate next permutation
                 combination = nextBitPermutation(combination);
                 ++k;
-            } while (combination < (1 << vot->nrChildren()) && combination != 0);
+            } while (combination < (1ul << vot->nrChildren()) && combination != 0);
 
             // Constraint is OR over all possible combinations
             constraints.push_back(std::make_shared<IsMinimum>(timePointVariables.at(i), tmpVars));

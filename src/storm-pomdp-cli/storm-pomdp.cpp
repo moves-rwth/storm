@@ -3,8 +3,9 @@
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
-#include "storm-pomdp-cli/settings/modules/GridApproximationSettings.h"
 #include "storm-pomdp-cli/settings/modules/QualitativePOMDPAnalysisSettings.h"
+#include "storm-pomdp-cli/settings/modules/BeliefExplorationSettings.h"
+
 #include "storm-pomdp-cli/settings/PomdpSettings.h"
 #include "storm/analysis/GraphConditions.h"
 
@@ -81,13 +82,28 @@ namespace storm {
             template<typename ValueType>
             void printResult(ValueType const& lowerBound, ValueType const& upperBound) {
                 if (lowerBound == upperBound) {
-                    STORM_PRINT_AND_LOG(lowerBound);
+                    if (storm::utility::isInfinity(lowerBound)) {
+                        STORM_PRINT_AND_LOG("inf");
+                    } else {
+                        STORM_PRINT_AND_LOG(lowerBound);
+                    }
+                } else if (storm::utility::isInfinity<ValueType>(-lowerBound)) {
+                    if (storm::utility::isInfinity(upperBound)) {
+                        STORM_PRINT_AND_LOG("[-inf, inf] (width=inf)");
+                    } else {
+                        // Only upper bound is known
+                        STORM_PRINT_AND_LOG("≤ " << upperBound);
+                    }
+                } else if (storm::utility::isInfinity(upperBound)) {
+                    STORM_PRINT_AND_LOG("≥ " << lowerBound);
                 } else {
                     STORM_PRINT_AND_LOG("[" << lowerBound << ", " << upperBound << "] (width=" << ValueType(upperBound - lowerBound) << ")");
                 }
                 if (storm::NumberTraits<ValueType>::IsExact) {
                     STORM_PRINT_AND_LOG(" (approx. ");
-                    printResult(storm::utility::convertNumber<double>(lowerBound), storm::utility::convertNumber<double>(upperBound));
+                    double roundedLowerBound = storm::utility::isInfinity<ValueType>(-lowerBound) ? -storm::utility::infinity<double>() : storm::utility::convertNumber<double>(lowerBound);
+                    double roundedUpperBound = storm::utility::isInfinity(upperBound) ? storm::utility::infinity<double>() : storm::utility::convertNumber<double>(upperBound);
+                    printResult(roundedLowerBound, roundedUpperBound);
                     STORM_PRINT_AND_LOG(")");
                 }
             }
@@ -166,27 +182,11 @@ namespace storm {
             bool performAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& pomdp, storm::pomdp::analysis::FormulaInformation const& formulaInfo, storm::logic::Formula const& formula) {
                 auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
                 bool analysisPerformed = false;
-                if (pomdpSettings.isGridApproximationSet()) {
-                    STORM_PRINT_AND_LOG("Applying grid approximation... ");
-                    auto const& gridSettings = storm::settings::getModule<storm::settings::modules::GridApproximationSettings>();
-                    typename storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::models::sparse::Pomdp<ValueType>>::Options options;
-                    options.initialGridResolution = gridSettings.getGridResolution();
-                    options.explorationThreshold = storm::utility::convertNumber<ValueType>(gridSettings.getExplorationThreshold());
-                    options.doRefinement = gridSettings.isRefineSet();
-                    options.refinementPrecision = storm::utility::convertNumber<ValueType>(gridSettings.getRefinementPrecision());
-                    options.numericPrecision = storm::utility::convertNumber<ValueType>(gridSettings.getNumericPrecision());
-                    options.cacheSubsimplices = gridSettings.isCacheSimplicesSet();
-                    if (gridSettings.isUnfoldBeliefMdpSizeThresholdSet()) {
-                        options.beliefMdpSizeThreshold = gridSettings.getUnfoldBeliefMdpSizeThreshold();
-                    }
-                    if (storm::NumberTraits<ValueType>::IsExact) {
-                        if (gridSettings.isNumericPrecisionSetFromDefault()) {
-                            STORM_LOG_WARN_COND(storm::utility::isZero(options.numericPrecision), "Setting numeric precision to zero because exact arithmethic is used.");
-                            options.numericPrecision = storm::utility::zero<ValueType>();
-                        } else {
-                            STORM_LOG_WARN_COND(storm::utility::isZero(options.numericPrecision), "A non-zero numeric precision was set although exact arithmethic is used. Results might be inexact.");
-                        }
-                    }
+                if (pomdpSettings.isBeliefExplorationSet()) {
+                    STORM_PRINT_AND_LOG("Exploring the belief MDP... ");
+                    auto options = storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<ValueType>(pomdpSettings.isBeliefExplorationDiscretizeSet(), pomdpSettings.isBeliefExplorationUnfoldSet());
+                    auto const& beliefExplorationSettings = storm::settings::getModule<storm::settings::modules::BeliefExplorationSettings>();
+                    beliefExplorationSettings.setValuesInOptionsStruct(options);
                     storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::models::sparse::Pomdp<ValueType>> checker(*pomdp, options);
                     auto result = checker.check(formula);
                     checker.printStatisticsToStream(std::cout);
@@ -340,7 +340,7 @@ namespace storm {
                     // Note that formulaInfo contains state-based information which potentially needs to be updated during preprocessing
                     if (performPreprocessing<ValueType, DdType>(pomdp, formulaInfo, *formula)) {
                         sw.stop();
-                        STORM_PRINT_AND_LOG("Time for graph-based POMDP (pre-)processing: " << sw << "s." << std::endl);
+                        STORM_PRINT_AND_LOG("Time for graph-based POMDP (pre-)processing: " << sw << "." << std::endl);
                         pomdp->printModelInformationToStream(std::cout);
                     }
 

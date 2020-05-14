@@ -149,7 +149,8 @@ namespace storm {
                                     } else {
                                         STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Failed to convert Z3 expression. Expression is constant integer and value does not fit into 64-bit integer.");
                                     }
-                                } else if (expr.is_real() && expr.is_const()) {
+                                } else {
+                                    STORM_LOG_ASSERT(expr.is_real() && expr.is_const(), "Cannot handle numerical expression");
                                     Z3_SIGNED_INTEGER num;
                                     Z3_SIGNED_INTEGER den;
                                     if (Z3_get_numeral_rational_int64(expr.ctx(), expr, &num, &den)) {
