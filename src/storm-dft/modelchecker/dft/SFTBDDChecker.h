@@ -28,12 +28,15 @@ class SFTBDDChecker {
     SFTBDDChecker(std::shared_ptr<storm::storage::DFT<ValueType>> dft)
         : sylvanBddManager{std::make_shared<
               storm::storage::SylvanBddManager>()},
-          dft{std::move(dft)} {
-        storm::transformations::dft::SftToBddTransformator<ValueType>
-            transformer{this->dft, this->sylvanBddManager};
+          dft{std::move(dft)},
+          calculatedTopLevelGate{false} {}
 
-        topLevelGateBdd = transformer.transform();
-    }
+    SFTBDDChecker(
+        std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager,
+        std::shared_ptr<storm::storage::DFT<ValueType>> dft)
+        : sylvanBddManager{sylvanBddManager},
+          dft{std::move(dft)},
+          calculatedTopLevelGate{false} {}
 
     /**
      * Exports the Bdd that represents the top level gate to a file
@@ -43,14 +46,39 @@ class SFTBDDChecker {
      * The name of the file the dot graph is written to
      */
     void exportBddToDot(std::string const &filename) {
-        sylvanBddManager->exportBddToDot(topLevelGateBdd, filename);
+        sylvanBddManager->exportBddToDot(getTopLevelGateBdd(), filename);
     }
 
     /**
      * \return
      * Generated Bdd that represents the formula of the top level gate
      */
-    Bdd getBdd() { return topLevelGateBdd; }
+    Bdd getTopLevelGateBdd() {
+        if (!calculatedTopLevelGate) {
+            storm::transformations::dft::SftToBddTransformator<ValueType>
+                transformer{dft, sylvanBddManager};
+
+            topLevelGateBdd = transformer.transform();
+            calculatedTopLevelGate = true;
+        }
+        return topLevelGateBdd;
+    }
+
+    /**
+     * \return
+     * Generated Bdds that represent the logical formula of the given events
+     */
+    std::map<std::string, Bdd> getRelevantEventBdds(
+        std::set<std::string> relevantEventNames) {
+        storm::transformations::dft::SftToBddTransformator<ValueType>
+            transformer{dft, sylvanBddManager};
+        auto results{transformer.transform(relevantEventNames)};
+
+        topLevelGateBdd = results[dft->getTopLevelGate()->name()];
+        calculatedTopLevelGate = true;
+
+        return results;
+    }
 
     /**
      * \return
@@ -58,7 +86,7 @@ class SFTBDDChecker {
      * where the basic events are identified by their name
      */
     std::set<std::set<std::string>> getMinimalCutSets() {
-        auto bdd{minsol(topLevelGateBdd)};
+        auto bdd{minsol(getTopLevelGateBdd())};
 
         std::set<std::set<std::string>> rval{};
         std::vector<uint32_t> buffer{};
@@ -75,7 +103,23 @@ class SFTBDDChecker {
      * Works only with exponential distributions and no spares.
      * Otherwise the function returns an arbitrary value
      */
-    double getProbabilityAtTimebound(double timebound) const {
+    double getProbabilityAtTimebound(double timebound) {
+        return getProbabilityAtTimebound(getTopLevelGateBdd(), timebound);
+    }
+
+    /**
+     * \return
+     * The Probabilities that the given Event fails at the given timebound.
+     *
+     * \param bdd
+     * The bdd that represents an event in the dft.
+     * Must be from a call to some function of *this.
+     *
+     * \note
+     * Works only with exponential distributions and no spares.
+     * Otherwise the function returns an arbitrary value
+     */
+    double getProbabilityAtTimebound(Bdd bdd, double timebound) const {
         std::map<uint32_t, double> indexToProbability{};
         for (auto const &be : dft->getBasicElements()) {
             if (be->type() == storm::storage::DFTElementType::BE_EXP) {
@@ -92,14 +136,15 @@ class SFTBDDChecker {
                 auto const currentIndex{sylvanBddManager->getIndex(be->name())};
                 indexToProbability[currentIndex] = failureProbability;
             } else {
-                STORM_LOG_ERROR("Basic Element Type not supported.");
+                STORM_LOG_ERROR("Basic Element Type " << be->typestring()
+                                                      << " not supported.");
                 return -1;
             }
         }
 
         std::map<uint64_t, double> bddToProbability{};
-        auto const probability{recursiveProbability(
-            topLevelGateBdd, indexToProbability, bddToProbability)};
+        auto const probability{
+            recursiveProbability(bdd, indexToProbability, bddToProbability)};
         return probability;
     }
 
@@ -119,7 +164,33 @@ class SFTBDDChecker {
      * Otherwise the function returns an arbitrary value
      */
     std::vector<double> getProbabilitiesAtTimepoints(
-        std::vector<double> const &timepoints, size_t chunksize = 0) const {
+        std::vector<double> const &timepoints, size_t const chunksize = 0) {
+        return getProbabilitiesAtTimepoints(getTopLevelGateBdd(), timepoints,
+                                            chunksize);
+    }
+
+    /**
+     * \return
+     * The Probabilities that the given Event fails at the given timepoints.
+     *
+     * \param bdd
+     * The bdd that represents an event in the dft.
+     * Must be from a call to some function of *this.
+     *
+     * \param timepoints
+     * Array of timebounds to calculate the failure probabilities for.
+     *
+     * \param chunksize
+     * Splits the timepoints array into chunksize chunks.
+     * A value of 0 represents to calculate the whole array at once.
+     *
+     * \note
+     * Works only with exponential distributions and no spares.
+     * Otherwise the function returns an arbitrary value
+     */
+    std::vector<double> getProbabilitiesAtTimepoints(
+        Bdd bdd, std::vector<double> const &timepoints,
+        size_t chunksize = 0) const {
         if (chunksize == 0) {
             chunksize = timepoints.size();
         }
@@ -177,8 +248,7 @@ class SFTBDDChecker {
             // Great care was made so that the pointer returned is always valid
             // and points to an element in bddToProbabilities
             auto const &probabilitiesArray{*recursiveProbabilities(
-                chunksize, topLevelGateBdd, indexToProbabilities,
-                bddToProbabilities)};
+                chunksize, bdd, indexToProbabilities, bddToProbabilities)};
 
             // Update result Probabilities
             for (size_t i{0}; i < chunksize; ++i) {
@@ -437,6 +507,7 @@ class SFTBDDChecker {
     std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager;
     std::shared_ptr<storm::storage::DFT<ValueType>> dft;
 
+    bool calculatedTopLevelGate;
     Bdd topLevelGateBdd;
 };
 
