@@ -130,17 +130,14 @@ namespace storm {
                         ValueType result = storm::utility::zero<ValueType>();
                         int limK = invResults ? -1 : nrM + 1;
                         int chK = invResults ? -1 : 1;
-                        // WARNING: there is a bug for computing permutations with more than 32 elements
-                        STORM_LOG_THROW(res.size() < 32, storm::exceptions::NotSupportedException,
-                                        "Permutations work only for < 32 elements");
                         for (int cK = nrK; cK != limK; cK += chK) {
                             STORM_LOG_ASSERT(cK >= 0, "ck negative.");
-                            size_t permutation = smallestIntWithNBitsSet(static_cast<size_t>(cK));
+                            uint64_t permutation = smallestIntWithNBitsSet(static_cast<uint64_t>(cK));
                             do {
                                 STORM_LOG_TRACE("Permutation=" << permutation);
                                 ValueType permResult = storm::utility::one<ValueType>();
                                 for (size_t i = 0; i < res.size(); ++i) {
-                                    if (permutation & (1 << i)) {
+                                    if (permutation & (1ul << i)) {
                                         permResult *= res[i];
                                     } else {
                                         permResult *= storm::utility::one<ValueType>() - res[i];
@@ -149,7 +146,7 @@ namespace storm {
                                 STORM_LOG_TRACE("Result for permutation:" << permResult);
                                 permutation = nextBitPermutation(permutation);
                                 result += permResult;
-                            } while (permutation < (1 << nrM) && permutation != 0);
+                            } while (permutation < (1ul << nrM) && permutation != 0);
                         }
                         if (invResults) {
                             result = storm::utility::one<ValueType>() - result;

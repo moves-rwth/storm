@@ -109,14 +109,6 @@ namespace storm {
                             dimensionIndexMap.push_back(globalDimensionIndex);
                         }
                         
-                        bool objectiveContainsLowerBound = false;
-                        for (auto const& globalDimensionIndex : objectiveDimensions[objIndex]) {
-                            if (dimensions[globalDimensionIndex].boundType == DimensionBoundType::LowerBound) {
-                                objectiveContainsLowerBound = true;
-                                break;
-                            }
-                        }
-                        
                         // collect the memory states for this objective
                         std::vector<storm::storage::BitVector> objMemStates;
                         storm::storage::BitVector m(dimensionIndexMap.size(), false);

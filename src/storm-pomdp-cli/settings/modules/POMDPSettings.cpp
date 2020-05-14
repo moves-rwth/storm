@@ -13,7 +13,10 @@ namespace storm {
         namespace modules {
             
             const std::string POMDPSettings::moduleName = "pomdp";
+            const std::string noCanonicOption = "nocanonic";
             const std::string exportAsParametricModelOption = "parametric-drn";
+            const std::string beliefExplorationOption = "belief-exploration";
+            std::vector<std::string> beliefExplorationModes = {"both", "discretize", "unfold"};
             const std::string qualitativeReductionOption = "qualitativereduction";
             const std::string analyzeUniqueObservationsOption = "uniqueobservations";
             const std::string mecReductionOption = "mecreduction";
@@ -25,8 +28,12 @@ namespace storm {
             std::vector<std::string> fscModes = {"standard", "simple-linear", "simple-linear-inverse"};
             const std::string transformBinaryOption = "transformbinary";
             const std::string transformSimpleOption = "transformsimple";
+            const std::string memlessSearchOption = "memlesssearch";
+            std::vector<std::string> memlessSearchMethods = {"none", "ccdmemless", "ccdmemory", "iterative"};
+            const std::string checkFullyObservableOption = "check-fully-observable";
 
             POMDPSettings::POMDPSettings() : ModuleSettings(moduleName) {
+                this->addOption(storm::settings::OptionBuilder(moduleName, noCanonicOption, false, "If this is set, actions will not be ordered canonically. Could yield incorrect results.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportAsParametricModelOption, false, "Export the parametric file.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which to write the model.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, qualitativeReductionOption, false, "Reduces the model size by performing qualitative analysis (E.g. merge states with prob. 1.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, analyzeUniqueObservationsOption, false, "Computes the states with a unique observation").build());
@@ -37,6 +44,14 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, fscmode, false, "Sets the way the pMC is obtained").addArgument(storm::settings::ArgumentBuilder::createStringArgument("type", "type name").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(fscModes)).setDefaultValueString("standard").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, transformBinaryOption, false, "Transforms the pomdp to a binary pomdp.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, transformSimpleOption, false, "Transforms the pomdp to a binary and simple pomdp.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, beliefExplorationOption, false,"Analyze the POMDP by exploring the belief state-space.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "Sets whether lower, upper, or interval result bounds are computed.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(beliefExplorationModes)).setDefaultValueString("both").makeOptional().build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, memlessSearchOption, false, "Search for a qualitative memoryless scheuler").addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "method name").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(memlessSearchMethods)).setDefaultValueString("none").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, checkFullyObservableOption, false, "Performs standard model checking on the underlying MDP").build());
+
+            }
+
+            bool POMDPSettings::isNoCanonicSet() const {
+                return this->getOption(noCanonicOption).getHasOptionBeenSet();
             }
 
             bool POMDPSettings::isExportToParametricSet() const {
@@ -62,7 +77,33 @@ namespace storm {
             bool POMDPSettings::isSelfloopReductionSet() const {
                 return this->getOption(selfloopReductionOption).getHasOptionBeenSet();
             }
+
+            bool POMDPSettings::isBeliefExplorationSet() const {
+                return this->getOption(beliefExplorationOption).getHasOptionBeenSet();
+            }
             
+            bool POMDPSettings::isBeliefExplorationDiscretizeSet() const {
+                std::string arg = this->getOption(beliefExplorationOption).getArgumentByName("mode").getValueAsString();
+                return isBeliefExplorationSet() && (arg == "discretize" || arg == "both");
+            }
+
+            bool POMDPSettings::isBeliefExplorationUnfoldSet() const {
+                std::string arg = this->getOption(beliefExplorationOption).getArgumentByName("mode").getValueAsString();
+                return isBeliefExplorationSet() && (arg == "unfold" || arg == "both");
+            }
+
+            bool POMDPSettings::isMemlessSearchSet() const {
+                return this->getOption(memlessSearchOption).getHasOptionBeenSet();
+            }
+
+            bool POMDPSettings::isCheckFullyObservableSet() const {
+                return this->getOption(checkFullyObservableOption).getHasOptionBeenSet();
+            }
+
+            std::string POMDPSettings::getMemlessSearchMethod() const {
+                return this->getOption(memlessSearchOption).getArgumentByName("method").getValueAsString();
+            }
+
             uint64_t POMDPSettings::getMemoryBound() const {
                 return this->getOption(memoryBoundOption).getArgumentByName("bound").getValueAsUnsignedInteger();
             }

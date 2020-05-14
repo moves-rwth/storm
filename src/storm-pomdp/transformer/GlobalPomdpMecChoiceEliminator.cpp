@@ -225,5 +225,8 @@ namespace storm {
 
         
         template class GlobalPomdpMecChoiceEliminator<storm::RationalNumber>;
+
+        template
+        class GlobalPomdpMecChoiceEliminator<double>;
     }
 }
