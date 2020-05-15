@@ -122,7 +122,7 @@ class SFTBDDChecker {
     double getProbabilityAtTimebound(Bdd bdd, double timebound) const {
         std::map<uint32_t, double> indexToProbability{};
         for (auto const &be : dft->getBasicElements()) {
-            if (be->type() == storm::storage::DFTElementType::BE_EXP) {
+            if (be->beType() == storm::storage::BEType::EXPONENTIAL) {
                 auto const failureRate{
                     std::static_pointer_cast<
                         storm::storage::BEExponential<ValueType>>(be)
@@ -223,7 +223,7 @@ class SFTBDDChecker {
 
             // Update the probabilities of the basic elements
             for (auto const &be : basicElemets) {
-                if (be->type() == storm::storage::DFTElementType::BE_EXP) {
+                if (be->beType() == storm::storage::BEType::EXPONENTIAL) {
                     auto const failureRate{
                         std::static_pointer_cast<
                             storm::storage::BEExponential<ValueType>>(be)
