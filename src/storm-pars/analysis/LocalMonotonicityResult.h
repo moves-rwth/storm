@@ -19,6 +19,14 @@ namespace storm {
 
             void setMonotonicity(uint_fast64_t state, VariableType var, Monotonicity mon);
 
+            void setMonotonicityResult(uint_fast64_t state, MonotonicityResult<VariableType>* monRes);
+
+            /*!
+             * Constructs a new LocalMonotonicityResult object that is a copy of the current one
+             * @return Pointer to the copy
+             */
+            LocalMonotonicityResult<VariableType>* copy();
+
         private:
             std::vector<MonotonicityResult<VariableType>*> stateMonRes;
         };

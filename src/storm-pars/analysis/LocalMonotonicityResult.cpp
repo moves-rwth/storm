@@ -25,6 +25,20 @@ namespace storm {
             stateMonRes[state]->addMonotonicityResult(var, mon);
         }
 
+        template <typename VariableType>
+        void LocalMonotonicityResult<VariableType>::setMonotonicityResult(uint_fast64_t state, MonotonicityResult<VariableType>* monRes) {
+            this->stateMonRes[state] = monRes;
+        }
+
+        template <typename VariableType>
+        LocalMonotonicityResult<VariableType>* LocalMonotonicityResult<VariableType>::copy() {
+            auto copy = new LocalMonotonicityResult<VariableType>(stateMonRes.size());
+            for (auto state = 0; state < stateMonRes.size(); state++) {
+                copy->setMonotonicityResult(state, stateMonRes[state]->copy());
+            }
+            return copy;
+        }
+
         template class LocalMonotonicityResult<storm::RationalFunctionVariable>;
     }
 }

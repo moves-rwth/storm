@@ -180,9 +180,8 @@ namespace storm {
         }
 
         template<typename ParametricType, typename ConstantType>
-        void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::analysis::Order* reachabilityOrder) {
+        void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::analysis::Order* reachabilityOrder, storm::analysis::LocalMonotonicityResult<typename ParameterLifter<ParametricType, ConstantType>::VariableType>* localMonotonicityResult) {
             storm::storage::BitVector selectedRows(matrix.getRowCount(), true);
-            // TODO: maybe store the already found localMonotonicityResult
 
             auto state = reachabilityOrder->getNextAddedState(-1);
             while (state != reachabilityOrder->getNumberOfStates()) {
@@ -198,7 +197,13 @@ namespace storm {
                 // (00...0 = lower boundaries for all variables, 11...1 = upper boundaries for all variables)
                 auto index = 0;
                 for (auto var : variables) {
-                    auto monotonicity = monotonicityChecker->checkLocalMonotonicity(reachabilityOrder, state, var, region);
+                    auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
+                    if (monotonicity == Monotonicity::Unknown) {
+                        monotonicity = monotonicityChecker->checkLocalMonotonicity(reachabilityOrder, state, var, region);
+                        if (monotonicity != Monotonicity::Unknown) {
+                            localMonotonicityResult->setMonotonicity(state, var, monotonicity);
+                        }
+                    }
                     bool ignoreUpperBound = monotonicity == Monotonicity::Constant
                             || (monotonicity == Monotonicity::Incr && dirForParameters == storm::solver::OptimizationDirection::Maximize)
                             || (monotonicity == Monotonicity::Decr && dirForParameters == storm::solver::OptimizationDirection::Minimize);

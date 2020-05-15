@@ -63,10 +63,14 @@ namespace storm {
                 // FIFO queues storing the data for the regions that we still need to process.
                 std::queue<std::pair<storm::storage::ParameterRegion<ParametricType>, RegionResult>> unprocessedRegions;
                 std::queue<storm::analysis::Order*> orders;
+                std::queue<storm::analysis::LocalMonotonicityResult<VariableType>*> localMonotonicityResults;
                 std::queue<uint64_t> refinementDepths;
                 unprocessedRegions.emplace(region, RegionResult::Unknown);
                 refinementDepths.push(0);
                 orders.emplace(extendOrder(nullptr, region));
+                if (orders.front() != nullptr) {
+                    localMonotonicityResults.emplace(new storm::analysis::LocalMonotonicityResult<VariableType>(orders.front()->getNumberOfStates()));
+                }
 
                 uint_fast64_t numOfAnalyzedRegions = 0;
                 CoefficientType displayedProgress = storm::utility::zero<CoefficientType>();
@@ -91,9 +95,11 @@ namespace storm {
                     auto& currentRegion = unprocessedRegions.front().first;
                     auto& res = unprocessedRegions.front().second;
                     auto order = orders.front();
+                    auto localMonotonicityResult = localMonotonicityResults.front();
+                    // TODO: localMonotonicityResult stack maken
                     if (useMonotonicity) {
                         extendOrder(order, currentRegion);
-                        res = analyzeRegion(env, currentRegion, hypothesis, res, false, order);
+                        res = analyzeRegion(env, currentRegion, hypothesis, res, false, order, localMonotonicityResult);
                     } else {
                         res = analyzeRegion(env, currentRegion, hypothesis, res, false);
                     }
@@ -118,13 +124,13 @@ namespace storm {
                                                                          ((res == RegionResult::CenterViolated) ? RegionResult::ExistsViolated :
                                                                           RegionResult::Unknown);
                                 bool first = true;
-                                // TODO: dit kan stuk gaan?
-                                orders.pop();
                                 for (auto& newRegion : newRegions) {
                                     if (useMonotonicity && (!first && !order->getDoneBuilding())) {
                                         orders.emplace(new storm::analysis::Order(order));
+                                        localMonotonicityResults.emplace(localMonotonicityResult->copy());
                                     } else if (useMonotonicity){
                                         orders.emplace(order);
+                                        localMonotonicityResults.emplace(localMonotonicityResult);
                                         first = false;
                                     }
                                     unprocessedRegions.emplace(std::move(newRegion), initResForNewRegions);
@@ -140,6 +146,7 @@ namespace storm {
                     unprocessedRegions.pop();
                     refinementDepths.pop();
                     orders.pop();
+                    localMonotonicityResults.pop();
                     if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
                         while (displayedProgress < storm::utility::one<CoefficientType>() - fractionOfUndiscoveredArea) {
                             STORM_PRINT_AND_LOG("#");
