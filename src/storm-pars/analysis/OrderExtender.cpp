@@ -32,7 +32,23 @@ namespace storm {
             this->matrix = matrix;
             std::vector<uint_fast64_t> statesSorted = utility::graph::getTopologicalSort(matrix);
             std::reverse(statesSorted.begin(),statesSorted.end());
-            this->bottomTopOrder = new Order(topStates, bottomStates, matrix.getColumnCount(), &statesSorted);
+            this->numberOfStates = matrix.getColumnCount();
+
+            // TODO: can we do this differently?
+            // Build stateMap
+            for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
+                auto row = matrix.getRow(state);
+                stateMap[state] = std::vector<uint_fast64_t>();
+                for (auto rowItr = row.begin(); rowItr != row.end(); ++rowItr) {
+                    // ignore self-loops when there are more transitions
+                    if (state != rowItr->getColumn() || row.getNumberOfEntries() == 1) {
+                        stateMap[state].push_back(rowItr->getColumn());
+                    }
+                }
+            }
+            cyclic = storm::utility::graph::hasCycle(matrix);
+
+            this->bottomTopOrder = new Order(topStates, bottomStates, numberOfStates, &statesSorted);
         }
 
         template <typename ValueType, typename ConstantType>
@@ -253,6 +269,7 @@ namespace storm {
             if (currentState == numberOfStates) {
                 order->setDoneBuilding();
             }
+            return order;
         }
 
         template <typename ValueType, typename ConstantType>

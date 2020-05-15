@@ -180,6 +180,11 @@ namespace storm {
                     bool getDoneBuilding();
 
                     /*!
+                     * Returns the next added state of the order, returns the number of state if end of added states is reached.
+                     */
+                    uint_fast64_t getNextAddedState(uint_fast64_t state);
+
+                    /*!
                      * Retrieves the pointer to a Node at which the state occurs.
                      *
                      * @param state The number of the state.
@@ -207,6 +212,11 @@ namespace storm {
                      * Returns the number of added states.
                      */
                     uint_fast64_t getNumberOfAddedStates();
+
+                    /*!
+                     * Returns the number of possible states in the order.
+                     */
+                    uint_fast64_t getNumberOfStates();
 
                     /*!
                      * Returns if the order only consists of bottom and top states (so no in-between nodes).

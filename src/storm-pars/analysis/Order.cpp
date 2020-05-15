@@ -192,7 +192,6 @@ namespace storm {
             mergeNodes(getNode(var1), getNode(var2));
         }
 
-
         /*** Checking on the order ***/
 
         Order::NodeComparison Order::compare(uint_fast64_t state1, uint_fast64_t state2) {
@@ -254,6 +253,10 @@ namespace storm {
             return doneBuilding;
         }
 
+        uint_fast64_t Order::getNextAddedState(uint_fast64_t state) {
+            return addedStates->getNextSetIndex(state + 1);
+        }
+
         Order::Node *Order::getNode(uint_fast64_t stateNumber) {
             assert (stateNumber < numberOfStates);
             return nodes[stateNumber];
@@ -269,6 +272,10 @@ namespace storm {
 
         uint_fast64_t Order::getNumberOfAddedStates() {
             return numberOfAddedStates;
+        }
+
+        uint_fast64_t Order::getNumberOfStates() {
+            return numberOfStates;
         }
 
         bool Order::isOnlyBottomTopOrder() {
@@ -354,7 +361,8 @@ namespace storm {
             return result;
         }
 
-        /*** Checking on helpfunctionality of order ***/
+        /*** Checking on helpfunctionality for building of order ***/
+
         void Order::addStateToHandle(uint_fast64_t state) {
             statesToHandle.push_back(state);
         }
@@ -390,11 +398,13 @@ namespace storm {
         }
 
         /*** Setters ***/
+
         void Order::setDoneBuilding(bool done) {
             doneBuilding = done;
         }
 
         /*** Output ***/
+
         void Order::toDotOutput() {
             // Graphviz Output start
             STORM_PRINT("Dot Output:" << std::endl << "digraph model {" << std::endl);
