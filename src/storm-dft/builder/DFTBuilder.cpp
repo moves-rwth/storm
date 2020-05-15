@@ -253,7 +253,7 @@ namespace storm {
             std::vector<std::string> children;
             switch (element->type()) {
                 case storm::storage::DFTElementType::BE:
-                    copyBE(std::static_pointer_cast<storm::storage::DFTBE<ValueType>>(element));
+                    copyBE(std::static_pointer_cast<storm::storage::DFTBE<ValueType> const>(element));
                     break;
                 case storm::storage::DFTElementType::AND:
                 case storm::storage::DFTElementType::OR:
@@ -294,17 +294,17 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void DFTBuilder<ValueType>::copyBE(DFTBEPointer be) {
+        void DFTBuilder<ValueType>::copyBE(DFTBECPointer be) {
             switch (be->beType()) {
                 case storm::storage::BEType::CONSTANT:
                 {
-                    auto beConst = std::static_pointer_cast<storm::storage::BEConst<ValueType>>(be);
+                    auto beConst = std::static_pointer_cast<storm::storage::BEConst<ValueType> const>(be);
                     addBasicElementConst(beConst->name(), beConst->failed());
                     break;
                 }
                 case storm::storage::BEType::EXPONENTIAL:
                 {
-                    auto beExp = std::static_pointer_cast<storm::storage::BEExponential<ValueType>>(be);
+                    auto beExp = std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(be);
                     addBasicElementExponential(beExp->name(), beExp->activeFailureRate(), beExp->dormancyFactor(), beExp->isTransient());
                     break;
                 }
