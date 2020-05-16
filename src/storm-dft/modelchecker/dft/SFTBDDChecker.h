@@ -122,24 +122,8 @@ class SFTBDDChecker {
     double getProbabilityAtTimebound(Bdd bdd, double timebound) const {
         std::map<uint32_t, double> indexToProbability{};
         for (auto const &be : dft->getBasicElements()) {
-            if (be->beType() == storm::storage::BEType::EXPONENTIAL) {
-                auto const failureRate{
-                    std::static_pointer_cast<
-                        storm::storage::BEExponential<ValueType>>(be)
-                        ->activeFailureRate()};
-
-                // exponential distribution
-                // p(T <= t) = 1 - exp(-lambda*t)
-                auto const failureProbability{
-                    1 - std::exp(-failureRate * timebound)};
-
-                auto const currentIndex{sylvanBddManager->getIndex(be->name())};
-                indexToProbability[currentIndex] = failureProbability;
-            } else {
-                STORM_LOG_ERROR("Basic Element Type " << be->typestring()
-                                                      << " not supported.");
-                return -1;
-            }
+            auto const currentIndex{sylvanBddManager->getIndex(be->name())};
+            indexToProbability[currentIndex] = be->getUnreliability(timebound);
         }
 
         std::map<uint64_t, double> bddToProbability{};
@@ -223,6 +207,9 @@ class SFTBDDChecker {
 
             // Update the probabilities of the basic elements
             for (auto const &be : basicElemets) {
+                auto const beIndex{sylvanBddManager->getIndex(be->name())};
+                // Vectorize known BETypes
+                // fallback to getUnreliability() otherwise
                 if (be->beType() == storm::storage::BEType::EXPONENTIAL) {
                     auto const failureRate{
                         std::static_pointer_cast<
@@ -231,12 +218,15 @@ class SFTBDDChecker {
 
                     // exponential distribution
                     // p(T <= t) = 1 - exp(-lambda*t)
-                    auto const beIndex{sylvanBddManager->getIndex(be->name())};
                     indexToProbabilities[beIndex] =
                         1 - (-failureRate * timepointsArray).exp();
                 } else {
-                    STORM_LOG_ERROR("Basic Element Type not supported.");
-                    return {};
+                    auto probabilities{timepointsArray};
+                    for (size_t i{0}; i < chunksize; ++i) {
+                        probabilities(i) =
+                            be->getUnreliability(timepointsArray(i));
+                    }
+                    indexToProbabilities[beIndex] = probabilities;
                 }
             }
 
