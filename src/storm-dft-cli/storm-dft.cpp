@@ -210,6 +210,8 @@ void processOptions() {
                 relevantEventNames.push_back(label.substr(0, label.size() - 7));
             } else if (boost::ends_with(label, "_dc")) {
                 relevantEventNames.push_back(label.substr(0, label.size() - 3));
+            } else if (label.find("_claimed_") != std::string::npos) {
+                STORM_LOG_THROW(faultTreeSettings.isAddLabelsClaiming(), storm::exceptions::InvalidArgumentException, "Claiming labels will not be exported but are required for label '" << label << "'. Try setting --labels-claiming.");
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Label '" << label << "' not known.");
             }
