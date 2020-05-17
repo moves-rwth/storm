@@ -754,14 +754,17 @@ namespace storm {
             // Check independence of spare modules
             // TODO: comparing one element of each spare module sufficient?
             for (auto module1 = mSpareModules.begin(); module1 != mSpareModules.end(); ++module1) {
-                size_t firstElement = module1->second.front();
-                for (auto module2 = std::next(module1); module2 != mSpareModules.end(); ++module2) {
-                    if (std::find(module2->second.begin(), module2->second.end(), firstElement) != module2->second.end()) {
-                        if (!wellformed) {
-                            stream << std::endl;
+                if (!module1->second.empty()) {
+                    // Empty modules are allowed for the primary module of a spare gate
+                    size_t firstElement = module1->second.front();
+                    for (auto module2 = std::next(module1); module2 != mSpareModules.end(); ++module2) {
+                        if (std::find(module2->second.begin(), module2->second.end(), firstElement) != module2->second.end()) {
+                            if (!wellformed) {
+                                stream << std::endl;
+                            }
+                            stream << "Spare modules of '" << getElement(module1->first)->name() << "' and '" << getElement(module2->first)->name() << "' should not overlap.";
+                            wellformed = false;
                         }
-                        stream << "Spare modules of '" << getElement(module1->first)->name() << "' and '" << getElement(module2->first)->name() << "' should not overlap.";
-                        wellformed = false;
                     }
                 }
             }
