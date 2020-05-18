@@ -18,7 +18,7 @@ namespace storm {
         if (lraSettings.isMaximalIterationCountSet()) {
             maxIters = lraSettings.getMaximalIterationCount();
         }
-        aperiodicFactor = lraSettings.getAperiodicFactor();
+        aperiodicFactor = storm::utility::convertNumber<storm::RationalNumber>(lraSettings.getAperiodicFactor());
     }
     
     LongRunAverageSolverEnvironment::~LongRunAverageSolverEnvironment() {

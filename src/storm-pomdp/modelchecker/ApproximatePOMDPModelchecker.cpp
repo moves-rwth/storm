@@ -39,7 +39,7 @@ namespace storm {
             ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::Result::diff(bool relative) const {
                 ValueType diff = upperBound - lowerBound;
                 if (diff < storm::utility::zero<ValueType>()) {
-                    STORM_LOG_WARN_COND(diff >= 1e-6, "Upper bound '" << upperBound << "' is smaller than lower bound '" << lowerBound << "': Difference is " << diff << ".");
+                    STORM_LOG_WARN_COND(diff >= storm::utility::convertNumber<ValueType>(1e-6), "Upper bound '" << upperBound << "' is smaller than lower bound '" << lowerBound << "': Difference is " << diff << ".");
                     diff = storm::utility::zero<ValueType >();
                 }
                 if (relative && !storm::utility::isZero(upperBound)) {
