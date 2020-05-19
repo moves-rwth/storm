@@ -101,6 +101,7 @@ namespace {
     }
 
     TYPED_TEST(SparseDtmcParameterLiftingTest, Brp_Prob_Mon) {
+        // TODO: @Svenja, this one uses the monotonicity
                 typedef typename TestFixture::ValueType ValueType;
 
         std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
@@ -498,6 +499,7 @@ namespace {
     }
 
     TYPED_TEST(SparseDtmcParameterLiftingTest, Parametric_Die_Mon) {
+        // TODO: @Svenja, this one uses the monotonicity
         typedef typename TestFixture::ValueType ValueType;
 
         std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/parametric_die_2.pm";
