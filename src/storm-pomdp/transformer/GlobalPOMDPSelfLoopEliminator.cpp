@@ -77,5 +77,8 @@ namespace storm {
         }
 
         template class GlobalPOMDPSelfLoopEliminator<storm::RationalNumber>;
+
+        template
+        class GlobalPOMDPSelfLoopEliminator<double>;
     }
 }

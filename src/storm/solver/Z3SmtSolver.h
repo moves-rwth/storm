@@ -22,6 +22,7 @@ namespace storm {
                 virtual bool getBooleanValue(storm::expressions::Variable const& variable) const override;
                 virtual int_fast64_t getIntegerValue(storm::expressions::Variable const& variable) const override;
                 virtual double getRationalValue(storm::expressions::Variable const& variable) const override;
+				virtual std::string toString() const override;
                 
 			private:
 #ifdef STORM_HAVE_Z3

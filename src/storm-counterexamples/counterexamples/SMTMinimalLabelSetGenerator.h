@@ -1220,10 +1220,6 @@ namespace storm {
                 // try with an increased bound.
                 while (solver.checkWithAssumptions({assumption}) == storm::solver::SmtSolver::CheckResult::Unsat) {
                     STORM_LOG_DEBUG("Constraint system is unsatisfiable with at most " << currentBound << " taken commands; increasing bound.");
-#ifndef NDEBUG
-                    STORM_LOG_DEBUG("Sanity check to see whether constraint system is still satisfiable.");
-                    STORM_LOG_ASSERT(solver.check() == storm::solver::SmtSolver::CheckResult::Sat, "Constraint system is not satisfiable anymore.");
-#endif
                     solver.add(variableInformation.auxiliaryVariables.back());
                     variableInformation.auxiliaryVariables.push_back(assertLessOrEqualKRelaxed(solver, variableInformation, ++currentBound));
                     assumption = !variableInformation.auxiliaryVariables.back();
@@ -1754,6 +1750,10 @@ namespace storm {
 
                     if (result.size() > 0 && iterations > firstCounterexampleFound + options.maximumExtraIterations) {
                         break;
+                    }
+                    if (result.size() == 0) {
+                        STORM_LOG_DEBUG("Sanity check to see whether constraint system is still satisfiable.");
+                        STORM_LOG_ASSERT(solver->check() == storm::solver::SmtSolver::CheckResult::Sat, "Constraint system is not satisfiable anymore.");
                     }
                     STORM_LOG_DEBUG("Computing minimal command set.");
                     solverClock = std::chrono::high_resolution_clock::now();

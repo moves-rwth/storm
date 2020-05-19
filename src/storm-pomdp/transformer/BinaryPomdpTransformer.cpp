@@ -162,5 +162,7 @@ namespace storm {
         
         template class BinaryPomdpTransformer<storm::RationalNumber>;
 
+        template
+        class BinaryPomdpTransformer<double>;
     }
 }

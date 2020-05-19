@@ -55,16 +55,49 @@ namespace storm {
             }
 
             template<typename ValueType, typename RewardModelType>
+            uint64_t  Pomdp<ValueType, RewardModelType>::getMaxNrStatesWithSameObservation() const {
+                std::map<uint32_t, uint64_t> counts;
+                for (auto const& obs : observations) {
+                    auto insertionRes = counts.emplace(obs, 1ull);
+                    if (!insertionRes.second) {
+                        ++insertionRes.first->second;
+                    }
+                }
+                uint64_t result = 0;
+                for (auto const& count : counts) {
+                    result = std::max(result, count.second);
+                }
+                return result;
+            }
+            
+            template<typename ValueType, typename RewardModelType>
             std::vector<uint32_t> const& Pomdp<ValueType, RewardModelType>::getObservations() const {
                 return observations;
+            }
+            
+
+            template<typename ValueType, typename RewardModelType>
+            std::string Pomdp<ValueType, RewardModelType>::additionalDotStateInfo(uint64_t state) const {
+                return "<" + std::to_string(getObservation(state)) + ">";
+            }
+
+
+            template<typename ValueType, typename RewardModelType>
+            std::vector<uint64_t>
+            Pomdp<ValueType, RewardModelType>::getStatesWithObservation(uint32_t observation) const {
+                std::vector<uint64_t> result;
+                for (uint64_t state = 0; state < this->getNumberOfStates(); ++state) {
+                    if (this->getObservation(state) == observation) {
+                        result.push_back(state);
+                    }
+                }
+                return result;
             }
 
             template<typename ValueType, typename RewardModelType>
             bool Pomdp<ValueType, RewardModelType>::isCanonic() const {
                 return canonicFlag;
             }
-
-
 
 
 
