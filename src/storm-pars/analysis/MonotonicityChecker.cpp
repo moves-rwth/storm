@@ -14,7 +14,7 @@ namespace storm {
             // Create + fill Vector containing the Monotonicity of the transitions to the succs
             auto row = matrix.getRow(state);
             std::vector<uint_fast64_t> succs;
-            std::vector<Monotonicity> succsMonUnsorted(row.getNumberOfEntries());
+            std::vector<Monotonicity> succsMonUnsorted;
             for (auto entry : row) {
                 auto succState = entry.getColumn();
                 succsMonUnsorted.push_back(checkTransitionMonRes(entry.getValue(), var, region));
@@ -22,10 +22,11 @@ namespace storm {
             }
             auto succsSorted = order->sortStates(&succs);
 
-            uint_fast64_t index = 0;
-            Monotonicity localMonotonicity = Monotonicity::Constant;
-
             uint_fast64_t succSize = succs.size();
+            if (succsSorted[succSize - 1] == matrix.getColumnCount()) {
+                return Monotonicity::Unknown;
+            }
+
             if (succSize == 2) {
                 // In this case we can ignore the last entry, as this will have a probability of 1 - the other
                 succSize = 1;
@@ -33,6 +34,8 @@ namespace storm {
 
             // First check as long as it stays constant and either incr or decr
             bool allowedToSwap = true;
+            Monotonicity localMonotonicity = Monotonicity::Constant;
+            uint_fast64_t index = 0;
             while (index < succSize && localMonotonicity == Monotonicity::Constant) {
                 auto itr = std::find(succs.begin(), succs.end(), succsSorted[index]);
                 auto newIndex = std::distance(succs.begin(), itr);
@@ -67,7 +70,6 @@ namespace storm {
                 }
                 index++;
             }
-            // TODO: save this somewhere?
             return localMonotonicity;
         }
 

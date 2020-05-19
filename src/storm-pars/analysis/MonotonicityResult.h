@@ -85,7 +85,7 @@ namespace storm {
              * Constructs a new MonotonicityResult object that is a copy of the current one
              * @return Pointer to the copy
              */
-            MonotonicityResult<VariableType>* copy();
+            std::shared_ptr<MonotonicityResult<VariableType>> copy();
 
         private:
             std::map<VariableType, Monotonicity> monotonicityResult;

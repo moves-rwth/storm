@@ -135,9 +135,9 @@ namespace storm {
         }
 
         template <typename VariableType>
-        MonotonicityResult<VariableType>* MonotonicityResult<VariableType>::copy(){
-            MonotonicityResult<VariableType>* copy = new MonotonicityResult<VariableType>();
-            copy->monotonicityResult = *(new std::map<VariableType, Monotonicity>(monotonicityResult));
+        std::shared_ptr<MonotonicityResult<VariableType>> MonotonicityResult<VariableType>::copy(){
+            std::shared_ptr<MonotonicityResult<VariableType>> copy = std::make_shared<MonotonicityResult<VariableType>>();
+            copy->monotonicityResult = std::map<VariableType, Monotonicity>(monotonicityResult);
             copy->setAllMonotonicity(allMonotonicity);
             copy->setSomewhereMonotonicity(somewhereMonotonicity);
             copy->setDone(done);

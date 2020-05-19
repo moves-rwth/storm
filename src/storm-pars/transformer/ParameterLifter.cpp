@@ -12,8 +12,11 @@ namespace storm {
     namespace transformer {
 
         template<typename ParametricType, typename ConstantType>
-        ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix, std::vector<ParametricType> const& pVector, storm::storage::BitVector const& selectedRows, storm::storage::BitVector const& selectedColumns, bool generateRowLabels) {
-            monotonicityChecker = new storm::analysis::MonotonicityChecker<ParametricType>(pMatrix);
+        ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix, std::vector<ParametricType> const& pVector, storm::storage::BitVector const& selectedRows, storm::storage::BitVector const& selectedColumns, bool generateRowLabels, bool useMonotonicity) {
+            this->useMonotonicity = useMonotonicity;
+            if (useMonotonicity) {
+                monotonicityChecker = new storm::analysis::MonotonicityChecker<ParametricType>(pMatrix);
+            }
 
             // get a mapping from old column indices to new ones
             oldToNewColumnIndexMapping = std::vector<uint_fast64_t>(selectedColumns.size(), selectedColumns.size());
@@ -103,8 +106,10 @@ namespace storm {
 
                     ++newRowIndex;
                 }
-                // Safe the occuringVariables of a state, needed if we want to use monotonicity
-                occurringVariablesAtState[rowIndex] = std::move(occurringVariables);
+                if (useMonotonicity) {
+                    // Safe the occuringVariables of a state, needed if we want to use monotonicity
+                    occurringVariablesAtState[rowIndex] = std::move(occurringVariables);
+                }
             }
             
             // Matrix and vector are now filled with constant results from constant functions and place holders for non-constant functions.
@@ -180,7 +185,8 @@ namespace storm {
         }
 
         template<typename ParametricType, typename ConstantType>
-        void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::analysis::Order* reachabilityOrder, storm::analysis::LocalMonotonicityResult<typename ParameterLifter<ParametricType, ConstantType>::VariableType>* localMonotonicityResult) {
+        void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::analysis::Order* reachabilityOrder, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename ParameterLifter<ParametricType, ConstantType>::VariableType>> localMonotonicityResult) {
+            assert (useMonotonicity);
             storm::storage::BitVector selectedRows(matrix.getRowCount(), true);
 
             auto state = reachabilityOrder->getNextAddedState(-1);
@@ -204,12 +210,13 @@ namespace storm {
                             localMonotonicityResult->setMonotonicity(state, var, monotonicity);
                         }
                     }
+
                     bool ignoreUpperBound = monotonicity == Monotonicity::Constant
-                            || (monotonicity == Monotonicity::Incr && dirForParameters == storm::solver::OptimizationDirection::Maximize)
-                            || (monotonicity == Monotonicity::Decr && dirForParameters == storm::solver::OptimizationDirection::Minimize);
+                            || (monotonicity == Monotonicity::Incr && dirForParameters == storm::solver::OptimizationDirection::Minimize)
+                            || (monotonicity == Monotonicity::Decr && dirForParameters == storm::solver::OptimizationDirection::Maximize);
                     bool ignoreLowerBound = !ignoreUpperBound
-                            && ((monotonicity == Monotonicity::Incr && dirForParameters == storm::solver::OptimizationDirection::Minimize)
-                                || (monotonicity == Monotonicity::Decr && dirForParameters == storm::solver::OptimizationDirection::Maximize));
+                            && ((monotonicity == Monotonicity::Incr && dirForParameters == storm::solver::OptimizationDirection::Maximize)
+                                || (monotonicity == Monotonicity::Decr && dirForParameters == storm::solver::OptimizationDirection::Minimize));
 
                     if (ignoreLowerBound) {
                         auto stepSize = std::pow(2, index);

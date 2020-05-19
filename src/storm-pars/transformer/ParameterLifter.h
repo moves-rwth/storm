@@ -43,7 +43,7 @@ namespace storm {
              * @param selectedRows a Bitvector that specifies which rows of the matrix and the vector are considered.
              * @param selectedColumns a Bitvector that specifies which columns of the matrix are considered.
              */
-            ParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix, std::vector<ParametricType> const& pVector, storm::storage::BitVector const& selectedRows, storm::storage::BitVector const& selectedColumns,  bool generateRowLabels = false);
+            ParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix, std::vector<ParametricType> const& pVector, storm::storage::BitVector const& selectedRows, storm::storage::BitVector const& selectedColumns,  bool generateRowLabels = false, bool useMonotonicity = false);
             
             void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
 
@@ -61,7 +61,7 @@ namespace storm {
              * @param dirForParameters the optimization direction
              * @param reachabilityOrder a (possibly insufficient) reachability order, used for local monotonicity
              */
-            void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::analysis::Order* reachabilityOrder, storm::analysis::LocalMonotonicityResult<VariableType>* localMonotonicityResult);
+            void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::analysis::Order* reachabilityOrder, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
 
             // Returns the resulting matrix. Should only be called AFTER specifying a region
             storm::storage::SparseMatrix<ConstantType> const& getMatrix() const;
@@ -166,6 +166,7 @@ namespace storm {
             bool usePartialScheduler = false;
 
             storm::analysis::MonotonicityChecker<ParametricType>* monotonicityChecker; // MonotonicityChecker object, on the original pMatrix
+            bool useMonotonicity;
         };
 
     }

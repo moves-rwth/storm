@@ -63,13 +63,18 @@ namespace storm {
                 // FIFO queues storing the data for the regions that we still need to process.
                 std::queue<std::pair<storm::storage::ParameterRegion<ParametricType>, RegionResult>> unprocessedRegions;
                 std::queue<storm::analysis::Order*> orders;
-                std::queue<storm::analysis::LocalMonotonicityResult<VariableType>*> localMonotonicityResults;
+                std::queue<std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>> localMonotonicityResults;
                 std::queue<uint64_t> refinementDepths;
                 unprocessedRegions.emplace(region, RegionResult::Unknown);
                 refinementDepths.push(0);
-                orders.emplace(extendOrder(nullptr, region));
-                if (orders.front() != nullptr) {
-                    localMonotonicityResults.emplace(new storm::analysis::LocalMonotonicityResult<VariableType>(orders.front()->getNumberOfStates()));
+                if (useMonotonicity) {
+                    orders.emplace(extendOrder(nullptr, region));
+                    if (orders.front() != nullptr) {
+                        auto localMonRes = std::shared_ptr< storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(orders.front()->getNumberOfStates()));
+                        localMonotonicityResults.emplace(localMonRes);
+                    } else {
+                        assert (false);
+                    }
                 }
 
                 uint_fast64_t numOfAnalyzedRegions = 0;
@@ -94,10 +99,11 @@ namespace storm {
                     STORM_LOG_INFO("Analyzing region #" << numOfAnalyzedRegions << " (Refinement depth " << currentDepth << "; " << storm::utility::convertNumber<double>(fractionOfUndiscoveredArea) * 100 << "% still unknown)");
                     auto& currentRegion = unprocessedRegions.front().first;
                     auto& res = unprocessedRegions.front().second;
-                    auto order = orders.front();
-                    auto localMonotonicityResult = localMonotonicityResults.front();
-                    // TODO: localMonotonicityResult stack maken
+                    storm::analysis::Order* order;
+                    std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult(nullptr);
                     if (useMonotonicity) {
+                        order = orders.front();
+                        localMonotonicityResult = localMonotonicityResults.front();
                         extendOrder(order, currentRegion);
                         res = analyzeRegion(env, currentRegion, hypothesis, res, false, order, localMonotonicityResult);
                     } else {
@@ -145,8 +151,10 @@ namespace storm {
                     ++numOfAnalyzedRegions;
                     unprocessedRegions.pop();
                     refinementDepths.pop();
-                    orders.pop();
-                    localMonotonicityResults.pop();
+                    if (useMonotonicity) {
+                        orders.pop();
+                        localMonotonicityResults.pop();
+                    }
                     if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
                         while (displayedProgress < storm::utility::one<CoefficientType>() - fractionOfUndiscoveredArea) {
                             STORM_PRINT_AND_LOG("#");

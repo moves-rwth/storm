@@ -5,7 +5,7 @@ namespace storm {
 
         template <typename VariableType>
         LocalMonotonicityResult<VariableType>::LocalMonotonicityResult(uint_fast64_t numberOfStates) {
-            stateMonRes = std::vector<MonotonicityResult<VariableType>*>(numberOfStates, nullptr);
+            stateMonRes = std::vector<std::shared_ptr<MonotonicityResult<VariableType>>>(numberOfStates, nullptr);
         }
 
         template <typename VariableType>
@@ -20,21 +20,23 @@ namespace storm {
         template <typename VariableType>
         void LocalMonotonicityResult<VariableType>::setMonotonicity(uint_fast64_t state, VariableType var, typename LocalMonotonicityResult<VariableType>::Monotonicity mon) {
             if (stateMonRes[state] == nullptr) {
-                stateMonRes[state] = new MonotonicityResult<VariableType>();
+                stateMonRes[state] = std::make_shared<MonotonicityResult<VariableType>>();
             }
             stateMonRes[state]->addMonotonicityResult(var, mon);
         }
 
         template <typename VariableType>
-        void LocalMonotonicityResult<VariableType>::setMonotonicityResult(uint_fast64_t state, MonotonicityResult<VariableType>* monRes) {
+        void LocalMonotonicityResult<VariableType>::setMonotonicityResult(uint_fast64_t state, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
             this->stateMonRes[state] = monRes;
         }
 
         template <typename VariableType>
-        LocalMonotonicityResult<VariableType>* LocalMonotonicityResult<VariableType>::copy() {
-            auto copy = new LocalMonotonicityResult<VariableType>(stateMonRes.size());
+        std::shared_ptr<LocalMonotonicityResult<VariableType>> LocalMonotonicityResult<VariableType>::copy() {
+            std::shared_ptr<LocalMonotonicityResult<VariableType>> copy = std::make_shared<LocalMonotonicityResult<VariableType>>(stateMonRes.size());
             for (auto state = 0; state < stateMonRes.size(); state++) {
-                copy->setMonotonicityResult(state, stateMonRes[state]->copy());
+                if (stateMonRes[state] != nullptr) {
+                    copy->setMonotonicityResult(state, stateMonRes[state]->copy());
+                }
             }
             return copy;
         }

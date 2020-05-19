@@ -170,10 +170,10 @@ namespace storm {
                                 // only add assumption to the set of assumptions if it is unknown whether it holds or not
                                 assumptionsCopy.push_back(std::move(assumption.first));
                             }
-
-                            auto criticalTuple = extender->extendOrder(orderCopy, std::make_shared<MonotonicityResult<VariableType>>(*monResCopy), assumption.first);
+                            // TODO: dit werkt niet goed
+                            auto criticalTuple = extender->extendOrder(orderCopy, monResCopy, assumption.first);
                             if (monResCopy->isSomewhereMonotonicity()) {
-                                extendOrderWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptionsCopy, std::make_shared<MonotonicityResult<VariableType>>(*monResCopy));
+                                extendOrderWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptionsCopy, monResCopy);
                             }
                         } else {
                             // It is the last one, so we don't need to create a copy.
@@ -183,9 +183,9 @@ namespace storm {
                                 assumptions.push_back(std::move(assumption.first));
                             }
 
-                            auto criticalTuple = extender->extendOrder(order, std::make_shared<MonotonicityResult<VariableType>>(*monRes), assumption.first);
+                            auto criticalTuple = extender->extendOrder(order, monRes, assumption.first);
                             if (monRes->isSomewhereMonotonicity()) {
-                                extendOrderWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptions, std::make_shared<MonotonicityResult<VariableType>>(*monRes));
+                                extendOrderWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptions, monRes);
                             }
                         }
                     }

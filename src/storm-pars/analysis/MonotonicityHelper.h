@@ -49,8 +49,6 @@ namespace storm {
              */
             MonotonicityHelper(std::shared_ptr<models::ModelBase> model, std::vector<std::shared_ptr<logic::Formula const>> formulas, std::vector<storage::ParameterRegion<ValueType>> regions, uint_fast64_t numberOfSamples=0, double const& precision=0.000001, bool dotOutput = false);
 
-            MonotonicityHelper(storage::SparseMatrix<ValueType> matrix);
-
             /*!
              * Checks if a derivative >=0 or/and <=0
              * @param derivative The derivative you want to check

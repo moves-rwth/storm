@@ -220,19 +220,19 @@ namespace storm {
                     return BELOW;
                 }
 
-                // tweak for cyclic pmcs
-                if (doneBuilding) {
-                    doneBuilding = false;
-                    if (above(node1, node2)) {
-                        assert(!above(node2, node1));
-                        doneBuilding = true;
-                        return ABOVE;
-                    }
-                    if (above(node2, node1)) {
-                        doneBuilding = true;
-                        return BELOW;
-                    }
-                }
+//                // tweak for cyclic pmcs
+//                if (doneBuilding) {
+//                    doneBuilding = false;
+//                    if (above(node1, node2)) {
+//                        assert(!above(node2, node1));
+//                        doneBuilding = true;
+//                        return ABOVE;
+//                    }
+//                    if (above(node2, node1)) {
+//                        doneBuilding = true;
+//                        return BELOW;
+//                    }
+//                }
             }
             return UNKNOWN;
         }
@@ -313,10 +313,8 @@ namespace storm {
                     }
                 }
             }
-            auto i = 0;
             while (result.size() < numberOfStatesToSort) {
                 result.push_back(numberOfStates);
-                ++i;
             }
             assert (result.size() == numberOfStatesToSort);
             return result;
