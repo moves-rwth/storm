@@ -159,7 +159,7 @@ index a86dac93f..2ad56531c 100644
 +        if (!storm::utility::isZero(rtemp) && rtemp >= thresh) return true;
 +        return false;
 +    }
-+    
++
 +    template<typename Scalar, typename std::enable_if<!std::is_same<Scalar, double>::value, int>::type = 0>
 +    bool diagonalElementCanBePivot(Scalar const* lu_col_ptr, Index const& diag, Scalar const& diagpivotthresh, Scalar const& pivmax) {
 +        if (!storm::utility::isZero(lu_col_ptr[diag])) return true;
@@ -192,7 +192,7 @@ index a86dac93f..2ad56531c 100644
 +  Index pivptr = nsupc;
 +  Index diag = emptyIdxLU;
 +  Index icol, itemp, k;
-+  
++
 +  findLargestAbsolutePivotElement(nsupc, nsupr, lu_col_ptr, lsub_ptr, diagind, diag, pivptr, pivmax);
    
    // Test for singularity
