@@ -1,6 +1,6 @@
 #pragma once
 
-// Include this utility header so we can access utility function from Eigen.
+// Include these utility headers so we can access utility function from Eigen.
 #include "storm/utility/constants.h"
 
 #if defined(__clang__)
@@ -14,9 +14,9 @@
 #endif
 
 // Finally include the parts of Eigen we need.
-#include <StormEigen/Dense>
-#include <StormEigen/Sparse>
-#include <unsupported/StormEigen/IterativeSolvers>
+#include <Eigen/Dense>
+#include <Eigen/Sparse>
+#include <unsupported/Eigen/IterativeSolvers>
 
 #if defined(__clang__)
 #pragma clang diagnostic pop
