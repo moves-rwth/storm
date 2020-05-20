@@ -44,8 +44,24 @@ list(APPEND STORM_DEP_TARGETS gmm)
 ##
 #############################################################
 
-add_imported_library_interface(StormEigen33 "${PROJECT_SOURCE_DIR}/resources/3rdparty/eigen-3.3-beta1")
-list(APPEND STORM_DEP_TARGETS StormEigen33)
+# Checkout Eigen version 3.3.7
+ExternalProject_Add(
+        eigen_src
+        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+		GIT_SHALLOW 1
+        GIT_TAG 21ae2afd4edaa1b69782c67a54182d34efe43f9c
+        SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/eigen
+		PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen.patch
+        UPDATE_COMMAND ""
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND ""
+        INSTALL_COMMAND ""
+        LOG_INSTALL ON
+)
+add_imported_library_interface(Eigen "${STORM_3RDPARTY_SOURCE_DIR}/eigen")
+list(APPEND STORM_DEP_TARGETS Eigen)
+add_dependencies(Eigen eigen_src)
+
 
 
 #############################################################
