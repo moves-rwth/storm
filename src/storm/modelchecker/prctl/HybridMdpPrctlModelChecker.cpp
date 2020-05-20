@@ -46,6 +46,7 @@ namespace storm {
                 if (requiresSingleInitialState) {
                     *requiresSingleInitialState = true;
                 }
+                return true;
             }
             return false;
         }
