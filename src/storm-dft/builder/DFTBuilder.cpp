@@ -308,6 +308,13 @@ namespace storm {
                     addBasicElementExponential(beExp->name(), beExp->activeFailureRate(), beExp->dormancyFactor(), beExp->isTransient());
                     break;
                 }
+                case storm::storage::BEType::SAMPLES: {
+                    auto beSamples = std::static_pointer_cast<
+                        storm::storage::BESamples<ValueType> const>(be);
+                    addBasicElementSamples(
+                        beSamples->name(), beSamples->activeSamples());
+                    break;
+                }
                 default:
                     STORM_LOG_ASSERT(false, "BE type not known.");
                     break;

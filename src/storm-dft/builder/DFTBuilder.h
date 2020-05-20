@@ -186,6 +186,33 @@ namespace storm {
                 return true;
             }
 
+            bool addBasicElementSamples(
+                std::string const& name,
+                std::map<ValueType, ValueType> const& activeSamples) {
+                if (nameInUse(name)) {
+                    STORM_LOG_ERROR("Element with name '" << name << "' already exists.");
+                    return false;
+                }
+
+                // check if it can fail
+                bool canFail{false};
+                for (auto const& sample : activeSamples) {
+                    if (!storm::utility::isZero(sample.second)) {
+                        canFail = true;
+                        break;
+                    }
+                }
+
+                if (!canFail) {
+                    return addBasicElementConst(name, false);
+                }
+
+                mElements[name] =
+                    std::make_shared<storm::storage::BESamples<ValueType>>(
+                        mNextId++, name, activeSamples);
+                return true;
+            }
+
             void addLayoutInfo(std::string const& name, double x, double y) {
                 if (!nameInUse(name)) {
                     STORM_LOG_ERROR("Element with name '" << name << "' not found.");
