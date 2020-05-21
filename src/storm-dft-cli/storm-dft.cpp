@@ -77,6 +77,44 @@ void processOptions() {
         return;
     }
 
+    bool useSMT = false;
+    uint64_t solverTimeout = 10;
+#ifdef STORM_HAVE_Z3
+    if (faultTreeSettings.solveWithSMT()) {
+        useSMT = true;
+        STORM_LOG_DEBUG("Use SMT for preprocessing");
+    }
+#endif
+
+    // Apply transformations
+    // TODO transform later before actual analysis
+    dft = storm::api::applyTransformations(*dft, faultTreeSettings.isUniqueFailedBE(), true);
+    STORM_LOG_DEBUG(dft->getElementsString());
+
+    // Compute minimal number of BE failures leading to system failure and
+    // maximal number of BE failures not leading to system failure yet.
+    // TODO: always needed?
+    auto bounds = storm::api::computeBEFailureBounds(*dft, useSMT, solverTimeout);
+    STORM_LOG_DEBUG("BE failure bounds: lower bound: " << bounds.first << ", upper bound: " << bounds.second << ".");
+
+    // Check which FDEPs actually introduce conflicts which need non-deterministic resolution
+    bool hasConflicts = storm::api::computeDependencyConflicts(*dft, useSMT, solverTimeout);
+    if (hasConflicts) {
+        STORM_LOG_DEBUG("FDEP conflicts found.");
+    } else {
+        STORM_LOG_DEBUG("No FDEP conflicts found.");
+    }
+
+
+#ifdef STORM_HAVE_Z3
+    if (useSMT) {
+        // Solve with SMT
+        STORM_LOG_DEBUG("Running DFT analysis with use of SMT.");
+        // Set dynamic behavior vector
+        storm::api::analyzeDFTSMT(*dft, true);
+    }
+#endif
+
     // BDD Analysis
     if(dftIOSettings.isExportToBddDot() ||
             dftIOSettings.isAnalyzeWithBdds() ||
@@ -120,45 +158,6 @@ void processOptions() {
             return;
         }
     }
-
-    bool useSMT = false;
-    uint64_t solverTimeout = 10;
-#ifdef STORM_HAVE_Z3
-    if (faultTreeSettings.solveWithSMT()) {
-        useSMT = true;
-        STORM_LOG_DEBUG("Use SMT for preprocessing");
-    }
-#endif
-
-    // Apply transformations
-    // TODO transform later before actual analysis
-    dft = storm::api::applyTransformations(*dft, faultTreeSettings.isUniqueFailedBE(), true);
-    STORM_LOG_DEBUG(dft->getElementsString());
-
-    // Compute minimal number of BE failures leading to system failure and
-    // maximal number of BE failures not leading to system failure yet.
-    // TODO: always needed?
-    auto bounds = storm::api::computeBEFailureBounds(*dft, useSMT, solverTimeout);
-    STORM_LOG_DEBUG("BE failure bounds: lower bound: " << bounds.first << ", upper bound: " << bounds.second << ".");
-
-    // Check which FDEPs actually introduce conflicts which need non-deterministic resolution
-    bool hasConflicts = storm::api::computeDependencyConflicts(*dft, useSMT, solverTimeout);
-    if (hasConflicts) {
-        STORM_LOG_DEBUG("FDEP conflicts found.");
-    } else {
-        STORM_LOG_DEBUG("No FDEP conflicts found.");
-    }
-
-
-#ifdef STORM_HAVE_Z3
-    if (useSMT) {
-        // Solve with SMT
-        STORM_LOG_DEBUG("Running DFT analysis with use of SMT.");
-        // Set dynamic behavior vector
-        storm::api::analyzeDFTSMT(*dft, true);
-    }
-#endif
-
 
     // From now on we analyse the DFT via model checking
 
