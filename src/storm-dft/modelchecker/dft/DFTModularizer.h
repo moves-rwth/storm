@@ -8,6 +8,7 @@
 #include "storm-dft/builder/DFTBuilder.h"
 #include "storm-dft/modelchecker/dft/DFTModelChecker.h"
 #include "storm-dft/modelchecker/dft/SFTBDDChecker.h"
+#include "storm-dft/modelchecker/dft/SFTBDDPropertyFormulaAdapter.h"
 #include "storm-dft/storage/dft/DFT.h"
 #include "storm-parsers/api/properties.h"
 #include "storm/api/properties.h"
@@ -30,29 +31,39 @@ class DFTModularizer {
      * Calculates Modules
      */
     DFTModularizer(std::shared_ptr<storm::storage::DFT<ValueType>> dft)
-        : dft{std::move(dft)} {
+        : dft{std::move(dft)},
+          sylvanBddManager{
+              std::make_shared<storm::storage::SylvanBddManager>()} {
         populateDfsCounters();
         populateElementInfos();
     }
 
     /**
      * \return
-     * The Probability that the top level gate fails.
+     * The Probabilities that the top level gate fails at the given timepoints.
      */
-    double getProbabilityAtTimebound(double const timebound) {
+    std::vector<double> getProbabilitiesAtTimepoints(
+        std::vector<double> const &timepoints, size_t const chunksize = 0) {
         workDFT = dft;
 
         auto topLevelElement{std::static_pointer_cast<
             storm::storage::DFTElement<ValueType> const>(
             workDFT->getTopLevelGate())};
-        replaceDynamicModules(topLevelElement, timebound);
+        replaceDynamicModules(topLevelElement, timepoints);
 
-        topLevelElement = std::static_pointer_cast<
-            storm::storage::DFTElement<ValueType> const>(
-            workDFT->getTopLevelGate());
+        auto const subDFT{getSubDFT(topLevelElement)};
+        storm::modelchecker::SFTBDDChecker<ValueType> checker{sylvanBddManager,
+                                                              subDFT};
+        return checker.getProbabilitiesAtTimepoints(timepoints, chunksize);
+    }
 
-        auto const probability{analyseStatic(topLevelElement, timebound)};
-        return probability;
+    /**
+     * \return
+     * The Probability that the top level gate fails at the given timebound.
+     */
+    double getProbabilityAtTimebound(double const timebound) {
+        auto const result{getProbabilitiesAtTimepoints({timebound})};
+        return result.at(0);
     }
 
    private:
@@ -220,7 +231,8 @@ class DFTModularizer {
 
             // minFistVisit <= secondVisit
             counter.minFirstVisit = counter.secondVisit;
-            for (auto const &decendant : getDecendants(element)) {
+            auto const decendants{getDecendants(element)};
+            for (auto const &decendant : decendants) {
                 populateElementInfos(decendant);
 
                 auto const &decendantCounter{dfsCounters.at(decendant->id())};
@@ -260,18 +272,18 @@ class DFTModularizer {
      * Calculate dynamic Modules and replace them with BE's in workDFT
      */
     void replaceDynamicModules(DFTElementCPointer const element,
-                               double const timebound) {
+                               std::vector<double> const &timepoints) {
         if (element->isGate()) {
             auto &elementInfo{elementInfos.at(element->id())};
             auto const parent{std::static_pointer_cast<
                 storm::storage::DFTChildren<ValueType> const>(element)};
 
             if (elementInfo.isModule && !elementInfo.isStatic) {
-                analyseDynamic(element, timebound);
-            }
-
-            for (auto const child : parent->children()) {
-                replaceDynamicModules(child, timebound);
+                analyseDynamic(element, timepoints);
+            } else {
+                for (auto const child : parent->children()) {
+                    replaceDynamicModules(child, timepoints);
+                }
             }
         } else if (!element->isBasicElement()) {
             STORM_LOG_ERROR("Wrong Type: " << element->typestring());
@@ -297,30 +309,18 @@ class DFTModularizer {
     }
 
     /**
-     * \return
-     * A lambda such that a basic element with it
-     * would fauil with the given probability at the given timebound
-     */
-    constexpr static ValueType inverseExp(const ValueType probability,
-                                          const ValueType timebound) {
-        return -(std::log(1 - probability) / timebound);
-    }
-
-    /**
      * Update the workdDFT.
-     * Replaces the given element with a BE
-     * that fails with the given probability at the given timebound.
+     * Replace the given element with a sample BE
      */
     void updateWorkDFT(DFTElementCPointer const element,
-                       ValueType const probability, double const timebound) {
-        auto const lambda{inverseExp(probability, timebound)};
+                       std::map<double, double> activeSamples) {
         storm::builder::DFTBuilder<ValueType> builder{};
         for (auto const id : workDFT->getAllIds()) {
             auto const tmpElement{workDFT->getElement(id)};
             if (tmpElement->name() != element->name()) {
                 builder.copyElement(tmpElement);
             } else {
-                builder.addBasicElementExponential(element->name(), lambda, 1);
+                builder.addBasicElementSamples(element->name(), activeSamples);
             }
         }
         builder.setTopLevel(workDFT->getTopLevelGate()->name());
@@ -335,46 +335,37 @@ class DFTModularizer {
      * \note
      * Updates the workDFT with the calculated probability
      */
-    double analyseStatic(DFTElementCPointer const element,
-                         double const timebound) {
-        auto subDFT{getSubDFT(element)};
-        storm::modelchecker::SFTBDDChecker<ValueType> checker{subDFT};
-        auto const probability{checker.getProbabilityAtTimebound(timebound)};
-
-        updateWorkDFT(element, probability, timebound);
-
-        return probability;
-    }
-
-    /**
-     * Analyse the static Module with the given element as the root.
-     *
-     * \note
-     * Updates the workDFT with the calculated probability
-     */
-    double analyseDynamic(DFTElementCPointer const element,
-                          double const timebound) {
+    void analyseDynamic(DFTElementCPointer const element,
+                        std::vector<double> const &timepoints) {
         auto subDFT{getSubDFT(element)};
         subDFT->checkWellFormedness(true, std::cout);
 
         storm::modelchecker::DFTModelChecker<ValueType> checker{true};
         std::stringstream propertyStream{};
-        propertyStream << "Pmin=? [F<=" << timebound << "\"failed\"]";
+
+        for (auto const timebound : timepoints) {
+            propertyStream << "Pmin=? [F<=" << timebound << "\"failed\"];";
+        }
+
         auto const props{storm::api::extractFormulasFromProperties(
             storm::api::parseProperties(propertyStream.str()))};
-        auto const result{
-            checker.check(*subDFT, props, false, false, subDFT->getAllIds())};
+        auto const result{checker.check(*subDFT, props, false, false, {})};
+
         checker.printResults(result);
 
-        auto const probability{boost::get<double>(result[0])};
+        std::map<double, double> activeSamples{};
+        for (size_t i{0}; i < timepoints.size(); ++i) {
+            auto const probability{boost::get<double>(result[i])};
+            auto const timebound{timepoints[i]};
+            activeSamples[timebound] = probability;
+        }
 
-        updateWorkDFT(element, probability, timebound);
-        return probability;
+        updateWorkDFT(element, activeSamples);
     }
 
     // don't reinitialise Sylvan BDD
     // temporary
-    storm::storage::SylvanBddManager manager{};
+    std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager;
 };
 
 }  // namespace modelchecker
