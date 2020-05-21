@@ -29,7 +29,7 @@ std::string const AndOrBdd =
 
 std::string const VotBdd =
     R"|(
-{"nodes":[{"classes":"be_exp","data":{"distribution":"exp","dorm":"1","id":"0","name":"x1","rate":"0.693147","type":"be_exp"},"group":"nodes"},{"classes":"be_exp","data":{"distribution":"exp","dorm":"1","id":"1","name":"x2","rate":"0.693147","type":"be_exp"},"group":"nodes"},{"classes":"be_exp","data":{"distribution":"exp","dorm":"1","id":"2","name":"x3","rate":"0.693147","type":"be_exp"},"group":"nodes"},{"classes":"be_exp","data":{"distribution":"exp","dorm":"1","id":"3","name":"x4","rate":"0.693147","type":"be_exp"},"group":"nodes"},{"classes":"or","data":{"children":["0","1","2","3"],"id":"4","name":"F","type":"or"},"group":"nodes"}],"toplevel":"4"}
+{"nodes":[{"classes":"be","data":{"distribution":"exp","dorm":"1","id":"0","name":"x1","rate":"0.693147","type":"be"},"group":"nodes"},{"classes":"be","data":{"distribution":"exp","dorm":"1","id":"1","name":"x2","rate":"0.693147","type":"be"},"group":"nodes"},{"classes":"be","data":{"distribution":"exp","dorm":"1","id":"2","name":"x3","rate":"0.693147","type":"be"},"group":"nodes"},{"classes":"be","data":{"distribution":"exp","dorm":"1","id":"3","name":"x4","rate":"0.693147","type":"be"},"group":"nodes"},{"classes":"vot","data":{"children":["0","1","2","3"],"id":"4","name":"F","type":"vot","voting":2},"group":"nodes"}],"toplevel":"4"}
 )|";
 
 TEST(TestBdd, AndOrFormulaFail) {
@@ -140,7 +140,7 @@ TEST(TestBdd, Vot) {
     storm::modelchecker::SFTBDDChecker<double> checker{dft};
     auto result = checker.getTopLevelGateBdd();
 
-    EXPECT_NEAR(checker.getProbabilityAtTimebound(1), 0.9375, 1e-6);
+    EXPECT_NEAR(checker.getProbabilityAtTimebound(1), 0.6875, 1e-6);
     checker.exportBddToDot("/tmp/test/vot.dot");
 }
 
