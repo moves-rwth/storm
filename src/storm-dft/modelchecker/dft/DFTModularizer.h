@@ -12,6 +12,7 @@
 #include "storm-dft/storage/dft/DFT.h"
 #include "storm-parsers/api/properties.h"
 #include "storm/api/properties.h"
+#include "storm/logic/Formula.h"
 
 namespace storm {
 namespace modelchecker {
@@ -26,6 +27,8 @@ class DFTModularizer {
     using ElementId = size_t;
     using DFTElementCPointer =
         std::shared_ptr<storm::storage::DFTElement<ValueType> const>;
+    using FormulaCPointer = std::shared_ptr<storm::logic::Formula const>;
+    using FormulaVector = std::vector<FormulaCPointer>;
 
     /**
      * Calculates Modules
@@ -36,6 +39,37 @@ class DFTModularizer {
               std::make_shared<storm::storage::SylvanBddManager>()} {
         populateDfsCounters();
         populateElementInfos();
+    }
+
+    /**
+     * Calculate the properties specified by the formulas
+     * \param formuals
+     * The Properties to check for.
+     *
+     * \note Does not work with events in dynamic modules.
+     */
+    std::vector<double> check(FormulaVector const &formulas,
+                              size_t const chunksize = 0) {
+        storm::adapters::SFTBDDPropertyFormulaAdapter::checkForm(formulas);
+        std::set<ValueType> timepointSet;
+        for (auto const &formula : formulas) {
+            timepointSet.insert(
+                storm::adapters::SFTBDDPropertyFormulaAdapter::getTimebound(
+                    formula));
+        }
+
+        std::vector<ValueType> timepoints(timepointSet.begin(),
+                                          timepointSet.end());
+
+        auto topLevelElement{std::static_pointer_cast<
+            storm::storage::DFTElement<ValueType> const>(
+            workDFT->getTopLevelGate())};
+        replaceDynamicModules(topLevelElement, timepoints);
+
+        auto const subDFT{getSubDFT(topLevelElement)};
+        storm::adapters::SFTBDDPropertyFormulaAdapter checker{sylvanBddManager,
+                                                              subDFT};
+        return checker.check(formulas, chunksize);
     }
 
     /**
