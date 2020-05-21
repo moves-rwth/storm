@@ -24,12 +24,27 @@ namespace storm {
                 size_t const chunksize) {
             if(useModularisation && calculateProbability) {
                 storm::modelchecker::DFTModularizer<double> checker{dft};
+                if(chunksize == 1) {
                     for(auto const& timebound : timepoints) {
                         auto const probability{
                             checker.getProbabilityAtTimebound(timebound)};
                         std::cout << "Systemfailure Probability at Timebound " << timebound << " is " << probability << '\n';
                     }
+                } else {
+                    auto const probabilities{checker.getProbabilitiesAtTimepoints(timepoints, chunksize)};
+                    for(size_t i{0}; i < timepoints.size(); ++i) {
+                        auto const timebound{timepoints[i]};
+                        auto const probability{probabilities[i]};
+                        std::cout << "Systemfailure Probability at Timebound " << timebound << " is " << probability << '\n';
+                    }
+                }
                 return;
+            } else {
+                STORM_LOG_THROW(dft->nrDynamicElements() == 0,
+                        storm::exceptions::NotSupportedException,
+                        "DFT is dynamic. "
+                        "Bdds can only be used on static fault trees. "
+                        "Try modularisation.");
             }
 
             storm::modelchecker::SFTBDDChecker<double> checker{dft};
