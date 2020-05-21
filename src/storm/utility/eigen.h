@@ -8,7 +8,9 @@
 #pragma clang diagnostic ignored "-Wunknown-pragmas"
 #elif defined(__GNUC__)
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-copy" // Should be fixed for versions after 3.3.7
+#if __GNUC__ > 8
+#pragma GCC diagnostic ignored "-Wdeprecated-copy" // Ignore warnings present for GCC 9 and later. The warnings should be fixed for Eigen versions after 3.3.7
+#endif
 #endif
 
 // Finally include the parts of Eigen we need.
