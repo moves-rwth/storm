@@ -48,7 +48,8 @@ class SFTBDDPropertyFormulaAdapter {
      * \param formuals
      * The Properties to check for.
      */
-    std::vector<ValueType> check(FormulaVector const &formulas) {
+    std::vector<ValueType> check(FormulaVector const &formulas,
+                                 size_t const chunksize = 0) {
         checkForm(formulas);
         auto const bdds{formulasToBdd(formulas)};
 
@@ -71,7 +72,8 @@ class SFTBDDPropertyFormulaAdapter {
         for (auto const &pair : bddToReversedTimepoints) {
             auto const bdd{BDDToBdd.at(pair.first)};
             bddToReversedProbabilities[pair.first] =
-                checker.getProbabilitiesAtTimepoints(bdd, pair.second);
+                checker.getProbabilitiesAtTimepoints(bdd, pair.second,
+                                                     chunksize);
         }
 
         std::vector<ValueType> rval{};
@@ -105,34 +107,7 @@ class SFTBDDPropertyFormulaAdapter {
         return rval;
     }
 
-   private:
-    std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager;
-    storm::modelchecker::SFTBDDChecker<ValueType> checker;
-    std::shared_ptr<storm::storage::DFT<ValueType>> dft;
-
-    std::map<std::string, Bdd> relevantEventBdds;
-
-    /**
-     * \return
-     * true iff the formula if of the form 'P=? [F = x phi]'
-     */
-    static bool checkBoundsSame(FormulaCPointer const &formula) {
-        auto const probabilityOperator{std::static_pointer_cast<
-            storm::logic::ProbabilityOperatorFormula const>(formula)};
-        auto const boundedUntil{
-            std::static_pointer_cast<storm::logic::BoundedUntilFormula const>(
-                probabilityOperator->getSubformula().asSharedPointer())};
-
-        if (!boundedUntil->hasLowerBound() || !boundedUntil->hasUpperBound()) {
-            return false;
-        } else if (boundedUntil->getUpperBound().evaluateAsDouble() ==
-                   boundedUntil->getLowerBound().evaluateAsDouble()) {
-            return true;
-        }
-
-        return false;
-    }
-
+    // TODO: Move formulahandling into its own module
     /**
      * Check if the formulas are of the form 'P=? [F op phi]'
      * where op is in {<=, <, =} and phi is a state formula
@@ -208,6 +183,34 @@ class SFTBDDPropertyFormulaAdapter {
                 subFormula)};
 
         return boundedUntil->getUpperBound().evaluateAsDouble();
+    }
+
+   private:
+    std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager;
+    storm::modelchecker::SFTBDDChecker<ValueType> checker;
+    std::shared_ptr<storm::storage::DFT<ValueType>> dft;
+
+    std::map<std::string, Bdd> relevantEventBdds;
+
+    /**
+     * \return
+     * true iff the formula if of the form 'P=? [F = x phi]'
+     */
+    static bool checkBoundsSame(FormulaCPointer const &formula) {
+        auto const probabilityOperator{std::static_pointer_cast<
+            storm::logic::ProbabilityOperatorFormula const>(formula)};
+        auto const boundedUntil{
+            std::static_pointer_cast<storm::logic::BoundedUntilFormula const>(
+                probabilityOperator->getSubformula().asSharedPointer())};
+
+        if (!boundedUntil->hasLowerBound() || !boundedUntil->hasUpperBound()) {
+            return false;
+        } else if (boundedUntil->getUpperBound().evaluateAsDouble() ==
+                   boundedUntil->getLowerBound().evaluateAsDouble()) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
