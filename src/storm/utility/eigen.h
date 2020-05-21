@@ -8,9 +8,7 @@
 #pragma clang diagnostic ignored "-Wunknown-pragmas"
 #elif defined(__GNUC__)
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wignored-attributes"
-#pragma GCC diagnostic ignored "-Wmisleading-indentation"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wdeprecated-copy" // Should be fixed for versions after 3.3.7
 #endif
 
 // Finally include the parts of Eigen we need.
