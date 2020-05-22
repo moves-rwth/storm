@@ -187,23 +187,24 @@ Consider an instance of stochastic job scheduling, where a number of jobs with e
 On one hand, we are interested in reducing the expected time until all jobs are done. On the other hand, we want to maximize the probability that a first
 batch of jobs has been treated within an hour. This yields a trade-off, as the optimal strategy for minimizing the expected time is to run the slowest jobs first.
 
-The trade-off is depicted by the following curve:
+The trade-off for 12 jobs and 3 servers is depicted by the following curve:
 
 ![Pareto Curve]({{ site.github.url }}/pics/multi-objective.png 'Pareto Curve'){: .img-thumbnail .col-sm .center-image width="300"}
 
-{% include includes/show_model.html name="PRISM file for stochastic job scheduling" class="job_sched_file" path="ma/jobs03_2.ma" %}
+{% include includes/show_model.html name="PRISM file for stochastic job scheduling (3 jobs and 2 servers)" class="job_sched_file" path="ma/jobs03_2.ma" %}
 
-Again, we assume that the file `jobs03_2.nm` is located in the current directory.
-We obtain the data for the plot above by the following call:
+Again, we assume that the file `jobs03_2.ma` is located in the current directory.
+We obtain the data for tha Pareto plot as above by the following call:
 
 ```console
-$ storm --prism jobs12_3.ma --prop "multi(Tmin=? [ F \"all_jobs_finished\"], Pmax=? [ F<=(N/(4*K)) \"half_of_jobs_finished\"])" --multiobjective:precision 0.01 --multiobjective:exportplot plot/
+$ storm --prism jobs03_2.ma --prop "multi(Tmin=? [ F \"all_jobs_finished\"], Pmax=? [ F<=(N/(4*K)) \"half_of_jobs_finished\"])" --multiobjective:precision 0.01 --multiobjective:exportplot plot/
 ```
 
 `--prop` now contains a multi-objective query with two dimensions: A call for the expected time, and a maximum time-bounded probability.
 Notice that for Markov automata, the algorithm necessarily can only approximate the result: `--multiobjective:precision` reflects the area that remains undecided.
 `--multiobjective:exportplot plot/` specifies that the directory `plot` will contain the Pareto-optimal points in a CSV format. The plot can be generated from this file.
 
+More benchmarks and further details for multi-objective model checking can also be found in [this](https://github.com/tquatmann/multiobjective-ma) repository.
 
 ### Running Storm on JANI input
 
