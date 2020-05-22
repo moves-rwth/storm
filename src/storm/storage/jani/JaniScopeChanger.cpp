@@ -25,9 +25,20 @@ namespace storm {
                     if (*result) { return; }
                     *result = expression.containsVariable(varSet);
                 }
-                
+
+                virtual void traverse(LValue const& lValue, boost::any const& data) override {
+                    bool* result = boost::any_cast<bool *>(data);
+                    if (*result) { return; }
+                    if (lValue.isVariable()) {
+                        *result = varSet.count(lValue.getVariable().getExpressionVariable()) > 0;
+                    } else {
+                        STORM_LOG_ASSERT(lValue.isArrayAccess(), "lValue has unexpected type.");
+                        *result = varSet.count(lValue.getArray().getExpressionVariable()) > 0;
+                    }
+                }
+
             private:
-                std::set<storm::expressions::Variable> const& varSet;
+                std::set<storm::expressions::Variable> varSet;
             };
             
             std::set<uint64_t> getAutomataAccessingVariable(storm::expressions::Variable const& variable, Model const& model) {
