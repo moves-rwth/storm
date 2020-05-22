@@ -190,14 +190,20 @@ namespace storm {
             template <typename ValueType>
             std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::intersection(std::shared_ptr<Polytope<ValueType>> const& rhs) const{
                 STORM_LOG_THROW(rhs->isNativePolytope(), storm::exceptions::InvalidArgumentException, "Invoked operation between a NativePolytope and a different polytope implementation. This is not supported");
-                NativePolytope<ValueType> const& nativeRhs = dynamic_cast<NativePolytope<ValueType> const&>(*rhs);
-                EigenMatrix resultA(A.rows() + nativeRhs.A.rows(), A.cols());
-                resultA << A,
-                           nativeRhs.A;
-                EigenVector resultb(resultA.rows());
-                resultb << b,
-                           nativeRhs.b;
-                return std::make_shared<NativePolytope<ValueType>>(EmptyStatus::Unknown, std::move(resultA), std::move(resultb));
+                if (this->isUniversal()) {
+                    return rhs;
+                } else if (rhs->isUniversal()) {
+                    return std::make_shared<NativePolytope<ValueType>>(*this);
+                } else {
+                    NativePolytope<ValueType> const& nativeRhs = dynamic_cast<NativePolytope<ValueType> const&>(*rhs);
+                    EigenMatrix resultA(A.rows() + nativeRhs.A.rows(), A.cols());
+                    resultA << A,
+                               nativeRhs.A;
+                    EigenVector resultb(resultA.rows());
+                    resultb << b,
+                               nativeRhs.b;
+                    return std::make_shared<NativePolytope<ValueType>>(EmptyStatus::Unknown, std::move(resultA), std::move(resultb));
+                }
             }
             
             template <typename ValueType>
