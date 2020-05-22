@@ -52,7 +52,7 @@ namespace Eigen {
         typedef storm::RationalNumber Nested;
         static inline Real epsilon() { return 0; }
         static inline Real dummy_precision() { return 0; }
-        static inline Real digits10() { return 0; }
+        static inline int digits10() { return 0; }
         enum {
             IsInteger = 0,
             IsSigned = 1,
