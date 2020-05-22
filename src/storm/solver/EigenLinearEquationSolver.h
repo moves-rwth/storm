@@ -32,7 +32,7 @@ namespace storm {
             virtual uint64_t getMatrixColumnCount() const override;
             
             // The (eigen) matrix associated with this equation solver.
-            std::unique_ptr<StormEigen::SparseMatrix<ValueType>> eigenA;
+            std::unique_ptr<Eigen::SparseMatrix<ValueType>> eigenA;
 
         };
         

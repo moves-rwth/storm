@@ -11,7 +11,7 @@ namespace storm {
             template<typename ValueType>
             void HyperplaneEnumeration<ValueType>::generateVerticesFromConstraints(EigenMatrix const& constraintMatrix, EigenVector const& constraintVector, bool generateRelevantHyperplanesAndVertexSets) {
                 STORM_LOG_DEBUG("Invoked Hyperplane enumeration with " << constraintMatrix.rows() << " constraints.");
-                StormEigen::Index dimension = constraintMatrix.cols();
+                Eigen::Index dimension = constraintMatrix.cols();
                 if (dimension == 0) {
                     // No halfspaces means no vertices
                     resultVertices.clear();
@@ -28,14 +28,14 @@ namespace storm {
 
                         EigenMatrix subMatrix(dimension, dimension);
                         EigenVector subVector(dimension);
-                        for (StormEigen::Index i = 0; i < dimension; ++i){
+                        for (Eigen::Index i = 0; i < dimension; ++i){
                             subMatrix.row(i) = constraintMatrix.row(subset[i]);
                             subVector(i) = constraintVector(subset[i]);
                         }
 
                         EigenVector point = subMatrix.fullPivLu().solve(subVector);
                         bool pointContained = true;
-                        for (StormEigen::Index row=0; row < constraintMatrix.rows(); ++row){
+                        for (Eigen::Index row=0; row < constraintMatrix.rows(); ++row){
                             if ((constraintMatrix.row(row) * point)(0) > constraintVector(row)){
                                 pointContained = false;
                                 break;
@@ -53,7 +53,7 @@ namespace storm {
 
                 if (generateRelevantHyperplanesAndVertexSets){
                     //For each hyperplane, get the number of (unique) vertices that lie on it.
-                    std::vector<StormEigen::Index> verticesOnHyperplaneCounter(constraintMatrix.rows(), 0);
+                    std::vector<Eigen::Index> verticesOnHyperplaneCounter(constraintMatrix.rows(), 0);
                     for (auto const& mapEntry : vertexCollector){
                         for (auto const& hyperplaneIndex : mapEntry.second){
                             ++verticesOnHyperplaneCounter[hyperplaneIndex];
@@ -91,7 +91,7 @@ namespace storm {
                     for (auto const& mapEntry : vertexCollector){
                         for (auto const& oldHyperplaneIndex : mapEntry.second){
                             //ignore the hyperplanes which are redundant, i.e. for which there is no new index
-                            if ((StormEigen::Index) oldToNewIndexMapping[oldHyperplaneIndex] <  relevantVector.rows()){
+                            if ((Eigen::Index) oldToNewIndexMapping[oldHyperplaneIndex] <  relevantVector.rows()){
                                 vertexSets[oldToNewIndexMapping[oldHyperplaneIndex]].insert(resultVertices.size());
                             }
                         }
@@ -120,10 +120,10 @@ namespace storm {
             bool HyperplaneEnumeration<ValueType>::linearDependenciesFilter(std::vector<uint_fast64_t> const& subset, uint_fast64_t const& item, EigenMatrix const& A) {
                 EigenMatrix subMatrix(subset.size() + 1, A.cols());
                 for (uint_fast64_t i = 0; i < subset.size(); ++i){
-                    subMatrix.row((StormEigen::Index) i) = A.row(StormEigen::Index (subset[i]));
+                    subMatrix.row((Eigen::Index) i) = A.row(Eigen::Index (subset[i]));
                 }
                 subMatrix.row(subset.size()) = A.row(item);
-                StormEigen::FullPivLU<EigenMatrix> lUMatrix( subMatrix );
+                Eigen::FullPivLU<EigenMatrix> lUMatrix( subMatrix );
                 if (lUMatrix.rank() < subMatrix.rows()){
                     //Linear dependent!
                     return false;

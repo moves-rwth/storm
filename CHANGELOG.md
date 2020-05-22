@@ -11,9 +11,11 @@ Version 1.5.x
 - Scheduler export: Properly handle models with end components. Added export in .json format.
 - CMake: Search for Gurobi prefers new versions
 - CMake: We no longer ship xerces-c. If xerces-c is not found on the system, storm-gspn will not be able to parse xml-based GSPN formats 
+- `Eigen' library: The source code of Eigen is no longer included but downloaded from an external repository instead. Incremented Eigen version to 3.3.7 which fixes a compilation issue with recent XCode Versions.
 - Tests: Enabled tests for permissive schedulers
 - `storm-counterexamples`: fix when computing multiple counterexamples in debug mode
 - `storm-dft`: Renamed setting `--show-dft-stats` to `dft-statistics` and added approximation information to statistics.
+- `storm-pomdp`: Implemented approximation algorithms that explore (a discritization of) the belief MDP, allowing to compute safe lower- and upper bounds for a given property.
 
 ## Version 1.5.1 (2020/03)
 - Jani models are now parsed using exact arithmetic.

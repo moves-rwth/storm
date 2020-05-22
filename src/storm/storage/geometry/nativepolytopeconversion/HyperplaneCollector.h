@@ -17,8 +17,8 @@ namespace storm {
             class HyperplaneCollector {
             public:
 
-                typedef StormEigen::Matrix<ValueType, StormEigen::Dynamic, StormEigen::Dynamic> EigenMatrix;
-                typedef StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1> EigenVector;
+                typedef Eigen::Matrix<ValueType, Eigen::Dynamic, Eigen::Dynamic> EigenMatrix;
+                typedef Eigen::Matrix<ValueType, Eigen::Dynamic, 1> EigenVector;
 
                 HyperplaneCollector() = default;
                 HyperplaneCollector(const HyperplaneCollector& orig) = default;

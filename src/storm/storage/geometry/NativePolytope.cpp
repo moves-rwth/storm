@@ -22,12 +22,12 @@ namespace storm {
                     // The polytope is universal
                     emptyStatus = EmptyStatus::Nonempty;
                 } else {
-                    StormEigen::Index maxCol = halfspaces.front().normalVector().size();
-                    StormEigen::Index maxRow = halfspaces.size();
+                    Eigen::Index maxCol = halfspaces.front().normalVector().size();
+                    Eigen::Index maxRow = halfspaces.size();
                     A = EigenMatrix(maxRow, maxCol);
                     b = EigenVector(maxRow);
-                    for (StormEigen::Index row = 0; row < A.rows(); ++row ){
-                        assert((StormEigen::Index) halfspaces[row].normalVector().size() == maxCol);
+                    for (Eigen::Index row = 0; row < A.rows(); ++row ){
+                        assert((Eigen::Index) halfspaces[row].normalVector().size() == maxCol);
                         b(row) = halfspaces[row].offset();
                         A.row(row) = storm::adapters::EigenAdapter::toEigenVector(halfspaces[row].normalVector());
                     }
@@ -107,7 +107,7 @@ namespace storm {
                 std::vector<Halfspace<ValueType>> result;
                 result.reserve(A.rows());
 
-                for (StormEigen::Index row=0; row < A.rows(); ++row){
+                for (Eigen::Index row=0; row < A.rows(); ++row){
                     result.emplace_back(storm::adapters::EigenAdapter::toStdVector(EigenVector(A.row(row))), b(row));
                 }
                 return result;
@@ -145,7 +145,7 @@ namespace storm {
             template <typename ValueType>
             bool NativePolytope<ValueType>::contains(Point const& point) const{
                 EigenVector x = storm::adapters::EigenAdapter::toEigenVector(point);
-                for (StormEigen::Index row=0; row < A.rows(); ++row){
+                for (Eigen::Index row=0; row < A.rows(); ++row){
                     if ((A.row(row) * x)(0) > b(row)){
                         return false;
                     }
@@ -252,7 +252,7 @@ namespace storm {
                 resultConstraints.reserve(A.rows() + nativeRhs.A.rows());
 
                 // evaluation of rhs in directions of lhs
-                for (StormEigen::Index i = 0; i < A.rows(); ++i) {
+                for (Eigen::Index i = 0; i < A.rows(); ++i) {
                     auto optimizationRes = nativeRhs.optimize(A.row(i));
                     if ( optimizationRes.second ) {
                         resultConstraints.emplace_back(A.row(i), b(i) + (A.row(i) * optimizationRes.first)(0));
@@ -261,7 +261,7 @@ namespace storm {
                 }
 
                 // evaluation of lhs in directions of rhs
-                for (StormEigen::Index i = 0; i < nativeRhs.A.rows(); ++i) {
+                for (Eigen::Index i = 0; i < nativeRhs.A.rows(); ++i) {
                     auto optimizationRes = optimize(nativeRhs.A.row(i));
                     if ( optimizationRes.second ) {
                         resultConstraints.emplace_back(nativeRhs.A.row(i), nativeRhs.b(i) + (nativeRhs.A.row(i) * optimizationRes.first)(0));
@@ -274,7 +274,7 @@ namespace storm {
                 } else {
                     EigenMatrix newA(resultConstraints.size(), resultConstraints.front().first.rows());
                     EigenVector newb(resultConstraints.size());
-                    for (StormEigen::Index i = 0; i < newA.rows(); ++i) {
+                    for (Eigen::Index i = 0; i < newA.rows(); ++i) {
                         newA.row(i) = resultConstraints[i].first;
                         newb(i) = resultConstraints[i].second;
                     }
@@ -285,15 +285,15 @@ namespace storm {
             template <typename ValueType>
             std::shared_ptr<Polytope<ValueType>> NativePolytope<ValueType>::affineTransformation(std::vector<Point> const& matrix, Point const& vector) const {
                 STORM_LOG_THROW(!matrix.empty(), storm::exceptions::InvalidArgumentException, "Invoked affine transformation with a matrix without rows.");
-                StormEigen::Index rows = matrix.size();
-                StormEigen::Index columns = matrix.front().size();
+                Eigen::Index rows = matrix.size();
+                Eigen::Index columns = matrix.front().size();
                 EigenMatrix eigenMatrix(rows, columns);
-                for (StormEigen::Index row = 0; row < rows; ++row) {
+                for (Eigen::Index row = 0; row < rows; ++row) {
                     eigenMatrix.row(row) = storm::adapters::EigenAdapter::toEigenVector(matrix[row]);
                 }
                 EigenVector eigenVector = storm::adapters::EigenAdapter::toEigenVector(vector);
 
-                StormEigen::FullPivLU<EigenMatrix> luMatrix( eigenMatrix );
+                Eigen::FullPivLU<EigenMatrix> luMatrix( eigenMatrix );
                 STORM_LOG_THROW(luMatrix.isInvertible(), storm::exceptions::NotImplementedException, "Affine Transformation of native polytope only implemented if the transformation matrix is invertable");
                 if (isUniversal()) {
                     return std::make_shared<NativePolytope<ValueType>>(std::vector<Halfspace<ValueType>>());
@@ -312,7 +312,7 @@ namespace storm {
                 storm::solver::Z3LpSolver<ValueType> solver(storm::solver::OptimizationDirection::Maximize);
                 std::vector<storm::expressions::Variable> variables;
                 variables.reserve(A.cols());
-                for (StormEigen::Index i = 0; i < A.cols(); ++i) {
+                for (Eigen::Index i = 0; i < A.cols(); ++i) {
                     variables.push_back(solver.addUnboundedContinuousVariable("x" + std::to_string(i), direction[i]));
                 }
                 std::vector<storm::expressions::Expression> constraints = getConstraints(solver.getManager(), variables);
@@ -343,7 +343,7 @@ namespace storm {
                 storm::solver::Z3LpSolver<ValueType> solver(storm::solver::OptimizationDirection::Maximize);
                 std::vector<storm::expressions::Variable> variables;
                 variables.reserve(A.cols());
-                for (StormEigen::Index i = 0; i < A.cols(); ++i) {
+                for (Eigen::Index i = 0; i < A.cols(); ++i) {
                     variables.push_back(solver.addUnboundedContinuousVariable("x" + std::to_string(i), static_cast<ValueType>(direction(i))));
                 }
                 std::vector<storm::expressions::Expression> constraints = getConstraints(solver.getManager(), variables);
@@ -354,7 +354,7 @@ namespace storm {
                 solver.optimize();
                 if (solver.isOptimal()) {
                     auto result = std::make_pair(EigenVector(A.cols()), true);
-                    for (StormEigen::Index i = 0; i < A.cols(); ++i) {
+                    for (Eigen::Index i = 0; i < A.cols(); ++i) {
                         result.first(i) = solver.getContinuousValue(variables[i]);
                     }
                     return result;
@@ -379,7 +379,7 @@ namespace storm {
             std::vector<storm::expressions::Variable> NativePolytope<ValueType>::declareVariables(storm::expressions::ExpressionManager& manager, std::string const& namePrefix) const {
                 std::vector<storm::expressions::Variable> result;
                 result.reserve(A.cols());
-                for (StormEigen::Index col=0; col < A.cols(); ++col){
+                for (Eigen::Index col=0; col < A.cols(); ++col){
                     result.push_back(manager.declareVariable(namePrefix + std::to_string(col), manager.getRationalType()));
                 }
                 return result;
@@ -388,9 +388,9 @@ namespace storm {
             template <typename ValueType>
             std::vector<storm::expressions::Expression> NativePolytope<ValueType>::getConstraints(storm::expressions::ExpressionManager const& manager, std::vector<storm::expressions::Variable> const& variables) const {
                 std::vector<storm::expressions::Expression> result;
-                for (StormEigen::Index row = 0; row < A.rows(); ++row) {
+                for (Eigen::Index row = 0; row < A.rows(); ++row) {
                     storm::expressions::Expression lhs = manager.rational(A(row,0)) * variables[0].getExpression();
-                    for (StormEigen::Index col=1; col < A.cols(); ++col) {
+                    for (Eigen::Index col=1; col < A.cols(); ++col) {
                         lhs = lhs + manager.rational(A(row,col)) * variables[col].getExpression();
                     }
                     result.push_back(lhs <= manager.rational(b(row)));
@@ -411,9 +411,9 @@ namespace storm {
                     solver->add(constraint);
                 }
                 storm::storage::BitVector keptConstraints(A.rows(), false);
-                for (StormEigen::Index row = 0; row < A.rows(); ++row) {
+                for (Eigen::Index row = 0; row < A.rows(); ++row) {
                     storm::expressions::Expression lhs = manager->rational(A(row,0)) * variables[0].getExpression();
-                    for (StormEigen::Index col=1; col < A.cols(); ++col) {
+                    for (Eigen::Index col=1; col < A.cols(); ++col) {
                         lhs = lhs + manager->rational(A(row,col)) * variables[col].getExpression();
                     }
                     solver->push();
