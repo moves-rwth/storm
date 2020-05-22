@@ -31,7 +31,7 @@ Make sure to assign enough resources to the VM. Since the build process is quite
 
 * Once the operating system inside the VM is ready, open a terminal and (assuming Ubuntu) execute the following command to install the dependencies of Storm:
 ```console
-sudo apt-get install git cmake libboost-all-dev libcln-dev libgmp-dev libginac-dev automake libglpk-dev libhwloc-dev libz3-dev libxerces-c-dev libeigen3-dev
+sudo apt-get install build-essential git cmake libboost-all-dev libcln-dev libgmp-dev libginac-dev automake libglpk-dev libhwloc-dev libz3-dev libxerces-c-dev libeigen3-dev
 ```
 
 * We are now ready to download and compile the source code by executing:
