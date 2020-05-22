@@ -57,7 +57,7 @@ namespace storm {
              * @param order The order.
              * @return AssumptionStatus::VALID, or AssumptionStatus::UNKNOWN, or AssumptionStatus::INVALID
              */
-            AssumptionStatus validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption, Order* order);
+            AssumptionStatus validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order);
 
             /*!
              * Tries to validate an assumption based on the order, and SMT solving techniques
@@ -66,7 +66,7 @@ namespace storm {
              * @param order The order.
              * @return AssumptionStatus::VALID, or AssumptionStatus::UNKNOWN, or AssumptionStatus::INVALID
              */
-            AssumptionStatus validateAssumptionSMTSolver(std::shared_ptr<expressions::BinaryRelationExpression> assumption, Order* order);
+            AssumptionStatus validateAssumptionSMTSolver(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order);
 
         private:
             std::shared_ptr<logic::Formula const> formula;

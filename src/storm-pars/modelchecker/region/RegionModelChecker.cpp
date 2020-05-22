@@ -62,7 +62,7 @@ namespace storm {
                 
                 // FIFO queues storing the data for the regions that we still need to process.
                 std::queue<std::pair<storm::storage::ParameterRegion<ParametricType>, RegionResult>> unprocessedRegions;
-                std::queue<storm::analysis::Order*> orders;
+                std::queue<std::shared_ptr<storm::analysis::Order>> orders;
                 std::queue<std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>> localMonotonicityResults;
                 std::queue<uint64_t> refinementDepths;
                 unprocessedRegions.emplace(region, RegionResult::Unknown);
@@ -99,7 +99,7 @@ namespace storm {
                     STORM_LOG_INFO("Analyzing region #" << numOfAnalyzedRegions << " (Refinement depth " << currentDepth << "; " << storm::utility::convertNumber<double>(fractionOfUndiscoveredArea) * 100 << "% still unknown)");
                     auto& currentRegion = unprocessedRegions.front().first;
                     auto& res = unprocessedRegions.front().second;
-                    storm::analysis::Order* order;
+                    std::shared_ptr<storm::analysis::Order> order;
                     std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult(nullptr);
                     if (useMonotonicity) {
                         order = orders.front();
@@ -132,7 +132,7 @@ namespace storm {
                                 bool first = true;
                                 for (auto& newRegion : newRegions) {
                                     if (useMonotonicity && (!first && !order->getDoneBuilding())) {
-                                        orders.emplace(new storm::analysis::Order(order));
+                                        orders.emplace(std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(order.get())));
                                         localMonotonicityResults.emplace(localMonotonicityResult->copy());
                                     } else if (useMonotonicity){
                                         orders.emplace(order);
@@ -203,7 +203,7 @@ namespace storm {
         }
 
         template <typename ParametricType>
-        storm::analysis::Order* RegionModelChecker<ParametricType>::extendOrder(storm::analysis::Order* order, storm::storage::ParameterRegion<ParametricType> region) {
+        std::shared_ptr<storm::analysis::Order> RegionModelChecker<ParametricType>::extendOrder(std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ParametricType> region) {
             STORM_LOG_WARN("Extending order for RegionModelChecker not implemented");
             // Does nothing
             return order;

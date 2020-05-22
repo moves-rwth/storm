@@ -2,6 +2,7 @@
 
 #include <ostream>
 #include <map>
+#include <memory>
 
 namespace storm {
     namespace analysis {
@@ -85,6 +86,7 @@ namespace storm {
              * Constructs a new MonotonicityResult object that is a copy of the current one
              * @return Pointer to the copy
              */
+
             std::shared_ptr<MonotonicityResult<VariableType>> copy();
 
         private:

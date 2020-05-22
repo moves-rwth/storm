@@ -67,7 +67,7 @@ namespace storm {
 
         /*** Public methods ***/
         template <typename ValueType, typename ConstantType>
-        std::map<analysis::Order*, std::pair<std::shared_ptr<MonotonicityResult<typename MonotonicityHelper<ValueType, ConstantType>::VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(std::ostream& outfile, std::string dotOutfileName) {
+        std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<typename MonotonicityHelper<ValueType, ConstantType>::VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(std::ostream& outfile, std::string dotOutfileName) {
             createOrder();
 
             //output of results
@@ -106,13 +106,13 @@ namespace storm {
         template <typename ValueType, typename ConstantType>
         void MonotonicityHelper<ValueType, ConstantType>::createOrder() {
             // Transform to Orders
-            std::tuple<analysis::Order *, uint_fast64_t, uint_fast64_t> criticalTuple;
+            std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> criticalTuple;
 
             // Create initial order
             auto monRes = std::make_shared<MonotonicityResult<VariableType>>(MonotonicityResult<VariableType>());
             criticalTuple = extender->toOrder(monRes);
             // Continue based on not (yet) sorted states
-            std::map<analysis::Order*, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
+            std::map<std::shared_ptr<Order>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
 
             auto val1 = std::get<1>(criticalTuple);
             auto val2 = std::get<2>(criticalTuple);
@@ -121,7 +121,7 @@ namespace storm {
 
             if (val1 == numberOfStates && val2 == numberOfStates) {
                 auto resAssumptionPair = std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>(monRes, assumptions);
-                monResults.insert(std::pair<Order*, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>(std::get<0>(criticalTuple), resAssumptionPair));
+                monResults.insert(std::pair<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>(std::get<0>(criticalTuple), resAssumptionPair));
             } else if (val1 != numberOfStates && val2 != numberOfStates) {
                 analysis::AssumptionChecker<ValueType, ConstantType> *assumptionChecker;
                 if (model->isOfType(models::ModelType::Dtmc)) {
@@ -141,15 +141,15 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(analysis::Order* order, analysis::AssumptionMaker<ValueType, ConstantType>* assumptionMaker, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
-            std::map<analysis::Order*, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
+        void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std::shared_ptr<Order> order, analysis::AssumptionMaker<ValueType, ConstantType>* assumptionMaker, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
+            std::map<std::shared_ptr<Order>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
 
             auto numberOfStates = model->getNumberOfStates();
             if (val1 == numberOfStates || val2 == numberOfStates) {
                 assert (val1 == val2);
                 assert (order->getAddedStates()->size() == order->getAddedStates()->getNumberOfSetBits());
                 auto resAssumptionPair = std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>(monRes, assumptions);
-                monResults.insert(std::pair<Order*, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>(std::move(order), std::move(resAssumptionPair)));
+                monResults.insert(std::pair<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>(std::move(order), std::move(resAssumptionPair)));
             } else {
                 // Make the three assumptions
                 auto newAssumptions = assumptionMaker->createAndCheckAssumptions(val1, val2, order);
@@ -162,7 +162,8 @@ namespace storm {
                     if (assumption.second != AssumptionStatus::INVALID) {
                         if (itr != newAssumptions.end()) {
                             // We make a copy of the order and the assumptions
-                            auto orderCopy = new Order(order);
+                            //TODO How to copy order?
+                            auto orderCopy = std::shared_ptr<Order>(order);
                             auto assumptionsCopy = std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>(assumptions);
                             auto monResCopy = monRes->copy();
 
