@@ -13,6 +13,20 @@
 namespace storm {
 namespace pomdp {
 
+    enum class MemlessSearchPathVariables {
+        BooleanRanking, IntegerRanking, RealRanking
+    };
+    MemlessSearchPathVariables pathVariableTypeFromString(std::string const& in) {
+        if(in == "int") {
+            return MemlessSearchPathVariables::IntegerRanking;
+        } else if (in == "real") {
+            return MemlessSearchPathVariables::RealRanking;
+        } else {
+            assert(in == "bool");
+            return MemlessSearchPathVariables::BooleanRanking;
+        }
+    }
+
     class MemlessSearchOptions {
 
     public:
@@ -45,9 +59,13 @@ namespace pomdp {
         }
 
         bool onlyDeterministicStrategies = false;
-        bool forceLookahead = true;
+        bool forceLookahead = false;
         bool validateEveryStep = false;
         bool validateResult = false;
+        MemlessSearchPathVariables pathVariableType = MemlessSearchPathVariables::RealRanking;
+        uint64_t restartAfterNIterations = 250;
+        uint64_t extensionCallTimeout = 0u;
+        uint64_t localIterationMaximum = 600;
 
     private:
         std::string exportSATcalls = "";
@@ -198,7 +216,7 @@ namespace pomdp {
         void printScheduler(std::vector<InternalObservationScheduler> const& );
         void printCoveredStates(storm::storage::BitVector const& remaining) const;
 
-        void initialize(uint64_t k);
+        bool initialize(uint64_t k);
 
         bool smtCheck(uint64_t iteration, std::set<storm::expressions::Expression> const& assumptions = {});
 
@@ -230,7 +248,8 @@ namespace pomdp {
         std::vector<storm::expressions::Expression> followVarExpressions;
         std::vector<storm::expressions::Variable> continuationVars;
         std::vector<storm::expressions::Expression> continuationVarExpressions;
-        std::vector<std::vector<storm::expressions::Expression>> pathVars;
+        std::vector<std::vector<storm::expressions::Variable>> pathVars;
+        std::vector<std::vector<storm::expressions::Expression>> pathVarExpressions;
 
         std::vector<InternalObservationScheduler> finalSchedulers;
         std::vector<uint64_t> schedulerForObs;
