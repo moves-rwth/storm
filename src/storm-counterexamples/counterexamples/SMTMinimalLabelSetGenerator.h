@@ -2121,7 +2121,11 @@ namespace storm {
 
 
                 if (symbolicModel.isPrismProgram()) {
-                    return std::make_shared<HighLevelCounterexample>(symbolicModel.asPrismProgram().restrictCommands(labelSets[0]));
+                    storm::prism::Program program = symbolicModel.asPrismProgram().restrictCommands(labelSets[0]);
+                    if(formula->isProbabilityOperatorFormula()) {
+                        program.removeRewardModels();
+                    }
+                    return std::make_shared<HighLevelCounterexample>(program);
                 } else {
                     STORM_LOG_ASSERT(symbolicModel.isJaniModel(), "Unknown symbolic model description type.");
                     return std::make_shared<HighLevelCounterexample>(symbolicModel.asJaniModel().restrictEdges(labelSets[0]));
