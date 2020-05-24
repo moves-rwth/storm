@@ -35,9 +35,8 @@ namespace storm {
                 bool isSelfloopReductionSet() const;
                 bool isTransformSimpleSet() const;
                 bool isTransformBinarySet() const;
-                bool isMemlessSearchSet() const;
                 bool isCheckFullyObservableSet() const;
-                std::string getMemlessSearchMethod() const;
+                bool isQualitativeAnalysisSet() const;
                 std::string getFscApplicationTypeString() const;
                 uint64_t getMemoryBound() const;
 

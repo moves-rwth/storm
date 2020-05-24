@@ -28,9 +28,8 @@ namespace storm {
             std::vector<std::string> fscModes = {"standard", "simple-linear", "simple-linear-inverse"};
             const std::string transformBinaryOption = "transformbinary";
             const std::string transformSimpleOption = "transformsimple";
-            const std::string memlessSearchOption = "memlesssearch";
-            std::vector<std::string> memlessSearchMethods = {"none", "ccd-memless", "ccd-memory", "iterative"};
             const std::string checkFullyObservableOption = "check-fully-observable";
+            const std::string isQualitativeOption = "qualitative-analysis";
 
             POMDPSettings::POMDPSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, noCanonicOption, false, "If this is set, actions will not be ordered canonically. Could yield incorrect results.").build());
@@ -45,9 +44,8 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, transformBinaryOption, false, "Transforms the pomdp to a binary pomdp.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, transformSimpleOption, false, "Transforms the pomdp to a binary and simple pomdp.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, beliefExplorationOption, false,"Analyze the POMDP by exploring the belief state-space.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "Sets whether lower, upper, or interval result bounds are computed.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(beliefExplorationModes)).setDefaultValueString("both").makeOptional().build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, memlessSearchOption, false, "Search for a qualitative memoryless scheuler").addArgument(storm::settings::ArgumentBuilder::createStringArgument("method", "method name").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(memlessSearchMethods)).setDefaultValueString("none").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, checkFullyObservableOption, false, "Performs standard model checking on the underlying MDP").build());
-
+                this->addOption(storm::settings::OptionBuilder(moduleName, isQualitativeOption, false, "Sets the option qualitative analysis").build());
             }
 
             bool POMDPSettings::isNoCanonicSet() const {
@@ -92,17 +90,14 @@ namespace storm {
                 return isBeliefExplorationSet() && (arg == "unfold" || arg == "both");
             }
 
-            bool POMDPSettings::isMemlessSearchSet() const {
-                return this->getOption(memlessSearchOption).getHasOptionBeenSet();
-            }
-
             bool POMDPSettings::isCheckFullyObservableSet() const {
                 return this->getOption(checkFullyObservableOption).getHasOptionBeenSet();
             }
 
-            std::string POMDPSettings::getMemlessSearchMethod() const {
-                return this->getOption(memlessSearchOption).getArgumentByName("method").getValueAsString();
+            bool POMDPSettings::isQualitativeAnalysisSet() const {
+                return this->getOption(isQualitativeOption).getHasOptionBeenSet();
             }
+
 
             uint64_t POMDPSettings::getMemoryBound() const {
                 return this->getOption(memoryBoundOption).getArgumentByName("bound").getValueAsUnsignedInteger();

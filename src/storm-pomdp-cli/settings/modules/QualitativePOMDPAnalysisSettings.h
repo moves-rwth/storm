@@ -21,12 +21,21 @@ namespace storm {
                 QualitativePOMDPAnalysisSettings();
 
                 uint64_t getLookahead() const;
+                std::string getLookaheadType() const;
                 bool isExportSATCallsSet() const;
                 std::string getExportSATCallsPath() const;
                 bool isOnlyDeterministicSet() const;
                 bool isWinningRegionSet() const;
                 bool validateIntermediateSteps() const;
                 bool validateFinalResult() const;
+                bool computeExpensiveStats() const;
+                bool isPrintWinningRegionSet() const;
+                bool isExportWinningRegionSet() const;
+                std::string exportWinningRegionPath() const;
+                bool isGraphPreprocessingAllowed() const;
+                bool isMemlessSearchSet() const;
+                std::string getMemlessSearchMethod() const;
+
 
 
                 virtual ~QualitativePOMDPAnalysisSettings() = default;
