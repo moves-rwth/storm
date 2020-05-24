@@ -213,7 +213,7 @@ namespace storm {
                 for (auto const& f : {p.getRawFormula(), p.getFilter().getStatesFormula()}) {
                     auto task = storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*f, true);
                     if (!canHandle(engine, modelDescription.getModelType(), task)) {
-                        STORM_LOG_INFO("Engine " << engine << " can not handle formula '" << *f << "'.");
+                        STORM_LOG_INFO("Engine " << engine << " can not handle formula '" << *f << "' on models of type " << modelDescription.getModelType() << ".");
                         return false;
                     }
                 }
