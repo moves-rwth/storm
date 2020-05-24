@@ -352,9 +352,9 @@ namespace storm {
 
         template <typename ValueType>
         bool MemlessStrategySearchQualitative<ValueType>::analyze(uint64_t k, storm::storage::BitVector const& oneOfTheseStates, storm::storage::BitVector const& allOfTheseStates) {
-            std::cout << "Surely reach sink states: " << surelyReachSinkStates << std::endl;
-            std::cout << "Target states " << targetStates << std::endl;
-            std::cout << (~surelyReachSinkStates & ~targetStates) << std::endl;
+            STORM_LOG_DEBUG("Surely reach sink states: " << surelyReachSinkStates);
+            STORM_LOG_DEBUG("Target states " << targetStates);
+            STORM_LOG_DEBUG("Questionmark states " << (~surelyReachSinkStates & ~targetStates));
             stats.initializeSolverTimer.start();
             // TODO: When do we need to reinitialize? When the solver has been reset.
             initialize(k);
@@ -363,7 +363,6 @@ namespace storm {
 
             stats.winningRegionUpdatesTimer.start();
             storm::storage::BitVector updated(pomdp.getNrObservations());
-            // TODO CODE DUPLICATION WITH UPDATE, PUT IN PROCEDURE
             storm::storage::BitVector potentialWinner(pomdp.getNrObservations());
             storm::storage::BitVector observationsWithPartialWinners(pomdp.getNrObservations());
             for(uint64_t observation = 0; observation < pomdp.getNrObservations(); ++observation) {
@@ -386,7 +385,7 @@ namespace storm {
                     updated.set(observation);
                 }
             }
-            STORM_LOG_INFO("Graph based winning obs: " << stats.getGraphBasedwinningObservations());
+            STORM_LOG_DEBUG("Graph based winning obs: " << stats.getGraphBasedwinningObservations());
             observationsWithPartialWinners &= potentialWinner;
             for (auto const& observation : observationsWithPartialWinners) {
 
@@ -411,10 +410,11 @@ namespace storm {
             stats.winningRegionUpdatesTimer.stop();
 
 
-            uint64_t maximalNrActions = 8;
-            STORM_LOG_WARN("We have hardcoded (an upper bound on) the number of actions");
+            uint64_t maximalNrActions = 0;
+            for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
+                maximalNrActions = std::max(pomdp.getTransitionMatrix().getRowGroupSize(state),maximalNrActions);
+            }
             std::vector<storm::expressions::Expression> atLeastOneOfStates;
-
             for (uint64_t state : oneOfTheseStates) {
                 STORM_LOG_ASSERT(reachVarExpressions.size() > state, "state id " << state << " exceeds number of states (" <<  reachVarExpressions.size() << ")" );
                 atLeastOneOfStates.push_back(reachVarExpressions[state]);
@@ -426,7 +426,6 @@ namespace storm {
 
 
             std::set<storm::expressions::Expression> allOfTheseAssumption;
-
             std::vector<storm::expressions::Expression> updateForObservationExpressions;
 
             for (uint64_t state : allOfTheseStates) {
@@ -483,7 +482,6 @@ namespace storm {
             }
 
             assert(pomdp.getNrObservations() == schedulerForObs.size());
-
 
             InternalObservationScheduler scheduler;
             scheduler.switchObservations = storm::storage::BitVector(pomdp.getNrObservations());
@@ -677,14 +675,13 @@ namespace storm {
                     stats.graphSearchTime.start();
                     storm::analysis::QualitativeAnalysisOnGraphs<ValueType> graphanalysis(pomdp);
                     uint64_t targetStatesBefore = targetStates.getNumberOfSetBits();
-                    STORM_LOG_INFO("Target states before graph based analysis " << targetStates.getNumberOfSetBits());
+                    STORM_LOG_DEBUG("Target states before graph based analysis " << targetStates.getNumberOfSetBits());
                     targetStates = graphanalysis.analyseProb1Max(~surelyReachSinkStates, targetStates);
                     uint64_t targetStatesAfter = targetStates.getNumberOfSetBits();
-                    STORM_LOG_INFO("Target states after graph based analysis " << targetStates.getNumberOfSetBits());
+                    STORM_LOG_DEBUG("Target states after graph based analysis " << targetStates.getNumberOfSetBits());
                     stats.graphSearchTime.stop();
                     if (targetStatesAfter -  targetStatesBefore > 0) {
                         stats.winningRegionUpdatesTimer.start();
-                        // TODO CODE DUPLICATION WITH INIT, PUT IN PROCEDURE
                         storm::storage::BitVector potentialWinner(pomdp.getNrObservations());
                         storm::storage::BitVector observationsWithPartialWinners(pomdp.getNrObservations());
                         for(uint64_t observation = 0; observation < pomdp.getNrObservations(); ++observation) {
@@ -706,7 +703,7 @@ namespace storm {
                                 updated.set(observation);
                             }
                         }
-                        STORM_LOG_INFO("Graph based winning obs: " << stats.getGraphBasedwinningObservations());
+                        STORM_LOG_DEBUG("Graph based winning obs: " << stats.getGraphBasedwinningObservations());
                         observationsWithPartialWinners &= potentialWinner;
                         for (auto const& observation : observationsWithPartialWinners) {
                             uint64_t nrStatesForObs  = statesPerObservation[observation].size();
@@ -726,7 +723,6 @@ namespace storm {
                         stats.winningRegionUpdatesTimer.stop();
 
                         if (observationsWithPartialWinners.getNumberOfSetBits() > 0) {
-                            STORM_LOG_WARN("This case has been barely tested and likely contains bug");
                             reset();
                             return analyze(k, ~targetStates & ~surelyReachSinkStates);
                         }
@@ -783,10 +779,9 @@ namespace storm {
             if(options.validateResult) {
                 STORM_LOG_WARN("Validating result is a winning region, only for debugging purposes.");
                 validator->validate(surelyReachSinkStates);
-                STORM_LOG_WARN("Validating result is a maximal winning region, only for debugging purposes.");
+                STORM_LOG_WARN("Validating result is a fixed point, only for debugging purposes.");
                 validator->validateIsMaximal(surelyReachSinkStates);
             }
-            winningRegion.print();
 
             if (!allOfTheseStates.empty()) {
                 for (uint64_t observation = 0; observation < pomdp.getNrObservations(); ++observation) {
@@ -805,10 +800,10 @@ namespace storm {
             }
             return true;
         }
+        
 
         template<typename ValueType>
         void MemlessStrategySearchQualitative<ValueType>::printCoveredStates(storm::storage::BitVector const &remaining) const {
-
             STORM_LOG_DEBUG("states that are okay");
             for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
                 if (!remaining.get(state)) {
@@ -816,7 +811,6 @@ namespace storm {
                 }
             }
             std::cout << std::endl;
-
         }
 
         template<typename ValueType>
@@ -857,7 +851,8 @@ namespace storm {
             stats.incrementSmtChecks();
 
             if (result == storm::solver::SmtSolver::CheckResult::Unknown) {
-                STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "SMT solver yielded an unexpected result");
+                STORM_LOG_DEBUG("Unknown");
+                return false;
             } else if (result == storm::solver::SmtSolver::CheckResult::Unsat) {
                 STORM_LOG_DEBUG("Unsatisfiable!");
                 return false;

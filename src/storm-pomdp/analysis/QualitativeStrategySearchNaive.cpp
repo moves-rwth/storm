@@ -50,7 +50,6 @@ namespace storm {
                 smtSolver->add(storm::expressions::disjunction(actionVars));
             }
 
-
             uint64_t rowindex = 0;
             for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
                 for (uint64_t action = 0; action < pomdp.getNumberOfChoices(state); ++action) {
@@ -78,7 +77,6 @@ namespace storm {
                     smtSolver->add(!reachVarExpressions[state]);
                     rowindex += pomdp.getNumberOfChoices(state);
                 } else if(!targetStates.get(state)) {
-                    std::cout << state << " is not a target state" << std::endl;
 
                     std::vector<std::vector<std::vector<storm::expressions::Expression>>> pathsubsubexprs;
                     for (uint64_t j = 1; j < k; ++j) {
@@ -160,7 +158,6 @@ namespace storm {
             storm::storage::BitVector remainingstates(pomdp.getNumberOfStates());
             for (auto rv : reachVars) {
                 if (model->getBooleanValue(rv)) {
-                    std::cout << i << " " << std::endl;
                     observations.set(pomdp.getObservation(i));
                 } else {
                     remainingstates.set(i);
@@ -179,18 +176,7 @@ namespace storm {
                 }
             }
 
-            // TODO move this into a print scheduler function.
-            //STORM_LOG_TRACE("the scheduler: ");
-            for (uint64_t obs = 0; obs < scheduler.size(); ++obs) {
-                if (observations.get(obs)) {
-                    //STORM_LOG_TRACE("observation: " << obs);
-                    //std::cout << "actions:";
-                    //for (auto act : scheduler[obs]) {
-                    //    std::cout << " " << act;
-                    //}
-                    //std::cout << std::endl;
-                }
-            }
+
 
 
             return true;
