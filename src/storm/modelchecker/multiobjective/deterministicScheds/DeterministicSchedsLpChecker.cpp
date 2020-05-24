@@ -663,7 +663,7 @@ namespace storm {
                                         // The issue has to be for some normal vector with a negative entry. Otherwise, the intersection with the downward closure wouldn't be empty
                                         bool normalVectorContainsNegative = false;
                                         for (auto const& hi : h.normalVector()) {
-                                            if (hi < storm::utility::zero<ValueType>()) {
+                                            if (hi < storm::utility::zero<GeometryValueType>()) {
                                                 normalVectorContainsNegative = true;
                                                 break;
                                             }
@@ -743,7 +743,7 @@ namespace storm {
                     if (objectiveHelper[objIndex].minimizing()) {
                         inducedValue = -inducedValue;
                     }
-                    inducedPoint.push_back(inducedValue);
+                    inducedPoint.push_back(storm::utility::convertNumber<GeometryValueType>(inducedValue));
                     // If this objective has weight zero, the lp solution is not necessarily correct
                     if (!storm::utility::isZero(currentWeightVector[objIndex])) {
                         ValueType lpValue = lpModel->getContinuousValue(currentObjectiveVariables[objIndex]);

@@ -152,9 +152,12 @@ namespace storm {
                     }
                     prec *= factor;
                     if (relative) {
-                        return std::make_pair<ValueType, ValueType>(value * (1/(prec + 1)), value * (1 + prec/(prec +1)));
+                        ValueType one = storm::utility::one<ValueType>();
+                        ValueType lower = value * (one        / (prec + one));
+                        ValueType upper = value * (one + prec / (prec + one));
+                        return std::make_pair(lower, upper);
                     } else {
-                        return std::make_pair<ValueType, ValueType>(value - prec, value + prec);
+                        return std::pair<ValueType, ValueType>(value - prec, value + prec);
                     }
                 }
                 

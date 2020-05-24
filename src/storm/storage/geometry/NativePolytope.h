@@ -14,8 +14,8 @@ namespace storm {
             class NativePolytope : public Polytope<ValueType> {
             public:
 
-                typedef StormEigen::Matrix<ValueType, StormEigen::Dynamic, StormEigen::Dynamic> EigenMatrix;
-                typedef StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1> EigenVector;
+                typedef Eigen::Matrix<ValueType, Eigen::Dynamic, Eigen::Dynamic> EigenMatrix;
+                typedef Eigen::Matrix<ValueType, Eigen::Dynamic, 1> EigenVector;
 
                 enum class EmptyStatus{
                     Unknown, //It is unknown whether the polytope is empty or not

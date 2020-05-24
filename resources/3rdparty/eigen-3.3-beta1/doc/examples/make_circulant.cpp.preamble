@@ -1,4 +1,0 @@
-#include <StormEigen/Core>
-#include <iostream>
-
-template <class ArgType> class Circulant;

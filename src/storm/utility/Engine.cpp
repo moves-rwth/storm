@@ -108,6 +108,7 @@ namespace storm {
             switch (engine) {
                 case Engine::Sparse:
                 case Engine::DdSparse:
+                case Engine::Jit:
                     switch (modelType) {
                         case ModelType::DTMC:
                             return storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>>::canHandleStatic(checkTask);
@@ -148,7 +149,7 @@ namespace storm {
                     }
                     break;
                 default:
-                    STORM_LOG_ERROR("The selected engine" << engine << " is not considered.");
+                    STORM_LOG_ERROR("The selected engine " << engine << " is not considered.");
             }
             STORM_LOG_ERROR("The selected combination of engine (" << engine << ") and model type (" << modelType << ") does not seem to be supported for this value type.");
             return false;

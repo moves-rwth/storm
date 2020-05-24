@@ -18,13 +18,13 @@ namespace storm {
              * @return A pointer to a row-major sparse matrix in gmm++ format.
              */
             template<class ValueType>
-            static std::unique_ptr<StormEigen::SparseMatrix<ValueType>> toEigenSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix);
+            static std::unique_ptr<Eigen::SparseMatrix<ValueType>> toEigenSparseMatrix(storm::storage::SparseMatrix<ValueType> const& matrix);
 
             template <typename ValueType>
-            static std::vector<ValueType> toStdVector(StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1> const& v);
+            static std::vector<ValueType> toStdVector(Eigen::Matrix<ValueType, Eigen::Dynamic, 1> const& v);
 
             template <typename ValueType>
-            static StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1> toEigenVector(std::vector<ValueType> const& v);
+            static Eigen::Matrix<ValueType, Eigen::Dynamic, 1> toEigenVector(std::vector<ValueType> const& v);
         };
         
     }
@@ -33,8 +33,8 @@ namespace storm {
 
 namespace std {
     template<class ValueType>
-    struct hash<StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1>> {
-        std::size_t operator()(StormEigen::Matrix<ValueType, StormEigen::Dynamic, 1> const &vector) const {
+    struct hash<Eigen::Matrix<ValueType, Eigen::Dynamic, 1>> {
+        std::size_t operator()(Eigen::Matrix<ValueType, Eigen::Dynamic, 1> const &vector) const {
             size_t seed = 0;
             for (uint_fast64_t i = 0; i < static_cast<uint_fast64_t>(vector.rows()); ++i) {
                 carl::hash_add(seed, std::hash<ValueType>()(vector(i)));
@@ -44,7 +44,7 @@ namespace std {
     };
 }
 
-namespace StormEigen {
+namespace Eigen {
     template<> struct NumTraits<storm::RationalNumber> : GenericNumTraits<storm::RationalNumber>
     {
         typedef storm::RationalNumber Real;
@@ -52,7 +52,7 @@ namespace StormEigen {
         typedef storm::RationalNumber Nested;
         static inline Real epsilon() { return 0; }
         static inline Real dummy_precision() { return 0; }
-        static inline Real digits10() { return 0; }
+        static inline int digits10() { return 0; }
         enum {
             IsInteger = 0,
             IsSigned = 1,
