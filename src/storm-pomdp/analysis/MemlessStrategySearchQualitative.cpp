@@ -92,8 +92,13 @@ namespace storm {
             } else {
                 lookaheadConstraintsRequired = qualitative::isLookaheadRequired(pomdp,  targetStates, surelyReachSinkStates);
             }
+            if (options.pathVariableType == MemlessSearchPathVariables::RealRanking) {
+                k = 10; //magic constant, consider moving.
+            }
+
 
             if (actionSelectionVars.empty()) {
+
                 for (uint64_t obs = 0; obs < pomdp.getNrObservations(); ++obs) {
                     actionSelectionVars.push_back(std::vector<storm::expressions::Variable>());
                     actionSelectionVarExpressions.push_back(std::vector<storm::expressions::Expression>());
@@ -537,6 +542,8 @@ namespace storm {
             STORM_LOG_INFO("Start iterative solver...");
 
             uint64_t iterations  = 0;
+
+            bool foundWhatWeLookFor = false;
             while(true) {
                 stats.incrementOuterIterations();
                 // TODO consider what we really want to store about the schedulers.
@@ -546,26 +553,30 @@ namespace storm {
                 coveredStates = targetStates;
                 coveredStatesAfterSwitch.clear();
                 observationUpdated.clear();
+                bool newSchedulerDiscovered = false;
                 if (!allOfTheseAssumption.empty()) {
                     bool foundResult = this->smtCheck(iterations, allOfTheseAssumption);
                     if (foundResult) {
                         // Consider storing the scheduler
-                        return true;
+                        foundWhatWeLookFor = true;
                     }
                 }
-                bool newSchedulerDiscovered = false;
-
+                uint64_t localIterations = 0;
                 while (true) {
                     ++iterations;
+                    ++localIterations;
 
-
-                    bool foundScheduler = this->smtCheck(iterations);
+                    bool foundScheduler = foundWhatWeLookFor;
+                    if (!foundScheduler) {
+                        foundScheduler = this->smtCheck(iterations);
+                    }
                     if (!foundScheduler) {
                         break;
                     }
                     newSchedulerDiscovered = true;
                     stats.evaluateExtensionSolverTime.start();
                     auto const& model = smtSolver->getModel();
+
 
                     newObservationsAfterSwitch.clear();
                     newObservations.clear();
@@ -655,6 +666,11 @@ namespace storm {
                         scheduler.printForObservations(observations,observationsAfterSwitch);
                     }
 
+                    if (foundWhatWeLookFor || (options.localIterationMaximum > 0 && (localIterations % (options.localIterationMaximum + 1) == options.localIterationMaximum))) {
+                        stats.encodeExtensionSolverTime.stop();
+                        break;
+                    }
+
                     std::vector<storm::expressions::Expression> remainingExpressions;
                     for (auto index : ~coveredStates) {
                         if (observationUpdated.get(pomdp.getObservation(index))) {
@@ -672,10 +688,12 @@ namespace storm {
                     }
                     smtSolver->add(storm::expressions::disjunction(remainingExpressions));
                     stats.encodeExtensionSolverTime.stop();
+                    //smtSolver->setTimeout(options.extensionCallTimeout);
                 }
                 if (!newSchedulerDiscovered) {
                     break;
                 }
+                //smtSolver->unsetTimeout();
                 smtSolver->pop();
 
                 if(options.computeDebugOutput()) {
@@ -718,6 +736,9 @@ namespace storm {
                     }
                 }
                 stats.winningRegionUpdatesTimer.stop();
+                if (foundWhatWeLookFor) {
+                    return true;
+                }
                 if (newTargetObservations>0) {
                     stats.graphSearchTime.start();
                     storm::analysis::QualitativeAnalysisOnGraphs<ValueType> graphanalysis(pomdp);
