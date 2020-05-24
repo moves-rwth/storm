@@ -12,6 +12,8 @@ namespace storm {
             bool update(uint64_t observation, storm::storage::BitVector const& winning);
             bool query(uint64_t observation, storm::storage::BitVector const& currently) const;
             bool isWinning(uint64_t observation, uint64_t offset) const {
+                assert(observation < observationSizes.size());
+                assert(offset < observationSizes[observation]);
                 storm::storage::BitVector currently(observationSizes[observation]);
                 currently.set(offset);
                 return query(observation,currently);
@@ -27,6 +29,9 @@ namespace storm {
 
 
                 uint64_t getStorageSize() const;
+            storm::RationalNumber beliefSupportStates() const;
+            std::pair<storm::RationalNumber,storm::RationalNumber> computeNrWinningBeliefs() const;
+
             uint64_t getNumberOfObservations() const;
             bool empty() const;
             void print() const;
