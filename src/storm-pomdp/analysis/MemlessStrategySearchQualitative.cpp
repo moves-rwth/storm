@@ -645,7 +645,7 @@ namespace storm {
                     for (auto obs : newObservationsAfterSwitch) {
                         observationsAfterSwitch.set(obs);
                         scheduler.schedulerRef[obs] = model->getIntegerValue(schedulerVariables[obs]);
-                        smtSolver->add(schedulerVariableExpressions[obs] == expressionManager->integer(scheduler.schedulerRef.back()));
+                        smtSolver->add(schedulerVariableExpressions[obs] == expressionManager->integer(scheduler.schedulerRef[obs]));
                     }
 
                     if(options.computeTraceOutput()) {
