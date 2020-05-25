@@ -394,7 +394,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        void JaniNextStateGenerator<ValueType, StateType>::applyTransientUpdate(TransientVariableValuation<ValueType>& transientValuation, storm::jani::detail::ConstAssignments const& transientAssignments,  storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator) {
+        void JaniNextStateGenerator<ValueType, StateType>::applyTransientUpdate(TransientVariableValuation<ValueType>& transientValuation, storm::jani::detail::ConstAssignments const& transientAssignments,  storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator) const {
             
             auto assignmentIt = transientAssignments.begin();
             auto assignmentIte = transientAssignments.end();
@@ -457,15 +457,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        StateBehavior<ValueType, StateType> JaniNextStateGenerator<ValueType, StateType>::expand(StateToIdCallback const& stateToIdCallback) {
-            // Prepare the result, in case we return early.
-            StateBehavior<ValueType, StateType> result;
-            
-            // Retrieve the locations from the state.
-            std::vector<uint64_t> locations = getLocations(*this->state);
-            
-            // First, construct the state rewards, as we may return early if there are no choices later and we already
-            // need the state rewards then.
+        TransientVariableValuation<ValueType> JaniNextStateGenerator<ValueType, StateType>::getTransientVariableValuationAtLocations(std::vector<uint64_t> const& locations) const {
             uint64_t automatonIndex = 0;
             TransientVariableValuation<ValueType> transientVariableValuation;
             for (auto const& automatonRef : this->parallelAutomata) {
@@ -476,6 +468,84 @@ namespace storm {
                 applyTransientUpdate(transientVariableValuation, location.getAssignments().getTransientAssignments(), *this->evaluator);
                 ++automatonIndex;
             }
+            return transientVariableValuation;
+        }
+        
+        template<typename ValueType, typename StateType>
+        storm::storage::sparse::StateValuationsBuilder JaniNextStateGenerator<ValueType, StateType>::initializeStateValuationsBuilder() const {
+            auto result = NextStateGenerator<ValueType, StateType>::initializeStateValuationsBuilder();
+            // Also add information for transient variables
+            for (auto const& varInfo : transientVariableInformation.booleanVariableInformation) {
+                result.addVariable(varInfo.variable);
+            }
+            for (auto const& varInfo : transientVariableInformation.integerVariableInformation) {
+                result.addVariable(varInfo.variable);
+            }
+            for (auto const& varInfo : transientVariableInformation.rationalVariableInformation) {
+                result.addVariable(varInfo.variable);
+            }
+            return result;
+        }
+        
+        template<typename ValueType, typename StateType>
+        void JaniNextStateGenerator<ValueType, StateType>::addStateValuation(storm::storage::sparse::state_type const& currentStateIndex, storm::storage::sparse::StateValuationsBuilder& valuationsBuilder) const {
+            std::vector<bool> booleanValues;
+            booleanValues.reserve(this->variableInformation.booleanVariables.size() + transientVariableInformation.booleanVariableInformation.size());
+            std::vector<int64_t> integerValues;
+            integerValues.reserve(this->variableInformation.locationVariables.size() + this->variableInformation.integerVariables.size() + transientVariableInformation.integerVariableInformation.size());
+            std::vector<storm::RationalNumber> rationalValues;
+            rationalValues.reserve(transientVariableInformation.rationalVariableInformation.size());
+            
+            // Add values for non-transient variables
+            extractVariableValues(*this->state, this->variableInformation, integerValues, booleanValues, integerValues);
+            
+            // Add values for transient variables
+            auto transientVariableValuation = getTransientVariableValuationAtLocations(getLocations(*this->state));
+            {
+                auto varIt = transientVariableValuation.booleanValues.begin();
+                for (auto const& varInfo : transientVariableInformation.booleanVariableInformation) {
+                    if (varIt->first->variable == varInfo.variable) {
+                        booleanValues.push_back(varIt->second);
+                    } else {
+                        booleanValues.push_back(varInfo.defaultValue);
+                    }
+                }
+            }
+            {
+                auto varIt = transientVariableValuation.integerValues.begin();
+                for (auto const& varInfo : transientVariableInformation.integerVariableInformation) {
+                    if (varIt->first->variable == varInfo.variable) {
+                        integerValues.push_back(varIt->second);
+                    } else {
+                        integerValues.push_back(varInfo.defaultValue);
+                    }
+                }
+            }
+            {
+                auto varIt = transientVariableValuation.rationalValues.begin();
+                for (auto const& varInfo : transientVariableInformation.rationalVariableInformation) {
+                    if (varIt->first->variable == varInfo.variable) {
+                        rationalValues.push_back(storm::utility::convertNumber<storm::RationalNumber>(varIt->second));
+                    } else {
+                        rationalValues.push_back(storm::utility::convertNumber<storm::RationalNumber>(varInfo.defaultValue));
+                    }
+                }
+            }
+            
+            valuationsBuilder.addState(currentStateIndex, std::move(booleanValues), std::move(integerValues), std::move(rationalValues));
+        }
+        
+        template<typename ValueType, typename StateType>
+        StateBehavior<ValueType, StateType> JaniNextStateGenerator<ValueType, StateType>::expand(StateToIdCallback const& stateToIdCallback) {
+            // Prepare the result, in case we return early.
+            StateBehavior<ValueType, StateType> result;
+            
+            // Retrieve the locations from the state.
+            std::vector<uint64_t> locations = getLocations(*this->state);
+            
+            // First, construct the state rewards, as we may return early if there are no choices later and we already
+            // need the state rewards then.
+            auto transientVariableValuation = getTransientVariableValuationAtLocations(locations);
             transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
             result.addStateRewards(evaluateRewardExpressions());
             this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
