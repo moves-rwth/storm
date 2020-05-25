@@ -115,6 +115,10 @@ namespace storm {
                     }
                 }
                 os << std::endl;
+                // Write state valuations as comments
+                if(sparseModel->hasStateValuations()) {
+                    os << "//" << sparseModel->getStateValuations().getStateInfo(group) << std::endl;
+                }
 
                 // Write probabilities
                 typename storm::storage::SparseMatrix<ValueType>::index_type start = matrix.hasTrivialRowGrouping() ? group : matrix.getRowGroupIndices()[group];
