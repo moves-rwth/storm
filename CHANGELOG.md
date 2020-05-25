@@ -8,10 +8,11 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.5.x
 -------------
 ## Version 1.5.x (Under development)
-- Scheduler export: Properly handle models with end components. Added export in .json format.
+- Changed default Dd library from `cudd` to `sylvan`. The Dd library can be changed back to `cudd` using the command line switch `--ddlib`.
+- Scheduler export: Properly handle models with end components. Added export in `.json` format.
 - CMake: Search for Gurobi prefers new versions
 - CMake: We no longer ship xerces-c. If xerces-c is not found on the system, storm-gspn will not be able to parse xml-based GSPN formats 
-- `Eigen' library: The source code of Eigen is no longer included but downloaded from an external repository instead. Incremented Eigen version to 3.3.7 which fixes a compilation issue with recent XCode Versions.
+- Eigen library: The source code of Eigen is no longer included but downloaded from an external repository instead. Incremented Eigen version to 3.3.7 which fixes a compilation issue with recent XCode versions.
 - Tests: Enabled tests for permissive schedulers
 - `storm-counterexamples`: fix when computing multiple counterexamples in debug mode
 - `storm-dft`: Renamed setting `--show-dft-stats` to `dft-statistics` and added approximation information to statistics.
