@@ -241,7 +241,7 @@ namespace storm {
                 }
                 storm::json<storm::RationalNumber> stateChoicesJson;
                 if (model && model->hasStateValuations()) {
-                    stateChoicesJson["s"] = model->getStateValuations().getStateValuation(state).toJson();
+                    stateChoicesJson["s"] = model->getStateValuations()[state].toJson(model->getStateValuations());
                 } else {
                     stateChoicesJson["s"] = state;
                 }
