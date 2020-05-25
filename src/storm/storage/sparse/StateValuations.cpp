@@ -10,71 +10,78 @@ namespace storm {
     namespace storage {
         namespace sparse {
             
-            StateValuation::StateValuation(std::vector<bool>&& booleanValues, std::vector<int64_t>&& integerValues, std::vector<storm::RationalNumber>&& rationalValues) : booleanValues(std::move(booleanValues)), integerValues(std::move(integerValues)), rationalValues(std::move(rationalValues)) {
+            StateValuations::StateValuation::StateValuation(std::vector<bool>&& booleanValues, std::vector<int64_t>&& integerValues, std::vector<storm::RationalNumber>&& rationalValues) : booleanValues(std::move(booleanValues)), integerValues(std::move(integerValues)), rationalValues(std::move(rationalValues)) {
                 // Intentionally left empty
             }
             
-            bool StateValuation::getBooleanValue(StateValuations const& valuations, storm::expressions::Variable const& booleanVariable) const {
-                STORM_LOG_ASSERT(assertValuations(valuations), "Invalid  state valuations");
-                STORM_LOG_ASSERT(valuations.variableToIndexMap.count(booleanVariable) > 0, "Variable " << booleanVariable.getName() << " is not part of this valuation.");
-                return booleanValues[valuations.variableToIndexMap.at(booleanVariable)];
+            typename StateValuations::StateValuation const& StateValuations::getValuation(storm::storage::sparse::state_type const& stateIndex) const {
+                STORM_LOG_ASSERT(stateIndex < valuations.size(), "Invalid state index.");
+                STORM_LOG_ASSERT(assertValuation(valuations[stateIndex]), "Invalid  state valuations");
+                return valuations[stateIndex];
             }
             
-            int64_t const& StateValuation::getIntegerValue(StateValuations const& valuations, storm::expressions::Variable const& integerVariable) const {
-                STORM_LOG_ASSERT(assertValuations(valuations), "Invalid  state valuations");
-                STORM_LOG_ASSERT(valuations.variableToIndexMap.count(integerVariable) > 0, "Variable " << integerVariable.getName() << " is not part of this valuation.");
-                return integerValues[valuations.variableToIndexMap.at(integerVariable)];
+            bool StateValuations::getBooleanValue(storm::storage::sparse::state_type const& stateIndex, storm::expressions::Variable const& booleanVariable) const {
+                auto const& valuation = getValuation(stateIndex);
+                STORM_LOG_ASSERT(variableToIndexMap.count(booleanVariable) > 0, "Variable " << booleanVariable.getName() << " is not part of this valuation.");
+                return valuation.booleanValues[variableToIndexMap.at(booleanVariable)];
             }
             
-            storm::RationalNumber const& StateValuation::getRationalValue(StateValuations const& valuations, storm::expressions::Variable const& rationalVariable) const {
-                STORM_LOG_ASSERT(assertValuations(valuations), "Invalid  state valuations");
-                STORM_LOG_ASSERT(valuations.variableToIndexMap.count(rationalVariable) > 0, "Variable " << rationalVariable.getName() << " is not part of this valuation.");
-                return rationalValues[valuations.variableToIndexMap.at(rationalVariable)];
+            int64_t const& StateValuations::getIntegerValue(storm::storage::sparse::state_type const& stateIndex, storm::expressions::Variable const& integerVariable) const {
+                auto const& valuation = getValuation(stateIndex);
+                STORM_LOG_ASSERT(variableToIndexMap.count(integerVariable) > 0, "Variable " << integerVariable.getName() << " is not part of this valuation.");
+                return valuation.integerValues[variableToIndexMap.at(integerVariable)];
             }
             
-            bool StateValuation::isEmpty() const {
-                return booleanValues.empty() && integerValues.empty() && rationalValues.empty();
+            storm::RationalNumber const& StateValuations::getRationalValue(storm::storage::sparse::state_type const& stateIndex, storm::expressions::Variable const& rationalVariable) const {
+                auto const& valuation = getValuation(stateIndex);
+                STORM_LOG_ASSERT(variableToIndexMap.count(rationalVariable) > 0, "Variable " << rationalVariable.getName() << " is not part of this valuation.");
+                return valuation.rationalValues[variableToIndexMap.at(rationalVariable)];
             }
             
-            std::string StateValuation::toString(StateValuations const& valuations, bool pretty, boost::optional<std::set<storm::expressions::Variable>> const& selectedVariables) const {
-                STORM_LOG_ASSERT(assertValuations(valuations), "Invalid  state valuations");
-                typename std::map<storm::expressions::Variable, uint64_t>::const_iterator mapIt = valuations.variableToIndexMap.begin();
+            bool StateValuations::isEmpty(storm::storage::sparse::state_type const& stateIndex) const {
+                auto const& valuation = getValuation(stateIndex);
+                return valuation.booleanValues.empty() && valuation.integerValues.empty() && valuation.rationalValues.empty();
+            }
+            
+            std::string StateValuations::toString(storm::storage::sparse::state_type const& stateIndex, bool pretty, boost::optional<std::set<storm::expressions::Variable>> const& selectedVariables) const {
+                auto const& valuation = getValuation(stateIndex);
+                typename std::map<storm::expressions::Variable, uint64_t>::const_iterator mapIt = variableToIndexMap.begin();
                 typename std::set<storm::expressions::Variable>::const_iterator setIt;
                 if (selectedVariables) {
                     setIt = selectedVariables->begin();
                 }
                 std::vector<std::string> assignments;
-                while (mapIt != valuations.variableToIndexMap.end() && (!selectedVariables || setIt != selectedVariables->end())) {
+                while (mapIt != variableToIndexMap.end() && (!selectedVariables || setIt != selectedVariables->end())) {
                     
                     // Move Map iterator to next relevant position
                     if (selectedVariables) {
                         while (mapIt->first != *setIt) {
                             ++mapIt;
-                            STORM_LOG_ASSERT(mapIt != valuations.variableToIndexMap.end(), "Valuation does not consider selected variable " << setIt->getName() << ".");
+                            STORM_LOG_ASSERT(mapIt != variableToIndexMap.end(), "Valuation does not consider selected variable " << setIt->getName() << ".");
                         }
                     }
                     
                     auto const& variable = mapIt->first;
                     std::stringstream stream;
                     if (pretty) {
-                        if (variable.hasBooleanType() && !booleanValues[mapIt->second]) {
+                        if (variable.hasBooleanType() && !valuation.booleanValues[mapIt->second]) {
                             stream << "!";
                         }
                         stream << variable.getName();
                         if (variable.hasIntegerType()) {
-                            stream << "=" << integerValues[mapIt->second];
+                            stream << "=" << valuation.integerValues[mapIt->second];
                         } else if (variable.hasRationalType()) {
-                            stream << "=" << rationalValues[mapIt->second];
+                            stream << "=" << valuation.rationalValues[mapIt->second];
                         } else {
                             STORM_LOG_THROW(variable.hasBooleanType(), storm::exceptions::InvalidTypeException, "Unexpected variable type.");
                         }
                     } else {
                         if (variable.hasBooleanType()) {
-                            stream << std::boolalpha << booleanValues[mapIt->second] << std::noboolalpha;
+                            stream << std::boolalpha << valuation.booleanValues[mapIt->second] << std::noboolalpha;
                         } else if (variable.hasIntegerType()) {
-                            stream << integerValues[mapIt->second];
+                            stream << valuation.integerValues[mapIt->second];
                         } else if (variable.hasRationalType()) {
-                            stream << rationalValues[mapIt->second];
+                            stream << valuation.rationalValues[mapIt->second];
                         }
                     }
                     assignments.push_back(stream.str());
@@ -93,30 +100,30 @@ namespace storm {
                 }
             }
             
-            typename StateValuation::Json StateValuation::toJson(StateValuations const& valuations, boost::optional<std::set<storm::expressions::Variable>> const& selectedVariables) const {
-                STORM_LOG_ASSERT(assertValuations(valuations), "Invalid  state valuations");
-                typename std::map<storm::expressions::Variable, uint64_t>::const_iterator mapIt = valuations.variableToIndexMap.begin();
+            typename StateValuations::Json StateValuations::toJson(storm::storage::sparse::state_type const& stateIndex, boost::optional<std::set<storm::expressions::Variable>> const& selectedVariables) const {
+                auto const& valuation = getValuation(stateIndex);
+                typename std::map<storm::expressions::Variable, uint64_t>::const_iterator mapIt = variableToIndexMap.begin();
                 typename std::set<storm::expressions::Variable>::const_iterator setIt;
                 if (selectedVariables) {
                     setIt = selectedVariables->begin();
                 }
                 Json result;
-                while (mapIt != valuations.variableToIndexMap.end() && (!selectedVariables || setIt != selectedVariables->end())) {
+                while (mapIt != variableToIndexMap.end() && (!selectedVariables || setIt != selectedVariables->end())) {
                     // Move Map iterator to next relevant position
                     if (selectedVariables) {
                         while (mapIt->first != *setIt) {
                             ++mapIt;
-                            STORM_LOG_ASSERT(mapIt != valuations.variableToIndexMap.end(), "Valuation does not consider selected variable " << setIt->getName() << ".");
+                            STORM_LOG_ASSERT(mapIt != variableToIndexMap.end(), "Valuation does not consider selected variable " << setIt->getName() << ".");
                         }
                     }
                     
                     auto const& variable = mapIt->first;
                     if (variable.hasBooleanType()) {
-                        result[variable.getName()] = bool(booleanValues[mapIt->second]);
+                        result[variable.getName()] = bool(valuation.booleanValues[mapIt->second]);
                     } else if (variable.hasIntegerType()) {
-                        result[variable.getName()] = integerValues[mapIt->second];
+                        result[variable.getName()] = valuation.integerValues[mapIt->second];
                     } else if (variable.hasRationalType()) {
-                        result[variable.getName()] = rationalValues[mapIt->second];
+                        result[variable.getName()] = valuation.rationalValues[mapIt->second];
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unexpected variable type.");
                     }
@@ -131,11 +138,11 @@ namespace storm {
                 return result;
             }
             
-            bool StateValuation::assertValuations(StateValuations const& valuations) const {
-                storm::storage::BitVector foundBooleanValues(booleanValues.size(), false);
-                storm::storage::BitVector foundIntegerValues(integerValues.size(), false);
-                storm::storage::BitVector foundRationalValues(rationalValues.size(), false);
-                for (auto const& varIndex : valuations.variableToIndexMap) {
+            bool StateValuations::assertValuation(StateValuation const& valuation) const {
+                storm::storage::BitVector foundBooleanValues(valuation.booleanValues.size(), false);
+                storm::storage::BitVector foundIntegerValues(valuation.integerValues.size(), false);
+                storm::storage::BitVector foundRationalValues(valuation.rationalValues.size(), false);
+                for (auto const& varIndex : variableToIndexMap) {
                     storm::storage::BitVector* bv;
                     if (varIndex.first.hasBooleanType()) {
                         bv = &foundBooleanValues;
@@ -169,19 +176,9 @@ namespace storm {
             
             std::string StateValuations::getStateInfo(state_type const& state) const {
                 STORM_LOG_ASSERT(state < getNumberOfStates(), "Invalid state index.");
-                return (*this)[state].toString(*this);
+                return this->toString(state);
             }
             
-            StateValuation& StateValuations::operator[](storm::storage::sparse::state_type const& state) {
-                STORM_LOG_ASSERT(state < getNumberOfStates(), "Invalid state index.");
-                return valuations[state];
-            }
-            
-            StateValuation const& StateValuations::operator[](storm::storage::sparse::state_type const& state) const {
-                STORM_LOG_ASSERT(state < getNumberOfStates(), "Invalid state index.");
-                return valuations[state];
-            }
-
             uint_fast64_t StateValuations::getNumberOfStates() const {
                 return valuations.size();
             }
@@ -228,8 +225,8 @@ namespace storm {
                 if (state == currentStateValuations.valuations.size()) {
                     currentStateValuations.valuations.emplace_back(std::move(booleanValues), std::move(integerValues), std::move(rationalValues));
                 } else {
-                    STORM_LOG_ASSERT(currentStateValuations[state].isEmpty(), "Adding a valuation to the same state multiple times.");
-                    currentStateValuations[state] = StateValuation(std::move(booleanValues), std::move(integerValues), std::move(rationalValues));
+                    STORM_LOG_ASSERT(currentStateValuations.isEmpty(state), "Adding a valuation to the same state multiple times.");
+                    currentStateValuations.valuations[state] = typename StateValuations::StateValuation(std::move(booleanValues), std::move(integerValues), std::move(rationalValues));
                 }
             }
             

@@ -13,21 +13,38 @@ namespace storm {
     namespace storage {
         namespace sparse {
             
-            class StateValuations;
             class StateValuationsBuilder;
             
-            class StateValuation {
+            // A structure holding information about the reachable state space that can be retrieved from the outside.
+            class StateValuations : public storm::models::sparse::StateAnnotation {
             public:
+                friend class StateValuationsBuilder;
                 typedef storm::json<storm::RationalNumber> Json;
-                StateValuation() = default;
-                StateValuation(std::vector<bool>&& booleanValues, std::vector<int64_t>&& integerValues, std::vector<storm::RationalNumber>&& rationalValues);
 
-                bool getBooleanValue(StateValuations const& valuations, storm::expressions::Variable const& booleanVariable) const;
-                int64_t const& getIntegerValue(StateValuations const& valuations, storm::expressions::Variable const& integerVariable) const;
-                storm::RationalNumber const& getRationalValue(StateValuations const& valuations, storm::expressions::Variable const& rationalVariable) const;
+                class StateValuation {
+                public:
+                    friend class StateValuations;
+                    StateValuation() = default;
+                    StateValuation(std::vector<bool>&& booleanValues, std::vector<int64_t>&& integerValues, std::vector<storm::RationalNumber>&& rationalValues);
+    
+                private:
+                    
+                    std::vector<bool> booleanValues;
+                    std::vector<int64_t> integerValues;
+                    std::vector<storm::RationalNumber> rationalValues;
+                };
                 
-                // Returns true, if this valuation does not contain any value.
-                bool isEmpty() const;
+
+                StateValuations() = default;
+                
+                virtual ~StateValuations() = default;
+                virtual std::string getStateInfo(storm::storage::sparse::state_type const& state) const override;
+                
+                bool getBooleanValue(storm::storage::sparse::state_type const& stateIndex, storm::expressions::Variable const& booleanVariable) const;
+                int64_t const& getIntegerValue(storm::storage::sparse::state_type const& stateIndex, storm::expressions::Variable const& integerVariable) const;
+                storm::RationalNumber const& getRationalValue(storm::storage::sparse::state_type const& stateIndex, storm::expressions::Variable const& rationalVariable) const;
+                /// Returns true, if this valuation does not contain any value.
+                bool isEmpty(storm::storage::sparse::state_type const& stateIndex) const;
                 
                 /*!
                  * Returns a string representation of the valuation.
@@ -35,41 +52,15 @@ namespace storm {
                  * @param selectedVariables If given, only the informations for the variables in this set are processed.
                  * @return The string representation.
                  */
-                std::string toString(StateValuations const& valuations, bool pretty = true, boost::optional<std::set<storm::expressions::Variable>> const& selectedVariables = boost::none) const;
+                std::string toString(storm::storage::sparse::state_type const& stateIndex, bool pretty = true, boost::optional<std::set<storm::expressions::Variable>> const& selectedVariables = boost::none) const;
                 
                 /*!
                  * Returns a JSON representation of this valuation
                  * @param selectedVariables If given, only the informations for the variables in this set are processed.
                  * @return
                  */
-                Json toJson(StateValuations const& valuations, boost::optional<std::set<storm::expressions::Variable>> const& selectedVariables = boost::none) const;
-                
-            private:
-                // Asserts whether the variable and value counts for each type match.
-                bool assertValuations(StateValuations const& valuations) const;
-                
-                std::vector<bool> booleanValues;
-                std::vector<int64_t> integerValues;
-                std::vector<storm::RationalNumber> rationalValues;
-            };
-            
-            // A structure holding information about the reachable state space that can be retrieved from the outside.
-            class StateValuations : public storm::models::sparse::StateAnnotation {
-            public:
-                friend class StateValuation;
-                friend class StateValuationsBuilder;
+                Json toJson(storm::storage::sparse::state_type const& stateIndex, boost::optional<std::set<storm::expressions::Variable>> const& selectedVariables = boost::none) const;
 
-                StateValuations() = default;
-                
-                virtual ~StateValuations() = default;
-                virtual std::string getStateInfo(storm::storage::sparse::state_type const& state) const override;
-                
-                /*!
-                 * Returns the valuation at the specific state
-                 */
-                StateValuation& operator[](storm::storage::sparse::state_type const& state);
-                StateValuation const& operator[](storm::storage::sparse::state_type const& state) const;
-                
                 
                 // Returns the (current) number of states that this object describes.
                 uint_fast64_t getNumberOfStates() const;
@@ -88,6 +79,9 @@ namespace storm {
                 
             private:
                 StateValuations(std::map<storm::expressions::Variable, uint64_t> const& variableToIndexMap, std::vector<StateValuation>&& valuations);
+                bool assertValuation(StateValuation const& valuation) const;
+                StateValuation const& getValuation(storm::storage::sparse::state_type const& stateIndex) const;
+                
                 std::map<storm::expressions::Variable, uint64_t> variableToIndexMap;
                 // A mapping from state indices to their variable valuations.
                 std::vector<StateValuation> valuations;
