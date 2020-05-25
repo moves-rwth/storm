@@ -19,15 +19,10 @@ namespace storm {
             std::vector<std::string> beliefExplorationModes = {"both", "discretize", "unfold"};
             const std::string qualitativeReductionOption = "qualitativereduction";
             const std::string analyzeUniqueObservationsOption = "uniqueobservations";
-            const std::string mecReductionOption = "mecreduction";
             const std::string selfloopReductionOption = "selfloopreduction";
             const std::string memoryBoundOption = "memorybound";
             const std::string memoryPatternOption = "memorypattern";
             std::vector<std::string> memoryPatterns = {"trivial", "fixedcounter", "selectivecounter", "ring", "fixedring", "settablebits", "full"};
-            const std::string fscmode = "fscmode";
-            std::vector<std::string> fscModes = {"standard", "simple-linear", "simple-linear-inverse"};
-            const std::string transformBinaryOption = "transformbinary";
-            const std::string transformSimpleOption = "transformsimple";
             const std::string checkFullyObservableOption = "check-fully-observable";
             const std::string isQualitativeOption = "qualitative-analysis";
 
@@ -36,13 +31,9 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportAsParametricModelOption, false, "Export the parametric file.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which to write the model.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, qualitativeReductionOption, false, "Reduces the model size by performing qualitative analysis (E.g. merge states with prob. 1.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, analyzeUniqueObservationsOption, false, "Computes the states with a unique observation").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, mecReductionOption, false, "Reduces the model size by analyzing maximal end components").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, selfloopReductionOption, false, "Reduces the model size by removing self loop actions").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, memoryBoundOption, false, "Sets the maximal number of allowed memory states (1 means memoryless schedulers).").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("bound", "The maximal number of memory states.").setDefaultValueUnsignedInteger(1).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterValidator(0)).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, memoryPatternOption, false, "Sets the pattern of the considered memory structure").addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "Pattern name.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(memoryPatterns)).setDefaultValueString("full").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, fscmode, false, "Sets the way the pMC is obtained").addArgument(storm::settings::ArgumentBuilder::createStringArgument("type", "type name").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(fscModes)).setDefaultValueString("standard").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, transformBinaryOption, false, "Transforms the pomdp to a binary pomdp.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, transformSimpleOption, false, "Transforms the pomdp to a binary and simple pomdp.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, beliefExplorationOption, false,"Analyze the POMDP by exploring the belief state-space.").addArgument(storm::settings::ArgumentBuilder::createStringArgument("mode", "Sets whether lower, upper, or interval result bounds are computed.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(beliefExplorationModes)).setDefaultValueString("both").makeOptional().build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, checkFullyObservableOption, false, "Performs standard model checking on the underlying MDP").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, isQualitativeOption, false, "Sets the option qualitative analysis").build());
@@ -66,10 +57,6 @@ namespace storm {
             
             bool POMDPSettings::isAnalyzeUniqueObservationsSet() const {
                 return this->getOption(analyzeUniqueObservationsOption).getHasOptionBeenSet();
-            }
-            
-            bool POMDPSettings::isMecReductionSet() const {
-                return this->getOption(mecReductionOption).getHasOptionBeenSet();
             }
             
             bool POMDPSettings::isSelfloopReductionSet() const {
@@ -123,18 +110,7 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The name of the memory pattern is unknown.");
             }
 
-            std::string POMDPSettings::getFscApplicationTypeString() const {
-                return this->getOption(fscmode).getArgumentByName("type").getValueAsString();
-            }
-            
-            bool POMDPSettings::isTransformBinarySet() const {
-                return this->getOption(transformBinaryOption).getHasOptionBeenSet();
-            }
 
-            bool POMDPSettings::isTransformSimpleSet() const {
-                return this->getOption(transformSimpleOption).getHasOptionBeenSet();
-            }
-            
             void POMDPSettings::finalize() {
             }
 

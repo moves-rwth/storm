@@ -5,6 +5,7 @@
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
 #include "storm-pomdp-cli/settings/modules/QualitativePOMDPAnalysisSettings.h"
 #include "storm-pomdp-cli/settings/modules/BeliefExplorationSettings.h"
+#include "storm-pomdp-cli/settings/modules/ToParametricSettings.h"
 
 #include "storm-pomdp-cli/settings/PomdpSettings.h"
 #include "storm/analysis/GraphConditions.h"
@@ -268,6 +269,8 @@ namespace storm {
             template<typename ValueType, storm::dd::DdType DdType>
             bool performTransformation(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>& pomdp, storm::logic::Formula const& formula) {
                 auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
+                auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+                auto const& transformSettings = storm::settings::getModule<storm::settings::modules::ToParametricSettings>();
                 bool transformationPerformed = false;
                 bool memoryUnfolded = false;
                 if (pomdpSettings.getMemoryBound() > 1) {
@@ -284,7 +287,7 @@ namespace storm {
         
                 // From now on the pomdp is considered memoryless
         
-                if (pomdpSettings.isMecReductionSet()) {
+                if (transformSettings.isMecReductionSet()) {
                     STORM_PRINT_AND_LOG("Eliminating mec choices ...");
                     // Note: Elimination of mec choices only preserves memoryless schedulers.
                     uint64_t oldChoiceCount = pomdp->getNumberOfChoices();
@@ -296,8 +299,8 @@ namespace storm {
                     transformationPerformed = true;
                 }
         
-                if (pomdpSettings.isTransformBinarySet() || pomdpSettings.isTransformSimpleSet()) {
-                    if (pomdpSettings.isTransformSimpleSet()) {
+                if (transformSettings.isTransformBinarySet() || transformSettings.isTransformSimpleSet()) {
+                    if (transformSettings.isTransformSimpleSet()) {
                         STORM_PRINT_AND_LOG("Transforming the POMDP to a simple POMDP.");
                         pomdp = storm::transformer::BinaryPomdpTransformer<ValueType>().transform(*pomdp, true);
                     } else {
@@ -312,17 +315,16 @@ namespace storm {
                 if (pomdpSettings.isExportToParametricSet()) {
                     STORM_PRINT_AND_LOG("Transforming memoryless POMDP to pMC...");
                     storm::transformer::ApplyFiniteSchedulerToPomdp<ValueType> toPMCTransformer(*pomdp);
-                    std::string transformMode = pomdpSettings.getFscApplicationTypeString();
+                    std::string transformMode = transformSettings.getFscApplicationTypeString();
                     auto pmc = toPMCTransformer.transform(storm::transformer::parsePomdpFscApplicationMode(transformMode));
                     STORM_PRINT_AND_LOG(" done." << std::endl);
                     pmc->printModelInformationToStream(std::cout);
-                    STORM_PRINT_AND_LOG("Simplifying pMC...");
-                    //if (generalSettings.isBisimulationSet()) {
-                    pmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>(),{formula.asSharedPointer()}, storm::storage::BisimulationType::Strong)->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-        
+                    //if (transformSettings.isSimplificationSet()) {
+                        STORM_PRINT_AND_LOG("Simplifying pMC...");
+                        pmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>(),{formula.asSharedPointer()}, storm::storage::BisimulationType::Strong)->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+                        STORM_PRINT_AND_LOG(" done." << std::endl);
+                        pmc->printModelInformationToStream(std::cout);
                     //}
-                    STORM_PRINT_AND_LOG(" done." << std::endl);
-                    pmc->printModelInformationToStream(std::cout);
                     STORM_PRINT_AND_LOG("Exporting pMC...");
                     storm::analysis::ConstraintCollector<storm::RationalFunction> constraints(*pmc);
                     auto const& parameterSet = constraints.getVariables();
