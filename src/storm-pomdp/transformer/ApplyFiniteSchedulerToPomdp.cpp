@@ -122,6 +122,8 @@ namespace storm {
             }
             
             modelComponents.stateLabeling = pomdp.getStateLabeling();
+            modelComponents.stateValuations = pomdp.getOptionalStateValuations();
+
             
             return std::make_shared<storm::models::sparse::Dtmc<storm::RationalFunction>>(modelComponents);
             
