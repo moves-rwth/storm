@@ -8,15 +8,16 @@
 #pragma clang diagnostic ignored "-Wunknown-pragmas"
 #elif defined(__GNUC__)
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wignored-attributes"
-#pragma GCC diagnostic ignored "-Wmisleading-indentation"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
+#if __GNUC__ > 8
+#pragma GCC diagnostic ignored "-Wdeprecated-copy" // Ignore warnings present for GCC 9 and later. The warnings should be fixed for Eigen versions after 3.3.7
+#endif
 #endif
 
 // Finally include the parts of Eigen we need.
-#include <Eigen/Dense>
-#include <Eigen/Sparse>
-#include <unsupported/Eigen/IterativeSolvers>
+// Make sure to include our patched version of Eigen (and not a pre-installed one e.g. located at /usr/include)
+#include <resources/3rdparty/StormEigen/Eigen/Dense>
+#include <resources/3rdparty/StormEigen/Eigen/Sparse>
+#include <resources/3rdparty/StormEigen/unsupported/Eigen/IterativeSolvers>
 
 #if defined(__clang__)
 #pragma clang diagnostic pop

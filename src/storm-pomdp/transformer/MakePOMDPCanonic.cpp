@@ -148,7 +148,9 @@ namespace storm {
                                                                                newRewardModels,
                                                                                false, boost::none);
             modelcomponents.observabilityClasses = pomdp.getObservations();
-            //modelcomponents.choiceLabeling = pomdp.getChoiceLabeling();
+            modelcomponents.stateValuations = pomdp.getOptionalStateValuations();
+            modelcomponents.choiceLabeling = pomdp.getChoiceLabeling();
+            modelcomponents.choiceLabeling->permuteItems(permutation);
             return std::make_shared<storm::models::sparse::Pomdp<ValueType>>(modelcomponents, true);
         }
 
@@ -185,7 +187,15 @@ namespace storm {
                     if (moreActionObservations.get(observation)) {
                         // We have seen this observation previously with multiple actions. Error!
                         // TODO provide more diagnostic information
-                        STORM_LOG_THROW(false, storm::exceptions::AmbiguousModelException, "Observation " << observation << " sometimes provides multiple actions, but in state " <<  state << " provides one action.");
+                        std::string stateval ="";
+                        if (pomdp.hasStateValuations()) {
+                            stateval = " (" + pomdp.getStateValuations().getStateInfo(state) + ") ";
+                        }
+                        std::string actionval= "";
+                        if (pomdp.hasChoiceLabeling()) {
+                            actionval = *pomdp.getChoiceLabeling().getLabelsOfChoice(rowIndexFrom).begin();
+                        }
+                        STORM_LOG_THROW(false, storm::exceptions::AmbiguousModelException, "Observation " << observation << " sometimes provides multiple actions, but in state " <<  state << stateval << " provides only one action " << actionval << ".");
                     }
                     oneActionObservations.set(observation);
 
@@ -194,7 +204,15 @@ namespace storm {
                 } else {
                     if (oneActionObservations.get(observation)) {
                         // We have seen this observation previously with one action. Error!
-                        STORM_LOG_THROW(false, storm::exceptions::AmbiguousModelException, "Observation " << observation << " sometimes provides one action, but in state " <<  state << " provides multiple actions.");
+                        std::string stateval ="";
+                        if (pomdp.hasStateValuations()) {
+                            stateval = " (" + pomdp.getStateValuations().getStateInfo(state) + ") ";
+                        }
+//                        std::string actionval= "";
+//                        if (pomdp.hasChoiceLabeling()) {
+//                            actionval = *pomdp.getChoiceLabeling().getLabelsOfChoice(rowIndexFrom).begin();
+//                        }
+                        STORM_LOG_THROW(false, storm::exceptions::AmbiguousModelException, "Observation " << observation << " sometimes provides one action, but in state " <<  state << stateval << " provides " << rowIndexTo - rowIndexFrom << " actions.");
                     }
                     moreActionObservations.set(observation);
                 }

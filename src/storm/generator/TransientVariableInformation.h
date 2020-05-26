@@ -93,9 +93,9 @@ namespace storm {
             TransientVariableInformation() = default;
             
             void registerArrayVariableReplacements(storm::jani::ArrayEliminatorData const& arrayEliminatorData);
-            TransientVariableData<bool> const& getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t index);
-            TransientVariableData<int64_t> const& getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t index);
-            TransientVariableData<ValueType> const& getRationalArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t index);
+            TransientVariableData<bool> const& getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t index) const;
+            TransientVariableData<int64_t> const& getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t index) const;
+            TransientVariableData<ValueType> const& getRationalArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t index) const;
             
             void setDefaultValuesInEvaluator(storm::expressions::ExpressionEvaluator<ValueType>& evaluator) const;
             

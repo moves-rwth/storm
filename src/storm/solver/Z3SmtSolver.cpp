@@ -7,7 +7,7 @@
 namespace storm {
 	namespace solver {
 #ifdef STORM_HAVE_Z3
-		Z3SmtSolver::Z3ModelReference::Z3ModelReference(storm::expressions::ExpressionManager const& manager, z3::model model, storm::adapters::Z3ExpressionAdapter& expressionAdapter) : ModelReference(manager), model(model), expressionAdapter(expressionAdapter) {
+		Z3SmtSolver::Z3ModelReference::Z3ModelReference(storm::expressions::ExpressionManager const& manager, z3::model const& model, storm::adapters::Z3ExpressionAdapter& expressionAdapter) : ModelReference(manager), model(model), expressionAdapter(expressionAdapter) {
             // Intentionally left empty.
 		}
 #endif

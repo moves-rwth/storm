@@ -97,21 +97,21 @@ namespace storm {
         }
         
         template <typename ValueType>
-        TransientVariableData<bool> const& TransientVariableInformation<ValueType>::getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) {
+        TransientVariableData<bool> const& TransientVariableInformation<ValueType>::getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) const {
             std::vector<uint64_t> const& indices = arrayVariableToElementInformations.at(arrayVariable);
             STORM_LOG_THROW(arrayIndex < indices.size(), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex << " which is out of bounds as the array size is " << indices.size() << ".");
             return booleanVariableInformation[indices[arrayIndex]];
         }
         
         template <typename ValueType>
-        TransientVariableData<int64_t> const& TransientVariableInformation<ValueType>::getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) {
+        TransientVariableData<int64_t> const& TransientVariableInformation<ValueType>::getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) const {
             std::vector<uint64_t> const& indices = arrayVariableToElementInformations.at(arrayVariable);
             STORM_LOG_THROW(arrayIndex < indices.size(), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex << " which is out of bounds as the array size is " << indices.size() << ".");
             return integerVariableInformation[indices[arrayIndex]];
         }
         
         template <typename ValueType>
-        TransientVariableData<ValueType> const& TransientVariableInformation<ValueType>::getRationalArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) {
+        TransientVariableData<ValueType> const& TransientVariableInformation<ValueType>::getRationalArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) const {
             std::vector<uint64_t> const& indices = arrayVariableToElementInformations.at(arrayVariable);
             STORM_LOG_THROW(arrayIndex < indices.size(), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex << " which is out of bounds as the array size is " << indices.size() << ".");
             return rationalVariableInformation[indices[arrayIndex]];

@@ -324,7 +324,7 @@ namespace storm {
             out << "manager {" << std::endl;
             
             for (auto const& variableTypePair : manager) {
-                out << "\t" << variableTypePair.second << " " << variableTypePair.first.getName() << " [offset " << variableTypePair.first.getOffset() << "]" << std::endl;
+                out << "\t" << variableTypePair.second << " " << variableTypePair.first.getName() << " [offset " << variableTypePair.first.getOffset() << ", " << variableTypePair.first.getIndex() <<" ]"  << std::endl;
             }
             
             out << "}" << std::endl;

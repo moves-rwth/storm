@@ -142,6 +142,12 @@ namespace storm {
                  * @return The name of the DRN file that contains the model.
                  */
                 std::string getExplicitDRNFilename() const;
+
+                /*!
+                 * Retrieves whether we prevent the usage of placeholders in the explicit DRN format
+                 * @return
+                 */
+                bool isExplicitExportPlaceholdersDisabled() const;
                 
                 /*!
                  * Retrieves whether the explicit option with IMCA was set.

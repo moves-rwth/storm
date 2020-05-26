@@ -18,7 +18,7 @@ namespace storm {
     namespace exporter {
 
         template<typename ValueType>
-        void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel, std::vector<std::string> const& parameters) {
+        void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel, std::vector<std::string> const& parameters, DirectEncodingOptions const& options) {
 
             // Notice that for CTMCs we write the rate matrix instead of probabilities
 
@@ -49,7 +49,10 @@ namespace storm {
             // Optionally write placeholders which only need to be parsed once
             // This is used to reduce the parsing effort for rational functions
             // Placeholders begin with the dollar symbol $
-            std::unordered_map<ValueType, std::string> placeholders = generatePlaceholders(sparseModel, exitRates);
+            std::unordered_map<ValueType, std::string> placeholders;
+            if (options.allowPlaceholders) {
+                placeholders = generatePlaceholders(sparseModel, exitRates);
+            }
             if (!placeholders.empty()) {
                 os << "@placeholders" << std::endl;
                 for (auto const& entry : placeholders) {
@@ -115,6 +118,10 @@ namespace storm {
                     }
                 }
                 os << std::endl;
+                // Write state valuations as comments
+                if(sparseModel->hasStateValuations()) {
+                    os << "//" << sparseModel->getStateValuations().getStateInfo(group) << std::endl;
+                }
 
                 // Write probabilities
                 typename storm::storage::SparseMatrix<ValueType>::index_type start = matrix.hasTrivialRowGrouping() ? group : matrix.getRowGroupIndices()[group];
@@ -269,8 +276,8 @@ namespace storm {
 
 
         // Template instantiations
-        template void explicitExportSparseModel<double>(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<double>> sparseModel, std::vector<std::string> const& parameters);
-        template void explicitExportSparseModel<storm::RationalNumber>(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> sparseModel, std::vector<std::string> const& parameters);
-        template void explicitExportSparseModel<storm::RationalFunction>(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> sparseModel, std::vector<std::string> const& parameters);
+        template void explicitExportSparseModel<double>(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<double>> sparseModel, std::vector<std::string> const& parameters, DirectEncodingOptions const& options);
+        template void explicitExportSparseModel<storm::RationalNumber>(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<storm::RationalNumber>> sparseModel, std::vector<std::string> const& parameters,DirectEncodingOptions const& options);
+        template void explicitExportSparseModel<storm::RationalFunction>(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> sparseModel, std::vector<std::string> const& parameters,DirectEncodingOptions const& options);
     }
 }

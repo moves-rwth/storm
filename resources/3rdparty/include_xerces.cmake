@@ -9,7 +9,7 @@ if(USE_XERCESC)
             FIND_LIBRARY(CORESERVICES_LIBRARY CoreServices )
             mark_as_advanced(COREFOUNDATION_LIBRARY)
             mark_as_advanced(CORESERVICES_LIBRARY)
-            string(REPLACE ".so" ".dylib" XercesC_LIBRARIES ${XercesC_LIBRARIES})
+            string(REPLACE ".dylib" ".so" XercesC_LIBRARIES ${XercesC_LIBRARIES})
 
         endif()
 

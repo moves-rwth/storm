@@ -105,7 +105,7 @@ namespace storm {
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
-        void ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders, ChoiceInformationBuilder& choiceInformationBuilder, boost::optional<storm::storage::BitVector>& markovianStates) {
+        void ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders, ChoiceInformationBuilder& choiceInformationBuilder, boost::optional<storm::storage::BitVector>& markovianStates, boost::optional<storm::storage::sparse::StateValuationsBuilder>& stateValuationsBuilder) {
             
             // Create markovian states bit vector, if required.
             if (generator->getModelType() == storm::generator::ModelType::MA) {
@@ -154,6 +154,9 @@ namespace storm {
                 }
                 
                 generator->load(currentState);
+                if (stateValuationsBuilder) {
+                    generator->addStateValuation(currentIndex, stateValuationsBuilder.get());
+                }
                 storm::generator::StateBehavior<ValueType, StateType> behavior = generator->expand(stateToIdCallback);
                 
                 // If there is no behavior, we might have to introduce a self-loop.
@@ -188,7 +191,7 @@ namespace storm {
                         ++currentRow;
                         ++currentRowGroup;
                     } else {
-                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error while creating sparse matrix from probabilistic program: found deadlock state (" << generator->toValuation(currentState).toString(true) << "). For fixing these, please provide the appropriate option.");
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error while creating sparse matrix from probabilistic program: found deadlock state (" << generator->stateToString(currentState) << "). For fixing these, please provide the appropriate option.");
                     }
                 } else {
                     // Add the state rewards to the corresponding reward models.
@@ -314,7 +317,13 @@ namespace storm {
             ChoiceInformationBuilder choiceInformationBuilder;
             boost::optional<storm::storage::BitVector> markovianStates;
             
-            buildMatrices(transitionMatrixBuilder, rewardModelBuilders, choiceInformationBuilder, markovianStates);
+            // If we need to build state valuations, initialize them now.
+            boost::optional<storm::storage::sparse::StateValuationsBuilder> stateValuationsBuilder;
+            if (generator->getOptions().isBuildStateValuationsSet()) {
+                stateValuationsBuilder = generator->initializeStateValuationsBuilder();
+            }
+            
+            buildMatrices(transitionMatrixBuilder, rewardModelBuilders, choiceInformationBuilder, markovianStates, stateValuationsBuilder);
             
             // Initialize the model components with the obtained information.
             storm::storage::sparse::ModelComponents<ValueType, RewardModelType> modelComponents(transitionMatrixBuilder.build(0, transitionMatrixBuilder.getCurrentRowGroupCount()), buildStateLabeling(), std::unordered_map<std::string, RewardModelType>(), !generator->isDiscreteTimeModel(), std::move(markovianStates));
@@ -327,12 +336,8 @@ namespace storm {
             modelComponents.choiceLabeling = choiceInformationBuilder.buildChoiceLabeling(modelComponents.transitionMatrix.getRowCount());
             
             // If requested, build the state valuations and choice origins
-            if (generator->getOptions().isBuildStateValuationsSet()) {
-                std::vector<storm::expressions::SimpleValuation> valuations(modelComponents.transitionMatrix.getRowGroupCount());
-                for (auto const& bitVectorIndexPair : stateStorage.stateToId) {
-                    valuations[bitVectorIndexPair.second] = generator->toValuation(bitVectorIndexPair.first);
-                }
-                modelComponents.stateValuations = storm::storage::sparse::StateValuations(std::move(valuations));
+            if (stateValuationsBuilder) {
+                modelComponents.stateValuations = stateValuationsBuilder->build(modelComponents.transitionMatrix.getRowGroupCount());
             }
             if (generator->getOptions().isBuildChoiceOriginsSet()) {
                 auto originData = choiceInformationBuilder.buildDataOfChoiceOrigins(modelComponents.transitionMatrix.getRowCount());
