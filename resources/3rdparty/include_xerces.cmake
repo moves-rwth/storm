@@ -15,7 +15,7 @@ if(USE_XERCESC)
 
 
         # find_package(CURL)
-        message (STATUS "Storm (GSPN) - Linking with xercesc: ${XercesC_LIBRARIES}")
+        message (STATUS "Storm (GSPN) - Linking with Xerces-c ${XercesC_VERSION}: ${XercesC_LIBRARIES}")
 
         list(APPEND STORM_GSPN_LINK_LIBRARIES ${XercesC_LIBRARIES} ${COREFOUNDATION_LIBRARY} ${CORESERVICES_LIBRARY} ${CURL_LIBRARIES})
     else()
