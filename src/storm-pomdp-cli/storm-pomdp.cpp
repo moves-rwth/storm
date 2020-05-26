@@ -333,7 +333,7 @@ namespace storm {
                     for (auto const& parameter : parameters) {
                         parameterNames.push_back(parameter.name());
                     }
-                    storm::api::exportSparseModelAsDrn(pmc, pomdpSettings.getExportToParametricFilename(), parameterNames);
+                    storm::api::exportSparseModelAsDrn(pmc, pomdpSettings.getExportToParametricFilename(), parameterNames, !ioSettings.isExplicitExportPlaceholdersDisabled());
                     STORM_PRINT_AND_LOG(" done." << std::endl);
                     transformationPerformed = true;
                 }

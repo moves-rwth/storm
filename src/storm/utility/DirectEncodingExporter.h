@@ -8,6 +8,9 @@
 namespace storm {
     namespace exporter {
 
+        struct DirectEncodingOptions {
+            bool allowPlaceholders = true;
+        };
         /*!
          * Exports a sparse model into the explicit DRN format.
          *
@@ -16,7 +19,7 @@ namespace storm {
          * @param parameters   List of parameters
          */
         template<typename ValueType>
-        void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel, std::vector<std::string> const& parameters);
+        void explicitExportSparseModel(std::ostream& os, std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel, std::vector<std::string> const& parameters, DirectEncodingOptions const& options=DirectEncodingOptions());
 
 
         /*!

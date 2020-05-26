@@ -569,7 +569,7 @@ namespace storm {
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
             
             if (ioSettings.isExportExplicitSet()) {
-                storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), input.model ? input.model.get().getParameterNames() : std::vector<std::string>());
+                storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), input.model ? input.model.get().getParameterNames() : std::vector<std::string>(), !ioSettings.isExplicitExportPlaceholdersDisabled());
             }
 
             if (ioSettings.isExportDdSet()) {

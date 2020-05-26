@@ -364,7 +364,7 @@ namespace storm {
                     if (ioSettings.isExportExplicitSet()) {
                         std::vector<std::string> parameterNames;
                         // TODO fill parameter names
-                        storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), parameterNames);
+                        storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), parameterNames, !ioSettings.isExplicitExportPlaceholdersDisabled());
                     }
 
                     // Check lower bounds
@@ -442,7 +442,7 @@ namespace storm {
                 if (ioSettings.isExportExplicitSet()) {
                     std::vector<std::string> parameterNames;
                     // TODO fill parameter names
-                    storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), parameterNames);
+                    storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), parameterNames, !ioSettings.isExplicitExportPlaceholdersDisabled());
                 }
                 if (ioSettings.isExportDotSet()) {
                     storm::api::exportSparseModelAsDot(model, ioSettings.getExportDotFilename(), ioSettings.getExportDotMaxWidth());
