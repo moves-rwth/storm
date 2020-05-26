@@ -51,7 +51,7 @@ namespace storm {
             const std::string IOSettings::qvbsInputOptionShortName = "qvbs";
             const std::string IOSettings::qvbsRootOptionName = "qvbsroot";
 
-            std::string preventDRNPlaceholderOptionName = "nodrnplaceholders";
+            std::string preventDRNPlaceholderOptionName = "no-drn-placeholders";
             
             IOSettings::IOSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportDotOptionName, false, "If given, the loaded model will be written to the specified file in the dot format.").setIsAdvanced()

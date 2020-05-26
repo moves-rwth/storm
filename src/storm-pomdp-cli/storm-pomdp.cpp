@@ -319,12 +319,12 @@ namespace storm {
                     auto pmc = toPMCTransformer.transform(storm::transformer::parsePomdpFscApplicationMode(transformMode));
                     STORM_PRINT_AND_LOG(" done." << std::endl);
                     pmc->printModelInformationToStream(std::cout);
-                    //if (transformSettings.isSimplificationSet()) {
+                    if (transformSettings.allowPostSimplifications()) {
                         STORM_PRINT_AND_LOG("Simplifying pMC...");
                         pmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>(),{formula.asSharedPointer()}, storm::storage::BisimulationType::Strong)->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
                         STORM_PRINT_AND_LOG(" done." << std::endl);
                         pmc->printModelInformationToStream(std::cout);
-                    //}
+                    }
                     STORM_PRINT_AND_LOG("Exporting pMC...");
                     storm::analysis::ConstraintCollector<storm::RationalFunction> constraints(*pmc);
                     auto const& parameterSet = constraints.getVariables();
