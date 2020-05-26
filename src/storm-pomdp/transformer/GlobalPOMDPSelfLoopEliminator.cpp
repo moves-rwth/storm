@@ -72,8 +72,9 @@ namespace storm {
          //   std::cout << "selection: " << filter << std::endl;
 
             ChoiceSelector<ValueType> cs(pomdp);
-            return cs.transform(filter)->template as<storm::models::sparse::Pomdp<ValueType>>();
-
+            auto res = cs.transform(filter)->template as<storm::models::sparse::Pomdp<ValueType>>();
+            res->setIsCanonic();
+            return res;
         }
 
         template class GlobalPOMDPSelfLoopEliminator<storm::RationalNumber>;

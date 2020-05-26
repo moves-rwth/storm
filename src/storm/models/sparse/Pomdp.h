@@ -70,6 +70,8 @@ namespace storm {
 
                 bool isCanonic() const;
 
+                void setIsCanonic(bool newValue = true);
+
             protected:
                 /*!
                  * Return a string that is additonally added to the state information in the dot stream.

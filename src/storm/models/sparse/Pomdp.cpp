@@ -99,6 +99,10 @@ namespace storm {
                 return canonicFlag;
             }
 
+            template<typename ValueType, typename RewardModelType>
+            void Pomdp<ValueType, RewardModelType>::setIsCanonic(bool newValue) {
+                this->canonicFlag = newValue;
+            }
 
 
             template class Pomdp<double>;
