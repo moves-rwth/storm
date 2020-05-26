@@ -9,8 +9,8 @@ configs = [
     ("debian", "9", "gcc", "DefaultRelease", "Test"),
     ("debian", "10", "gcc", "DefaultDebug", "Test"),
     ("debian", "10", "gcc", "DefaultRelease", "Test"),
-    ("ubuntu", "19.10", "gcc", "DefaultDebugTravis", "TestDocker"),
-    ("ubuntu", "19.10", "gcc", "DefaultReleaseTravis", "TestDockerDoxygen"),
+    ("ubuntu", "20.04", "gcc", "DefaultDebugTravis", "TestDocker"),
+    ("ubuntu", "20.04", "gcc", "DefaultReleaseTravis", "TestDockerDoxygen"),
 #    ("osx", "xcode9.3", "clang", "DefaultDebug", "Test"),
 #    ("osx", "xcode9.3", "clang", "DefaultRelease", "Test"),
 ]
@@ -19,8 +19,7 @@ configs = [
 build_stages = [
     ("Build (1st run)", "Build1"),
     ("Build (2nd run)", "Build2"),
-    ("Build (3rd run)", "Build3"),
-    ("Build (4th run)", "BuildLast"),
+    ("Build (3rd run)", "BuildLast"),
     ("Tasks", "Tasks"),
 ]
 

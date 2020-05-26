@@ -67,7 +67,7 @@ namespace storm {
                 std::vector<uint32_t> const& getObservations() const;
 
                 std::vector<uint64_t> getStatesWithObservation(uint32_t observation) const;
-                
+
                 bool isCanonic() const;
 
             protected:

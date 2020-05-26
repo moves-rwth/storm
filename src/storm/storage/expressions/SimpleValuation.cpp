@@ -152,7 +152,7 @@ namespace storm {
                 } else if (variable.second.isIntegerType()) {
                     result[variable.first.getName()] = this->getIntegerValue(variable.first);
                 } else if (variable.second.isRationalType()) {
-                    result[variable.first.getName()] = this->getRationalValue(variable.first);
+                    result[variable.first.getName()] = storm::utility::convertNumber<storm::RationalNumber>(this->getRationalValue(variable.first));
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unexpected variable type.");
                 }

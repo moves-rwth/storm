@@ -1256,6 +1256,36 @@ namespace storm {
             
             return h1 ^ h2;
         }
+
+        void BitVector::store(std::ostream& os) const {
+            os << bitCount;
+            for (uint64_t i = 0; i < bucketCount(); ++i) {
+                os << " " << buckets[i];
+            }
+        }
+
+        BitVector BitVector::load(std::string const& description) {
+            std::vector<std::string> splitted;
+            std::stringstream ss(description);
+            ss >> std::noskipws;
+            std::string field;
+            char ws_delim;
+            while(true) {
+                if( ss >> field )
+                    splitted.push_back(field);
+                else if (ss.eof())
+                    break;
+                else
+                    splitted.push_back(std::string());
+                ss.clear();
+                ss >> ws_delim;
+            }
+            BitVector bv(std::stoul(splitted[0]));
+            for(uint64_t i = 0; i < splitted.size()-1; ++i) {
+                bv.buckets[i] = std::stoul(splitted[i+1]);
+            }
+            return bv;
+        }
         
         // All necessary explicit template instantiations.
         template BitVector::BitVector(uint_fast64_t length, std::vector<uint_fast64_t>::iterator begin, std::vector<uint_fast64_t>::iterator end);

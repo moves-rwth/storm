@@ -512,9 +512,9 @@ namespace storm {
         ValueType GlpkLpSolver<ValueType>::getMILPGap(bool relative) const {
             STORM_LOG_ASSERT(this->isOptimal(), "Asked for the MILP gap although there is no (bounded) solution.");
             if (relative) {
-                return this->actualRelativeMILPGap;
+                return storm::utility::convertNumber<ValueType>(this->actualRelativeMILPGap);
             } else {
-                return storm::utility::abs<ValueType>(this->actualRelativeMILPGap * getObjectiveValue());
+                return storm::utility::abs<ValueType>(storm::utility::convertNumber<ValueType>(this->actualRelativeMILPGap) * getObjectiveValue());
             }
         }
         

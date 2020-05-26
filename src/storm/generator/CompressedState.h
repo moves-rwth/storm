@@ -38,6 +38,22 @@ namespace storm {
         storm::expressions::SimpleValuation unpackStateIntoValuation(CompressedState const& state, VariableInformation const& variableInformation, storm::expressions::ExpressionManager const& manager);
 
         /*!
+         * Appends the values of the given variables in the given state to the corresponding result vectors.
+         * locationValues are inserted before integerValues (relevant if both, locationValues and integerValues actually refer to the same vector)
+         * @param state The state
+         * @param variableInformation The variables
+         * @param locationValues
+         * @param booleanValues
+         * @param integerValues
+         */
+        void extractVariableValues(CompressedState const& state, VariableInformation const& variableInformation, std::vector<int64_t>& locationValues, std::vector<bool>& booleanValues, std::vector<int64_t>& integerValues);
+        
+        /*!
+         * Returns a (human readable) string representation of the variable valuation encoded by the given state
+         */
+        std::string toString(CompressedState const& state, VariableInformation const& variableInformation);
+
+        /*!
          *
          * @param variableInformation
          * @return

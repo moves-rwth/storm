@@ -136,7 +136,7 @@ namespace storm {
             template<typename ValueType>
             void BeliefExplorationSettings::setValuesInOptionsStruct(storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<ValueType>& options) const {
                 options.refine = isRefineSet();
-                options.refinePrecision = getRefinePrecision();
+                options.refinePrecision = storm::utility::convertNumber<ValueType>(getRefinePrecision());
                 if (isRefineStepLimitSet()) {
                     options.refineStepLimit = getRefineStepLimit();
                 } else {
@@ -158,7 +158,7 @@ namespace storm {
                 options.obsThresholdInit = storm::utility::convertNumber<ValueType>(getObservationScoreThresholdInit());
                 options.obsThresholdIncrementFactor = storm::utility::convertNumber<ValueType>(getObservationScoreThresholdFactor());
                 
-                options.numericPrecision = getNumericPrecision();
+                options.numericPrecision = storm::utility::convertNumber<ValueType>(getNumericPrecision());
                 if (storm::NumberTraits<ValueType>::IsExact) {
                     if (isNumericPrecisionSetFromDefault()) {
                         STORM_LOG_WARN_COND(storm::utility::isZero(options.numericPrecision), "Setting numeric precision to zero because exact arithmethic is used.");
