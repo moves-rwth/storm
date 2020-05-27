@@ -48,7 +48,7 @@ namespace storm {
             }
             cyclic = storm::utility::graph::hasCycle(matrix);
 
-            this->bottomTopOrder = new Order(topStates, bottomStates, numberOfStates, &statesSorted);
+            this->bottomTopOrder = std::shared_ptr<Order>(new Order(topStates, bottomStates, numberOfStates, &statesSorted));
         }
 
         template <typename ValueType, typename ConstantType>
@@ -73,7 +73,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        Order* OrderExtender<ValueType, ConstantType>::getBottomTopOrder() {
+        std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::getBottomTopOrder() {
             if (bottomTopOrder == nullptr) {
                 STORM_LOG_THROW(matrix.getRowCount() == matrix.getColumnCount(), exceptions::NotSupportedException,"Creating order not supported for non-square matrix");
                 modelchecker::SparsePropositionalModelChecker<models::sparse::Model<ValueType>> propositionalChecker(*model);
@@ -101,18 +101,18 @@ namespace storm {
                 auto matrix = this->model->getTransitionMatrix();
                 std::vector<uint_fast64_t> statesSorted = utility::graph::getTopologicalSort(matrix);
                 std::reverse(statesSorted.begin(),statesSorted.end());
-                bottomTopOrder = new Order(&topStates, &bottomStates, numberOfStates, &statesSorted);
+                bottomTopOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, numberOfStates, &statesSorted));
             }
             return bottomTopOrder;
         }
 
         template <typename ValueType, typename ConstantType>
-        std::tuple<Order*, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::toOrder(std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
+        std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::toOrder(std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
             return this->extendOrder(getBottomTopOrder(), monRes);
         }
 
         template <typename ValueType, typename ConstantType>
-        Order* OrderExtender<ValueType, ConstantType>::toOrder(std::vector<ConstantType> minValues, std::vector<ConstantType> maxValues, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
+        std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::toOrder(std::vector<ConstantType> minValues, std::vector<ConstantType> maxValues, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
             this->minValues = minValues;
             this->maxValues = maxValues;
             usePLA = true;
@@ -120,7 +120,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        void OrderExtender<ValueType, ConstantType>::handleAssumption(Order* order, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
+        void OrderExtender<ValueType, ConstantType>::handleAssumption(std::shared_ptr<Order> order, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
             assert (assumption != nullptr);
             assert (assumption->getFirstOperand()->isVariable() && assumption->getSecondOperand()->isVariable());
 
@@ -160,7 +160,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        std::tuple<Order*, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendOrder(Order* order, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
+        std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
             if (assumption != nullptr) {
                 handleAssumption(order, assumption);
             }
@@ -170,7 +170,7 @@ namespace storm {
 
         // TODO: remove the use Assumption boolean
         template <typename ValueType, typename ConstantType>
-        std::tuple<Order*, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendOrder(Order *order, bool useAssumption, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
+        std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, bool useAssumption, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
             auto currentState = order->getNextSortedState();
             while ((*order->getAddedStates())[currentState]) {
                 currentState = order->getNextSortedState();
@@ -230,7 +230,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        storm::analysis::Order* OrderExtender<ValueType, ConstantType>::extendOrder(Order *order, storm::storage::ParameterRegion<ValueType> region) {
+        std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region) {
             if (order == nullptr) {
                 order = getBottomTopOrder();
             }
@@ -273,7 +273,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(Order *order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors) {
+        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors) {
             if (!cyclic && order->isOnlyBottomTopOrder()) {
                 order->add(currentState);
                 return std::pair<uint_fast64_t, uint_fast64_t>(numberOfStates, numberOfStates);
@@ -351,7 +351,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByForwardReasoning(Order *order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors) {
+        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByForwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors) {
             // If this is the first state to add, we add it between =) and =(.
             auto succ1 = successors[0];
             auto compareSucc1 = order->compare(succ1, currentState);
@@ -388,7 +388,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMinMax(Order *order, uint_fast64_t state1, uint_fast64_t state2) {
+        Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) {
             assert (order->compare(state1, state2) == Order::UNKNOWN);
             if (minValues[state1] > maxValues[state2]) {
                 // state 1 will always be larger than state2

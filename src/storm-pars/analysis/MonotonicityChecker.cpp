@@ -10,7 +10,7 @@ namespace storm {
 
         /*** Public methods ***/
         template <typename ValueType>
-        typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueType>::checkLocalMonotonicity(Order* order, uint_fast64_t state, VariableType var, storage::ParameterRegion<ValueType> region) {
+        typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueType>::checkLocalMonotonicity(std::shared_ptr<Order> order, uint_fast64_t state, VariableType var, storage::ParameterRegion<ValueType> region) {
             // Create + fill Vector containing the Monotonicity of the transitions to the succs
             auto row = matrix.getRow(state);
             std::vector<uint_fast64_t> succs;

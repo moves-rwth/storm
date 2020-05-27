@@ -85,7 +85,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption, Order* order) {
+        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order) {
             // First check if based on sample points the assumption can be discharged
             auto result = checkOnSamples(assumption);
             assert (result != AssumptionStatus::VALID);
@@ -127,6 +127,7 @@ namespace storm {
                            if (state1succ1->getValue() == state2succ1->getValue()) {
                                result = AssumptionStatus::VALID;
                            }
+                           //TODO is get here okay?
                        } else if (order->compare(state1succ1->getColumn(), state1succ2->getColumn() == Order::NodeComparison::ABOVE)){
                            // The SMT solver cannot solve this either
                            result = AssumptionStatus::UNKNOWN;
@@ -144,7 +145,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionSMTSolver(std::shared_ptr<expressions::BinaryRelationExpression> assumption, Order* order) {
+        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionSMTSolver(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order) {
             std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
             std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
 
