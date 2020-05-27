@@ -23,7 +23,7 @@
 #include "storm-parsers/api/storm-parsers.h"
 
 // TODO: @Svenja add some more tests & rename
-TEST(MonotonicityCheckerTest, Derivative_checker) {
+TEST(MonotonicityHelperTest, Derivative_checker) {
 
     // Create the region
     typename storm::storage::ParameterRegion<storm::RationalFunction>::Valuation lowerBoundaries;
@@ -105,7 +105,7 @@ TEST(MonotonicityCheckerTest, Derivative_checker) {
     EXPECT_FALSE(functionRes.second);
 }
 
-TEST(MonotonicityCheckerTest, Brp_with_bisimulation_no_samples) {
+TEST(MonotonicityHelperTest, Brp_with_bisimulation_no_samples) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [true U s=4 & i=N ]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
@@ -145,8 +145,8 @@ TEST(MonotonicityCheckerTest, Brp_with_bisimulation_no_samples) {
     ASSERT_EQ(dtmc->getNumberOfStates(), 99ull);
     ASSERT_EQ(dtmc->getNumberOfTransitions(), 195ull);
 
-    storm::analysis::MonotonicityHelper<storm::RationalFunction, double> monotonicityChecker = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(dtmc, formulas, regions, true);
-    auto result = monotonicityChecker.checkMonotonicityInBuild(std::cout);
+    storm::analysis::MonotonicityHelper<storm::RationalFunction, double> MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(dtmc, formulas, regions, true);
+    auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout);
     EXPECT_EQ(1, result.size());
     auto order = result.begin()->first;
     auto monotonicityResult = result.begin()->second.first;
@@ -162,7 +162,7 @@ TEST(MonotonicityCheckerTest, Brp_with_bisimulation_no_samples) {
     }
 }
 
-TEST(MonotonicityCheckerTest, Brp_with_bisimulation_samples) {
+TEST(MonotonicityHelperTest, Brp_with_bisimulation_samples) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [true U s=4 & i=N ]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
@@ -201,8 +201,8 @@ TEST(MonotonicityCheckerTest, Brp_with_bisimulation_samples) {
     ASSERT_EQ(dtmc->getNumberOfStates(), 99ull);
     ASSERT_EQ(dtmc->getNumberOfTransitions(), 195ull);
 
-    auto monotonicityChecker = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(dtmc, formulas, regions, true, 50);
-    auto result = monotonicityChecker.checkMonotonicityInBuild(std::cout);
+    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(dtmc, formulas, regions, true, 50);
+    auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout);
 
     EXPECT_EQ(1, result.size());
     auto order = result.begin()->first;

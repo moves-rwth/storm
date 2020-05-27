@@ -132,7 +132,7 @@ namespace storm {
                                 bool first = true;
                                 for (auto& newRegion : newRegions) {
                                     if (useMonotonicity && (!first && !order->getDoneBuilding())) {
-                                        orders.emplace(std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(order.get())));
+                                        orders.emplace(std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(order)));
                                         localMonotonicityResults.emplace(localMonotonicityResult->copy());
                                     } else if (useMonotonicity){
                                         orders.emplace(order);
