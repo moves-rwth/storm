@@ -9,6 +9,7 @@
 
 namespace storm {
             namespace analysis {
+                // TODO: @Svenja change pointers to Order and Node* to shared_ptr
 
                 class Order {
 
