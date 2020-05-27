@@ -121,7 +121,7 @@ TEST(AssumptionMakerTest, Simple1) {
     below.set(4);
     std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
 
-    auto order = new storm::analysis::Order(&above, &below, 5, &statesSorted);
+    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, &statesSorted));
 
     auto assumptionChecker = storm::analysis::AssumptionChecker<storm::RationalFunction, double>(formulas[0], dtmc, region, 3);
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction, double>(&assumptionChecker, dtmc->getNumberOfStates());
@@ -193,7 +193,7 @@ TEST(AssumptionMakerTest, Simple2) {
 
     std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
 
-    auto order = new storm::analysis::Order(&above, &below, 5, &statesSorted);
+    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, &statesSorted));
 
     auto assumptionChecker = storm::analysis::AssumptionChecker<storm::RationalFunction, double>(formulas[0], dtmc, region, 3);
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction, double>(&assumptionChecker, dtmc->getNumberOfStates());
