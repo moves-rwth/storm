@@ -45,7 +45,7 @@ namespace storm {
             assert (addedStates->getNumberOfSetBits() == 2);
         }
 
-        Order::Order(Order* order) {
+        Order::Order(std::shared_ptr<Order> order) {
             auto copyStatesSorted = std::vector<uint_fast64_t>(order->getStatesSorted());
             init(order->getAddedStates()->size(), &copyStatesSorted, order->getDoneBuilding());
             onlyBottomTopOrder = order->isOnlyBottomTopOrder();
