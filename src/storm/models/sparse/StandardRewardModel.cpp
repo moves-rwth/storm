@@ -399,6 +399,21 @@ namespace storm {
                 return true;
             }
 
+            template<typename ValueType>
+            std::size_t StandardRewardModel<ValueType>::hash() const {
+                size_t seed = 0;
+                if(hasStateRewards()) {
+                    boost::hash_combine(seed, boost::hash_range(optionalStateRewardVector->begin(), optionalStateRewardVector->end()));
+                }
+                if (hasStateActionRewards()) {
+                    boost::hash_combine(seed, boost::hash_range(optionalStateActionRewardVector->begin(), optionalStateActionRewardVector->end()));
+                }
+                if (hasTransitionRewards()) {
+                    boost::hash_combine(seed, optionalTransitionRewardMatrix->hash());
+                }
+                return seed;
+            }
+
             template <typename ValueType>
             std::ostream& operator<<(std::ostream& out, StandardRewardModel<ValueType> const& rewardModel) {
                 out << std::boolalpha << "reward model [state reward: "

@@ -18,6 +18,7 @@ Version 1.5.x
 - `storm-dft`: Renamed setting `--show-dft-stats` to `dft-statistics` and added approximation information to statistics.
 - `storm-pomdp`: Implemented approximation algorithms that explore (a discritization of) the belief MDP, allowing to compute safe lower- and upper bounds for a given property.
 - `storm-pomdp`: Implemented almost-sure reachability computations: graph-based, one-shot SAT-based, and iterative SAT-based
+- `storm-pomdp': Various changes such that transformation to pMCs is now again supported (and improved)
 
 ## Version 1.5.1 (2020/03)
 - Jani models are now parsed using exact arithmetic.

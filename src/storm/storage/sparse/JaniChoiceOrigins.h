@@ -47,6 +47,8 @@ namespace storm {
                  * The edges set is represented by a set of indices that encode an automaton index and its local edge index.
                  */
                 EdgeIndexSet const& getEdgeIndexSet(uint_fast64_t choiceIndex) const;
+
+                std::size_t hash() const override;
                 
             private:
                 /*

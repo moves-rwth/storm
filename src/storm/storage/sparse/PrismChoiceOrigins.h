@@ -51,6 +51,8 @@ namespace storm {
                  */
                 CommandSet const& getCommandSet(uint_fast64_t choiceIndex) const;
 
+                std::size_t hash() const override;
+
             protected:
                 /*
                  * Returns a copy of this object where the mapping of choice indices to origin identifiers is replaced by the given one.

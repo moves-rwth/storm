@@ -9,13 +9,14 @@ if(USE_XERCESC)
             FIND_LIBRARY(CORESERVICES_LIBRARY CoreServices )
             mark_as_advanced(COREFOUNDATION_LIBRARY)
             mark_as_advanced(CORESERVICES_LIBRARY)
-            string(REPLACE ".dylib" ".so" XercesC_LIBRARIES ${XercesC_LIBRARIES})
-
+            if(${XercesC_VERSION} VERSION_LESS 3.2.2)
+                string(REPLACE ".dylib" ".so" XercesC_LIBRARIES ${XercesC_LIBRARIES})
+            endif()
         endif()
 
 
         # find_package(CURL)
-        message (STATUS "Storm (GSPN) - Linking with xercesc: ${XercesC_LIBRARIES}")
+        message (STATUS "Storm (GSPN) - Linking with Xerces-c ${XercesC_VERSION}: ${XercesC_LIBRARIES}")
 
         list(APPEND STORM_GSPN_LINK_LIBRARIES ${XercesC_LIBRARIES} ${COREFOUNDATION_LIBRARY} ${CORESERVICES_LIBRARY} ${CURL_LIBRARIES})
     else()

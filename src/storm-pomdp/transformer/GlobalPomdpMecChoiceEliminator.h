@@ -13,6 +13,7 @@ namespace storm {
         class GlobalPomdpMecChoiceEliminator {
 
         public:
+            /* Notice that this eliminator is only correct for memoryless, strictly randomising policies */
             GlobalPomdpMecChoiceEliminator(storm::models::sparse::Pomdp<ValueType> const& pomdp);
             
             // Note: this only preserves probabilities for memoryless pomdps

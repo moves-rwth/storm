@@ -25,7 +25,7 @@ namespace storm {
             components.transitionMatrix = std::move(data.simpleMatrix);
             components.observabilityClasses = std::move(data.simpleObservations);
             
-            return std::make_shared<storm::models::sparse::Pomdp<ValueType>>(std::move(components));
+            return std::make_shared<storm::models::sparse::Pomdp<ValueType>>(std::move(components), true);
         }
         
         struct BinaryPomdpTransformerRowGroup {
