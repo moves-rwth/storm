@@ -54,7 +54,7 @@ namespace storm {
                      *
                      * @param order the original order
                      */
-                    Order(Order* order);
+                    Order(std::shared_ptr<Order> order);
 
                     /*!
                      * Adds state between the top and bottom node of the order
