@@ -102,7 +102,7 @@ namespace storm {
             /*!
              * Builds Reachability Orders for the given model and simultaneously uses them to check for Monotonicity
              */
-            std::map<analysis::Order*, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> checkMonotonicityInBuild(std::ostream& outfile, std::string dotOutfileName = "dotOutput");
+            std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> checkMonotonicityInBuild(std::ostream& outfile, std::string dotOutfileName = "dotOutput");
 
             /*!
              * Checks for local monotonicity at the given state.
@@ -113,7 +113,7 @@ namespace storm {
              * @param region the region on which we check the monotonicity
              * @return Incr, Decr, Constant, Unknown or Not
              */
-            Monotonicity checkLocalMonotonicity(Order* order, uint_fast64_t state, VariableType var, storage::ParameterRegion<ValueType> region);
+            Monotonicity checkLocalMonotonicity(std::shared_ptr<Order> order, uint_fast64_t state, VariableType var, storage::ParameterRegion<ValueType> region);
 
         private:
             void createOrder();
@@ -122,7 +122,7 @@ namespace storm {
 
             std::map<VariableType, std::pair<bool, bool>> checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples);
 
-            void extendOrderWithAssumptions(Order* order, AssumptionMaker<ValueType, ConstantType>* assumptionMaker, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions, std::shared_ptr<MonotonicityResult<VariableType>> monRes);
+            void extendOrderWithAssumptions(std::shared_ptr<Order> order, AssumptionMaker<ValueType, ConstantType>* assumptionMaker, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions, std::shared_ptr<MonotonicityResult<VariableType>> monRes);
 
             Monotonicity checkTransitionMonRes(ValueType function, VariableType param, Region region);
 
@@ -141,7 +141,7 @@ namespace storm {
 
             std::map<VariableType, std::pair<bool, bool>> resultCheckOnSamples;
 
-            std::map<analysis::Order*, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> monResults;
+            std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> monResults;
 
             OrderExtender<ValueType, ConstantType> *extender;
 

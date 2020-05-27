@@ -40,7 +40,7 @@ namespace storm {
              * @param initialResult encodes what is already known about this region
              * @param sampleVerticesOfRegion enables sampling of the vertices of the region in cases where AllSat/AllViolated could not be shown.
              */
-            virtual RegionResult analyzeRegion(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown, RegionResult const& initialResult = RegionResult::Unknown, bool sampleVerticesOfRegion = false, storm::analysis::Order* reachabilityOrder = nullptr, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult = nullptr) = 0;
+            virtual RegionResult analyzeRegion(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown, RegionResult const& initialResult = RegionResult::Unknown, bool sampleVerticesOfRegion = false, std::shared_ptr<storm::analysis::Order> reachabilityOrder = nullptr, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult = nullptr) = 0;
             
              /*!
              * Analyzes the given regions.
@@ -80,7 +80,7 @@ namespace storm {
              */
             virtual std::map<VariableType, double> getRegionSplitEstimate() const;
 
-            virtual storm::analysis::Order* extendOrder(storm::analysis::Order* order, storm::storage::ParameterRegion<ParametricType> region);
+            virtual std::shared_ptr<storm::analysis::Order> extendOrder(std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ParametricType> region);
 
         };
 

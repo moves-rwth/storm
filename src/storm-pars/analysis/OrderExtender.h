@@ -39,7 +39,7 @@ namespace storm {
              *         is unknown but needed. When the states have as number the number of states, no states are
              *         unplaced but needed.
              */
-            std::tuple<Order*, uint_fast64_t, uint_fast64_t> toOrder(std::shared_ptr<MonotonicityResult<VariableType>> monRes);
+            std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> toOrder(std::shared_ptr<MonotonicityResult<VariableType>> monRes);
 
             /*!
              * Creates an order based on the given min/max values
@@ -49,7 +49,7 @@ namespace storm {
              * @param maxValues The upper bound of reaching target state
              * @return possibly unsufficient order
              */
-            Order* toOrder(std::vector<ConstantType> minValues, std::vector<ConstantType> maxValues, std::shared_ptr<MonotonicityResult<VariableType>> monRes);
+            std::shared_ptr<Order> toOrder(std::vector<ConstantType> minValues, std::vector<ConstantType> maxValues, std::shared_ptr<MonotonicityResult<VariableType>> monRes);
 
             /*!
              * Extends the order based on the given assumption.
@@ -60,25 +60,25 @@ namespace storm {
              *         is unknown but needed. When the states have as number the number of states, no states are
              *         unplaced but needed.
              */
-            std::tuple<Order*, uint_fast64_t, uint_fast64_t> extendOrder(Order* order, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr);
-            Order* extendOrder(Order* order, storm::storage::ParameterRegion<ValueType> region);
+            std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr);
+            std::shared_ptr<Order> extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region);
 
         private:
             void init(std::shared_ptr<models::sparse::Model<ValueType>> model);
 
-            Order* getBottomTopOrder();
+            std::shared_ptr<Order> getBottomTopOrder();
 
-            Order::NodeComparison addStatesBasedOnMinMax(Order* order, uint_fast64_t state1, uint_fast64_t state2);
+            Order::NodeComparison addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2);
 
-            std::tuple<Order*, uint_fast64_t, uint_fast64_t> extendOrder(Order* order, bool useAssumptions, std::shared_ptr<MonotonicityResult<VariableType>> monRes);
+            std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, bool useAssumptions, std::shared_ptr<MonotonicityResult<VariableType>> monRes);
 
-            std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(Order* order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors);
+            std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors);
 
-            std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(Order* order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors);
+            std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors);
 
-            Order* bottomTopOrder = nullptr;
+            std::shared_ptr<Order> bottomTopOrder = nullptr;
 
-            void handleAssumption(Order* order, std::shared_ptr<expressions::BinaryRelationExpression> assumption);
+            void handleAssumption(std::shared_ptr<Order> order, std::shared_ptr<expressions::BinaryRelationExpression> assumption);
 
             void getMinMaxValues();
 

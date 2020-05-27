@@ -88,7 +88,7 @@ TEST(AssumptionCheckerTest, Brp_no_bisimulation) {
 
     std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
 
-    auto dummyOrder = new storm::analysis::Order(&above, &below, 8, &statesSorted);
+    auto dummyOrder = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 8, &statesSorted));
     // Validate assumption
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, dummyOrder));
 
@@ -104,7 +104,7 @@ TEST(AssumptionCheckerTest, Brp_no_bisimulation) {
     below = storm::storage::BitVector(13);
     below.set(9);
 
-    dummyOrder = new storm::analysis::Order(&above, &below, 13, &statesSorted);
+    dummyOrder = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 13, &statesSorted));
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.checkOnSamples(assumption));
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, dummyOrder));
 }
@@ -197,7 +197,7 @@ TEST(AssumptionCheckerTest, Simple2) {
 
     std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
 
-    auto order = new storm::analysis::Order(&above, &below, 5, &statesSorted);
+    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, &statesSorted));
 
     // Checking on samples and validate
     auto assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
@@ -262,7 +262,7 @@ TEST(AssumptionCheckerTest, Simple3) {
 
     std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
 
-    auto order = new storm::analysis::Order(&above, &below, 6, &statesSorted);
+    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 6, &statesSorted));
     order->add(3);
 
     // Checking on samples and validate
@@ -330,7 +330,7 @@ TEST(AssumptionCheckerTest, Simple4) {
     below.set(4);
     std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
 
-    auto order = new storm::analysis::Order(&above, &below, 5, &statesSorted);
+    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, &statesSorted));
 
     auto assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
             storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
