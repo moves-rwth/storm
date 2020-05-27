@@ -358,6 +358,8 @@ namespace storm {
                 virtual bool hasParameters() const override;
                 
                 virtual bool isExact() const override;
+
+                virtual std::size_t hash() const;
             protected:
 
                 RewardModelType & rewardModel(std::string const& rewardModelName);

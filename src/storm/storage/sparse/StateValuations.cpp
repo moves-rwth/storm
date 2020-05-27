@@ -182,6 +182,10 @@ namespace storm {
             uint_fast64_t StateValuations::getNumberOfStates() const {
                 return valuations.size();
             }
+
+            std::size_t StateValuations::hash() const {
+                return 0;
+            }
             
             StateValuations StateValuations::selectStates(storm::storage::BitVector const& selectedStates) const {
                 return StateValuations(variableToIndexMap, storm::utility::vector::filterVector(valuations, selectedStates));

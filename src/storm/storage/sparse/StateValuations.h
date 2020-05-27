@@ -75,7 +75,8 @@ namespace storm {
                  * If an invalid state index is selected, the corresponding valuation will be empty.
                  */
                 StateValuations selectStates(std::vector<storm::storage::sparse::state_type> const& selectedStates) const;
-                
+
+                virtual std::size_t hash() const;
                 
             private:
                 StateValuations(std::map<storm::expressions::Variable, uint64_t> const& variableToIndexMap, std::vector<StateValuation>&& valuations);
