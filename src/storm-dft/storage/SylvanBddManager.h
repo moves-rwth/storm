@@ -69,7 +69,7 @@ class SylvanBddManager {
      * Therefore ITE(x, 0, 1).
      */
     sylvan::Bdd getNegativeLiteral(std::string const name) const {
-        return sylvan::Bdd::bddVar(nameToIndex.at(name));
+        return !sylvan::Bdd::bddVar(nameToIndex.at(name));
     }
 
     /**
@@ -89,7 +89,7 @@ class SylvanBddManager {
      * Therefore ITE(x, 0, 1).
      */
     sylvan::Bdd getNegativeLiteral(uint32_t const index) const {
-        return sylvan::Bdd::bddVar(index);
+        return !sylvan::Bdd::bddVar(index);
     }
 
     /**
