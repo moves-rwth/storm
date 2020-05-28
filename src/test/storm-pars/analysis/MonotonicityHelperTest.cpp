@@ -268,10 +268,61 @@ TEST(MonotonicityHelperTest, zeroconf) {
     }
 }
 
-TEST(MonotonicityHelperTest, simple1) {
+TEST(MonotonicityHelperTest, Simple1) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple1.pm";
     std::string formulaAsString = "P > 0.5 [ F s=3 ]";
-    std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
+    std::string constantsAsString = "";
+
+    // Program and formula
+    storm::prism::Program program = storm::api::parseProgram(programFile);
+    program = storm::utility::prism::preprocess(program, constantsAsString);
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
+    ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
+    model = simplifier.getSimplifiedModel();
+
+    // Create the region
+    typename storm::storage::ParameterRegion<storm::RationalFunction>::Valuation lowerBoundaries;
+    typename storm::storage::ParameterRegion<storm::RationalFunction>::Valuation upperBoundaries;
+    std::set<typename storm::storage::ParameterRegion<storm::RationalFunction>::VariableType> vars = storm::models::sparse::getProbabilityParameters(*dtmc);
+    for (auto var : vars) {
+        typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType lb = storm::utility::convertNumber<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>(0 + 0.000001);
+        typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType ub = storm::utility::convertNumber<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>(1 - 0.000001);
+        lowerBoundaries.emplace(std::make_pair(var, lb));
+        upperBoundaries.emplace(std::make_pair(var, ub));
+    }
+    auto region =  storm::storage::ParameterRegion<storm::RationalFunction>(std::move(lowerBoundaries), std::move(upperBoundaries));
+    std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> regions = {region};
+
+    ASSERT_EQ(dtmc->getNumberOfStates(), 5ull);
+    ASSERT_EQ(dtmc->getNumberOfTransitions(), 8ull);
+
+    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(dtmc, formulas, regions, true, 50);
+    auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout);
+
+    EXPECT_EQ(1, result.size());
+    auto order = result.begin()->first;
+    auto monotonicityResult = result.begin()->second.first;
+    EXPECT_TRUE(monotonicityResult->isDone());
+    EXPECT_TRUE(!monotonicityResult->isSomewhereMonotonicity());
+    EXPECT_TRUE(!monotonicityResult->isAllMonotonicity());
+    auto assumptions = result.begin()->second.second;
+    EXPECT_EQ(0, assumptions.size());
+
+    auto monRes = monotonicityResult->getMonotonicityResult();
+    for (auto entry : monRes) {
+        EXPECT_EQ(storm::analysis::MonotonicityResult<storm::RationalFunctionVariable>::Monotonicity::Unknown, entry.second);
+    }
+}
+
+
+
+TEST(MonotonicityHelperTest, Simple2) {
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple2.pm";
+    std::string formulaAsString = "P > 0.5 [ F s=3 ]";
+    std::string constantsAsString = "";
 
     // Program and formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
@@ -316,3 +367,108 @@ TEST(MonotonicityHelperTest, simple1) {
         EXPECT_EQ(storm::analysis::MonotonicityResult<storm::RationalFunctionVariable>::Monotonicity::Incr, entry.second);
     }
 }
+
+
+TEST(MonotonicityHelperTest, Simple3) {
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple3.pm";
+    std::string formulaAsString = "P > 0.5 [ F s=4 ]";
+    std::string constantsAsString = "";
+
+    // Program and formula
+    storm::prism::Program program = storm::api::parseProgram(programFile);
+    program = storm::utility::prism::preprocess(program, constantsAsString);
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
+    ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
+    model = simplifier.getSimplifiedModel();
+
+    // Create the region
+    typename storm::storage::ParameterRegion<storm::RationalFunction>::Valuation lowerBoundaries;
+    typename storm::storage::ParameterRegion<storm::RationalFunction>::Valuation upperBoundaries;
+    std::set<typename storm::storage::ParameterRegion<storm::RationalFunction>::VariableType> vars = storm::models::sparse::getProbabilityParameters(*dtmc);
+    for (auto var : vars) {
+        typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType lb = storm::utility::convertNumber<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>(0 + 0.000001);
+        typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType ub = storm::utility::convertNumber<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>(1 - 0.000001);
+        lowerBoundaries.emplace(std::make_pair(var, lb));
+        upperBoundaries.emplace(std::make_pair(var, ub));
+    }
+    auto region =  storm::storage::ParameterRegion<storm::RationalFunction>(std::move(lowerBoundaries), std::move(upperBoundaries));
+    std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> regions = {region};
+
+    ASSERT_EQ(dtmc->getNumberOfStates(), 6ull);
+    ASSERT_EQ(dtmc->getNumberOfTransitions(), 12ull);
+
+    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(dtmc, formulas, regions, true, 50);
+    auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout);
+
+    EXPECT_EQ(1, result.size());
+    auto order = result.begin()->first;
+    auto monotonicityResult = result.begin()->second.first;
+    EXPECT_TRUE(monotonicityResult->isDone());
+    EXPECT_TRUE(monotonicityResult->isSomewhereMonotonicity());
+    EXPECT_TRUE(monotonicityResult->isAllMonotonicity());
+    auto assumptions = result.begin()->second.second;
+    EXPECT_EQ(0, assumptions.size());
+
+    auto monRes = monotonicityResult->getMonotonicityResult();
+    for (auto entry : monRes) {
+        EXPECT_EQ(storm::analysis::MonotonicityResult<storm::RationalFunctionVariable>::Monotonicity::Incr, entry.second);
+    }
+}
+
+
+
+
+TEST(MonotonicityHelperTest, Simple4) {
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple4.pm";
+    std::string formulaAsString = "P > 0.5 [ F s=3 ]";
+    std::string constantsAsString = "";
+
+    // Program and formula
+    storm::prism::Program program = storm::api::parseProgram(programFile);
+    program = storm::utility::prism::preprocess(program, constantsAsString);
+    std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+    auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<storm::models::sparse::Dtmc<storm::RationalFunction>>(*dtmc);
+    ASSERT_TRUE(simplifier.simplify(*(formulas[0])));
+    model = simplifier.getSimplifiedModel();
+
+    // Create the region
+    typename storm::storage::ParameterRegion<storm::RationalFunction>::Valuation lowerBoundaries;
+    typename storm::storage::ParameterRegion<storm::RationalFunction>::Valuation upperBoundaries;
+    std::set<typename storm::storage::ParameterRegion<storm::RationalFunction>::VariableType> vars = storm::models::sparse::getProbabilityParameters(*dtmc);
+    for (auto var : vars) {
+        typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType lb = storm::utility::convertNumber<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>(0 + 0.000001);
+        typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType ub = storm::utility::convertNumber<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>(1 - 0.000001);
+        lowerBoundaries.emplace(std::make_pair(var, lb));
+        upperBoundaries.emplace(std::make_pair(var, ub));
+    }
+    auto region =  storm::storage::ParameterRegion<storm::RationalFunction>(std::move(lowerBoundaries), std::move(upperBoundaries));
+    std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> regions = {region};
+
+    ASSERT_EQ(dtmc->getNumberOfStates(), 5ull);
+    ASSERT_EQ(dtmc->getNumberOfTransitions(), 8ull);
+
+    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(dtmc, formulas, regions, true, 50);
+    auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout);
+
+    EXPECT_EQ(1, result.size());
+    auto order = result.begin()->first;
+    auto monotonicityResult = result.begin()->second.first;
+    EXPECT_TRUE(monotonicityResult->isDone());
+    EXPECT_TRUE(monotonicityResult->isSomewhereMonotonicity());
+    EXPECT_TRUE(monotonicityResult->isAllMonotonicity());
+    auto assumptions = result.begin()->second.second;
+    EXPECT_EQ(0, assumptions.size());
+
+    auto monRes = monotonicityResult->getMonotonicityResult();
+    for (auto entry : monRes) {
+        EXPECT_EQ(storm::analysis::MonotonicityResult<storm::RationalFunctionVariable>::Monotonicity::Decr, entry.second);
+    }
+}
+
+
+
