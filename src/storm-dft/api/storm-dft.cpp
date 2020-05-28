@@ -23,7 +23,7 @@ namespace storm {
                 std::vector<double> const timepoints,
                 size_t const chunksize) {
             if(useModularisation && calculateProbability) {
-                storm::modelchecker::DFTModularizer<double> checker{dft};
+                storm::modelchecker::DFTModularizer checker{dft};
                 if(chunksize == 1) {
                     for(auto const& timebound : timepoints) {
                         auto const probability{

@@ -21,9 +21,9 @@ namespace modelchecker {
  * Main class for BDD accelerated DFT checking
  *
  */
-template <typename ValueType>
 class DFTModularizer {
    public:
+    using ValueType = double;
     using ElementId = size_t;
     using DFTElementCPointer =
         std::shared_ptr<storm::storage::DFTElement<ValueType> const>;
@@ -48,8 +48,8 @@ class DFTModularizer {
      *
      * \note Does not work with events in dynamic modules.
      */
-    std::vector<double> check(FormulaVector const &formulas,
-                              size_t const chunksize = 0) {
+    std::vector<ValueType> check(FormulaVector const &formulas,
+                                 size_t const chunksize = 0) {
         storm::adapters::SFTBDDPropertyFormulaAdapter::checkForm(formulas);
         std::set<ValueType> timepointSet;
         for (auto const &formula : formulas) {
@@ -76,8 +76,8 @@ class DFTModularizer {
      * \return
      * The Probabilities that the top level gate fails at the given timepoints.
      */
-    std::vector<double> getProbabilitiesAtTimepoints(
-        std::vector<double> const &timepoints, size_t const chunksize = 0) {
+    std::vector<ValueType> getProbabilitiesAtTimepoints(
+        std::vector<ValueType> const &timepoints, size_t const chunksize = 0) {
         workDFT = dft;
 
         auto topLevelElement{std::static_pointer_cast<
@@ -86,8 +86,7 @@ class DFTModularizer {
         replaceDynamicModules(topLevelElement, timepoints);
 
         auto const subDFT{getSubDFT(topLevelElement)};
-        storm::modelchecker::SFTBDDChecker checker{sylvanBddManager,
-                                                              subDFT};
+        storm::modelchecker::SFTBDDChecker checker{sylvanBddManager, subDFT};
         return checker.getProbabilitiesAtTimepoints(timepoints, chunksize);
     }
 
@@ -95,7 +94,7 @@ class DFTModularizer {
      * \return
      * The Probability that the top level gate fails at the given timebound.
      */
-    double getProbabilityAtTimebound(double const timebound) {
+    ValueType getProbabilityAtTimebound(ValueType const timebound) {
         auto const result{getProbabilitiesAtTimepoints({timebound})};
         return result.at(0);
     }
@@ -306,7 +305,7 @@ class DFTModularizer {
      * Calculate dynamic Modules and replace them with BE's in workDFT
      */
     void replaceDynamicModules(DFTElementCPointer const element,
-                               std::vector<double> const &timepoints) {
+                               std::vector<ValueType> const &timepoints) {
         if (element->isGate()) {
             auto &elementInfo{elementInfos.at(element->id())};
             auto const parent{std::static_pointer_cast<
@@ -347,7 +346,7 @@ class DFTModularizer {
      * Replace the given element with a sample BE
      */
     void updateWorkDFT(DFTElementCPointer const element,
-                       std::map<double, double> activeSamples) {
+                       std::map<ValueType, ValueType> activeSamples) {
         storm::builder::DFTBuilder<ValueType> builder{};
         for (auto const id : workDFT->getAllIds()) {
             auto const tmpElement{workDFT->getElement(id)};
@@ -370,7 +369,7 @@ class DFTModularizer {
      * Updates the workDFT with the calculated probability
      */
     void analyseDynamic(DFTElementCPointer const element,
-                        std::vector<double> const &timepoints) {
+                        std::vector<ValueType> const &timepoints) {
         auto subDFT{getSubDFT(element)};
         subDFT->checkWellFormedness(true, std::cout);
 
@@ -387,9 +386,9 @@ class DFTModularizer {
 
         checker.printResults(result);
 
-        std::map<double, double> activeSamples{};
+        std::map<ValueType, ValueType> activeSamples{};
         for (size_t i{0}; i < timepoints.size(); ++i) {
-            auto const probability{boost::get<double>(result[i])};
+            auto const probability{boost::get<ValueType>(result[i])};
             auto const timebound{timepoints[i]};
             activeSamples[timebound] = probability;
         }
