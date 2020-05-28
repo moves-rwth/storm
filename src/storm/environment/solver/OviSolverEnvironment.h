@@ -17,7 +17,7 @@ namespace storm {
         bool useRelevantValuesForPrecisionUpdate() const;
         storm::RationalNumber getUpperBoundGuessingFactor() const;
         uint64_t getUpperBoundOnlyIterations() const;
-        bool getUseTerminationGuaranteedMinimumMethod() const;
+        bool useTerminationGuaranteedMinimumMethod() const;
         
     private:
         storm::RationalNumber precisionUpdateFactor;
@@ -25,7 +25,7 @@ namespace storm {
         bool relevantValuesForPrecisionUpdate;
         storm::RationalNumber upperBoundGuessingFactor;
         uint64_t upperBoundOnlyIterations;
-        bool useTerminationGuaranteedMinimumMethod;
+        bool terminationGuaranteedMinimumMethod;
     };
 }
 

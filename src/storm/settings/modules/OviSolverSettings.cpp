@@ -54,7 +54,7 @@ namespace storm {
                 return this->getOption(upperBoundOnlyIterationsOptionName).getArgumentByName("iter").getValueAsInteger();
             }
 
-            bool OviSolverSettings::getUseTerminationGuaranteedMinimumMethod() const {
+            bool OviSolverSettings::useTerminationGuaranteedMinimumMethod() const {
                 return this->getOption(useTerminationGuaranteedMinimumMethodOptionName).getHasOptionBeenSet();
             }
            

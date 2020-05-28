@@ -25,7 +25,7 @@ namespace storm {
 
                 uint64_t getUpperBoundOnlyIterations() const;
 
-                bool getUseTerminationGuaranteedMinimumMethod() const;
+                bool useTerminationGuaranteedMinimumMethod() const;
                 
                 // The name of the module.
                 static const std::string moduleName;
