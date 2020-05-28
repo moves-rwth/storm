@@ -4,6 +4,7 @@
 #include <boost/container/flat_set.hpp>
 #include <iostream>
 #include <vector>
+#include <memory>
 
 #include "storm/storage/BitVector.h"
 
