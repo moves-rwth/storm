@@ -111,7 +111,7 @@ TEST(TestBdd, AndOrFormula) {
 
 TEST(TestBdd, And) {
     auto dft = storm::api::loadDFTJsonString<double>(AndBdd);
-    storm::modelchecker::SFTBDDChecker<double> checker{dft};
+    storm::modelchecker::SFTBDDChecker checker{dft};
 
     EXPECT_NEAR(checker.getProbabilityAtTimebound(1), 0.25, 1e-6);
     checker.exportBddToDot("/tmp/test/and.dot");
@@ -119,7 +119,7 @@ TEST(TestBdd, And) {
 
 TEST(TestBdd, Or) {
     auto dft = storm::api::loadDFTJsonString<double>(OrBdd);
-    storm::modelchecker::SFTBDDChecker<double> checker{dft};
+    storm::modelchecker::SFTBDDChecker checker{dft};
     auto result = checker.getTopLevelGateBdd();
 
     EXPECT_NEAR(checker.getProbabilityAtTimebound(1), 0.75, 1e-6);
@@ -128,7 +128,7 @@ TEST(TestBdd, Or) {
 
 TEST(TestBdd, AndOr) {
     auto dft = storm::api::loadDFTJsonString<double>(AndOrBdd);
-    storm::modelchecker::SFTBDDChecker<double> checker{dft};
+    storm::modelchecker::SFTBDDChecker checker{dft};
     auto result = checker.getTopLevelGateBdd();
 
     EXPECT_NEAR(checker.getProbabilityAtTimebound(1), 0.5625, 1e-6);
@@ -137,7 +137,7 @@ TEST(TestBdd, AndOr) {
 
 TEST(TestBdd, Vot) {
     auto dft = storm::api::loadDFTJsonString<double>(VotBdd);
-    storm::modelchecker::SFTBDDChecker<double> checker{dft};
+    storm::modelchecker::SFTBDDChecker checker{dft};
     auto result = checker.getTopLevelGateBdd();
 
     EXPECT_NEAR(checker.getProbabilityAtTimebound(1), 0.6875, 1e-6);
@@ -163,7 +163,7 @@ TEST(TestBdd, AndOrRelevantEvents) {
 
 TEST(TestBdd, AndOrRelevantEventsChecked) {
     auto dft = storm::api::loadDFTJsonString<double>(AndOrBdd);
-    storm::modelchecker::SFTBDDChecker<double> checker{dft};
+    storm::modelchecker::SFTBDDChecker checker{dft};
     auto relevantEvents = checker.getRelevantEventBdds({"F", "F1", "F2", "x1"});
 
     EXPECT_NEAR(checker.getProbabilityAtTimebound(relevantEvents["F"], 1),

@@ -86,7 +86,7 @@ class DFTModularizer {
         replaceDynamicModules(topLevelElement, timepoints);
 
         auto const subDFT{getSubDFT(topLevelElement)};
-        storm::modelchecker::SFTBDDChecker<ValueType> checker{sylvanBddManager,
+        storm::modelchecker::SFTBDDChecker checker{sylvanBddManager,
                                                               subDFT};
         return checker.getProbabilitiesAtTimepoints(timepoints, chunksize);
     }

@@ -47,7 +47,7 @@ namespace storm {
                         "Try modularisation.");
             }
 
-            storm::modelchecker::SFTBDDChecker<double> checker{dft};
+            storm::modelchecker::SFTBDDChecker checker{dft};
             if(exportToDot) {
                 checker.exportBddToDot(filename);
             }

@@ -187,7 +187,7 @@ class SFTBDDPropertyFormulaAdapter {
 
    private:
     std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager;
-    storm::modelchecker::SFTBDDChecker<ValueType> checker;
+    storm::modelchecker::SFTBDDChecker checker;
     std::shared_ptr<storm::storage::DFT<ValueType>> dft;
 
     std::map<std::string, Bdd> relevantEventBdds;

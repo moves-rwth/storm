@@ -20,23 +20,16 @@ namespace modelchecker {
  * Main class for the SFTBDDChecker
  *
  */
-template <typename ValueType>
 class SFTBDDChecker {
    public:
+    using ValueType = double;
     using Bdd = sylvan::Bdd;
 
-    SFTBDDChecker(std::shared_ptr<storm::storage::DFT<ValueType>> dft)
-        : sylvanBddManager{std::make_shared<
-              storm::storage::SylvanBddManager>()},
-          dft{std::move(dft)},
-          calculatedTopLevelGate{false} {}
+    SFTBDDChecker(std::shared_ptr<storm::storage::DFT<ValueType>> dft);
 
     SFTBDDChecker(
         std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager,
-        std::shared_ptr<storm::storage::DFT<ValueType>> dft)
-        : sylvanBddManager{sylvanBddManager},
-          dft{std::move(dft)},
-          calculatedTopLevelGate{false} {}
+        std::shared_ptr<storm::storage::DFT<ValueType>> dft);
 
     /**
      * Exports the Bdd that represents the top level gate to a file
@@ -53,47 +46,21 @@ class SFTBDDChecker {
      * \return
      * Generated Bdd that represents the formula of the top level gate
      */
-    Bdd getTopLevelGateBdd() {
-        if (!calculatedTopLevelGate) {
-            storm::transformations::dft::SftToBddTransformator<ValueType>
-                transformer{dft, sylvanBddManager};
-
-            topLevelGateBdd = transformer.transform();
-            calculatedTopLevelGate = true;
-        }
-        return topLevelGateBdd;
-    }
+    Bdd getTopLevelGateBdd();
 
     /**
      * \return
      * Generated Bdds that represent the logical formula of the given events
      */
     std::map<std::string, Bdd> getRelevantEventBdds(
-        std::set<std::string> relevantEventNames) {
-        storm::transformations::dft::SftToBddTransformator<ValueType>
-            transformer{dft, sylvanBddManager};
-        auto results{transformer.transform(relevantEventNames)};
-
-        topLevelGateBdd = results[dft->getTopLevelGate()->name()];
-        calculatedTopLevelGate = true;
-
-        return results;
-    }
+        std::set<std::string> relevantEventNames);
 
     /**
      * \return
      * A set of minimal cut sets,
      * where the basic events are identified by their name
      */
-    std::set<std::set<std::string>> getMinimalCutSets() {
-        auto bdd{minsol(getTopLevelGateBdd())};
-
-        std::set<std::set<std::string>> rval{};
-        std::vector<uint32_t> buffer{};
-        recursiveMCS(bdd, buffer, rval);
-
-        return rval;
-    }
+    std::set<std::set<std::string>> getMinimalCutSets();
 
     /**
      * \return
@@ -103,7 +70,7 @@ class SFTBDDChecker {
      * Works only with exponential distributions and no spares.
      * Otherwise the function returns an arbitrary value
      */
-    double getProbabilityAtTimebound(double timebound) {
+    ValueType getProbabilityAtTimebound(ValueType timebound) {
         return getProbabilityAtTimebound(getTopLevelGateBdd(), timebound);
     }
 
@@ -119,18 +86,7 @@ class SFTBDDChecker {
      * Works only with exponential distributions and no spares.
      * Otherwise the function returns an arbitrary value
      */
-    double getProbabilityAtTimebound(Bdd bdd, double timebound) const {
-        std::map<uint32_t, double> indexToProbability{};
-        for (auto const &be : dft->getBasicElements()) {
-            auto const currentIndex{sylvanBddManager->getIndex(be->name())};
-            indexToProbability[currentIndex] = be->getUnreliability(timebound);
-        }
-
-        std::map<uint64_t, double> bddToProbability{};
-        auto const probability{
-            recursiveProbability(bdd, indexToProbability, bddToProbability)};
-        return probability;
-    }
+    ValueType getProbabilityAtTimebound(Bdd bdd, ValueType timebound) const;
 
     /**
      * \return
@@ -147,8 +103,8 @@ class SFTBDDChecker {
      * Works only with exponential distributions and no spares.
      * Otherwise the function returns an arbitrary value
      */
-    std::vector<double> getProbabilitiesAtTimepoints(
-        std::vector<double> const &timepoints, size_t const chunksize = 0) {
+    std::vector<ValueType> getProbabilitiesAtTimepoints(
+        std::vector<ValueType> const &timepoints, size_t const chunksize = 0) {
         return getProbabilitiesAtTimepoints(getTopLevelGateBdd(), timepoints,
                                             chunksize);
     }
@@ -172,82 +128,9 @@ class SFTBDDChecker {
      * Works only with exponential distributions and no spares.
      * Otherwise the function returns an arbitrary value
      */
-    std::vector<double> getProbabilitiesAtTimepoints(
-        Bdd bdd, std::vector<double> const &timepoints,
-        size_t chunksize = 0) const {
-        if (chunksize == 0) {
-            chunksize = timepoints.size();
-        }
-
-        // caches
-        auto const basicElemets{dft->getBasicElements()};
-        std::map<uint32_t, Eigen::ArrayXd> indexToProbabilities{};
-        std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-            bddToProbabilities{};
-
-        // The current timepoints we calculate with
-        Eigen::ArrayXd timepointsArray{chunksize};
-
-        // The Return vector
-        std::vector<double> resultProbabilities{};
-        resultProbabilities.reserve(timepoints.size());
-
-        for (size_t currentIndex{}; currentIndex < timepoints.size();
-             currentIndex += chunksize) {
-            auto const sizeLeft{timepoints.size() - currentIndex};
-            if (sizeLeft < chunksize) {
-                chunksize = sizeLeft;
-                timepointsArray = Eigen::ArrayXd{chunksize};
-            }
-
-            // Update current timepoints
-            for (size_t i{currentIndex}; i < currentIndex + chunksize; ++i) {
-                timepointsArray(i - currentIndex) = timepoints[i];
-            }
-
-            // Update the probabilities of the basic elements
-            for (auto const &be : basicElemets) {
-                auto const beIndex{sylvanBddManager->getIndex(be->name())};
-                // Vectorize known BETypes
-                // fallback to getUnreliability() otherwise
-                if (be->beType() == storm::storage::BEType::EXPONENTIAL) {
-                    auto const failureRate{
-                        std::static_pointer_cast<
-                            storm::storage::BEExponential<ValueType>>(be)
-                            ->activeFailureRate()};
-
-                    // exponential distribution
-                    // p(T <= t) = 1 - exp(-lambda*t)
-                    indexToProbabilities[beIndex] =
-                        1 - (-failureRate * timepointsArray).exp();
-                } else {
-                    auto probabilities{timepointsArray};
-                    for (size_t i{0}; i < chunksize; ++i) {
-                        probabilities(i) =
-                            be->getUnreliability(timepointsArray(i));
-                    }
-                    indexToProbabilities[beIndex] = probabilities;
-                }
-            }
-
-            // Invalidate bdd cache
-            for (auto &i : bddToProbabilities) {
-                i.second.first = false;
-            }
-
-            // Great care was made so that the pointer returned is always valid
-            // and points to an element in bddToProbabilities
-            auto const &probabilitiesArray{*recursiveProbabilities(
-                chunksize, bdd, indexToProbabilities, bddToProbabilities)};
-
-            // Update result Probabilities
-            for (size_t i{0}; i < chunksize; ++i) {
-                resultProbabilities.push_back(probabilitiesArray(i));
-            }
-        }
-
-        return resultProbabilities;
-    }
+    std::vector<ValueType> getProbabilitiesAtTimepoints(
+        Bdd bdd, std::vector<ValueType> const &timepoints,
+        size_t chunksize = 0) const;
 
    private:
     /**
@@ -267,34 +150,9 @@ class SFTBDDChecker {
      * Must be empty or from an earlier call with a bdd that is an
      * ancestor of the current one.
      */
-    double recursiveProbability(
-        Bdd const bdd, std::map<uint32_t, double> const &indexToProbability,
-        std::map<uint64_t, double> &bddToProbability) const {
-        if (bdd.isOne()) {
-            return 1;
-        } else if (bdd.isZero()) {
-            return 0;
-        }
-
-        auto const it{bddToProbability.find(bdd.GetBDD())};
-        if (it != bddToProbability.end()) {
-            return it->second;
-        }
-
-        auto const currentVar{bdd.TopVar()};
-        auto const currentProbability{indexToProbability.at(currentVar)};
-
-        auto const thenProbability{recursiveProbability(
-            bdd.Then(), indexToProbability, bddToProbability)};
-        auto const elseProbability{recursiveProbability(
-            bdd.Else(), indexToProbability, bddToProbability)};
-
-        // P(Ite(x, f1, f2)) = P(x) * P(f1) + P(!x) * P(f2)
-        auto const probability{currentProbability * thenProbability +
-                               (1 - currentProbability) * elseProbability};
-        bddToProbability[bdd.GetBDD()] = probability;
-        return probability;
-    }
+    ValueType recursiveProbability(
+        Bdd const bdd, std::map<uint32_t, ValueType> const &indexToProbability,
+        std::map<uint64_t, ValueType> &bddToProbability) const;
 
     /**
      * \returns
@@ -325,41 +183,7 @@ class SFTBDDChecker {
         size_t const chunksize, Bdd const bdd,
         std::map<uint32_t, Eigen::ArrayXd> const &indexToProbabilities,
         std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-            &bddToProbabilities) const {
-        auto const bddId{bdd.GetBDD()};
-        auto const it{bddToProbabilities.find(bddId)};
-        if (it != bddToProbabilities.end() && it->second.first) {
-            return &it->second.second;
-        }
-
-        auto &bddToProbabilitiesElement{bddToProbabilities[bddId]};
-        if (bdd.isOne()) {
-            bddToProbabilitiesElement.first = true;
-            bddToProbabilitiesElement.second =
-                Eigen::ArrayXd::Constant(chunksize, 1);
-            return &bddToProbabilitiesElement.second;
-        } else if (bdd.isZero()) {
-            bddToProbabilitiesElement.first = true;
-            bddToProbabilitiesElement.second =
-                Eigen::ArrayXd::Constant(chunksize, 0);
-            return &bddToProbabilitiesElement.second;
-        }
-
-        auto const &thenProbabilities{*recursiveProbabilities(
-            chunksize, bdd.Then(), indexToProbabilities, bddToProbabilities)};
-        auto const &elseProbabilities{*recursiveProbabilities(
-            chunksize, bdd.Else(), indexToProbabilities, bddToProbabilities)};
-
-        auto const currentVar{bdd.TopVar()};
-        auto const &currentProbabilities{indexToProbabilities.at(currentVar)};
-
-        // P(Ite(x, f1, f2)) = P(x) * P(f1) + P(!x) * P(f2)
-        bddToProbabilitiesElement.first = true;
-        bddToProbabilitiesElement.second =
-            currentProbabilities * thenProbabilities +
-            (1 - currentProbabilities) * elseProbabilities;
-        return &bddToProbabilitiesElement.second;
-    }
+            &bddToProbabilities) const;
 
     std::map<uint64_t, std::map<uint64_t, Bdd>> withoutCache{};
     /**
@@ -372,59 +196,7 @@ class SFTBDDChecker {
      * \return
      * f without paths that are included in a path in g
      */
-    Bdd without(Bdd const f, Bdd const g) {
-        if (f.isZero() || g.isOne()) {
-            return sylvanBddManager->getZero();
-        } else if (g.isZero()) {
-            return f;
-        } else if (f.isOne()) {
-            return sylvanBddManager->getOne();
-        }
-
-        auto const it1{withoutCache.find(f.GetBDD())};
-        if (it1 != withoutCache.end()) {
-            auto const &fCache{it1->second};
-            auto const it2{fCache.find(g.GetBDD())};
-            if (it2 != fCache.end()) {
-                return it2->second;
-            }
-        }
-
-        // f = Ite(x, f1, f2)
-        // g = Ite(y, g1, g2)
-
-        if (f.TopVar() < g.TopVar()) {
-            auto const f1{f.Then()};
-            auto const f2{f.Else()};
-
-            auto const currentVar{f.TopVar()};
-            auto const varOne{sylvanBddManager->getPositiveLiteral(currentVar)};
-
-            auto const u{without(f1, g)};
-            auto const v{without(f2, g)};
-
-            return varOne.Ite(u, v);
-        } else if (f.TopVar() > g.TopVar()) {
-            auto const g2{g.Else()};
-
-            return without(f, g2);
-        } else {
-            auto const f1{f.Then()};
-            auto const f2{f.Else()};
-            auto const g1{g.Then()};
-            auto const g2{g.Else()};
-
-            auto const currentVar{f.TopVar()};
-            auto const varOne{sylvanBddManager->getPositiveLiteral(currentVar)};
-
-            auto const u{without(f1, g1)};
-            auto const v{without(f2, g2)};
-
-            auto const result{varOne.Ite(u, v)};
-            withoutCache[f.GetBDD()][g.GetBDD()] = result;
-            return result;
-        }
-    }
+    Bdd without(Bdd const f, Bdd const g);
 
     std::map<uint64_t, Bdd> minsolCache{};
     /**
@@ -437,29 +209,7 @@ class SFTBDDChecker {
      * \return
      * A bdd encoding the minmal solutions of f
      */
-    Bdd minsol(Bdd const f) {
-        if (f.isTerminal()) return f;
-
-        auto const it{minsolCache.find(f.GetBDD())};
-        if (it != minsolCache.end()) {
-            return it->second;
-        }
-
-        // f = Ite(x, g, h)
-
-        auto const g{f.Then()};
-        auto const h{f.Else()};
-        auto const k{minsol(g)};
-        auto const u{without(k, h)};
-        auto const v{minsol(h)};
-
-        auto const currentVar{f.TopVar()};
-        auto const varOne{sylvanBddManager->getPositiveLiteral(currentVar)};
-
-        auto const result{varOne.Ite(u, v)};
-        minsolCache[result.GetBDD()] = result;
-        return result;
-    }
+    Bdd minsol(Bdd const f);
 
     /**
      * recursivly traverses the given BDD and returns the minimalCutSets
@@ -476,23 +226,7 @@ class SFTBDDChecker {
      * Will be populated by the function.
      */
     void recursiveMCS(Bdd const bdd, std::vector<uint32_t> &buffer,
-                      std::set<std::set<std::string>> &minimalCutSets) const {
-        if (bdd.isOne()) {
-            std::set<std::string> minimalCutSet{};
-            for (auto const &var : buffer) {
-                minimalCutSet.insert(sylvanBddManager->getName(var));
-            }
-            minimalCutSets.insert(std::move(minimalCutSet));
-        } else if (!bdd.isZero()) {
-            auto const currentVar{bdd.TopVar()};
-
-            buffer.push_back(currentVar);
-            recursiveMCS(bdd.Then(), buffer, minimalCutSets);
-            buffer.pop_back();
-
-            recursiveMCS(bdd.Else(), buffer, minimalCutSets);
-        }
-    }
+                      std::set<std::set<std::string>> &minimalCutSets) const;
 
     std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager;
     std::shared_ptr<storm::storage::DFT<ValueType>> dft;
