@@ -72,6 +72,8 @@ namespace storm {
 
                 void setIsCanonic(bool newValue = true);
 
+                virtual std::size_t hash() const override;
+
             protected:
                 /*!
                  * Return a string that is additonally added to the state information in the dot stream.

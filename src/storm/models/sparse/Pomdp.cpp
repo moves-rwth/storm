@@ -104,6 +104,15 @@ namespace storm {
                 this->canonicFlag = newValue;
             }
 
+            template<typename ValueType, typename RewardModelType>
+            std::size_t Pomdp<ValueType, RewardModelType>::hash() const {
+
+                std::size_t seed = 0;
+                boost::hash_combine(seed,sparse::Model<ValueType,RewardModelType>::hash());
+                boost::hash_combine(seed,boost::hash_range(observations.begin(), observations.end()));
+                return seed;
+            }
+
 
             template class Pomdp<double>;
             template class Pomdp<storm::RationalNumber>;
