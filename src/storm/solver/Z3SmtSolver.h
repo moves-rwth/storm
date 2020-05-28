@@ -17,7 +17,7 @@ namespace storm {
 			class Z3ModelReference : public SmtSolver::ModelReference {
 			public:
 #ifdef STORM_HAVE_Z3
-				Z3ModelReference(storm::expressions::ExpressionManager const& manager, z3::model m, storm::adapters::Z3ExpressionAdapter& expressionAdapter);
+				Z3ModelReference(storm::expressions::ExpressionManager const& manager, z3::model const& m, storm::adapters::Z3ExpressionAdapter& expressionAdapter);
 #endif
                 virtual bool getBooleanValue(storm::expressions::Variable const& variable) const override;
                 virtual int_fast64_t getIntegerValue(storm::expressions::Variable const& variable) const override;

@@ -13,7 +13,7 @@ namespace storm {
         maMethodSetFromDefault = tbSettings.isMaMethodSetFromDefaultValue();
         precision = storm::utility::convertNumber<storm::RationalNumber>(tbSettings.getPrecision());
         relative = tbSettings.isRelativePrecision();
-        unifPlusKappa = tbSettings.getUnifPlusKappa();
+        unifPlusKappa = storm::utility::convertNumber<storm::RationalNumber>(tbSettings.getUnifPlusKappa());
     }
     
     TimeBoundedSolverEnvironment::~TimeBoundedSolverEnvironment() {

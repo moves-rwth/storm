@@ -24,16 +24,31 @@ namespace storm {
                     bool* result = boost::any_cast<bool *>(data);
                     if (*result) { return; }
                     *result = expression.containsVariable(varSet);
+                    if (*result) {
+                        STORM_LOG_TRACE("The expression " << expression << " 'contains' a variable in the variable set.");
+                    }
                 }
-                
+
+                virtual void traverse(LValue const& lValue, boost::any const& data) override {
+                    bool* result = boost::any_cast<bool *>(data);
+                    if (*result) { return; }
+                    if (lValue.isVariable()) {
+                        *result = varSet.count(lValue.getVariable().getExpressionVariable()) > 0;
+                    } else {
+                        STORM_LOG_ASSERT(lValue.isArrayAccess(), "lValue has unexpected type.");
+                        *result = varSet.count(lValue.getArray().getExpressionVariable()) > 0;
+                    }
+                }
+
             private:
-                std::set<storm::expressions::Variable> const& varSet;
+                std::set<storm::expressions::Variable> varSet;
             };
             
             std::set<uint64_t> getAutomataAccessingVariable(storm::expressions::Variable const& variable, Model const& model) {
                 std::set<uint64_t> res;
                 for (uint64_t i = 0; i < model.getNumberOfAutomata(); ++i) {
                     if (model.getAutomaton(i).getVariables().hasVariable(variable)) {
+                        STORM_LOG_TRACE("The automaton " << model.getAutomaton(i).getName() << " 'has' the variable " << variable.getName() << ".");
                         res.insert(i);
                     } else {
                         VariableAccessedTraverser vat({variable});
@@ -41,6 +56,8 @@ namespace storm {
                         vat.traverse(model.getAutomaton(i), &varAccessed);
                         if (varAccessed) {
                             res.insert(i);
+                            STORM_LOG_TRACE("The automaton " << model.getAutomaton(i).getName() << " 'accesses' the variable " << variable.getName() << ".");
+
                         }
                     }
                 }
@@ -72,6 +89,8 @@ namespace storm {
         }
         
         bool JaniScopeChanger::canMakeVariableGlobal(storm::expressions::Variable const& variable, Model const& model) const {
+            STORM_LOG_TRACE("Can the variable " << variable.getName() << " be made global?");
+
             if (model.hasGlobalVariable(variable.getName())) {
                 return false;
             }
@@ -87,8 +106,12 @@ namespace storm {
             }
             return foundVar;
         }
-        
+
+
+
         std::pair<bool, uint64_t> JaniScopeChanger::canMakeVariableLocal(storm::expressions::Variable const& variable, Model const& model, std::vector<Property> const& properties, boost::optional<uint64_t> automatonIndex) const {
+            STORM_LOG_TRACE("Can the variable " << variable.getName() << " be made local?");
+
             uint64_t index = model.getNumberOfAutomata();
             
             if (!model.getGlobalVariables().hasVariable(variable)) {
@@ -97,26 +120,32 @@ namespace storm {
             
             auto accessingAutomata = detail::getAutomataAccessingVariable(variable, model);
             if (accessingAutomata.size() > 1 || (automatonIndex.is_initialized() && accessingAutomata.count(automatonIndex.get()) == 0)) {
+                STORM_LOG_TRACE(".. no!, multiple automata access the variable, e.g. automata " << model.getAutomaton(*accessingAutomata.begin()).getName() << " and " << model.getAutomaton(*accessingAutomata.rbegin()).getName());
                 return {false, index};
             }
             if (model.getInitialStatesRestriction().containsVariable({variable})) {
+                STORM_LOG_TRACE(".. no!, initial states restriction contains variable");
                 return {false, index};
             }
             for (auto const& rewExp : model.getNonTrivialRewardExpressions()) {
                 if (rewExp.second.containsVariable({variable})) {
+                    STORM_LOG_TRACE(".. no!, non trivial reward expression ");
                     return {false, index};
                 }
             }
             for (auto const& funDef : model.getGlobalFunctionDefinitions()) {
                 if (funDef.second.getFunctionBody().containsVariable({variable})) {
+                    STORM_LOG_TRACE(".. no!, function definition: ");
                     return {false, index};
                 }
             }
             for (auto const& p : properties) {
                 if (p.getUsedVariablesAndConstants().count(variable) > 0) {
+                    STORM_LOG_TRACE(".. no!, used variables definition: ");
                     return {false, index};
                 }
                 if (p.getUsedLabels().count(variable.getName()) > 0) {
+                    STORM_LOG_TRACE(".. no!, used labels definition: ");
                     return {false, index};
                 }
             }
@@ -127,6 +156,7 @@ namespace storm {
                 index = *accessingAutomata.begin();
                 assert(!automatonIndex.is_initialized() || index == automatonIndex.get());
             }
+            STORM_LOG_TRACE(".. Yes, made local in automaton with index " << index );
             return {true, index};
         }
         

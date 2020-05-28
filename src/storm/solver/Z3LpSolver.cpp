@@ -323,7 +323,6 @@ namespace storm {
             storm::utility::openFile(filename, stream);
             stream << Z3_optimize_to_string(*context, *solver);
             storm::utility::closeFile(stream);
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Exporting LP Problems to a file is not implemented for z3.");
         }
         
         template<typename ValueType>

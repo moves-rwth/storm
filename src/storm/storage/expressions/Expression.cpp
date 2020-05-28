@@ -133,9 +133,12 @@ namespace storm {
         
         bool Expression::containsVariable(std::set<storm::expressions::Variable> const& variables) const {
             std::set<storm::expressions::Variable> appearingVariables = this->getVariables();
-            std::set<storm::expressions::Variable> intersection;
-            std::set_intersection(variables.begin(), variables.end(), appearingVariables.begin(), appearingVariables.end(), std::inserter(intersection, intersection.begin()));
-            return !intersection.empty();
+            for (auto const& v : variables) {
+                if (appearingVariables.count(v) > 0) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         bool Expression::containsVariableInITEGuard(std::set<storm::expressions::Variable> const& variables) const {

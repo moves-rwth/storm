@@ -298,6 +298,31 @@ namespace storm {
                 this->printModelInformationHeaderToStream(out);
                 this->printModelInformationFooterToStream(out);
             }
+
+            template<typename ValueType, typename RewardModelType>
+            std::size_t Model<ValueType, RewardModelType>::hash() const {
+
+                // if set, retrieves for each state the variable valuation that this state represents
+                boost::optional<storm::storage::sparse::StateValuations> stateValuations;
+
+                // if set, gives information about where each choice originates w.r.t. the input model description
+                boost::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> choiceOrigins;
+                std::size_t seed = 0;
+                boost::hash_combine(seed,transitionMatrix.hash());
+                boost::hash_combine(seed,stateLabeling.hash());
+                for (auto const& rewModel : rewardModels) {
+                    boost::hash_combine(seed,rewModel.second.hash());
+                }
+                if(choiceLabeling) {
+                    boost::hash_combine(seed,choiceLabeling->hash());
+                }
+                if(stateValuations) {
+                    boost::hash_combine(seed,stateValuations->hash());
+                }
+                if(choiceOrigins) {
+                    boost::hash_combine(seed,choiceOrigins.get()->hash());
+                }
+            }
             
             template<typename ValueType, typename RewardModelType>
             void Model<ValueType, RewardModelType>::printModelInformationHeaderToStream(std::ostream& out) const {

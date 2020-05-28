@@ -37,7 +37,7 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("memorystates", "The Number of memory states (only if supported by the pattern).").setDefaultValueUnsignedInteger(0).makeOptional().build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, printResultsOptionName, true, "Prints intermediate results of the computation to standard output.").setIsAdvanced().build());
                 std::vector<std::string> encodingTypes = {"auto", "classic", "flow"};
-                this->addOption(storm::settings::OptionBuilder(moduleName, encodingOptionName, true, "The prefered type of encoding for constraint-based methods.").setIsAdvanced()
+                this->addOption(storm::settings::OptionBuilder(moduleName, encodingOptionName, true, "The preferred type of encoding for constraint-based methods.").setIsAdvanced()
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("type", "The type.").setDefaultValueString("auto").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(encodingTypes)).build()).build());
             }
             

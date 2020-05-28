@@ -156,6 +156,10 @@ namespace storm {
                     this->identifierToJson.push_back(std::move(setJson));
                 }
             }
+
+            std::size_t PrismChoiceOrigins::hash() const {
+                return 0;
+            }
         }
     }
 }

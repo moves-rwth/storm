@@ -49,6 +49,8 @@ namespace storm {
             const std::string IOSettings::qvbsInputOptionName = "qvbs";
             const std::string IOSettings::qvbsInputOptionShortName = "qvbs";
             const std::string IOSettings::qvbsRootOptionName = "qvbsroot";
+
+            std::string preventDRNPlaceholderOptionName = "no-drn-placeholders";
             
             IOSettings::IOSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportDotOptionName, false, "If given, the loaded model will be written to the specified file in the dot format.").setIsAdvanced()
@@ -61,6 +63,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportSchedulerOptionName, false, "Exports the choices of an optimal scheduler to the given file (if supported by engine).").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The output file. Use file extension '.json' to export in json.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportExplicitOptionName, "", "If given, the loaded model will be written to the specified file in the drn format.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the file to which the model is to be writen.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName,  preventDRNPlaceholderOptionName, true, "If given, the exported DRN contains no placeholders").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportDdOptionName, "", "If given, the loaded model will be written to the specified file in the drdd format.")
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the file to which the model is to be writen.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, explicitOptionName, false, "Parses the model given in an explicit (sparse) representation.").setShortName(explicitOptionShortName)
@@ -133,6 +136,10 @@ namespace storm {
 
             std::string IOSettings::getExportExplicitFilename() const {
                 return this->getOption(exportExplicitOptionName).getArgumentByName("filename").getValueAsString();
+            }
+
+            bool IOSettings::isExplicitExportPlaceholdersDisabled() const {
+                return this->getOption(preventDRNPlaceholderOptionName).getHasOptionBeenSet();
             }
 
             bool IOSettings::isExportDdSet() const {

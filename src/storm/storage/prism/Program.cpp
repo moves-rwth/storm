@@ -732,6 +732,11 @@ namespace storm {
             STORM_LOG_THROW(it != this->labels.end(), storm::exceptions::InvalidArgumentException, "Canno remove unknown label '" << name << "'.");
             this->labels.erase(it);
         }
+
+        void Program::removeRewardModels() {
+            this->rewardModels.clear();
+            this->rewardModelToIndexMap.clear();
+        }
         
         void Program::filterLabels(std::set<std::string> const& labelSet) {
             std::vector<storm::prism::Label> newLabels;

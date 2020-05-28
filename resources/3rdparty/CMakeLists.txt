@@ -3,6 +3,7 @@ add_custom_target(test-resources)
 
 set(STORM_3RDPARTY_SOURCE_DIR ${PROJECT_SOURCE_DIR}/resources/3rdparty)
 set(STORM_3RDPARTY_BINARY_DIR ${PROJECT_BINARY_DIR}/resources/3rdparty)
+set(STORM_3RDPARTY_INCLUDE_DIR ${PROJECT_BINARY_DIR}/include/resources/3rdparty)
 
 
 #############################################################
@@ -44,8 +45,26 @@ list(APPEND STORM_DEP_TARGETS gmm)
 ##
 #############################################################
 
-add_imported_library_interface(StormEigen33 "${PROJECT_SOURCE_DIR}/resources/3rdparty/eigen-3.3-beta1")
-list(APPEND STORM_DEP_TARGETS StormEigen33)
+# Checkout Eigen version 3.3.7
+message (STATUS "Storm - Including Eigen 3.3.7.")
+ExternalProject_Add(
+        eigen_src
+        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+		GIT_SHALLOW 1
+        GIT_TAG 21ae2afd4edaa1b69782c67a54182d34efe43f9c
+        SOURCE_DIR ${STORM_3RDPARTY_INCLUDE_DIR}/StormEigen
+        PREFIX ${STORM_3RDPARTY_BINARY_DIR}/StormEigen-3.3.7
+		PATCH_COMMAND git apply ${STORM_3RDPARTY_SOURCE_DIR}/patches/eigen.patch
+        UPDATE_COMMAND ""
+        CONFIGURE_COMMAND ""
+        BUILD_COMMAND ""
+        INSTALL_COMMAND ""
+        LOG_INSTALL ON
+)
+add_imported_library_interface(StormEigen "${STORM_3RDPARTY_INCLUDE_DIR}/StormEigen")
+list(APPEND STORM_DEP_TARGETS StormEigen)
+add_dependencies(StormEigen eigen_src)
+
 
 
 #############################################################
@@ -105,7 +124,7 @@ set(SPARSEPP_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/resources/3rdparty/sparsepp/spar
 file(GLOB SPARSEPP_HEADERS "${SPARSEPP_INCLUDE_DIR}/*.h")
 
 # Add the sparsepp headers to the headers that are copied to the include directory in the build directory.
-set(SPARSEPP_BINDIR_DIR ${CMAKE_BINARY_DIR}/include/resources/3rdparty/sparsepp)
+set(SPARSEPP_BINDIR_DIR ${STORM_3RDPARTY_INCLUDE_DIR}/sparsepp)
 include_directories("${SPARSEPP_BINDIR_DIR}")
 foreach(HEADER ${SPARSEPP_HEADERS})
     string(REGEX REPLACE "${PROJECT_SOURCE_DIR}/src/?" "" RELATIVE_HEADER_PATH ${HEADER})

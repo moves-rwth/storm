@@ -313,6 +313,8 @@ namespace storm {
                  * @param nrChoices The number of choices in the model
                  */
                 bool isCompatible(uint_fast64_t nrStates, uint_fast64_t nrChoices) const;
+
+                std::size_t hash() const;
                 
                 template <typename ValueTypePrime>
                 friend std::ostream& operator<<(std::ostream& out, StandardRewardModel<ValueTypePrime> const& rewardModel);

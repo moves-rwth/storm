@@ -1506,9 +1506,9 @@ namespace storm {
              * Also returns the Labelsets of the sub-model.
              */
             static std::pair<std::shared_ptr<storm::models::sparse::Model<T>>, std::vector<storm::storage::FlatSet<uint_fast64_t>>> restrictModelToLabelSet(storm::models::sparse::Model<T> const& model,  storm::storage::FlatSet<uint_fast64_t> const& filterLabelSet, boost::optional<uint64_t> absorbState = boost::none) {
-
                 bool customRowGrouping = model.isOfType(storm::models::ModelType::Mdp);
-                
+                STORM_LOG_TRACE("Restrict model to label set " <<  storm::storage::toString(filterLabelSet));
+
                 std::vector<storm::storage::FlatSet<uint_fast64_t>> resultLabelSet;
                 storm::storage::SparseMatrixBuilder<T> transitionMatrixBuilder(0, model.getTransitionMatrix().getColumnCount(), 0, true, customRowGrouping, model.getTransitionMatrix().getRowGroupCount());
 
@@ -1522,6 +1522,8 @@ namespace storm {
 
                         // If the choice is valid, copy over all its elements.
                         if (choiceValid) {
+                            STORM_LOG_TRACE("Choice " << choice << " has a valid label set " <<  storm::storage::toString(choiceLabelSet));
+
                             if (!stateHasValidChoice && customRowGrouping) {
                                 transitionMatrixBuilder.newRowGroup(currentRow);
                             }
@@ -1563,14 +1565,16 @@ namespace storm {
 
                 std::vector<T> allStatesResult;
                 
-                STORM_LOG_DEBUG("Invoking model checker.");
+                STORM_LOG_DEBUG("Invoking model checker on model with " << model.getNumberOfStates() << " states and " << model.getNumberOfTransitions() << " transitions.");
                 if (model.isOfType(storm::models::ModelType::Dtmc)) {
                     if (rewardName == boost::none) {
                         results.push_back(storm::utility::zero<T>());
                         allStatesResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<T>::computeUntilProbabilities(env, false, model.getTransitionMatrix(), model.getBackwardTransitions(), phiStates, psiStates, false);
                         for (auto state : model.getInitialStates()) {
+                            STORM_LOG_TRACE("Found probability " << allStatesResult[state]);
                             results.back() = std::max(results.back(), allStatesResult[state]);
                         }
+                        STORM_LOG_TRACE("Final probability " << results.back());
                     } else {
                         for (auto const &rewName : rewardName.get()) {
                             results.push_back(storm::utility::zero<T>());
@@ -1844,10 +1848,10 @@ namespace storm {
                     if (static_cast<uint64_t>(durationSinceLastMessage) >= progressDelay || lastSize < commandSet.size()) {
                         auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(now - totalClock).count();
                         if (lastSize < commandSet.size()) {
-                            std::cout << "Improved lower bound to " << currentBound << " after " << milliseconds << "ms." << std::endl;
+                            STORM_LOG_DEBUG("Improved lower bound to " << currentBound << " after " << milliseconds << "ms.");
                             lastSize = commandSet.size();
                         } else {
-                            std::cout << "Lower bound on label set size is " << currentBound << " after " << milliseconds << "ms (checked " << iterations << " models, " << zeroProbabilityCount << " could not reach the target set)." << std::endl;
+                            STORM_LOG_DEBUG("Lower bound on label set size is " << currentBound << " after " << milliseconds << "ms (checked " << iterations << " models, " << zeroProbabilityCount << " could not reach the target set).");
                             timeOfLastMessage = std::chrono::high_resolution_clock::now();
                         }
                     }
@@ -2117,7 +2121,11 @@ namespace storm {
 
 
                 if (symbolicModel.isPrismProgram()) {
-                    return std::make_shared<HighLevelCounterexample>(symbolicModel.asPrismProgram().restrictCommands(labelSets[0]));
+                    storm::prism::Program program = symbolicModel.asPrismProgram().restrictCommands(labelSets[0]);
+                    if(formula->isProbabilityOperatorFormula()) {
+                        program.removeRewardModels();
+                    }
+                    return std::make_shared<HighLevelCounterexample>(program);
                 } else {
                     STORM_LOG_ASSERT(symbolicModel.isJaniModel(), "Unknown symbolic model description type.");
                     return std::make_shared<HighLevelCounterexample>(symbolicModel.asJaniModel().restrictEdges(labelSets[0]));

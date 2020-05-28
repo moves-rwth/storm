@@ -201,6 +201,10 @@ namespace storm {
                 }
             }
 
+            std::size_t ItemLabeling::hash() const {
+                return 0;
+            }
+
             std::ostream& operator<<(std::ostream& out, ItemLabeling const& labeling) {
                 labeling.printLabelingInformationToStream(out);
                 return out;

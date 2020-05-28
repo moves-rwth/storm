@@ -310,7 +310,7 @@ namespace storm {
                 BeliefValueType x = resolution;
                 for (auto const& entry : belief) {
                     qsRow.push_back(storm::utility::floor(x)); // v
-                    sorted_diffs.emplace(toOriginalIndicesMap.size(), x - qsRow.back()); // x-v
+                    sorted_diffs.emplace(toOriginalIndicesMap.size(), ValueType(x - qsRow.back())); // x-v
                     toOriginalIndicesMap.push_back(entry.first);
                     x -= entry.second * resolution;
                 }
