@@ -562,6 +562,9 @@ namespace {
         model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
         auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, false);
+
+        // TODO: this doesn't work when there is no global monotonicity, maybe work there with order extender for each region you need a "new" orderExtender.
+        // Something like order = orderExtender->extendOrder(nullptr, region)
         auto monHelper = new storm::analysis::MonotonicityHelper<storm::RationalFunction, ValueType>(model, formulas, regions);
         auto order = monHelper->checkMonotonicityInBuild(std::cout).begin()->first;
         ASSERT_EQ(order->getNumberOfAddedStates(), model->getTransitionMatrix().getColumnCount());
@@ -577,7 +580,7 @@ namespace {
         EXPECT_EQ(storm::modelchecker::RegionResult::AllViolated, regionChecker->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, order, monRes));
     }
 
-
+    // TODO: Add _Mon to tests (e.g. Simple1_Mon)
     TYPED_TEST(SparseDtmcParameterLiftingTest, Simple1) {
         typedef typename TestFixture::ValueType ValueType;
 
@@ -595,6 +598,7 @@ namespace {
         auto rewParameters = storm::models::sparse::getRewardParameters(*model);
         modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
+        // TODO: You need to use the monotonicity in the same way as Parametric_Die_mon, so create an order, and monRes and use this also in analyzeRegion
         auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true));
 
         //start testing

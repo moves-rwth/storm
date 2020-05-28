@@ -302,22 +302,8 @@ TEST(MonotonicityHelperTest, Simple1) {
     auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(dtmc, formulas, regions, true, 50);
     auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout);
 
-    EXPECT_EQ(1, result.size());
-    auto order = result.begin()->first;
-    auto monotonicityResult = result.begin()->second.first;
-    EXPECT_TRUE(monotonicityResult->isDone());
-    EXPECT_TRUE(!monotonicityResult->isSomewhereMonotonicity());
-    EXPECT_TRUE(!monotonicityResult->isAllMonotonicity());
-    auto assumptions = result.begin()->second.second;
-    EXPECT_EQ(0, assumptions.size());
-
-    auto monRes = monotonicityResult->getMonotonicityResult();
-    for (auto entry : monRes) {
-        EXPECT_EQ(storm::analysis::MonotonicityResult<storm::RationalFunctionVariable>::Monotonicity::Unknown, entry.second);
-    }
+    EXPECT_EQ(0, result.size());
 }
-
-
 
 TEST(MonotonicityHelperTest, Simple2) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple2.pm";
