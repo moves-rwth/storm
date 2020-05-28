@@ -1,17 +1,10 @@
 #pragma once
 
 #include <memory>
-#include <sstream>
 #include <vector>
 
-#include "DFTModelChecker.h"
-#include "storm-dft/builder/DFTBuilder.h"
-#include "storm-dft/modelchecker/dft/DFTModelChecker.h"
-#include "storm-dft/modelchecker/dft/SFTBDDChecker.h"
-#include "storm-dft/modelchecker/dft/SFTBDDPropertyFormulaAdapter.h"
+#include "storm-dft/storage/SylvanBddManager.h"
 #include "storm-dft/storage/dft/DFT.h"
-#include "storm-parsers/api/properties.h"
-#include "storm/api/properties.h"
 #include "storm/logic/Formula.h"
 
 namespace storm {
