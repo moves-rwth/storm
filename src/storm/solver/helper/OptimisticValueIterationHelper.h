@@ -163,16 +163,17 @@ namespace storm {
     
                             // Upper bound iteration
                             singleIterationCallback(upperX, auxVector, overallIterations);
-                            // At this point, auxVector contains the old values for the upper bound whereas upperX contains the new ones.
+                            // At this point,h auxVector contains the old values for the upper bound whereas upperX contains the new ones.
                             
                             // Compare the new upper bound candidate with the old one
                             bool newUpperBoundAlwaysHigherEqual = true;
                             bool newUpperBoundAlwaysLowerEqual = true;
                             for (uint64_t i = 0; i < upperX->size(); ++i) {
-                                if ((*auxVector)[i] > (*upperX)[i]) {
-                                    newUpperBoundAlwaysHigherEqual = false;
-                                } else if ((*auxVector)[i] != (*upperX)[i]) {
+                                if ((*upperX)[i] < (*auxVector)[i]) {
+				                    newUpperBoundAlwaysHigherEqual = false;
+                                } else if ((*upperX)[i] != (*auxVector)[i]) {
                                     newUpperBoundAlwaysLowerEqual = false;
+                                    //std::swap((*upperX)[i], (*auxVector)[i]);
                                 }
                             }
                             if (newUpperBoundAlwaysHigherEqual &! newUpperBoundAlwaysLowerEqual) {
