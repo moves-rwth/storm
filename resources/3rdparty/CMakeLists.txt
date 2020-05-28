@@ -450,13 +450,31 @@ endif(ENABLE_MSAT)
 #############################################################
 
 set(STORM_HAVE_QVBS OFF)
-if (NOT "${STORM_QVBS_ROOT}" STREQUAL "")
-	if( EXISTS "${STORM_QVBS_ROOT}/index.json")
-       set(STORM_HAVE_QVBS ON)
-       message (STATUS "Storm - Enabled inputs from QVBS located at ${STORM_QVBS_ROOT}")
-	else()
-   		message(FATAL_ERROR "No file 'index.json' in provided QVBS root directory ${STORM_QVBS_ROOT}")
-	endif()
+if (STORM_LOAD_QVBS)
+    ExternalProject_Add(
+            download_qvbs
+            GIT_REPOSITORY https://github.com/ahartmanns/qcomp.git
+            GIT_SHALLOW 1
+            PREFIX ${PROJECT_BINARY_DIR}/qvbs
+            UPDATE_COMMAND ""
+            CONFIGURE_COMMAND ""
+            BUILD_COMMAND ""
+            INSTALL_COMMAND ""
+            LOG_INSTALL ON
+    )
+    add_dependencies(resources download_qvbs)
+    set(STORM_HAVE_QVBS ON)
+    ExternalProject_Get_Property(download_qvbs source_dir)
+    set(STORM_QVBS_ROOT "${source_dir}/benchmarks")
+elseif (NOT "${STORM_QVBS_ROOT}" STREQUAL "")
+    if( EXISTS "${STORM_QVBS_ROOT}/index.json")
+        set(STORM_HAVE_QVBS ON)
+    else()
+        message(FATAL_ERROR "No file 'index.json' in provided QVBS root directory ${STORM_QVBS_ROOT}")
+    endif()
+endif()
+if (STORM_HAVE_QVBS)
+    message (STATUS "Storm - Enabled inputs from QVBS located at ${STORM_QVBS_ROOT}")
 endif()
 
 
