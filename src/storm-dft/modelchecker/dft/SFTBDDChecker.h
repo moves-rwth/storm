@@ -9,9 +9,6 @@
 
 #include "storm-dft/storage/SylvanBddManager.h"
 #include "storm-dft/storage/dft/DFT.h"
-#include "storm-dft/transformations/SftToBddTransformator.h"
-#include "storm/adapters/eigen.h"
-#include "storm/storage/dd/DdManager.h"
 
 namespace storm {
 namespace modelchecker {
@@ -133,58 +130,6 @@ class SFTBDDChecker {
         size_t chunksize = 0) const;
 
    private:
-    /**
-     * \returns
-     * The probability that the bdd is true
-     * given the probabilities that the variables are true.
-     *
-     * \param bdd
-     * The bdd for which to calculate the probability
-     *
-     * \param indexToProbability
-     * A reference to a mapping
-     * that must map every variable in the bdd to a probability
-     *
-     * \param bddToProbability
-     * A cache for common sub Bdds.
-     * Must be empty or from an earlier call with a bdd that is an
-     * ancestor of the current one.
-     */
-    ValueType recursiveProbability(
-        Bdd const bdd, std::map<uint32_t, ValueType> const &indexToProbability,
-        std::map<uint64_t, ValueType> &bddToProbability) const;
-
-    /**
-     * \returns
-     * The probabilities that the bdd is true
-     * given the probabilities that the variables are true.
-     *
-     * \param chunksize
-     * The width of the Eigen Arrays
-     *
-     * \param bdd
-     * The bdd for which to calculate the probabilities
-     *
-     * \param indexToProbabilities
-     * A reference to a mapping
-     * that must map every variable in the bdd to probabilities
-     *
-     * \param bddToProbabilities
-     * A cache for common sub Bdds.
-     * Must be empty or from an earlier call with a bdd that is an
-     * ancestor of the current one.
-     *
-     * \note
-     * Great care was made that all pointers
-     * are valid elements in bddToProbabilities.
-     *
-     */
-    Eigen::ArrayXd const *recursiveProbabilities(
-        size_t const chunksize, Bdd const bdd,
-        std::map<uint32_t, Eigen::ArrayXd> const &indexToProbabilities,
-        std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-            &bddToProbabilities) const;
-
     std::map<uint64_t, std::map<uint64_t, Bdd>> withoutCache{};
     /**
      * The without operator as defined by Rauzy93

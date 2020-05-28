@@ -1,10 +1,127 @@
 #include "storm-dft/modelchecker/dft/SFTBDDChecker.h"
+#include "storm-dft/transformations/SftToBddTransformator.h"
+#include "storm/adapters/eigen.h"
 
 namespace storm {
 namespace modelchecker {
 
 using ValueType = SFTBDDChecker::ValueType;
 using Bdd = SFTBDDChecker::Bdd;
+
+namespace {
+
+/**
+ * \returns
+ * The probability that the bdd is true
+ * given the probabilities that the variables are true.
+ *
+ * \param bdd
+ * The bdd for which to calculate the probability
+ *
+ * \param indexToProbability
+ * A reference to a mapping
+ * that must map every variable in the bdd to a probability
+ *
+ * \param bddToProbability
+ * A cache for common sub Bdds.
+ * Must be empty or from an earlier call with a bdd that is an
+ * ancestor of the current one.
+ */
+ValueType recursiveProbability(
+    Bdd const bdd, std::map<uint32_t, ValueType> const &indexToProbability,
+    std::map<uint64_t, ValueType> &bddToProbability) {
+    if (bdd.isOne()) {
+        return 1;
+    } else if (bdd.isZero()) {
+        return 0;
+    }
+
+    auto const it{bddToProbability.find(bdd.GetBDD())};
+    if (it != bddToProbability.end()) {
+        return it->second;
+    }
+
+    auto const currentVar{bdd.TopVar()};
+    auto const currentProbability{indexToProbability.at(currentVar)};
+
+    auto const thenProbability{
+        recursiveProbability(bdd.Then(), indexToProbability, bddToProbability)};
+    auto const elseProbability{
+        recursiveProbability(bdd.Else(), indexToProbability, bddToProbability)};
+
+    // P(Ite(x, f1, f2)) = P(x) * P(f1) + P(!x) * P(f2)
+    auto const probability{currentProbability * thenProbability +
+                           (1 - currentProbability) * elseProbability};
+    bddToProbability[bdd.GetBDD()] = probability;
+    return probability;
+}
+
+/**
+ * \returns
+ * The probabilities that the bdd is true
+ * given the probabilities that the variables are true.
+ *
+ * \param chunksize
+ * The width of the Eigen Arrays
+ *
+ * \param bdd
+ * The bdd for which to calculate the probabilities
+ *
+ * \param indexToProbabilities
+ * A reference to a mapping
+ * that must map every variable in the bdd to probabilities
+ *
+ * \param bddToProbabilities
+ * A cache for common sub Bdds.
+ * Must be empty or from an earlier call with a bdd that is an
+ * ancestor of the current one.
+ *
+ * \note
+ * Great care was made that all pointers
+ * are valid elements in bddToProbabilities.
+ *
+ */
+Eigen::ArrayXd const *recursiveProbabilities(
+    size_t const chunksize, Bdd const bdd,
+    std::map<uint32_t, Eigen::ArrayXd> const &indexToProbabilities,
+    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
+        &bddToProbabilities) {
+    auto const bddId{bdd.GetBDD()};
+    auto const it{bddToProbabilities.find(bddId)};
+    if (it != bddToProbabilities.end() && it->second.first) {
+        return &it->second.second;
+    }
+
+    auto &bddToProbabilitiesElement{bddToProbabilities[bddId]};
+    if (bdd.isOne()) {
+        bddToProbabilitiesElement.first = true;
+        bddToProbabilitiesElement.second =
+            Eigen::ArrayXd::Constant(chunksize, 1);
+        return &bddToProbabilitiesElement.second;
+    } else if (bdd.isZero()) {
+        bddToProbabilitiesElement.first = true;
+        bddToProbabilitiesElement.second =
+            Eigen::ArrayXd::Constant(chunksize, 0);
+        return &bddToProbabilitiesElement.second;
+    }
+
+    auto const &thenProbabilities{*recursiveProbabilities(
+        chunksize, bdd.Then(), indexToProbabilities, bddToProbabilities)};
+    auto const &elseProbabilities{*recursiveProbabilities(
+        chunksize, bdd.Else(), indexToProbabilities, bddToProbabilities)};
+
+    auto const currentVar{bdd.TopVar()};
+    auto const &currentProbabilities{indexToProbabilities.at(currentVar)};
+
+    // P(Ite(x, f1, f2)) = P(x) * P(f1) + P(!x) * P(f2)
+    bddToProbabilitiesElement.first = true;
+    bddToProbabilitiesElement.second =
+        currentProbabilities * thenProbabilities +
+        (1 - currentProbabilities) * elseProbabilities;
+    return &bddToProbabilitiesElement.second;
+}
+
+}  // namespace
 
 SFTBDDChecker::SFTBDDChecker(
     std::shared_ptr<storm::storage::DFT<ValueType>> dft)
@@ -139,75 +256,6 @@ std::vector<ValueType> SFTBDDChecker::getProbabilitiesAtTimepoints(
     }
 
     return resultProbabilities;
-}
-
-ValueType SFTBDDChecker::recursiveProbability(
-    Bdd const bdd, std::map<uint32_t, ValueType> const &indexToProbability,
-    std::map<uint64_t, ValueType> &bddToProbability) const {
-    if (bdd.isOne()) {
-        return 1;
-    } else if (bdd.isZero()) {
-        return 0;
-    }
-
-    auto const it{bddToProbability.find(bdd.GetBDD())};
-    if (it != bddToProbability.end()) {
-        return it->second;
-    }
-
-    auto const currentVar{bdd.TopVar()};
-    auto const currentProbability{indexToProbability.at(currentVar)};
-
-    auto const thenProbability{
-        recursiveProbability(bdd.Then(), indexToProbability, bddToProbability)};
-    auto const elseProbability{
-        recursiveProbability(bdd.Else(), indexToProbability, bddToProbability)};
-
-    // P(Ite(x, f1, f2)) = P(x) * P(f1) + P(!x) * P(f2)
-    auto const probability{currentProbability * thenProbability +
-                           (1 - currentProbability) * elseProbability};
-    bddToProbability[bdd.GetBDD()] = probability;
-    return probability;
-}
-
-Eigen::ArrayXd const *SFTBDDChecker::recursiveProbabilities(
-    size_t const chunksize, Bdd const bdd,
-    std::map<uint32_t, Eigen::ArrayXd> const &indexToProbabilities,
-    std::unordered_map<uint64_t, std::pair<bool, Eigen::ArrayXd>>
-        &bddToProbabilities) const {
-    auto const bddId{bdd.GetBDD()};
-    auto const it{bddToProbabilities.find(bddId)};
-    if (it != bddToProbabilities.end() && it->second.first) {
-        return &it->second.second;
-    }
-
-    auto &bddToProbabilitiesElement{bddToProbabilities[bddId]};
-    if (bdd.isOne()) {
-        bddToProbabilitiesElement.first = true;
-        bddToProbabilitiesElement.second =
-            Eigen::ArrayXd::Constant(chunksize, 1);
-        return &bddToProbabilitiesElement.second;
-    } else if (bdd.isZero()) {
-        bddToProbabilitiesElement.first = true;
-        bddToProbabilitiesElement.second =
-            Eigen::ArrayXd::Constant(chunksize, 0);
-        return &bddToProbabilitiesElement.second;
-    }
-
-    auto const &thenProbabilities{*recursiveProbabilities(
-        chunksize, bdd.Then(), indexToProbabilities, bddToProbabilities)};
-    auto const &elseProbabilities{*recursiveProbabilities(
-        chunksize, bdd.Else(), indexToProbabilities, bddToProbabilities)};
-
-    auto const currentVar{bdd.TopVar()};
-    auto const &currentProbabilities{indexToProbabilities.at(currentVar)};
-
-    // P(Ite(x, f1, f2)) = P(x) * P(f1) + P(!x) * P(f2)
-    bddToProbabilitiesElement.first = true;
-    bddToProbabilitiesElement.second =
-        currentProbabilities * thenProbabilities +
-        (1 - currentProbabilities) * elseProbabilities;
-    return &bddToProbabilitiesElement.second;
 }
 
 Bdd SFTBDDChecker::without(Bdd const f, Bdd const g) {
