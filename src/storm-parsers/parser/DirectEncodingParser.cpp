@@ -168,6 +168,9 @@ namespace storm {
             bool firstState = true;
             bool firstActionForState = true;
             while (storm::utility::getline(file, line)) {
+                if (boost::starts_with(line, "//")) {
+                    continue;
+                }
                 STORM_LOG_TRACE("Parsing: " << line);
                 if (boost::starts_with(line, "state ")) {
                     // New state
