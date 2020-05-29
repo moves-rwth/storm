@@ -47,7 +47,6 @@ namespace storm {
                 }
             }
             cyclic = storm::utility::graph::hasCycle(matrix);
-
             this->bottomTopOrder = std::shared_ptr<Order>(new Order(topStates, bottomStates, numberOfStates, &statesSorted));
         }
 
@@ -129,7 +128,7 @@ namespace storm {
             auto val1 = std::stoul(var1.getName(), nullptr, 0);
             auto val2 = std::stoul(var2.getName(), nullptr, 0);
 
-            assert(order->compare(val1, val2) == Order::UNKNOWN);
+            assert (order->compare(val1, val2) == Order::UNKNOWN);
             Order::Node* n1 = order->getNode(val1);
             Order::Node* n2 = order->getNode(val2);
 
@@ -166,7 +165,6 @@ namespace storm {
             }
             return extendOrder(order, true, monRes);
         }
-
 
         // TODO: remove the use Assumption boolean
         template <typename ValueType, typename ConstantType>
@@ -329,7 +327,6 @@ namespace storm {
                     }
 
                     auto compareWithLowest = order->compare(lowest, i);
-
                     if (usePLA && compareWithLowest == Order::UNKNOWN) {
                         compareWithLowest = addStatesBasedOnMinMax(order, lowest, i);
                     }
@@ -399,8 +396,8 @@ namespace storm {
                     order->add(state2);
                 }
 
-                assert(order->compare(state1, state2) != Order::BELOW);
-                assert(order->compare(state1, state2) != Order::SAME);
+                assert (order->compare(state1, state2) != Order::BELOW);
+                assert (order->compare(state1, state2) != Order::SAME);
                 order->addRelation(state1, state2);
                 return Order::ABOVE;
             } else if (minValues[state2] > maxValues[state1]) {
@@ -411,8 +408,8 @@ namespace storm {
                 if (!order->contains(state2)) {
                     order->add(state2);
                 }
-                assert(order->compare(state2, state1) != Order::BELOW);
-                assert(order->compare(state2, state1) != Order::SAME);
+                assert (order->compare(state2, state1) != Order::BELOW);
+                assert (order->compare(state2, state1) != Order::SAME);
                 order->addRelation(state2, state1);
                 return Order::BELOW;
             } else {

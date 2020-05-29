@@ -23,7 +23,7 @@ namespace storm {
             // Create sample points
             auto instantiator = utility::ModelInstantiator<models::sparse::Dtmc<ValueType>, models::sparse::Dtmc<ConstantType>>(*model);
             auto matrix = model->getTransitionMatrix();
-            std::set<VariableType> variables =  models::sparse::getProbabilityParameters(*model);
+            std::set<VariableType> variables = models::sparse::getProbabilityParameters(*model);
 
             for (uint_fast64_t i = 0; i < numberOfSamples; ++i) {
                 auto valuation = utility::parametric::Valuation<ValueType>();

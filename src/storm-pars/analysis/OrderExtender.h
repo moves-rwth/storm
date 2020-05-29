@@ -61,6 +61,7 @@ namespace storm {
              *         unplaced but needed.
              */
             std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr);
+
             std::shared_ptr<Order> extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region);
 
         private:

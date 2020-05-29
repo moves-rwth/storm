@@ -257,12 +257,10 @@ namespace storm {
                      */
                     uint_fast64_t getNextSortedState();
 
-
                     /*!
                      * If the order is fully build, this can be set to true.
                      */
                     void setDoneBuilding(bool done = true);
-
 
                     /*!
                      * Prints to normal STORM_PRINT the dot output.

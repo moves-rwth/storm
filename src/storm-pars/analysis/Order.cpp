@@ -140,7 +140,7 @@ namespace storm {
         }
 
         void Order::addBetween(uint_fast64_t state, uint_fast64_t above, uint_fast64_t below) {
-            assert(compare(above, below) == ABOVE);
+            assert (compare(above, below) == ABOVE);
             assert (getNode(below)->states.find(below) != getNode(below)->states.end());
             assert (getNode(above)->states.find(above) != getNode(above)->states.end());
 
@@ -178,7 +178,7 @@ namespace storm {
         void Order::mergeNodes(storm::analysis::Order::Node *node1, storm::analysis::Order::Node *node2) {
             // Merges node2 into node 1
             // everything above n2 also above n1
-            node1->statesAbove|=((node2->statesAbove));
+            node1->statesAbove |= ((node2->statesAbove));
 
             // add states of node 2 to node 1
             node1->states.insert(node2->states.begin(), node2->states.end());
@@ -409,35 +409,32 @@ namespace storm {
 
             // Vertices of the digraph
             storm::storage::BitVector stateCoverage = storm::storage::BitVector(*addedStates);
-            for (uint_fast64_t i = stateCoverage.getNextSetIndex(0); i!= numberOfStates; i= stateCoverage.getNextSetIndex(i+1)){
-                for(uint_fast64_t j = i + 1; j < numberOfStates; j++){
+            for (uint_fast64_t i = stateCoverage.getNextSetIndex(0); i!= numberOfStates; i= stateCoverage.getNextSetIndex(i+1)) {
+                for (uint_fast64_t j = i + 1; j < numberOfStates; j++) {
                     if (getNode(j) == getNode(i)) stateCoverage.set(j, false);
                 }
                 STORM_PRINT("\t" << nodeName(*getNode(i)) << " [ label = \"" << nodeLabel(*getNode(i)) << "\" ];" << std::endl);
             }
 
             // Edges of the digraph
-            for (uint_fast64_t i = stateCoverage.getNextSetIndex(0); i!= numberOfStates; i= stateCoverage.getNextSetIndex(i+1)){
+            for (uint_fast64_t i = stateCoverage.getNextSetIndex(0); i!= numberOfStates; i= stateCoverage.getNextSetIndex(i+1)) {
                 storm::storage::BitVector v = storm::storage::BitVector(numberOfStates, false);
                 Node* currentNode = getNode(i);
-                for (uint_fast64_t s1 : getNode(i)->statesAbove){
+                for (uint_fast64_t s1 : getNode(i)->statesAbove) {
                     v |= (currentNode->statesAbove & getNode(s1)->statesAbove);
                 }
 
                 std::set<Node*> seenNodes;
-                for (uint_fast64_t state : currentNode->statesAbove){
+                for (uint_fast64_t state : currentNode->statesAbove) {
                     Node* n = getNode(state);
-                    if(std::find(seenNodes.begin(), seenNodes.end(), n) == seenNodes.end()){
+                    if (std::find(seenNodes.begin(), seenNodes.end(), n) == seenNodes.end()) {
                         seenNodes.insert(n);
-                        if(!v[state]){
+                        if (!v[state]) {
                             STORM_PRINT("\t" << nodeName(*currentNode) << " ->  " << nodeName(*getNode(state)) << ";" << std::endl);
                         }
-
                     }
                 }
-
             }
-
             // Graphviz Output end
             STORM_PRINT("}" << std::endl);
         }
@@ -448,27 +445,27 @@ namespace storm {
 
             // Vertices of the digraph
             storm::storage::BitVector stateCoverage = storm::storage::BitVector(numberOfStates, true);
-            for (uint_fast64_t i = stateCoverage.getNextSetIndex(0); i!= numberOfStates; i= stateCoverage.getNextSetIndex(i+1)){
-                for(uint_fast64_t j = i + 1; j < numberOfStates; j++){
+            for (uint_fast64_t i = stateCoverage.getNextSetIndex(0); i!= numberOfStates; i= stateCoverage.getNextSetIndex(i+1)) {
+                for (uint_fast64_t j = i + 1; j < numberOfStates; j++) {
                     if (getNode(j) == getNode(i)) stateCoverage.set(j, false);
                 }
                 dotOutfile << "\t" << nodeName(*getNode(i)) << " [ label = \"" << nodeLabel(*getNode(i)) << "\" ];" << std::endl;
             }
 
             // Edges of the digraph
-            for (uint_fast64_t i = stateCoverage.getNextSetIndex(0); i!= numberOfStates; i= stateCoverage.getNextSetIndex(i+1)){
+            for (uint_fast64_t i = stateCoverage.getNextSetIndex(0); i!= numberOfStates; i= stateCoverage.getNextSetIndex(i+1)) {
                 storm::storage::BitVector v = storm::storage::BitVector(numberOfStates, false);
                 Node* currentNode = getNode(i);
-                for (uint_fast64_t s1 : getNode(i)->statesAbove){
+                for (uint_fast64_t s1 : getNode(i)->statesAbove) {
                     v |= (currentNode->statesAbove & getNode(s1)->statesAbove);
                 }
 
                 std::set<Node*> seenNodes;
-                for (uint_fast64_t state : currentNode->statesAbove){
+                for (uint_fast64_t state : currentNode->statesAbove) {
                     Node* n = getNode(state);
-                    if(std::find(seenNodes.begin(), seenNodes.end(), n) == seenNodes.end()){
+                    if (std::find(seenNodes.begin(), seenNodes.end(), n) == seenNodes.end()) {
                         seenNodes.insert(n);
-                        if(!v[state]){
+                        if (!v[state]) {
                             dotOutfile << "\t" << nodeName(*currentNode) << " ->  " << nodeName(*getNode(state)) << ";" << std::endl;
                         }
 
@@ -482,13 +479,13 @@ namespace storm {
         }
 
         /*** Private methods ***/
+
         void Order::init(uint_fast64_t numberOfStates, std::vector<uint_fast64_t> *statesSorted, bool doneBuilding) {
             this->numberOfStates = numberOfStates;
             this->nodes = std::vector<Node *>(numberOfStates, nullptr);
             this->addedStates = new storm::storage::BitVector(numberOfStates);
             this->doneBuilding = doneBuilding;
             this->statesSorted = *statesSorted;
-
             this->top = new Node();
             this->bottom = new Node();
             this->top->statesAbove = storm::storage::BitVector(numberOfStates);
@@ -497,7 +494,6 @@ namespace storm {
 
         bool Order::aboveFast(Node* node1, Node* node2) {
             bool found = false;
-
             for (auto const& state : node1->states) {
                 found = ((node2->statesAbove))[state];
                 if (found) {
@@ -511,7 +507,7 @@ namespace storm {
             bool found = false;
             if (!doneBuilding) {
                 storm::storage::BitVector statesSeen((node2->statesAbove));
-                for (auto const &i: (node2->statesAbove)) {
+                for (auto const &i : (node2->statesAbove)) {
                     auto nodeI = getNode(i);
                     if (((nodeI->statesAbove) & statesSeen) != (nodeI->statesAbove)) {
                         found = above(node1, nodeI, node2, &statesSeen);
@@ -529,7 +525,6 @@ namespace storm {
 
         bool Order::above(storm::analysis::Order::Node *node1, storm::analysis::Order::Node *node2, storm::analysis::Order::Node *nodePrev, storm::storage::BitVector *statesSeen) {
             bool found = false;
-
             for (auto const& state : node1->states) {
                 found = ((node2->statesAbove))[state];
                 if (found) {
