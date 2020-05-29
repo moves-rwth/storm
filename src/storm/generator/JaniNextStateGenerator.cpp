@@ -503,9 +503,11 @@ namespace storm {
             auto transientVariableValuation = getTransientVariableValuationAtLocations(getLocations(*this->state));
             {
                 auto varIt = transientVariableValuation.booleanValues.begin();
+                auto varIte = transientVariableValuation.booleanValues.end();
                 for (auto const& varInfo : transientVariableInformation.booleanVariableInformation) {
-                    if (varIt->first->variable == varInfo.variable) {
+                    if (varIt != varIte && varIt->first->variable == varInfo.variable) {
                         booleanValues.push_back(varIt->second);
+                        ++varIt;
                     } else {
                         booleanValues.push_back(varInfo.defaultValue);
                     }
@@ -513,9 +515,11 @@ namespace storm {
             }
             {
                 auto varIt = transientVariableValuation.integerValues.begin();
+                auto varIte = transientVariableValuation.integerValues.end();
                 for (auto const& varInfo : transientVariableInformation.integerVariableInformation) {
-                    if (varIt->first->variable == varInfo.variable) {
+                    if (varIt != varIte && varIt->first->variable == varInfo.variable) {
                         integerValues.push_back(varIt->second);
+                        ++varIt;
                     } else {
                         integerValues.push_back(varInfo.defaultValue);
                     }
@@ -523,9 +527,11 @@ namespace storm {
             }
             {
                 auto varIt = transientVariableValuation.rationalValues.begin();
+                auto varIte = transientVariableValuation.rationalValues.end();
                 for (auto const& varInfo : transientVariableInformation.rationalVariableInformation) {
-                    if (varIt->first->variable == varInfo.variable) {
+                    if (varIt != varIte && varIt->first->variable == varInfo.variable) {
                         rationalValues.push_back(storm::utility::convertNumber<storm::RationalNumber>(varIt->second));
+                        ++varIt;
                     } else {
                         rationalValues.push_back(storm::utility::convertNumber<storm::RationalNumber>(varInfo.defaultValue));
                     }
