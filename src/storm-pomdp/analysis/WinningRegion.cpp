@@ -1,5 +1,6 @@
 #include <iostream>
 #include <boost/algorithm/string.hpp>
+#include <storm/exceptions/WrongFormatException.h>
 #include "storm/utility/file.h"
 #include "storm/utility/constants.h"
 #include "storm/storage/expressions/Expression.h"
@@ -313,9 +314,12 @@ namespace pomdp {
         return result;
     }
 
-    void WinningRegion::storeToFile(std::string const& path) const {
+    void WinningRegion::storeToFile(std::string const& path, std::string const& preamble, bool append) const {
         std::ofstream file;
-        storm::utility::openFile(path, file);
+        storm::utility::openFile(path, file, append);
+        file << ":preamble" << std::endl;
+        file << preamble << std::endl;
+        file << ":winningregion" << std::endl;
         bool firstLine = true;
         for (auto const& i : observationSizes) {
             if(!firstLine) {
@@ -337,26 +341,40 @@ namespace pomdp {
     }
 
 
-    WinningRegion WinningRegion::loadFromFile(std::string const& path) {
+    std::pair<WinningRegion,std::string> WinningRegion::loadFromFile(std::string const& path) {
         std::ifstream file;
         std::vector<uint64_t> observationSizes;
         storm::utility::openFile(path, file);
         std::string line;
-        bool firstLine = true;
+        uint64_t state = 0; // 0 = expect preamble
         uint64_t observation = 0;
         WinningRegion wr({1});
+        std::stringstream preamblestream;
         while (std::getline(file, line))
         {
-            std::vector<std::string> entries;
-            if(firstLine) {
+            if (boost::starts_with(line, "#")) {
+                continue;
+            }
+            if (state == 0) {
+                STORM_LOG_THROW(line == ":preamble", storm::exceptions::WrongFormatException, "Expected to see :preamble");
+                state = 1; // state = 1: preamble
+            } else if (state == 1) {
+                if (line == ":winningregion") {
+                    state = 2; // get sizes
+                } else {
+                    preamblestream << line << std::endl;
+                }
+            } else if (state == 2) {
+                std::vector<std::string> entries;
                 boost::split(entries, line, boost::is_space());
                 std::vector<uint64_t> observationSizes;
-                for(auto const& entry : entries) {
+                for (auto const &entry : entries) {
                     observationSizes.push_back(std::stoul(entry));
                 }
                 wr = WinningRegion(observationSizes);
-                firstLine = false;
-            } else {
+                state = 3;
+            } else if (state == 3) {
+                std::vector<std::string> entries;
                 boost::split(entries, line, boost::is_any_of(";"));
                 entries.pop_back();
                 for (std::string const& bvString : entries) {
@@ -366,7 +384,7 @@ namespace pomdp {
             }
         }
         storm::utility::closeFile(file);
-        return wr;
+        return {wr,preamblestream.str()};
     }
 
 }

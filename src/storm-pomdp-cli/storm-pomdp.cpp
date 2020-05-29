@@ -182,7 +182,8 @@ namespace storm {
                         std::cout << std::endl;
                     }
                     if (qualSettings.isExportWinningRegionSet()) {
-                        search.getLastWinningRegion().storeToFile(qualSettings.exportWinningRegionPath());
+                        std::size_t hash = pomdp.hash();
+                        search.getLastWinningRegion().storeToFile(qualSettings.exportWinningRegionPath(), "model hash: " + std::to_string(hash));
                     }
 
                     search.finalizeStatistics();
