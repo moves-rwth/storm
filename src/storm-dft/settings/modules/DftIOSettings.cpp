@@ -142,7 +142,7 @@ namespace storm {
                 return this->getOption(analyzeWithBdds).getHasOptionBeenSet();
             }
 
-            bool DftIOSettings::isMinimimCutSets() const {
+            bool DftIOSettings::isMinimumCutSets() const {
                 return this->getOption(minimalCutSets).getHasOptionBeenSet();
             }
 

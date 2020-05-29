@@ -127,7 +127,7 @@ namespace storm {
                  *
                  * @return True if the minimum cut sets option was set.
                  */
-                bool isMinimimCutSets() const;
+                bool isMinimumCutSets() const;
 
                 /*!
                  * Retrieves whether the export to Bdd Dot file option was set.
