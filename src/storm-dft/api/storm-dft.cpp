@@ -7,6 +7,7 @@
 
 #include "storm-dft/modelchecker/dft/SFTBDDChecker.h"
 #include "storm-dft/modelchecker/dft/DFTModularizer.h"
+#include "storm-dft/utility/MTTFHelper.h"
 #include <memory>
 #include <vector>
 
@@ -17,11 +18,15 @@ namespace storm {
                 std::shared_ptr<storm::storage::DFT<double>> const &dft,
                 bool const exportToDot,
                 std::string const &filename,
+                bool const calculateMttf,
                 bool const calculateMCS,
                 bool const calculateProbability,
                 bool const useModularisation,
                 std::vector<double> const timepoints,
                 size_t const chunksize) {
+            if(calculateMttf) {
+                std::cout << "The numerically approximated MTTF is " << storm::dft::utility::MTTFHelper(dft) << '\n';
+            }
             if(useModularisation && calculateProbability) {
                 storm::modelchecker::DFTModularizer checker{dft};
                 if(chunksize == 1) {
@@ -89,6 +94,7 @@ namespace storm {
                 std::shared_ptr<storm::storage::DFT<storm::RationalFunction>> const &dft,
                 bool const exportToDot,
                 std::string const &filename,
+                bool const calculateMttf,
                 bool const calculateMCS,
                 bool const calculateProbability,
                 bool const useModularisation,

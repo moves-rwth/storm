@@ -193,6 +193,7 @@ namespace storm {
                 std::shared_ptr<storm::storage::DFT<ValueType>> const &dft,
                 bool const exportToDot,
                 std::string const &filename,
+                bool const calculateMttf,
                 bool const calculateMCS,
                 bool const calculateProbability,
                 bool const useModularisation,

@@ -120,6 +120,7 @@ void processOptions() {
             dftIOSettings.isAnalyzeWithBdds() ||
             dftIOSettings.isMinimimCutSets()) {
         bool const isMinimimCutSets{dftIOSettings.isMinimimCutSets()};
+        bool const isMTTF{dftIOSettings.usePropExpectedTime()};
         bool const isExportToBddDot{dftIOSettings.isExportToBddDot()};
         bool const isAnalyzeWithBdds{dftIOSettings.isAnalyzeWithBdds()};
 
@@ -147,6 +148,7 @@ void processOptions() {
         storm::api::analyzeDFTBdd<ValueType>(dft,
                 isExportToBddDot,
                 filename,
+                isMTTF,
                 isMinimimCutSets,
                 probabilityAnalysis,
                 isModularisation,
