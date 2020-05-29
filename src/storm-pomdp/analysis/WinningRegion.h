@@ -36,8 +36,8 @@ namespace storm {
             bool empty() const;
             void print() const;
 
-            void storeToFile(std::string const& path) const;
-            static WinningRegion loadFromFile(std::string const& path);
+            void storeToFile(std::string const& path, std::string const& preamble="", bool append=false) const;
+            static std::pair<WinningRegion,std::string> loadFromFile(std::string const& path);
 
 
         private:

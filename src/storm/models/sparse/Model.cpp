@@ -301,12 +301,6 @@ namespace storm {
 
             template<typename ValueType, typename RewardModelType>
             std::size_t Model<ValueType, RewardModelType>::hash() const {
-
-                // if set, retrieves for each state the variable valuation that this state represents
-                boost::optional<storm::storage::sparse::StateValuations> stateValuations;
-
-                // if set, gives information about where each choice originates w.r.t. the input model description
-                boost::optional<std::shared_ptr<storm::storage::sparse::ChoiceOrigins>> choiceOrigins;
                 std::size_t seed = 0;
                 boost::hash_combine(seed,transitionMatrix.hash());
                 boost::hash_combine(seed,stateLabeling.hash());

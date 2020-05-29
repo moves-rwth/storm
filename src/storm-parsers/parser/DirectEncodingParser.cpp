@@ -168,6 +168,9 @@ namespace storm {
             bool firstState = true;
             bool firstActionForState = true;
             while (storm::utility::getline(file, line)) {
+                if (boost::starts_with(line, "//")) {
+                    continue;
+                }
                 STORM_LOG_TRACE("Parsing: " << line);
                 if (boost::starts_with(line, "state ")) {
                     // New state
@@ -346,7 +349,7 @@ namespace storm {
                 } else {
                     // New transition
                     size_t posColon = line.find(':');
-                    STORM_LOG_THROW(posColon != std::string::npos, storm::exceptions::WrongFormatException, "':' not found.");
+                    STORM_LOG_THROW(posColon != std::string::npos, storm::exceptions::WrongFormatException, "':' not found in '" << line << "'.");
                     size_t target = parseNumber<size_t>(line.substr(2, posColon - 3));
                     std::string valueStr = line.substr(posColon + 2);
                     ValueType value = parseValue(valueStr, placeholders, valueParser);

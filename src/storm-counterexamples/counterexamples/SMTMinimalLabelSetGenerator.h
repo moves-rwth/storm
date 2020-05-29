@@ -1508,7 +1508,7 @@ namespace storm {
             static std::pair<std::shared_ptr<storm::models::sparse::Model<T>>, std::vector<storm::storage::FlatSet<uint_fast64_t>>> restrictModelToLabelSet(storm::models::sparse::Model<T> const& model,  storm::storage::FlatSet<uint_fast64_t> const& filterLabelSet, boost::optional<uint64_t> absorbState = boost::none) {
                 bool customRowGrouping = model.isOfType(storm::models::ModelType::Mdp);
                 STORM_LOG_TRACE("Restrict model to label set " <<  storm::storage::toString(filterLabelSet));
-
+                STORM_LOG_TRACE("Absorb state = " << (absorbState == boost::none ? "none" : std::to_string(absorbState.get())));
                 std::vector<storm::storage::FlatSet<uint_fast64_t>> resultLabelSet;
                 storm::storage::SparseMatrixBuilder<T> transitionMatrixBuilder(0, model.getTransitionMatrix().getColumnCount(), 0, true, customRowGrouping, model.getTransitionMatrix().getRowGroupCount());
 
@@ -1541,7 +1541,7 @@ namespace storm {
                         if (customRowGrouping) {
                             transitionMatrixBuilder.newRowGroup(currentRow);
                         }
-                        uint64_t targetState = absorbState == boost::none ? state : absorbState.get();
+                        uint64_t targetState = (absorbState == boost::none ? state : absorbState.get());
                         transitionMatrixBuilder.addNextValue(currentRow, targetState, storm::utility::one<T>());
                         // Insert an empty label set for this choice
                         resultLabelSet.emplace_back();
@@ -1785,7 +1785,7 @@ namespace storm {
                         break;
                     }
 
-                    auto subChoiceOrigins = restrictModelToLabelSet(model, commandSet, psiStates.getNextSetIndex(0));
+                    auto subChoiceOrigins = restrictModelToLabelSet(model, commandSet, rewardName ? boost::make_optional(psiStates.getNextSetIndex(0)) : boost::none);
                     std::shared_ptr<storm::models::sparse::Model<T>> const& subModel = subChoiceOrigins.first;
                     std::vector<storm::storage::FlatSet<uint_fast64_t>> const& subLabelSets = subChoiceOrigins.second;
   

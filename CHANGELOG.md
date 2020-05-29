@@ -12,6 +12,7 @@ Version 1.5.x
 - Scheduler export: Properly handle models with end components. Added export in `.json` format.
 - CMake: Search for Gurobi prefers new versions
 - CMake: We no longer ship xerces-c. If xerces-c is not found on the system, storm-gspn will not be able to parse xml-based GSPN formats 
+- CMake: Added option `STORM_LOAD_QVBS` to automatically download the quantitative verification benchmark set.
 - Eigen library: The source code of Eigen is no longer included but downloaded from an external repository instead. Incremented Eigen version to 3.3.7 which fixes a compilation issue with recent XCode versions.
 - Tests: Enabled tests for permissive schedulers
 - `storm-counterexamples`: fix when computing multiple counterexamples in debug mode
