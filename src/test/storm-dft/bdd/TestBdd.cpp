@@ -3,6 +3,7 @@
 #include "storm-dft/modelchecker/dft/SFTBDDChecker.h"
 #include "storm-dft/modelchecker/dft/SFTBDDPropertyFormulaAdapter.h"
 #include "storm-dft/transformations/SftToBddTransformator.h"
+#include "storm-dft/utility/MTTFHelper.h"
 #include "storm-parsers/api/properties.h"
 #include "storm/api/properties.h"
 #include "storm/settings/SettingMemento.h"
@@ -107,6 +108,16 @@ TEST(TestBdd, AndOrFormula) {
     manager->exportBddToDot(result[5], "/tmp/test/andOrFormula_NotF2.dot");
     manager->exportBddToDot(result[6], "/tmp/test/andOrFormula_F1.dot");
     manager->exportBddToDot(result[7], "/tmp/test/andOrFormula_F2.dot");
+}
+
+TEST(TestBdd, AndMTTF) {
+    auto dft = storm::api::loadDFTJsonString<double>(AndBdd);
+    EXPECT_NEAR(storm::dft::utility::MTTFHelper(dft), 2.164042561, 1e-6);
+}
+
+TEST(TestBdd, VotMTTF) {
+    auto dft = storm::api::loadDFTJsonString<double>(VotBdd);
+    EXPECT_NEAR(storm::dft::utility::MTTFHelper(dft), 0.8415721072, 1e-6);
 }
 
 TEST(TestBdd, And) {
