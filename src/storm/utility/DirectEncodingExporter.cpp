@@ -81,6 +81,11 @@ namespace storm {
                     writeValue(os, exitRates.at(group), placeholders);
                 }
 
+
+                if (sparseModel->getType() == storm::models::ModelType::Pomdp) {
+                    os << " {" << sparseModel->template as<storm::models::sparse::Pomdp<ValueType>>()->getObservation(group) << "}";
+                }
+
                 // Write state rewards
                 bool first = true;
                 for (auto const& rewardModelEntry : sparseModel->getRewardModels()) {
@@ -100,10 +105,6 @@ namespace storm {
 
                 if (!first) {
                     os << "]";
-                }
-
-                if (sparseModel->getType() == storm::models::ModelType::Pomdp) {
-                    os << " {" << sparseModel->template as<storm::models::sparse::Pomdp<ValueType>>()->getObservation(group) << "}";
                 }
 
                 // Write labels. Only labels with a whitespace are put in (double) quotation marks.
