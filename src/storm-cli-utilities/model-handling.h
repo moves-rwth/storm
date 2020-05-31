@@ -441,7 +441,12 @@ namespace storm {
             if (buildSettings.isApplyNoMaximumProgressAssumptionSet()) {
                 options.setApplyMaximalProgressAssumption(false);
             }
-            
+
+            if (buildSettings.isExplorationChecksSet()) {
+                options.setExplorationChecks();
+            }
+            options.setReservedBitsForUnboundedVariables(options.getReservedBitsForUnboundedVariables());
+
             options.setAddOutOfBoundsState(buildSettings.isBuildOutOfBoundsStateSet());
             if (buildSettings.isBuildFullModelSet()) {
                 options.clearTerminalStates();
