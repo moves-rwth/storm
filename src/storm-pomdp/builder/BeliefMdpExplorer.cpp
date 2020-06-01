@@ -2,11 +2,20 @@
 
 namespace storm {
     namespace builder {
+        template<typename PomdpType, typename BeliefValueType>
+        BeliefMdpExplorer<PomdpType, BeliefValueType>::SuccessorObservationInformation::SuccessorObservationInformation(ValueType const &obsProb, ValueType const &maxProb, uint64_t const &count) : observationProbability(obsProb), maxProbabilityToSuccessorWithObs(maxProb), successorWithObsCount(count) {
+            // Intentionally left empty.
+        }
 
         template<typename PomdpType, typename BeliefValueType>
-        BeliefMdpExplorer<PomdpType, BeliefValueType>::BeliefMdpExplorer(std::shared_ptr<BeliefManagerType> beliefManager,
-                                                                         storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const &pomdpValueBounds) : beliefManager(
-                beliefManager), pomdpValueBounds(pomdpValueBounds), status(Status::Uninitialized) {
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::SuccessorObservationInformation::join(SuccessorObservationInformation other) { /// Does not join support (for performance reasons)
+            observationProbability += other.observationProbability;
+            maxProbabilityToSuccessorWithObs = std::max(maxProbabilityToSuccessorWithObs, other.maxProbabilityToSuccessorWithObs);
+            successorWithObsCount += other.successorWithObsCount;
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        BeliefMdpExplorer<PomdpType, BeliefValueType>::BeliefMdpExplorer(std::shared_ptr<BeliefManagerType> beliefManager,storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const &pomdpValueBounds) : beliefManager(beliefManager), pomdpValueBounds(pomdpValueBounds), status(Status::Uninitialized) {
             // Intentionally left empty
         }
 

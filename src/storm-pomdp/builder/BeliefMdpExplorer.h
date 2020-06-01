@@ -32,6 +32,15 @@ namespace storm {
             typedef typename BeliefManagerType::BeliefId BeliefId;
             typedef uint64_t MdpStateType;
 
+            struct SuccessorObservationInformation {
+                SuccessorObservationInformation(ValueType const &obsProb, ValueType const &maxProb, uint64_t const &count);
+                void join(SuccessorObservationInformation other);
+                ValueType observationProbability; /// The probability we move to the corresponding observation.
+                ValueType maxProbabilityToSuccessorWithObs; /// The maximal probability to move to a successor with the corresponding observation.
+                uint64_t successorWithObsCount; /// The number of successor beliefstates with this observation
+                typename BeliefManagerType::BeliefSupportType support;
+            };
+
             enum class Status {
                 Uninitialized,
                 Exploring,
@@ -149,25 +158,6 @@ namespace storm {
             ValueType const &getComputedValueAtInitialState() const;
 
             MdpStateType getBeliefId(MdpStateType exploredMdpState) const;
-
-            struct SuccessorObservationInformation {
-                SuccessorObservationInformation(ValueType const &obsProb, ValueType const &maxProb, uint64_t const &count) : observationProbability(obsProb),
-                                                                                                                             maxProbabilityToSuccessorWithObs(maxProb),
-                                                                                                                             successorWithObsCount(count) {
-                    // Intentionally left empty.
-                }
-
-                void join(SuccessorObservationInformation other) { /// Does not join support (for performance reasons)
-                    observationProbability += other.observationProbability;
-                    maxProbabilityToSuccessorWithObs = std::max(maxProbabilityToSuccessorWithObs, other.maxProbabilityToSuccessorWithObs);
-                    successorWithObsCount += other.successorWithObsCount;
-                }
-
-                ValueType observationProbability; /// The probability we move to the corresponding observation.
-                ValueType maxProbabilityToSuccessorWithObs; /// The maximal probability to move to a successor with the corresponding observation.
-                uint64_t successorWithObsCount; /// The number of successor beliefstates with this observation
-                typename BeliefManagerType::BeliefSupportType support;
-            };
 
             void gatherSuccessorObservationInformationAtCurrentState(uint64_t localActionIndex, std::map<uint32_t, SuccessorObservationInformation> &gatheredSuccessorObservations);
 
