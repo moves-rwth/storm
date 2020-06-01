@@ -34,10 +34,7 @@ namespace storm {
             struct Triangulation {
                 std::vector<BeliefId> gridPoints;
                 std::vector<BeliefValueType> weights;
-
-                uint64_t size() const {
-                    return weights.size();
-                }
+                uint64_t size() const;
             };
 
             BeliefId noId() const;
@@ -77,6 +74,18 @@ namespace storm {
 
         private:
 
+            struct BeliefHash {
+                std::size_t operator()(const BeliefType &belief) const;
+            };
+
+            struct FreudenthalDiff {
+                FreudenthalDiff(StateType const &dimension, BeliefValueType &&diff);
+
+                StateType dimension; // i
+                BeliefValueType diff; // d[i]
+                bool operator>(FreudenthalDiff const &other) const;
+            };
+
             BeliefType const &getBelief(BeliefId const &id) const;
 
             BeliefId getId(BeliefType const &belief) const;
@@ -91,19 +100,6 @@ namespace storm {
 
             uint32_t getBeliefObservation(BeliefType belief) const;
 
-            struct FreudenthalDiff {
-                FreudenthalDiff(StateType const &dimension, BeliefValueType &&diff) : dimension(dimension), diff(std::move(diff)) {};
-                StateType dimension; // i
-                BeliefValueType diff; // d[i]
-                bool operator>(FreudenthalDiff const &other) const {
-                    if (diff != other.diff) {
-                        return diff > other.diff;
-                    } else {
-                        return dimension < other.dimension;
-                    }
-                }
-            };
-
             void triangulateBeliefFreudenthal(BeliefType const &belief, BeliefValueType const &resolution, Triangulation &result);
 
             void triangulateBeliefDynamic(BeliefType const &belief, BeliefValueType const &resolution, Triangulation &result);
@@ -117,18 +113,6 @@ namespace storm {
 
             BeliefId getOrAddBeliefId(BeliefType const &belief);
 
-            struct BeliefHash {
-                std::size_t operator()(const BeliefType &belief) const {
-                    std::size_t seed = 0;
-                    // Assumes that beliefs are ordered
-                    for (auto const &entry : belief) {
-                        boost::hash_combine(seed, entry.first);
-                        boost::hash_combine(seed, entry.second);
-                    }
-                    return seed;
-                }
-            };
-            
             PomdpType const& pomdp;
             std::vector<ValueType> pomdpActionRewardVector;
             
