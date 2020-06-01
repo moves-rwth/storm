@@ -13,7 +13,7 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/utility/macros.h"
-#include "storm-pomdp/storage/BeliefManager.h"
+#include "storm-pomdp/storage/BeliefManager.cpp"
 #include "storm-pomdp/modelchecker/TrivialPomdpValueBoundsModelChecker.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/modelchecker/results/CheckResult.h"
