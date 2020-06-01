@@ -4,6 +4,37 @@ namespace storm {
     namespace storage {
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
+        uint64_t BeliefManager<PomdpType, BeliefValueType, StateType>::Triangulation::size() const {
+            return weights.size();
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        BeliefManager<PomdpType, BeliefValueType, StateType>::FreudenthalDiff::FreudenthalDiff(StateType const &dimension, BeliefValueType &&diff) : dimension(dimension),
+                                                                                                                                                     diff(std::move(diff)) {
+            // Intentionally left empty
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        bool BeliefManager<PomdpType, BeliefValueType, StateType>::FreudenthalDiff::operator>(FreudenthalDiff const &other) const {
+            if (diff != other.diff) {
+                return diff > other.diff;
+            } else {
+                return dimension < other.dimension;
+            }
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        std::size_t BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefHash::operator()(const BeliefType &belief) const {
+            std::size_t seed = 0;
+            // Assumes that beliefs are ordered
+            for (auto const &entry : belief) {
+                boost::hash_combine(seed, entry.first);
+                boost::hash_combine(seed, entry.second);
+            }
+            return seed;
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
         BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefManager(PomdpType const &pomdp, BeliefValueType const &precision, TriangulationMode const &triangulationMode)
                 : pomdp(pomdp), triangulationMode(triangulationMode) {
             cc = storm::utility::ConstantsComparator<ValueType>(precision, false);
