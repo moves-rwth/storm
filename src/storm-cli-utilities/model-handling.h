@@ -7,7 +7,6 @@
 
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/file.h"
-#include "storm/utility/storm-version.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/Engine.h"

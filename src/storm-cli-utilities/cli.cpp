@@ -3,7 +3,7 @@
 
 #include "storm/utility/resources.h"
 #include "storm/utility/file.h"
-#include "storm/utility/storm-version.h"
+#include "storm-version-info/storm-version.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/initialize.h"
 #include "storm/utility/SignalHandler.h"
@@ -88,7 +88,7 @@ namespace storm {
         }
         
         void printHeader(std::string const& name, const int argc, const char** argv) {
-            STORM_PRINT(name << " " << storm::utility::StormVersion::shortVersionString() << std::endl << std::endl);
+            STORM_PRINT(name << " " << storm::StormVersion::shortVersionString() << std::endl << std::endl);
             
             // "Compute" the command line argument string with which storm was invoked.
             std::stringstream commandStream;
@@ -107,8 +107,8 @@ namespace storm {
         }
         
         void printVersion(std::string const& name) {
-            STORM_PRINT(storm::utility::StormVersion::longVersionString() << std::endl);
-            STORM_PRINT(storm::utility::StormVersion::buildInfo() << std::endl);
+            STORM_PRINT(storm::StormVersion::longVersionString() << std::endl);
+            STORM_PRINT(storm::StormVersion::buildInfo() << std::endl);
             
 #ifdef STORM_HAVE_INTELTBB
             STORM_PRINT("Linked with Intel Threading Building Blocks v" << TBB_VERSION_MAJOR << "." << TBB_VERSION_MINOR << " (Interface version " << TBB_INTERFACE_VERSION << ")." << std::endl);

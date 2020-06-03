@@ -488,14 +488,6 @@ configure_file (
 	"${PROJECT_BINARY_DIR}/include/storm-config.h"
 )
 
-# Configure a source file to pass the Storm version to the source code
-configure_file (
-	"${PROJECT_SOURCE_DIR}/storm-version.cpp.in"
-	"${PROJECT_SOURCE_DIR}/src/storm/utility/storm-version.cpp"
-)
-
-set(STORM_GENERATED_SOURCES "${PROJECT_BINARY_DIR}/src/storm/utility/storm-version.cpp")
-
 # Add the binary dir include directory for storm-config.h
 include_directories("${PROJECT_BINARY_DIR}/include")
 
