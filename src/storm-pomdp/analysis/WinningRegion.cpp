@@ -226,7 +226,7 @@ namespace pomdp {
             std::vector<storm::storage::BitVector> useIntersects;
             std::vector<storm::storage::BitVector> useInfo;
             for(uint64_t i = 0; i < intersects.size(); ++i) {
-                if (upperBoundElements > 1000 && intersects[i].getNumberOfSetBits() < intersectSetSkip - 2) {
+                if (upperBoundElements > 10000 && intersects[i].getNumberOfSetBits() < intersectSetSkip - 3) {
                     skipped += (carl::pow(two, intersects[i].getNumberOfSetBits()) * origSets.size());
                     STORM_LOG_DEBUG("Skipped " << skipped);
                 } else {
@@ -243,7 +243,7 @@ namespace pomdp {
             std::vector<storm::storage::BitVector> newInfo;
 
             for (uint64_t i = 0; i < origSets.size(); ++i) {
-                if (upperBoundElements > 1000 && origSets[i].getNumberOfSetBits() < origSetSkip - 2) {
+                if (upperBoundElements > 20000 && origSets[i].getNumberOfSetBits() < origSetSkip - 3) {
                     skipped += (carl::pow(two, origSets[i].getNumberOfSetBits()) * useIntersects.size());
                     STORM_LOG_DEBUG("Skipped " << skipped);
                     continue;
@@ -273,9 +273,11 @@ namespace pomdp {
 
             auto res =  count(origSets, newIntersects, newInfo, newVal, !plus, remdepth - 1);
             if (plus) {
-                return std::make_pair(res.first - skipped, res.second);
+                storm::RationalNumber tmp = res.first - skipped;
+                return std::make_pair(storm::utility::max(tmp, val), res.second);
             } else {
-                return std::make_pair(res.first, res.second + skipped);
+                storm::RationalNumber tmp = res.second + skipped;
+                return std::make_pair(res.first, storm::utility::min(tmp, val));
             }
         }
     }
@@ -294,7 +296,7 @@ namespace pomdp {
                 entry.set(i);
                 info.push_back(entry);
             }
-            auto res = count(winningSets, winningSets, info, totalForObs, true, 6);
+            auto res = count(winningSets, winningSets, info, totalForObs, true, 40);
             lower += res.first;
             upper += res.second;
         }
