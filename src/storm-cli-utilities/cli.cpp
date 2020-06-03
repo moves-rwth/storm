@@ -88,8 +88,10 @@ namespace storm {
         }
         
         void printHeader(std::string const& name, const int argc, const char** argv) {
-            STORM_PRINT(name << " " << storm::StormVersion::shortVersionString() << std::endl << std::endl);
-            
+            STORM_PRINT(name << " " << storm::StormVersion::shortVersionString() << std::endl);
+#ifndef NDEBUG
+            STORM_PRINT("DEBUG BUILD" << std::endl);
+#endif
             // "Compute" the command line argument string with which storm was invoked.
             std::stringstream commandStream;
             for (int i = 1; i < argc; ++i) {
@@ -99,6 +101,7 @@ namespace storm {
             std::string command = commandStream.str();
             
             if (!command.empty()) {
+                STORM_PRINT(std::endl);
                 std::time_t result = std::time(nullptr);
                 STORM_PRINT("Date: " << std::ctime(&result));
                 STORM_PRINT("Command line arguments:" << commandStream.str() << std::endl);
