@@ -207,6 +207,7 @@ namespace pomdp {
         storm::expressions::Expression const& getDoneActionExpression(uint64_t obs) const;
 
         void reset () {
+            STORM_LOG_INFO("Reset solver to restart with current winning region");
             schedulerForObs.clear();
             finalSchedulers.clear();
             smtSolver->reset();

@@ -143,7 +143,9 @@ namespace storm {
             void performQualitativeAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& origpomdp, storm::pomdp::analysis::FormulaInformation const& formulaInfo, storm::logic::Formula const& formula) {
                 auto const& qualSettings = storm::settings::getModule<storm::settings::modules::QualitativePOMDPAnalysisSettings>();
                 auto const& coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
-
+                std::stringstream sstr;
+                origpomdp->printModelInformationToStream(sstr);
+                STORM_LOG_INFO(sstr.str());
                 STORM_LOG_THROW(formulaInfo.isNonNestedReachabilityProbability(), storm::exceptions::NotSupportedException, "Qualitative memoryless scheduler search is not implemented for this property type.");
                 STORM_LOG_TRACE("Run qualitative preprocessing...");
                 storm::models::sparse::Pomdp<ValueType> pomdp(*origpomdp);
@@ -161,7 +163,6 @@ namespace storm {
                 if (lookahead == 0) {
                     lookahead = pomdp.getNumberOfStates();
                 }
-                STORM_LOG_TRACE("target states: "  << targetStates);
                 if (qualSettings.getMemlessSearchMethod() == "one-shot") {
                     storm::pomdp::QualitativeStrategySearchNaive<ValueType> memlessSearch(pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory);
                     if (qualSettings.isWinningRegionSet()) {

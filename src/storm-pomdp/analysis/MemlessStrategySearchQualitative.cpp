@@ -35,16 +35,16 @@ namespace storm {
 
         template <typename ValueType>
         void MemlessStrategySearchQualitative<ValueType>::Statistics::print() const {
-            STORM_PRINT_AND_LOG("Total time: " << totalTimer << std::endl);
-            STORM_PRINT_AND_LOG("SAT Calls " << satCalls << std::endl);
-            STORM_PRINT_AND_LOG("SAT Calls time: " << smtCheckTimer << std::endl);
-            STORM_PRINT_AND_LOG("Outer iterations: " << outerIterations << std::endl);
-            STORM_PRINT_AND_LOG("Solver initialization time: " << initializeSolverTimer << std::endl);
-            STORM_PRINT_AND_LOG("Obtain partial scheduler time: " << evaluateExtensionSolverTime << std::endl);
-            STORM_PRINT_AND_LOG("Update solver to extend partial scheduler time: " << encodeExtensionSolverTime << std::endl);
-            STORM_PRINT_AND_LOG("Update solver with new scheduler time: " << updateNewStrategySolverTime << std::endl);
-            STORM_PRINT_AND_LOG("Winning regions update time: " << winningRegionUpdatesTimer << std::endl);
-            STORM_PRINT_AND_LOG("Graph search time: " << graphSearchTime << std::endl);
+            STORM_PRINT_AND_LOG("Total time: " << totalTimer);
+            STORM_PRINT_AND_LOG("SAT Calls " << satCalls);
+            STORM_PRINT_AND_LOG("SAT Calls time: " << smtCheckTimer);
+            STORM_PRINT_AND_LOG("Outer iterations: " << outerIterations);
+            STORM_PRINT_AND_LOG("Solver initialization time: " << initializeSolverTimer);
+            STORM_PRINT_AND_LOG("Obtain partial scheduler time: " << evaluateExtensionSolverTime);
+            STORM_PRINT_AND_LOG("Update solver to extend partial scheduler time: " << encodeExtensionSolverTime);
+            STORM_PRINT_AND_LOG("Update solver with new scheduler time: " << updateNewStrategySolverTime);
+            STORM_PRINT_AND_LOG("Winning regions update time: " << winningRegionUpdatesTimer);
+            STORM_PRINT_AND_LOG("Graph search time: " << graphSearchTime);
         }
 
         template <typename ValueType>
