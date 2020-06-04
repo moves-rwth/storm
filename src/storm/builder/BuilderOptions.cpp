@@ -60,6 +60,8 @@ namespace storm {
             auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
             if (modelDescription.hasModel()) {
                 this->setApplyMaximalProgressAssumption(modelDescription.getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA);
+                this->setBuildChoiceOrigins(modelDescription.getModelType() == storm::storage::SymbolicModelDescription::ModelType::POMDP);
+                this->setBuildChoiceLabels(modelDescription.getModelType() == storm::storage::SymbolicModelDescription::ModelType::POMDP);
             }
             showProgress = generalSettings.isVerboseSet();
             showProgressDelay = generalSettings.getShowProgressDelay();

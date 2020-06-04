@@ -421,10 +421,10 @@ namespace storm {
         template <typename ValueType>
         std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::settings::modules::BuildSettings const& buildSettings, bool useJit) {
             storm::builder::BuilderOptions options(createFormulasToRespect(input.properties), input.model.get());
-            options.setBuildChoiceLabels(buildSettings.isBuildChoiceLabelsSet());
-            options.setBuildStateValuations(buildSettings.isBuildStateValuationsSet());
-            options.setBuildAllLabels(buildSettings.isBuildAllLabelsSet());
-            bool buildChoiceOrigins = buildSettings.isBuildChoiceOriginsSet();
+            options.setBuildChoiceLabels(options.isBuildChoiceLabelsSet() || buildSettings.isBuildChoiceLabelsSet());
+            options.setBuildStateValuations(options.isBuildStateValuationsSet() || buildSettings.isBuildStateValuationsSet());
+            options.setBuildAllLabels(options.isBuildAllLabelsSet() || buildSettings.isBuildAllLabelsSet());
+            bool buildChoiceOrigins = options.isBuildChoiceOriginsSet() || buildSettings.isBuildChoiceOriginsSet();
             if (storm::settings::manager().hasModule(storm::settings::modules::CounterexampleGeneratorSettings::moduleName)) {
                 auto counterexampleGeneratorSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
                 if (counterexampleGeneratorSettings.isCounterexampleSet()) {
@@ -432,10 +432,6 @@ namespace storm {
                 }
             }
             options.setBuildChoiceOrigins(buildChoiceOrigins);
-            if (input.model->getModelType() == storm::storage::SymbolicModelDescription::ModelType::POMDP) {
-                options.setBuildChoiceOrigins(true);
-                options.setBuildChoiceLabels(true);
-            }
 
             if (buildSettings.isApplyNoMaximumProgressAssumptionSet()) {
                 options.setApplyMaximalProgressAssumption(false);
