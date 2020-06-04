@@ -444,7 +444,7 @@ namespace storm {
             if (buildSettings.isExplorationChecksSet()) {
                 options.setExplorationChecks();
             }
-            options.setReservedBitsForUnboundedVariables(options.getReservedBitsForUnboundedVariables());
+            options.setReservedBitsForUnboundedVariables(buildSettings.getBitsForUnboundedVariables());
 
             options.setAddOutOfBoundsState(buildSettings.isBuildOutOfBoundsStateSet());
             if (buildSettings.isBuildFullModelSet()) {
