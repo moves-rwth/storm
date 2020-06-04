@@ -136,7 +136,8 @@ namespace storm {
                                         localMonotonicityResults.emplace(localMonotonicityResult->copy());
                                     } else if (useMonotonicity){
                                         orders.emplace(order);
-                                        localMonotonicityResults.emplace(localMonotonicityResult);
+                                        // We always have to take the copy as within a region the local monotonicity may differ
+                                        localMonotonicityResults.emplace(localMonotonicityResult->copy());
                                         first = false;
                                     }
                                     unprocessedRegions.emplace(std::move(newRegion), initResForNewRegions);
