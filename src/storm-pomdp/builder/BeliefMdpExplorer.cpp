@@ -1,4 +1,17 @@
-#include "BeliefMdpExplorer.h"
+#include "storm-pomdp/builder/BeliefMdpExplorer.h"
+
+#include "storm-parsers/api/properties.h"
+#include "storm/api/properties.h"
+
+#include "storm/modelchecker/results/CheckResult.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/modelchecker/hints/ExplicitModelCheckerHint.cpp"
+#include "storm/models/sparse/Pomdp.h"
+#include "storm/storage/SparseMatrix.h"
+#include "storm/utility/constants.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/SignalHandler.h"
 
 namespace storm {
     namespace builder {
