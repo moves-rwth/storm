@@ -8,8 +8,8 @@ namespace storm {
     namespace pomdp {
         namespace modelchecker {
             template<typename ValueType>
-            struct ApproximatePOMDPModelCheckerOptions {
-                ApproximatePOMDPModelCheckerOptions(bool discretize, bool unfold) : discretize(discretize), unfold(unfold) {
+            struct BeliefExplorationPomdpModelCheckerOptions {
+                BeliefExplorationPomdpModelCheckerOptions(bool discretize, bool unfold) : discretize(discretize), unfold(unfold) {
                     // Intentionally left empty
                 }
                 

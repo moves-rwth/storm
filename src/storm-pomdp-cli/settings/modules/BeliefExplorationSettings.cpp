@@ -8,7 +8,7 @@
 
 #include "storm/utility/NumberTraits.h"
 #include "storm/adapters/RationalNumberAdapter.h"
-#include "storm-pomdp/modelchecker/ApproximatePOMDPModelCheckerOptions.h"
+#include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelCheckerOptions.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
 
@@ -134,7 +134,7 @@ namespace storm {
             }
             
             template<typename ValueType>
-            void BeliefExplorationSettings::setValuesInOptionsStruct(storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<ValueType>& options) const {
+            void BeliefExplorationSettings::setValuesInOptionsStruct(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) const {
                 options.refine = isRefineSet();
                 options.refinePrecision = storm::utility::convertNumber<ValueType>(getRefinePrecision());
                 if (isRefineStepLimitSet()) {
@@ -170,8 +170,8 @@ namespace storm {
                 options.dynamicTriangulation = isDynamicTriangulationModeSet();
             }
             
-            template void BeliefExplorationSettings::setValuesInOptionsStruct<double>(storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<double>& options) const;
-            template void BeliefExplorationSettings::setValuesInOptionsStruct<storm::RationalNumber>(storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<storm::RationalNumber>& options) const;
+            template void BeliefExplorationSettings::setValuesInOptionsStruct<double>(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<double>& options) const;
+            template void BeliefExplorationSettings::setValuesInOptionsStruct<storm::RationalNumber>(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<storm::RationalNumber>& options) const;
 
             
             

@@ -3,7 +3,7 @@
 #include "storm/utility/logging.h"
 #include "storm-pomdp/storage/Belief.h"
 #include "storm-pomdp/storage/BeliefManager.h"
-#include "storm-pomdp/modelchecker/ApproximatePOMDPModelCheckerOptions.h"
+#include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelCheckerOptions.h"
 #include "storm-pomdp/builder/BeliefMdpExplorer.h"
 
 #include "storm/storage/jani/Property.h"
@@ -20,13 +20,13 @@ namespace storm {
             struct TrivialPomdpValueBounds;
             
             template<typename PomdpModelType, typename BeliefValueType = typename PomdpModelType::ValueType>
-            class ApproximatePOMDPModelchecker {
+            class BeliefExplorationPomdpModelChecker {
             public:
                 typedef typename PomdpModelType::ValueType ValueType;
                 typedef typename PomdpModelType::RewardModelType RewardModelType;
                 typedef storm::storage::BeliefManager<PomdpModelType, BeliefValueType> BeliefManagerType;
                 typedef storm::builder::BeliefMdpExplorer<PomdpModelType, BeliefValueType> ExplorerType;
-                typedef ApproximatePOMDPModelCheckerOptions<ValueType> Options;
+                typedef BeliefExplorationPomdpModelCheckerOptions<ValueType> Options;
                 
                 struct Result {
                     Result(ValueType lower, ValueType upper);
@@ -37,7 +37,7 @@ namespace storm {
                     bool updateUpperBound(ValueType const& value);
                 };
                 
-                ApproximatePOMDPModelchecker(std::shared_ptr<PomdpModelType> pomdp, Options options = Options());
+                BeliefExplorationPomdpModelChecker(std::shared_ptr<PomdpModelType> pomdp, Options options = Options());
                 
                 Result check(storm::logic::Formula const& formula);
 

@@ -22,7 +22,7 @@
 #include "storm-pomdp/transformer/MakePOMDPCanonic.h"
 #include "storm-pomdp/analysis/UniqueObservationStates.h"
 #include "storm-pomdp/analysis/QualitativeAnalysisOnGraphs.h"
-#include "storm-pomdp/modelchecker/ApproximatePOMDPModelchecker.h"
+#include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelChecker.h"
 #include "storm-pomdp/analysis/FormulaInformation.h"
 #include "storm-pomdp/analysis/MemlessStrategySearchQualitative.h"
 #include "storm-pomdp/analysis/QualitativeStrategySearchNaive.h"
@@ -226,10 +226,10 @@ namespace storm {
                 bool analysisPerformed = false;
                 if (pomdpSettings.isBeliefExplorationSet()) {
                     STORM_PRINT_AND_LOG("Exploring the belief MDP... ");
-                    auto options = storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<ValueType>(pomdpSettings.isBeliefExplorationDiscretizeSet(), pomdpSettings.isBeliefExplorationUnfoldSet());
+                    auto options = storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>(pomdpSettings.isBeliefExplorationDiscretizeSet(), pomdpSettings.isBeliefExplorationUnfoldSet());
                     auto const& beliefExplorationSettings = storm::settings::getModule<storm::settings::modules::BeliefExplorationSettings>();
                     beliefExplorationSettings.setValuesInOptionsStruct(options);
-                    storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::models::sparse::Pomdp<ValueType>> checker(pomdp, options);
+                    storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(pomdp, options);
                     auto result = checker.check(formula);
                     checker.printStatisticsToStream(std::cout);
                     if (storm::utility::resources::isTerminate()) {

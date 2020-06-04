@@ -1,7 +1,7 @@
 #include "test/storm_gtest.h"
 #include "storm-config.h"
 
-#include "storm-pomdp/modelchecker/ApproximatePOMDPModelchecker.h"
+#include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelChecker.h"
 #include "storm-pomdp/transformer/MakePOMDPCanonic.h"
 #include "storm/api/storm.h"
 #include "storm-parsers/api/storm-parsers.h"
@@ -20,7 +20,7 @@ namespace {
             env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
             return env;
         }
-        static void adaptOptions(storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<ValueType>& options) {}  // TODO
+        static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) {}  // TODO
         static PreprocessingType const preprocessingType = PreprocessingType::None;
     };
     
@@ -33,7 +33,7 @@ namespace {
             env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
             return env;
         }
-        static void adaptOptions(storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<ValueType>&) { /* intentionally left empty */ }
+        static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>&) { /* intentionally left empty */ }
         static PreprocessingType const preprocessingType = PreprocessingType::None;
     };
     
@@ -46,7 +46,7 @@ namespace {
             env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
             return env;
         }
-        static void adaptOptions(storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<ValueType>& options) { /* intentionally left empty */ }
+        static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */ }
         static PreprocessingType const preprocessingType = PreprocessingType::None; // TODO
     };
 
@@ -59,7 +59,7 @@ namespace {
             env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
             return env;
         }
-        static void adaptOptions(storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<ValueType>& options) {}  // TODO
+        static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) {}  // TODO
         static PreprocessingType const preprocessingType = PreprocessingType::None;
     };
 
@@ -72,7 +72,7 @@ namespace {
             env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
             return env;
         }
-        static void adaptOptions(storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<ValueType>& options) {}  // TODO
+        static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) {}  // TODO
         static PreprocessingType const preprocessingType = PreprocessingType::None;
     };
     
@@ -86,7 +86,7 @@ namespace {
             env.solver().setForceSoundness(true);
             return env;
         }
-        static void adaptOptions(storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<ValueType>& options) { /* intentionally left empty */ }
+        static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */ }
         static PreprocessingType const preprocessingType = PreprocessingType::None;
     };
     
@@ -99,7 +99,7 @@ namespace {
             env.solver().setForceExact(true);
             return env;
         }
-        static void adaptOptions(storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<ValueType>& options) { /* intentionally left empty */ }
+        static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */ }
         static PreprocessingType const preprocessingType = PreprocessingType::None;
     };
     
@@ -112,7 +112,7 @@ namespace {
             env.solver().setForceExact(true);
             return env;
         }
-        static void adaptOptions(storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<ValueType>& options) { /* intentionally left empty */ }
+        static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */ }
         static PreprocessingType const preprocessingType = PreprocessingType::None; // TODO
     };
     
@@ -122,8 +122,8 @@ namespace {
         typedef typename TestType::ValueType ValueType;
         BeliefExplorationTest() : _environment(TestType::createEnvironment()) {}
         storm::Environment const& env() const { return _environment; }
-        storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<ValueType> options() const {
-            storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<ValueType> opt(true, true); // Always compute both bounds (lower and upper)
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> options() const {
+            storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType> opt(true, true); // Always compute both bounds (lower and upper)
             TestType::adaptOptions(opt);
             return opt;
         }
@@ -177,7 +177,7 @@ namespace {
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmax=? [F \"goal\" ]", "slippery=0");
-        storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
         auto result = checker.check(*data.formula);
         
         EXPECT_LE(result.lowerBound, this->parseNumber("7/10"));
