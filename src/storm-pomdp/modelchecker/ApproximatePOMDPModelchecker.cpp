@@ -6,6 +6,7 @@
 
 #include "storm-pomdp/analysis/FormulaInformation.h"
 #include "storm-pomdp/analysis/FiniteBeliefMdpDetection.h"
+#include "storm-pomdp/transformer/MakeStateSetObservationClosed.h"
 
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/NumberTraits.h"
@@ -72,32 +73,45 @@ namespace storm {
             }
             
             template<typename PomdpModelType, typename BeliefValueType>
-            ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::ApproximatePOMDPModelchecker(PomdpModelType const& pomdp, Options options) : pomdp(pomdp), options(options) {
+            ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::ApproximatePOMDPModelchecker(std::shared_ptr<PomdpModelType> pomdp, Options options) : inputPomdp(pomdp), options(options) {
+                STORM_LOG_ASSERT(inputPomdp, "The given POMDP is not initialized.");
+                STORM_LOG_ERROR_COND(inputPomdp->isCanonic(), "Input Pomdp is not canonic. This might lead to unexpected verification results.");
+
                 cc = storm::utility::ConstantsComparator<ValueType>(storm::utility::convertNumber<ValueType>(this->options.numericPrecision), false);
             }
 
             template<typename PomdpModelType, typename BeliefValueType>
             typename ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::Result ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::check(storm::logic::Formula const& formula) {
                 STORM_LOG_ASSERT(options.unfold || options.discretize, "Invoked belief exploration but no task (unfold or discretize) given.");
+                
+                // Potentially reset preprocessed model from previous call
+                preprocessedPomdp.reset();
+                
                 // Reset all collected statistics
                 statistics = Statistics();
                 statistics.totalTime.start();
                 // Extract the relevant information from the formula
-                auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(pomdp, formula);
+                auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(pomdp(), formula);
                 
                 // Compute some initial bounds on the values for each state of the pomdp
-                auto initialPomdpValueBounds = TrivialPomdpValueBoundsModelChecker<storm::models::sparse::Pomdp<ValueType>>(pomdp).getValueBounds(formula, formulaInfo);
-                uint64_t initialPomdpState = pomdp.getInitialStates().getNextSetIndex(0);
+                auto initialPomdpValueBounds = TrivialPomdpValueBoundsModelChecker<storm::models::sparse::Pomdp<ValueType>>(pomdp()).getValueBounds(formula, formulaInfo);
+                uint64_t initialPomdpState = pomdp().getInitialStates().getNextSetIndex(0);
                 Result result(initialPomdpValueBounds.getHighestLowerBound(initialPomdpState), initialPomdpValueBounds.getSmallestUpperBound(initialPomdpState));
                 STORM_PRINT_AND_LOG("Initial value bounds are [" << result.lowerBound << ", " <<  result.upperBound << "]" << std::endl);
 
                 boost::optional<std::string> rewardModelName;
+                std::set<uint32_t> targetObservations;
                 if (formulaInfo.isNonNestedReachabilityProbability() || formulaInfo.isNonNestedExpectedRewardFormula()) {
-                    // FIXME: Instead of giving up, introduce a new observation for target states and make sink states absorbing.
-                    STORM_LOG_THROW(formulaInfo.getTargetStates().observationClosed, storm::exceptions::NotSupportedException, "There are non-target states with the same observation as a target state. This is currently not supported");
+                    if (formulaInfo.getTargetStates().observationClosed) {
+                        targetObservations = formulaInfo.getTargetStates().observations;
+                    } else {
+                        storm::transformer::MakeStateSetObservationClosed<ValueType> obsCloser(inputPomdp);
+                        std::tie(preprocessedPomdp, targetObservations) = obsCloser.transform(formulaInfo.getTargetStates().states);
+                    }
+                    // FIXME: Instead of giving up, make sink states absorbing.
                     if (formulaInfo.isNonNestedReachabilityProbability()) {
                         if (!formulaInfo.getSinkStates().empty()) {
-                            auto reachableFromSinkStates = storm::utility::graph::getReachableStates(pomdp.getTransitionMatrix(), formulaInfo.getSinkStates().states, formulaInfo.getSinkStates().states, ~formulaInfo.getSinkStates().states);
+                            auto reachableFromSinkStates = storm::utility::graph::getReachableStates(pomdp().getTransitionMatrix(), formulaInfo.getSinkStates().states, formulaInfo.getSinkStates().states, ~formulaInfo.getSinkStates().states);
                             reachableFromSinkStates &= ~formulaInfo.getSinkStates().states;
                             STORM_LOG_THROW(reachableFromSinkStates.empty(), storm::exceptions::NotSupportedException, "There are sink states that can reach non-sink states. This is currently not supported");
                         }
@@ -108,14 +122,14 @@ namespace storm {
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unsupported formula '" << formula << "'.");
                 }
-                if (storm::pomdp::detectFiniteBeliefMdp(pomdp, formulaInfo.getTargetStates().states)) {
+                if (storm::pomdp::detectFiniteBeliefMdp(pomdp(), formulaInfo.getTargetStates().states)) {
                     STORM_PRINT_AND_LOG("Detected that the belief MDP is finite." << std::endl);
                 }
                 
                 if (options.refine) {
-                    refineReachability(formulaInfo.getTargetStates().observations, formulaInfo.minimize(), rewardModelName, initialPomdpValueBounds, result);
+                    refineReachability(targetObservations, formulaInfo.minimize(), rewardModelName, initialPomdpValueBounds, result);
                 } else {
-                    computeReachabilityOTF(formulaInfo.getTargetStates().observations, formulaInfo.minimize(), rewardModelName, initialPomdpValueBounds, result);
+                    computeReachabilityOTF(targetObservations, formulaInfo.minimize(), rewardModelName, initialPomdpValueBounds, result);
                 }
                 // "clear" results in case they were actually not requested (this will make the output a bit more clear)
                 if ((formulaInfo.minimize() && !options.discretize) || (formulaInfo.maximize() && !options.unfold)) {
@@ -136,8 +150,8 @@ namespace storm {
             void ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::printStatisticsToStream(std::ostream& stream) const {
                 stream << "##### Grid Approximation Statistics ######" << std::endl;
                 stream << "# Input model: " << std::endl;
-                pomdp.printModelInformationToStream(stream);
-                stream << "# Max. Number of states with same observation: " << pomdp.getMaxNrStatesWithSameObservation() << std::endl;
+                pomdp().printModelInformationToStream(stream);
+                stream << "# Max. Number of states with same observation: " << pomdp().getMaxNrStatesWithSameObservation() << std::endl;
                 
                 if (statistics.aborted) {
                     stream << "# Computation aborted early" << std::endl;
@@ -191,8 +205,8 @@ namespace storm {
             void ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const& pomdpValueBounds, Result& result) {
                 
                 if (options.discretize) {
-                    std::vector<BeliefValueType> observationResolutionVector(pomdp.getNrObservations(), storm::utility::convertNumber<BeliefValueType>(options.resolutionInit));
-                    auto manager = std::make_shared<BeliefManagerType>(pomdp, options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
+                    std::vector<BeliefValueType> observationResolutionVector(pomdp().getNrObservations(), storm::utility::convertNumber<BeliefValueType>(options.resolutionInit));
+                    auto manager = std::make_shared<BeliefManagerType>(pomdp(), options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
                     if (rewardModelName) {
                         manager->setRewardModel(rewardModelName);
                     }
@@ -212,7 +226,7 @@ namespace storm {
                     }
                 }
                 if (options.unfold) { // Underapproximation (uses a fresh Belief manager)
-                    auto manager = std::make_shared<BeliefManagerType>(pomdp, options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
+                    auto manager = std::make_shared<BeliefManagerType>(pomdp(), options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
                     if (rewardModelName) {
                         manager->setRewardModel(rewardModelName);
                     }
@@ -225,7 +239,7 @@ namespace storm {
                         if (options.explorationTimeLimit) {
                             heuristicParameters.sizeThreshold = std::numeric_limits<uint64_t>::max();
                         } else {
-                            heuristicParameters.sizeThreshold = pomdp.getNumberOfStates() * pomdp.getMaxNrStatesWithSameObservation();
+                            heuristicParameters.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
                             STORM_PRINT_AND_LOG("Heuristically selected an under-approximation mdp size threshold of " << heuristicParameters.sizeThreshold << "." << std::endl);
                         }
                     }
@@ -249,8 +263,8 @@ namespace storm {
                 std::shared_ptr<ExplorerType> overApproximation;
                 HeuristicParameters overApproxHeuristicPar;
                 if (options.discretize) { // Setup and build first OverApproximation
-                    observationResolutionVector = std::vector<BeliefValueType>(pomdp.getNrObservations(), storm::utility::convertNumber<BeliefValueType>(options.resolutionInit));
-                    overApproxBeliefManager = std::make_shared<BeliefManagerType>(pomdp, options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
+                    observationResolutionVector = std::vector<BeliefValueType>(pomdp().getNrObservations(), storm::utility::convertNumber<BeliefValueType>(options.resolutionInit));
+                    overApproxBeliefManager = std::make_shared<BeliefManagerType>(pomdp(), options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
                     if (rewardModelName) {
                         overApproxBeliefManager->setRewardModel(rewardModelName);
                     }
@@ -274,7 +288,7 @@ namespace storm {
                 std::shared_ptr<ExplorerType> underApproximation;
                 HeuristicParameters underApproxHeuristicPar;
                 if (options.unfold) { // Setup and build first UnderApproximation
-                    underApproxBeliefManager = std::make_shared<BeliefManagerType>(pomdp, options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
+                    underApproxBeliefManager = std::make_shared<BeliefManagerType>(pomdp(), options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
                     if (rewardModelName) {
                         underApproxBeliefManager->setRewardModel(rewardModelName);
                     }
@@ -284,7 +298,7 @@ namespace storm {
                     underApproxHeuristicPar.sizeThreshold = options.sizeThresholdInit;
                     if (underApproxHeuristicPar.sizeThreshold == 0) {
                         // Select a decent value automatically
-                        underApproxHeuristicPar.sizeThreshold = pomdp.getNumberOfStates() * pomdp.getMaxNrStatesWithSameObservation();
+                        underApproxHeuristicPar.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
                     }
                     buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, underApproxHeuristicPar, underApproxBeliefManager, underApproximation);
                     if (!underApproximation->hasComputedValues() || storm::utility::resources::isTerminate()) {
@@ -430,7 +444,7 @@ namespace storm {
                 auto const& choiceIndices = overApproximation->getExploredMdp()->getNondeterministicChoiceIndices();
                 BeliefValueType maxResolution = *std::max_element(observationResolutionVector.begin(), observationResolutionVector.end());
 
-                std::vector<BeliefValueType> resultingRatings(pomdp.getNrObservations(), storm::utility::one<BeliefValueType>());
+                std::vector<BeliefValueType> resultingRatings(pomdp().getNrObservations(), storm::utility::one<BeliefValueType>());
                 
                 std::map<uint32_t, typename ExplorerType::SuccessorObservationInformation> gatheredSuccessorObservations; // Declare here to avoid reallocations
                 for (uint64_t mdpState = 0; mdpState < numMdpStates; ++mdpState) {
@@ -829,6 +843,15 @@ namespace storm {
                 }
                 return fixPoint;
 
+            }
+            
+            template<typename PomdpModelType, typename BeliefValueType>
+            PomdpModelType const& ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::pomdp() const {
+                if (preprocessedPomdp) {
+                    return *preprocessedPomdp;
+                } else {
+                    return *inputPomdp;
+                }
             }
 
             template class ApproximatePOMDPModelchecker<storm::models::sparse::Pomdp<double>>;

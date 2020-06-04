@@ -37,13 +37,19 @@ namespace storm {
                     bool updateUpperBound(ValueType const& value);
                 };
                 
-                ApproximatePOMDPModelchecker(PomdpModelType const& pomdp, Options options = Options());
+                ApproximatePOMDPModelchecker(std::shared_ptr<PomdpModelType> pomdp, Options options = Options());
                 
                 Result check(storm::logic::Formula const& formula);
 
                 void printStatisticsToStream(std::ostream& stream) const;
                 
             private:
+                
+                /**
+                 * Returns the pomdp that is to be analyzed
+                 */
+                PomdpModelType const& pomdp() const;
+                
                 /**
                  * Helper method that handles the computation of reachability probabilities and rewards using the on-the-fly state space generation for a fixed grid size
                  *
@@ -111,7 +117,9 @@ namespace storm {
                 };
                 Statistics statistics;
                 
-                PomdpModelType const& pomdp;
+                std::shared_ptr<PomdpModelType> inputPomdp;
+                std::shared_ptr<PomdpModelType> preprocessedPomdp;
+                
                 Options options;
                 storm::utility::ConstantsComparator<ValueType> cc;
             };
