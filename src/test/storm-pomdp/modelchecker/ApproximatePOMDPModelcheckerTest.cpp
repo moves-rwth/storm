@@ -2,6 +2,7 @@
 #include "storm-config.h"
 
 #include "storm-pomdp/modelchecker/ApproximatePOMDPModelchecker.h"
+#include "storm-pomdp/transformer/MakePOMDPCanonic.h"
 #include "storm/api/storm.h"
 #include "storm-parsers/api/storm-parsers.h"
 
@@ -126,15 +127,35 @@ namespace {
             TestType::adaptOptions(opt);
             return opt;
         }
-        void preprocess(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>& model, std::shared_ptr<const storm::logic::Formula>& formula) {
-            switch(TestType::preprocessingType) {
+        ValueType parseNumber(std::string const& str) {
+            return storm::utility::convertNumber<ValueType>(str);
+        }
+        struct Input {
+            std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> model;
+            std::shared_ptr<storm::logic::Formula const> formula;
+        };
+        Input buildPrism(std::string const& programFile, std::string const& formulaAsString, std::string const& constantsAsString = "") const {
+            // Parse and build input
+            storm::prism::Program program = storm::api::parseProgram(programFile);
+            program = storm::utility::prism::preprocess(program, constantsAsString);
+            Input input;
+            input.formula = storm::api::parsePropertiesForPrismProgram(formulaAsString, program).front().getRawFormula();
+            input.model = storm::api::buildSparseModel<ValueType>(program, {input.formula})->template as<storm::models::sparse::Pomdp<ValueType>>();
+            // Preprocess
+            storm::transformer::MakePOMDPCanonic<ValueType> makeCanonic(*input.model);
+            input.model = makeCanonic.transform();
+            EXPECT_TRUE(input.model->isCanonic());
+            switch (TestType::preprocessingType) {
                 case PreprocessingType::None:
                     // nothing to do
                     break;
                 default:
-                    FAIL() << "Unhandled preprocessing type.";
+                    ADD_FAILURE() << "Unhandled preprocessing type.";
             }
+            EXPECT_TRUE(input.model->isCanonic());
+            return input;
         }
+        
     private:
         storm::Environment _environment;
     };
@@ -152,24 +173,15 @@ namespace {
     
     TYPED_TEST_SUITE(BeliefExplorationTest, TestingTypes,);
     
-    TYPED_TEST(BeliefExplorationTest, simple) {
+    TYPED_TEST(BeliefExplorationTest, simple_max) {
         typedef typename TestFixture::ValueType ValueType;
 
-        std::string programFile = STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism";
-        std::string formulaAsString = "P=? [F \"goal\" ]";
-        std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
-    
-        // Program and formula
-        storm::prism::Program program = storm::api::parseProgram(programFile);
-        program = storm::utility::prism::preprocess(program, constantsAsString);
-        std::shared_ptr<const storm::logic::Formula> formula = storm::api::parsePropertiesForPrismProgram(formulaAsString, program).front().getRawFormula();
-        std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> model = storm::api::buildSparseModel<ValueType>(program, {formula})->template as<storm::models::sparse::Pomdp<ValueType>>();
-        this->preprocess(model, formula);
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmax=? [F \"goal\" ]", "slippery=0");
+        storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
+        auto result = checker.check(*data.formula);
         
-        // Invoke model checking
-        storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::models::sparse::Pomdp<ValueType>> checker(*model, this->options());
-        auto result = checker.check(*formula);
-        std::cout << "[" << result.lowerBound << "," << result.upperBound << std::endl;
+        EXPECT_LE(result.lowerBound, this->parseNumber("7/10"));
+        EXPECT_GE(result.upperBound, this->parseNumber("7/10"));
         
     }
 }
