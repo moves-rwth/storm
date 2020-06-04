@@ -75,7 +75,7 @@ namespace storm {
             template<typename PomdpModelType, typename BeliefValueType>
             ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::ApproximatePOMDPModelchecker(std::shared_ptr<PomdpModelType> pomdp, Options options) : inputPomdp(pomdp), options(options) {
                 STORM_LOG_ASSERT(inputPomdp, "The given POMDP is not initialized.");
-                STORM_LOG_ERROR_COND(inputPomdp->isCanonic(), "Input Pomdp is not canonic. This might lead to unexpected verification results.");
+                STORM_LOG_ERROR_COND(inputPomdp->isCanonic(), "Input Pomdp is not known to be canonic. This might lead to unexpected verification results.");
 
                 cc = storm::utility::ConstantsComparator<ValueType>(storm::utility::convertNumber<ValueType>(this->options.numericPrecision), false);
             }
