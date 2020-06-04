@@ -65,6 +65,16 @@ namespace storm {
                 uint64_t getMaxNrStatesWithSameObservation() const;
                 
                 std::vector<uint32_t> const& getObservations() const;
+                
+                /*!
+                 * Changes the observations to the given ones and updates redundant informations (like the number of observations)
+                 * After calling this method, isCanonic() returns true iff (i) isCanonic() returned true before calling this method and (ii) preservesCanonicity was set to true.
+                 *
+                 * @param newObservations The new observations
+                 * @param preservesCanonicity specifies whether the pomdp is still canonic (assuming that it was canonic before)
+                 *
+                 */
+                void updateObservations(std::vector<uint32_t>&& newObservations, bool preservesCanonicity);
 
                 std::vector<uint64_t> getStatesWithObservation(uint32_t observation) const;
 

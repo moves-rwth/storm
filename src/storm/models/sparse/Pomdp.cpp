@@ -75,6 +75,12 @@ namespace storm {
                 return observations;
             }
             
+            template<typename ValueType, typename RewardModelType>
+            void Pomdp<ValueType, RewardModelType>::updateObservations(std::vector<uint32_t>&& newObservations, bool preservesCanonicity) {
+                observations = std::move(newObservations);
+                computeNrObservations();
+                setIsCanonic(isCanonic() && preservesCanonicity);
+            }
 
             template<typename ValueType, typename RewardModelType>
             std::string Pomdp<ValueType, RewardModelType>::additionalDotStateInfo(uint64_t state) const {
