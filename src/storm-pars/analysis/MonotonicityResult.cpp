@@ -22,17 +22,14 @@ namespace storm {
 
 
         template <typename VariableType>
-        void MonotonicityResult<VariableType>::updateMonotonicityResult(VariableType var,
-                                                                        MonotonicityResult<VariableType>::Monotonicity mon) {
-
-            if(mon == MonotonicityResult<VariableType>::Monotonicity::Not){
+        void MonotonicityResult<VariableType>::updateMonotonicityResult(VariableType var, MonotonicityResult<VariableType>::Monotonicity mon) {
+            if (mon == MonotonicityResult<VariableType>::Monotonicity::Not) {
                 mon = MonotonicityResult<VariableType>::Monotonicity::Unknown;
             }
 
-            if (monotonicityResult.find(var) == monotonicityResult.end()){
+            if (monotonicityResult.find(var) == monotonicityResult.end()) {
                 addMonotonicityResult(std::move(var), std::move(mon));
-            }
-            else{
+            } else {
                 auto monRes = monotonicityResult[var];
                 if (monRes == MonotonicityResult<VariableType>::Monotonicity::Unknown || monRes == mon || mon == MonotonicityResult<VariableType>::Monotonicity::Constant){
                     return;
@@ -44,14 +41,12 @@ namespace storm {
                     monotonicityResult[var] = MonotonicityResult<VariableType>::Monotonicity::Unknown;
                 }
             }
-            if(monotonicityResult[var] == MonotonicityResult<VariableType>::Monotonicity::Unknown){
+            if (monotonicityResult[var] == MonotonicityResult<VariableType>::Monotonicity::Unknown) {
                 setAllMonotonicity(false);
                 setSomewhereMonotonicity(false);
-            }
-            else{
+            } else {
                 setSomewhereMonotonicity(true);
             }
-
         }
 
         template <typename VariableType>

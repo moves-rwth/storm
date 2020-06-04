@@ -6,6 +6,7 @@ namespace storm {
         template <typename VariableType>
         LocalMonotonicityResult<VariableType>::LocalMonotonicityResult(uint_fast64_t numberOfStates) {
             stateMonRes = std::vector<std::shared_ptr<MonotonicityResult<VariableType>>>(numberOfStates, nullptr);
+            globalMonotonicityResult = std::make_shared<MonotonicityResult<VariableType>>();
         }
 
         template <typename VariableType>
@@ -23,11 +24,12 @@ namespace storm {
                 stateMonRes[state] = std::make_shared<MonotonicityResult<VariableType>>();
             }
             stateMonRes[state]->addMonotonicityResult(var, mon);
+            globalMonotonicityResult->updateMonotonicityResult(var, mon);
         }
 
         template <typename VariableType>
-        void LocalMonotonicityResult<VariableType>::setMonotonicityResult(uint_fast64_t state, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
-            this->stateMonRes[state] = monRes;
+        std::shared_ptr<MonotonicityResult<VariableType>> LocalMonotonicityResult<VariableType>::getGlobalMonotonicityResult() {
+            return globalMonotonicityResult;
         }
 
         template <typename VariableType>
@@ -38,7 +40,18 @@ namespace storm {
                     copy->setMonotonicityResult(state, stateMonRes[state]->copy());
                 }
             }
+            copy->setGlobalMonotonicityResult(this->getGlobalMonotonicityResult()->copy());
             return copy;
+        }
+
+        template <typename VariableType>
+        void LocalMonotonicityResult<VariableType>::setMonotonicityResult(uint_fast64_t state, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
+            this->stateMonRes[state] = monRes;
+        }
+
+        template <typename VariableType>
+        void LocalMonotonicityResult<VariableType>::setGlobalMonotonicityResult(std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
+            this->globalMonotonicityResult = monRes;
         }
 
         template class LocalMonotonicityResult<storm::RationalFunctionVariable>;
