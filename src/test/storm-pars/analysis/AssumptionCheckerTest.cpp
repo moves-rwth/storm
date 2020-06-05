@@ -358,7 +358,4 @@ TEST(AssumptionCheckerTest, Simple4) {
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.checkOnSamples(assumption));
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order));
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumptionSMTSolver(assumption, order));
-
-
-
 }
