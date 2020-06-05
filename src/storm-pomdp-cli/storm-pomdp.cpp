@@ -24,8 +24,8 @@
 #include "storm-pomdp/analysis/QualitativeAnalysisOnGraphs.h"
 #include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelChecker.h"
 #include "storm-pomdp/analysis/FormulaInformation.h"
-#include "storm-pomdp/analysis/MemlessStrategySearchQualitative.h"
-#include "storm-pomdp/analysis/QualitativeStrategySearchNaive.h"
+#include "storm-pomdp/analysis/IterativePolicySearch.h"
+#include "storm-pomdp/analysis/OneShotPolicySearch.h"
 
 #include "storm/api/storm.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -163,14 +163,14 @@ namespace storm {
                     lookahead = pomdp.getNumberOfStates();
                 }
                 if (qualSettings.getMemlessSearchMethod() == "one-shot") {
-                    storm::pomdp::QualitativeStrategySearchNaive<ValueType> memlessSearch(pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory);
+                    storm::pomdp::OneShotPolicySearch<ValueType> memlessSearch(pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory);
                     if (qualSettings.isWinningRegionSet()) {
                         STORM_LOG_ERROR("Computing winning regions is not supported by ccd-memless.");
                     } else {
                         memlessSearch.analyzeForInitialStates(lookahead);
                     }
                 } else if (qualSettings.getMemlessSearchMethod() == "iterative") {
-                    storm::pomdp::MemlessStrategySearchQualitative<ValueType> search(pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory, options);
+                    storm::pomdp::IterativePolicySearch<ValueType> search(pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory, options);
                     if (qualSettings.isWinningRegionSet()) {
                         search.computeWinningRegion(lookahead);
                     } else {

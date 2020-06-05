@@ -1,7 +1,7 @@
-#include "storm-pomdp/analysis/MemlessStrategySearchQualitative.h"
+#include "storm-pomdp/analysis/IterativePolicySearch.h"
 #include "storm/utility/file.h"
 
-#include "storm-pomdp/analysis/QualitativeStrategySearchNaive.h"
+#include "storm-pomdp/analysis/OneShotPolicySearch.h"
 #include "storm-pomdp/analysis/QualitativeAnalysis.h"
 #include "storm-pomdp/analysis/QualitativeAnalysisOnGraphs.h"
 
@@ -34,7 +34,7 @@ namespace storm {
         }
 
         template <typename ValueType>
-        void MemlessStrategySearchQualitative<ValueType>::Statistics::print() const {
+        void IterativePolicySearch<ValueType>::Statistics::print() const {
             STORM_PRINT_AND_LOG("Total time: " << totalTimer);
             STORM_PRINT_AND_LOG("SAT Calls " << satCalls);
             STORM_PRINT_AND_LOG("SAT Calls time: " << smtCheckTimer);
@@ -48,11 +48,11 @@ namespace storm {
         }
 
         template <typename ValueType>
-        MemlessStrategySearchQualitative<ValueType>::MemlessStrategySearchQualitative(storm::models::sparse::Pomdp<ValueType> const& pomdp,
-                    storm::storage::BitVector const& targetStates,
-                    storm::storage::BitVector const& surelyReachSinkStates,
-                    std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory,
-                    MemlessSearchOptions const& options) :
+        IterativePolicySearch<ValueType>::IterativePolicySearch(storm::models::sparse::Pomdp<ValueType> const& pomdp,
+                                                                storm::storage::BitVector const& targetStates,
+                                                                storm::storage::BitVector const& surelyReachSinkStates,
+                                                                std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory,
+                                                                MemlessSearchOptions const& options) :
             pomdp(pomdp),
             surelyReachSinkStates(surelyReachSinkStates),
             targetStates(targetStates),
@@ -83,7 +83,7 @@ namespace storm {
         }
 
         template <typename ValueType>
-        bool MemlessStrategySearchQualitative<ValueType>::initialize(uint64_t k) {
+        bool IterativePolicySearch<ValueType>::initialize(uint64_t k) {
             STORM_LOG_INFO("Start intializing solver...");
 
             bool lookaheadConstraintsRequired;
@@ -377,7 +377,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        uint64_t MemlessStrategySearchQualitative<ValueType>::getOffsetFromObservation(uint64_t state, uint64_t observation) const {
+        uint64_t IterativePolicySearch<ValueType>::getOffsetFromObservation(uint64_t state, uint64_t observation) const {
             if(!useFindOffset) {
                 STORM_LOG_WARN("This code is slow and should only be used for debugging.");
                 useFindOffset = true;
@@ -394,7 +394,7 @@ namespace storm {
         }
 
         template <typename ValueType>
-        bool MemlessStrategySearchQualitative<ValueType>::analyze(uint64_t k, storm::storage::BitVector const& oneOfTheseStates, storm::storage::BitVector const& allOfTheseStates) {
+        bool IterativePolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVector const& oneOfTheseStates, storm::storage::BitVector const& allOfTheseStates) {
             STORM_LOG_DEBUG("Surely reach sink states: " << surelyReachSinkStates);
             STORM_LOG_DEBUG("Target states " << targetStates);
             STORM_LOG_DEBUG("Questionmark states " << (~surelyReachSinkStates & ~targetStates));
@@ -897,7 +897,7 @@ namespace storm {
         
 
         template<typename ValueType>
-        void MemlessStrategySearchQualitative<ValueType>::printCoveredStates(storm::storage::BitVector const &remaining) const {
+        void IterativePolicySearch<ValueType>::printCoveredStates(storm::storage::BitVector const &remaining) const {
             STORM_LOG_DEBUG("states that are okay");
             for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
                 if (!remaining.get(state)) {
@@ -908,22 +908,22 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void MemlessStrategySearchQualitative<ValueType>::printScheduler(std::vector<InternalObservationScheduler> const& ) {
+        void IterativePolicySearch<ValueType>::printScheduler(std::vector<InternalObservationScheduler> const& ) {
 
         }
 
         template<typename ValueType>
-        void MemlessStrategySearchQualitative<ValueType>::finalizeStatistics() {
+        void IterativePolicySearch<ValueType>::finalizeStatistics() {
 
         }
 
         template<typename ValueType>
-        typename MemlessStrategySearchQualitative<ValueType>::Statistics const& MemlessStrategySearchQualitative<ValueType>::getStatistics() const{
+        typename IterativePolicySearch<ValueType>::Statistics const& IterativePolicySearch<ValueType>::getStatistics() const{
             return stats;
         }
 
         template <typename ValueType>
-        bool MemlessStrategySearchQualitative<ValueType>::smtCheck(uint64_t iteration, std::set<storm::expressions::Expression> const& assumptions) {
+        bool IterativePolicySearch<ValueType>::smtCheck(uint64_t iteration, std::set<storm::expressions::Expression> const& assumptions) {
             if(options.isExportSATSet()) {
                 STORM_LOG_DEBUG("Export SMT Solver Call (" <<iteration << ")");
                 std::string filepath = options.getExportSATCallsPath() + "call_" + std::to_string(iteration) + ".smt2";
@@ -957,8 +957,8 @@ namespace storm {
             return true;
         }
 
-        template class MemlessStrategySearchQualitative<double>;
-        template class MemlessStrategySearchQualitative<storm::RationalNumber>;
+        template class IterativePolicySearch<double>;
+        template class IterativePolicySearch<storm::RationalNumber>;
 
 
     }
