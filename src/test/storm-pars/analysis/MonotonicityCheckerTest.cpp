@@ -23,8 +23,6 @@
 #include "storm-parsers/api/storm-parsers.h"
 
 TEST(MonotonicityCheckerTest, Simple1) {
-    typedef typename TestFixture::ValueType ValueType;
-
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple1.pm";
     std::string formulaAsString = "P=? [F s=3 ]";
     std::string constantsAsString = "";
@@ -50,19 +48,26 @@ TEST(MonotonicityCheckerTest, Simple1) {
         upperBoundaries.emplace(std::make_pair(var, ub));
     }
     auto region =  storm::storage::ParameterRegion<storm::RationalFunction>(std::move(lowerBoundaries), std::move(upperBoundaries));
+    std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> regions = {region};
 
     //order
-    auto monHelper = new storm::analysis::MonotonicityHelper<storm::RationalFunction, ValueType>(model, formulas, regions);
+    auto monHelper = new storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 0, 0, false);
     auto order = monHelper->checkMonotonicityInBuild(std::cout).begin()->first;
 
+    //TODO order is nullpointer here, idk why.
+    ASSERT_TRUE(order.get() != nullptr);
+
     //monchecker
-    std::shared_ptr<models::sparse::Model<ValueType>> sparseModel = model->as<models::sparse::Model<ValueType>>();
-    auto matrix = sparseModel->getTransitionMatrix();
-    auto monChecker = new storm::analysis::MonotonicityChecker<storm::RationalFunction, ValueType>(matrix);
+    //std::shared_ptr<storm::models::sparse::Model<ValueType>> sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
+    auto matrix = model->getTransitionMatrix();
+    auto monChecker = new storm::analysis::MonotonicityChecker<storm::RationalFunction>(matrix);
+
+    STORM_PRINT(matrix);
 
     //start testing
     auto var = vars.begin();
-    for (uint_fast64_t i = 0; i < 3) {
-        EXPECT_EQ(storm::analysis::MonotonicityResult<storm::RationalFunction, ValueType>::Monotonicity::Decr, monChecker->checkLocalMonotonicity(order, i, &var, region));
+    for (uint_fast64_t i = 0; i < 3; i++) {
+        STORM_PRINT("HELLO " << i << std::endl);
+        EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Decr, monChecker->checkLocalMonotonicity(order, i, *var, region));
     }
 }
