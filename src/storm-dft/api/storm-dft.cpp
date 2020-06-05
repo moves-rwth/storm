@@ -7,6 +7,7 @@
 
 #include "storm-dft/modelchecker/dft/SFTBDDChecker.h"
 #include "storm-dft/modelchecker/dft/DFTModularizer.h"
+#include "storm-dft/modelchecker/dft/SFTBDDPropertyFormulaAdapter.h"
 #include "storm-dft/utility/MTTFHelper.h"
 #include <memory>
 #include <vector>
@@ -22,7 +23,8 @@ namespace storm {
                 bool const calculateMCS,
                 bool const calculateProbability,
                 bool const useModularisation,
-                std::vector<double> const timepoints,
+                std::vector<double> const &timepoints,
+                std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
                 size_t const chunksize) {
             if(calculateMttf) {
                 std::cout << "The numerically approximated MTTF is " << storm::dft::utility::MTTFHelper(dft) << '\n';
@@ -43,6 +45,15 @@ namespace storm {
                         std::cout << "Systemfailure Probability at Timebound " << timebound << " is " << probability << '\n';
                     }
                 }
+
+                auto const probabilities{checker.check(properties, chunksize)};
+                for(size_t i{0}; i < probabilities.size(); ++i) {
+                    std::cout << "Property \""
+                        << properties.at(i)->toString()
+                        << "\" checks to "
+                        << probabilities.at(i) << '\n';
+                }
+
                 return;
             } else {
                 STORM_LOG_THROW(dft->nrDynamicElements() == 0,
@@ -86,6 +97,15 @@ namespace storm {
                         std::cout << "Systemfailure Probability at Timebound " << timebound << " is " << probability << '\n';
                     }
                 }
+
+                storm::adapters::SFTBDDPropertyFormulaAdapter adapter{checker, dft};
+                auto const probabilities{adapter.check(properties, chunksize)};
+                for(size_t i{0}; i < probabilities.size(); ++i) {
+                    std::cout << "Property \""
+                        << properties.at(i)->toString()
+                        << "\" checks to "
+                        << probabilities.at(i) << '\n';
+                }
             }
         }
 
@@ -98,7 +118,8 @@ namespace storm {
                 bool const calculateMCS,
                 bool const calculateProbability,
                 bool const useModularisation,
-                std::vector<double> const timepoints,
+                std::vector<double> const &timepoints,
+                std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
                 size_t const chunksize) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BDD analysis is not supportet for this data type.");
         }

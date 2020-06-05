@@ -128,7 +128,7 @@ void processOptions() {
             dftIOSettings.usePropTimebound()};
         bool const isTimepoints{isAnalyzeWithBdds &&
             dftIOSettings.usePropTimepoints()};
-        bool const probabilityAnalysis {isTimebound || isTimepoints};
+        bool const probabilityAnalysis {isTimebound || isTimepoints || ioSettings.isPropertySet()};
         size_t const chunksize{faultTreeSettings.getChunksize()};
         bool const isModularisation{faultTreeSettings.useModularisation()};
 
@@ -145,6 +145,13 @@ void processOptions() {
             filename = dftIOSettings.getExportBddDotFilename();
         }
 
+        // gather manually inputted properties
+        std::vector<std::shared_ptr<storm::logic::Formula const>>
+            manuallyInputtedProperties;
+        if(ioSettings.isPropertySet()) {
+            manuallyInputtedProperties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(ioSettings.getProperty()));
+        }
+
         storm::api::analyzeDFTBdd<ValueType>(dft,
                 isExportToBddDot,
                 filename,
@@ -153,6 +160,7 @@ void processOptions() {
                 probabilityAnalysis,
                 isModularisation,
                 timepoints,
+                manuallyInputtedProperties,
                 chunksize);
 
         // don't perform other analysis if analyzeWithBdds is set

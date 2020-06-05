@@ -197,7 +197,8 @@ namespace storm {
                 bool const calculateMCS,
                 bool const calculateProbability,
                 bool const useModularisation,
-                std::vector<double> const timepoints,
+                std::vector<double> const &timepoints,
+                std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
                 size_t const chunksize);
 
         /*!
