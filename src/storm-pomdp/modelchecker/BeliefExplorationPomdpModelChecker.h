@@ -101,6 +101,9 @@ namespace storm {
                     boost::optional<uint64_t> refinementSteps;
                     storm::utility::Stopwatch totalTime;
                     
+                    bool beliefMdpDetectedToBeFinite;
+                    bool refinementFixpointDetected;
+                    
                     boost::optional<uint64_t> overApproximationStates;
                     bool overApproximationBuildAborted;
                     storm::utility::Stopwatch overApproximationBuildTime;

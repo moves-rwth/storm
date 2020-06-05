@@ -183,7 +183,7 @@ namespace storm {
                             }
                         }
                     }
-                    std::cout << "Keeping scheduler guesses " << keptGuesses << std::endl;
+                    STORM_LOG_INFO("Keeping scheduler guesses " << keptGuesses);
                     storm::utility::vector::filterVectorInPlace(guessedSchedulerValues, keptGuesses);
                     
                     // Finally prepare the result

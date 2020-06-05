@@ -68,7 +68,7 @@ namespace storm {
             }
             
             template<typename PomdpModelType, typename BeliefValueType>
-            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::Statistics::Statistics() :  overApproximationBuildAborted(false), underApproximationBuildAborted(false), aborted(false) {
+            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::Statistics::Statistics() :  beliefMdpDetectedToBeFinite(false), refinementFixpointDetected(false), overApproximationBuildAborted(false), underApproximationBuildAborted(false), aborted(false) {
                 // intentionally left empty;
             }
             
@@ -97,7 +97,7 @@ namespace storm {
                 auto initialPomdpValueBounds = TrivialPomdpValueBoundsModelChecker<storm::models::sparse::Pomdp<ValueType>>(pomdp()).getValueBounds(formula, formulaInfo);
                 uint64_t initialPomdpState = pomdp().getInitialStates().getNextSetIndex(0);
                 Result result(initialPomdpValueBounds.getHighestLowerBound(initialPomdpState), initialPomdpValueBounds.getSmallestUpperBound(initialPomdpState));
-                STORM_PRINT_AND_LOG("Initial value bounds are [" << result.lowerBound << ", " <<  result.upperBound << "]" << std::endl);
+                STORM_LOG_INFO("Initial value bounds are [" << result.lowerBound << ", " <<  result.upperBound << "]");
 
                 boost::optional<std::string> rewardModelName;
                 std::set<uint32_t> targetObservations;
@@ -123,7 +123,8 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unsupported formula '" << formula << "'.");
                 }
                 if (storm::pomdp::detectFiniteBeliefMdp(pomdp(), formulaInfo.getTargetStates().states)) {
-                    STORM_PRINT_AND_LOG("Detected that the belief MDP is finite." << std::endl);
+                    STORM_LOG_INFO("Detected that the belief MDP is finite.");
+                    statistics.beliefMdpDetectedToBeFinite = true;
                 }
                 
                 if (options.refine) {
@@ -153,6 +154,9 @@ namespace storm {
                 pomdp().printModelInformationToStream(stream);
                 stream << "# Max. Number of states with same observation: " << pomdp().getMaxNrStatesWithSameObservation() << std::endl;
                 
+                if (statistics.beliefMdpDetectedToBeFinite) {
+                    stream << "# Pre-computations detected that the belief MDP is finite.";
+                }
                 if (statistics.aborted) {
                     stream << "# Computation aborted early" << std::endl;
                 }
@@ -162,6 +166,9 @@ namespace storm {
                 // Refinement information:
                 if (statistics.refinementSteps) {
                     stream << "# Number of refinement steps: " << statistics.refinementSteps.get() << std::endl;
+                }
+                if (statistics.refinementFixpointDetected) {
+                    stream << "# Detected a refinement fixpoint." << std::endl;
                 }
                 
                 // The overapproximation MDP:
@@ -219,8 +226,13 @@ namespace storm {
                     
                     buildOverApproximation(targetObservations, min, rewardModelName.is_initialized(), false, heuristicParameters, observationResolutionVector, manager, approx);
                     if (approx->hasComputedValues()) {
-                        STORM_PRINT_AND_LOG("Explored and checked Over-Approximation MDP:\n");
-                        approx->getExploredMdp()->printModelInformationToStream(std::cout);
+                        auto printInfo = [&approx]() {
+                            std::stringstream str;
+                            str << "Explored and checked Over-Approximation MDP:" << std::endl;
+                            approx->getExploredMdp()->printModelInformationToStream(str);
+                            return str.str();
+                        };
+                        STORM_LOG_INFO(printInfo());
                         ValueType& resultValue = min ? result.lowerBound : result.upperBound;
                         resultValue = approx->getComputedValueAtInitialState();
                     }
@@ -240,13 +252,18 @@ namespace storm {
                             heuristicParameters.sizeThreshold = std::numeric_limits<uint64_t>::max();
                         } else {
                             heuristicParameters.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
-                            STORM_PRINT_AND_LOG("Heuristically selected an under-approximation mdp size threshold of " << heuristicParameters.sizeThreshold << "." << std::endl);
+                            STORM_LOG_INFO("Heuristically selected an under-approximation mdp size threshold of " << heuristicParameters.sizeThreshold << ".");
                         }
                     }
                     buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, heuristicParameters, manager, approx);
                     if (approx->hasComputedValues()) {
-                        STORM_PRINT_AND_LOG("Explored and checked Under-Approximation MDP:\n");
-                        approx->getExploredMdp()->printModelInformationToStream(std::cout);
+                        auto printInfo = [&approx]() {
+                            std::stringstream str;
+                            str << "Explored and checked Under-Approximation MDP:" << std::endl;
+                            approx->getExploredMdp()->printModelInformationToStream(str);
+                            return str.str();
+                        };
+                        STORM_LOG_INFO(printInfo());
                         ValueType& resultValue = min ? result.upperBound : result.lowerBound;
                         resultValue = approx->getComputedValueAtInitialState();
                     }
@@ -280,7 +297,7 @@ namespace storm {
                     ValueType const& newValue = overApproximation->getComputedValueAtInitialState();
                     bool betterBound = min ? result.updateLowerBound(newValue) : result.updateUpperBound(newValue);
                     if (betterBound) {
-                        STORM_PRINT_AND_LOG("Over-approx result for refinement improved after " << statistics.totalTime << " seconds in refinement step #" << statistics.refinementSteps.get() << ". New value is '" << newValue << "'." << std::endl);
+                        STORM_LOG_INFO("Over-approx result for refinement improved after " << statistics.totalTime << " seconds in refinement step #" << statistics.refinementSteps.get() << ". New value is '" << newValue << "'." << std::endl);
                     }
                 }
                 
@@ -307,30 +324,29 @@ namespace storm {
                     ValueType const& newValue = underApproximation->getComputedValueAtInitialState();
                     bool betterBound = min ? result.updateUpperBound(newValue) : result.updateLowerBound(newValue);
                     if (betterBound) {
-                        STORM_PRINT_AND_LOG("Under-approx result for refinement improved after " << statistics.totalTime << " seconds in refinement step #" << statistics.refinementSteps.get() << ". New value is '" << newValue << "'." << std::endl);
+                        STORM_LOG_INFO("Under-approx result for refinement improved after " << statistics.totalTime << " seconds in refinement step #" << statistics.refinementSteps.get() << ". New value is '" << newValue << "'." << std::endl);
                     }
                 }
                 
                 // Do some output
-                STORM_PRINT_AND_LOG("Completed iteration #" << statistics.refinementSteps.get() << ". Current checktime is " << statistics.totalTime << ".");
+                STORM_LOG_INFO("Completed iteration #" << statistics.refinementSteps.get() << ". Current checktime is " << statistics.totalTime << ".");
                 bool computingLowerBound = false;
                 bool computingUpperBound = false;
                 if (options.discretize) {
-                    STORM_PRINT_AND_LOG(" Over-approx MDP has size " << overApproximation->getExploredMdp()->getNumberOfStates() << ".");
+                    STORM_LOG_INFO("\tOver-approx MDP has size " << overApproximation->getExploredMdp()->getNumberOfStates() << ".");
                     (min ? computingLowerBound : computingUpperBound) = true;
                 }
                 if (options.unfold) {
-                    STORM_PRINT_AND_LOG(" Under-approx MDP has size " << underApproximation->getExploredMdp()->getNumberOfStates() << ".");
+                    STORM_LOG_INFO("\tUnder-approx MDP has size " << underApproximation->getExploredMdp()->getNumberOfStates() << ".");
                     (min ? computingUpperBound : computingLowerBound) = true;
                 }
                 if (computingLowerBound && computingUpperBound) {
-                    STORM_PRINT_AND_LOG(" Current result is [" << result.lowerBound << ", " << result.upperBound << "].");
+                    STORM_LOG_INFO("\tCurrent result is [" << result.lowerBound << ", " << result.upperBound << "].");
                 } else if (computingLowerBound) {
-                    STORM_PRINT_AND_LOG(" Current result is ≥" << result.lowerBound << ".");
+                    STORM_LOG_INFO("\tCurrent result is ≥" << result.lowerBound << ".");
                 } else if (computingUpperBound) {
-                    STORM_PRINT_AND_LOG(" Current result is ≤" << result.upperBound << ".");
+                    STORM_LOG_INFO("\tCurrent result is ≤" << result.upperBound << ".");
                 }
-                STORM_PRINT_AND_LOG(std::endl);
                 
                 // Start refinement
                 STORM_LOG_WARN_COND(options.refineStepLimit.is_initialized() || !storm::utility::isZero(options.refinePrecision), "No termination criterion for refinement given. Consider to specify a steplimit, a non-zero precisionlimit, or a timeout");
@@ -354,7 +370,7 @@ namespace storm {
                             ValueType const& newValue = overApproximation->getComputedValueAtInitialState();
                             bool betterBound = min ? result.updateLowerBound(newValue) : result.updateUpperBound(newValue);
                             if (betterBound) {
-                                STORM_PRINT_AND_LOG("Over-approx result for refinement improved after " << statistics.totalTime << " in refinement step #" << (statistics.refinementSteps.get() + 1) << ". New value is '" << newValue << "'." << std::endl);
+                                STORM_LOG_INFO("Over-approx result for refinement improved after " << statistics.totalTime << " in refinement step #" << (statistics.refinementSteps.get() + 1) << ". New value is '" << newValue << "'.");
                             }
                         } else {
                             break;
@@ -371,7 +387,7 @@ namespace storm {
                             ValueType const& newValue = underApproximation->getComputedValueAtInitialState();
                             bool betterBound = min ? result.updateUpperBound(newValue) : result.updateLowerBound(newValue);
                             if (betterBound) {
-                                STORM_PRINT_AND_LOG("Under-approx result for refinement improved after " << statistics.totalTime << " in refinement step #" << (statistics.refinementSteps.get() + 1) << ". New value is '" << newValue << "'." << std::endl);
+                                STORM_LOG_INFO("Under-approx result for refinement improved after " << statistics.totalTime << " in refinement step #" << (statistics.refinementSteps.get() + 1) << ". New value is '" << newValue << "'.");
                             }
                         } else {
                             break;
@@ -384,30 +400,30 @@ namespace storm {
                         ++statistics.refinementSteps.get();
                         // Don't make too many outputs (to avoid logfile clutter)
                         if (statistics.refinementSteps.get() <= 1000) {
-                            STORM_PRINT_AND_LOG("Completed iteration #" << statistics.refinementSteps.get() << ". Current checktime is " << statistics.totalTime << ".");
+                            STORM_LOG_INFO("Completed iteration #" << statistics.refinementSteps.get() << ". Current checktime is " << statistics.totalTime << ".");
                             bool computingLowerBound = false;
                             bool computingUpperBound = false;
                             if (options.discretize) {
-                                STORM_PRINT_AND_LOG(" Over-approx MDP has size " << overApproximation->getExploredMdp()->getNumberOfStates() << ".");
+                                STORM_LOG_INFO("\tOver-approx MDP has size " << overApproximation->getExploredMdp()->getNumberOfStates() << ".");
                                 (min ? computingLowerBound : computingUpperBound) = true;
                             }
                             if (options.unfold) {
-                                STORM_PRINT_AND_LOG(" Under-approx MDP has size " << underApproximation->getExploredMdp()->getNumberOfStates() << ".");
+                                STORM_LOG_INFO("\tUnder-approx MDP has size " << underApproximation->getExploredMdp()->getNumberOfStates() << ".");
                                 (min ? computingUpperBound : computingLowerBound) = true;
                             }
                             if (computingLowerBound && computingUpperBound) {
-                                STORM_PRINT_AND_LOG(" Current result is [" << result.lowerBound << ", " << result.upperBound << "].");
+                                STORM_LOG_INFO("\tCurrent result is [" << result.lowerBound << ", " << result.upperBound << "].");
                             } else if (computingLowerBound) {
-                                STORM_PRINT_AND_LOG(" Current result is ≥" << result.lowerBound << ".");
+                                STORM_LOG_INFO("\tCurrent result is ≥" << result.lowerBound << ".");
                             } else if (computingUpperBound) {
-                                STORM_PRINT_AND_LOG(" Current result is ≤" << result.upperBound << ".");
+                                STORM_LOG_INFO("\tCurrent result is ≤" << result.upperBound << ".");
                             }
-                            STORM_PRINT_AND_LOG(std::endl);
                             STORM_LOG_WARN_COND(statistics.refinementSteps.get() < 1000, "Refinement requires  more than 1000 iterations.");
                         }
                     }
                     if (overApproxFixPoint && underApproxFixPoint) {
-                        STORM_PRINT_AND_LOG("Refinement fixpoint reached after " << statistics.refinementSteps.get() << " iterations." << std::endl);
+                        STORM_LOG_INFO("Refinement fixpoint reached after " << statistics.refinementSteps.get() << " iterations." << std::endl);
+                        statistics.refinementFixpointDetected = true;
                         break;
                     }
                 }
