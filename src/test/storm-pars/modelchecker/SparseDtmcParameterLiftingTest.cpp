@@ -584,7 +584,7 @@ namespace {
         EXPECT_EQ(storm::modelchecker::RegionResult::AllViolated, regionChecker->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, order, monRes));
     }
 
-    // TODO: Add _Mon to tests (e.g. Simple1_Mon)
+
     TYPED_TEST(SparseDtmcParameterLiftingTest, Simple1_Mon) {
         typedef typename TestFixture::ValueType ValueType;
 
