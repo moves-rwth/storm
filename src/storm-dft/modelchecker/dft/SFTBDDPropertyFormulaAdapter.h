@@ -43,6 +43,11 @@ class SFTBDDPropertyFormulaAdapter {
         std::shared_ptr<storm::storage::DFT<ValueType>> dft)
         : sylvanBddManager{sylvanBddManager}, checker{dft}, dft{dft} {}
 
+    SFTBDDPropertyFormulaAdapter(
+        storm::modelchecker::SFTBDDChecker const &checker,
+        std::shared_ptr<storm::storage::DFT<ValueType>> dft)
+        : checker{checker}, dft{dft} {}
+
     /**
      * Calculate the properties specified by the formulas
      * \param formuals
