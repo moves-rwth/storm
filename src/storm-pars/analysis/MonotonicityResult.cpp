@@ -9,7 +9,7 @@ namespace storm {
     namespace analysis {
 
         template <typename VariableType>
-        MonotonicityResult<VariableType>::MonotonicityResult(){
+        MonotonicityResult<VariableType>::MonotonicityResult() {
             this->done = false;
             this->somewhereMonotonicity = false;
             this->allMonotonicity = true;
@@ -20,9 +20,9 @@ namespace storm {
             monotonicityResult.insert(std::pair<VariableType, MonotonicityResult<VariableType>::Monotonicity>(std::move(var), std::move(mon)));
         }
 
-
         template <typename VariableType>
         void MonotonicityResult<VariableType>::updateMonotonicityResult(VariableType var, MonotonicityResult<VariableType>::Monotonicity mon) {
+
             if (mon == MonotonicityResult<VariableType>::Monotonicity::Not) {
                 mon = MonotonicityResult<VariableType>::Monotonicity::Unknown;
             }
@@ -31,13 +31,11 @@ namespace storm {
                 addMonotonicityResult(std::move(var), std::move(mon));
             } else {
                 auto monRes = monotonicityResult[var];
-                if (monRes == MonotonicityResult<VariableType>::Monotonicity::Unknown || monRes == mon || mon == MonotonicityResult<VariableType>::Monotonicity::Constant){
+                if (monRes == MonotonicityResult<VariableType>::Monotonicity::Unknown || monRes == mon || mon == MonotonicityResult<VariableType>::Monotonicity::Constant) {
                     return;
-                }
-                else if (mon == MonotonicityResult<VariableType>::Monotonicity::Unknown || monRes == MonotonicityResult<VariableType>::Monotonicity::Constant ){
+                } else if (mon == MonotonicityResult<VariableType>::Monotonicity::Unknown || monRes == MonotonicityResult<VariableType>::Monotonicity::Constant ) {
                     monotonicityResult[var] = mon;
-                }
-                else{
+                } else {
                     monotonicityResult[var] = MonotonicityResult<VariableType>::Monotonicity::Unknown;
                 }
             }
@@ -130,7 +128,7 @@ namespace storm {
         }
 
         template <typename VariableType>
-        std::shared_ptr<MonotonicityResult<VariableType>> MonotonicityResult<VariableType>::copy(){
+        std::shared_ptr<MonotonicityResult<VariableType>> MonotonicityResult<VariableType>::copy() {
             std::shared_ptr<MonotonicityResult<VariableType>> copy = std::make_shared<MonotonicityResult<VariableType>>();
             copy->monotonicityResult = std::map<VariableType, Monotonicity>(monotonicityResult);
             copy->setAllMonotonicity(allMonotonicity);

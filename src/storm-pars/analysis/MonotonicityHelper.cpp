@@ -41,7 +41,7 @@ namespace storm {
                     lowerBoundaries.insert(std::make_pair(var, lb));
                     upperBoundaries.insert(std::make_pair(var, ub));
                 }
-                this->region =  storage::ParameterRegion<ValueType>(std::move(lowerBoundaries), std::move(upperBoundaries));
+                this->region = storage::ParameterRegion<ValueType>(std::move(lowerBoundaries), std::move(upperBoundaries));
             }
 
             if (numberOfSamples > 2) {
@@ -53,12 +53,12 @@ namespace storm {
                     this->resultCheckOnSamples = std::map<VariableType, std::pair<bool, bool>>(
                             checkMonotonicityOnSamples(model->as<models::sparse::Mdp<ValueType>>(), numberOfSamples));
                 }
-                checkSamples= true;
+                checkSamples = true;
             } else {
                 if (numberOfSamples > 0) {
                     STORM_LOG_WARN("At least 3 sample points are needed to check for monotonicity on samples, not using samples for now");
                 }
-                checkSamples= false;
+                checkSamples = false;
             }
 
             this->extender = new analysis::OrderExtender<ValueType, ConstantType>(sparseModel, formulas[0], region);
@@ -71,7 +71,7 @@ namespace storm {
             createOrder();
 
             //output of results
-            for(auto itr : monResults) {
+            for (auto itr : monResults) {
                 std::string temp = itr.second.first->toString();
                 outfile << temp << std::endl;
             }
@@ -200,7 +200,7 @@ namespace storm {
             std::map<VariableType, std::pair<bool, bool>> result;
 
             auto instantiator = utility::ModelInstantiator<models::sparse::Dtmc<ValueType>, models::sparse::Dtmc<ConstantType>>(*model);
-            std::set<VariableType> variables =  models::sparse::getProbabilityParameters(*model);
+            std::set<VariableType> variables = models::sparse::getProbabilityParameters(*model);
 
             // For each of the variables create a model in which we only change the value for this specific variable
             for (auto itr = variables.begin(); itr != variables.end(); ++itr) {

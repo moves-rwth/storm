@@ -49,7 +49,6 @@ namespace storm {
                     monIncr = derivative.constantPart() >= 0;
                     monDecr = derivative.constantPart() <= 0;
                 } else {
-
                     std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
                     std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
                     solver::Z3SmtSolver s(*manager);

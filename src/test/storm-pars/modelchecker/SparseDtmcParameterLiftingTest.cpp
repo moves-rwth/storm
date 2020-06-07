@@ -562,19 +562,189 @@ namespace {
         model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
         auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, false);
-        auto monHelper = new storm::analysis::MonotonicityHelper<storm::RationalFunction, ValueType>(model, formulas, regions);
-        auto order = monHelper->checkMonotonicityInBuild(std::cout).begin()->first;
-        ASSERT_EQ(order->getNumberOfAddedStates(), model->getTransitionMatrix().getColumnCount());
+
+
         //start testing
-        auto allSatRegion=storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.2,0.8<=q<=0.9", modelParameters);
+        auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.2,0.8<=q<=0.9", modelParameters);
+        auto o = new storm::analysis::OrderExtender<storm::RationalFunction, ValueType>(model, formulas[0], allSatRegion);
+        auto order = o->extendOrder(nullptr, allSatRegion);
         auto monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
         EXPECT_EQ(storm::modelchecker::RegionResult::AllSat, regionChecker->analyzeRegion(this->env(), allSatRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true, order, monRes));
 
-        auto exBothRegion=storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.9,0.1<=q<=0.9", modelParameters);
+        auto exBothRegion = storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.9,0.1<=q<=0.9", modelParameters);
+        o = new storm::analysis::OrderExtender<storm::RationalFunction, ValueType>(model, formulas[0], exBothRegion);
+        order = o->extendOrder(nullptr, exBothRegion);
+        monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
         EXPECT_EQ(storm::modelchecker::RegionResult::ExistsBoth, regionChecker->analyzeRegion(this->env(), exBothRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, order, monRes));
 
-        auto allVioRegion=storm::api::parseRegion<storm::RationalFunction>("0.8<=p<=0.9,0.1<=q<=0.2", modelParameters);
+        auto allVioRegion = storm::api::parseRegion<storm::RationalFunction>("0.8<=p<=0.9,0.1<=q<=0.2", modelParameters);
+        o = new storm::analysis::OrderExtender<storm::RationalFunction, ValueType>(model, formulas[0], allVioRegion);
+        order = o->extendOrder(nullptr, allVioRegion);
+        monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
         EXPECT_EQ(storm::modelchecker::RegionResult::AllViolated, regionChecker->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, order, monRes));
     }
+
+
+    TYPED_TEST(SparseDtmcParameterLiftingTest, Simple1_Mon) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple1.pm";
+        std::string formulaAsString = "P<0.75 [F s=3 ]";
+        std::string constantsAsString = "";
+
+        // Program and formula
+        storm::prism::Program program = storm::api::parseProgram(programFile);
+        program = storm::utility::prism::preprocess(program, constantsAsString);
+        std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+        std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+
+        auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
+        auto rewParameters = storm::models::sparse::getRewardParameters(*model);
+        modelParameters.insert(rewParameters.begin(), rewParameters.end());
+
+        auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true));
+
+        //start testing
+        auto allSatRegion=storm::api::parseRegion<storm::RationalFunction>("0.4<=p<=0.6", modelParameters);
+        auto o = new storm::analysis::OrderExtender<storm::RationalFunction, ValueType>(model, formulas[0], allSatRegion);
+        auto order = o->extendOrder(nullptr, allSatRegion);
+        auto monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
+        EXPECT_EQ(storm::modelchecker::RegionResult::AllSat, regionChecker->analyzeRegion(this->env(), allSatRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true, order, monRes));
+
+        auto exBothRegion=storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.9", modelParameters);
+        o = new storm::analysis::OrderExtender<storm::RationalFunction, ValueType>(model, formulas[0], exBothRegion);
+        order = o->extendOrder(nullptr, exBothRegion);
+        monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
+        EXPECT_EQ(storm::modelchecker::RegionResult::ExistsBoth, regionChecker->analyzeRegion(this->env(), exBothRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, order, monRes));
+
+        auto allVioRegion=storm::api::parseRegion<storm::RationalFunction>("0.05<=p<=0.1", modelParameters);
+        o = new storm::analysis::OrderExtender<storm::RationalFunction, ValueType>(model, formulas[0], allVioRegion);
+        order = o->extendOrder(nullptr, allVioRegion);
+        monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
+        EXPECT_EQ(storm::modelchecker::RegionResult::AllViolated, regionChecker->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, order, monRes));
+
+    }
+
+    TYPED_TEST(SparseDtmcParameterLiftingTest, Simple2_Mon) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple2.pm";
+        std::string formulaAsString = "P<0.5 [F s=3 ]";
+        std::string constantsAsString = "";
+
+        // Program and formula
+        storm::prism::Program program = storm::api::parseProgram(programFile);
+        program = storm::utility::prism::preprocess(program, constantsAsString);
+        std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+        std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+
+        auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
+        auto rewParameters = storm::models::sparse::getRewardParameters(*model);
+        modelParameters.insert(rewParameters.begin(), rewParameters.end());
+
+        auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true));
+
+        //start testing
+        auto allSatRegion=storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.5", modelParameters);
+        auto o = new storm::analysis::OrderExtender<storm::RationalFunction, ValueType>(model, formulas[0], allSatRegion);
+        auto order = o->extendOrder(nullptr, allSatRegion);
+        auto monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
+        EXPECT_EQ(storm::modelchecker::RegionResult::AllSat, regionChecker->analyzeRegion(this->env(), allSatRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true, order, monRes));
+
+        auto exBothRegion=storm::api::parseRegion<storm::RationalFunction>("0.4<=p<=0.8", modelParameters);
+        o = new storm::analysis::OrderExtender<storm::RationalFunction, ValueType>(model, formulas[0], exBothRegion);
+        order = o->extendOrder(nullptr, exBothRegion);
+        monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
+        EXPECT_EQ(storm::modelchecker::RegionResult::ExistsBoth, regionChecker->analyzeRegion(this->env(), exBothRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, order, monRes));
+
+        auto allVioRegion=storm::api::parseRegion<storm::RationalFunction>("0.7<=p<=0.9", modelParameters);
+        o = new storm::analysis::OrderExtender<storm::RationalFunction, ValueType>(model, formulas[0], allVioRegion);
+        order = o->extendOrder(nullptr, allVioRegion);
+        monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
+        EXPECT_EQ(storm::modelchecker::RegionResult::AllViolated, regionChecker->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, order, monRes));
+    }
+
+
+    TYPED_TEST(SparseDtmcParameterLiftingTest, Simple3_Mon) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple3.pm";
+        std::string formulaAsString = "P<0.5 [F s=4 ]";
+        std::string constantsAsString = "";
+
+        // Program and formula
+        storm::prism::Program program = storm::api::parseProgram(programFile);
+        program = storm::utility::prism::preprocess(program, constantsAsString);
+        std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+        std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+
+        auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
+        auto rewParameters = storm::models::sparse::getRewardParameters(*model);
+        modelParameters.insert(rewParameters.begin(), rewParameters.end());
+
+        auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true));
+
+        //start testing
+
+        auto allSatRegion=storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.4", modelParameters);
+        auto o = new storm::analysis::OrderExtender<storm::RationalFunction, ValueType>(model, formulas[0], allSatRegion);
+        auto order = o->extendOrder(nullptr, allSatRegion);
+        auto monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
+        EXPECT_EQ(storm::modelchecker::RegionResult::AllSat, regionChecker->analyzeRegion(this->env(), allSatRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true, order, monRes));
+
+        auto exBothRegion=storm::api::parseRegion<storm::RationalFunction>("0.4<=p<=0.6", modelParameters);
+        o = new storm::analysis::OrderExtender<storm::RationalFunction, ValueType>(model, formulas[0], exBothRegion);
+        order = o->extendOrder(nullptr, exBothRegion);
+        monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
+        EXPECT_EQ(storm::modelchecker::RegionResult::ExistsBoth, regionChecker->analyzeRegion(this->env(), exBothRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, order, monRes));
+
+        auto allVioRegion=storm::api::parseRegion<storm::RationalFunction>("0.6<=p<=0.9", modelParameters);
+        o = new storm::analysis::OrderExtender<storm::RationalFunction, ValueType>(model, formulas[0], allVioRegion);
+        order = o->extendOrder(nullptr, allVioRegion);
+        monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
+        EXPECT_EQ(storm::modelchecker::RegionResult::AllViolated, regionChecker->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, order, monRes));
+    }
+
+
+    TYPED_TEST(SparseDtmcParameterLiftingTest, Simple4_Mon) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple4.pm";
+        std::string formulaAsString = "P<0.5 [F s=3 ]";
+        std::string constantsAsString = "";
+
+        // Program and formula
+        storm::prism::Program program = storm::api::parseProgram(programFile);
+        program = storm::utility::prism::preprocess(program, constantsAsString);
+        std::vector<std::shared_ptr<const storm::logic::Formula>> formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulaAsString, program));
+        std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFunction>> model = storm::api::buildSparseModel<storm::RationalFunction>(program, formulas)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+
+        auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
+        auto rewParameters = storm::models::sparse::getRewardParameters(*model);
+        modelParameters.insert(rewParameters.begin(), rewParameters.end());
+
+        auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true));
+
+        //start testing
+
+        auto allSatRegion=storm::api::parseRegion<storm::RationalFunction>("0.6<=p<=0.9", modelParameters);
+        auto o = new storm::analysis::OrderExtender<storm::RationalFunction, ValueType>(model, formulas[0], allSatRegion);
+        auto order = o->extendOrder(nullptr, allSatRegion);
+        auto monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
+        EXPECT_EQ(storm::modelchecker::RegionResult::AllSat, regionChecker->analyzeRegion(this->env(), allSatRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true, order, monRes));
+
+        auto exBothRegion=storm::api::parseRegion<storm::RationalFunction>("0.3<=p<=0.7", modelParameters);
+        o = new storm::analysis::OrderExtender<storm::RationalFunction, ValueType>(model, formulas[0], exBothRegion);
+        order = o->extendOrder(nullptr, exBothRegion);
+        monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
+        EXPECT_EQ(storm::modelchecker::RegionResult::ExistsBoth, regionChecker->analyzeRegion(this->env(), exBothRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, order, monRes));
+
+        auto allVioRegion=storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.4", modelParameters);
+        o = new storm::analysis::OrderExtender<storm::RationalFunction, ValueType>(model, formulas[0], allVioRegion);
+        order = o->extendOrder(nullptr, allVioRegion);
+        monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
+        EXPECT_EQ(storm::modelchecker::RegionResult::AllViolated, regionChecker->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, order, monRes));
+    }
+    
 }
 #endif

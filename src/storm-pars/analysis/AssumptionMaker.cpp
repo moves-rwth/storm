@@ -13,7 +13,6 @@ namespace storm {
             }
         }
 
-
         template <typename ValueType, typename ConstantType>
         std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> AssumptionMaker<ValueType, ConstantType>::createAndCheckAssumptions(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<Order> order) {
             std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> result;
