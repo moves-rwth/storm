@@ -278,6 +278,14 @@ namespace storm {
             return numberOfStates;
         }
 
+        bool Order::isBottomState(uint_fast64_t state) {
+            return std::find(bottom->states.begin(), bottom->states.end(), state) == bottom->states.end();
+        }
+
+        bool Order::isTopState(uint_fast64_t state) {
+            return std::find(top->states.begin(), top->states.end(), state) == top->states.end();
+        }
+
         bool Order::isOnlyBottomTopOrder() {
             return onlyBottomTopOrder;
         }

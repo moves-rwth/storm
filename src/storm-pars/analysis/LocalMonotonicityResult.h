@@ -4,6 +4,7 @@
 #include <vector>
 #include "storm-pars/analysis/MonotonicityResult.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
+#include "storm/storage/BitVector.h"
 
 namespace storm {
     namespace analysis {
@@ -27,6 +28,11 @@ namespace storm {
              */
             std::shared_ptr<LocalMonotonicityResult<VariableType>> copy();
 
+            bool isDone();
+
+            void setStateMonotone(uint_fast64_t state);
+
+
         private:
             std::vector<std::shared_ptr<MonotonicityResult<VariableType>>> stateMonRes;
 
@@ -35,6 +41,10 @@ namespace storm {
             void setMonotonicityResult(uint_fast64_t state, std::shared_ptr<MonotonicityResult<VariableType>> monRes);
 
             void setGlobalMonotonicityResult(std::shared_ptr<MonotonicityResult<VariableType>> monRes);
+
+            void setStatesMonotone(storm::storage::BitVector statesMonotone);
+
+            storm::storage::BitVector statesMonotone;
         };
     }
 }

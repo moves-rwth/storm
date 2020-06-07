@@ -3,6 +3,9 @@
 #include <map>
 
 #include "storm-pars/utility/parametric.h"
+#include "storm-pars/analysis/MonotonicityResult.h"
+#include "storm-pars/modelchecker/region/RegionResult.h"
+#include "storm/solver/OptimizationDirection.h"
 
 namespace storm {
     namespace storage {
@@ -62,6 +65,8 @@ namespace storm {
              * Subregions with area()==0 are not inserted in the vector.
              */
             void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector) const;
+
+            void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector, std::vector<ParameterRegion<ParametricType>>& knownRegionVector, storm::analysis::MonotonicityResult<VariableType> monRes, storm::modelchecker::RegionResult regionRes, storm::solver::OptimizationDirection parameterOptimizationDirection) const;
 
             //returns the region as string in the format 0.3<=p<=0.4,0.2<=q<=0.5;
             std::string toString(bool boundariesAsDouble = false) const;

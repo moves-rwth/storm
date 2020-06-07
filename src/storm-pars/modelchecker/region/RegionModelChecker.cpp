@@ -48,7 +48,7 @@ namespace storm {
             }
         
             template <typename ParametricType>
-            std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> RegionModelChecker<ParametricType>::performRegionRefinement(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, boost::optional<ParametricType> const& coverageThreshold, boost::optional<uint64_t> depthThreshold, RegionResultHypothesis const& hypothesis, bool const& useMonotonicity) {
+            std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> RegionModelChecker<ParametricType>::performRegionRefinement(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, boost::optional<ParametricType> const& coverageThreshold, boost::optional<uint64_t> depthThreshold, RegionResultHypothesis const& hypothesis) {
                 STORM_LOG_INFO("Applying refinement on region: " << region.toString(true) << " .");
                 
                 auto thresholdAsCoefficient = coverageThreshold ? storm::utility::convertNumber<CoefficientType>(coverageThreshold.get()) : storm::utility::zero<CoefficientType>();
@@ -125,24 +125,56 @@ namespace storm {
                             // Split the region as long as the desired refinement depth is not reached.
                             if (!depthThreshold || currentDepth < depthThreshold.get()) {
                                 std::vector<storm::storage::ParameterRegion<ParametricType>> newRegions;
-                                currentRegion.split(currentRegion.getCenterPoint(), newRegions);
                                 RegionResult initResForNewRegions = (res == RegionResult::CenterSat) ? RegionResult::ExistsSat :
-                                                                         ((res == RegionResult::CenterViolated) ? RegionResult::ExistsViolated :
-                                                                          RegionResult::Unknown);
+                                                                    ((res == RegionResult::CenterViolated) ? RegionResult::ExistsViolated :
+                                                                     RegionResult::Unknown);
+                                if (useMonotonicity) {
+                                    std::vector<storm::storage::ParameterRegion<ParametricType>> newKnownRegions;
+                                    // TODO: use split of currentRegion
+                                    this->splitAtCenter(currentRegion, newRegions, newKnownRegions, *(localMonotonicityResult->getGlobalMonotonicityResult()), res);
+                                    for (auto& newKnownRegion : newKnownRegions) {
+                                        if (res == RegionResult::CenterSat) {
+                                            result.push_back(std::move(std::make_pair(newKnownRegion, RegionResult::AllSat)));
+                                        }  else {
+                                            assert (res == RegionResult::CenterViolated);
+                                            result.push_back(std::move(std::make_pair(newKnownRegion, RegionResult::AllViolated)));
+                                        }
+                                        // Only add one to analyzed regions, don't pop
+                                        fractionOfUndiscoveredArea -= newKnownRegion.area() / areaOfParameterSpace;
+                                        fractionOfAllViolatedArea += newKnownRegion.area() / areaOfParameterSpace;
+                                        ++numOfAnalyzedRegions;
+                                    }
+                                } else {
+                                    currentRegion.split(currentRegion.getCenterPoint(), newRegions);
+                                }
+
                                 bool first = true;
                                 for (auto& newRegion : newRegions) {
-                                    if (useMonotonicity && (!first && !order->getDoneBuilding())) {
-                                        orders.emplace(std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(order)));
-                                        localMonotonicityResults.emplace(localMonotonicityResult->copy());
-                                    } else if (useMonotonicity){
+                                    if (first && useMonotonicity) {
                                         orders.emplace(order);
-                                        // We always have to take the copy as within a region the local monotonicity may differ
-                                        localMonotonicityResults.emplace(localMonotonicityResult->copy());
+                                        localMonotonicityResults.emplace(localMonotonicityResult);
                                         first = false;
+                                    } else if (!first && useMonotonicity) {
+                                        if (!order->getDoneBuilding()) {
+                                            // we need to use copies for both order and local mon res
+                                            orders.emplace(std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(order)));
+                                            localMonotonicityResults.emplace(localMonotonicityResult->copy());
+                                        } else if (!localMonotonicityResult->isDone()) {
+                                            // the order will not change anymore
+                                            orders.emplace(order);
+                                            localMonotonicityResults.emplace(localMonotonicityResult->copy());
+                                        } else {
+                                            // both will not change anymore
+                                            orders.emplace(order);
+                                            localMonotonicityResults.emplace(localMonotonicityResult);
+                                        }
+
                                     }
+
                                     unprocessedRegions.emplace(std::move(newRegion), initResForNewRegions);
                                     refinementDepths.push(currentDepth + 1);
                                 }
+
                             } else {
                                 // If the region is not further refined, it is still added to the result
                                 result.push_back(std::move(unprocessedRegions.front()));
@@ -208,6 +240,21 @@ namespace storm {
             STORM_LOG_WARN("Extending order for RegionModelChecker not implemented");
             // Does nothing
             return order;
+        }
+
+        template <typename ParametricType>
+        bool RegionModelChecker<ParametricType>::isUseMonotonicitySet() {
+            return useMonotonicity;
+        }
+
+        template <typename ParametricType>
+        void RegionModelChecker<ParametricType>::setMonotonicity(bool monotonicity) {
+            this->useMonotonicity = monotonicity;
+        }
+
+        template <typename ParametricType>
+        void RegionModelChecker<ParametricType>::splitAtCenter(storm::storage::ParameterRegion<ParametricType> const& region, std::vector<storm::storage::ParameterRegion<ParametricType>>& regionVector, std::vector<storm::storage::ParameterRegion<ParametricType>>& knownRegionVector, storm::analysis::MonotonicityResult<VariableType> monRes, storm::modelchecker::RegionResult regionRes) {
+            region.split(region.getCenterPoint(), regionVector);
         }
     
 #ifdef STORM_HAVE_CARL

@@ -2,11 +2,13 @@
 
 namespace storm {
     namespace analysis {
+        // TODO: Do we need global monres?
 
         template <typename VariableType>
         LocalMonotonicityResult<VariableType>::LocalMonotonicityResult(uint_fast64_t numberOfStates) {
             stateMonRes = std::vector<std::shared_ptr<MonotonicityResult<VariableType>>>(numberOfStates, nullptr);
             globalMonotonicityResult = std::make_shared<MonotonicityResult<VariableType>>();
+            statesMonotone = storm::storage::BitVector(numberOfStates, false);
         }
 
         template <typename VariableType>
@@ -19,18 +21,25 @@ namespace storm {
         }
 
         template <typename VariableType>
+        std::shared_ptr<MonotonicityResult<VariableType>> LocalMonotonicityResult<VariableType>::getGlobalMonotonicityResult() {
+            return globalMonotonicityResult;
+        }
+
+        template <typename VariableType>
         void LocalMonotonicityResult<VariableType>::setMonotonicity(uint_fast64_t state, VariableType var, typename LocalMonotonicityResult<VariableType>::Monotonicity mon) {
             if (stateMonRes[state] == nullptr) {
                 stateMonRes[state] = std::make_shared<MonotonicityResult<VariableType>>();
             }
             stateMonRes[state]->addMonotonicityResult(var, mon);
             globalMonotonicityResult->updateMonotonicityResult(var, mon);
+            if (mon == Monotonicity::Unknown || mon == Monotonicity::Not) {
+                statesMonotone.set(state, false);
+            } else {
+                statesMonotone.set(state, stateMonRes[state]->isAllMonotonicity());
+            }
         }
 
-        template <typename VariableType>
-        std::shared_ptr<MonotonicityResult<VariableType>> LocalMonotonicityResult<VariableType>::getGlobalMonotonicityResult() {
-            return globalMonotonicityResult;
-        }
+
 
         template <typename VariableType>
         std::shared_ptr<LocalMonotonicityResult<VariableType>> LocalMonotonicityResult<VariableType>::copy() {
@@ -41,7 +50,14 @@ namespace storm {
                 }
             }
             copy->setGlobalMonotonicityResult(this->getGlobalMonotonicityResult()->copy());
+            // TODO fixen van dit
+            copy->setStatesMonotone(statesMonotone);
             return copy;
+        }
+
+        template <typename VariableType>
+        bool LocalMonotonicityResult<VariableType>::isDone() {
+            return statesMonotone.full();
         }
 
         template <typename VariableType>
@@ -52,6 +68,16 @@ namespace storm {
         template <typename VariableType>
         void LocalMonotonicityResult<VariableType>::setGlobalMonotonicityResult(std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
             this->globalMonotonicityResult = monRes;
+        }
+
+        template <typename VariableType>
+        void LocalMonotonicityResult<VariableType>::setStatesMonotone(storm::storage::BitVector statesMonotone) {
+            this->statesMonotone = statesMonotone; // TODO: werkt dit?
+        }
+
+        template <typename VariableType>
+        void LocalMonotonicityResult<VariableType>::setStateMonotone(uint_fast64_t state) {
+            this->statesMonotone.set(state);
         }
 
         template class LocalMonotonicityResult<storm::RationalFunctionVariable>;

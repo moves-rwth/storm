@@ -31,7 +31,7 @@ namespace storm {
             virtual ~RegionModelChecker() = default;
             
             virtual bool canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const = 0;
-            virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask, bool generateRegionSplitEstimates, bool allowModelSimplifications = true) = 0;
+            virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask, bool generateRegionSplitEstimates) = 0;
 
             
             /*!
@@ -60,7 +60,7 @@ namespace storm {
              * @param hypothesis if not 'unknown', it is only checked whether the hypothesis holds within the given region.
              *
              */
-            std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> performRegionRefinement(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, boost::optional<ParametricType> const& coverageThreshold, boost::optional<uint64_t> depthThreshold = boost::none, RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown, bool const& useMonotonicity = false);
+            std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> performRegionRefinement(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, boost::optional<ParametricType> const& coverageThreshold, boost::optional<uint64_t> depthThreshold = boost::none, RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown);
             
             /*!
              * Finds the extremal value within the given region and with the given precision.
@@ -82,6 +82,13 @@ namespace storm {
 
             virtual std::shared_ptr<storm::analysis::Order> extendOrder(std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ParametricType> region);
 
+            bool isUseMonotonicitySet();
+
+            void setMonotonicity(bool monotonicity = true);
+        private:
+            virtual void splitAtCenter(storm::storage::ParameterRegion<ParametricType> const& region, std::vector<storm::storage::ParameterRegion<ParametricType>>& regionVector, std::vector<storm::storage::ParameterRegion<ParametricType>>& knownRegionVector, storm::analysis::MonotonicityResult<VariableType> monRes, storm::modelchecker::RegionResult regionRes);
+
+            bool useMonotonicity = false;
         };
 
     } //namespace modelchecker

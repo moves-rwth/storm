@@ -30,6 +30,8 @@ namespace storm {
         template <typename ValueType, typename ConstantType>
         OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix) {
             this->matrix = matrix;
+            this->model = nullptr;
+            usePLA = false;
             std::vector<uint_fast64_t> statesSorted = utility::graph::getTopologicalSort(matrix);
             std::reverse(statesSorted.begin(),statesSorted.end());
             this->numberOfStates = matrix.getColumnCount();
@@ -115,7 +117,6 @@ namespace storm {
         std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::toOrder(std::vector<ConstantType> minValues, std::vector<ConstantType> maxValues, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
             this->minValues = minValues;
             this->maxValues = maxValues;
-            usePLA = true;
             return std::get<0>(this->extendOrder(getBottomTopOrder(), false, monRes));
         }
 
@@ -390,6 +391,8 @@ namespace storm {
         template <typename ValueType, typename ConstantType>
         Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) {
             assert (order->compare(state1, state2) == Order::UNKNOWN);
+            assert(minValues.size() > state1 && minValues.size() > state2);
+            assert(maxValues.size() > state1 && maxValues.size() > state2);
             if (minValues[state1] > maxValues[state2]) {
                 // state 1 will always be larger than state2
                 if (!order->contains(state1)) {
@@ -424,21 +427,22 @@ namespace storm {
         template <typename ValueType, typename ConstantType>
         void OrderExtender<ValueType, ConstantType>::getMinMaxValues() {
             assert (!usePLA);
-            // Use parameter lifting modelchecker to get initial min/max values for order creation
-            modelchecker::SparseDtmcParameterLiftingModelChecker<models::sparse::Dtmc<ValueType>, ConstantType> plaModelChecker;
-            std::unique_ptr<modelchecker::CheckResult> checkResult;
-            auto env = Environment();
+            if (model != nullptr) {
+                // Use parameter lifting modelchecker to get initial min/max values for order creation
+                modelchecker::SparseDtmcParameterLiftingModelChecker<models::sparse::Dtmc<ValueType>, ConstantType> plaModelChecker;
+                std::unique_ptr<modelchecker::CheckResult> checkResult;
+                auto env = Environment();
+                const modelchecker::CheckTask<logic::Formula, ValueType> checkTask = modelchecker::CheckTask<logic::Formula, ValueType>(*formula);
+                STORM_LOG_THROW(plaModelChecker.canHandle(model, checkTask), exceptions::NotSupportedException, "Cannot handle this formula");
+                plaModelChecker.specify(env, model, checkTask, false);
 
-            const modelchecker::CheckTask<logic::Formula, ValueType> checkTask = modelchecker::CheckTask<logic::Formula, ValueType>(*formula);
-            STORM_LOG_THROW(plaModelChecker.canHandle(model, checkTask), exceptions::NotSupportedException,"Cannot handle this formula");
-            plaModelChecker.specify(env, model, checkTask, false, false);
+                std::unique_ptr<modelchecker::CheckResult> minCheck = plaModelChecker.check(env, region, solver::OptimizationDirection::Minimize);
+                std::unique_ptr<modelchecker::CheckResult> maxCheck = plaModelChecker.check(env, region, solver::OptimizationDirection::Maximize);
 
-            std::unique_ptr<modelchecker::CheckResult> minCheck = plaModelChecker.check(env, region,solver::OptimizationDirection::Minimize);
-            std::unique_ptr<modelchecker::CheckResult> maxCheck = plaModelChecker.check(env, region,solver::OptimizationDirection::Maximize);
-
-            minValues = minCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-            maxValues = maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-            usePLA = true;
+                minValues = minCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                maxValues = maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                usePLA = true;
+            }
         }
 
         template <typename ValueType, typename ConstantType>

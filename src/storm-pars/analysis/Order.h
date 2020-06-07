@@ -220,6 +220,10 @@ namespace storm {
                      */
                     uint_fast64_t getNumberOfStates();
 
+                    bool isBottomState(uint_fast64_t);
+
+                    bool isTopState(uint_fast64_t);
+
                     /*!
                      * Returns if the order only consists of bottom and top states (so no in-between nodes).
                      */

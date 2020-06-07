@@ -81,7 +81,7 @@ namespace storm {
         }
 
         template <typename ParametricType, typename ConstantType>
-        std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initializeParameterLiftingRegionModelChecker(Environment const& env, std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task, bool generateSplitEstimates = false, bool allowModelSimplification = true) {
+        std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initializeParameterLiftingRegionModelChecker(Environment const& env, std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task, bool generateSplitEstimates = false, bool useMonotonicity = false) {
 
             STORM_LOG_WARN_COND(storm::utility::parameterlifting::validateParameterLiftingSound(*model, task.getFormula()), "Could not validate whether parameter lifting is applicable. Please validate manually...");
 
@@ -105,13 +105,15 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform parameterLifting on the provided model type.");
             }
 
-            checker->specify(env, consideredModel, task, generateSplitEstimates, allowModelSimplification);
+            checker->setMonotonicity(useMonotonicity);
+
+            checker->specify(env, consideredModel, task, generateSplitEstimates);
 
             return checker;
         }
 
         template <typename ParametricType, typename ImpreciseType, typename PreciseType>
-        std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initializeValidatingRegionModelChecker(Environment const& env, std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task, bool generateSplitEstimates = false, bool allowModelSimplification = true) {
+        std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initializeValidatingRegionModelChecker(Environment const& env, std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task, bool generateSplitEstimates = false) {
             
             STORM_LOG_WARN_COND(storm::utility::parameterlifting::validateParameterLiftingSound(*model, task.getFormula()), "Could not validate whether parameter lifting is applicable. Please validate manually...");
 
@@ -134,17 +136,17 @@ namespace storm {
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Unable to perform parameterLifting on the provided model type.");
             }
-            
-            checker->specify(env, consideredModel, task, generateSplitEstimates, allowModelSimplification);
+
+            checker->specify(env, consideredModel, task, generateSplitEstimates);
             
             return checker;
         }
         
         template <typename ValueType>
-        std::shared_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRegionModelChecker(Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine, bool allowModelSimplification = true) {
+        std::shared_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRegionModelChecker(Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine, bool useMonotonicity = false) {
             switch (engine) {
                     case storm::modelchecker::RegionCheckEngine::ParameterLifting:
-                            return initializeParameterLiftingRegionModelChecker<ValueType, double>(env, model, task, false, allowModelSimplification);
+                            return initializeParameterLiftingRegionModelChecker<ValueType, double>(env, model, task, false, useMonotonicity);
                     case storm::modelchecker::RegionCheckEngine::ExactParameterLifting:
                             return initializeParameterLiftingRegionModelChecker<ValueType, storm::RationalNumber>(env, model, task);
                     case storm::modelchecker::RegionCheckEngine::ValidatingParameterLifting:
@@ -185,10 +187,9 @@ namespace storm {
         template <typename ValueType>
         std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> checkAndRefineRegionWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, boost::optional<ValueType> const& coverageThreshold, boost::optional<uint64_t> const& refinementDepthThreshold = boost::none, storm::modelchecker::RegionResultHypothesis hypothesis = storm::modelchecker::RegionResultHypothesis::Unknown, bool useMonotonicity = false) {
             Environment env;
-            // If using monotonicity, we don't want more simplification, as this is already done in storm-pars.cpp
-            bool doSimplification = !useMonotonicity;
-            auto regionChecker = initializeRegionModelChecker(env, model, task, engine, doSimplification);
-            return regionChecker->performRegionRefinement(env, region, coverageThreshold, refinementDepthThreshold, hypothesis, useMonotonicity);
+
+            auto regionChecker = initializeRegionModelChecker(env, model, task, engine, useMonotonicity);
+            return regionChecker->performRegionRefinement(env, region, coverageThreshold, refinementDepthThreshold, hypothesis);
         }
     
         /*!

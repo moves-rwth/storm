@@ -24,8 +24,8 @@ namespace storm {
             
             virtual bool canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const override;
 
-            virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool generateRegionSplitEstimates = false, bool allowModelSimplification = true) override;
-            void specify_internal(Environment const& env, std::shared_ptr<SparseModelType> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool generateRegionSplitEstimates, bool skipModelSimplification);
+            virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool generateRegionSplitEstimates = false) override;
+            void specify_internal(Environment const& env, std::shared_ptr<SparseModelType> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool generateRegionSplitEstimates);
 
             boost::optional<storm::storage::Scheduler<ConstantType>> getCurrentMinScheduler();
             boost::optional<storm::storage::Scheduler<ConstantType>> getCurrentMaxScheduler();
@@ -72,6 +72,8 @@ namespace storm {
             // Used for monotonicity
             storm::analysis::OrderExtender<typename SparseModelType::ValueType, ConstantType>* orderExtender;
             bool useOrderExtender;
+            virtual void splitAtCenter(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>>& regionVector, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>>& knownRegionVector, storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> monRes, storm::modelchecker::RegionResult regionRes) override;
+
         };
     }
 }

@@ -117,18 +117,19 @@ namespace storm {
             class FunctionValuationCollector {
             public:
                 FunctionValuationCollector() = default;
-                
+
                 /*!
                  * Adds the provided function and valuation.
                  * Returns a reference to a placeholder in which the evaluation result will be written upon calling evaluateCollectedFunctions)
                  */
                 ConstantType& add(ParametricType const& function, AbstractValuation const& valuation);
-                
+
                 void evaluateCollectedFunctions(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForUnspecifiedParameters);
                 
             private:
                 // Stores a function and a valuation. The valuation is stored as an index of the collectedValuations-vector.
                 typedef std::pair<ParametricType, AbstractValuation> FunctionValuation;
+
                 class FuncValHash{
                     public:
                         std::size_t operator()(FunctionValuation const& fv) const {
@@ -138,7 +139,7 @@ namespace storm {
                             return seed;
                         }
                 };
-                
+
                 // Stores the collected functions with the valuations together with a placeholder for the result.
                 std::unordered_map<FunctionValuation, ConstantType, FuncValHash> collectedFunctions;
             };
@@ -152,7 +153,6 @@ namespace storm {
 
             std::vector<uint_fast64_t> oldToNewColumnIndexMapping; // Mapping from old to new columnIndex used for monotonicity
 
-            std::vector<std::set<VariableType>> occurringVariablesAtState; // Used for monotonicity
 
             storm::storage::SparseMatrix<ConstantType> matrix; //The resulting matrix;
             std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>> matrixAssignment; // Connection of matrix entries with placeholders
@@ -160,13 +160,27 @@ namespace storm {
             std::vector<ConstantType> vector; //The resulting vector
             std::vector<std::pair<typename std::vector<ConstantType>::iterator, ConstantType&>> vectorAssignment; // Connection of vector entries with placeholders
 
-            std::vector<ConstantType> specifiedVector; //The resulting vector, in which possibly some entries are deleted. Used for monotonicity
-            storm::storage::SparseMatrix<ConstantType> specifiedMatrix; // The resulting matrix, in which possibly some rows are deleted. Used for monotonicity
-
+            // For partial scheduler
             bool usePartialScheduler = false;
 
+            // Used for monotonicity
+            std::vector<std::set<VariableType>> occurringVariablesAtState;
+
+            std::vector<ConstantType> specifiedVector; //The resulting vector, in which possibly some entries are deleted.
+            storm::storage::SparseMatrix<ConstantType> specifiedMatrix; // The resulting matrix, in which possibly some rows are deleted.
+
+
             storm::analysis::MonotonicityChecker<ParametricType>* monotonicityChecker; // MonotonicityChecker object, on the original pMatrix
-            bool useMonotonicity;
+
+            std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> lastMonotonicityResult = nullptr;
+            bool useLastMonotonicityResult = false;
+            bool useLastMatrix = false;
+
+            std::vector<std::pair<uint_fast64_t, uint_fast64_t>> numberOfPlaceHolders;
+
+            storm::storage::BitVector nonConstMatrixEntries;
+            storm::storage::BitVector nonConstVectorEntries;
+            storm::storage::BitVector selectedRows;
         };
 
     }
