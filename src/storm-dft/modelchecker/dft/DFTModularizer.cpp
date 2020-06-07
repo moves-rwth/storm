@@ -259,6 +259,10 @@ void DFTModularizer::updateWorkDFT(
 
 void DFTModularizer::analyseDynamic(DFTElementCPointer const element,
                                     std::vector<ValueType> const &timepoints) {
+    // Check that analysis is needed
+    if(workDFT->getElement(element->id())->isBasicElement()) {
+        return;
+    }
     auto subDFT{getSubDFT(element)};
     subDFT->checkWellFormedness(true, std::cout);
 
