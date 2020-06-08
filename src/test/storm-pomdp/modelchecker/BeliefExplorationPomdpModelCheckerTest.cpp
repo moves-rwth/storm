@@ -5,12 +5,15 @@
 #include "storm-pomdp/transformer/MakePOMDPCanonic.h"
 #include "storm/api/storm.h"
 #include "storm-parsers/api/storm-parsers.h"
+#include "storm-pomdp/transformer/GlobalPOMDPSelfLoopEliminator.h"
+#include "storm-pomdp/analysis/QualitativeAnalysisOnGraphs.h"
+#include "storm-pomdp/transformer/KnownProbabilityTransformer.h"
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
 
 namespace {
-    enum class PreprocessingType { None };
+    enum class PreprocessingType { None, SelfloopReduction, QualitativeReduction, All };
     
     class DefaultDoubleVIEnvironment {
     public:
@@ -27,6 +30,36 @@ namespace {
         static PreprocessingType const preprocessingType = PreprocessingType::None;
     };
     
+    class SelfloopReductionDefaultDoubleVIEnvironment {
+    public:
+        typedef double ValueType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+            return env;
+        }
+        static bool const isExactModelChecking = false;
+        static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.1); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
+        static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */ }
+        static PreprocessingType const preprocessingType = PreprocessingType::SelfloopReduction;
+    };
+    
+    class QualitativeReductionDefaultDoubleVIEnvironment {
+    public:
+        typedef double ValueType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+            return env;
+        }
+        static bool const isExactModelChecking = false;
+        static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.1); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
+        static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */ }
+        static PreprocessingType const preprocessingType = PreprocessingType::QualitativeReduction;
+    };
+    
     class PreprocessedDefaultDoubleVIEnvironment {
     public:
         typedef double ValueType;
@@ -39,7 +72,7 @@ namespace {
         static bool const isExactModelChecking = false;
         static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.1); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
         static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */ }
-        static PreprocessingType const preprocessingType = PreprocessingType::None; // TODO
+        static PreprocessingType const preprocessingType = PreprocessingType::All;
     };
 
     class FineDoubleVIEnvironment {
@@ -86,7 +119,7 @@ namespace {
         }
         static bool const isExactModelChecking = false;
         static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.001); }
-        static PreprocessingType const preprocessingType = PreprocessingType::None; // TODO
+        static PreprocessingType const preprocessingType = PreprocessingType::All;
         static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) {options.refine = true; options.refinePrecision = precision();}
     };
     
@@ -133,7 +166,7 @@ namespace {
         static bool const isExactModelChecking = true;
         static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.1); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
         static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */ }
-        static PreprocessingType const preprocessingType = PreprocessingType::None; // TODO
+        static PreprocessingType const preprocessingType = PreprocessingType::All;
     };
     
     template<typename TestType>
@@ -161,16 +194,34 @@ namespace {
             Input input;
             input.formula = storm::api::parsePropertiesForPrismProgram(formulaAsString, program).front().getRawFormula();
             input.model = storm::api::buildSparseModel<ValueType>(program, {input.formula})->template as<storm::models::sparse::Pomdp<ValueType>>();
+            
             // Preprocess
             storm::transformer::MakePOMDPCanonic<ValueType> makeCanonic(*input.model);
             input.model = makeCanonic.transform();
             EXPECT_TRUE(input.model->isCanonic());
-            switch (TestType::preprocessingType) {
-                case PreprocessingType::None:
-                    // nothing to do
-                    break;
-                default:
-                    ADD_FAILURE() << "Unhandled preprocessing type.";
+            if (TestType::preprocessingType == PreprocessingType::SelfloopReduction || TestType::preprocessingType == PreprocessingType::All ) {
+                storm::transformer::GlobalPOMDPSelfLoopEliminator<ValueType> selfLoopEliminator(*input.model);
+                if (selfLoopEliminator.preservesFormula(*input.formula)) {
+                    input.model = selfLoopEliminator.transform();
+                } else {
+                    EXPECT_TRUE(input.formula->isOperatorFormula());
+                    EXPECT_TRUE(input.formula->asOperatorFormula().hasOptimalityType());
+                    bool maximizing = storm::solver::maximize(input.formula->asOperatorFormula().getOptimalityType());
+                    // Valid reasons for unpreserved formulas:
+                    EXPECT_TRUE(maximizing || input.formula->isProbabilityOperatorFormula());
+                    EXPECT_TRUE(!maximizing || input.formula->isRewardOperatorFormula());
+                }
+            }
+            if (TestType::preprocessingType == PreprocessingType::QualitativeReduction || TestType::preprocessingType == PreprocessingType::All ) {
+                EXPECT_TRUE(input.formula->isOperatorFormula());
+                EXPECT_TRUE(input.formula->asOperatorFormula().hasOptimalityType());
+                if (input.formula->isProbabilityOperatorFormula() && storm::solver::maximize(input.formula->asOperatorFormula().getOptimalityType())) {
+                    storm::analysis::QualitativeAnalysisOnGraphs<ValueType> qualitativeAnalysis(*input.model);
+                    storm::storage::BitVector prob0States = qualitativeAnalysis.analyseProb0(input.formula->asProbabilityOperatorFormula());
+                    storm::storage::BitVector  prob1States = qualitativeAnalysis.analyseProb1(input.formula->asProbabilityOperatorFormula());
+                    storm::pomdp::transformer::KnownProbabilityTransformer<ValueType> kpt;
+                    input.model = kpt.transform(*input.model, prob0States, prob1States);
+                }
             }
             EXPECT_TRUE(input.model->isCanonic());
             return input;
@@ -184,6 +235,8 @@ namespace {
   
     typedef ::testing::Types<
             DefaultDoubleVIEnvironment,
+            SelfloopReductionDefaultDoubleVIEnvironment,
+            QualitativeReductionDefaultDoubleVIEnvironment,
             PreprocessedDefaultDoubleVIEnvironment,
             FineDoubleVIEnvironment,
             RefineDoubleVIEnvironment,
@@ -195,7 +248,7 @@ namespace {
     
     TYPED_TEST_SUITE(BeliefExplorationTest, TestingTypes,);
     
-    TYPED_TEST(BeliefExplorationTest, simple_max) {
+    TYPED_TEST(BeliefExplorationTest, simple_Pmax) {
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmax=? [F \"goal\" ]", "slippery=0");
@@ -208,7 +261,7 @@ namespace {
         EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise." << std::endl;
     }
     
-    TYPED_TEST(BeliefExplorationTest, simple_min) {
+    TYPED_TEST(BeliefExplorationTest, simple_Pmin) {
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmin=? [F \"goal\" ]", "slippery=0");
@@ -221,7 +274,7 @@ namespace {
         EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise." << std::endl;
     }
     
-    TYPED_TEST(BeliefExplorationTest, simple_slippery_max) {
+    TYPED_TEST(BeliefExplorationTest, simple_slippery_Pmax) {
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmax=? [F \"goal\" ]", "slippery=0.4");
@@ -234,7 +287,7 @@ namespace {
         EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise." << std::endl;
     }
     
-    TYPED_TEST(BeliefExplorationTest, simple_slippery_min) {
+    TYPED_TEST(BeliefExplorationTest, simple_slippery_Pmin) {
         typedef typename TestFixture::ValueType ValueType;
 
         auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Pmin=? [F \"goal\" ]", "slippery=0.4");
@@ -246,4 +299,58 @@ namespace {
         EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
         EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise." << std::endl;
     }
+    
+    TYPED_TEST(BeliefExplorationTest, simple_Rmax) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmax=? [F s>4 ]", "slippery=0");
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
+        auto result = checker.check(*data.formula);
+        
+        ValueType expected = this->parseNumber("29/50");
+        EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
+        EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise." << std::endl;
+    }
+    
+    TYPED_TEST(BeliefExplorationTest, simple_Rmin) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmin=? [F s>4 ]", "slippery=0");
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
+        auto result = checker.check(*data.formula);
+        
+        ValueType expected = this->parseNumber("19/50");
+        EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
+        EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise." << std::endl;
+    }
+    
+    TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmax) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmax=? [F s>4 ]", "slippery=0.4");
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
+        auto result = checker.check(*data.formula);
+        
+        ValueType expected = this->parseNumber("29/30");
+        EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
+        EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise." << std::endl;
+    }
+    
+    TYPED_TEST(BeliefExplorationTest, simple_slippery_Rmin) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "Rmin=? [F s>4 ]", "slippery=0.4");
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
+        auto result = checker.check(*data.formula);
+        
+        ValueType expected = this->parseNumber("19/30");
+        EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
+        EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise." << std::endl;
+    }
+    
+    
 }

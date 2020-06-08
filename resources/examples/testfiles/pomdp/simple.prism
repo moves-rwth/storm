@@ -13,5 +13,11 @@ module main
     [beta]  s=4 -> (1-slippery): (s'=5) + slippery: true;
 endmodule
 
+rewards
+    [alpha] s=3: 0.5;
+    [beta] s=4: 0.5;
+    true : s * 0.05;
+endrewards
+
 
 label "goal" = s=5;
