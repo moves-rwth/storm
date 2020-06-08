@@ -1,0 +1,98 @@
+pomdp
+
+observables
+start, fuel
+endobservables
+
+const int N;
+const int fuelCAP = N-1;
+const int axMAX = N;
+const int ayMAX = N;
+const int axMIN = 0;
+const int ayMIN = 0;
+const double slippery = 0.4;
+const int ob1x = axMAX-1;
+const int ob1y = ayMAX-1;
+const int rf1x = axMIN;
+const int rf1y = ayMIN;
+const int rf2x = axMIN + ceil((axMAX - axMIN) / 3);
+const int rf2y = ayMIN + ceil((ayMAX - ayMIN) / 3);
+const int rf3x = axMIN + floor(2 * (axMAX - axMIN) / 3);
+const int rf3y = ayMIN + floor(2 * (ayMAX - ayMIN) / 3);
+
+formula northenabled = ax != axMIN;
+formula southenabled = ax != axMAX;
+formula westenabled = ay != ayMIN;
+formula eastenabled = ay != ayMAX;
+observable "cangonorth" = northenabled;
+observable "cangosouth" = southenabled;
+observable "cangowest" = westenabled;
+observable "cangoeast" = eastenabled;
+formula done = start & ax = axMAX & ay = ayMAX;
+observable "amdone" = done;
+formula crash =  (ax = ob1x & ay = ob1y);
+observable "hascrash" = crash;
+formula atStation = (ax = rf1x & ay = rf1y) | (ax = rf2x & ay = rf2y) |  (ax = rf3x & ay = rf3y);
+formula canRefuel = atStation  & fuel < fuelCAP;
+observable "refuelAllowed" = canRefuel;
+
+module master
+    start : bool init false;
+
+    [placement] !start -> (start'=true);
+    [north] start & !done -> true;
+    [south] start  & !done -> true;
+    [east] start  & !done-> true;
+    [west] start & !done -> true;
+
+
+endmodule
+
+
+module tank
+    fuel : [0..fuelCAP] init fuelCAP;
+
+    [refuel] canRefuel -> 1:(fuel'=fuelCAP);
+    [north] fuel > 0 & !canRefuel -> 1:(fuel'=fuel-1);
+    [south] fuel > 0 & !canRefuel -> 1:(fuel'=fuel-1);
+    [east] fuel > 0 & !canRefuel -> 1:(fuel'=fuel-1);
+    [west] fuel > 0 & !canRefuel -> 1:(fuel'=fuel-1);
+    [empty] fuel = 0 & !canRefuel -> 1:(fuel'=0);
+endmodule
+
+module alice
+    ax : [axMIN..axMAX] init 0;
+    ay : [ayMIN..ayMAX] init 0;
+
+    [placement] true ->  1: (ax'=0) & (ay'=0); //+ 1/4: (ax'=1) & (ay'=1) + 1/4: (ax'=2) & (ay'=1) + 1/4: (ax'=1) & (ay'=3);
+
+    [west] northenabled -> (1-slippery): (ax'=max(ax-1,axMIN)) + slippery: (ax'=max(ax-2,axMIN));
+    [east] southenabled -> (1-slippery): (ax'=min(ax+1,axMAX)) + slippery: (ax'=min(ax+2,axMAX));
+    [south]  eastenabled -> (1-slippery): (ay'=min(ay+1,ayMAX)) + slippery: (ay'=min(ay+2,ayMAX));
+    [north]  westenabled -> (1-slippery): (ay'=max(ay-1,ayMIN)) + slippery: (ay'=max(ay-2,ayMIN));
+endmodule
+
+rewards "steps"
+    [north] true : 1;
+    [south] true : 1;
+    [west] true : 1;
+    [east] true : 1;
+endrewards
+
+rewards "refuels"
+    [refuel] true : 1;
+endrewards
+
+rewards "costs"
+    [north] true : 1;
+    [south] true : 1;
+    [west] true : 1;
+    [east] true : 1;
+    [refuel] true : 3;
+endrewards
+
+
+label "goal" = done;
+label "traps" = crash;
+label "stationvisit" = atStation;
+label "notbad" =  !crash & (fuel > 0 | canRefuel);

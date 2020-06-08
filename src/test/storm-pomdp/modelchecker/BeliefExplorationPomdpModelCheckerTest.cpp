@@ -25,7 +25,7 @@ namespace {
             return env;
         }
         static bool const isExactModelChecking = false;
-        static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.1); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
+        static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.12); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
         static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>&) { /* intentionally left empty */ }
         static PreprocessingType const preprocessingType = PreprocessingType::None;
     };
@@ -40,7 +40,7 @@ namespace {
             return env;
         }
         static bool const isExactModelChecking = false;
-        static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.1); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
+        static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.12); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
         static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */ }
         static PreprocessingType const preprocessingType = PreprocessingType::SelfloopReduction;
     };
@@ -55,7 +55,7 @@ namespace {
             return env;
         }
         static bool const isExactModelChecking = false;
-        static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.1); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
+        static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.12); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
         static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */ }
         static PreprocessingType const preprocessingType = PreprocessingType::QualitativeReduction;
     };
@@ -70,7 +70,7 @@ namespace {
             return env;
         }
         static bool const isExactModelChecking = false;
-        static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.1); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
+        static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.12); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
         static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */ }
         static PreprocessingType const preprocessingType = PreprocessingType::All;
     };
@@ -134,7 +134,7 @@ namespace {
             return env;
         }
         static bool const isExactModelChecking = false;
-        static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.1); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
+        static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.12); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
         static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */ }
         static PreprocessingType const preprocessingType = PreprocessingType::None;
     };
@@ -149,7 +149,7 @@ namespace {
             return env;
         }
         static bool const isExactModelChecking = true;
-        static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.1); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
+        static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.12); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
         static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */ }
         static PreprocessingType const preprocessingType = PreprocessingType::None;
     };
@@ -164,7 +164,7 @@ namespace {
             return env;
         }
         static bool const isExactModelChecking = true;
-        static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.1); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
+        static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.12); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
         static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) { /* intentionally left empty */ }
         static PreprocessingType const preprocessingType = PreprocessingType::All;
     };
@@ -401,6 +401,35 @@ namespace {
         EXPECT_TRUE(storm::utility::isInfinity(result.lowerBound));
         EXPECT_TRUE(storm::utility::isInfinity(result.upperBound));
     }
+    
+    TYPED_TEST(BeliefExplorationTest, refuel_Pmax) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/refuel.prism", "Pmax=?[\"notbad\" U \"goal\"]", "N=4");
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
+        auto result = checker.check(*data.formula);
+        
+        ValueType expected = this->parseNumber("38/155");
+        EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
+        EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+        // Use relative difference of bounds for this one
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise." << std::endl;
+    }
+    
+    TYPED_TEST(BeliefExplorationTest, refuel_Pmin) {
+        typedef typename TestFixture::ValueType ValueType;
+
+        auto data = this->buildPrism(STORM_TEST_RESOURCES_DIR "/pomdp/refuel.prism", "Pmin=?[\"notbad\" U \"goal\"]", "N=4");
+        storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(data.model, this->options());
+        auto result = checker.check(*data.formula);
+        
+        ValueType expected = this->parseNumber("0");
+        EXPECT_LE(result.lowerBound, expected + this->modelcheckingPrecision());
+        EXPECT_GE(result.upperBound, expected - this->modelcheckingPrecision());
+        // Use relative difference of bounds for this one
+        EXPECT_LE(result.diff(), this->precision()) << "Result [" << result.lowerBound << ", " << result.upperBound << "] is not precise enough. If (only) this fails, the result bounds are still correct, but they might be unexpectedly imprecise." << std::endl;
+    }
+    
     
     
 }
