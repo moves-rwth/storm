@@ -49,15 +49,15 @@ namespace storm {
                 auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
                 bool preprocessingPerformed = false;
                 if (pomdpSettings.isSelfloopReductionSet()) {
-                    bool apply = formulaInfo.isNonNestedReachabilityProbability() && formulaInfo.maximize();
-                    apply = apply || (formulaInfo.isNonNestedExpectedRewardFormula() && formulaInfo.minimize());
-                    if (apply) {
+                    storm::transformer::GlobalPOMDPSelfLoopEliminator<ValueType> selfLoopEliminator(*pomdp);
+                    if (selfLoopEliminator.preservesFormula(formula)) {
                         STORM_PRINT_AND_LOG("Eliminating self-loop choices ...");
                         uint64_t oldChoiceCount = pomdp->getNumberOfChoices();
-                        storm::transformer::GlobalPOMDPSelfLoopEliminator<ValueType> selfLoopEliminator(*pomdp);
                         pomdp = selfLoopEliminator.transform();
                         STORM_PRINT_AND_LOG(oldChoiceCount - pomdp->getNumberOfChoices() << " choices eliminated through self-loop elimination." << std::endl);
                         preprocessingPerformed = true;
+                    } else {
+                        STORM_PRINT_AND_LOG("Not eliminating self-loop choices as it does not preserve the formula." << std::endl);
                     }
                 }
                 if (pomdpSettings.isQualitativeReductionSet() && formulaInfo.isNonNestedReachabilityProbability()) {
@@ -65,11 +65,10 @@ namespace storm {
                     STORM_PRINT_AND_LOG("Computing states with probability 0 ...");
                     storm::storage::BitVector prob0States = qualitativeAnalysis.analyseProb0(formula.asProbabilityOperatorFormula());
                     std::cout << prob0States << std::endl;
-                    STORM_PRINT_AND_LOG(" done." << std::endl);
+                    STORM_PRINT_AND_LOG(" done. " << prob0States.getNumberOfSetBits() << " states found." << std::endl);
                     STORM_PRINT_AND_LOG("Computing states with probability 1 ...");
                     storm::storage::BitVector  prob1States = qualitativeAnalysis.analyseProb1(formula.asProbabilityOperatorFormula());
-                    std::cout << prob1States << std::endl;
-                    STORM_PRINT_AND_LOG(" done." << std::endl);
+                    STORM_PRINT_AND_LOG(" done. " << prob1States.getNumberOfSetBits() << " states found." << std::endl);
                     storm::pomdp::transformer::KnownProbabilityTransformer<ValueType> kpt = storm::pomdp::transformer::KnownProbabilityTransformer<ValueType>();
                     pomdp = kpt.transform(*pomdp, prob0States, prob1States);
                     // Update formulaInfo to changes from Preprocessing
