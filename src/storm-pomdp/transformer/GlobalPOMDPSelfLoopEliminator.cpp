@@ -79,7 +79,6 @@ namespace storm {
                 }
                 offset += pomdp.getNumberOfChoices(state);
             }
-            std::cout << "Filter: " << filter << std::endl;
             
             // We do not consider rewards right now, since this reduction only preserves maximizing probabilities and minimizing expected rewards, anyway.
             // In both cases, the reward at a selfloop has no effect (assuming not reaching goal means infinite reward)
