@@ -83,6 +83,11 @@ TEST(SparseMaPcaaMultiObjectiveModelCheckerTest, server) {
     std::vector<storm::RationalNumber> lb(2,-eps), ub(2,eps);
     auto bloatingBox = storm::storage::geometry::Hyperrectangle<storm::RationalNumber>(lb,ub).asPolytope();
 
+    if (storm::test::z3AtLeastVersion(4,8,8)) {
+        // TODO: z3 v4.8.8 is known to be broken here. Check if this is fixed in future versions >4.8.8
+        GTEST_SKIP() << "Test disabled since it triggers a bug in the installed version of z3.";
+    }
+    
     EXPECT_TRUE(expectedAchievableValues->minkowskiSum(bloatingBox)->contains(result->asExplicitParetoCurveCheckResult<double>().getUnderApproximation()->convertNumberRepresentation<storm::RationalNumber>()));
     EXPECT_TRUE(result->asExplicitParetoCurveCheckResult<double>().getOverApproximation()->convertNumberRepresentation<storm::RationalNumber>()->minkowskiSum(bloatingBox)->contains(expectedAchievableValues));
 
