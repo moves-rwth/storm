@@ -67,7 +67,6 @@ TEST(MonotonicityCheckerTest, Simple1) {
     //start testing
     auto var = vars.begin();
     for (uint_fast64_t i = 0; i < 3; i++) {
-        STORM_PRINT("HELLO " << i << std::endl);
         EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Decr, monChecker->checkLocalMonotonicity(order, i, *var, region));
     }
 }

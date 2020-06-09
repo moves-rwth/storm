@@ -306,7 +306,7 @@ TEST(MonotonicityHelperTest, Simple1) {
 }
 
 TEST(MonotonicityHelperTest, Simple2) {
-    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple2.pm";
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy1.pm";
     std::string formulaAsString = "P > 0.5 [ F s=3 ]";
     std::string constantsAsString = "";
 
@@ -356,7 +356,7 @@ TEST(MonotonicityHelperTest, Simple2) {
 
 
 TEST(MonotonicityHelperTest, Simple3) {
-    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple3.pm";
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy2.pm";
     std::string formulaAsString = "P > 0.5 [ F s=4 ]";
     std::string constantsAsString = "";
 
@@ -408,7 +408,7 @@ TEST(MonotonicityHelperTest, Simple3) {
 
 
 TEST(MonotonicityHelperTest, Simple4) {
-    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple4.pm";
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy3.pm";
     std::string formulaAsString = "P > 0.5 [ F s=3 ]";
     std::string constantsAsString = "";
 
