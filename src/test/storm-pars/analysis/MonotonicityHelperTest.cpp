@@ -220,7 +220,7 @@ TEST(MonotonicityHelperTest, Brp_with_bisimulation_samples) {
 }
 
 TEST(MonotonicityHelperTest, zeroconf) {
-    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/zc.pm";
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/zeroconf4.pm";
     std::string formulaAsString = "P > 0.5 [ F s=5 ]";
     std::string constantsAsString = "n = 4"; //e.g. pL=0.9,TOACK=0.5
 
@@ -305,7 +305,7 @@ TEST(MonotonicityHelperTest, Simple1) {
     EXPECT_EQ(0, result.size());
 }
 
-TEST(MonotonicityHelperTest, Simple2) {
+TEST(MonotonicityHelperTest, Casestudy1) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy1.pm";
     std::string formulaAsString = "P > 0.5 [ F s=3 ]";
     std::string constantsAsString = "";
@@ -338,8 +338,8 @@ TEST(MonotonicityHelperTest, Simple2) {
 
     auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(dtmc, formulas, regions, true, 50);
     auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout);
+    ASSERT_EQ(1, result.size());
 
-    EXPECT_EQ(1, result.size());
     auto order = result.begin()->first;
     auto monotonicityResult = result.begin()->second.first;
     EXPECT_TRUE(monotonicityResult->isDone());
@@ -355,7 +355,7 @@ TEST(MonotonicityHelperTest, Simple2) {
 }
 
 
-TEST(MonotonicityHelperTest, Simple3) {
+TEST(MonotonicityHelperTest, CaseStudy2) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy2.pm";
     std::string formulaAsString = "P > 0.5 [ F s=4 ]";
     std::string constantsAsString = "";
@@ -389,8 +389,10 @@ TEST(MonotonicityHelperTest, Simple3) {
     auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(dtmc, formulas, regions, true, 50);
     auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout);
 
-    EXPECT_EQ(1, result.size());
+    ASSERT_EQ(1, result.size());
     auto order = result.begin()->first;
+    ASSERT_TRUE(order.get() != nullptr);
+
     auto monotonicityResult = result.begin()->second.first;
     EXPECT_TRUE(monotonicityResult->isDone());
     EXPECT_TRUE(monotonicityResult->isSomewhereMonotonicity());
@@ -407,7 +409,7 @@ TEST(MonotonicityHelperTest, Simple3) {
 
 
 
-TEST(MonotonicityHelperTest, Simple4) {
+TEST(MonotonicityHelperTest, Casestudy3) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy3.pm";
     std::string formulaAsString = "P > 0.5 [ F s=3 ]";
     std::string constantsAsString = "";
@@ -441,8 +443,9 @@ TEST(MonotonicityHelperTest, Simple4) {
     auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(dtmc, formulas, regions, true, 50);
     auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout);
 
-    EXPECT_EQ(1, result.size());
+    ASSERT_EQ(1, result.size());
     auto order = result.begin()->first;
+
     auto monotonicityResult = result.begin()->second.first;
     EXPECT_TRUE(monotonicityResult->isDone());
     EXPECT_TRUE(monotonicityResult->isSomewhereMonotonicity());

@@ -103,7 +103,7 @@ namespace {
     TYPED_TEST(SparseDtmcParameterLiftingTest, ZeroConf) {
         typedef typename TestFixture::ValueType ValueType;
 
-        std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/zc.pm";
+        std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/zeroconf4.pm";
         std::string formulaAsString = "P>0.5 [F s=5 ]";
         std::string constantsAsString = " n = 4"; //e.g. pL=0.9,TOACK=0.5
 
