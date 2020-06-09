@@ -4,6 +4,7 @@
 #include "storm/storage/expressions/ExpressionVisitor.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidTypeException.h"
+#include "Expressions.h"
 
 namespace storm {
     namespace expressions {
@@ -106,6 +107,18 @@ namespace storm {
                             return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), false));
                         } else if (firstOperandSimplified->isFalse() && secondOperandSimplified->isTrue()) {
                             return std::shared_ptr<BaseExpression>(new BooleanLiteralExpression(this->getManager(), false));
+                        }
+                        if (firstOperandSimplified->isTrue()) {
+                            return secondOperandSimplified;
+                        }
+                        if (secondOperandSimplified->isTrue()) {
+                            return firstOperandSimplified;
+                        }
+                        if (firstOperandSimplified->isFalse()) {
+                            return std::shared_ptr<BaseExpression>(new UnaryBooleanFunctionExpression(this->getManager(), this->getType(), secondOperandSimplified, UnaryBooleanFunctionExpression::OperatorType::Not));
+                        }
+                        if (secondOperandSimplified->isFalse()) {
+                            return std::shared_ptr<BaseExpression>(new UnaryBooleanFunctionExpression(this->getManager(), this->getType(), firstOperandSimplified, UnaryBooleanFunctionExpression::OperatorType::Not));
                         }
                         break;
                 }
