@@ -16,7 +16,7 @@ Storm's main engine is the sparse engine in the sense that it tends to have the 
 
 ##### **Characteristics**:
 - model building is rather memory- and time-consuming
-- numerical solution tends to be fast
+- numerical computations tend to be fast
 
 ##### **Advisable if**:
 - model is moderately sized
@@ -33,12 +33,12 @@ Storm's main engine is the sparse engine in the sense that it tends to have the 
 **Select**: `--engine dd` or `-e dd`
 
 ##### **Characteristics**:
-- model building is fast and memory-efficient if the model is somewhat symmetrical
-- numerical solution tends to be slower
+- model building is fast and memory-efficient if the model is structured in some way
+- numerical computations tend to be slower
 
 ##### **Advisable if**:
 - model is large
-- model is symmetrical
+- model is structured (for example symmetrical)
 - target query does not involve heavy numerical computations (for example qualitative queries)
 
 ##### **Major restrictions**:
