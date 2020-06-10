@@ -59,9 +59,6 @@ The hybrid engine tries to combine the [sparse](#sparse) and [dd](#dd) engines. 
 - model is not too large
 - model is symmetrical
 
-##### **Major restrictions**:
-- does not support [MAs](models.html#markov-automata-mas)
-
 ## Exploration
 
 All engines so far have the requirement that a representation of the model needs to be built prior to model checking. This can be prohibitive for some models and may be unnecessary as fragments of the model may already allow for an answer (within a given precision) to a query. The exploration engine is based on the ideas of applying techniques from *machine learning*[^1]. Intuitively, it tries to explore the parts of the system on-the-fly that contribute most to the model checking result.
