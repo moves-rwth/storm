@@ -51,13 +51,13 @@ The hybrid engine tries to combine the [sparse](#sparse) and [dd](#dd) engines. 
 **Select**: `--engine hybrid` or `-e hybrid`
 
 ##### **Characteristics**:
-- model building is fast and memory-efficient if the model is somewhat symmetrical
+- model building is fast and memory-efficient if the model is structured in some way
 - translation from DDs to sparse matrices requires the sparse matrix to fit into memory
-- numerical solution tends to be fast
+- numerical computations tend to be fast
 
 ##### **Advisable if**:
 - model is not too large
-- model is symmetrical
+- model is structured (for example symmetrical)
 
 ## Exploration
 
