@@ -41,15 +41,17 @@ Required:
 - hwloc
 
 Recommended:
-- [Z3](https://github.com/Z3Prover/z3) (not strictly required, but already needed for standard tasks like PRISM/JANI model building)
-- xercesc (installation prevents an expensive part of the build step)
-- [Eigen3](http://eigen.tuxfamily.org/index.php) (installation prevents an expensive part of the build step)
+- [Z3](https://github.com/Z3Prover/z3){:target="_blank"} (not strictly required, but already needed for standard tasks like PRISM/JANI model building)
+- [xerces-c](https://xerces.apache.org/xerces-c/){:target="_blank"} (needed for the parsing and export of XML files, in particular for GSPNs)
+- [Eigen3](http://eigen.tuxfamily.org/index.php){:target="_blank"} (installation prevents an expensive part of the build step)
 - [MathSAT](http://mathsat.fbk.eu/){:target="_blank"} (needed by the abstraction refinement engine, needs to be configured manually during the [configuration](manual-configuration.html#mathsat))
 
 
 ## OS specific preparations
 
-We collected some platform specific hints to ease the installation of Storm on the supported operating systems. Since Storm has some optional dependencies that enhance it's functionality, and some dependencies that are strictly required, we show how to install both the *required* and *recommended* dependencies. The installation instructions of the *recommended* dependencies are to be understood incrementally, i.e. in addition to the required dependencies.
+We collected some platform specific hints to ease the installation of Storm on the supported operating systems.
+Since Storm has some optional dependencies that enhance it's functionality, and some dependencies that are strictly required, we show how to install both the *required* and *recommended* dependencies.
+The installation instructions of the *recommended* dependencies already include the *required* dependencies.
 
 ### <i class="fa fa-apple" aria-hidden="true"></i> macOS 10.12 "Sierra" and higher
 
@@ -59,41 +61,28 @@ Furthermore, we recommend the usage of [Homebrew](https://brew.sh){:target="_bla
 
 - Required:
 ``` console
-$ brew install cln ginac automake cmake
-$ brew install boost
-$ brew install gmp
-$ brew install glpk
-$ brew install hwloc
+$ brew install cln ginac automake cmake boost gmp glpk hwloc
 ```
 
 - Recommended:
 ``` console
-$ brew install z3 xerces-c
+$ brew install cln ginac automake cmake boost gmp glpk hwloc z3 xerces-c
 ```
 
-### <i class="icon-debian"></i> Debian 9 "Stretch"
+### <i class="icon-debian"></i> Debian 9 "Stretch" and higher, and
+### <i class="icon-ubuntu"></i> Ubuntu 18.04 "Bionic Beaver" and higher
+<!-- If these are changed, also change them in `vm.md` -->
 
 - Required:
 ``` console
-$ sudo apt-get install git cmake libboost-all-dev libcln-dev libgmp-dev libginac-dev automake libglpk-dev
+$ sudo apt-get install build-essential git cmake libboost-all-dev libcln-dev libgmp-dev libginac-dev automake libglpk-dev libhwloc-dev
 ```
 
 - Recommended
 ``` console
-$ sudo apt-get install libz3-dev libxerces-c-dev libeigen3-dev
+$ sudo apt-get install build-essential git cmake libboost-all-dev libcln-dev libgmp-dev libginac-dev automake libglpk-dev libhwloc-dev libz3-dev libxerces-c-dev libeigen3-dev
 ```
 
-### <i class="icon-ubuntu"></i> Ubuntu 16.10 "Yakkety Yak" and higher
-<!-- If these are changed, also change them in `vm.md` -->
-- Required:
-``` console
-$ sudo apt-get install git cmake libboost-all-dev libcln-dev libgmp-dev libginac-dev automake libglpk-dev libhwloc-dev
-```
-
-- Recommended:
-``` console
-$ sudo apt-get install libz3-dev libxerces-c-dev libeigen3-dev
-```
 
 ## Manually installing dependencies <span class="label label-info">optional</span>
 
