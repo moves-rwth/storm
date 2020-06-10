@@ -505,6 +505,8 @@ add_dependencies(check-verbose tests)
 set(STORM_TARGETS "")
 add_subdirectory(src)
 
+export_option(STORM_HAVE_XERCES)
+
 include(export)
 
 install(FILES ${CMAKE_BINARY_DIR}/stormConfig.install.cmake DESTINATION ${CMAKE_INSTALL_DIR} RENAME stormConfig.cmake)
