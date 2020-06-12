@@ -62,15 +62,9 @@ $ storm-dft -dft hecs.dft -mttf
 
 {% include includes/show_output.html class="dft_hecs_mttf" path="dft/hecs_mttf.out" %}
 
-As the system is larger, it makes sense to use *symmetry reduction* as an optimization via `-symred`.
-
-```console
-$ storm-dft -dft hecs.dft -mttf -symred
-```
-
-{% include includes/show_output.html class="dft_hecs_mttf_symred" path="dft/hecs_mttf_symred.out" %}
-
-This reduces the model size drastically and improves the analysis time.
+As the system is larger, it makes sense to use *symmetry reduction* as an optimization.
+This is enabled by default for all analyses and exploits symmetries in the system, for example stemming from redundant components.
+Symmetry reduction reduces the model size drastically which improves the analysis time.
 
 For reliability another optimization can be enabled: *modularisation* via `--modularisation`.
 
