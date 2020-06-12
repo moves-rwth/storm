@@ -50,7 +50,7 @@ however just a displaying issue. Newer versions of Storm correctly display "inf"
 
 ### References
 
-[^1]: C. Hensel, S. Junges, J.-P. Katoen, T. Quatmann, M. Volk: The Probabilistic Model Checker Storm. To appear.
+[^1]: [C. Hensel, S. Junges, J.-P. Katoen, T. Quatmann, M. Volk: *The Probabilistic Model Checker Storm*, 2020](https://arxiv.org/abs/2002.07080)
 
 [^2]: [E. M. Hahn, A. Hartmanns, C. Hensel, M. Klauck, J. Klein, J. Křetínský, D. Parker, T. Quatmann, E. Ruijters, M. Steinmetz: *The 2019 Comparison of Tools for the Analysis of Quantitative Formal Models*, 2019](https://doi.org/10.1007/978-3-030-17502-3_5){:target="_blank"}
 
