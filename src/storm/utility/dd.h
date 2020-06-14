@@ -2,6 +2,7 @@
 
 #include <set>
 #include <vector>
+#include <cstdint>
 
 #include "storm/storage/dd/DdType.h"
 
