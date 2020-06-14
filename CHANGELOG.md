@@ -8,6 +8,10 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.6.x
 -------------
 
+## Version 1.6.1 (??)
+- Prism program simplification improved
+- `storm-pomdp`: Fix for --transformsimple and --transformbinary when used with until formulae
+
 ## Version 1.6.0 (2020/06)
 - Changed default Dd library from `cudd` to `sylvan`. The Dd library can be changed back to `cudd` using the command line switch `--ddlib`.
 - Scheduler export: Properly handle models with end components. Added export in `.json` format.
