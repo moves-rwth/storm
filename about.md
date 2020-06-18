@@ -22,6 +22,19 @@ Formal methods --- and in particular model checking --- has proved to discover i
 </blockquote>
 -->
 
+## Videos
+
+We provide a three-part tutorial into Storm on YouTube.
+The tutorial was originally presented at [DisCoTec 2020](https://www.discotec.org/2020/).
+
+<div class="embed-responsive embed-responsive-16by9">
+  <iframe class="embed-responsive-item" src="https://www.youtube.com/embed/TTfSZGiCQ3I?list=PLtEtbVzif4eg7c76bOzyreJvNVgmrj3Ub"></iframe>
+</div>
+
+You can try out all examples from the tutorial by yourself and even play around with modifications.
+Use the links to follow along [part 2 about Storm](https://mybinder.org/v2/gh/moves-rwth/stormpyter/discotec2020?filepath=tutorial_discotec2020%2Fdiscotec_storm.ipynb){:target="_blank"} or [part 3 about stormpy](https://mybinder.org/v2/gh/moves-rwth/stormpyter/discotec2020?filepath=tutorial_discotec2020%2Fdiscotec_stormpy.ipynb){:target="_blank"}, the Python bindings of Storm.
+For more details, also see the corresponding [webpage](https://github.com/moves-rwth/stormpyter/tree/master/tutorial_discotec2020) for the tutorial.
+
 ## Characteristics
 
 There are several [related tools](related-tools.html#related-tools) addressing the analysis of probabilistic systems. However, these tools differ substantially regarding (among other things)
