@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+    {% include includes/head.html %}
+    <body>
+
+    {% include includes/navbar.html %}
+    <div class="container">
+        <ul class="breadcrumb">
+            <li><a href="{{ site.github.url }}/index.html">Home</a></li>
+            {% if page.categories and page.categories != empty %}
+            <li>{{ page.categories }}</li>
+            {% endif %}
+            <li class="active">{{ page.title }}</li>
+        </ul>
+
+        <!--
+        <div class="page-header">
+            <h1>{{ page.title }}</h1>
+            <hr />
+        </div>
+        -->
+                
+        <div class="content">
+            {{ content }}
+        </div>
+
+        {% if page.tags != empty %}
+        <div class="panel-footer">
+            {% for tag in page.tags %}
+            <span class="badge badge-primary">{{ tag }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    {% include includes/footer.html %}
+    <script>
+        $(function(){
+          $("#papers_storm").load("https://www-i2.informatik.rwth-aachen.de/pub/index.php?title=&topics=storm_paper&years=0&author_url=");
+          $("#papers_storm_competition").load("https://www-i2.informatik.rwth-aachen.de/pub/index.php?title=&topics=storm_competition&years=0&author_url=");
+          $("#papers_storm_techniques").load("https://www-i2.informatik.rwth-aachen.de/pub/index.php?title=&topics=storm_techniques&years=0&author_url=");
+          $("#papers_use_storm").load("https://www-i2.informatik.rwth-aachen.de/pub/index.php?title=&topics=use_storm&years=0&author_url=");
+        });
+    </script>
+
+  </body>
+</html>
