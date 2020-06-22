@@ -103,7 +103,7 @@ namespace {
     TYPED_TEST(SparseDtmcParameterLiftingTest, ZeroConf) {
         typedef typename TestFixture::ValueType ValueType;
 
-        std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/zc.pm";
+        std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/zeroconf4.pm";
         std::string formulaAsString = "P>0.5 [F s=5 ]";
         std::string constantsAsString = " n = 4"; //e.g. pL=0.9,TOACK=0.5
 
@@ -628,7 +628,7 @@ namespace {
     TYPED_TEST(SparseDtmcParameterLiftingTest, Simple2_Mon) {
         typedef typename TestFixture::ValueType ValueType;
 
-        std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple2.pm";
+        std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy1.pm";
         std::string formulaAsString = "P<0.5 [F s=3 ]";
         std::string constantsAsString = "";
 
@@ -668,7 +668,7 @@ namespace {
     TYPED_TEST(SparseDtmcParameterLiftingTest, Simple3_Mon) {
         typedef typename TestFixture::ValueType ValueType;
 
-        std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple3.pm";
+        std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy2.pm";
         std::string formulaAsString = "P<0.5 [F s=4 ]";
         std::string constantsAsString = "";
 
@@ -709,7 +709,7 @@ namespace {
     TYPED_TEST(SparseDtmcParameterLiftingTest, Simple4_Mon) {
         typedef typename TestFixture::ValueType ValueType;
 
-        std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple4.pm";
+        std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy3.pm";
         std::string formulaAsString = "P<0.5 [F s=3 ]";
         std::string constantsAsString = "";
 

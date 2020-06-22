@@ -165,8 +165,8 @@ TEST(AssumptionMakerTest, Simple1) {
     EXPECT_TRUE(foundThird);
 }
 
-TEST(AssumptionMakerTest, Simple2) {
-    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple2.pm";
+TEST(AssumptionMakerTest, Casestudy1) {
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy1.pm";
     std::string formulaAsString = "P=? [F s=3]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
 

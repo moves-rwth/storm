@@ -161,8 +161,8 @@ TEST(AssumptionCheckerTest, Simple1) {
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.checkOnSamples(assumption));
 }
 
-TEST(AssumptionCheckerTest, Simple2) {
-    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple2.pm";
+TEST(AssumptionCheckerTest, Casestudy1) {
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy1.pm";
     std::string formulaAsString = "P=? [F s=3]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
 
@@ -226,8 +226,8 @@ TEST(AssumptionCheckerTest, Simple2) {
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumption(assumption, order));
 }
 
-TEST(AssumptionCheckerTest, Simple3) {
-    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple3.pm";
+TEST(AssumptionCheckerTest, Casestudy2) {
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy2.pm";
     std::string formulaAsString = "P=? [F s=4]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
 
@@ -294,8 +294,8 @@ TEST(AssumptionCheckerTest, Simple3) {
     EXPECT_EQ(storm::analysis::AssumptionStatus::INVALID, checker.validateAssumptionSMTSolver(assumption, order));
 }
 
-TEST(AssumptionCheckerTest, Simple4) {
-    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple4.pm";
+TEST(AssumptionCheckerTest, Casestudy3) {
+    std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy3.pm";
     std::string formulaAsString = "P=? [F s=3]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
 
