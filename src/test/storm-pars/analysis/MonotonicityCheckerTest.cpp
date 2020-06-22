@@ -22,7 +22,7 @@
 
 #include "storm-parsers/api/storm-parsers.h"
 
-TEST(MonotonicityCheckerTest, Simple1) {
+TEST(MonotonicityCheckerTest, Simple1_not_monotone) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple1.pm";
     std::string formulaAsString = "P=? [F s=3 ]";
     std::string constantsAsString = "";
@@ -38,32 +38,21 @@ TEST(MonotonicityCheckerTest, Simple1) {
     model = simplifier.getSimplifiedModel();
 
     // Create the region
-    typename storm::storage::ParameterRegion<storm::RationalFunction>::Valuation lowerBoundaries;
-    typename storm::storage::ParameterRegion<storm::RationalFunction>::Valuation upperBoundaries;
-    std::set<typename storm::storage::ParameterRegion<storm::RationalFunction>::VariableType> vars = storm::models::sparse::getProbabilityParameters(*dtmc);
-    for (auto var : vars) {
-        typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType lb = storm::utility::convertNumber<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>(0 + 0.000001);
-        typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType ub = storm::utility::convertNumber<typename storm::storage::ParameterRegion<storm::RationalFunction>::CoefficientType>(0.5 - 0.000001);
-        lowerBoundaries.emplace(std::make_pair(var, lb));
-        upperBoundaries.emplace(std::make_pair(var, ub));
-    }
-    auto region =  storm::storage::ParameterRegion<storm::RationalFunction>(std::move(lowerBoundaries), std::move(upperBoundaries));
+    auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
+    auto region=storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.9", modelParameters);
     std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> regions = {region};
 
-    //order
+    // order
     auto monHelper = new storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 0, 0, false);
     auto result = monHelper->checkMonotonicityInBuild(std::cout);
     ASSERT_TRUE(result.size() != 0);
     auto order = result.begin()->first;
 
-    //monchecker
-    auto matrix = model->getTransitionMatrix();
-    auto monChecker = new storm::analysis::MonotonicityChecker<storm::RationalFunction>(matrix);
-
-    STORM_PRINT(matrix);
+    // monchecker
+    auto monChecker = new storm::analysis::MonotonicityChecker<storm::RationalFunction>(model->getTransitionMatrix());
 
     //start testing
-    auto var = vars.begin();
+    auto var = modelParameters.begin();
     for (uint_fast64_t i = 0; i < 3; i++) {
         EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Decr, monChecker->checkLocalMonotonicity(order, i, *var, region));
     }

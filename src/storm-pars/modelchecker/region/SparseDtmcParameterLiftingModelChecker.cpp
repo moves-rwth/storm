@@ -457,7 +457,7 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::splitAtCenter(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>>& regionVector, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>>& knownRegionVector, storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> monRes, storm::modelchecker::RegionResult regionRes) {
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::splitAtCenter(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>>& regionVector, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>>& knownRegionVector, storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> const& monRes, storm::modelchecker::RegionResult const& regionRes) {
             auto optimizationDirection = isLowerBound(this->currentCheckTask->getBound().comparisonType) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
             region.split(region.getCenterPoint(), regionVector, knownRegionVector, monRes, regionRes, optimizationDirection);
         }

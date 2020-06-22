@@ -178,13 +178,13 @@ namespace storm {
                 order->add(currentState);
             }
             while (currentState != numberOfStates ) {
-
                 // Check if position of all successor states is known
                 auto successors = stateMap[currentState];
                 // If it is cyclic, first do forward reasoning
                 if (cyclic && order->contains(currentState) && successors.size() == 2) {
-                    extendByForwardReasoning(order, currentState, successors);
+                    auto forwardResult = extendByForwardReasoning(order, currentState, successors);
                 }
+
                 // Also do normal backward reasoning if the state is not yet in the order
                 auto stateSucc1 = numberOfStates;
                 auto stateSucc2 = numberOfStates;
@@ -223,7 +223,7 @@ namespace storm {
 
             if (useAssumption) {
                 order->setDoneBuilding();
-                monRes.get()->setDone(true);
+                monRes->setDone();
             }
             return std::make_tuple(order, numberOfStates, numberOfStates);
         }
@@ -312,30 +312,31 @@ namespace storm {
                 auto highest = successors[0];
                 auto lowest = highest;
                 for (auto i = 1 ; i < successors.size(); ++i) {
-                    auto compareWithHighest = order->compare(i, highest);
+                    auto next = successors[i];
+                    auto compareWithHighest = order->compare(next, highest);
                     if (!cyclic && !usePLA && compareWithHighest == Order::UNKNOWN) {
                         // Only use pla for acyclic models
                         getMinMaxValues();
                     }
                     if (usePLA && compareWithHighest == Order::UNKNOWN) {
-                        compareWithHighest = addStatesBasedOnMinMax(order, i, highest);
+                        compareWithHighest = addStatesBasedOnMinMax(order, next, highest);
                     }
                     if (compareWithHighest == Order::ABOVE) {
-                        highest = i;
+                        highest = next;
                     } else if (compareWithHighest == Order::UNKNOWN) {
                         // Return current successors as the "problematic ones"
-                        return std::pair<uint_fast64_t, uint_fast64_t>(i, highest);
+                        return std::pair<uint_fast64_t, uint_fast64_t>(next, highest);
                     }
 
-                    auto compareWithLowest = order->compare(lowest, i);
+                    auto compareWithLowest = order->compare(lowest, next);
                     if (usePLA && compareWithLowest == Order::UNKNOWN) {
-                        compareWithLowest = addStatesBasedOnMinMax(order, lowest, i);
+                        compareWithLowest = addStatesBasedOnMinMax(order, lowest, next);
                     }
                     if (compareWithLowest == Order::ABOVE) {
-                        lowest = i;
+                        lowest = next;
                     } else if (compareWithLowest == Order::UNKNOWN) {
                         // Return current successors as the "problematic ones"
-                        return std::pair<uint_fast64_t, uint_fast64_t>(i, lowest);
+                        return std::pair<uint_fast64_t, uint_fast64_t>(next, lowest);
                     }
                 }
 

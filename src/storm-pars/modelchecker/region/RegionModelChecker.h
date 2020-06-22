@@ -86,7 +86,7 @@ namespace storm {
 
             void setMonotonicity(bool monotonicity = true);
         private:
-            virtual void splitAtCenter(storm::storage::ParameterRegion<ParametricType> const& region, std::vector<storm::storage::ParameterRegion<ParametricType>>& regionVector, std::vector<storm::storage::ParameterRegion<ParametricType>>& knownRegionVector, storm::analysis::MonotonicityResult<VariableType> monRes, storm::modelchecker::RegionResult regionRes);
+            virtual void splitAtCenter(storm::storage::ParameterRegion<ParametricType> const& region, std::vector<storm::storage::ParameterRegion<ParametricType>>& regionVector, std::vector<storm::storage::ParameterRegion<ParametricType>>& knownRegionVector, storm::analysis::MonotonicityResult<VariableType> const& monRes, storm::modelchecker::RegionResult const& regionRes);
 
             bool useMonotonicity = false;
         };

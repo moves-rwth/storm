@@ -11,7 +11,7 @@ namespace storm {
         template <typename VariableType>
         MonotonicityResult<VariableType>::MonotonicityResult() {
             this->done = false;
-            this->somewhereMonotonicity = false;
+            this->somewhereMonotonicity = true;
             this->allMonotonicity = true;
         }
 
@@ -48,7 +48,7 @@ namespace storm {
         }
 
         template <typename VariableType>
-        typename MonotonicityResult<VariableType>::Monotonicity MonotonicityResult<VariableType>::getMonotonicity(VariableType var) {
+        typename MonotonicityResult<VariableType>::Monotonicity MonotonicityResult<VariableType>::getMonotonicity(VariableType var) const{
             auto itr = monotonicityResult.find(var);
             if (itr != monotonicityResult.end()) {
                 return itr->second;
@@ -57,12 +57,12 @@ namespace storm {
         }
 
         template <typename VariableType>
-        std::map<VariableType, typename MonotonicityResult<VariableType>::Monotonicity> MonotonicityResult<VariableType>::getMonotonicityResult() {
+        std::map<VariableType, typename MonotonicityResult<VariableType>::Monotonicity> MonotonicityResult<VariableType>::getMonotonicityResult() const{
             return monotonicityResult;
         }
 
         template <typename VariableType>
-        std::string MonotonicityResult<VariableType>::toString() {
+        std::string MonotonicityResult<VariableType>::toString() const{
             std::string result;
             for (auto res : getMonotonicityResult()) {
                 result += res.first.name();
@@ -95,7 +95,7 @@ namespace storm {
         }
 
         template <typename VariableType>
-        bool MonotonicityResult<VariableType>::isDone() {
+        bool MonotonicityResult<VariableType>::isDone() const{
             return done;
         }
 
@@ -123,12 +123,12 @@ namespace storm {
         }
 
         template <typename VariableType>
-        bool MonotonicityResult<VariableType>::isAllMonotonicity() {
+        bool MonotonicityResult<VariableType>::isAllMonotonicity() const{
             return allMonotonicity;
         }
 
         template <typename VariableType>
-        std::shared_ptr<MonotonicityResult<VariableType>> MonotonicityResult<VariableType>::copy() {
+        std::shared_ptr<MonotonicityResult<VariableType>> MonotonicityResult<VariableType>::copy() const{
             std::shared_ptr<MonotonicityResult<VariableType>> copy = std::make_shared<MonotonicityResult<VariableType>>();
             copy->monotonicityResult = std::map<VariableType, Monotonicity>(monotonicityResult);
             copy->setAllMonotonicity(allMonotonicity);
@@ -136,7 +136,6 @@ namespace storm {
             copy->setDone(done);
             return copy;
         }
-
 
         template class MonotonicityResult<storm::RationalFunctionVariable>;
     }

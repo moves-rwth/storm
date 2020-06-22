@@ -72,7 +72,7 @@ namespace storm {
             // Used for monotonicity
             storm::analysis::OrderExtender<typename SparseModelType::ValueType, ConstantType>* orderExtender;
             bool useOrderExtender;
-            virtual void splitAtCenter(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>>& regionVector, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>>& knownRegionVector, storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> monRes, storm::modelchecker::RegionResult regionRes) override;
+            virtual void splitAtCenter(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>>& regionVector, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>>& knownRegionVector, storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> const& monRes, storm::modelchecker::RegionResult const& regionRes) override;
 
         };
     }

@@ -70,8 +70,7 @@ namespace storm {
                 if (useMonotonicity) {
                     orders.emplace(extendOrder(nullptr, region));
                     if (orders.front() != nullptr) {
-                        auto localMonRes = std::shared_ptr< storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(orders.front()->getNumberOfStates()));
-                        localMonotonicityResults.emplace(localMonRes);
+                        localMonotonicityResults.emplace(std::shared_ptr< storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(orders.front()->getNumberOfStates())));
                     } else {
                         assert (false);
                     }
@@ -100,11 +99,13 @@ namespace storm {
                     auto& currentRegion = unprocessedRegions.front().first;
                     auto& res = unprocessedRegions.front().second;
                     std::shared_ptr<storm::analysis::Order> order;
-                    std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult(nullptr);
+                    std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult;
                     if (useMonotonicity) {
                         order = orders.front();
                         localMonotonicityResult = localMonotonicityResults.front();
-                        extendOrder(order, currentRegion);
+                        if (!order->getDoneBuilding()) {
+                            extendOrder(order, currentRegion);
+                        }
                         res = analyzeRegion(env, currentRegion, hypothesis, res, false, order, localMonotonicityResult);
                     } else {
                         res = analyzeRegion(env, currentRegion, hypothesis, res, false);
@@ -253,7 +254,7 @@ namespace storm {
         }
 
         template <typename ParametricType>
-        void RegionModelChecker<ParametricType>::splitAtCenter(storm::storage::ParameterRegion<ParametricType> const& region, std::vector<storm::storage::ParameterRegion<ParametricType>>& regionVector, std::vector<storm::storage::ParameterRegion<ParametricType>>& knownRegionVector, storm::analysis::MonotonicityResult<VariableType> monRes, storm::modelchecker::RegionResult regionRes) {
+        void RegionModelChecker<ParametricType>::splitAtCenter(storm::storage::ParameterRegion<ParametricType> const& region, std::vector<storm::storage::ParameterRegion<ParametricType>>& regionVector, std::vector<storm::storage::ParameterRegion<ParametricType>>& knownRegionVector, storm::analysis::MonotonicityResult<VariableType> const& monRes, storm::modelchecker::RegionResult const& regionRes) {
             region.split(region.getCenterPoint(), regionVector);
         }
     

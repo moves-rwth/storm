@@ -153,7 +153,7 @@ namespace storm {
             } else {
                 // Make the three assumptions
                 auto newAssumptions = assumptionMaker->createAndCheckAssumptions(val1, val2, order);
-                assert (newAssumptions.size() == 3);
+                assert (newAssumptions.size() <= 3);
                 auto itr = newAssumptions.begin();
 
                 while (itr != newAssumptions.end()) {
@@ -178,7 +178,6 @@ namespace storm {
                             }
                         } else {
                             // It is the last one, so we don't need to create a copy.
-
                             if (assumption.second == AssumptionStatus::UNKNOWN) {
                                 // only add assumption to the set of assumptions if it is unknown whether it holds or not
                                 assumptions.push_back(std::move(assumption.first));
@@ -190,6 +189,10 @@ namespace storm {
                             }
                         }
                     }
+                }
+                if (this->monResults.size() == 0) {
+                    auto resAssumptionPair = std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>(monRes, assumptions);
+                    monResults.insert(std::pair<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>(std::move(order), std::move(resAssumptionPair)));
                 }
             }
         }

@@ -18,10 +18,18 @@ namespace storm {
             std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> result;
             expressions::Variable var1 = expressionManager->getVariable(std::to_string(val1));
             expressions::Variable var2 = expressionManager->getVariable(std::to_string(val2));
-            result.insert(createAndCheckAssumption(var1, var2, expressions::BinaryRelationExpression::RelationType::Greater, order));
-            result.insert(createAndCheckAssumption(var2, var1, expressions::BinaryRelationExpression::RelationType::Greater, order));
-            result.insert(createAndCheckAssumption(var1, var2, expressions::BinaryRelationExpression::RelationType::Equal, order));
-
+            auto assumption = createAndCheckAssumption(var1, var2, expressions::BinaryRelationExpression::RelationType::Greater, order);
+            if (assumption.second != AssumptionStatus::INVALID) {
+                result.insert(assumption);
+            }
+            assumption = createAndCheckAssumption(var2, var1, expressions::BinaryRelationExpression::RelationType::Greater, order);
+            if (assumption.second != AssumptionStatus::INVALID) {
+                result.insert(assumption);
+            }
+            assumption = createAndCheckAssumption(var1, var2, expressions::BinaryRelationExpression::RelationType::Equal, order);
+            if (assumption.second != AssumptionStatus::INVALID) {
+                result.insert(assumption);
+            }
             return result;
         }
 

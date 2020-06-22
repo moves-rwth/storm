@@ -38,24 +38,24 @@ namespace storm {
              */
             void updateMonotonicityResult(VariableType var, Monotonicity mon);
 
-            Monotonicity getMonotonicity(VariableType var);
+            Monotonicity getMonotonicity(VariableType var) const;
 
             /*!
              * Returns the results so far
              * @return the variable / Monotonicity map
              */
-            std::map<VariableType, Monotonicity> getMonotonicityResult();
+            std::map<VariableType, Monotonicity> getMonotonicityResult() const;
 
             /*!
              * Constructs a string output of all variables and their corresponding Monotonicity
              * @return Results so far
              */
-            std::string toString();
+            std::string toString() const;
 
             /*!
              * Checks if the result is complete
              */
-            bool isDone();
+            bool isDone() const;
 
             /*!
              * Checks if there is any variable that is monotone
@@ -63,9 +63,9 @@ namespace storm {
             bool isSomewhereMonotonicity();
 
             /*!
-             * Checks if all Variables are monotone
+             * Returns if all Variables are monotone
              */
-            bool isAllMonotonicity();
+            bool isAllMonotonicity() const;
 
             /*!
              * Sets the done bool to the given truth value
@@ -87,7 +87,7 @@ namespace storm {
              * @return Pointer to the copy
              */
 
-            std::shared_ptr<MonotonicityResult<VariableType>> copy();
+            std::shared_ptr<MonotonicityResult<VariableType>> copy() const;
 
         private:
             std::map<VariableType, Monotonicity> monotonicityResult;

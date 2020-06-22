@@ -220,19 +220,20 @@ namespace storm {
                     return BELOW;
                 }
 
-//                // tweak for cyclic pmcs
-//                if (doneBuilding) {
-//                    doneBuilding = false;
-//                    if (above(node1, node2)) {
-//                        assert(!above(node2, node1));
-//                        doneBuilding = true;
-//                        return ABOVE;
-//                    }
-//                    if (above(node2, node1)) {
-//                        doneBuilding = true;
-//                        return BELOW;
-//                    }
-//                }
+                // tweak for cyclic pmcs it might be possible that we missed something due to forward reasoning
+                //TODO: fix this
+                if (doneBuilding) {
+                    doneBuilding = false;
+                    if (above(node1, node2)) {
+                        assert(!above(node2, node1));
+                        doneBuilding = true;
+                        return ABOVE;
+                    }
+                    if (above(node2, node1)) {
+                        doneBuilding = true;
+                        return BELOW;
+                    }
+                }
             }
             return UNKNOWN;
         }
@@ -279,11 +280,13 @@ namespace storm {
         }
 
         bool Order::isBottomState(uint_fast64_t state) {
-            return std::find(bottom->states.begin(), bottom->states.end(), state) == bottom->states.end();
+            auto states = bottom->states;
+            return states.find(state) != states.end();
         }
 
         bool Order::isTopState(uint_fast64_t state) {
-            return std::find(top->states.begin(), top->states.end(), state) == top->states.end();
+            auto states = top->states;
+            return states.find(state) != states.end();
         }
 
         bool Order::isOnlyBottomTopOrder() {

@@ -36,6 +36,9 @@ namespace storm {
                 statesMonotone.set(state, false);
             } else {
                 statesMonotone.set(state, stateMonRes[state]->isAllMonotonicity());
+                if (isDone()) {
+                    globalMonotonicityResult->setDone();
+                }
             }
         }
 
