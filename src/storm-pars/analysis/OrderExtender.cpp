@@ -21,7 +21,23 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         OrderExtender<ValueType, ConstantType>::OrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula,  storage::ParameterRegion<ValueType> region) {
-            init(model);
+            this->model = model;
+            this->matrix = model->getTransitionMatrix();
+            this->numberOfStates = this->model->getNumberOfStates();
+            this->params = storm::models::sparse::getProbabilityParameters(*model);
+
+            // Build stateMap
+            for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
+                auto row = matrix.getRow(state);
+                stateMap[state] = std::vector<uint_fast64_t>();
+                for (auto rowItr = row.begin(); rowItr != row.end(); ++rowItr) {
+                    // ignore self-loops when there are more transitions
+                    if (state != rowItr->getColumn() || row.getNumberOfEntries() == 1) {
+                        stateMap[state].push_back(rowItr->getColumn());
+                    }
+                }
+            }
+            cyclic = storm::utility::graph::hasCycle(matrix);
             this->region = region;
             this->formula = formula;
             usePLA = false;
@@ -53,29 +69,9 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        void OrderExtender<ValueType, ConstantType>::init(std::shared_ptr<models::sparse::Model<ValueType>> model) {
-            this->model = model;
-            this->matrix = model->getTransitionMatrix();
-            this->numberOfStates = this->model->getNumberOfStates();
-            this->params = storm::models::sparse::getProbabilityParameters(*model);
-
-            // Build stateMap
-            for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
-                auto row = matrix.getRow(state);
-                stateMap[state] = std::vector<uint_fast64_t>();
-                for (auto rowItr = row.begin(); rowItr != row.end(); ++rowItr) {
-                    // ignore self-loops when there are more transitions
-                    if (state != rowItr->getColumn() || row.getNumberOfEntries() == 1) {
-                        stateMap[state].push_back(rowItr->getColumn());
-                    }
-                }
-            }
-            cyclic = storm::utility::graph::hasCycle(matrix);
-        }
-
-        template <typename ValueType, typename ConstantType>
         std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::getBottomTopOrder() {
             if (bottomTopOrder == nullptr) {
+                assert (model != nullptr);
                 STORM_LOG_THROW(matrix.getRowCount() == matrix.getColumnCount(), exceptions::NotSupportedException,"Creating order not supported for non-square matrix");
                 modelchecker::SparsePropositionalModelChecker<models::sparse::Model<ValueType>> propositionalChecker(*model);
                 storage::BitVector phiStates;
@@ -109,14 +105,7 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::toOrder(std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
-            return this->extendOrder(getBottomTopOrder(), monRes);
-        }
-
-        template <typename ValueType, typename ConstantType>
-        std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::toOrder(std::vector<ConstantType> minValues, std::vector<ConstantType> maxValues, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
-            this->minValues = minValues;
-            this->maxValues = maxValues;
-            return std::get<0>(this->extendOrder(getBottomTopOrder(), false, monRes));
+            return this->extendOrder(getBottomTopOrder(), monRes, nullptr);
         }
 
         template <typename ValueType, typename ConstantType>
@@ -164,12 +153,6 @@ namespace storm {
             if (assumption != nullptr) {
                 handleAssumption(order, assumption);
             }
-            return extendOrder(order, true, monRes);
-        }
-
-        // TODO: remove the use Assumption boolean
-        template <typename ValueType, typename ConstantType>
-        std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, bool useAssumption, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
             auto currentState = order->getNextSortedState();
             while ((*order->getAddedStates())[currentState]) {
                 currentState = order->getNextSortedState();
@@ -180,6 +163,7 @@ namespace storm {
             while (currentState != numberOfStates ) {
                 // Check if position of all successor states is known
                 auto successors = stateMap[currentState];
+
                 // If it is cyclic, first do forward reasoning
                 if (cyclic && order->contains(currentState) && successors.size() == 2) {
                     auto forwardResult = extendByForwardReasoning(order, currentState, successors);
@@ -194,18 +178,11 @@ namespace storm {
                     stateSucc2 = backwardResult.second;
                 }
 
-                // We only do this if it is cyclic, because than forward reasoning makes sense
                 if (stateSucc1 != numberOfStates) {
                     assert (stateSucc2 != numberOfStates);
                     // create tuple for assumptions
-                    if (useAssumption) {
-                        // Remember that we did not yet add the currentState to the Order
-                        order->addStateToHandle(currentState);
+                    order->addStateToHandle(currentState);
                         return std::make_tuple(order, stateSucc1, stateSucc2);
-                    } else {
-                        // If we don't allow for assumptions, we stop creating the order and return what we got so far
-                        return std::make_tuple(order, numberOfStates, numberOfStates);
-                    }
                 }
 
                 assert (order->contains(currentState) && order->getNode(currentState) != nullptr);
@@ -221,8 +198,8 @@ namespace storm {
                 currentState = order->getNextSortedState();
             }
 
-            if (useAssumption) {
-                order->setDoneBuilding();
+            order->setDoneBuilding();
+            if (monRes != nullptr) {
                 monRes->setDone();
             }
             return std::make_tuple(order, numberOfStates, numberOfStates);
@@ -259,9 +236,9 @@ namespace storm {
                     assert (stateSucc2 == numberOfStates);
                     currentState = order->getNextSortedState();
                 } else {
+                    order->addStateToHandle(currentState);
                     break;
                     // TODO: make assumptions here if there is only 1 assumption -->then we can continue building order, use region for this
-                    order->addStateToHandle(currentState);
                 }
             }
 
