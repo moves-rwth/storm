@@ -160,31 +160,31 @@ namespace storm {
                     /*!
                      * Check if state is already contained in order
                      */
-                    bool contains(uint_fast64_t state);
+                    bool contains(uint_fast64_t state) const;
 
                     /*!
                      * Returns a BitVector in which all added states are set.
                      *
                      * @return the BitVector with all added states
                      */
-                    storm::storage::BitVector* getAddedStates();
+                    storm::storage::BitVector* getAddedStates() const;
 
                     /*!
                      * Retrieves the bottom node of the order.
                      *
                      * @return the bottom node
                      */
-                    Node* getBottom();
+                    Node* getBottom() const;
 
                     /*!
                      * Returns true if done building the order.
                      */
-                    bool getDoneBuilding();
+                    bool getDoneBuilding() const;
 
                     /*!
                      * Returns the next added state of the order, returns the number of state if end of added states is reached.
                      */
-                    uint_fast64_t getNextAddedState(uint_fast64_t state);
+                    uint_fast64_t getNextAddedState(uint_fast64_t state) const;
 
                     /*!
                      * Retrieves the pointer to a Node at which the state occurs.
@@ -192,7 +192,7 @@ namespace storm {
                      * @param state The number of the state.
                      * @return The pointer to the node of the state, nullptr if the node does not exist.
                      */
-                    Node *getNode(uint_fast64_t state);
+                    Node *getNode(uint_fast64_t state) const;
 
                     /*!
                      * Returns the vector with the nodes of the order.
@@ -201,33 +201,33 @@ namespace storm {
                      *
                      * @return the vector with nodes of the order
                      */
-                    std::vector<Node*> getNodes();
+                    std::vector<Node*> getNodes() const;
 
                     /*!
                      * Retrieves the top node of the order.
                      *
                      * @return the top node
                      */
-                    Node* getTop();
+                    Node* getTop() const;
 
                     /*!
                      * Returns the number of added states.
                      */
-                    uint_fast64_t getNumberOfAddedStates();
+                    uint_fast64_t getNumberOfAddedStates() const;
 
                     /*!
                      * Returns the number of possible states in the order.
                      */
-                    uint_fast64_t getNumberOfStates();
+                    uint_fast64_t getNumberOfStates() const;
 
-                    bool isBottomState(uint_fast64_t);
+                    bool isBottomState(uint_fast64_t) const;
 
-                    bool isTopState(uint_fast64_t);
+                    bool isTopState(uint_fast64_t) const;
 
                     /*!
                      * Returns if the order only consists of bottom and top states (so no in-between nodes).
                      */
-                    bool isOnlyBottomTopOrder();
+                    bool isOnlyBottomTopOrder() const;
 
                     /*!
                      * Sorts the given states if possible.
@@ -269,18 +269,18 @@ namespace storm {
                     /*!
                      * Prints to normal STORM_PRINT the dot output.
                      */
-                    void toDotOutput();
+                    void toDotOutput() const;
 
                     /*!
                      * Writes dotoutput to the file.
                      * @param dotOutfile
                      */
-                    void dotOutputToFile(std::ofstream& dotOutfile);
+                    void dotOutputToFile(std::ofstream& dotOutfile) const;
 
                 protected:
-                    std::vector<uint_fast64_t> getStatesSorted();
+                    std::vector<uint_fast64_t> getStatesSorted() const;
 
-                    std::vector<uint_fast64_t> getStatesToHandle();
+                    std::vector<uint_fast64_t> getStatesToHandle() const;
 
                 private:
                     bool above(Node * node1, Node * node2);
@@ -291,9 +291,9 @@ namespace storm {
 
                     void init(uint_fast64_t numberOfStates, std::vector<uint_fast64_t>* statesSorted, bool doneBuilding = false);
 
-                    std::string nodeName(Node n);
+                    std::string nodeName(Node n) const;
 
-                    std::string nodeLabel(Node n);
+                    std::string nodeLabel(Node n) const;
 
                     void nodeOutput();
 

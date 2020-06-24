@@ -194,7 +194,7 @@ namespace storm {
 
         /*** Checking on the order ***/
 
-        Order::NodeComparison Order::compare(uint_fast64_t state1, uint_fast64_t state2) {
+        Order::NodeComparison Order::compare(uint_fast64_t state1, uint_fast64_t state2){
             return compare(getNode(state1), getNode(state2));
         }
 
@@ -238,58 +238,58 @@ namespace storm {
             return UNKNOWN;
         }
 
-        bool Order::contains(uint_fast64_t state) {
+        bool Order::contains(uint_fast64_t state) const {
             return state < addedStates->size() && (*addedStates)[state];
         }
 
-        storm::storage::BitVector* Order::getAddedStates() {
+        storm::storage::BitVector* Order::getAddedStates() const {
             return addedStates;
         }
 
-        Order::Node *Order::getBottom() {
+        Order::Node *Order::getBottom() const {
             return bottom;
         }
 
-        bool Order::getDoneBuilding() {
+        bool Order::getDoneBuilding() const {
             return doneBuilding;
         }
 
-        uint_fast64_t Order::getNextAddedState(uint_fast64_t state) {
+        uint_fast64_t Order::getNextAddedState(uint_fast64_t state) const {
             return addedStates->getNextSetIndex(state + 1);
         }
 
-        Order::Node *Order::getNode(uint_fast64_t stateNumber) {
+        Order::Node *Order::getNode(uint_fast64_t stateNumber) const {
             assert (stateNumber < numberOfStates);
             return nodes[stateNumber];
         }
 
-        std::vector<Order::Node*> Order::getNodes() {
+        std::vector<Order::Node*> Order::getNodes() const {
             return nodes;
         }
 
-        Order::Node *Order::getTop() {
+        Order::Node *Order::getTop() const {
             return top;
         }
 
-        uint_fast64_t Order::getNumberOfAddedStates() {
+        uint_fast64_t Order::getNumberOfAddedStates() const {
             return numberOfAddedStates;
         }
 
-        uint_fast64_t Order::getNumberOfStates() {
+        uint_fast64_t Order::getNumberOfStates() const {
             return numberOfStates;
         }
 
-        bool Order::isBottomState(uint_fast64_t state) {
+        bool Order::isBottomState(uint_fast64_t state) const {
             auto states = bottom->states;
             return states.find(state) != states.end();
         }
 
-        bool Order::isTopState(uint_fast64_t state) {
+        bool Order::isTopState(uint_fast64_t state) const {
             auto states = top->states;
             return states.find(state) != states.end();
         }
 
-        bool Order::isOnlyBottomTopOrder() {
+        bool Order::isOnlyBottomTopOrder() const {
             return onlyBottomTopOrder;
         }
 
@@ -376,11 +376,11 @@ namespace storm {
             statesToHandle.push_back(state);
         }
 
-        std::vector<uint_fast64_t> Order::getStatesSorted() {
+        std::vector<uint_fast64_t> Order::getStatesSorted() const {
             return statesSorted;
         }
 
-        std::vector<uint_fast64_t> Order::getStatesToHandle() {
+        std::vector<uint_fast64_t> Order::getStatesToHandle() const {
             return statesToHandle;
         }
 
@@ -414,7 +414,7 @@ namespace storm {
 
         /*** Output ***/
 
-        void Order::toDotOutput() {
+        void Order::toDotOutput() const {
             // Graphviz Output start
             STORM_PRINT("Dot Output:" << std::endl << "digraph model {" << std::endl);
 
@@ -450,7 +450,7 @@ namespace storm {
             STORM_PRINT("}" << std::endl);
         }
 
-        void Order::dotOutputToFile(std::ofstream& dotOutfile) {
+        void Order::dotOutputToFile(std::ofstream& dotOutfile) const {
             // Graphviz Output start
             dotOutfile << "Dot Output:" << std::endl << "digraph model {" << std::endl;
 
@@ -562,13 +562,13 @@ namespace storm {
             return found;
         }
 
-        std::string Order::nodeName(Node n){
+        std::string Order::nodeName(Node n) const {
             auto itr = n.states.begin();
             std::string name = "n" + std::to_string(*itr);
             return name;
         }
 
-        std::string Order::nodeLabel(Node n){
+        std::string Order::nodeLabel(Node n) const {
             if (n.states == top->states) return "=)";
             if (n.states == bottom->states) return "=(";
             auto itr = n.states.begin();

@@ -68,7 +68,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) {
+        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) const {
             // First check if based on sample points the assumption can be discharged
             AssumptionStatus result = AssumptionStatus::UNKNOWN;
             if (useSamples) {
@@ -130,7 +130,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::checkOnSamples(std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
+        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::checkOnSamples(std::shared_ptr<expressions::BinaryRelationExpression> assumption) const {
             auto result = AssumptionStatus::UNKNOWN;
             std::set<expressions::Variable> vars = std::set<expressions::Variable>({});
             assumption->gatherVariables(vars);
@@ -151,7 +151,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionSMTSolver(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) {
+        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionSMTSolver(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) const {
             std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
             std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
 

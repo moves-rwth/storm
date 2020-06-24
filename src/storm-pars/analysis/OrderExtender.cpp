@@ -109,7 +109,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        void OrderExtender<ValueType, ConstantType>::handleAssumption(std::shared_ptr<Order> order, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
+        void OrderExtender<ValueType, ConstantType>::handleAssumption(std::shared_ptr<Order> order, std::shared_ptr<expressions::BinaryRelationExpression> assumption) const {
             assert (assumption != nullptr);
             assert (assumption->getFirstOperand()->isVariable() && assumption->getSecondOperand()->isVariable());
 
@@ -332,7 +332,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByForwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors) {
+        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByForwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors) const {
             // If this is the first state to add, we add it between =) and =(.
             auto succ1 = successors[0];
             auto compareSucc1 = order->compare(succ1, currentState);
@@ -369,7 +369,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) {
+        Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) const {
             assert (order->compare(state1, state2) == Order::UNKNOWN);
             assert(minValues.size() > state1 && minValues.size() > state2);
             assert(maxValues.size() > state1 && maxValues.size() > state2);
