@@ -717,7 +717,7 @@ namespace storm {
 
                 STORM_LOG_THROW(regions.size() <= 1, storm::exceptions::InvalidArgumentException, "Monotonicity analysis only allowed on single region");
                 // TODO: type, should this be double?
-                storm::analysis::MonotonicityHelper<ValueType, double> monotonicityHelper = storm::analysis::MonotonicityHelper<ValueType, double>(model, formulas, regions, monSettings.getNumberOfSamples(), monSettings.getMonotonicityAnalysisPrecision(), monSettings.isDotOutputSet());
+                storm::analysis::MonotonicityHelper<ValueType, double> monotonicityHelper = storm::analysis::MonotonicityHelper<ValueType, double>(model->as<models::sparse::Model<ValueType>>(), formulas, regions, monSettings.getNumberOfSamples(), monSettings.getMonotonicityAnalysisPrecision(), monSettings.isDotOutputSet());
                 if (monSettings.isExportMonotonicitySet()) {
                     std::ofstream outfile;
                     utility::openFile(monSettings.getExportMonotonicityFilename(), outfile);

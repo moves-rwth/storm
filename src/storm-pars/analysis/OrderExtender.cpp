@@ -236,9 +236,14 @@ namespace storm {
                     assert (stateSucc2 == numberOfStates);
                     currentState = order->getNextSortedState();
                 } else {
-                    order->addStateToHandle(currentState);
-                    break;
-                    // TODO: make assumptions here if there is only 1 assumption -->then we can continue building order, use region for this
+                    // TODO: do this only once
+                    auto assumptionMaker = analysis::AssumptionMaker<ValueType, ConstantType>(matrix);
+                    auto assumptions = assumptionMaker.createAndCheckAssumptions(stateSucc1, stateSucc2, order, region);
+                    if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
+                        handleAssumption(order, assumptions.begin()->first);
+                    } else {
+                        break;
+                    }
                 }
             }
 

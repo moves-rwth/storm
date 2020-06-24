@@ -16,7 +16,7 @@ namespace storm {
     namespace analysis {
         /*** Constructor ***/
         template <typename ValueType, typename ConstantType>
-        MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(std::shared_ptr<models::ModelBase> model, std::vector<std::shared_ptr<logic::Formula const>> formulas, std::vector<storage::ParameterRegion<ValueType>> regions, uint_fast64_t numberOfSamples, double const& precision, bool dotOutput) {
+        MonotonicityHelper<ValueType, ConstantType>::MonotonicityHelper(std::shared_ptr<models::sparse::Model<ValueType>> model, std::vector<std::shared_ptr<logic::Formula const>> formulas, std::vector<storage::ParameterRegion<ValueType>> regions, uint_fast64_t numberOfSamples, double const& precision, bool dotOutput) : assumptionMaker(model->getTransitionMatrix()){
             assert (model != nullptr);
             STORM_LOG_THROW(regions.size() <= 1, exceptions::NotSupportedException, "Monotonicity checking is not (yet) supported for multiple regions");
             STORM_LOG_THROW(formulas.size() <= 1, exceptions::NotSupportedException, "Monotonicity checking is not (yet) supported for multiple formulas");
@@ -24,8 +24,7 @@ namespace storm {
             this->model = model;
             this->formulas = formulas;
             this->precision = utility::convertNumber<ConstantType>(precision);
-            std::shared_ptr<models::sparse::Model<ValueType>> sparseModel = model->as<models::sparse::Model<ValueType>>();
-            this->matrix = sparseModel->getTransitionMatrix();
+            this->matrix = model->getTransitionMatrix();
             this->dotOutput = dotOutput;
 
             if (regions.size() == 1) {
@@ -34,7 +33,7 @@ namespace storm {
                 typename storage::ParameterRegion<ValueType>::Valuation lowerBoundaries;
                 typename storage::ParameterRegion<ValueType>::Valuation upperBoundaries;
                 std::set<VariableType> vars;
-                vars = models::sparse::getProbabilityParameters(*sparseModel);
+                vars = models::sparse::getProbabilityParameters(*model);
                 for (auto var : vars) {
                     typename storage::ParameterRegion<ValueType>::CoefficientType lb = utility::convertNumber<CoefficientType>(0 + precision) ;
                     typename storage::ParameterRegion<ValueType>::CoefficientType ub = utility::convertNumber<CoefficientType>(1 - precision) ;
@@ -48,11 +47,13 @@ namespace storm {
                 // sampling
                 if (model->isOfType(models::ModelType::Dtmc)) {
                     this->resultCheckOnSamples = std::map<VariableType, std::pair<bool, bool>>(
-                            checkMonotonicityOnSamples(model->as<models::sparse::Dtmc<ValueType>>(), numberOfSamples));
+                            checkMonotonicityOnSamples(model->template as<models::sparse::Dtmc<ValueType>>(), numberOfSamples));
                 } else if (model->isOfType(models::ModelType::Mdp)) {
                     this->resultCheckOnSamples = std::map<VariableType, std::pair<bool, bool>>(
-                            checkMonotonicityOnSamples(model->as<models::sparse::Mdp<ValueType>>(), numberOfSamples));
+                            checkMonotonicityOnSamples(model->template as<models::sparse::Mdp<ValueType>>(), numberOfSamples));
                 }
+               // TODO use samples also for assumptinomaker
+
                 checkSamples = true;
             } else {
                 if (numberOfSamples > 0) {
@@ -61,7 +62,7 @@ namespace storm {
                 checkSamples = false;
             }
 
-            this->extender = new analysis::OrderExtender<ValueType, ConstantType>(sparseModel, formulas[0], region);
+            this->extender = new analysis::OrderExtender<ValueType, ConstantType>(model, formulas[0], region);
         }
 
 
@@ -123,25 +124,14 @@ namespace storm {
                 auto resAssumptionPair = std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>(monRes, assumptions);
                 monResults.insert(std::pair<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>(std::get<0>(criticalTuple), resAssumptionPair));
             } else if (val1 != numberOfStates && val2 != numberOfStates) {
-                analysis::AssumptionChecker<ValueType, ConstantType> *assumptionChecker;
-                if (model->isOfType(models::ModelType::Dtmc)) {
-                    auto dtmc = model->as<models::sparse::Dtmc<ValueType>>();
-                    assumptionChecker = new analysis::AssumptionChecker<ValueType, ConstantType>(formulas[0], dtmc, region, 3);
-                } else if (model->isOfType(models::ModelType::Mdp)) {
-                    auto mdp = model->as<models::sparse::Mdp<ValueType>>();
-                    assumptionChecker = new analysis::AssumptionChecker<ValueType, ConstantType>(formulas[0], mdp, 3);
-                } else {
-                    STORM_LOG_THROW(false, exceptions::InvalidOperationException,"Unable to perform monotonicity analysis on the provided model type.");
-                }
-                auto assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(assumptionChecker, numberOfStates);
-                extendOrderWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, val1, val2, assumptions, monRes);
+                extendOrderWithAssumptions(std::get<0>(criticalTuple), val1, val2, assumptions, monRes);
             } else {
                 assert (false);
             }
         }
 
         template <typename ValueType, typename ConstantType>
-        void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std::shared_ptr<Order> order, analysis::AssumptionMaker<ValueType, ConstantType>* assumptionMaker, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
+        void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std::shared_ptr<Order> order, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
             std::map<std::shared_ptr<Order>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
 
             auto numberOfStates = model->getNumberOfStates();
@@ -152,7 +142,7 @@ namespace storm {
                 monResults.insert(std::pair<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>(std::move(order), std::move(resAssumptionPair)));
             } else {
                 // Make the three assumptions
-                auto newAssumptions = assumptionMaker->createAndCheckAssumptions(val1, val2, order);
+                auto newAssumptions = assumptionMaker.createAndCheckAssumptions(val1, val2, order, region);
                 assert (newAssumptions.size() <= 3);
                 auto itr = newAssumptions.begin();
 
@@ -162,7 +152,7 @@ namespace storm {
                     if (assumption.second != AssumptionStatus::INVALID) {
                         if (itr != newAssumptions.end()) {
                             // We make a copy of the order and the assumptions
-                            //TODO How to copy order?
+                            // TODO: @Svenja create a copy method for order in the same way as for monResCopy, with the content of the Order Constructor.
                             auto orderCopy = std::shared_ptr<Order>(order);
                             auto assumptionsCopy = std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>(assumptions);
                             auto monResCopy = monRes->copy();
@@ -171,10 +161,10 @@ namespace storm {
                                 // only add assumption to the set of assumptions if it is unknown whether it holds or not
                                 assumptionsCopy.push_back(std::move(assumption.first));
                             }
-                            // TODO: dit werkt niet goed
+
                             auto criticalTuple = extender->extendOrder(orderCopy, monResCopy, assumption.first);
                             if (monResCopy->isSomewhereMonotonicity()) {
-                                extendOrderWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptionsCopy, monResCopy);
+                                extendOrderWithAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptionsCopy, monResCopy);
                             }
                         } else {
                             // It is the last one, so we don't need to create a copy.
@@ -185,7 +175,7 @@ namespace storm {
 
                             auto criticalTuple = extender->extendOrder(order, monRes, assumption.first);
                             if (monRes->isSomewhereMonotonicity()) {
-                                extendOrderWithAssumptions(std::get<0>(criticalTuple), assumptionMaker, std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptions, monRes);
+                                extendOrderWithAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptions, monRes);
                             }
                         }
                     }

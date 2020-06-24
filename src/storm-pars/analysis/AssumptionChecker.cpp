@@ -15,11 +15,13 @@
 namespace storm {
     namespace analysis {
         template <typename ValueType, typename ConstantType>
-        AssumptionChecker<ValueType, ConstantType>::AssumptionChecker(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Dtmc<ValueType>> model, storage::ParameterRegion<ValueType> region, uint_fast64_t numberOfSamples) {
-            this->formula = formula;
-            this->matrix = model->getTransitionMatrix();
-            this->region = region;
+        AssumptionChecker<ValueType, ConstantType>::AssumptionChecker(storage::SparseMatrix<ValueType> matrix){
+            this->matrix = matrix;
+            useSamples = false;
+        }
 
+        template <typename ValueType, typename ConstantType>
+        void AssumptionChecker<ValueType, ConstantType>::initializeCheckingOnSamples(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Dtmc<ValueType>> model, storage::ParameterRegion<ValueType> region, uint_fast64_t numberOfSamples) {
             // Create sample points
             auto instantiator = utility::ModelInstantiator<models::sparse::Dtmc<ValueType>, models::sparse::Dtmc<ConstantType>>(*model);
             auto matrix = model->getTransitionMatrix();
@@ -55,7 +57,9 @@ namespace storm {
                 std::vector<ConstantType> values = quantitativeResult.getValueVector();
                 samples.push_back(values);
             }
+            useSamples = true;
         }
+
 
         template <typename ValueType, typename ConstantType>
         AssumptionChecker<ValueType, ConstantType>::AssumptionChecker(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples) {
@@ -64,30 +68,12 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::checkOnSamples(std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
-            auto result = AssumptionStatus::UNKNOWN;
-            std::set<expressions::Variable> vars = std::set<expressions::Variable>({});
-            assumption->gatherVariables(vars);
-            for (auto values : samples) {
-                auto valuation = expressions::SimpleValuation(assumption->getManager().getSharedPointer());
-                for (auto var : vars) {
-                    auto index = std::stoi(var.getName());
-                    valuation.setRationalValue(var, utility::convertNumber<double>(values[index]));
-                }
-
-                assert (assumption->hasBooleanType());
-                if (!assumption->evaluateAsBool(&valuation)) {
-                    result = AssumptionStatus::INVALID;
-                    break;
-                }
-            }
-            return result;
-        }
-
-        template <typename ValueType, typename ConstantType>
-        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order) {
+        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) {
             // First check if based on sample points the assumption can be discharged
-            auto result = checkOnSamples(assumption);
+            AssumptionStatus result = AssumptionStatus::UNKNOWN;
+            if (useSamples) {
+                result = checkOnSamples(assumption);
+            }
             assert (result != AssumptionStatus::VALID);
 
             if (result == AssumptionStatus::UNKNOWN) {
@@ -121,31 +107,51 @@ namespace storm {
                     }
 
                     if (state1succ1->getColumn() == state2succ1->getColumn() && state1succ2->getColumn() == state2succ2->getColumn()) {
-                       if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Equal) {
-                           // The assumption is equal, the successors are the same,
-                           // so if the probability of reaching the successors is the same, we have a valid assumption
-                           if (state1succ1->getValue() == state2succ1->getValue()) {
-                               result = AssumptionStatus::VALID;
-                           }
-                           //TODO is get here okay?
-                       } else if (order->compare(state1succ1->getColumn(), state1succ2->getColumn() == Order::NodeComparison::ABOVE)){
-                           // The SMT solver cannot solve this either
-                           result = AssumptionStatus::UNKNOWN;
-                       } else {
-                           result = validateAssumptionSMTSolver(assumption, order);
-                       }
+                        if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Equal) {
+                            // The assumption is equal, the successors are the same,
+                            // so if the probability of reaching the successors is the same, we have a valid assumption
+                            if (state1succ1->getValue() == state2succ1->getValue()) {
+                                result = AssumptionStatus::VALID;
+                            }
+                        } else if (order->compare(state1succ1->getColumn(), state1succ2->getColumn() == Order::NodeComparison::ABOVE)){
+                            // The SMT solver cannot solve this either
+                            result = AssumptionStatus::UNKNOWN;
+                        } else {
+                            result = validateAssumptionSMTSolver(assumption, order, region);
+                        }
                     } else {
-                        result = validateAssumptionSMTSolver(assumption, order);
+                        result = validateAssumptionSMTSolver(assumption, order, region);
                     }
                 } else {
-                    result = validateAssumptionSMTSolver(assumption, order);
+                    result = validateAssumptionSMTSolver(assumption, order, region);
                 }
             }
             return result;
         }
 
         template <typename ValueType, typename ConstantType>
-        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionSMTSolver(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order) {
+        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::checkOnSamples(std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
+            auto result = AssumptionStatus::UNKNOWN;
+            std::set<expressions::Variable> vars = std::set<expressions::Variable>({});
+            assumption->gatherVariables(vars);
+            for (auto values : samples) {
+                auto valuation = expressions::SimpleValuation(assumption->getManager().getSharedPointer());
+                for (auto var : vars) {
+                    auto index = std::stoi(var.getName());
+                    valuation.setRationalValue(var, utility::convertNumber<double>(values[index]));
+                }
+
+                assert (assumption->hasBooleanType());
+                if (!assumption->evaluateAsBool(&valuation)) {
+                    result = AssumptionStatus::INVALID;
+                    break;
+                }
+            }
+            return result;
+        }
+
+        template <typename ValueType, typename ConstantType>
+        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionSMTSolver(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) {
             std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
             std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
 

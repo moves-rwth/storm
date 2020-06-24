@@ -8,6 +8,8 @@
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm-pars/storage/ParameterRegion.h"
 #include "Order.h"
+#include "storm/storage/SparseMatrix.h"
+
 
 namespace storm {
     namespace analysis {
@@ -19,19 +21,16 @@ namespace storm {
             INVALID,
             UNKNOWN,
         };
+
         template<typename ValueType, typename ConstantType>
         class AssumptionChecker {
         public:
             typedef typename utility::parametric::VariableType<ValueType>::type VariableType;
             typedef typename utility::parametric::CoefficientType<ValueType>::type CoefficientType;
             /*!
-             * Constructs an AssumptionChecker based on the number of samples, for the given formula and model.
-             *
-             * @param formula The formula to check.
-             * @param model The dtmc model to check the formula on.
-             * @param numberOfSamples Number of sample points.
+             * Constructs an AssumptionChecker.
              */
-            AssumptionChecker(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Dtmc<ValueType>> model, storage::ParameterRegion<ValueType> region, uint_fast64_t numberOfSamples);
+            AssumptionChecker(storage::SparseMatrix<ValueType> matrix);
 
             /*!
              * Constructs an AssumptionChecker based on the number of samples, for the given formula and model.
@@ -40,15 +39,9 @@ namespace storm {
              * @param model The mdp model to check the formula on.
              * @param numberOfSamples Number of sample points.
              */
-            AssumptionChecker(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples);
+            AssumptionChecker(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t const numberOfSamples);
 
-            /*!
-             * Checks if the assumption holds at the sample points of the AssumptionChecker.
-             *
-             * @param assumption The assumption to check.
-             * @return AssumptionStatus::UNKNOWN or AssumptionStatus::INVALID
-             */
-            AssumptionStatus checkOnSamples(std::shared_ptr<expressions::BinaryRelationExpression> assumption);
+            void initializeCheckingOnSamples(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Dtmc<ValueType>> model, storage::ParameterRegion<ValueType> region, uint_fast64_t numberOfSamples);
 
             /*!
              * Tries to validate an assumption based on the order and underlying transition matrix.
@@ -57,25 +50,18 @@ namespace storm {
              * @param order The order.
              * @return AssumptionStatus::VALID, or AssumptionStatus::UNKNOWN, or AssumptionStatus::INVALID
              */
-            AssumptionStatus validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order);
-
-            /*!
-             * Tries to validate an assumption based on the order, and SMT solving techniques
-             *
-             * @param assumption The assumption to validate.
-             * @param order The order.
-             * @return AssumptionStatus::VALID, or AssumptionStatus::UNKNOWN, or AssumptionStatus::INVALID
-             */
-            AssumptionStatus validateAssumptionSMTSolver(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order);
+            AssumptionStatus validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region);
 
         private:
-            std::shared_ptr<logic::Formula const> formula;
-
-            storage::SparseMatrix<ValueType> matrix;
+            bool useSamples;
 
             std::vector<std::vector<ConstantType>> samples;
 
-            storage::ParameterRegion<ValueType> region;
+            storage::SparseMatrix<ValueType> matrix;
+
+            AssumptionStatus validateAssumptionSMTSolver(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region);
+
+            AssumptionStatus checkOnSamples(std::shared_ptr<expressions::BinaryRelationExpression> assumption);
         };
     }
 }

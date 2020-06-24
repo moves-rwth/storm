@@ -40,11 +40,12 @@ namespace storm {
                 auto itr = std::find(succs.begin(), succs.end(), succsSorted[index]);
                 auto newIndex = std::distance(succs.begin(), itr);
                 auto transitionMon = succsMonUnsorted[newIndex];
-                // TODO: moet deze niet soms not returnen?
                 if (transitionMon != Monotonicity::Not) {
                     localMonotonicity = transitionMon;
                 } else {
-                    localMonotonicity = Monotonicity::Unknown;
+                    if (succSize != 1) {
+                        localMonotonicity = Monotonicity::Unknown;
+                    }
                 }
                 index++;
             }

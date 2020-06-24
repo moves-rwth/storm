@@ -75,7 +75,7 @@ namespace storm {
 
         template <typename VariableType>
         void LocalMonotonicityResult<VariableType>::setStatesMonotone(storm::storage::BitVector statesMonotone) {
-            this->statesMonotone = statesMonotone; // TODO: werkt dit?
+            this->statesMonotone = statesMonotone;
         }
 
         template <typename VariableType>

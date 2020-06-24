@@ -6,6 +6,7 @@
 
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/SparseMatrix.h"
 
 namespace storm {
     namespace analysis {
@@ -21,24 +22,25 @@ namespace storm {
              * @param checker The AssumptionChecker which checks the assumptions at sample points.
              * @param numberOfStates The number of states of the model.
              */
-            AssumptionMaker(AssumptionChecker<ValueType, ConstantType>* checker, uint_fast64_t numberOfStates);
+            AssumptionMaker(storage::SparseMatrix<ValueType> matrix);
 
             /*!
-             * Creates assumptions, and checks them if validate in constructor is true.
-             * Possible results: AssumptionStatus::VALID, AssumptionStatus::INVALID, AssumptionStatus::UNKNOWN
-             * If validate is false, the result is always AssumptionStatus::UNKNOWN
+             * Creates assumptions, and checks them, only VALID and UNKNOWN assumptions are returned.
+             * If one assumption is VALID, this assumption will be returned as only assumption.
+             * Possible results: AssumptionStatus::VALID, AssumptionStatus::UNKNOWN.
              *
              * @param val1 First state number
              * @param val2 Second state number
              * @param order The order on which the assumptions are checked
-             * @return Map with three assumptions, and the validation
+             * @return Map with at most three assumptions, and the validation
              */
-            std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> createAndCheckAssumptions(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<Order> order);
+            std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> createAndCheckAssumptions(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region);
 
+            // TODO: maybe add a method like the initilaize samples thing in AssumptionChecker.h
         private:
-            std::pair<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> createAndCheckAssumption(expressions::Variable var1, expressions::Variable var2, expressions::BinaryRelationExpression::RelationType relationType, std::shared_ptr<Order> order);
+            std::pair<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> createAndCheckAssumption(expressions::Variable var1, expressions::Variable var2, expressions::BinaryRelationExpression::RelationType relationType, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region);
 
-            AssumptionChecker<ValueType, ConstantType>* assumptionChecker;
+            AssumptionChecker<ValueType, ConstantType> assumptionChecker;
 
             std::shared_ptr<expressions::ExpressionManager> expressionManager;
 

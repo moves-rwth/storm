@@ -47,7 +47,7 @@ namespace storm {
              *          if 0 then no check on samples is executed
              * @param precision precision on which the samples are compared
              */
-            MonotonicityHelper(std::shared_ptr<models::ModelBase> model, std::vector<std::shared_ptr<logic::Formula const>> formulas, std::vector<storage::ParameterRegion<ValueType>> regions, uint_fast64_t numberOfSamples=0, double const& precision=0.000001, bool dotOutput = false);
+            MonotonicityHelper(std::shared_ptr<models::sparse::Model<ValueType>> model, std::vector<std::shared_ptr<logic::Formula const>> formulas, std::vector<storage::ParameterRegion<ValueType>> regions, uint_fast64_t numberOfSamples=0, double const& precision=0.000001, bool dotOutput = false);
 
             /*!
              * Checks if a derivative >=0 or/and <=0
@@ -122,7 +122,7 @@ namespace storm {
 
             std::map<VariableType, std::pair<bool, bool>> checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples);
 
-            void extendOrderWithAssumptions(std::shared_ptr<Order> order, AssumptionMaker<ValueType, ConstantType>* assumptionMaker, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions, std::shared_ptr<MonotonicityResult<VariableType>> monRes);
+            void extendOrderWithAssumptions(std::shared_ptr<Order> order, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions, std::shared_ptr<MonotonicityResult<VariableType>> monRes);
 
             Monotonicity checkTransitionMonRes(ValueType function, VariableType param, Region region);
 
@@ -152,6 +152,8 @@ namespace storm {
             storage::SparseMatrix<ValueType> matrix;
 
             std::unordered_map<ValueType, std::unordered_map<VariableType, ValueType>> derivatives;
+
+            AssumptionMaker<ValueType, ConstantType> assumptionMaker;
 
 
         };
