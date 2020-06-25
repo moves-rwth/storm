@@ -688,13 +688,13 @@ namespace {
         auto monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
         EXPECT_EQ(storm::modelchecker::RegionResult::AllSat, regionChecker->analyzeRegion(this->env(), allSatRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true, order, monRes));
 
-        auto exBothRegion=storm::api::parseRegion<storm::RationalFunction>("0.4<=p<=0.6", modelParameters);
+        auto exBothRegion=storm::api::parseRegion<storm::RationalFunction>("0.4<=p<=0.9", modelParameters);
         o = new storm::analysis::OrderExtender<storm::RationalFunction, ValueType>(model, formulas[0], exBothRegion);
         order = o->extendOrder(nullptr, exBothRegion);
         monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
         EXPECT_EQ(storm::modelchecker::RegionResult::ExistsBoth, regionChecker->analyzeRegion(this->env(), exBothRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, order, monRes));
 
-        auto allVioRegion=storm::api::parseRegion<storm::RationalFunction>("0.6<=p<=0.9", modelParameters);
+        auto allVioRegion=storm::api::parseRegion<storm::RationalFunction>("0.8<=p<=0.9", modelParameters);
         o = new storm::analysis::OrderExtender<storm::RationalFunction, ValueType>(model, formulas[0], allVioRegion);
         order = o->extendOrder(nullptr, allVioRegion);
         monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
@@ -727,19 +727,21 @@ namespace {
         auto o = new storm::analysis::OrderExtender<storm::RationalFunction, ValueType>(model, formulas[0], allSatRegion);
         auto order = o->extendOrder(nullptr, allSatRegion);
         auto monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
-        EXPECT_EQ(storm::modelchecker::RegionResult::AllSat, regionChecker->analyzeRegion(this->env(), allSatRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true, order, monRes));
+        ASSERT_TRUE(order->getDoneBuilding());
+        EXPECT_EQ(storm::modelchecker::RegionResult::CenterSat, regionChecker->analyzeRegion(this->env(), allSatRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true, order, monRes));
 
         auto exBothRegion=storm::api::parseRegion<storm::RationalFunction>("0.3<=p<=0.7", modelParameters);
         o = new storm::analysis::OrderExtender<storm::RationalFunction, ValueType>(model, formulas[0], exBothRegion);
         order = o->extendOrder(nullptr, exBothRegion);
         monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
+        ASSERT_TRUE(order->getDoneBuilding());
         EXPECT_EQ(storm::modelchecker::RegionResult::ExistsBoth, regionChecker->analyzeRegion(this->env(), exBothRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, order, monRes));
 
         auto allVioRegion=storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.4", modelParameters);
         o = new storm::analysis::OrderExtender<storm::RationalFunction, ValueType>(model, formulas[0], allVioRegion);
         order = o->extendOrder(nullptr, allVioRegion);
         monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
-        EXPECT_EQ(storm::modelchecker::RegionResult::AllViolated, regionChecker->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, order, monRes));
+        EXPECT_EQ(storm::modelchecker::RegionResult::AllSat, regionChecker->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, order, monRes));
     }
     
 }
