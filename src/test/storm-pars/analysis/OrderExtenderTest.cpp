@@ -380,5 +380,5 @@ TEST(OrderExtenderTest, casestudy2_on_matrix) {
     // OrderExtender
     auto extender = storm::analysis::OrderExtender<storm::RationalFunction, double>(&topStates, &bottomStates, model->getTransitionMatrix());
     auto order = extender.extendOrder(nullptr, region);
-    EXPECT_FALSE(order->getDoneBuilding());
+    EXPECT_TRUE(order->getDoneBuilding());
 }
