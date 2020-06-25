@@ -44,8 +44,17 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation) {
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction, double>(model->getTransitionMatrix());
     auto result = assumptionMaker.createAndCheckAssumptions(std::get<1>(criticalTuple), std::get<2>(criticalTuple), std::get<0>(criticalTuple), region);
 
-    EXPECT_EQ(1, result.size());
+    EXPECT_EQ(3, result.size());
 
+    for (auto res : result) {
+        EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, res.second);
+        EXPECT_EQ(true, res.first->getFirstOperand()->isVariable());
+        EXPECT_EQ(true, res.first->getSecondOperand()->isVariable());
+    }
+
+    assumptionMaker.initializeCheckingOnSamples(formulas[0], model, region, 10);
+    result = assumptionMaker.createAndCheckAssumptions(std::get<1>(criticalTuple), std::get<2>(criticalTuple), std::get<0>(criticalTuple), region);
+    EXPECT_EQ(1, result.size());
     auto itr = result.begin();
     EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, itr->second);
     EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());
@@ -86,9 +95,15 @@ TEST(AssumptionMakerTest, Simple1) {
 
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction, double>(model->getTransitionMatrix());
     auto result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);
+    EXPECT_EQ(1, result.size());
+    EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, result.begin()->second);
+    assumptionMaker.initializeCheckingOnSamples(formulas[0], model, region, 10);
+    result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);
     EXPECT_EQ(0, result.size());
 
     region = storm::api::parseRegion<storm::RationalFunction>("0.500001 <= p <= 0.999999", vars);
+    std::vector<std::vector<double>> samples;
+    assumptionMaker.setSampleValues(samples);
     result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);
     EXPECT_EQ(1, result.size());
     auto itr = result.begin();
