@@ -43,6 +43,8 @@ namespace storm {
 
             void initializeCheckingOnSamples(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Dtmc<ValueType>> model, storage::ParameterRegion<ValueType> region, uint_fast64_t numberOfSamples);
 
+            void setSampleValues(std::vector<std::vector<ConstantType>> samples);
+
             /*!
              * Tries to validate an assumption based on the order and underlying transition matrix.
              *

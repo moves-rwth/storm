@@ -60,6 +60,11 @@ namespace storm {
             useSamples = true;
         }
 
+        template <typename ValueType, typename ConstantType>
+        void AssumptionChecker<ValueType, ConstantType>::setSampleValues(std::vector<std::vector<ConstantType>> samples) {
+            this->samples = samples;
+            useSamples = true;
+        }
 
         template <typename ValueType, typename ConstantType>
         AssumptionChecker<ValueType, ConstantType>::AssumptionChecker(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples) {

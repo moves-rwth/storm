@@ -48,6 +48,16 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
+        void AssumptionMaker<ValueType, ConstantType>::initializeCheckingOnSamples(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Dtmc<ValueType>> model, storage::ParameterRegion<ValueType> region, uint_fast64_t numberOfSamples){
+            assumptionChecker.initializeCheckingOnSamples(formula, model, region, numberOfSamples);
+        }
+
+        template <typename ValueType, typename ConstantType>
+        void AssumptionMaker<ValueType, ConstantType>::setSampleValues(std::vector<std::vector<ConstantType>>const & samples) {
+            assumptionChecker.setSampleValues(samples);
+        }
+
+        template <typename ValueType, typename ConstantType>
         std::pair<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> AssumptionMaker<ValueType, ConstantType>::createAndCheckAssumption(expressions::Variable var1, expressions::Variable var2, expressions::BinaryRelationExpression::RelationType relationType, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) {
             auto assumption = std::make_shared<expressions::BinaryRelationExpression>(expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(), var2.getExpression().getBaseExpressionPointer(), var1.getExpression().getBaseExpressionPointer(), relationType));
             AssumptionStatus validationResult;

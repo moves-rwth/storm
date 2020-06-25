@@ -36,7 +36,10 @@ namespace storm {
              */
             std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> createAndCheckAssumptions(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region);
 
-            // TODO: maybe add a method like the initilaize samples thing in AssumptionChecker.h
+            void initializeCheckingOnSamples(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Dtmc<ValueType>> model, storage::ParameterRegion<ValueType> region, uint_fast64_t numberOfSamples);
+
+            void setSampleValues(std::vector<std::vector<ConstantType>>const & samples);
+
         private:
             std::pair<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> createAndCheckAssumption(expressions::Variable var1, expressions::Variable var2, expressions::BinaryRelationExpression::RelationType relationType, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region);
 
