@@ -169,7 +169,7 @@ namespace {
         ASSERT_EQ(order->getNumberOfAddedStates(), model->getTransitionMatrix().getColumnCount());
         ASSERT_TRUE(order->getDoneBuilding());
 
-        auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, false);
+        auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, true);
         //start testing
         auto allSatRegion=storm::api::parseRegion<storm::RationalFunction>("0.7<=pL<=0.9,0.75<=pK<=0.95", modelParameters);
 
@@ -529,7 +529,6 @@ namespace {
     }
 
     TYPED_TEST(SparseDtmcParameterLiftingTest, Parametric_Die_Mon) {
-        // TODO: @Svenja, this one uses the monotonicity
         typedef typename TestFixture::ValueType ValueType;
 
         std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/parametric_die_2.pm";
@@ -561,7 +560,7 @@ namespace {
 
         model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
-        auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, false);
+        auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, true);
 
 
         //start testing
@@ -584,7 +583,6 @@ namespace {
         EXPECT_EQ(storm::modelchecker::RegionResult::AllViolated, regionChecker->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, order, monRes));
     }
 
-
     TYPED_TEST(SparseDtmcParameterLiftingTest, Simple1_Mon) {
         typedef typename TestFixture::ValueType ValueType;
 
@@ -602,7 +600,7 @@ namespace {
         auto rewParameters = storm::models::sparse::getRewardParameters(*model);
         modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
-        auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true));
+        auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, true);
 
         //start testing
         auto allSatRegion=storm::api::parseRegion<storm::RationalFunction>("0.4<=p<=0.6", modelParameters);
@@ -625,7 +623,7 @@ namespace {
 
     }
 
-    TYPED_TEST(SparseDtmcParameterLiftingTest, Simple2_Mon) {
+    TYPED_TEST(SparseDtmcParameterLiftingTest, Casestudy1_Mon) {
         typedef typename TestFixture::ValueType ValueType;
 
         std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy1.pm";
@@ -642,7 +640,7 @@ namespace {
         auto rewParameters = storm::models::sparse::getRewardParameters(*model);
         modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
-        auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true));
+        auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, true);
 
         //start testing
         auto allSatRegion=storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.5", modelParameters);
@@ -664,8 +662,7 @@ namespace {
         EXPECT_EQ(storm::modelchecker::RegionResult::AllViolated, regionChecker->analyzeRegion(this->env(), allVioRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, order, monRes));
     }
 
-
-    TYPED_TEST(SparseDtmcParameterLiftingTest, Simple3_Mon) {
+    TYPED_TEST(SparseDtmcParameterLiftingTest, Casestudy2_Mon) {
         typedef typename TestFixture::ValueType ValueType;
 
         std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy2.pm";
@@ -682,10 +679,9 @@ namespace {
         auto rewParameters = storm::models::sparse::getRewardParameters(*model);
         modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
-        auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true));
+        auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, true);
 
         //start testing
-
         auto allSatRegion=storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.4", modelParameters);
         auto o = new storm::analysis::OrderExtender<storm::RationalFunction, ValueType>(model, formulas[0], allSatRegion);
         auto order = o->extendOrder(nullptr, allSatRegion);
@@ -706,7 +702,7 @@ namespace {
     }
 
 
-    TYPED_TEST(SparseDtmcParameterLiftingTest, Simple4_Mon) {
+    TYPED_TEST(SparseDtmcParameterLiftingTest, Casestudy3_Mon) {
         typedef typename TestFixture::ValueType ValueType;
 
         std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy3.pm";
@@ -723,7 +719,7 @@ namespace {
         auto rewParameters = storm::models::sparse::getRewardParameters(*model);
         modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
-        auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true));
+        auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, true);
 
         //start testing
 
