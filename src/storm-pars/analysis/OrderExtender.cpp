@@ -118,6 +118,7 @@ namespace storm {
             auto val1 = std::stoul(var1.getName(), nullptr, 0);
             auto val2 = std::stoul(var2.getName(), nullptr, 0);
 
+
             assert (order->compare(val1, val2) == Order::UNKNOWN);
             Order::Node* n1 = order->getNode(val1);
             Order::Node* n2 = order->getNode(val2);
@@ -295,6 +296,19 @@ namespace storm {
                 auto lowest = highest;
                 for (auto i = 1 ; i < successors.size(); ++i) {
                     auto next = successors[i];
+
+                    //TODO UNDER CONSTRUCTION START
+                    /*
+                    auto assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(matrix);
+                    auto res = assumptionMaker->createAndCheckAssumptions(currentState, next, order, region);
+                    if (res.size() == 1 && res.begin()->second == VALID) {
+                        if (order->compare(currentState, next) == Order::UNKNOWN){
+                            handleAssumption(order, res.begin()->first);
+                        }
+                    }
+                    */
+                    //TODO UNDER CONSTRUCTION END
+
                     auto compareWithHighest = order->compare(next, highest);
                     if (!cyclic && !usePLA && compareWithHighest == Order::UNKNOWN) {
                         // Only use pla for acyclic models
