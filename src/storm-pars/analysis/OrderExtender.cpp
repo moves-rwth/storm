@@ -182,7 +182,7 @@ namespace storm {
                     assert (stateSucc2 != numberOfStates);
                     // create tuple for assumptions
                     order->addStateToHandle(currentState);
-                        return std::make_tuple(order, stateSucc1, stateSucc2);
+                    return std::make_tuple(order, stateSucc1, stateSucc2);
                 }
 
                 assert (order->contains(currentState) && order->getNode(currentState) != nullptr);

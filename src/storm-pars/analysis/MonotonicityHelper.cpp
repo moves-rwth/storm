@@ -52,8 +52,6 @@ namespace storm {
                     this->resultCheckOnSamples = std::map<VariableType, std::pair<bool, bool>>(
                             checkMonotonicityOnSamples(model->template as<models::sparse::Mdp<ValueType>>(), numberOfSamples));
                 }
-               // TODO use samples also for assumptinomaker
-
                 checkSamples = true;
             } else {
                 if (numberOfSamples > 0) {
@@ -194,7 +192,7 @@ namespace storm {
 
             auto instantiator = utility::ModelInstantiator<models::sparse::Dtmc<ValueType>, models::sparse::Dtmc<ConstantType>>(*model);
             std::set<VariableType> variables = models::sparse::getProbabilityParameters(*model);
-
+            std::vector<std::vector<ConstantType>> samples;
             // For each of the variables create a model in which we only change the value for this specific variable
             for (auto itr = variables.begin(); itr != variables.end(); ++itr) {
                 ConstantType previous = -1;
@@ -252,10 +250,12 @@ namespace storm {
                         monIncr &= diff < -precision;
                     }
                     previous = initial;
+                    samples.push_back(std::move(values));
                 }
                 result.insert(std::pair<VariableType,  std::pair<bool, bool>>(*itr, std::pair<bool,bool>(monIncr, monDecr)));
             }
             resultCheckOnSamples = result;
+            assumptionMaker.setSampleValues(std::move(samples));
             return result;
         }
 

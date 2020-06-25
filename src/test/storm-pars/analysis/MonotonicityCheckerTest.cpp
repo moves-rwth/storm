@@ -251,7 +251,7 @@ TEST(MonotonicityCheckerTest, Casestudy3) {
 
     //start testing
     auto var = modelParameters.begin();
-    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Unknown, monChecker->checkLocalMonotonicity(order, 0, *var, region));
+    EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Not, monChecker->checkLocalMonotonicity(order, 0, *var, region));
     EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr, monChecker->checkLocalMonotonicity(order, 1, *var, region));
     EXPECT_EQ(storm::analysis::MonotonicityChecker<storm::RationalFunction>::Monotonicity::Incr, monChecker->checkLocalMonotonicity(order, 2, *var, region));
 

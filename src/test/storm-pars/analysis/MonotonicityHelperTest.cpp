@@ -277,7 +277,7 @@ TEST(MonotonicityHelperTest, Simple1) {
     std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> regions = {region};
 
     // Start testing
-    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, true, 50);
+    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
 
     // Check if correct result size
     auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout);
@@ -321,7 +321,7 @@ TEST(MonotonicityHelperTest, Casestudy1) {
     ASSERT_EQ(model->getNumberOfStates(), 5);
     ASSERT_EQ(model->getNumberOfTransitions(), 8);
 
-    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, true, 50);
+    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
     auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout);
     ASSERT_EQ(1, result.size());
 
@@ -362,7 +362,7 @@ TEST(MonotonicityHelperTest, CaseStudy2) {
     ASSERT_EQ(model->getNumberOfTransitions(), 12);
 
     // Start testing
-    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, true, 50);
+    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
 
     // Check if correct result size
     auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout);
@@ -406,7 +406,7 @@ TEST(MonotonicityHelperTest, Casestudy3_not_monotone) {
     ASSERT_EQ(model->getNumberOfStates(), 5);
     ASSERT_EQ(model->getNumberOfTransitions(), 8);
 
-    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, true, 50);
+    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
     auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout);
 
     ASSERT_EQ(1, result.size());
@@ -447,7 +447,7 @@ TEST(MonotonicityHelperTest, Casestudy3_monotone) {
     ASSERT_EQ(model->getNumberOfStates(), 5);
     ASSERT_EQ(model->getNumberOfTransitions(), 8);
 
-    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, true, 50);
+    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
     auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout);
 
     ASSERT_EQ(1, result.size());
