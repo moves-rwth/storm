@@ -241,6 +241,15 @@ namespace storm {
                     /*!
                      * Sorts the given states if possible.
                      *
+                     * @param states vector of the states to sort
+                     * @return pair of unsortabe states, vector with states sorted (so far)
+                     * If all states could be sorted, both values of the pair are numberOfStates and the vectors length will equal the number of states to sort
+                     */
+                    std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> sortStatesUnorderedPair(const std::vector<uint_fast64_t>* states);
+
+                    /*!
+                     * Sorts the given states if possible.
+                     *
                      * @param states Bitvector of the states to sort
                      * @return vector with states sorted, length equals number of states to sort.
                      * If states cannot be sorted, last state of the vector will always equal the length of the BitVector

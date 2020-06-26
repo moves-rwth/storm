@@ -119,7 +119,9 @@ namespace storm {
             auto val2 = std::stoul(var2.getName(), nullptr, 0);
 
 
-            assert (order->compare(val1, val2) == Order::UNKNOWN);
+            //TODO commented out for implementation purposes for now
+            //assert (order->compare(val1, val2) == Order::UNKNOWN);
+
             Order::Node* n1 = order->getNode(val1);
             Order::Node* n2 = order->getNode(val2);
 
@@ -292,22 +294,38 @@ namespace storm {
                 }
             } else {
                 assert (successors.size() >= 2);
+                STORM_PRINT("STATE WITH MORE THAN 2 SUCCS: " << currentState << std::endl);
+
+                //TODO UNDER CONSTRUCTION START
+
+                auto temp = order->sortStatesUnorderedPair(&successors);
+                if (temp.first != std::pair<uint_fast64_t, uint_fast64_t>(numberOfStates, numberOfStates)) {
+                    STORM_PRINT("   SUCCS COULD NOT BE ORDERED." << std::endl);
+                    return temp.first;
+                }
+
+                auto sortedSuccs = temp.second;
+
+                for(auto i = 0; i < sortedSuccs.size(); i++) {
+                    auto next = successors[i];
+                    STORM_PRINT("   SUCC " << next << std::endl);
+                    auto assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(matrix);
+                    auto res = assumptionMaker->createAndCheckAssumptions(currentState, next, order, region);
+                    if (res.size() == 1 && res.begin()->second == VALID) {
+                        STORM_PRINT("       FOUND A SINGLE WORKING ASSUMPTION." << std::endl);
+                        handleAssumption(order, res.begin()->first);
+                        continue;
+                    }
+                }
+
+                //TODO UNDER CONSTRUCTION END
+
+
+                /*
                 auto highest = successors[0];
                 auto lowest = highest;
                 for (auto i = 1 ; i < successors.size(); ++i) {
                     auto next = successors[i];
-
-                    //TODO UNDER CONSTRUCTION START
-                    /*
-                    auto assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(matrix);
-                    auto res = assumptionMaker->createAndCheckAssumptions(currentState, next, order, region);
-                    if (res.size() == 1 && res.begin()->second == VALID) {
-                        if (order->compare(currentState, next) == Order::UNKNOWN){
-                            handleAssumption(order, res.begin()->first);
-                        }
-                    }
-                    */
-                    //TODO UNDER CONSTRUCTION END
 
                     auto compareWithHighest = order->compare(next, highest);
                     if (!cyclic && !usePLA && compareWithHighest == Order::UNKNOWN) {
@@ -341,6 +359,7 @@ namespace storm {
                 } else {
                     order->addBetween(currentState, order->getNode(highest), order->getNode(lowest));
                 }
+                 */
             }
             return std::pair<uint_fast64_t, uint_fast64_t>(numberOfStates, numberOfStates);
         }

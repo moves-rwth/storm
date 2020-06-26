@@ -152,7 +152,8 @@ namespace storm {
         }
 
         void Order::addRelationNodes(Order::Node *above, Order::Node * below) {
-            assert (compare(above, below) == UNKNOWN);
+            //TODO commented out for implementation purposes for now
+            //assert (compare(above, below) == UNKNOWN);
 
             for (auto const &state : above->states) {
                 below->statesAbove.set(state);
@@ -329,6 +330,41 @@ namespace storm {
             }
             assert (result.size() == numberOfStatesToSort);
             return result;
+        }
+
+        std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> Order::sortStatesUnorderedPair(const std::vector<uint_fast64_t>* states) {
+            assert (states != nullptr);
+            uint_fast64_t numberOfStatesToSort = states->size();
+            std::vector<uint_fast64_t> result;
+            // Go over all states
+            for (auto state : *states) {
+                bool unknown = false;
+                if (result.size() == 0) {
+                    result.push_back(state);
+                } else {
+                    bool added = false;
+                    for (auto itr = result.begin();  itr != result.end(); ++itr) {
+                        auto compareRes = compare(state, (*itr));
+                        if (compareRes == ABOVE || compareRes == SAME) {
+                            // insert at current pointer (while keeping other values)
+                            result.insert(itr, state);
+                            added = true;
+                            break;
+                        } else if (compareRes == UNKNOWN) {
+                            return std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>>(std::pair<uint_fast64_t, uint_fast64_t>((*itr), state), result);
+                        }
+                    }
+                    if (unknown) {
+                        break;
+                    }
+                    if (!added) {
+                        result.push_back(state);
+                    }
+                }
+            }
+
+            assert (result.size() == numberOfStatesToSort);
+            return std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>>(std::pair<uint_fast64_t, uint_fast64_t>(numberOfStates, numberOfStates), result);
         }
 
         std::vector<uint_fast64_t> Order::sortStates(storm::storage::BitVector* states) {
