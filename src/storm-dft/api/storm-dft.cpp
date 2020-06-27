@@ -98,13 +98,15 @@ namespace storm {
                     }
                 }
 
-                storm::adapters::SFTBDDPropertyFormulaAdapter adapter{checker, dft};
-                auto const probabilities{adapter.check(properties, chunksize)};
-                for(size_t i{0}; i < probabilities.size(); ++i) {
-                    std::cout << "Property \""
-                        << properties.at(i)->toString()
-                        << "\" checks to "
-                        << probabilities.at(i) << '\n';
+                if(!properties.empty()) {
+                    storm::adapters::SFTBDDPropertyFormulaAdapter adapter{checker, dft};
+                    auto const probabilities{adapter.check(properties, chunksize)};
+                    for(size_t i{0}; i < probabilities.size(); ++i) {
+                        std::cout << "Property \""
+                            << properties.at(i)->toString()
+                            << "\" checks to "
+                            << probabilities.at(i) << '\n';
+                    }
                 }
             }
         }
