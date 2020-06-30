@@ -129,6 +129,55 @@ class SFTBDDChecker {
         Bdd bdd, std::vector<ValueType> const &timepoints,
         size_t chunksize = 0) const;
 
+    /**
+     * \return
+     * The birnbaum importance factor of the given basic event
+     * at the given timebound
+     */
+    ValueType getBirnbaumFactorAtTimebound(std::string const &beName,
+                                           ValueType timebound);
+
+    /**
+     * \return
+     * The birnbaum importance factor of all basic events
+     * at the given timebound
+     *
+     * \note
+     * Sorted after the order of dft->getBasicElements.
+     * Faster than looping over getBirnbaumFactorAtTimebound.
+     */
+    std::vector<ValueType> getAllBirnbaumFactorsAtTimebound(ValueType timebound);
+
+    /**
+     * \return
+     * The birnbaum importance factors of the given basic event
+     *
+     * \param timepoints
+     * Array of timebounds to calculate the factors for.
+     *
+     * \param chunksize
+     * Splits the timepoints array into chunksize chunks.
+     * A value of 0 represents to calculate the whole array at once.
+     */
+    std::vector<ValueType> getBirnbaumFactorsAtTimepoints(
+        std::string const &beName, std::vector<ValueType> const &timepoints,
+        size_t chunksize = 0);
+
+    /**
+     * \return
+     * The birnbaum importance factors of the given basic event
+     *
+     * \param timepoints
+     * Array of timebounds to calculate the factors for.
+     *
+     * \param chunksize
+     * Splits the timepoints array into chunksize chunks.
+     * A value of 0 represents to calculate the whole array at once.
+     */
+    std::vector<std::vector<ValueType>> getAllBirnbaumFactorsAtTimepoints(
+        std::vector<ValueType> const &timepoints,
+        size_t chunksize = 0);
+
    private:
     std::map<uint64_t, std::map<uint64_t, Bdd>> withoutCache{};
     /**
