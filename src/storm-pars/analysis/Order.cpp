@@ -493,9 +493,13 @@ namespace storm {
             // Vertices of the digraph
             storm::storage::BitVector stateCoverage = storm::storage::BitVector(numberOfStates, true);
             for (uint_fast64_t i = stateCoverage.getNextSetIndex(0); i!= numberOfStates; i= stateCoverage.getNextSetIndex(i+1)) {
+                if (getNode(i) == NULL) {
+                    continue;
+                }
                 for (uint_fast64_t j = i + 1; j < numberOfStates; j++) {
                     if (getNode(j) == getNode(i)) stateCoverage.set(j, false);
                 }
+
                 dotOutfile << "\t" << nodeName(*getNode(i)) << " [ label = \"" << nodeLabel(*getNode(i)) << "\" ];" << std::endl;
             }
 
@@ -503,6 +507,10 @@ namespace storm {
             for (uint_fast64_t i = stateCoverage.getNextSetIndex(0); i!= numberOfStates; i= stateCoverage.getNextSetIndex(i+1)) {
                 storm::storage::BitVector v = storm::storage::BitVector(numberOfStates, false);
                 Node* currentNode = getNode(i);
+                if (currentNode == NULL){
+                    continue;
+                }
+
                 for (uint_fast64_t s1 : getNode(i)->statesAbove) {
                     v |= (currentNode->statesAbove & getNode(s1)->statesAbove);
                 }

@@ -297,7 +297,7 @@ namespace storm {
                 STORM_PRINT("STATE WITH MORE THAN 2 SUCCS: " << currentState << std::endl);
 
                 //TODO UNDER CONSTRUCTION START
-
+                
                 auto temp = order->sortStatesUnorderedPair(&successors);
                 if (temp.first != std::pair<uint_fast64_t, uint_fast64_t>(numberOfStates, numberOfStates)) {
                     STORM_PRINT("   SUCCS COULD NOT BE ORDERED." << std::endl);
@@ -306,8 +306,12 @@ namespace storm {
 
                 auto sortedSuccs = temp.second;
 
+                //TODO Assumptions or just the addBetween()?
+                //order->addBetween(currentState, sortedSuccs[0], sortedSuccs[sortedSuccs.size()-1]);
+
+
                 for(auto i = 0; i < sortedSuccs.size(); i++) {
-                    auto next = successors[i];
+                    auto next = sortedSuccs[i];
                     STORM_PRINT("   SUCC " << next << std::endl);
                     auto assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(matrix);
                     auto res = assumptionMaker->createAndCheckAssumptions(currentState, next, order, region);
@@ -359,7 +363,8 @@ namespace storm {
                 } else {
                     order->addBetween(currentState, order->getNode(highest), order->getNode(lowest));
                 }
-                 */
+                */
+
             }
             return std::pair<uint_fast64_t, uint_fast64_t>(numberOfStates, numberOfStates);
         }
