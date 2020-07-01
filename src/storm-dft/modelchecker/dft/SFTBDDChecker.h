@@ -146,7 +146,8 @@ class SFTBDDChecker {
      * Sorted after the order of dft->getBasicElements.
      * Faster than looping over getBirnbaumFactorAtTimebound.
      */
-    std::vector<ValueType> getAllBirnbaumFactorsAtTimebound(ValueType timebound);
+    std::vector<ValueType> getAllBirnbaumFactorsAtTimebound(
+        ValueType timebound);
 
     /**
      * \return
@@ -175,8 +176,56 @@ class SFTBDDChecker {
      * A value of 0 represents to calculate the whole array at once.
      */
     std::vector<std::vector<ValueType>> getAllBirnbaumFactorsAtTimepoints(
-        std::vector<ValueType> const &timepoints,
+        std::vector<ValueType> const &timepoints, size_t chunksize = 0);
+
+    /**
+     * \return
+     * The Critical importance factor of the given basic event
+     * at the given timebound as defined in
+     * 10.1016/S0951-8320(01)00004-7
+     */
+    ValueType getCIFAtTimebound(std::string const &beName,
+                                           ValueType timebound);
+
+    /**
+     * \return
+     * The Critical importance factor of all basic event
+     * at the given timebound as defined in
+     * 10.1016/S0951-8320(01)00004-7
+     *
+     * \note
+     * Sorted after the order of dft->getBasicElements.
+     * Faster than looping over getBirnbaumFactorAtTimebound.
+     */
+    std::vector<ValueType> getAllCIFsAtTimebound(
+        ValueType timebound);
+
+    /**
+     * \return
+     * The Critical importance factor of the given basic event
+     * defined in
+     * 10.1016/S0951-8320(01)00004-7
+     *
+     * \param chunksize
+     * Splits the timepoints array into chunksize chunks.
+     * A value of 0 represents to calculate the whole array at once.
+     */
+    std::vector<ValueType> getCIFsAtTimepoints(
+        std::string const &beName, std::vector<ValueType> const &timepoints,
         size_t chunksize = 0);
+
+    /**
+     * \return
+     * The Critical importance factor of all basic event
+     * defined in
+     * 10.1016/S0951-8320(01)00004-7
+     *
+     * \param chunksize
+     * Splits the timepoints array into chunksize chunks.
+     * A value of 0 represents to calculate the whole array at once.
+     */
+    std::vector<std::vector<ValueType>> getAllCIFsAtTimepoints(
+        std::vector<ValueType> const &timepoints, size_t chunksize = 0);
 
    private:
     std::map<uint64_t, std::map<uint64_t, Bdd>> withoutCache{};
@@ -221,6 +270,11 @@ class SFTBDDChecker {
      */
     void recursiveMCS(Bdd const bdd, std::vector<uint32_t> &buffer,
                       std::set<std::set<std::string>> &minimalCutSets) const;
+
+    template <typename FuncType>
+    void chunkCalculationTemplate(FuncType func,
+                                  std::vector<ValueType> const &timepoints,
+                                  size_t chunksize) const;
 
     std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager;
     std::shared_ptr<storm::storage::DFT<ValueType>> dft;
