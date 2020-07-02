@@ -196,7 +196,8 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
 		message(FATAL_ERROR "AppleClang version must be at least 7.3.")
 	elseif ((CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 11.0) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 11.0))
 		message(WARNING "Temporarily disabling stack checks for AppleClang 11.0 or higher.")
-		# TODO: In release mode, stack checks currently fail at runtime. Might be a compiler bug as there does not seem to be faulty behavior. 
+		# TODO: In release mode, stack checks currently fail at runtime. Might be a compiler bug as there does not seem to be faulty behavior.
+		# TODO: This seems to be fixed for clang 11.0.3 (bundled with XCode 11.5). Check again, if the clang version coming with the command line tools is greater than 11.0.0.
 		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-stack-check")
 	endif()
 
@@ -488,14 +489,6 @@ configure_file (
 	"${PROJECT_BINARY_DIR}/include/storm-config.h"
 )
 
-# Configure a source file to pass the Storm version to the source code
-configure_file (
-	"${PROJECT_SOURCE_DIR}/storm-version.cpp.in"
-	"${PROJECT_SOURCE_DIR}/src/storm/utility/storm-version.cpp"
-)
-
-set(STORM_GENERATED_SOURCES "${PROJECT_BINARY_DIR}/src/storm/utility/storm-version.cpp")
-
 # Add the binary dir include directory for storm-config.h
 include_directories("${PROJECT_BINARY_DIR}/include")
 
@@ -511,6 +504,8 @@ add_dependencies(check-verbose tests)
 
 set(STORM_TARGETS "")
 add_subdirectory(src)
+
+export_option(STORM_HAVE_XERCES)
 
 include(export)
 

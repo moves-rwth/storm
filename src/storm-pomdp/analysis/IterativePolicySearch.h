@@ -114,7 +114,7 @@ namespace pomdp {
     };
 
     template<typename ValueType>
-    class MemlessStrategySearchQualitative {
+    class IterativePolicySearch {
     // Implements an extension to the Chatterjee, Chmelik, Davies (AAAI-16) paper.
 
     public:
@@ -162,12 +162,12 @@ namespace pomdp {
                 uint64_t graphBasedAnalysisWinOb = 0;
         };
 
-        MemlessStrategySearchQualitative(storm::models::sparse::Pomdp<ValueType> const& pomdp,
-                                         storm::storage::BitVector const& targetStates,
-                                         storm::storage::BitVector const& surelyReachSinkStates,
+        IterativePolicySearch(storm::models::sparse::Pomdp<ValueType> const& pomdp,
+                              storm::storage::BitVector const& targetStates,
+                              storm::storage::BitVector const& surelyReachSinkStates,
 
-                                         std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory,
-                                         MemlessSearchOptions const& options);
+                              std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory,
+                              MemlessSearchOptions const& options);
 
         void analyzeForInitialStates(uint64_t k) {
             stats.totalTimer.start();
@@ -207,6 +207,7 @@ namespace pomdp {
         storm::expressions::Expression const& getDoneActionExpression(uint64_t obs) const;
 
         void reset () {
+            STORM_LOG_INFO("Reset solver to restart with current winning region");
             schedulerForObs.clear();
             finalSchedulers.clear();
             smtSolver->reset();

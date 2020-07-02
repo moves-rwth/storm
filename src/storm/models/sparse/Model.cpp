@@ -316,6 +316,7 @@ namespace storm {
                 if(choiceOrigins) {
                     boost::hash_combine(seed,choiceOrigins.get()->hash());
                 }
+                return seed;
             }
             
             template<typename ValueType, typename RewardModelType>

@@ -76,7 +76,7 @@ namespace storm {
             
             storm::dd::Add<DdType, ValueType> filteredTransitions = filter.template toAdd<ValueType>() * currentGame.getTransitionMatrix();
             storm::dd::Bdd<DdType> filteredTransitionsBdd = filteredTransitions.toBdd().existsAbstract(currentGame.getNondeterminismVariables());
-            storm::dd::Bdd<DdType> filteredReachableStates = storm::utility::dd::computeReachableStates(currentGame.getInitialStates(), filteredTransitionsBdd, currentGame.getRowVariables(), currentGame.getColumnVariables());
+            storm::dd::Bdd<DdType> filteredReachableStates = storm::utility::dd::computeReachableStates(currentGame.getInitialStates(), filteredTransitionsBdd, currentGame.getRowVariables(), currentGame.getColumnVariables()).first;
             filteredTransitions *= filteredReachableStates.template toAdd<ValueType>();
             
             // Determine all initial states so we can color them blue.

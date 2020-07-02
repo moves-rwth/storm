@@ -3,7 +3,7 @@
 #include "storm/utility/logging.h"
 #include "storm-pomdp/storage/Belief.h"
 #include "storm-pomdp/storage/BeliefManager.h"
-#include "storm-pomdp/modelchecker/ApproximatePOMDPModelCheckerOptions.h"
+#include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelCheckerOptions.h"
 #include "storm-pomdp/builder/BeliefMdpExplorer.h"
 
 #include "storm/storage/jani/Property.h"
@@ -20,13 +20,13 @@ namespace storm {
             struct TrivialPomdpValueBounds;
             
             template<typename PomdpModelType, typename BeliefValueType = typename PomdpModelType::ValueType>
-            class ApproximatePOMDPModelchecker {
+            class BeliefExplorationPomdpModelChecker {
             public:
                 typedef typename PomdpModelType::ValueType ValueType;
                 typedef typename PomdpModelType::RewardModelType RewardModelType;
                 typedef storm::storage::BeliefManager<PomdpModelType, BeliefValueType> BeliefManagerType;
                 typedef storm::builder::BeliefMdpExplorer<PomdpModelType, BeliefValueType> ExplorerType;
-                typedef ApproximatePOMDPModelCheckerOptions<ValueType> Options;
+                typedef BeliefExplorationPomdpModelCheckerOptions<ValueType> Options;
                 
                 struct Result {
                     Result(ValueType lower, ValueType upper);
@@ -37,13 +37,19 @@ namespace storm {
                     bool updateUpperBound(ValueType const& value);
                 };
                 
-                ApproximatePOMDPModelchecker(PomdpModelType const& pomdp, Options options = Options());
+                BeliefExplorationPomdpModelChecker(std::shared_ptr<PomdpModelType> pomdp, Options options = Options());
                 
                 Result check(storm::logic::Formula const& formula);
 
                 void printStatisticsToStream(std::ostream& stream) const;
                 
             private:
+                
+                /**
+                 * Returns the pomdp that is to be analyzed
+                 */
+                PomdpModelType const& pomdp() const;
+                
                 /**
                  * Helper method that handles the computation of reachability probabilities and rewards using the on-the-fly state space generation for a fixed grid size
                  *
@@ -95,6 +101,9 @@ namespace storm {
                     boost::optional<uint64_t> refinementSteps;
                     storm::utility::Stopwatch totalTime;
                     
+                    bool beliefMdpDetectedToBeFinite;
+                    bool refinementFixpointDetected;
+                    
                     boost::optional<uint64_t> overApproximationStates;
                     bool overApproximationBuildAborted;
                     storm::utility::Stopwatch overApproximationBuildTime;
@@ -111,7 +120,9 @@ namespace storm {
                 };
                 Statistics statistics;
                 
-                PomdpModelType const& pomdp;
+                std::shared_ptr<PomdpModelType> inputPomdp;
+                std::shared_ptr<PomdpModelType> preprocessedPomdp;
+                
                 Options options;
                 storm::utility::ConstantsComparator<ValueType> cc;
             };

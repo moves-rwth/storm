@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <boost/variant.hpp>
 
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/BitVector.h"
@@ -34,11 +35,43 @@ namespace storm {
                     std::vector<storm::RationalNumber> rationalValues;
                 };
                 
-
-                StateValuations() = default;
+                class StateValueIterator {
+                public:
+                    StateValueIterator(typename std::map<storm::expressions::Variable, uint64_t>::const_iterator variableIt, StateValuation const* valuation);
+                    bool operator==(StateValueIterator const& other);
+                    bool operator!=(StateValueIterator const& other);
+                    StateValueIterator& operator++();
+                    StateValueIterator& operator--();
+                    
+                    storm::expressions::Variable const& getVariable() const;
+                    bool isBoolean() const;
+                    bool isInteger() const;
+                    bool isRational() const;
+                    
+                    // These shall only be called if the variable has the correct type
+                    bool getBooleanValue() const;
+                    int64_t getIntegerValue() const;
+                    storm::RationalNumber getRationalValue() const;
+                    
+                private:
+                    typename std::map<storm::expressions::Variable, uint64_t>::const_iterator variableIt;
+                    StateValuation const* const valuation;
+                };
                 
+                class StateValueIteratorRange {
+                public:
+                    StateValueIteratorRange(std::map<storm::expressions::Variable, uint64_t> const& variableMap, StateValuation const* valuation);
+                    StateValueIterator begin() const;
+                    StateValueIterator end() const;
+                private:
+                    std::map<storm::expressions::Variable, uint64_t> const& variableMap;
+                    StateValuation const* const valuation;
+                };
+                
+                StateValuations() = default;
                 virtual ~StateValuations() = default;
                 virtual std::string getStateInfo(storm::storage::sparse::state_type const& state) const override;
+                StateValueIteratorRange at(storm::storage::sparse::state_type const& state) const;
                 
                 bool getBooleanValue(storm::storage::sparse::state_type const& stateIndex, storm::expressions::Variable const& booleanVariable) const;
                 int64_t const& getIntegerValue(storm::storage::sparse::state_type const& stateIndex, storm::expressions::Variable const& integerVariable) const;

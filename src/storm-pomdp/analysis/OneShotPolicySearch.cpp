@@ -1,13 +1,13 @@
 #include "storm/utility/file.h"
 
-#include "storm-pomdp/analysis/QualitativeStrategySearchNaive.h"
+#include "storm-pomdp/analysis/OneShotPolicySearch.h"
 
 
 namespace storm {
     namespace pomdp {
 
         template <typename ValueType>
-        void QualitativeStrategySearchNaive<ValueType>::initialize(uint64_t k) {
+        void OneShotPolicySearch<ValueType>::initialize(uint64_t k) {
             if (maxK == std::numeric_limits<uint64_t>::max()) {
                 // not initialized at all.
                 // Create some data structures.
@@ -116,7 +116,7 @@ namespace storm {
         }
 
         template <typename ValueType>
-        bool QualitativeStrategySearchNaive<ValueType>::analyze(uint64_t k, storm::storage::BitVector const& oneOfTheseStates, storm::storage::BitVector const& allOfTheseStates) {
+        bool OneShotPolicySearch<ValueType>::analyze(uint64_t k, storm::storage::BitVector const& oneOfTheseStates, storm::storage::BitVector const& allOfTheseStates) {
 
             STORM_LOG_TRACE("Use lookahead of "<<k);
             if (k < maxK) {
@@ -183,7 +183,7 @@ namespace storm {
         }
 
 
-        template class QualitativeStrategySearchNaive<double>;
-        template class QualitativeStrategySearchNaive<storm::RationalNumber>;
+        template class OneShotPolicySearch<double>;
+        template class OneShotPolicySearch<storm::RationalNumber>;
     }
 }

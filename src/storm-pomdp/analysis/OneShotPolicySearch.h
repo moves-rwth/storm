@@ -20,7 +20,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        class QualitativeStrategySearchNaive {
+        class OneShotPolicySearch {
             // Implements  to the Chatterjee, Chmelik, Davies (AAAI-16) paper.
             class Statistics {
             public:
@@ -32,10 +32,10 @@ namespace storm {
             };
 
         public:
-            QualitativeStrategySearchNaive(storm::models::sparse::Pomdp<ValueType> const& pomdp,
-                                             storm::storage::BitVector const& targetStates,
-                                             storm::storage::BitVector const& surelyReachSinkStates,
-                                             std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory) :
+            OneShotPolicySearch(storm::models::sparse::Pomdp<ValueType> const& pomdp,
+                                storm::storage::BitVector const& targetStates,
+                                storm::storage::BitVector const& surelyReachSinkStates,
+                                std::shared_ptr<storm::utility::solver::SmtSolverFactory>& smtSolverFactory) :
                     pomdp(pomdp),
                     targetObservations(extractObservations(pomdp, targetStates)),
                     targetStates(targetStates),

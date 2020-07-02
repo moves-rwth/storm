@@ -22,10 +22,10 @@
 #include "storm-pomdp/transformer/MakePOMDPCanonic.h"
 #include "storm-pomdp/analysis/UniqueObservationStates.h"
 #include "storm-pomdp/analysis/QualitativeAnalysisOnGraphs.h"
-#include "storm-pomdp/modelchecker/ApproximatePOMDPModelchecker.h"
+#include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelChecker.h"
 #include "storm-pomdp/analysis/FormulaInformation.h"
-#include "storm-pomdp/analysis/MemlessStrategySearchQualitative.h"
-#include "storm-pomdp/analysis/QualitativeStrategySearchNaive.h"
+#include "storm-pomdp/analysis/IterativePolicySearch.h"
+#include "storm-pomdp/analysis/OneShotPolicySearch.h"
 
 #include "storm/api/storm.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -49,15 +49,15 @@ namespace storm {
                 auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
                 bool preprocessingPerformed = false;
                 if (pomdpSettings.isSelfloopReductionSet()) {
-                    bool apply = formulaInfo.isNonNestedReachabilityProbability() && formulaInfo.maximize();
-                    apply = apply || (formulaInfo.isNonNestedExpectedRewardFormula() && formulaInfo.minimize());
-                    if (apply) {
+                    storm::transformer::GlobalPOMDPSelfLoopEliminator<ValueType> selfLoopEliminator(*pomdp);
+                    if (selfLoopEliminator.preservesFormula(formula)) {
                         STORM_PRINT_AND_LOG("Eliminating self-loop choices ...");
                         uint64_t oldChoiceCount = pomdp->getNumberOfChoices();
-                        storm::transformer::GlobalPOMDPSelfLoopEliminator<ValueType> selfLoopEliminator(*pomdp);
                         pomdp = selfLoopEliminator.transform();
                         STORM_PRINT_AND_LOG(oldChoiceCount - pomdp->getNumberOfChoices() << " choices eliminated through self-loop elimination." << std::endl);
                         preprocessingPerformed = true;
+                    } else {
+                        STORM_PRINT_AND_LOG("Not eliminating self-loop choices as it does not preserve the formula." << std::endl);
                     }
                 }
                 if (pomdpSettings.isQualitativeReductionSet() && formulaInfo.isNonNestedReachabilityProbability()) {
@@ -65,11 +65,10 @@ namespace storm {
                     STORM_PRINT_AND_LOG("Computing states with probability 0 ...");
                     storm::storage::BitVector prob0States = qualitativeAnalysis.analyseProb0(formula.asProbabilityOperatorFormula());
                     std::cout << prob0States << std::endl;
-                    STORM_PRINT_AND_LOG(" done." << std::endl);
+                    STORM_PRINT_AND_LOG(" done. " << prob0States.getNumberOfSetBits() << " states found." << std::endl);
                     STORM_PRINT_AND_LOG("Computing states with probability 1 ...");
                     storm::storage::BitVector  prob1States = qualitativeAnalysis.analyseProb1(formula.asProbabilityOperatorFormula());
-                    std::cout << prob1States << std::endl;
-                    STORM_PRINT_AND_LOG(" done." << std::endl);
+                    STORM_PRINT_AND_LOG(" done. " << prob1States.getNumberOfSetBits() << " states found." << std::endl);
                     storm::pomdp::transformer::KnownProbabilityTransformer<ValueType> kpt = storm::pomdp::transformer::KnownProbabilityTransformer<ValueType>();
                     pomdp = kpt.transform(*pomdp, prob0States, prob1States);
                     // Update formulaInfo to changes from Preprocessing
@@ -143,7 +142,9 @@ namespace storm {
             void performQualitativeAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& origpomdp, storm::pomdp::analysis::FormulaInformation const& formulaInfo, storm::logic::Formula const& formula) {
                 auto const& qualSettings = storm::settings::getModule<storm::settings::modules::QualitativePOMDPAnalysisSettings>();
                 auto const& coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
-
+                std::stringstream sstr;
+                origpomdp->printModelInformationToStream(sstr);
+                STORM_LOG_INFO(sstr.str());
                 STORM_LOG_THROW(formulaInfo.isNonNestedReachabilityProbability(), storm::exceptions::NotSupportedException, "Qualitative memoryless scheduler search is not implemented for this property type.");
                 STORM_LOG_TRACE("Run qualitative preprocessing...");
                 storm::models::sparse::Pomdp<ValueType> pomdp(*origpomdp);
@@ -161,16 +162,15 @@ namespace storm {
                 if (lookahead == 0) {
                     lookahead = pomdp.getNumberOfStates();
                 }
-                STORM_LOG_TRACE("target states: "  << targetStates);
                 if (qualSettings.getMemlessSearchMethod() == "one-shot") {
-                    storm::pomdp::QualitativeStrategySearchNaive<ValueType> memlessSearch(pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory);
+                    storm::pomdp::OneShotPolicySearch<ValueType> memlessSearch(pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory);
                     if (qualSettings.isWinningRegionSet()) {
                         STORM_LOG_ERROR("Computing winning regions is not supported by ccd-memless.");
                     } else {
                         memlessSearch.analyzeForInitialStates(lookahead);
                     }
                 } else if (qualSettings.getMemlessSearchMethod() == "iterative") {
-                    storm::pomdp::MemlessStrategySearchQualitative<ValueType> search(pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory, options);
+                    storm::pomdp::IterativePolicySearch<ValueType> search(pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory, options);
                     if (qualSettings.isWinningRegionSet()) {
                         search.computeWinningRegion(lookahead);
                     } else {
@@ -225,10 +225,10 @@ namespace storm {
                 bool analysisPerformed = false;
                 if (pomdpSettings.isBeliefExplorationSet()) {
                     STORM_PRINT_AND_LOG("Exploring the belief MDP... ");
-                    auto options = storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<ValueType>(pomdpSettings.isBeliefExplorationDiscretizeSet(), pomdpSettings.isBeliefExplorationUnfoldSet());
+                    auto options = storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>(pomdpSettings.isBeliefExplorationDiscretizeSet(), pomdpSettings.isBeliefExplorationUnfoldSet());
                     auto const& beliefExplorationSettings = storm::settings::getModule<storm::settings::modules::BeliefExplorationSettings>();
                     beliefExplorationSettings.setValuesInOptionsStruct(options);
-                    storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::models::sparse::Pomdp<ValueType>> checker(*pomdp, options);
+                    storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(pomdp, options);
                     auto result = checker.check(formula);
                     checker.printStatisticsToStream(std::cout);
                     if (storm::utility::resources::isTerminate()) {

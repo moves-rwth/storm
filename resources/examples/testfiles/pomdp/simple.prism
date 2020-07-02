@@ -1,0 +1,23 @@
+pomdp
+
+observable "start" = s<3;
+observable "end" = s>4;
+
+const double slippery;
+
+module main
+    s : [0..6] init 0;
+    [alpha] s=0 -> (1-slippery) * 0.7: (s'=1) + (1-slippery) * 0.3: (s'=2) + slippery: true;
+    [alpha] s>0 & s<5 -> (1-slippery): (s'=s+2) + slippery: true;
+    [beta]  s=3 -> (1-slippery): (s'=6)   + slippery: true;
+    [beta]  s=4 -> (1-slippery): (s'=5) + slippery: true;
+endmodule
+
+rewards
+    [alpha] s=3: 0.5;
+    [beta] s=4: 0.5;
+    true : s * 0.05;
+endrewards
+
+
+label "goal" = s=5;

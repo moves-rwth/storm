@@ -1,4 +1,4 @@
-#include "ApproximatePOMDPModelchecker.h"
+#include "BeliefExplorationPomdpModelChecker.h"
 
 #include <tuple>
 
@@ -6,6 +6,7 @@
 
 #include "storm-pomdp/analysis/FormulaInformation.h"
 #include "storm-pomdp/analysis/FiniteBeliefMdpDetection.h"
+#include "storm-pomdp/transformer/MakeStateSetObservationClosed.h"
 
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/NumberTraits.h"
@@ -30,13 +31,13 @@ namespace storm {
         namespace modelchecker {
             
             template<typename PomdpModelType, typename BeliefValueType>
-            ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::Result::Result(ValueType lower, ValueType upper) : lowerBound(lower), upperBound(upper) {
+            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::Result::Result(ValueType lower, ValueType upper) : lowerBound(lower), upperBound(upper) {
                 // Intentionally left empty
             }
             
             template<typename PomdpModelType, typename BeliefValueType>
-            typename ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::ValueType
-            ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::Result::diff(bool relative) const {
+            typename BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::ValueType
+            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::Result::diff(bool relative) const {
                 ValueType diff = upperBound - lowerBound;
                 if (diff < storm::utility::zero<ValueType>()) {
                     STORM_LOG_WARN_COND(diff >= storm::utility::convertNumber<ValueType>(1e-6), "Upper bound '" << upperBound << "' is smaller than lower bound '" << lowerBound << "': Difference is " << diff << ".");
@@ -49,7 +50,7 @@ namespace storm {
             }
             
             template<typename PomdpModelType, typename BeliefValueType>
-            bool ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::Result::updateLowerBound(ValueType const& value) {
+            bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::Result::updateLowerBound(ValueType const& value) {
                 if (value > lowerBound) {
                     lowerBound = value;
                     return true;
@@ -58,7 +59,7 @@ namespace storm {
             }
             
             template<typename PomdpModelType, typename BeliefValueType>
-            bool ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::Result::updateUpperBound(ValueType const& value) {
+            bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::Result::updateUpperBound(ValueType const& value) {
                 if (value < upperBound) {
                     upperBound = value;
                     return true;
@@ -67,37 +68,50 @@ namespace storm {
             }
             
             template<typename PomdpModelType, typename BeliefValueType>
-            ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::Statistics::Statistics() :  overApproximationBuildAborted(false), underApproximationBuildAborted(false), aborted(false) {
+            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::Statistics::Statistics() :  beliefMdpDetectedToBeFinite(false), refinementFixpointDetected(false), overApproximationBuildAborted(false), underApproximationBuildAborted(false), aborted(false) {
                 // intentionally left empty;
             }
             
             template<typename PomdpModelType, typename BeliefValueType>
-            ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::ApproximatePOMDPModelchecker(PomdpModelType const& pomdp, Options options) : pomdp(pomdp), options(options) {
+            BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::BeliefExplorationPomdpModelChecker(std::shared_ptr<PomdpModelType> pomdp, Options options) : inputPomdp(pomdp), options(options) {
+                STORM_LOG_ASSERT(inputPomdp, "The given POMDP is not initialized.");
+                STORM_LOG_ERROR_COND(inputPomdp->isCanonic(), "Input Pomdp is not known to be canonic. This might lead to unexpected verification results.");
+
                 cc = storm::utility::ConstantsComparator<ValueType>(storm::utility::convertNumber<ValueType>(this->options.numericPrecision), false);
             }
 
             template<typename PomdpModelType, typename BeliefValueType>
-            typename ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::Result ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::check(storm::logic::Formula const& formula) {
+            typename BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::Result BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::check(storm::logic::Formula const& formula) {
                 STORM_LOG_ASSERT(options.unfold || options.discretize, "Invoked belief exploration but no task (unfold or discretize) given.");
+                
+                // Potentially reset preprocessed model from previous call
+                preprocessedPomdp.reset();
+                
                 // Reset all collected statistics
                 statistics = Statistics();
                 statistics.totalTime.start();
                 // Extract the relevant information from the formula
-                auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(pomdp, formula);
+                auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(pomdp(), formula);
                 
                 // Compute some initial bounds on the values for each state of the pomdp
-                auto initialPomdpValueBounds = TrivialPomdpValueBoundsModelChecker<storm::models::sparse::Pomdp<ValueType>>(pomdp).getValueBounds(formula, formulaInfo);
-                uint64_t initialPomdpState = pomdp.getInitialStates().getNextSetIndex(0);
+                auto initialPomdpValueBounds = TrivialPomdpValueBoundsModelChecker<storm::models::sparse::Pomdp<ValueType>>(pomdp()).getValueBounds(formula, formulaInfo);
+                uint64_t initialPomdpState = pomdp().getInitialStates().getNextSetIndex(0);
                 Result result(initialPomdpValueBounds.getHighestLowerBound(initialPomdpState), initialPomdpValueBounds.getSmallestUpperBound(initialPomdpState));
-                STORM_PRINT_AND_LOG("Initial value bounds are [" << result.lowerBound << ", " <<  result.upperBound << "]" << std::endl);
+                STORM_LOG_INFO("Initial value bounds are [" << result.lowerBound << ", " <<  result.upperBound << "]");
 
                 boost::optional<std::string> rewardModelName;
+                std::set<uint32_t> targetObservations;
                 if (formulaInfo.isNonNestedReachabilityProbability() || formulaInfo.isNonNestedExpectedRewardFormula()) {
-                    // FIXME: Instead of giving up, introduce a new observation for target states and make sink states absorbing.
-                    STORM_LOG_THROW(formulaInfo.getTargetStates().observationClosed, storm::exceptions::NotSupportedException, "There are non-target states with the same observation as a target state. This is currently not supported");
+                    if (formulaInfo.getTargetStates().observationClosed) {
+                        targetObservations = formulaInfo.getTargetStates().observations;
+                    } else {
+                        storm::transformer::MakeStateSetObservationClosed<ValueType> obsCloser(inputPomdp);
+                        std::tie(preprocessedPomdp, targetObservations) = obsCloser.transform(formulaInfo.getTargetStates().states);
+                    }
+                    // FIXME: Instead of giving up, make sink states absorbing.
                     if (formulaInfo.isNonNestedReachabilityProbability()) {
                         if (!formulaInfo.getSinkStates().empty()) {
-                            auto reachableFromSinkStates = storm::utility::graph::getReachableStates(pomdp.getTransitionMatrix(), formulaInfo.getSinkStates().states, formulaInfo.getSinkStates().states, ~formulaInfo.getSinkStates().states);
+                            auto reachableFromSinkStates = storm::utility::graph::getReachableStates(pomdp().getTransitionMatrix(), formulaInfo.getSinkStates().states, formulaInfo.getSinkStates().states, ~formulaInfo.getSinkStates().states);
                             reachableFromSinkStates &= ~formulaInfo.getSinkStates().states;
                             STORM_LOG_THROW(reachableFromSinkStates.empty(), storm::exceptions::NotSupportedException, "There are sink states that can reach non-sink states. This is currently not supported");
                         }
@@ -108,14 +122,15 @@ namespace storm {
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unsupported formula '" << formula << "'.");
                 }
-                if (storm::pomdp::detectFiniteBeliefMdp(pomdp, formulaInfo.getTargetStates().states)) {
-                    STORM_PRINT_AND_LOG("Detected that the belief MDP is finite." << std::endl);
+                if (storm::pomdp::detectFiniteBeliefMdp(pomdp(), formulaInfo.getTargetStates().states)) {
+                    STORM_LOG_INFO("Detected that the belief MDP is finite.");
+                    statistics.beliefMdpDetectedToBeFinite = true;
                 }
                 
                 if (options.refine) {
-                    refineReachability(formulaInfo.getTargetStates().observations, formulaInfo.minimize(), rewardModelName, initialPomdpValueBounds, result);
+                    refineReachability(targetObservations, formulaInfo.minimize(), rewardModelName, initialPomdpValueBounds, result);
                 } else {
-                    computeReachabilityOTF(formulaInfo.getTargetStates().observations, formulaInfo.minimize(), rewardModelName, initialPomdpValueBounds, result);
+                    computeReachabilityOTF(targetObservations, formulaInfo.minimize(), rewardModelName, initialPomdpValueBounds, result);
                 }
                 // "clear" results in case they were actually not requested (this will make the output a bit more clear)
                 if ((formulaInfo.minimize() && !options.discretize) || (formulaInfo.maximize() && !options.unfold)) {
@@ -133,12 +148,15 @@ namespace storm {
             }
             
             template<typename PomdpModelType, typename BeliefValueType>
-            void ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::printStatisticsToStream(std::ostream& stream) const {
+            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::printStatisticsToStream(std::ostream& stream) const {
                 stream << "##### Grid Approximation Statistics ######" << std::endl;
                 stream << "# Input model: " << std::endl;
-                pomdp.printModelInformationToStream(stream);
-                stream << "# Max. Number of states with same observation: " << pomdp.getMaxNrStatesWithSameObservation() << std::endl;
+                pomdp().printModelInformationToStream(stream);
+                stream << "# Max. Number of states with same observation: " << pomdp().getMaxNrStatesWithSameObservation() << std::endl;
                 
+                if (statistics.beliefMdpDetectedToBeFinite) {
+                    stream << "# Pre-computations detected that the belief MDP is finite.";
+                }
                 if (statistics.aborted) {
                     stream << "# Computation aborted early" << std::endl;
                 }
@@ -148,6 +166,9 @@ namespace storm {
                 // Refinement information:
                 if (statistics.refinementSteps) {
                     stream << "# Number of refinement steps: " << statistics.refinementSteps.get() << std::endl;
+                }
+                if (statistics.refinementFixpointDetected) {
+                    stream << "# Detected a refinement fixpoint." << std::endl;
                 }
                 
                 // The overapproximation MDP:
@@ -188,11 +209,11 @@ namespace storm {
             }
             
             template<typename PomdpModelType, typename BeliefValueType>
-            void ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const& pomdpValueBounds, Result& result) {
+            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const& pomdpValueBounds, Result& result) {
                 
                 if (options.discretize) {
-                    std::vector<BeliefValueType> observationResolutionVector(pomdp.getNrObservations(), storm::utility::convertNumber<BeliefValueType>(options.resolutionInit));
-                    auto manager = std::make_shared<BeliefManagerType>(pomdp, options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
+                    std::vector<BeliefValueType> observationResolutionVector(pomdp().getNrObservations(), storm::utility::convertNumber<BeliefValueType>(options.resolutionInit));
+                    auto manager = std::make_shared<BeliefManagerType>(pomdp(), options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
                     if (rewardModelName) {
                         manager->setRewardModel(rewardModelName);
                     }
@@ -205,14 +226,19 @@ namespace storm {
                     
                     buildOverApproximation(targetObservations, min, rewardModelName.is_initialized(), false, heuristicParameters, observationResolutionVector, manager, approx);
                     if (approx->hasComputedValues()) {
-                        STORM_PRINT_AND_LOG("Explored and checked Over-Approximation MDP:\n");
-                        approx->getExploredMdp()->printModelInformationToStream(std::cout);
+                        auto printInfo = [&approx]() {
+                            std::stringstream str;
+                            str << "Explored and checked Over-Approximation MDP:" << std::endl;
+                            approx->getExploredMdp()->printModelInformationToStream(str);
+                            return str.str();
+                        };
+                        STORM_LOG_INFO(printInfo());
                         ValueType& resultValue = min ? result.lowerBound : result.upperBound;
                         resultValue = approx->getComputedValueAtInitialState();
                     }
                 }
                 if (options.unfold) { // Underapproximation (uses a fresh Belief manager)
-                    auto manager = std::make_shared<BeliefManagerType>(pomdp, options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
+                    auto manager = std::make_shared<BeliefManagerType>(pomdp(), options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
                     if (rewardModelName) {
                         manager->setRewardModel(rewardModelName);
                     }
@@ -225,14 +251,19 @@ namespace storm {
                         if (options.explorationTimeLimit) {
                             heuristicParameters.sizeThreshold = std::numeric_limits<uint64_t>::max();
                         } else {
-                            heuristicParameters.sizeThreshold = pomdp.getNumberOfStates() * pomdp.getMaxNrStatesWithSameObservation();
-                            STORM_PRINT_AND_LOG("Heuristically selected an under-approximation mdp size threshold of " << heuristicParameters.sizeThreshold << "." << std::endl);
+                            heuristicParameters.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
+                            STORM_LOG_INFO("Heuristically selected an under-approximation mdp size threshold of " << heuristicParameters.sizeThreshold << ".");
                         }
                     }
                     buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, heuristicParameters, manager, approx);
                     if (approx->hasComputedValues()) {
-                        STORM_PRINT_AND_LOG("Explored and checked Under-Approximation MDP:\n");
-                        approx->getExploredMdp()->printModelInformationToStream(std::cout);
+                        auto printInfo = [&approx]() {
+                            std::stringstream str;
+                            str << "Explored and checked Under-Approximation MDP:" << std::endl;
+                            approx->getExploredMdp()->printModelInformationToStream(str);
+                            return str.str();
+                        };
+                        STORM_LOG_INFO(printInfo());
                         ValueType& resultValue = min ? result.upperBound : result.lowerBound;
                         resultValue = approx->getComputedValueAtInitialState();
                     }
@@ -240,7 +271,7 @@ namespace storm {
             }
             
             template<typename PomdpModelType, typename BeliefValueType>
-            void ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const& pomdpValueBounds, Result& result) {
+            void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const& pomdpValueBounds, Result& result) {
                 statistics.refinementSteps = 0;
 
                 // Set up exploration data
@@ -249,8 +280,8 @@ namespace storm {
                 std::shared_ptr<ExplorerType> overApproximation;
                 HeuristicParameters overApproxHeuristicPar;
                 if (options.discretize) { // Setup and build first OverApproximation
-                    observationResolutionVector = std::vector<BeliefValueType>(pomdp.getNrObservations(), storm::utility::convertNumber<BeliefValueType>(options.resolutionInit));
-                    overApproxBeliefManager = std::make_shared<BeliefManagerType>(pomdp, options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
+                    observationResolutionVector = std::vector<BeliefValueType>(pomdp().getNrObservations(), storm::utility::convertNumber<BeliefValueType>(options.resolutionInit));
+                    overApproxBeliefManager = std::make_shared<BeliefManagerType>(pomdp(), options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
                     if (rewardModelName) {
                         overApproxBeliefManager->setRewardModel(rewardModelName);
                     }
@@ -266,7 +297,7 @@ namespace storm {
                     ValueType const& newValue = overApproximation->getComputedValueAtInitialState();
                     bool betterBound = min ? result.updateLowerBound(newValue) : result.updateUpperBound(newValue);
                     if (betterBound) {
-                        STORM_PRINT_AND_LOG("Over-approx result for refinement improved after " << statistics.totalTime << " seconds in refinement step #" << statistics.refinementSteps.get() << ". New value is '" << newValue << "'." << std::endl);
+                        STORM_LOG_INFO("Over-approx result for refinement improved after " << statistics.totalTime << " seconds in refinement step #" << statistics.refinementSteps.get() << ". New value is '" << newValue << "'." << std::endl);
                     }
                 }
                 
@@ -274,7 +305,7 @@ namespace storm {
                 std::shared_ptr<ExplorerType> underApproximation;
                 HeuristicParameters underApproxHeuristicPar;
                 if (options.unfold) { // Setup and build first UnderApproximation
-                    underApproxBeliefManager = std::make_shared<BeliefManagerType>(pomdp, options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
+                    underApproxBeliefManager = std::make_shared<BeliefManagerType>(pomdp(), options.numericPrecision, options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic : BeliefManagerType::TriangulationMode::Static);
                     if (rewardModelName) {
                         underApproxBeliefManager->setRewardModel(rewardModelName);
                     }
@@ -284,7 +315,7 @@ namespace storm {
                     underApproxHeuristicPar.sizeThreshold = options.sizeThresholdInit;
                     if (underApproxHeuristicPar.sizeThreshold == 0) {
                         // Select a decent value automatically
-                        underApproxHeuristicPar.sizeThreshold = pomdp.getNumberOfStates() * pomdp.getMaxNrStatesWithSameObservation();
+                        underApproxHeuristicPar.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
                     }
                     buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, underApproxHeuristicPar, underApproxBeliefManager, underApproximation);
                     if (!underApproximation->hasComputedValues() || storm::utility::resources::isTerminate()) {
@@ -293,30 +324,29 @@ namespace storm {
                     ValueType const& newValue = underApproximation->getComputedValueAtInitialState();
                     bool betterBound = min ? result.updateUpperBound(newValue) : result.updateLowerBound(newValue);
                     if (betterBound) {
-                        STORM_PRINT_AND_LOG("Under-approx result for refinement improved after " << statistics.totalTime << " seconds in refinement step #" << statistics.refinementSteps.get() << ". New value is '" << newValue << "'." << std::endl);
+                        STORM_LOG_INFO("Under-approx result for refinement improved after " << statistics.totalTime << " seconds in refinement step #" << statistics.refinementSteps.get() << ". New value is '" << newValue << "'." << std::endl);
                     }
                 }
                 
                 // Do some output
-                STORM_PRINT_AND_LOG("Completed iteration #" << statistics.refinementSteps.get() << ". Current checktime is " << statistics.totalTime << ".");
+                STORM_LOG_INFO("Completed iteration #" << statistics.refinementSteps.get() << ". Current checktime is " << statistics.totalTime << ".");
                 bool computingLowerBound = false;
                 bool computingUpperBound = false;
                 if (options.discretize) {
-                    STORM_PRINT_AND_LOG(" Over-approx MDP has size " << overApproximation->getExploredMdp()->getNumberOfStates() << ".");
+                    STORM_LOG_INFO("\tOver-approx MDP has size " << overApproximation->getExploredMdp()->getNumberOfStates() << ".");
                     (min ? computingLowerBound : computingUpperBound) = true;
                 }
                 if (options.unfold) {
-                    STORM_PRINT_AND_LOG(" Under-approx MDP has size " << underApproximation->getExploredMdp()->getNumberOfStates() << ".");
+                    STORM_LOG_INFO("\tUnder-approx MDP has size " << underApproximation->getExploredMdp()->getNumberOfStates() << ".");
                     (min ? computingUpperBound : computingLowerBound) = true;
                 }
                 if (computingLowerBound && computingUpperBound) {
-                    STORM_PRINT_AND_LOG(" Current result is [" << result.lowerBound << ", " << result.upperBound << "].");
+                    STORM_LOG_INFO("\tCurrent result is [" << result.lowerBound << ", " << result.upperBound << "].");
                 } else if (computingLowerBound) {
-                    STORM_PRINT_AND_LOG(" Current result is ≥" << result.lowerBound << ".");
+                    STORM_LOG_INFO("\tCurrent result is ≥" << result.lowerBound << ".");
                 } else if (computingUpperBound) {
-                    STORM_PRINT_AND_LOG(" Current result is ≤" << result.upperBound << ".");
+                    STORM_LOG_INFO("\tCurrent result is ≤" << result.upperBound << ".");
                 }
-                STORM_PRINT_AND_LOG(std::endl);
                 
                 // Start refinement
                 STORM_LOG_WARN_COND(options.refineStepLimit.is_initialized() || !storm::utility::isZero(options.refinePrecision), "No termination criterion for refinement given. Consider to specify a steplimit, a non-zero precisionlimit, or a timeout");
@@ -340,7 +370,7 @@ namespace storm {
                             ValueType const& newValue = overApproximation->getComputedValueAtInitialState();
                             bool betterBound = min ? result.updateLowerBound(newValue) : result.updateUpperBound(newValue);
                             if (betterBound) {
-                                STORM_PRINT_AND_LOG("Over-approx result for refinement improved after " << statistics.totalTime << " in refinement step #" << (statistics.refinementSteps.get() + 1) << ". New value is '" << newValue << "'." << std::endl);
+                                STORM_LOG_INFO("Over-approx result for refinement improved after " << statistics.totalTime << " in refinement step #" << (statistics.refinementSteps.get() + 1) << ". New value is '" << newValue << "'.");
                             }
                         } else {
                             break;
@@ -357,7 +387,7 @@ namespace storm {
                             ValueType const& newValue = underApproximation->getComputedValueAtInitialState();
                             bool betterBound = min ? result.updateUpperBound(newValue) : result.updateLowerBound(newValue);
                             if (betterBound) {
-                                STORM_PRINT_AND_LOG("Under-approx result for refinement improved after " << statistics.totalTime << " in refinement step #" << (statistics.refinementSteps.get() + 1) << ". New value is '" << newValue << "'." << std::endl);
+                                STORM_LOG_INFO("Under-approx result for refinement improved after " << statistics.totalTime << " in refinement step #" << (statistics.refinementSteps.get() + 1) << ". New value is '" << newValue << "'.");
                             }
                         } else {
                             break;
@@ -370,30 +400,30 @@ namespace storm {
                         ++statistics.refinementSteps.get();
                         // Don't make too many outputs (to avoid logfile clutter)
                         if (statistics.refinementSteps.get() <= 1000) {
-                            STORM_PRINT_AND_LOG("Completed iteration #" << statistics.refinementSteps.get() << ". Current checktime is " << statistics.totalTime << ".");
+                            STORM_LOG_INFO("Completed iteration #" << statistics.refinementSteps.get() << ". Current checktime is " << statistics.totalTime << ".");
                             bool computingLowerBound = false;
                             bool computingUpperBound = false;
                             if (options.discretize) {
-                                STORM_PRINT_AND_LOG(" Over-approx MDP has size " << overApproximation->getExploredMdp()->getNumberOfStates() << ".");
+                                STORM_LOG_INFO("\tOver-approx MDP has size " << overApproximation->getExploredMdp()->getNumberOfStates() << ".");
                                 (min ? computingLowerBound : computingUpperBound) = true;
                             }
                             if (options.unfold) {
-                                STORM_PRINT_AND_LOG(" Under-approx MDP has size " << underApproximation->getExploredMdp()->getNumberOfStates() << ".");
+                                STORM_LOG_INFO("\tUnder-approx MDP has size " << underApproximation->getExploredMdp()->getNumberOfStates() << ".");
                                 (min ? computingUpperBound : computingLowerBound) = true;
                             }
                             if (computingLowerBound && computingUpperBound) {
-                                STORM_PRINT_AND_LOG(" Current result is [" << result.lowerBound << ", " << result.upperBound << "].");
+                                STORM_LOG_INFO("\tCurrent result is [" << result.lowerBound << ", " << result.upperBound << "].");
                             } else if (computingLowerBound) {
-                                STORM_PRINT_AND_LOG(" Current result is ≥" << result.lowerBound << ".");
+                                STORM_LOG_INFO("\tCurrent result is ≥" << result.lowerBound << ".");
                             } else if (computingUpperBound) {
-                                STORM_PRINT_AND_LOG(" Current result is ≤" << result.upperBound << ".");
+                                STORM_LOG_INFO("\tCurrent result is ≤" << result.upperBound << ".");
                             }
-                            STORM_PRINT_AND_LOG(std::endl);
                             STORM_LOG_WARN_COND(statistics.refinementSteps.get() < 1000, "Refinement requires  more than 1000 iterations.");
                         }
                     }
                     if (overApproxFixPoint && underApproxFixPoint) {
-                        STORM_PRINT_AND_LOG("Refinement fixpoint reached after " << statistics.refinementSteps.get() << " iterations." << std::endl);
+                        STORM_LOG_INFO("Refinement fixpoint reached after " << statistics.refinementSteps.get() << " iterations." << std::endl);
+                        statistics.refinementFixpointDetected = true;
                         break;
                     }
                 }
@@ -404,7 +434,7 @@ namespace storm {
              * Here, 0 means a bad approximation and 1 means a good approximation.
              */
             template<typename PomdpModelType, typename BeliefValueType>
-            BeliefValueType ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::rateObservation(typename ExplorerType::SuccessorObservationInformation const& info, BeliefValueType const& observationResolution, BeliefValueType const& maxResolution) {
+            BeliefValueType BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::rateObservation(typename ExplorerType::SuccessorObservationInformation const& info, BeliefValueType const& observationResolution, BeliefValueType const& maxResolution) {
                 auto n = storm::utility::convertNumber<BeliefValueType, uint64_t>(info.support.size());
                 auto one = storm::utility::one<BeliefValueType>();
                 if (storm::utility::isOne(n)) {
@@ -425,12 +455,12 @@ namespace storm {
             }
             
             template<typename PomdpModelType, typename BeliefValueType>
-            std::vector<BeliefValueType> ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::getObservationRatings(std::shared_ptr<ExplorerType> const& overApproximation, std::vector<BeliefValueType> const& observationResolutionVector) {
+            std::vector<BeliefValueType> BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::getObservationRatings(std::shared_ptr<ExplorerType> const& overApproximation, std::vector<BeliefValueType> const& observationResolutionVector) {
                 uint64_t numMdpStates = overApproximation->getExploredMdp()->getNumberOfStates();
                 auto const& choiceIndices = overApproximation->getExploredMdp()->getNondeterministicChoiceIndices();
                 BeliefValueType maxResolution = *std::max_element(observationResolutionVector.begin(), observationResolutionVector.end());
 
-                std::vector<BeliefValueType> resultingRatings(pomdp.getNrObservations(), storm::utility::one<BeliefValueType>());
+                std::vector<BeliefValueType> resultingRatings(pomdp().getNrObservations(), storm::utility::one<BeliefValueType>());
                 
                 std::map<uint32_t, typename ExplorerType::SuccessorObservationInformation> gatheredSuccessorObservations; // Declare here to avoid reallocations
                 for (uint64_t mdpState = 0; mdpState < numMdpStates; ++mdpState) {
@@ -477,7 +507,7 @@ namespace storm {
             }
             
             template<typename PomdpModelType, typename BeliefValueType>
-            bool ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::buildOverApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::vector<BeliefValueType>& observationResolutionVector, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& overApproximation) {
+            bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::buildOverApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::vector<BeliefValueType>& observationResolutionVector, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& overApproximation) {
                 
                 // Detect whether the refinement reached a fixpoint.
                 bool fixPoint = true;
@@ -712,7 +742,7 @@ namespace storm {
             }
 
             template<typename PomdpModelType, typename BeliefValueType>
-            bool ApproximatePOMDPModelchecker<PomdpModelType, BeliefValueType>::buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation) {
+            bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation) {
                 statistics.underApproximationBuildTime.start();
                 bool fixPoint = true;
                 if (heuristicParameters.sizeThreshold != std::numeric_limits<uint64_t>::max()) {
@@ -830,9 +860,18 @@ namespace storm {
                 return fixPoint;
 
             }
+            
+            template<typename PomdpModelType, typename BeliefValueType>
+            PomdpModelType const& BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::pomdp() const {
+                if (preprocessedPomdp) {
+                    return *preprocessedPomdp;
+                } else {
+                    return *inputPomdp;
+                }
+            }
 
-            template class ApproximatePOMDPModelchecker<storm::models::sparse::Pomdp<double>>;
-            template class ApproximatePOMDPModelchecker<storm::models::sparse::Pomdp<storm::RationalNumber>>;
+            template class BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<double>>;
+            template class BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<storm::RationalNumber>>;
 
         }
     }

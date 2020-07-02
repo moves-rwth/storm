@@ -7,7 +7,7 @@ namespace storm {
     namespace pomdp {
         namespace modelchecker {
             template<typename ValueType>
-            struct ApproximatePOMDPModelCheckerOptions;
+            struct BeliefExplorationPomdpModelCheckerOptions;
         }
     }
     
@@ -62,7 +62,7 @@ namespace storm {
                 bool isStaticTriangulationModeSet() const;
     
                 template<typename ValueType>
-                void setValuesInOptionsStruct(storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<ValueType>& options) const;
+                void setValuesInOptionsStruct(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) const;
                 
                 // The name of the module.
                 static const std::string moduleName;

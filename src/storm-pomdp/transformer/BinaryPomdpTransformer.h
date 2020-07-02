@@ -21,6 +21,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> simpleMatrix;
                 std::vector<uint32_t> simpleObservations;
                 std::vector<uint64_t> originalToSimpleChoiceMap;
+                std::vector<uint64_t> simpleStateToOriginalState;
             };
             
             TransformationData transformTransitions(storm::models::sparse::Pomdp<ValueType> const& pomdp, bool transformSimple) const;

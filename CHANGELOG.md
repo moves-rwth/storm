@@ -5,9 +5,14 @@ This changelog lists only the most important changes. Smaller (bug)fixes as well
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
 
-Version 1.5.x
+Version 1.6.x
 -------------
-## Version 1.5.x (Under development)
+
+## Version 1.6.1 (??)
+- Prism program simplification improved
+- `storm-pomdp`: Fix for --transformsimple and --transformbinary when used with until formulae
+
+## Version 1.6.0 (2020/06)
 - Changed default Dd library from `cudd` to `sylvan`. The Dd library can be changed back to `cudd` using the command line switch `--ddlib`.
 - Scheduler export: Properly handle models with end components. Added export in `.json` format.
 - CMake: Search for Gurobi prefers new versions
@@ -20,6 +25,11 @@ Version 1.5.x
 - `storm-pomdp`: Implemented approximation algorithms that explore (a discritization of) the belief MDP, allowing to compute safe lower- and upper bounds for a given property.
 - `storm-pomdp`: Implemented almost-sure reachability computations: graph-based, one-shot SAT-based, and iterative SAT-based
 - `storm-pomdp': Various changes such that transformation to pMCs is now again supported (and improved)
+- Fixed several compiler warnings.
+
+
+Version 1.5.x
+-------------
 
 ## Version 1.5.1 (2020/03)
 - Jani models are now parsed using exact arithmetic.
