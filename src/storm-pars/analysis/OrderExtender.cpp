@@ -120,7 +120,7 @@ namespace storm {
 
 
             //TODO commented out for implementation purposes for now
-            //assert (order->compare(val1, val2) == Order::UNKNOWN);
+            assert (order->compare(val1, val2) == Order::UNKNOWN);
 
             Order::Node* n1 = order->getNode(val1);
             Order::Node* n2 = order->getNode(val2);
@@ -296,8 +296,9 @@ namespace storm {
                 assert (successors.size() >= 2);
                 STORM_PRINT("STATE WITH MORE THAN 2 SUCCS: " << currentState << std::endl);
 
-                //TODO UNDER CONSTRUCTION START
-                
+                // TODO UNDER CONSTRUCTION START
+                // TODO @Jip 
+                /*
                 auto temp = order->sortStatesUnorderedPair(&successors);
                 if (temp.first != std::pair<uint_fast64_t, uint_fast64_t>(numberOfStates, numberOfStates)) {
                     STORM_PRINT("   SUCCS COULD NOT BE ORDERED." << std::endl);
@@ -323,9 +324,9 @@ namespace storm {
                 }
 
                 //TODO UNDER CONSTRUCTION END
+                */
 
 
-                /*
                 auto highest = successors[0];
                 auto lowest = highest;
                 for (auto i = 1 ; i < successors.size(); ++i) {
@@ -363,7 +364,8 @@ namespace storm {
                 } else {
                     order->addBetween(currentState, order->getNode(highest), order->getNode(lowest));
                 }
-                */
+
+
 
             }
             return std::pair<uint_fast64_t, uint_fast64_t>(numberOfStates, numberOfStates);
