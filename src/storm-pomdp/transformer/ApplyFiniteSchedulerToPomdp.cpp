@@ -19,7 +19,7 @@ namespace storm {
         }
 
         struct RationalFunctionConstructor {
-            RationalFunctionConstructor() : cache(std::make_shared<RawPolynomialCache>()) {
+            RationalFunctionConstructor(std::shared_ptr<RawPolynomialCache> const& cache) : cache(cache) {
 
             }
 
@@ -31,11 +31,25 @@ namespace storm {
             std::shared_ptr<RawPolynomialCache> cache;
         };
 
+        template<typename ValueType>
+        std::shared_ptr<RawPolynomialCache> getCache(storm::models::sparse::Pomdp<ValueType> const& model) {
+            return std::make_shared<RawPolynomialCache>();
+        }
+
+        template<>
+        std::shared_ptr<RawPolynomialCache> getCache(storm::models::sparse::Pomdp<storm::RationalFunction> const& model) {
+            for (auto const& entry : model.getTransitionMatrix()) {
+                if(!entry.getValue().isConstant()) {
+                    return entry.getValue().nominatorAsPolynomial().pCache();
+                }
+            }
+            return std::make_shared<RawPolynomialCache>();
+        }
 
         template<typename ValueType>
         std::unordered_map<uint32_t, std::vector<storm::RationalFunction>> ApplyFiniteSchedulerToPomdp<ValueType>::getObservationChoiceWeights(PomdpFscApplicationMode applicationMode ) const {
             std::unordered_map<uint32_t, std::vector<storm::RationalFunction>> res;
-            RationalFunctionConstructor ratFuncConstructor;
+            RationalFunctionConstructor ratFuncConstructor(getCache(pomdp));
 
             for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
                 auto observation = pomdp.getObservation(state);
