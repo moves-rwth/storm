@@ -173,5 +173,6 @@ namespace storm {
 
         template
         class BinaryPomdpTransformer<double>;
+        template class BinaryPomdpTransformer<storm::RationalFunction>;
     }
 }

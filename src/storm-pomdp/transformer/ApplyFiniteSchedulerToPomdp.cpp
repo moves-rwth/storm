@@ -133,5 +133,6 @@ namespace storm {
 
         template
         class ApplyFiniteSchedulerToPomdp<double>;
+        template class ApplyFiniteSchedulerToPomdp<storm::RationalFunction>;
     }
 }
