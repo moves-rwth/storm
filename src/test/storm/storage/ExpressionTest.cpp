@@ -257,6 +257,10 @@ TEST(Expression, OperatorTest) {
     EXPECT_TRUE(tempExpression.hasIntegerType());
     ASSERT_NO_THROW(tempExpression = intVarExpression ^ rationalVarExpression);
     EXPECT_TRUE(tempExpression.hasRationalType());
+
+    STORM_SILENT_ASSERT_THROW(tempExpression = storm::expressions::modulo(trueExpression, piExpression), storm::exceptions::InvalidTypeException);
+    ASSERT_NO_THROW(tempExpression = storm::expressions::maximum(threeExpression, threeExpression));
+    EXPECT_TRUE(tempExpression.hasIntegerType());
 }
 
 TEST(Expression, SubstitutionTest) {
