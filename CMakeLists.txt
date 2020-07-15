@@ -194,10 +194,9 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
 	# using AppleClang
 	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.3)
 		message(FATAL_ERROR "AppleClang version must be at least 7.3.")
-	elseif ((CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 11.0) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 11.0))
-		message(WARNING "Temporarily disabling stack checks for AppleClang 11.0 or higher.")
-		# TODO: In release mode, stack checks currently fail at runtime. Might be a compiler bug as there does not seem to be faulty behavior.
-		# TODO: This seems to be fixed for clang 11.0.3 (bundled with XCode 11.5). Check again, if the clang version coming with the command line tools is greater than 11.0.0.
+	elseif ((CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 11.0.0) OR ((CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 11.0.0) AND (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 11.0.3)))
+		message(WARNING "Disabling stack checks for AppleClang versions between 11.0.0 and 11.0.2.")
+		# With these compiler versions, stack checks fail in release mode (most likely due to a bug in these versions).
 		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-stack-check")
 	endif()
 
