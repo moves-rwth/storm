@@ -3,8 +3,6 @@
 #include <string>
 #include <sstream>
 
-#include <boost/optional.hpp>
-
 namespace storm {
 
     struct StormVersion {
@@ -36,8 +34,14 @@ namespace storm {
         /// How many commits passed since the tag was last set.
         const static unsigned commitsAhead;
 
-        /// 0 iff there no files were modified in the checkout, 1 otherwise. If none, no information about dirtyness is given.
-        const static boost::optional<bool> dirty;
+        enum class DirtyState {
+            Clean, /// no files were modified in the checkout
+            Dirty, /// some files were modified
+            Unknown /// No information about dirtyness is given.
+        };
+        
+        /// Indicates whether files were modified
+        const static DirtyState dirty;
 
         /// The system which has compiled Storm.
         const static std::string systemName;
@@ -77,14 +81,10 @@ namespace storm {
             } else {
                 sstream << " built from archive";
             }
-            if (dirty) {
-                if (dirty.get()) {
-                    sstream << " (dirty)";
-                } else {
-                    sstream << " (clean)";
-                }
-            } else {
-                sstream << " (potentially dirty)";
+            switch (dirty) {
+                case DirtyState::Clean: sstream << " (clean)"; break;
+                case DirtyState::Dirty: sstream << " (dirty)"; break;
+                default: sstream << " (potentially dirty)"; break;
             }
             return sstream.str();
         }
