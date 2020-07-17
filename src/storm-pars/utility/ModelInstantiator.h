@@ -117,7 +117,29 @@ namespace storm {
                     
                     this->instantiatedModel = std::make_shared<ConstantSparseModelType>(std::move(components));
                 }
-                
+
+                template<typename PMT = ParametricSparseModelType>
+                typename std::enable_if<
+                        std::is_same<PMT,ConstantSparseModelType>::value
+                >::type
+                instantiate_helper(storm::utility::parametric::Valuation<ParametricType> const& valuation) {
+                    for(auto& functionResult : this->functions){
+                        functionResult.second=
+                                storm::utility::parametric::substitute(functionResult.first, valuation);
+                    }
+                }
+
+                template<typename PMT = ParametricSparseModelType>
+                typename std::enable_if<
+                        !std::is_same<PMT,ConstantSparseModelType>::value
+                >::type
+                instantiate_helper(storm::utility::parametric::Valuation<ParametricType> const& valuation) {
+                    for(auto& functionResult : this->functions){
+                        functionResult.second=storm::utility::convertNumber<ConstantType>(
+                                storm::utility::parametric::evaluate(functionResult.first, valuation));
+                    }
+                }
+
                 /*!
                  * Creates a matrix that has entries at the same position as the given matrix.
                  * The returned matrix is a stochastic matrix, i.e., the rows sum up to one.
