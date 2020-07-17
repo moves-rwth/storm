@@ -141,8 +141,11 @@ namespace storm {
             for (auto const& labelName : pomdp.getStateLabeling().getLabels()) {
                 storm::storage::BitVector newStates = pomdp.getStateLabeling().getStates(labelName);
                 newStates.resize(data.simpleMatrix.getRowGroupCount(), false);
-                for (uint64_t newState = pomdp.getNumberOfStates(); newState < data.simpleMatrix.getRowGroupCount(); ++newState ) {
-                    newStates.set(newState, newStates[data.simpleStateToOriginalState[newState]]);
+                if (labelName != "init") {
+                    for (uint64_t newState = pomdp.getNumberOfStates();
+                         newState < data.simpleMatrix.getRowGroupCount(); ++newState) {
+                        newStates.set(newState, newStates[data.simpleStateToOriginalState[newState]]);
+                    }
                 }
                 labeling.addLabel(labelName, std::move(newStates));
 
