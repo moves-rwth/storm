@@ -255,9 +255,7 @@ namespace storm {
                             auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
                             if (monotonicity == Monotonicity::Unknown || monotonicity == Monotonicity::Not) {
                                 monotonicity = monotonicityChecker->checkLocalMonotonicity(reachabilityOrder, state, var, region);
-                                if (monotonicity != Monotonicity::Unknown) {
-                                    localMonotonicityResult->setMonotonicity(state, var, monotonicity);
-                                }
+                                localMonotonicityResult->setMonotonicity(state, var, monotonicity);
                             }
 
                             bool ignoreUpperBound = monotonicity == Monotonicity::Constant
