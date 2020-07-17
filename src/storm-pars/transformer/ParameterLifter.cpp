@@ -248,6 +248,9 @@ namespace storm {
                         // the consideredVariables.size() least significant bits of vertex will always represent the next vertex
                         // (00...0 = lower boundaries for all variables, 11...1 = upper boundaries for all variables)
                         auto index = 0;
+                        if (variables.size() == 0) {
+                            localMonotonicityResult->setStateMonotone(state);
+                        }
                         for (auto var : variables) {
                             auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
                             if (monotonicity == Monotonicity::Unknown || monotonicity == Monotonicity::Not) {
