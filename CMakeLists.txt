@@ -194,9 +194,11 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
 	# using AppleClang
 	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.3)
 		message(FATAL_ERROR "AppleClang version must be at least 7.3.")
-	elseif ((CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 11.0.0) OR ((CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 11.0.0) AND (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 11.0.3)))
-		message(WARNING "Disabling stack checks for AppleClang versions between 11.0.0 and 11.0.2.")
-		# With these compiler versions, stack checks fail in release mode (most likely due to a bug in these versions).
+	elseif ((CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 11.0.0) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 11.0.0))
+		message(WARNING "Disabling stack checks for AppleClang version 11.0.0 or higher.")
+		# Stack checks are known to produce errors with the following Clang versions:
+		# 11.0.0: Runtime errors (stack_not_16_byte_aligned_error) when invoking storm in release mode
+		# 11.0.3: Catching exceptions thrown within PRISM parser does not work (The exception just falls through)
 		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-stack-check")
 	endif()
 
