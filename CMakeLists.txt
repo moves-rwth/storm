@@ -277,13 +277,17 @@ elseif (STORM_COMPILER_GCC)
 endif ()
 
 if (STORM_USE_THIN_LTO)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto=thin")
-	message(STATUS "Storm - Enabling link-time optimizations using ThinLTO.")
+    if (STORM_COMPILER_CLANG OR STORM_COMPILER_APPLECLANG)
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto=thin")
+        message(STATUS "Storm - Enabling link-time optimizations using ThinLTO.")
+    else()
+        message(FATAL_ERROR "Storm - ThinLTO only supported for Clang. Use regular LTO instead.")
+    endif()
 elseif (STORM_USE_LTO)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
 
     # Fix for problems that occurred when using LTO on gcc. This should be removed when it
-    # is not needed anymore as it makes the the already long link-step potentially longer.
+    # is not needed anymore as it makes the already long link-step potentially longer.
     if (STORM_COMPILER_GCC)
         set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto-partition=none")
     endif()
