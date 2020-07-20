@@ -184,8 +184,7 @@ class SFTBDDChecker {
      * at the given timebound as defined in
      * 10.1016/S0951-8320(01)00004-7
      */
-    ValueType getCIFAtTimebound(std::string const &beName,
-                                           ValueType timebound);
+    ValueType getCIFAtTimebound(std::string const &beName, ValueType timebound);
 
     /**
      * \return
@@ -197,8 +196,7 @@ class SFTBDDChecker {
      * Sorted after the order of dft->getBasicElements.
      * Faster than looping over getBirnbaumFactorAtTimebound.
      */
-    std::vector<ValueType> getAllCIFsAtTimebound(
-        ValueType timebound);
+    std::vector<ValueType> getAllCIFsAtTimebound(ValueType timebound);
 
     /**
      * \return
@@ -225,6 +223,147 @@ class SFTBDDChecker {
      * A value of 0 represents to calculate the whole array at once.
      */
     std::vector<std::vector<ValueType>> getAllCIFsAtTimepoints(
+        std::vector<ValueType> const &timepoints, size_t chunksize = 0);
+
+    /**
+     * \return
+     * The Diagnostic importance factor of the given basic event
+     * at the given timebound as defined in
+     * 10.1016/S0951-8320(01)00004-7
+     */
+    ValueType getDIFAtTimebound(std::string const &beName, ValueType timebound);
+
+    /**
+     * \return
+     * The Diagnostic importance factor of all basic event
+     * at the given timebound as defined in
+     * 10.1016/S0951-8320(01)00004-7
+     *
+     * \note
+     * Sorted after the order of dft->getBasicElements.
+     * Faster than looping over getBirnbaumFactorAtTimebound.
+     */
+    std::vector<ValueType> getAllDIFsAtTimebound(ValueType timebound);
+
+    /**
+     * \return
+     * The Diagnostic importance factor of the given basic event
+     * defined in
+     * 10.1016/S0951-8320(01)00004-7
+     *
+     * \param chunksize
+     * Splits the timepoints array into chunksize chunks.
+     * A value of 0 represents to calculate the whole array at once.
+     */
+    std::vector<ValueType> getDIFsAtTimepoints(
+        std::string const &beName, std::vector<ValueType> const &timepoints,
+        size_t chunksize = 0);
+
+    /**
+     * \return
+     * The Diagnostic importance factor of all basic event
+     * defined in
+     * 10.1016/S0951-8320(01)00004-7
+     *
+     * \param chunksize
+     * Splits the timepoints array into chunksize chunks.
+     * A value of 0 represents to calculate the whole array at once.
+     */
+    std::vector<std::vector<ValueType>> getAllDIFsAtTimepoints(
+        std::vector<ValueType> const &timepoints, size_t chunksize = 0);
+
+    /**
+     * \return
+     * The risk achievement worth of the given basic event
+     * at the given timebound as defined in
+     * 10.1016/S0951-8320(01)00004-7
+     */
+    ValueType getRAWAtTimebound(std::string const &beName, ValueType timebound);
+
+    /**
+     * \return
+     * The risk achievement worth of all basic event
+     * at the given timebound as defined in
+     * 10.1016/S0951-8320(01)00004-7
+     *
+     * \note
+     * Sorted after the order of dft->getBasicElements.
+     * Faster than looping over getBirnbaumFactorAtTimebound.
+     */
+    std::vector<ValueType> getAllRAWsAtTimebound(ValueType timebound);
+
+    /**
+     * \return
+     * The risk achievement worth of the given basic event
+     * defined in
+     * 10.1016/S0951-8320(01)00004-7
+     *
+     * \param chunksize
+     * Splits the timepoints array into chunksize chunks.
+     * A value of 0 represents to calculate the whole array at once.
+     */
+    std::vector<ValueType> getRAWsAtTimepoints(
+        std::string const &beName, std::vector<ValueType> const &timepoints,
+        size_t chunksize = 0);
+
+    /**
+     * \return
+     * The risk achievement worth of all basic event
+     * defined in
+     * 10.1016/S0951-8320(01)00004-7
+     *
+     * \param chunksize
+     * Splits the timepoints array into chunksize chunks.
+     * A value of 0 represents to calculate the whole array at once.
+     */
+    std::vector<std::vector<ValueType>> getAllRAWsAtTimepoints(
+        std::vector<ValueType> const &timepoints, size_t chunksize = 0);
+
+    /**
+     * \return
+     * The risk reduction worth of the given basic event
+     * at the given timebound as defined in
+     * 10.1016/S0951-8320(01)00004-7
+     */
+    ValueType getRRWAtTimebound(std::string const &beName, ValueType timebound);
+
+    /**
+     * \return
+     * The risk reduction worth of all basic event
+     * at the given timebound as defined in
+     * 10.1016/S0951-8320(01)00004-7
+     *
+     * \note
+     * Sorted after the order of dft->getBasicElements.
+     * Faster than looping over getBirnbaumFactorAtTimebound.
+     */
+    std::vector<ValueType> getAllRRWsAtTimebound(ValueType timebound);
+
+    /**
+     * \return
+     * The risk reduction worth of the given basic event
+     * defined in
+     * 10.1016/S0951-8320(01)00004-7
+     *
+     * \param chunksize
+     * Splits the timepoints array into chunksize chunks.
+     * A value of 0 represents to calculate the whole array at once.
+     */
+    std::vector<ValueType> getRRWsAtTimepoints(
+        std::string const &beName, std::vector<ValueType> const &timepoints,
+        size_t chunksize = 0);
+
+    /**
+     * \return
+     * The risk reduction worth of all basic event
+     * defined in
+     * 10.1016/S0951-8320(01)00004-7
+     *
+     * \param chunksize
+     * Splits the timepoints array into chunksize chunks.
+     * A value of 0 represents to calculate the whole array at once.
+     */
+    std::vector<std::vector<ValueType>> getAllRRWsAtTimepoints(
         std::vector<ValueType> const &timepoints, size_t chunksize = 0);
 
    private:
