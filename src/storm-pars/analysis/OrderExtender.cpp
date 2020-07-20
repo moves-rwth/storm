@@ -109,7 +109,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        void OrderExtender<ValueType, ConstantType>::handleAssumption(std::shared_ptr<Order> order, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
+        void OrderExtender<ValueType, ConstantType>::handleAssumption(std::shared_ptr<Order> order, std::shared_ptr<expressions::BinaryRelationExpression> assumption) const {
             assert (assumption != nullptr);
             assert (assumption->getFirstOperand()->isVariable() && assumption->getSecondOperand()->isVariable());
 
@@ -118,7 +118,10 @@ namespace storm {
             auto val1 = std::stoul(var1.getName(), nullptr, 0);
             auto val2 = std::stoul(var2.getName(), nullptr, 0);
 
+
+            //TODO commented out for implementation purposes for now
             assert (order->compare(val1, val2) == Order::UNKNOWN);
+
             Order::Node* n1 = order->getNode(val1);
             Order::Node* n2 = order->getNode(val2);
 
@@ -291,10 +294,44 @@ namespace storm {
                 }
             } else {
                 assert (successors.size() >= 2);
+                STORM_PRINT("STATE WITH MORE THAN 2 SUCCS: " << currentState << std::endl);
+
+                // TODO UNDER CONSTRUCTION START
+                // TODO @Jip 
+                /*
+                auto temp = order->sortStatesUnorderedPair(&successors);
+                if (temp.first != std::pair<uint_fast64_t, uint_fast64_t>(numberOfStates, numberOfStates)) {
+                    STORM_PRINT("   SUCCS COULD NOT BE ORDERED." << std::endl);
+                    return temp.first;
+                }
+
+                auto sortedSuccs = temp.second;
+
+                //TODO Assumptions or just the addBetween()?
+                //order->addBetween(currentState, sortedSuccs[0], sortedSuccs[sortedSuccs.size()-1]);
+
+
+                for(auto i = 0; i < sortedSuccs.size(); i++) {
+                    auto next = sortedSuccs[i];
+                    STORM_PRINT("   SUCC " << next << std::endl);
+                    auto assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(matrix);
+                    auto res = assumptionMaker->createAndCheckAssumptions(currentState, next, order, region);
+                    if (res.size() == 1 && res.begin()->second == VALID) {
+                        STORM_PRINT("       FOUND A SINGLE WORKING ASSUMPTION." << std::endl);
+                        handleAssumption(order, res.begin()->first);
+                        continue;
+                    }
+                }
+
+                //TODO UNDER CONSTRUCTION END
+                */
+
+
                 auto highest = successors[0];
                 auto lowest = highest;
                 for (auto i = 1 ; i < successors.size(); ++i) {
                     auto next = successors[i];
+
                     auto compareWithHighest = order->compare(next, highest);
                     if (!cyclic && !usePLA && compareWithHighest == Order::UNKNOWN) {
                         // Only use pla for acyclic models
@@ -327,12 +364,15 @@ namespace storm {
                 } else {
                     order->addBetween(currentState, order->getNode(highest), order->getNode(lowest));
                 }
+
+
+
             }
             return std::pair<uint_fast64_t, uint_fast64_t>(numberOfStates, numberOfStates);
         }
 
         template <typename ValueType, typename ConstantType>
-        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByForwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors) {
+        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByForwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors) const {
             // If this is the first state to add, we add it between =) and =(.
             auto succ1 = successors[0];
             auto compareSucc1 = order->compare(succ1, currentState);
@@ -369,7 +409,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) {
+        Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) const {
             assert (order->compare(state1, state2) == Order::UNKNOWN);
             assert(minValues.size() > state1 && minValues.size() > state2);
             assert(maxValues.size() > state1 && maxValues.size() > state2);

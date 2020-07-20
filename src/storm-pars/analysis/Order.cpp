@@ -152,7 +152,8 @@ namespace storm {
         }
 
         void Order::addRelationNodes(Order::Node *above, Order::Node * below) {
-            assert (compare(above, below) == UNKNOWN);
+            //TODO commented out for implementation purposes for now
+            //assert (compare(above, below) == UNKNOWN);
 
             for (auto const &state : above->states) {
                 below->statesAbove.set(state);
@@ -194,7 +195,7 @@ namespace storm {
 
         /*** Checking on the order ***/
 
-        Order::NodeComparison Order::compare(uint_fast64_t state1, uint_fast64_t state2) {
+        Order::NodeComparison Order::compare(uint_fast64_t state1, uint_fast64_t state2){
             return compare(getNode(state1), getNode(state2));
         }
 
@@ -238,58 +239,58 @@ namespace storm {
             return UNKNOWN;
         }
 
-        bool Order::contains(uint_fast64_t state) {
+        bool Order::contains(uint_fast64_t state) const {
             return state < addedStates->size() && (*addedStates)[state];
         }
 
-        storm::storage::BitVector* Order::getAddedStates() {
+        storm::storage::BitVector* Order::getAddedStates() const {
             return addedStates;
         }
 
-        Order::Node *Order::getBottom() {
+        Order::Node *Order::getBottom() const {
             return bottom;
         }
 
-        bool Order::getDoneBuilding() {
+        bool Order::getDoneBuilding() const {
             return doneBuilding;
         }
 
-        uint_fast64_t Order::getNextAddedState(uint_fast64_t state) {
+        uint_fast64_t Order::getNextAddedState(uint_fast64_t state) const {
             return addedStates->getNextSetIndex(state + 1);
         }
 
-        Order::Node *Order::getNode(uint_fast64_t stateNumber) {
+        Order::Node *Order::getNode(uint_fast64_t stateNumber) const {
             assert (stateNumber < numberOfStates);
             return nodes[stateNumber];
         }
 
-        std::vector<Order::Node*> Order::getNodes() {
+        std::vector<Order::Node*> Order::getNodes() const {
             return nodes;
         }
 
-        Order::Node *Order::getTop() {
+        Order::Node *Order::getTop() const {
             return top;
         }
 
-        uint_fast64_t Order::getNumberOfAddedStates() {
+        uint_fast64_t Order::getNumberOfAddedStates() const {
             return numberOfAddedStates;
         }
 
-        uint_fast64_t Order::getNumberOfStates() {
+        uint_fast64_t Order::getNumberOfStates() const {
             return numberOfStates;
         }
 
-        bool Order::isBottomState(uint_fast64_t state) {
+        bool Order::isBottomState(uint_fast64_t state) const {
             auto states = bottom->states;
             return states.find(state) != states.end();
         }
 
-        bool Order::isTopState(uint_fast64_t state) {
+        bool Order::isTopState(uint_fast64_t state) const {
             auto states = top->states;
             return states.find(state) != states.end();
         }
 
-        bool Order::isOnlyBottomTopOrder() {
+        bool Order::isOnlyBottomTopOrder() const {
             return onlyBottomTopOrder;
         }
 
@@ -329,6 +330,41 @@ namespace storm {
             }
             assert (result.size() == numberOfStatesToSort);
             return result;
+        }
+
+        std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> Order::sortStatesUnorderedPair(const std::vector<uint_fast64_t>* states) {
+            assert (states != nullptr);
+            uint_fast64_t numberOfStatesToSort = states->size();
+            std::vector<uint_fast64_t> result;
+            // Go over all states
+            for (auto state : *states) {
+                bool unknown = false;
+                if (result.size() == 0) {
+                    result.push_back(state);
+                } else {
+                    bool added = false;
+                    for (auto itr = result.begin();  itr != result.end(); ++itr) {
+                        auto compareRes = compare(state, (*itr));
+                        if (compareRes == ABOVE || compareRes == SAME) {
+                            // insert at current pointer (while keeping other values)
+                            result.insert(itr, state);
+                            added = true;
+                            break;
+                        } else if (compareRes == UNKNOWN) {
+                            return std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>>(std::pair<uint_fast64_t, uint_fast64_t>((*itr), state), result);
+                        }
+                    }
+                    if (unknown) {
+                        break;
+                    }
+                    if (!added) {
+                        result.push_back(state);
+                    }
+                }
+            }
+
+            assert (result.size() == numberOfStatesToSort);
+            return std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>>(std::pair<uint_fast64_t, uint_fast64_t>(numberOfStates, numberOfStates), result);
         }
 
         std::vector<uint_fast64_t> Order::sortStates(storm::storage::BitVector* states) {
@@ -376,11 +412,11 @@ namespace storm {
             statesToHandle.push_back(state);
         }
 
-        std::vector<uint_fast64_t> Order::getStatesSorted() {
+        std::vector<uint_fast64_t> Order::getStatesSorted() const {
             return statesSorted;
         }
 
-        std::vector<uint_fast64_t> Order::getStatesToHandle() {
+        std::vector<uint_fast64_t> Order::getStatesToHandle() const {
             return statesToHandle;
         }
 
@@ -414,7 +450,7 @@ namespace storm {
 
         /*** Output ***/
 
-        void Order::toDotOutput() {
+        void Order::toDotOutput() const {
             // Graphviz Output start
             STORM_PRINT("Dot Output:" << std::endl << "digraph model {" << std::endl);
 
@@ -450,16 +486,20 @@ namespace storm {
             STORM_PRINT("}" << std::endl);
         }
 
-        void Order::dotOutputToFile(std::ofstream& dotOutfile) {
+        void Order::dotOutputToFile(std::ofstream& dotOutfile) const {
             // Graphviz Output start
             dotOutfile << "Dot Output:" << std::endl << "digraph model {" << std::endl;
 
             // Vertices of the digraph
             storm::storage::BitVector stateCoverage = storm::storage::BitVector(numberOfStates, true);
             for (uint_fast64_t i = stateCoverage.getNextSetIndex(0); i!= numberOfStates; i= stateCoverage.getNextSetIndex(i+1)) {
+                if (getNode(i) == NULL) {
+                    continue;
+                }
                 for (uint_fast64_t j = i + 1; j < numberOfStates; j++) {
                     if (getNode(j) == getNode(i)) stateCoverage.set(j, false);
                 }
+
                 dotOutfile << "\t" << nodeName(*getNode(i)) << " [ label = \"" << nodeLabel(*getNode(i)) << "\" ];" << std::endl;
             }
 
@@ -467,6 +507,10 @@ namespace storm {
             for (uint_fast64_t i = stateCoverage.getNextSetIndex(0); i!= numberOfStates; i= stateCoverage.getNextSetIndex(i+1)) {
                 storm::storage::BitVector v = storm::storage::BitVector(numberOfStates, false);
                 Node* currentNode = getNode(i);
+                if (currentNode == NULL){
+                    continue;
+                }
+
                 for (uint_fast64_t s1 : getNode(i)->statesAbove) {
                     v |= (currentNode->statesAbove & getNode(s1)->statesAbove);
                 }
@@ -562,13 +606,13 @@ namespace storm {
             return found;
         }
 
-        std::string Order::nodeName(Node n){
+        std::string Order::nodeName(Node n) const {
             auto itr = n.states.begin();
             std::string name = "n" + std::to_string(*itr);
             return name;
         }
 
-        std::string Order::nodeLabel(Node n){
+        std::string Order::nodeLabel(Node n) const {
             if (n.states == top->states) return "=)";
             if (n.states == bottom->states) return "=(";
             auto itr = n.states.begin();

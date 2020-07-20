@@ -16,11 +16,11 @@ namespace storm {
 
             LocalMonotonicityResult(uint_fast64_t numberOfStates);
 
-            Monotonicity getMonotonicity(uint_fast64_t state, VariableType var);
+            Monotonicity getMonotonicity(uint_fast64_t state, VariableType var) const;
 
             void setMonotonicity(uint_fast64_t state, VariableType var, Monotonicity mon);
 
-            std::shared_ptr<MonotonicityResult<VariableType>> getGlobalMonotonicityResult();
+            std::shared_ptr<MonotonicityResult<VariableType>> getGlobalMonotonicityResult() const;
 
             /*!
              * Constructs a new LocalMonotonicityResult object that is a copy of the current one
@@ -28,7 +28,7 @@ namespace storm {
              */
             std::shared_ptr<LocalMonotonicityResult<VariableType>> copy();
 
-            bool isDone();
+            bool isDone() const;
 
             void setStateMonotone(uint_fast64_t state);
 
