@@ -27,7 +27,7 @@ namespace storm {
                 std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
                 size_t const chunksize) {
             if(calculateMttf) {
-                std::cout << "The numerically approximated MTTF is " << storm::dft::utility::MTTFHelper(dft) << '\n';
+                std::cout << "The numerically approximated MTTF is " << storm::dft::utility::MTTFHelperProceeding(dft) << '\n';
             }
             if(useModularisation && calculateProbability) {
                 storm::modelchecker::DFTModularizer checker{dft};

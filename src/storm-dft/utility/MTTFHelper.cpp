@@ -22,9 +22,10 @@ namespace storm {
 namespace dft {
 namespace utility {
 
-double MTTFHelper(std::shared_ptr<storm::storage::DFT<double>> const dft,
-                  double const stepsize) {
-    constexpr size_t chunksize{101};
+double MTTFHelperProceeding(
+    std::shared_ptr<storm::storage::DFT<double>> const dft,
+    double const stepsize) {
+    constexpr size_t chunksize{1001};
     storm::modelchecker::DFTModularizer checker{dft};
 
     std::vector<double> timepoints{};
@@ -38,10 +39,15 @@ double MTTFHelper(std::shared_ptr<storm::storage::DFT<double>> const dft,
 
     double y1{0.0}, y2{0.0}, y3{1.0 - probabilities[0]};
     size_t i{1};
-    while (std::abs(delta) > 1e-7) {
+    auto currentStepsize{stepsize};
+    while (std::abs(delta) > 1e-12) {
         if (i + 1 >= probabilities.size()) {
             double const start{timepoints.back()};
-            linspace(timepoints, start, stepsize);
+            // double stepsize
+            if (currentStepsize < 1e-3) {
+                currentStepsize *= 2;
+            }
+            linspace(timepoints, start, currentStepsize);
             probabilities = checker.getProbabilitiesAtTimepoints(timepoints);
             i = 1;
         }
@@ -52,11 +58,47 @@ double MTTFHelper(std::shared_ptr<storm::storage::DFT<double>> const dft,
         i += 2;
 
         delta = y1 + 4.0 * y2 + y3;
-        delta /= 6.0;
+        delta /= 3.0;
+        delta *= currentStepsize;
         rval += delta;
     }
 
-    return 2 * stepsize * rval;
+    return rval;
+}
+
+double MTTFHelperVariableChange(
+    std::shared_ptr<storm::storage::DFT<double>> const dft,
+    double const stepsize) {
+    constexpr size_t chunksize{1001};
+    storm::modelchecker::DFTModularizer checker{dft};
+
+    std::vector<double> timepoints{};
+    timepoints.resize(static_cast<size_t>(1 / stepsize) - 1);
+    for (size_t i{0}; i < timepoints.size(); ++i) {
+        double x = (i + 1) * stepsize;
+        x = x / (1 - x);
+        timepoints[i] = x;
+    }
+
+    std::vector<double> probabilities{
+        checker.getProbabilitiesAtTimepoints(timepoints, chunksize)};
+
+    double rval{0};
+    for (size_t i{0}; i < probabilities.size(); ++i) {
+        double x{(i + 1) * stepsize};
+        x = 1 / (1 - x);
+        x = x * x;
+        auto &p{probabilities[i]};
+        p = (1 - p) * x;
+
+        rval += p;
+    }
+    // remove the ends
+    rval -= (probabilities.front() + probabilities.back()) / 2;
+    // resize
+    rval *= stepsize;
+
+    return rval;
 }
 
 }  // namespace utility

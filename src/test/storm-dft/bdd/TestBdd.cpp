@@ -112,12 +112,14 @@ TEST(TestBdd, AndOrFormula) {
 
 TEST(TestBdd, AndMTTF) {
     auto dft = storm::api::loadDFTJsonString<double>(AndBdd);
-    EXPECT_NEAR(storm::dft::utility::MTTFHelper(dft), 2.164042561, 1e-6);
+    EXPECT_NEAR(storm::dft::utility::MTTFHelperProceeding(dft), 2.164042561, 1e-6);
+    EXPECT_NEAR(storm::dft::utility::MTTFHelperVariableChange(dft), 2.164042561, 1e-6);
 }
 
 TEST(TestBdd, VotMTTF) {
     auto dft = storm::api::loadDFTJsonString<double>(VotBdd);
-    EXPECT_NEAR(storm::dft::utility::MTTFHelper(dft), 0.8415721072, 1e-6);
+    EXPECT_NEAR(storm::dft::utility::MTTFHelperProceeding(dft), 0.8415721072, 1e-6);
+    EXPECT_NEAR(storm::dft::utility::MTTFHelperVariableChange(dft), 0.8415721072, 1e-6);
 }
 
 TEST(TestBdd, And) {
