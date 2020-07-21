@@ -136,13 +136,17 @@ namespace storm {
                                     for (auto& newKnownRegion : newKnownRegions) {
                                         if (res == RegionResult::CenterSat) {
                                             result.push_back(std::move(std::make_pair(newKnownRegion, RegionResult::AllSat)));
+                                            STORM_LOG_INFO("Region " << newKnownRegion << " is AllSat, discovered with help of monotonicity");
+                                            fractionOfAllSatArea += newKnownRegion.area() / areaOfParameterSpace;
                                         }  else {
                                             assert (res == RegionResult::CenterViolated);
                                             result.push_back(std::move(std::make_pair(newKnownRegion, RegionResult::AllViolated)));
+                                            STORM_LOG_INFO("Region " << newKnownRegion << " is AllViolated, discovered with help of monotonicity");
+                                            fractionOfAllViolatedArea += newKnownRegion.area() / areaOfParameterSpace;
                                         }
+
                                         // Only add one to analyzed regions, don't pop
                                         fractionOfUndiscoveredArea -= newKnownRegion.area() / areaOfParameterSpace;
-                                        fractionOfAllViolatedArea += newKnownRegion.area() / areaOfParameterSpace;
                                         ++numOfAnalyzedRegions;
                                     }
                                 } else {
