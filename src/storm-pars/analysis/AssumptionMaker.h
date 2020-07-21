@@ -15,6 +15,7 @@ namespace storm {
         class AssumptionMaker {
             typedef std::shared_ptr<expressions::BinaryRelationExpression> AssumptionType;
         public:
+            // TODO: @Svenja, could you update the documentation of the public methods?
             /*!
              * Constructs AssumptionMaker based on the order extender, the assumption checker and number of states of the mode
              *

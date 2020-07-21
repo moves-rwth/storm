@@ -152,8 +152,7 @@ namespace storm {
         }
 
         void Order::addRelationNodes(Order::Node *above, Order::Node * below) {
-            //TODO commented out for implementation purposes for now
-            //assert (compare(above, below) == UNKNOWN);
+            assert (compare(above, below) != BELOW);
 
             for (auto const &state : above->states) {
                 below->statesAbove.set(state);

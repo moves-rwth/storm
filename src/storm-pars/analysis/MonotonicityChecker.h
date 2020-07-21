@@ -29,7 +29,7 @@ namespace storm {
             typedef typename utility::parametric::CoefficientType<ValueType>::type CoefficientType;
             typedef typename MonotonicityResult<VariableType>::Monotonicity Monotonicity;
             typedef typename storage::ParameterRegion<ValueType> Region;
-
+// TODO: @Svenja, could you update the documentation of the public methods?
 
             MonotonicityChecker(storage::SparseMatrix<ValueType> matrix);
 

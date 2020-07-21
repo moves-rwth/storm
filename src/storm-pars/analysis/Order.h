@@ -11,7 +11,7 @@
 namespace storm {
             namespace analysis {
                 class Order {
-
+// TODO: @Svenja, could you update the documentation of the public methods?
                 public:
                     /*!
                      * Constants for comparison of nodes/states

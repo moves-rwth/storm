@@ -22,7 +22,7 @@ namespace storm {
             typedef typename utility::parametric::VariableType<ValueType>::type VariableType;
             typedef typename MonotonicityResult<VariableType>::Monotonicity Monotonicity;
 
-            // TODO: documentation
+            // TODO: @Svenja, could you update the documentation of the public methods?
            /*!
             * Constructs OrderExtender which can extend an order
             *

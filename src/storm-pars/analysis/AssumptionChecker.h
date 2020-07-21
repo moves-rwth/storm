@@ -27,6 +27,7 @@ namespace storm {
         public:
             typedef typename utility::parametric::VariableType<ValueType>::type VariableType;
             typedef typename utility::parametric::CoefficientType<ValueType>::type CoefficientType;
+            // TODO: @Svenja, could you update the documentation of the public methods?
             /*!
              * Constructs an AssumptionChecker.
              */

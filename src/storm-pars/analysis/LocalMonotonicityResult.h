@@ -12,6 +12,7 @@ namespace storm {
         class LocalMonotonicityResult {
 
         public:
+            // TODO: @Svenja, could you update the documentation of the public methods?
             typedef typename MonotonicityResult<VariableType>::Monotonicity Monotonicity;
 
             LocalMonotonicityResult(uint_fast64_t numberOfStates);

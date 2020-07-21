@@ -2,7 +2,6 @@
 
 namespace storm {
     namespace analysis {
-        // TODO: Do we need global monres?
 
         template <typename VariableType>
         LocalMonotonicityResult<VariableType>::LocalMonotonicityResult(uint_fast64_t numberOfStates) {
@@ -42,8 +41,6 @@ namespace storm {
             }
         }
 
-
-
         template <typename VariableType>
         std::shared_ptr<LocalMonotonicityResult<VariableType>> LocalMonotonicityResult<VariableType>::copy() {
             std::shared_ptr<LocalMonotonicityResult<VariableType>> copy = std::make_shared<LocalMonotonicityResult<VariableType>>(stateMonRes.size());
@@ -53,7 +50,6 @@ namespace storm {
                 }
             }
             copy->setGlobalMonotonicityResult(this->getGlobalMonotonicityResult()->copy());
-            // TODO fixen van dit
             copy->setStatesMonotone(statesMonotone);
             return copy;
         }

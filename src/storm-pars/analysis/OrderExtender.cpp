@@ -118,8 +118,6 @@ namespace storm {
             auto val1 = std::stoul(var1.getName(), nullptr, 0);
             auto val2 = std::stoul(var2.getName(), nullptr, 0);
 
-
-            //TODO commented out for implementation purposes for now
             assert (order->compare(val1, val2) == Order::UNKNOWN);
 
             Order::Node* n1 = order->getNode(val1);
