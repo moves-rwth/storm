@@ -210,6 +210,8 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region) {
+            // TODO: dit niet zo doen maar meegeven via functie?
+            this->region = region;
             if (order == nullptr) {
                 order = getBottomTopOrder();
             }
@@ -294,79 +296,32 @@ namespace storm {
                 }
             } else {
                 assert (successors.size() >= 2);
-                STORM_PRINT("STATE WITH MORE THAN 2 SUCCS: " << currentState << std::endl);
 
-                // TODO UNDER CONSTRUCTION START
-                // TODO @Jip 
-                /*
                 auto temp = order->sortStatesUnorderedPair(&successors);
-                if (temp.first != std::pair<uint_fast64_t, uint_fast64_t>(numberOfStates, numberOfStates)) {
-                    STORM_PRINT("   SUCCS COULD NOT BE ORDERED." << std::endl);
+                if (temp.first.first != numberOfStates) {
                     return temp.first;
                 }
 
                 auto sortedSuccs = temp.second;
-
-                //TODO Assumptions or just the addBetween()?
-                //order->addBetween(currentState, sortedSuccs[0], sortedSuccs[sortedSuccs.size()-1]);
-
-
-                for(auto i = 0; i < sortedSuccs.size(); i++) {
+                for (auto i = 0; i < sortedSuccs.size(); i++) {
                     auto next = sortedSuccs[i];
-                    STORM_PRINT("   SUCC " << next << std::endl);
-                    auto assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(matrix);
-                    auto res = assumptionMaker->createAndCheckAssumptions(currentState, next, order, region);
-                    if (res.size() == 1 && res.begin()->second == VALID) {
-                        STORM_PRINT("       FOUND A SINGLE WORKING ASSUMPTION." << std::endl);
-                        handleAssumption(order, res.begin()->first);
-                        continue;
+                    if (i == 0) {
+                        // next is the highest one in the order
+                        order->addBelow(currentState, order->getNode(next));
+                    } else if (i == sortedSuccs.size() - 1) {
+                        // next is the lowest one in the order
+                        order->addRelationNodes(order->getNode(currentState), order->getNode(next));
+                    } else {
+                        auto assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(matrix);
+                        auto res = assumptionMaker->createAndCheckAssumptions(currentState, next, order, region);
+                        if (res.size() == 1 && res.begin()->second == VALID) {
+                            handleAssumption(order, res.begin()->first);
+                        }
                     }
                 }
-
-                //TODO UNDER CONSTRUCTION END
-                */
-
-
-                auto highest = successors[0];
-                auto lowest = highest;
-                for (auto i = 1 ; i < successors.size(); ++i) {
-                    auto next = successors[i];
-
-                    auto compareWithHighest = order->compare(next, highest);
-                    if (!cyclic && !usePLA && compareWithHighest == Order::UNKNOWN) {
-                        // Only use pla for acyclic models
-                        getMinMaxValues();
-                    }
-                    if (usePLA && compareWithHighest == Order::UNKNOWN) {
-                        compareWithHighest = addStatesBasedOnMinMax(order, next, highest);
-                    }
-                    if (compareWithHighest == Order::ABOVE) {
-                        highest = next;
-                    } else if (compareWithHighest == Order::UNKNOWN) {
-                        // Return current successors as the "problematic ones"
-                        return std::pair<uint_fast64_t, uint_fast64_t>(next, highest);
-                    }
-
-                    auto compareWithLowest = order->compare(lowest, next);
-                    if (usePLA && compareWithLowest == Order::UNKNOWN) {
-                        compareWithLowest = addStatesBasedOnMinMax(order, lowest, next);
-                    }
-                    if (compareWithLowest == Order::ABOVE) {
-                        lowest = next;
-                    } else if (compareWithLowest == Order::UNKNOWN) {
-                        // Return current successors as the "problematic ones"
-                        return std::pair<uint_fast64_t, uint_fast64_t>(next, lowest);
-                    }
-                }
-
-                if (lowest == highest) {
-                    order->addToNode(currentState, order->getNode(highest));
-                } else {
-                    order->addBetween(currentState, order->getNode(highest), order->getNode(lowest));
-                }
-
-
-
+                assert (order->contains(currentState)
+                        && order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE
+                        && order->compare(order->getNode(currentState), order->getTop()) == Order::BELOW);
             }
             return std::pair<uint_fast64_t, uint_fast64_t>(numberOfStates, numberOfStates);
         }

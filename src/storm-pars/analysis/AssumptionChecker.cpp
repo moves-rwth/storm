@@ -167,16 +167,22 @@ namespace storm {
             auto row2 = matrix.getRow(std::stoi(var2));
 
             bool orderKnown = true;
+            // if the state with number var1 (var2) occurs in the successors of the state with number var2 (var1) we need to add var1 == expr1 (var2 == expr2) to the bounds
+            bool addVar1 = false;
+            bool addVar2 = false;
             // Check if the order between the different successors is known
             // Also start creating expression for order of states
             expressions::Expression exprOrderSucc = manager->boolean(true);
             std::set<expressions::Variable> stateVariables;
             for (auto itr1 = row1.begin(); orderKnown && itr1 != row1.end(); ++itr1) {
+                addVar2 |= std::to_string(itr1->getColumn()) == var2;
                 auto varname1 = "s" + std::to_string(itr1->getColumn());
                 if (!manager->hasVariable(varname1)) {
                     stateVariables.insert(manager->declareRationalVariable(varname1));
                 }
+
                 for (auto itr2 = row2.begin(); orderKnown && itr2 != row2.end(); ++itr2) {
+                    addVar1 |= std::to_string(itr2->getColumn()) == var1;
                     if (itr1->getColumn() != itr2->getColumn()) {
                         auto varname2 = "s" + std::to_string(itr2->getColumn());
                         if (!manager->hasVariable(varname2)) {
@@ -215,8 +221,7 @@ namespace storm {
                 // Create expression for the assumption based on the relation to successors
                 // It is the negation of actual assumption
                 expressions::Expression exprToCheck ;
-                if (assumption->getRelationType() ==
-                    expressions::BinaryRelationExpression::RelationType::Greater) {
+                if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater) {
                     exprToCheck = expr1 <= expr2;
                 } else {
                     assert (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Equal);
@@ -226,6 +231,12 @@ namespace storm {
                 auto variables = manager->getVariables();
                 // Bounds for the state probabilities and parameters
                 expressions::Expression exprBounds =  manager->boolean(true);
+                if (addVar1) {
+                    exprBounds = exprBounds && (manager->getVariable("s" + var1) == expr1);
+                }
+                if (addVar2) {
+                    exprBounds = exprBounds && (manager->getVariable("s" + var2) == expr2);
+                }
                 for (auto var : variables) {
                     if (find(stateVariables.begin(), stateVariables.end(), var) != stateVariables.end()) {
                         // the var is a state

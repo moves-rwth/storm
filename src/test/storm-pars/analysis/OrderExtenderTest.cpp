@@ -363,7 +363,7 @@ TEST(OrderExtenderTest, casestudy2_on_matrix) {
 
     // Create the region
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
-    auto region=storm::api::parseRegion<storm::RationalFunction>("0.51 <= p <= 0.9", modelParameters);
+    auto region=storm::api::parseRegion<storm::RationalFunction>("0.1 <= p <= 0.2", modelParameters);
 
     // For order extender
     storm::modelchecker::SparsePropositionalModelChecker<storm::models::sparse::Model<storm::RationalFunction>> propositionalChecker(*model);
