@@ -41,6 +41,8 @@ namespace carl {
 namespace storm {
     typedef carl::Variable RationalFunctionVariable;
 
+    RationalFunctionVariable createRFVariable(std::string const& name);
+
 #if defined(STORM_HAVE_CLN) && defined(STORM_USE_CLN_RF)
     typedef cln::cl_RA RationalFunctionCoefficient;
 #elif defined(STORM_HAVE_GMP) && !defined(STORM_USE_CLN_RF)

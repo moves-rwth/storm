@@ -60,7 +60,7 @@ namespace storm {
                     storm::RationalFunction lastWeight = storm::utility::one<storm::RationalFunction>();
                     for (uint64_t a = 0; a < pomdp.getNumberOfChoices(state) - 1; ++a) {
                         std::string varName = "p" + std::to_string(observation) + "_" + std::to_string(a);
-                        storm::RationalFunction var = ratFuncConstructor.translate(carl::freshRealVariable(varName));
+                        storm::RationalFunction var = ratFuncConstructor.translate(storm::createRFVariable(varName));
                         if (applicationMode == PomdpFscApplicationMode::SIMPLE_LINEAR) {
                             weights.push_back(collected * var);
                             collected *= storm::utility::one<storm::RationalFunction>() - var;
