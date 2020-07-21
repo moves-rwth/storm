@@ -27,14 +27,13 @@ namespace storm {
                     if (itFind != mElements.end()) {
                         // Child found
                         DFTElementPointer childElement = itFind->second;
-                        STORM_LOG_THROW(!childElement->isRestriction(), storm::exceptions::WrongFormatException,
-                                        "Restictor " << childElement->name() << " is not allowed as child of gate "
-                                                     << gate->name());
-                        if(!childElement->isDependency()) {
+                        if (childElement->isRestriction()) {
+                            STORM_LOG_WARN("Restriction '" << child << "' is not used as input for gate '" << gate->name() << "', because restrictions have no output.");
+                        } else if (childElement->isDependency()) {
+                            STORM_LOG_WARN("Dependency '" << child << "' is not used as input for gate '" << gate->name() << "', because dependencies have no output.");
+                        } else {
                             gate->pushBackChild(childElement);
                             childElement->addParent(gate);
-                        } else {
-                            STORM_LOG_TRACE("Ignore functional dependency " << child << " in gate " << gate->name());
                         }
                     } else {
                         // Child not found -> find first dependent event to assure that child is dependency
