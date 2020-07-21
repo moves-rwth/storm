@@ -1,3 +1,5 @@
+#pragma once
+
 #include "storm-gspn/storage/gspn/GSPN.h"
 
 namespace storm {

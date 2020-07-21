@@ -35,7 +35,13 @@ namespace storm {
              */
             template<typename FunctionType>
             typename CoefficientType<FunctionType>::type evaluate(FunctionType const& function, Valuation<FunctionType> const& valuation);
-            
+
+            /*!
+             * Evaluates the given function wrt. the given valuation
+             */
+            template<typename FunctionType>
+            FunctionType substitute(FunctionType const& function, Valuation<FunctionType> const& valuation);
+
             /*!
              *  Add all variables that occur in the given function to the the given set
              */

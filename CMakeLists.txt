@@ -194,10 +194,11 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
 	# using AppleClang
 	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.3)
 		message(FATAL_ERROR "AppleClang version must be at least 7.3.")
-	elseif ((CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 11.0) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 11.0))
-		message(WARNING "Temporarily disabling stack checks for AppleClang 11.0 or higher.")
-		# TODO: In release mode, stack checks currently fail at runtime. Might be a compiler bug as there does not seem to be faulty behavior.
-		# TODO: This seems to be fixed for clang 11.0.3 (bundled with XCode 11.5). Check again, if the clang version coming with the command line tools is greater than 11.0.0.
+	elseif ((CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 11.0.0) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 11.0.0))
+		message(WARNING "Disabling stack checks for AppleClang version 11.0.0 or higher.")
+		# Stack checks are known to produce errors with the following Clang versions:
+		# 11.0.0: Runtime errors (stack_not_16_byte_aligned_error) when invoking storm in release mode
+		# 11.0.3: Catching exceptions thrown within PRISM parser does not work (The exception just falls through)
 		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-stack-check")
 	endif()
 
@@ -276,13 +277,17 @@ elseif (STORM_COMPILER_GCC)
 endif ()
 
 if (STORM_USE_THIN_LTO)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto=thin")
-	message(STATUS "Storm - Enabling link-time optimizations using ThinLTO.")
+    if (STORM_COMPILER_CLANG OR STORM_COMPILER_APPLECLANG)
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto=thin")
+        message(STATUS "Storm - Enabling link-time optimizations using ThinLTO.")
+    else()
+        message(FATAL_ERROR "Storm - ThinLTO only supported for Clang. Use regular LTO instead.")
+    endif()
 elseif (STORM_USE_LTO)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
 
     # Fix for problems that occurred when using LTO on gcc. This should be removed when it
-    # is not needed anymore as it makes the the already long link-step potentially longer.
+    # is not needed anymore as it makes the already long link-step potentially longer.
     if (STORM_COMPILER_GCC)
         set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto-partition=none")
     endif()
@@ -440,15 +445,15 @@ set(STORM_VERSION_APPENDIX "${CMAKE_MATCH_5}") # might be empty
 if (STORM_GIT_VERSION_STRING MATCHES "NOTFOUND")
 	set(STORM_VERSION_SOURCE "VersionSource::Static")
 	set(STORM_VERSION_COMMITS_AHEAD 0)
-	set(STORM_VERSION_DIRTY boost::none)
+	set(STORM_VERSION_DIRTY DirtyState:Unknown)
 	include(version.cmake)
 	message(WARNING "Storm - Git version information not available, statically assuming version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}.")
 else()
 	set(STORM_VERSION_SOURCE "VersionSource::Git")
 	if ("${STORM_VERSION_APPENDIX}" MATCHES "^.*dirty.*$")
-		set(STORM_VERSION_DIRTY "true")
+		set(STORM_VERSION_DIRTY "DirtyState::Dirty")
 	else()
-		set(STORM_VERSION_DIRTY "false")
+		set(STORM_VERSION_DIRTY "DirtyState::Clean")
 	endif()
 endif()
 

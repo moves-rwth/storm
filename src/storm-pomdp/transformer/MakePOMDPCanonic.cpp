@@ -289,5 +289,6 @@ namespace storm {
 
         template class MakePOMDPCanonic<double>;
         template class MakePOMDPCanonic<storm::RationalNumber>;
+        template class MakePOMDPCanonic<storm::RationalFunction>;
     }
 }
