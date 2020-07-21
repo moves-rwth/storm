@@ -475,6 +475,9 @@ namespace storm {
             }
             auto engine = regionSettings.getRegionCheckEngine();
             STORM_PRINT_AND_LOG(" using " << engine);
+            if (useMonotonicity) {
+                STORM_PRINT_AND_LOG(" with local monotonicity and");
+            }
 
             // Check the given set of regions with or without refinement
             if (regionSettings.isRefineSet()) {
