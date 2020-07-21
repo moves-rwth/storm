@@ -175,6 +175,7 @@ namespace storm {
             std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> lastMonotonicityResult = nullptr;
             bool useLastMonotonicityResult = false;
             bool useLastMatrix = false;
+            storm::solver::OptimizationDirection lastDirForParameters = storm::solver::OptimizationDirection::Minimize;
 
             std::vector<std::pair<uint_fast64_t, uint_fast64_t>> numberOfPlaceHolders;
 

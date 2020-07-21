@@ -224,12 +224,16 @@ namespace storm {
             assert (usePartialScheduler);
             storm::storage::BitVector selectedRows(matrix.getRowCount(), true);
 
-            // TODO: useLastMatrix en useLastMonRes meegeven als argument ipv classvariable
+            // TODO: useLastMatrix en useLastMonRes meegeven als argument ipv classvariable?
+            // TODO: save lastmatrix and last mon res for each direction
             // If they are both done (all states have local monotonicity, we can reuse the matrix
             // Check localMonotonicityResult == lastMonotonicityResult to prevent checking a bitvector twice when the pointers are the same
             useLastMatrix = localMonotonicityResult->isDone() && (localMonotonicityResult == lastMonotonicityResult || lastMonotonicityResult->isDone());
             // If we can use the last matrix and we have the same localMonotonicityResult pointer we can reuse the whole thing
-            useLastMonotonicityResult = useLastMatrix && localMonotonicityResult == lastMonotonicityResult;
+            // TODO: dirForParameters should also be the same
+            useLastMonotonicityResult = useLastMatrix && localMonotonicityResult == lastMonotonicityResult && dirForParameters == lastDirForParameters;
+            lastDirForParameters = dirForParameters;
+
             if (!useLastMonotonicityResult) {
                 // Maybe we can still use the last matrix
                 auto state = reachabilityOrder->getNextAddedState(-1);
@@ -260,15 +264,12 @@ namespace storm {
 
                             bool ignoreUpperBound = monotonicity == Monotonicity::Constant
                                                     || (monotonicity == Monotonicity::Incr &&
-                                                        dirForParameters ==
-                                                        storm::solver::OptimizationDirection::Minimize)
+                                                        dirForParameters == storm::solver::OptimizationDirection::Minimize)
                                                     || (monotonicity == Monotonicity::Decr &&
-                                                        dirForParameters ==
-                                                        storm::solver::OptimizationDirection::Maximize);
+                                                        dirForParameters == storm::solver::OptimizationDirection::Maximize);
                             bool ignoreLowerBound = !ignoreUpperBound
                                                     && ((monotonicity == Monotonicity::Incr &&
-                                                         dirForParameters ==
-                                                         storm::solver::OptimizationDirection::Maximize)
+                                                         dirForParameters == storm::solver::OptimizationDirection::Maximize)
                                                         || (monotonicity == Monotonicity::Decr && dirForParameters ==
                                                                                                   storm::solver::OptimizationDirection::Minimize));
 
