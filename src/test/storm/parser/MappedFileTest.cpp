@@ -10,8 +10,8 @@
 
 #include <string>
 #include "storm-parsers/parser/MappedFile.h"
-#include "storm/utility/cstring.h"
-#include "storm/utility/file.h"
+#include "storm-parsers/util/cstring.h"
+#include "storm/io/file.h"
 #include "storm/exceptions/FileIoException.h"
 
 TEST(MappedFileTest, NonExistingFile) {

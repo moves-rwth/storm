@@ -1,8 +1,8 @@
 #include "cli.h"
 
 
-#include "storm/utility/resources.h"
-#include "storm/utility/file.h"
+#include "storm-cli-utilities/resources.h"
+#include "storm/io/file.h"
 #include "storm-version-info/storm-version.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/initialize.h"

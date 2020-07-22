@@ -5,7 +5,7 @@
 #include <boost/optional.hpp>
 
 #include "storm/utility/macros.h"
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 
 
 namespace storm {

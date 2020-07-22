@@ -1,6 +1,6 @@
 #include "DftJsonExporter.h"
 
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 #include "storm/exceptions/NotSupportedException.h"
 
 #include <algorithm>

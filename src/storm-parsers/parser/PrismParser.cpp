@@ -6,7 +6,7 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/utility/macros.h"
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/UnexpectedException.h"
 

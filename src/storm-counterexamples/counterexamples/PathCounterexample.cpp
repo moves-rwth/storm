@@ -1,6 +1,6 @@
 #include "storm-counterexamples/counterexamples/PathCounterexample.h"
 
-#include "storm/utility/export.h"
+#include "storm/io/export.h"
 
 namespace storm {
     namespace counterexamples {

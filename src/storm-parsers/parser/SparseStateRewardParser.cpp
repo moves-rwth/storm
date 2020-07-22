@@ -4,7 +4,7 @@
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/exceptions/FileIoException.h"
-#include "storm/utility/cstring.h"
+#include "storm-parsers/util/cstring.h"
 #include "storm-parsers/parser/MappedFile.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"

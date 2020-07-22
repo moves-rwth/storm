@@ -34,7 +34,7 @@
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/storage/SymbolicModelDescription.h"
 
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 #include "storm/utility/initialize.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/macros.h"

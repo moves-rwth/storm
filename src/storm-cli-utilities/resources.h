@@ -1,6 +1,4 @@
-#ifndef STORM_UTILITY_RESOURCES_H_
-#define STORM_UTILITY_RESOURCES_H_
-
+#pragma once
 #include <sys/time.h>
 #include <sys/times.h>
 #include <sys/resource.h>
@@ -55,5 +53,3 @@ namespace storm {
         }
     }
 }
-
-#endif /* STORM_UTILITY_RESOURCES_H_ */

@@ -10,7 +10,7 @@
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/utility/dd.h"
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 
 #include "storm-config.h"
 #include "storm/adapters/RationalFunctionAdapter.h"

@@ -1,7 +1,7 @@
 #include "test/storm_gtest.h"
 #include "storm-config.h"
 
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 
 TEST(FileTest, GetLine) {
     std::stringstream stream;

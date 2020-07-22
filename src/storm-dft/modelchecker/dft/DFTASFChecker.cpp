@@ -2,7 +2,7 @@
 #include "SmtConstraint.cpp"
 #include <string>
 
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 #include "storm/utility/bitoperations.h"
 #include "storm-parsers/parser/ExpressionCreator.h"
 #include "storm/solver/SmtSolver.h"

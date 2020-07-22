@@ -4,7 +4,7 @@
 #include <string>
 #include <iostream>
 
-#include "storm/utility/cstring.h"
+#include "storm-parsers/util/cstring.h"
 #include "storm-parsers/parser/MappedFile.h"
 
 #include "storm/utility/macros.h"

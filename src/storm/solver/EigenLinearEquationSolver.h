@@ -2,7 +2,7 @@
 
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/SolverSelectionOptions.h"
-#include "storm/utility/eigen.h"
+#include "storm/adapters/eigen.h"
 
 namespace storm {
     namespace solver {

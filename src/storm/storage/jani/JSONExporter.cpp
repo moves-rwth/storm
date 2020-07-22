@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "storm/utility/macros.h"
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm/exceptions/NotSupportedException.h"
 

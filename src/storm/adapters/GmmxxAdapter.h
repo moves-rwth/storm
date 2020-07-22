@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "storm/utility/gmm.h"
+#include "storm/adapters/gmm.h"
 
 #include "storm/storage/SparseMatrix.h"
 
