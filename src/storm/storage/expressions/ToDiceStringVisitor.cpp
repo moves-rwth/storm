@@ -1,3 +1,4 @@
+#include "storm/exceptions/NotSupportedException.h"
 #include "storm/storage/expressions/ToDiceStringVisitor.h"
 
 namespace storm {
@@ -105,11 +106,12 @@ namespace storm {
                     stream << ")";
                     break;
                 case BinaryNumericalFunctionExpression::OperatorType::Modulo:
-                    stream << "(";
+                    STORM_LOG_THROW(expression.getSecondOperand()->isIntegerLiteralExpression(), storm::exceptions::NotSupportedException, "Dice does not support modulo with nonconst rhs");
+                    STORM_LOG_THROW(expression.getSecondOperand()->evaluateAsInt() == 2, storm::exceptions::NotSupportedException, "Dice does not support modulo with rhs != 2");
+
+                    stream << "( nth_bit(int(" << nrBits << "," << nrBits << "), ";
                     expression.getFirstOperand()->accept(*this, data);
-                    stream << "%";
-                    expression.getSecondOperand()->accept(*this, data);
-                    stream << ")";
+                    stream << "))";
                     break;
                 case BinaryNumericalFunctionExpression::OperatorType::Max:
                     stream << "max(";
@@ -132,11 +134,18 @@ namespace storm {
         boost::any ToDiceStringVisitor::visit(BinaryRelationExpression const& expression, boost::any const& data) {
             switch (expression.getRelationType()) {
                 case BinaryRelationExpression::RelationType::Equal:
-                    stream << "(";
-                    expression.getFirstOperand()->accept(*this, data);
-                    stream << "==";
-                    expression.getSecondOperand()->accept(*this, data);
-                    stream << ")";
+                    if (expression.getFirstOperand()->isBinaryNumericalFunctionExpression()) {
+                        if (expression.getFirstOperand()->asBinaryNumericalFunctionExpression().getOperatorType() == BinaryNumericalFunctionExpression::OperatorType::Modulo) {
+                            expression.getFirstOperand()->accept(*this, data);
+                        }
+                    } else {
+                        stream << "(";
+                        expression.getFirstOperand()->accept(*this, data);
+                        stream << "==";
+                        expression.getSecondOperand()->accept(*this, data);
+                        stream << ")";
+                    }
+
                     break;
                 case BinaryRelationExpression::RelationType::NotEqual:
                     stream << "(";
