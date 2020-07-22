@@ -12,6 +12,7 @@
 #include "storm-dft/transformations/DftTransformator.h"
 #include "storm-dft/utility/FDEPConflictFinder.h"
 #include "storm-dft/utility/FailureBoundFinder.h"
+#include "storm-dft/utility/RelevantEvents.h"
 
 #include "storm-gspn/api/storm-gspn.h"
 
@@ -115,6 +116,21 @@ namespace storm {
                 }
             }
             return true;
+        }
+
+        /*!
+         * Get relevant event ids from given relevant event names and labels in properties.
+         *
+         * @param dft DFT.
+         * @param properties List of properties. All events occurring in a property are relevant.
+         * @param additionalRelevantEventNames List of names of additional relevant events.
+         * @return Set of relevant event ids.
+         */
+        template<typename ValueType>
+        std::set<size_t> computeRelevantEvents(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, std::vector<std::string> const additionalRelevantEventNames) {
+            std::vector<std::string> relevantNames = storm::utility::getRelevantEventNames<ValueType>(dft, properties);
+            relevantNames.insert(relevantNames.end(), additionalRelevantEventNames.begin(), additionalRelevantEventNames.end());
+            return storm::utility::getRelevantEvents<ValueType>(dft, relevantNames);
         }
 
         /*!

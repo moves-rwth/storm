@@ -41,7 +41,7 @@ namespace storm {
                                                                "Avoid non-determinism by always taking the first possible dependency.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, relevantEventsOptionName, false, "Specifies the relevant events from the DFT.")
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values",
-                                                                                                            "A comma separated list of names of relevant events. 'all' marks all events as relevant, The default '' or 'none' marks only the top level event as relevant.").setDefaultValueString(
+                                                                                                            "A comma separated list of names of relevant events. 'all' marks all events as relevant, The default '' marks only the top level event as relevant.").setDefaultValueString(
                                                 "").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, allowDCRelevantOptionName, false, "Allow Don't Care propagation for relevant events.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, addLabelsClaimingOptionName, false,
