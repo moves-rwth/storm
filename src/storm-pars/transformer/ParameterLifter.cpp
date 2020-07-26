@@ -14,8 +14,6 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         ParameterLifter<ParametricType, ConstantType>::ParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix, std::vector<ParametricType> const& pVector, storm::storage::BitVector const& selectedRows, storm::storage::BitVector const& selectedColumns, bool generateRowLabels, bool useMonotonicity) {
             this->usePartialScheduler = useMonotonicity;
-            this->useLastMonotonicityResult = false;
-            this->useLastMatrix = false;
 
             if (useMonotonicity) {
                 monotonicityChecker = new storm::analysis::MonotonicityChecker<ParametricType>(pMatrix);
@@ -162,7 +160,9 @@ namespace storm {
                 STORM_LOG_WARN_COND(!storm::utility::isZero(assignment.second), "Parameter lifting on region " << region.toString() << " affects the underlying graph structure (the region is not strictly well defined). The result for this region might be incorrect.");
                 if (!usePartialScheduler) {
                     assignment.first->setValue(assignment.second);
-                } else if (assignment.first != specifiedMatrix.end()) {
+                } else if (useMinimize && assignment.first != specifiedMatrixMinimize.end()) {
+                    assignment.first->setValue(assignment.second);
+                } else if (!useMinimize && assignment.first != specifiedMatrixMaximize.end()) {
                     assignment.first->setValue(assignment.second);
                 }
             }
@@ -170,26 +170,41 @@ namespace storm {
             for (auto &assignment : vectorAssignment) {
                 *assignment.first = assignment.second;
             }
-            if (usePartialScheduler) {
-                specifiedVector = std::vector<ConstantType>();
-                for (auto rowIndex : selectedRows) {
-                    specifiedVector.push_back(vector[rowIndex]);
+            if (usePartialScheduler && useMinimize) {
+                specifiedVectorMinimize = std::vector<ConstantType>();
+                for (auto rowIndex : selectedRowsMinimize) {
+                    specifiedVectorMinimize.push_back(vector[rowIndex]);
+                }
+            }
+            if (usePartialScheduler && !useMinimize) {
+                specifiedVectorMaximize = std::vector<ConstantType>();
+                for (auto rowIndex : selectedRowsMaximize) {
+                    specifiedVectorMaximize.push_back(vector[rowIndex]);
                 }
             }
         }
 
         template<typename ParametricType, typename ConstantType>
         void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::storage::BitVector const& selectedRows) {
-            this->selectedRows = selectedRows;
+            if (useMinimize && !useLastMonotonicityResultMinimize) {
+                this->selectedRowsMinimize = selectedRows;
+            } else if(!useMinimize && !useLastMonotonicityResultMaximize) {
+                this->selectedRowsMaximize = selectedRows;
+            }
             assert (usePartialScheduler);
 
-            if (!useLastMatrix) {
+            if (useMinimize && !useLastMatrixMinimize) {
                 // Only need to take a different submatrix if previous or current localMonRes is not done yet.
                 auto selectedColumns = storm::storage::BitVector(matrix.getColumnCount(), true);
-                specifiedMatrix = matrix.getSubmatrix(false, selectedRows, selectedColumns);
+                specifiedMatrixMinimize = matrix.getSubmatrix(false, selectedRows, selectedColumns);
+            }
+            if (!useMinimize && !useLastMatrixMaximize) {
+                // Only need to take a different submatrix if previous or current localMonRes is not done yet.
+                auto selectedColumns = storm::storage::BitVector(matrix.getColumnCount(), true);
+                specifiedMatrixMaximize = matrix.getSubmatrix(false, selectedRows, selectedColumns);
             }
 
-            assert (!useLastMonotonicityResult);
+
             auto numberOfIgnoredRows = 0;
 
             // Insert the correct iterators for the matrix and vector assignment
@@ -199,14 +214,23 @@ namespace storm {
                 uint_fast64_t startEntryOfNextRow = startEntryOfRow + matrix.getRow(group, 0).getNumberOfEntries();
                 for (uint_fast64_t matrixRow = matrix.getRowGroupIndices()[group]; matrixRow < matrix.getRowGroupIndices()[group + 1]; ++matrixRow) {
                     if (selectedRows[matrixRow]) {
-                        auto matrixEntryIt = specifiedMatrix.getRow(matrixRow - numberOfIgnoredRows).begin();
+                        typename storm::storage::SparseMatrix<ConstantType>::iterator matrixEntryIt;
+                        if (useMinimize) {
+                            matrixEntryIt = specifiedMatrixMinimize.getRow(matrixRow - numberOfIgnoredRows).begin();
+                        } else {
+                             matrixEntryIt = specifiedMatrixMaximize.getRow(matrixRow - numberOfIgnoredRows).begin();
+                        }
                         for (uint_fast64_t nonConstEntryIndex = nonConstMatrixEntries.getNextSetIndex(startEntryOfRow); nonConstEntryIndex < startEntryOfNextRow; nonConstEntryIndex = nonConstMatrixEntries.getNextSetIndex(nonConstEntryIndex + 1)) {
                             matrixAssignmentIt->first = matrixEntryIt + (nonConstEntryIndex - startEntryOfRow);
                             ++matrixAssignmentIt;
                         }
                     } else {
                         for (uint_fast64_t nonConstEntryIndex = nonConstMatrixEntries.getNextSetIndex(startEntryOfRow); nonConstEntryIndex < startEntryOfNextRow; nonConstEntryIndex = nonConstMatrixEntries.getNextSetIndex(nonConstEntryIndex + 1)) {
-                            matrixAssignmentIt->first = specifiedMatrix.end();
+                            if (useMinimize) {
+                                matrixAssignmentIt->first = specifiedMatrixMinimize.end();
+                            } else {
+                                matrixAssignmentIt->first = specifiedMatrixMaximize.end();
+                            }
                             ++matrixAssignmentIt;
                         }
                         numberOfIgnoredRows++;
@@ -224,88 +248,150 @@ namespace storm {
             assert (usePartialScheduler);
             storm::storage::BitVector selectedRows(matrix.getRowCount(), true);
 
-            // TODO: useLastMatrix en useLastMonRes meegeven als argument ipv classvariable?
-            // TODO: save lastmatrix and last mon res for each direction
-            // If they are both done (all states have local monotonicity, we can reuse the matrix
-            // Check localMonotonicityResult == lastMonotonicityResult to prevent checking a bitvector twice when the pointers are the same
-            useLastMatrix = localMonotonicityResult->isDone() && (localMonotonicityResult == lastMonotonicityResult || lastMonotonicityResult->isDone());
-            // If we can use the last matrix and we have the same localMonotonicityResult pointer we can reuse the whole thing
-            // TODO: dirForParameters should also be the same
-            useLastMonotonicityResult = useLastMatrix && localMonotonicityResult == lastMonotonicityResult && dirForParameters == lastDirForParameters;
-            lastDirForParameters = dirForParameters;
-
-            if (!useLastMonotonicityResult) {
-                // Maybe we can still use the last matrix
-                auto state = reachabilityOrder->getNextAddedState(-1);
-                while (state != reachabilityOrder->getNumberOfStates()) {
-                    if (reachabilityOrder->isBottomState(state) || reachabilityOrder->isTopState(state)) {
-                        localMonotonicityResult->setStateMonotone(state);
-                    } else {
-                        auto stateNumberInNewMatrix = oldToNewColumnIndexMapping[state];
-                        auto variables = occurringVariablesAtState[state];
-                        // point at which we start with rows for this state
-                        auto rowGroupIndex = matrix.getRowGroupIndices()[stateNumberInNewMatrix];
-                        // number of rows (= #transitions) for this state
-                        auto numberOfRows = matrix.getRowGroupSize(stateNumberInNewMatrix);
-                        // variable at pos. index, changes lower/upperbound at 2^index
-                        // within a rowgroup we interprete vertexId as a bit sequence
-                        // the consideredVariables.size() least significant bits of vertex will always represent the next vertex
-                        // (00...0 = lower boundaries for all variables, 11...1 = upper boundaries for all variables)
-                        auto index = 0;
-                        if (variables.size() == 0) {
+            if (dirForParameters == storm::solver::OptimizationDirection::Minimize) {
+                useMinimize = true;
+                // If they are both done (all states have local monotonicity, we can reuse the matrix)
+                // Check localMonotonicityResult == lastMonotonicityResult to prevent checking a bitvector twice when the pointers are the same
+                useLastMatrixMinimize = localMonotonicityResult->isDone() && (localMonotonicityResult == lastMonotonicityResultMinimize || lastMonotonicityResultMinimize->isDone());
+                // If we can use the last matrix and we have the same localMonotonicityResult pointer we can reuse the whole thing
+                useLastMonotonicityResultMinimize = useLastMatrixMinimize && localMonotonicityResult == lastMonotonicityResultMinimize;
+                if (!useLastMonotonicityResultMinimize) {
+                    // Maybe we can still use the last matrix
+                    auto state = reachabilityOrder->getNextAddedState(-1);
+                    while (state != reachabilityOrder->getNumberOfStates()) {
+                        if (reachabilityOrder->isBottomState(state) || reachabilityOrder->isTopState(state)) {
                             localMonotonicityResult->setStateMonotone(state);
-                        }
-                        for (auto var : variables) {
-                            auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
-                            if (monotonicity == Monotonicity::Unknown || monotonicity == Monotonicity::Not) {
-                                monotonicity = monotonicityChecker->checkLocalMonotonicity(reachabilityOrder, state, var, region);
-                                localMonotonicityResult->setMonotonicity(state, var, monotonicity);
+                        } else {
+                            auto stateNumberInNewMatrix = oldToNewColumnIndexMapping[state];
+                            auto variables = occurringVariablesAtState[state];
+                            // point at which we start with rows for this state
+                            auto rowGroupIndex = matrix.getRowGroupIndices()[stateNumberInNewMatrix];
+                            // number of rows (= #transitions) for this state
+                            auto numberOfRows = matrix.getRowGroupSize(stateNumberInNewMatrix);
+                            // variable at pos. index, changes lower/upperbound at 2^index
+                            // within a rowgroup we interprete vertexId as a bit sequence
+                            // the consideredVariables.size() least significant bits of vertex will always represent the next vertex
+                            // (00...0 = lower boundaries for all variables, 11...1 = upper boundaries for all variables)
+                            auto index = 0;
+                            if (variables.size() == 0) {
+                                localMonotonicityResult->setStateMonotone(state);
                             }
+                            for (auto var : variables) {
+                                auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
+                                if (monotonicity == Monotonicity::Unknown || monotonicity == Monotonicity::Not) {
+                                    monotonicity = monotonicityChecker->checkLocalMonotonicity(reachabilityOrder, state,
+                                                                                               var, region);
+                                    localMonotonicityResult->setMonotonicity(state, var, monotonicity);
+                                }
 
-                            bool ignoreUpperBound = monotonicity == Monotonicity::Constant
-                                                    || (monotonicity == Monotonicity::Incr &&
-                                                        dirForParameters == storm::solver::OptimizationDirection::Minimize)
-                                                    || (monotonicity == Monotonicity::Decr &&
-                                                        dirForParameters == storm::solver::OptimizationDirection::Maximize);
-                            bool ignoreLowerBound = !ignoreUpperBound
-                                                    && ((monotonicity == Monotonicity::Incr &&
-                                                         dirForParameters == storm::solver::OptimizationDirection::Maximize)
-                                                        || (monotonicity == Monotonicity::Decr && dirForParameters ==
-                                                                                                  storm::solver::OptimizationDirection::Minimize));
-
-                            if (ignoreLowerBound) {
-                                auto stepSize = std::pow(2, index);
-                                for (auto j = 0; j < numberOfRows; j = j + 2 * stepSize) {
-                                    for (auto i = 0; i < stepSize; ++i) {
-                                        selectedRows.set(rowGroupIndex + j + i, false);
+                                bool ignoreUpperBound =
+                                        monotonicity == Monotonicity::Constant || monotonicity == Monotonicity::Incr;
+                                bool ignoreLowerBound = !ignoreUpperBound && monotonicity == Monotonicity::Decr;
+                                if (ignoreLowerBound) {
+                                    auto stepSize = std::pow(2, index);
+                                    for (auto j = 0; j < numberOfRows; j = j + 2 * stepSize) {
+                                        for (auto i = 0; i < stepSize; ++i) {
+                                            selectedRows.set(rowGroupIndex + j + i, false);
+                                        }
+                                    }
+                                } else if (ignoreUpperBound) {
+                                    // We ignore all upperbounds, so we start at index 2^index
+                                    auto stepSize = std::pow(2, index);
+                                    for (auto j = stepSize; j < numberOfRows; j = j + 2 * stepSize) {
+                                        for (auto i = 0; i < stepSize; ++i) {
+                                            selectedRows.set(rowGroupIndex + i + j, false);
+                                        }
                                     }
                                 }
-                            } else if (ignoreUpperBound) {
-                                // We ignore all upperbounds, so we start at index 2^index
-                                auto stepSize = std::pow(2, index);
-                                for (auto j = stepSize; j < numberOfRows; j = j + 2 * stepSize) {
-                                    for (auto i = 0; i < stepSize; ++i) {
-                                        selectedRows.set(rowGroupIndex + i + j, false);
-                                    }
-                                }
+                                ++index;
                             }
-                            ++index;
                         }
+                        state = reachabilityOrder->getNextAddedState(state);
                     }
-                    state = reachabilityOrder->getNextAddedState(state);
+                    specifyRegion(region, dirForParameters, selectedRows);
+                } else {
+                    // In this case the lastMonotonicityResult did not change at all, so local monotonicity is the same and we can keep the matrix and matrixAssignments
+                    specifyRegion(region, dirForParameters);
                 }
-                specifyRegion(region, dirForParameters, selectedRows);
-                lastMonotonicityResult = localMonotonicityResult;
             } else {
-                // In this case the lastMonotonicityResult did not change at all, so local monotonicity is the same and we can keep the matrix and matrixAssignments
-                specifyRegion(region, dirForParameters);
+                assert (dirForParameters == storm::solver::OptimizationDirection::Maximize);
+                useMinimize = false;
+                // If they are both done (all states have local monotonicity, we can reuse the matrix)
+                // Check localMonotonicityResult == lastMonotonicityResult to prevent checking a bitvector twice when the pointers are the same
+                useLastMatrixMaximize = localMonotonicityResult->isDone() &&
+                                        (localMonotonicityResult == lastMonotonicityResultMaximize ||
+                                         lastMonotonicityResultMaximize->isDone());
+                // If we can use the last matrix and we have the same localMonotonicityResult pointer we can reuse the whole thing
+                useLastMonotonicityResultMaximize =
+                        useLastMatrixMaximize && localMonotonicityResult == lastMonotonicityResultMaximize;
+                if (!useLastMonotonicityResultMaximize) {
+                    // Maybe we can still use the last matrix
+                    auto state = reachabilityOrder->getNextAddedState(-1);
+                    while (state != reachabilityOrder->getNumberOfStates()) {
+                        if (reachabilityOrder->isBottomState(state) || reachabilityOrder->isTopState(state)) {
+                            localMonotonicityResult->setStateMonotone(state);
+                        } else {
+                            auto stateNumberInNewMatrix = oldToNewColumnIndexMapping[state];
+                            auto variables = occurringVariablesAtState[state];
+                            // point at which we start with rows for this state
+                            auto rowGroupIndex = matrix.getRowGroupIndices()[stateNumberInNewMatrix];
+                            // number of rows (= #transitions) for this state
+                            auto numberOfRows = matrix.getRowGroupSize(stateNumberInNewMatrix);
+                            // variable at pos. index, changes lower/upperbound at 2^index
+                            // within a rowgroup we interprete vertexId as a bit sequence
+                            // the consideredVariables.size() least significant bits of vertex will always represent the next vertex
+                            // (00...0 = lower boundaries for all variables, 11...1 = upper boundaries for all variables)
+                            auto index = 0;
+                            if (variables.size() == 0) {
+                                localMonotonicityResult->setStateMonotone(state);
+                            }
+                            for (auto var : variables) {
+                                auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
+                                if (monotonicity == Monotonicity::Unknown || monotonicity == Monotonicity::Not) {
+                                    monotonicity = monotonicityChecker->checkLocalMonotonicity(reachabilityOrder, state,
+                                                                                               var, region);
+                                    localMonotonicityResult->setMonotonicity(state, var, monotonicity);
+                                }
+
+                                bool ignoreUpperBound =
+                                        monotonicity == Monotonicity::Constant || monotonicity == Monotonicity::Decr;
+                                bool ignoreLowerBound = !ignoreUpperBound && monotonicity == Monotonicity::Incr;
+
+                                if (ignoreLowerBound) {
+                                    auto stepSize = std::pow(2, index);
+                                    for (auto j = 0; j < numberOfRows; j = j + 2 * stepSize) {
+                                        for (auto i = 0; i < stepSize; ++i) {
+                                            selectedRows.set(rowGroupIndex + j + i, false);
+                                        }
+                                    }
+                                } else if (ignoreUpperBound) {
+                                    // We ignore all upperbounds, so we start at index 2^index
+                                    auto stepSize = std::pow(2, index);
+                                    for (auto j = stepSize; j < numberOfRows; j = j + 2 * stepSize) {
+                                        for (auto i = 0; i < stepSize; ++i) {
+                                            selectedRows.set(rowGroupIndex + i + j, false);
+                                        }
+                                    }
+                                }
+                                ++index;
+                            }
+                        }
+                        state = reachabilityOrder->getNextAddedState(state);
+                    }
+                    specifyRegion(region, dirForParameters, selectedRows);
+                } else {
+                    // In this case the lastMonotonicityResult did not change at all, so local monotonicity is the same and we can keep the matrix and matrixAssignments
+                    specifyRegion(region, dirForParameters);
+                }
             }
         }
     
         template<typename ParametricType, typename ConstantType>
         storm::storage::SparseMatrix<ConstantType> const& ParameterLifter<ParametricType, ConstantType>::getMatrix() const {
-            if (usePartialScheduler) {
-                return specifiedMatrix;
+            if (usePartialScheduler && useMinimize) {
+                return specifiedMatrixMinimize;
+            } else if (usePartialScheduler && !useMinimize) {
+                return specifiedMatrixMaximize;
             } else {
                 return matrix;
             }
@@ -313,8 +399,10 @@ namespace storm {
     
         template<typename ParametricType, typename ConstantType>
         std::vector<ConstantType> const& ParameterLifter<ParametricType, ConstantType>::getVector() const {
-            if (usePartialScheduler) {
-                return specifiedVector;
+            if (usePartialScheduler && useMinimize) {
+                return specifiedVectorMinimize;
+            } else if (usePartialScheduler && !useMinimize) {
+                return specifiedVectorMaximize;
             } else {
                 return vector;
             }

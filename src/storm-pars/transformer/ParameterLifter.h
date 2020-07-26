@@ -156,7 +156,7 @@ namespace storm {
 
             storm::storage::SparseMatrix<ConstantType> matrix; //The resulting matrix;
             std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>> matrixAssignment; // Connection of matrix entries with placeholders
-            
+
             std::vector<ConstantType> vector; //The resulting vector
             std::vector<std::pair<typename std::vector<ConstantType>::iterator, ConstantType&>> vectorAssignment; // Connection of vector entries with placeholders
 
@@ -166,22 +166,28 @@ namespace storm {
             // Used for monotonicity
             std::vector<std::set<VariableType>> occurringVariablesAtState;
 
-            std::vector<ConstantType> specifiedVector; //The resulting vector, in which possibly some entries are deleted.
-            storm::storage::SparseMatrix<ConstantType> specifiedMatrix; // The resulting matrix, in which possibly some rows are deleted.
+            std::vector<ConstantType> specifiedVectorMinimize; //The resulting vector, in which possibly some entries are deleted.
+            std::vector<ConstantType> specifiedVectorMaximize; //The resulting vector, in which possibly some entries are deleted.
+            storm::storage::SparseMatrix<ConstantType> specifiedMatrixMinimize; // The resulting matrix, in which possibly some rows are deleted.
+            storm::storage::SparseMatrix<ConstantType> specifiedMatrixMaximize; // The resulting matrix, in which possibly some rows are deleted.
 
 
             storm::analysis::MonotonicityChecker<ParametricType>* monotonicityChecker; // MonotonicityChecker object, on the original pMatrix
 
-            std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> lastMonotonicityResult = nullptr;
-            bool useLastMonotonicityResult = false;
-            bool useLastMatrix = false;
-            storm::solver::OptimizationDirection lastDirForParameters = storm::solver::OptimizationDirection::Minimize;
+            std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> lastMonotonicityResultMinimize = nullptr;
+            std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> lastMonotonicityResultMaximize = nullptr;
+            bool useLastMonotonicityResultMinimize = false;
+            bool useLastMonotonicityResultMaximize = false;
+            bool useLastMatrixMinimize = false;
+            bool useLastMatrixMaximize = false;
+            bool useMinimize = false;
 
             std::vector<std::pair<uint_fast64_t, uint_fast64_t>> numberOfPlaceHolders;
 
             storm::storage::BitVector nonConstMatrixEntries;
             storm::storage::BitVector nonConstVectorEntries;
-            storm::storage::BitVector selectedRows;
+            storm::storage::BitVector selectedRowsMinimize;
+            storm::storage::BitVector selectedRowsMaximize;
         };
 
     }
