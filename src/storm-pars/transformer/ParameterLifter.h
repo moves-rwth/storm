@@ -153,7 +153,6 @@ namespace storm {
 
             std::vector<uint_fast64_t> oldToNewColumnIndexMapping; // Mapping from old to new columnIndex used for monotonicity
 
-
             storm::storage::SparseMatrix<ConstantType> matrix; //The resulting matrix;
             std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>> matrixAssignment; // Connection of matrix entries with placeholders
 
@@ -162,6 +161,7 @@ namespace storm {
 
             // For partial scheduler
             bool usePartialScheduler = false;
+            void specifyIteratorsPartialScheduler ();
 
             // Used for monotonicity
             std::vector<std::set<VariableType>> occurringVariablesAtState;
@@ -170,7 +170,7 @@ namespace storm {
             std::vector<ConstantType> specifiedVectorMaximize; //The resulting vector, in which possibly some entries are deleted.
             storm::storage::SparseMatrix<ConstantType> specifiedMatrixMinimize; // The resulting matrix, in which possibly some rows are deleted.
             storm::storage::SparseMatrix<ConstantType> specifiedMatrixMaximize; // The resulting matrix, in which possibly some rows are deleted.
-
+            void setPartialSchedulerMonotonicity (storm::storage::ParameterRegion<ParametricType> const& region, std::shared_ptr<storm::analysis::Order> reachabilityOrder, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
 
             storm::analysis::MonotonicityChecker<ParametricType>* monotonicityChecker; // MonotonicityChecker object, on the original pMatrix
 
