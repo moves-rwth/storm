@@ -121,6 +121,8 @@ namespace storm {
                 ValueType two = storm::utility::convertNumber<ValueType>(2.0);
                 // Relative errors
                 bool relative = env.solver().minMax().getRelativeTerminationCriterion();
+                // Use no termination guaranteed upper bound iteration method
+                bool noTerminationGuarantee = env.solver().ovi().useNoTerminationGuaranteeMinimumMethod();
                 // Goal precision
                 ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision());
                 // Desired max difference between upperX and lowerX
@@ -135,142 +137,40 @@ namespace storm {
     
                 SolverStatus status = SolverStatus::InProgress;
     
-                if(env.solver().ovi().useTerminationGuaranteedMinimumMethod()) {
-                    while (status == SolverStatus::InProgress && overallIterations < maxOverallIterations) {
+                while (status == SolverStatus::InProgress && overallIterations < maxOverallIterations) {
 
-                        // Perform value iteration until convergence
-                        ++valueIterationInvocations;
-                        auto result = valueIterationCallback(lowerX, auxVector, iterationPrecision, relative, overallIterations, maxOverallIterations);
-                        lastValueIterationIterations = result.iterations;
-                        overallIterations += result.iterations;
+                    // Perform value iteration until convergence
+                    ++valueIterationInvocations;
+                    auto result = valueIterationCallback(lowerX, auxVector, iterationPrecision, relative, overallIterations, maxOverallIterations);
+                    lastValueIterationIterations = result.iterations;
+                    overallIterations += result.iterations;
 
-                        if (result.status != SolverStatus::Converged) {
-                            status = result.status;
+                    if (result.status != SolverStatus::Converged) {
+                        status = result.status;
+                    } else {
+                        bool intervalIterationNeeded = false;
+                        currentVerificationIterations = 0;
+
+                        if (relative) {
+                            oviinternal::guessUpperBoundRelative(*lowerX, *upperX, relativeBoundGuessingScaler);
                         } else {
-                            bool intervalIterationNeeded = false;
-                            currentVerificationIterations = 0;
-
-                            if (relative) {
-                                oviinternal::guessUpperBoundRelative(*lowerX, *upperX, relativeBoundGuessingScaler);
-                            } else {
-                                oviinternal::guessUpperBoundAbsolute(*lowerX, *upperX, precision);
-                            }
-
-                            bool cancelGuess = false;
-                            while (status == SolverStatus::InProgress && overallIterations < maxOverallIterations) {
-                                ++overallIterations;
-                                ++currentVerificationIterations;
-                                // Perform value iteration stepwise for lower bound and guessed upper bound
-
-                                // Upper bound iteration
-                                singleIterationCallback(upperX, auxVector, overallIterations);
-                                // At this point,h auxVector contains the old values for the upper bound whereas upperX contains the new ones.
-
-                                // Compare the new upper bound candidate with the old one
-                                bool newUpperBoundAlwaysHigherEqual = true;
-                                bool newUpperBoundAlwaysLowerEqual = true;
-                                for (uint64_t i = 0; i < upperX->size(); ++i) {
-                                    if ((*upperX)[i] < (*auxVector)[i]) {
-                                        newUpperBoundAlwaysHigherEqual = false;
-                                    } else if ((*upperX)[i] != (*auxVector)[i]) {
-                                        newUpperBoundAlwaysLowerEqual = false;
-                                        std::swap((*upperX)[i], (*auxVector)[i]);
-                                    }
-                                }
-
-                                if (newUpperBoundAlwaysHigherEqual &! newUpperBoundAlwaysLowerEqual) {
-                                    // All values moved up or stayed the same
-                                    // That means the guess for an upper bound is actually a lower bound
-                                    iterationPrecision = oviinternal::updateIterationPrecision(env, *auxVector, *upperX, relative, relevantValues);
-                                    // We assume to have a single fixed point. We can thus safely set the new lower bound, to the wrongly guessed upper bound
-                                    // Set lowerX to the upper bound candidate
-                                    std::swap(lowerX, upperX);
-                                    break;
-                                } else if (newUpperBoundAlwaysLowerEqual &! newUpperBoundAlwaysHigherEqual) {
-                                    // All values moved down or stayed the same and we have a maximum difference of twice the requested precision
-                                    // We can safely use twice the requested precision, as we calculate the center of both vectors
-                                    bool reachedPrecision;
-                                    if (relevantValues) {
-                                        reachedPrecision = storm::utility::vector::equalModuloPrecision(*lowerX, *upperX, relevantValues.get(), doublePrecision, relative);
-                                    } else {
-                                        reachedPrecision = storm::utility::vector::equalModuloPrecision(*lowerX, *upperX, doublePrecision, relative);
-                                    }
-                                    if (reachedPrecision) {
-                                        status = SolverStatus::Converged;
-                                        break;
-                                    } else {
-                                        // From now on, we keep updating both bounds
-                                        intervalIterationNeeded = true;
-                                    }
-                                }
-                                // At this point, the old upper bounds (auxVector) are not needed anymore.
-
-                                // Check whether we tried this guess for too long
-                                ValueType scaledIterationCount = storm::utility::convertNumber<ValueType>(currentVerificationIterations) * storm::utility::convertNumber<ValueType>(env.solver().ovi().getMaxVerificationIterationFactor());
-                                if (!intervalIterationNeeded && scaledIterationCount >= storm::utility::convertNumber<ValueType>(lastValueIterationIterations)) {
-                                    cancelGuess = true;
-                                    // In this case we will make one more iteration on the lower bound (mainly to obtain a new iterationPrecision)
-                                }
-
-                                // Lower bound iteration (only if needed)
-                                if (cancelGuess || intervalIterationNeeded || currentVerificationIterations > upperBoundOnlyIterations) {
-                                    singleIterationCallback(lowerX, auxVector, overallIterations);
-                                    // At this point, auxVector contains the old values for the lower bound whereas lowerX contains the new ones.
-
-                                    // Check whether the upper and lower bounds have crossed, i.e., the upper bound is smaller than the lower bound.
-                                    bool valuesCrossed = false;
-                                    for (uint64_t i = 0; i < lowerX->size(); ++i) {
-                                        if ((*upperX)[i] < (*lowerX)[i]) {
-                                            valuesCrossed = true;
-                                            break;
-                                        }
-                                    }
-
-                                    if (cancelGuess || valuesCrossed) {
-                                        // A new guess is needed.
-                                        iterationPrecision = oviinternal::updateIterationPrecision(env, *auxVector, *lowerX, relative, relevantValues);
-                                        break;
-                                    }
-                                }
-                            }
+                            oviinternal::guessUpperBoundAbsolute(*lowerX, *upperX, precision);
                         }
-                    }
-                }
-                else {
-                    while (status == SolverStatus::InProgress && overallIterations < maxOverallIterations) {
 
-                        // Perform value iteration until convergence
-                        ++valueIterationInvocations;
-                        auto result = valueIterationCallback(lowerX, auxVector, iterationPrecision, relative, overallIterations, maxOverallIterations);
-                        lastValueIterationIterations = result.iterations;
-                        overallIterations += result.iterations;
+                        bool cancelGuess = false;
+                        while (status == SolverStatus::InProgress && overallIterations < maxOverallIterations) {
+                            ++overallIterations;
+                            ++currentVerificationIterations;
+                            // Perform value iteration stepwise for lower bound and guessed upper bound
 
-                        if (result.status != SolverStatus::Converged) {
-                            status = result.status;
-                        } else {
-                            bool intervalIterationNeeded = false;
-                            currentVerificationIterations = 0;
+                            // Upper bound iteration
+                            singleIterationCallback(upperX, auxVector, overallIterations);
+                            // At this point,h auxVector contains the old values for the upper bound whereas upperX contains the new ones.
 
-                            if (relative) {
-                                oviinternal::guessUpperBoundRelative(*lowerX, *upperX, relativeBoundGuessingScaler);
-                            } else {
-                                oviinternal::guessUpperBoundAbsolute(*lowerX, *upperX, precision);
-                            }
-
-                            bool cancelGuess = false;
-                            while (status == SolverStatus::InProgress && overallIterations < maxOverallIterations) {
-                                ++overallIterations;
-                                ++currentVerificationIterations;
-                                // Perform value iteration stepwise for lower bound and guessed upper bound
-
-                                // Upper bound iteration
-                                singleIterationCallback(upperX, auxVector, overallIterations);
-
-                                // At this point,h auxVector contains the old values for the upper bound whereas upperX contains the new ones.
-
-                                // Compare the new upper bound candidate with the old one
-                                bool newUpperBoundAlwaysHigherEqual = true;
-                                bool newUpperBoundAlwaysLowerEqual = true;
+                            // Compare the new upper bound candidate with the old one
+                            bool newUpperBoundAlwaysHigherEqual = true;
+                            bool newUpperBoundAlwaysLowerEqual = true;
+                            if(noTerminationGuarantee) {
                                 bool cancelOuterScan = false;
                                 for (uint64_t i = 0; i < upperX->size() &! cancelOuterScan; ++i) {
                                     if ((*upperX)[i] < (*auxVector)[i]) {
@@ -288,8 +188,8 @@ namespace storm {
                                         newUpperBoundAlwaysLowerEqual = false;
                                         ++i;
                                         while (i < upperX->size()) {
-                                            if ((*upperX)[i] > (*auxVector)[i]) {
-                                                newUpperBoundAlwaysLowerEqual = false;
+                                            if ((*upperX)[i] < (*auxVector)[i]) {
+                                                newUpperBoundAlwaysHigherEqual = false;
                                                 cancelOuterScan = true;
                                                 break;
                                             }
@@ -297,60 +197,70 @@ namespace storm {
                                         }
                                     }
                                 }
+                            }
+                            else {
+                                for (uint64_t i = 0; i < upperX->size(); ++i) {
+                                    if ((*upperX)[i] < (*auxVector)[i]) {
+                                        newUpperBoundAlwaysHigherEqual = false;
+                                    } else if ((*upperX)[i] != (*auxVector)[i]) {
+                                        newUpperBoundAlwaysLowerEqual = false;
+                                        std::swap((*upperX)[i], (*auxVector)[i]);
+                                    }
+                                }
+                            }
 
-                                if (newUpperBoundAlwaysHigherEqual &! newUpperBoundAlwaysLowerEqual) {
-                                    // All values moved up or stayed the same
-                                    // That means the guess for an upper bound is actually a lower bound
-                                    iterationPrecision = oviinternal::updateIterationPrecision(env, *auxVector, *upperX, relative, relevantValues);
-                                    // We assume to have a single fixed point. We can thus safely set the new lower bound, to the wrongly guessed upper bound
-                                    // Set lowerX to the upper bound candidate
-                                    std::swap(lowerX, upperX);
+                            if (newUpperBoundAlwaysHigherEqual &! newUpperBoundAlwaysLowerEqual) {
+                                // All values moved up or stayed the same
+                                // That means the guess for an upper bound is actually a lower bound
+                                iterationPrecision = oviinternal::updateIterationPrecision(env, *auxVector, *upperX, relative, relevantValues);
+                                // We assume to have a single fixed point. We can thus safely set the new lower bound, to the wrongly guessed upper bound
+                                // Set lowerX to the upper bound candidate
+                                std::swap(lowerX, upperX);
+                                break;
+                            } else if (newUpperBoundAlwaysLowerEqual &! newUpperBoundAlwaysHigherEqual) {
+                                // All values moved down or stayed the same and we have a maximum difference of twice the requested precision
+                                // We can safely use twice the requested precision, as we calculate the center of both vectors
+                                bool reachedPrecision;
+                                if (relevantValues) {
+                                    reachedPrecision = storm::utility::vector::equalModuloPrecision(*lowerX, *upperX, relevantValues.get(), doublePrecision, relative);
+                                } else {
+                                    reachedPrecision = storm::utility::vector::equalModuloPrecision(*lowerX, *upperX, doublePrecision, relative);
+                                }
+                                if (reachedPrecision) {
+                                    status = SolverStatus::Converged;
                                     break;
-                                } else if (newUpperBoundAlwaysLowerEqual &! newUpperBoundAlwaysHigherEqual) {
-                                    // All values moved down or stayed the same and we have a maximum difference of twice the requested precision
-                                    // We can safely use twice the requested precision, as we calculate the center of both vectors
-                                    bool reachedPrecision;
-                                    if (relevantValues) {
-                                        reachedPrecision = storm::utility::vector::equalModuloPrecision(*lowerX, *upperX, relevantValues.get(), doublePrecision, relative);
-                                    } else {
-                                        reachedPrecision = storm::utility::vector::equalModuloPrecision(*lowerX, *upperX, doublePrecision, relative);
-                                    }
-                                    if (reachedPrecision) {
-                                        status = SolverStatus::Converged;
-                                        break;
-                                    } else {
-                                        // From now on, we keep updating both bounds
-                                        intervalIterationNeeded = true;
-                                    }
+                                } else {
+                                    // From now on, we keep updating both bounds
+                                    intervalIterationNeeded = true;
                                 }
-                                // At this point, the old upper bounds (auxVector) are not needed anymore.
+                            }
+                            // At this point, the old upper bounds (auxVector) are not needed anymore.
 
-                                // Check whether we tried this guess for too long
-                                ValueType scaledIterationCount = storm::utility::convertNumber<ValueType>(currentVerificationIterations) * storm::utility::convertNumber<ValueType>(env.solver().ovi().getMaxVerificationIterationFactor());
-                                if (!intervalIterationNeeded && scaledIterationCount >= storm::utility::convertNumber<ValueType>(lastValueIterationIterations)) {
-                                    cancelGuess = true;
-                                    // In this case we will make one more iteration on the lower bound (mainly to obtain a new iterationPrecision)
-                                }
+                            // Check whether we tried this guess for too long
+                            ValueType scaledIterationCount = storm::utility::convertNumber<ValueType>(currentVerificationIterations) * storm::utility::convertNumber<ValueType>(env.solver().ovi().getMaxVerificationIterationFactor());
+                            if (!intervalIterationNeeded && scaledIterationCount >= storm::utility::convertNumber<ValueType>(lastValueIterationIterations)) {
+                                cancelGuess = true;
+                                // In this case we will make one more iteration on the lower bound (mainly to obtain a new iterationPrecision)
+                            }
 
-                                // Lower bound iteration (only if needed)
-                                if (cancelGuess || intervalIterationNeeded || currentVerificationIterations > upperBoundOnlyIterations) {
-                                    singleIterationCallback(lowerX, auxVector, overallIterations);
-                                    // At this point, auxVector contains the old values for the lower bound whereas lowerX contains the new ones.
+                            // Lower bound iteration (only if needed)
+                            if (cancelGuess || intervalIterationNeeded || currentVerificationIterations > upperBoundOnlyIterations) {
+                                singleIterationCallback(lowerX, auxVector, overallIterations);
+                                // At this point, auxVector contains the old values for the lower bound whereas lowerX contains the new ones.
 
-                                    // Check whether the upper and lower bounds have crossed, i.e., the upper bound is smaller than the lower bound.
-                                    bool valuesCrossed = false;
-                                    for (uint64_t i = 0; i < lowerX->size(); ++i) {
-                                        if ((*upperX)[i] < (*lowerX)[i]) {
-                                            valuesCrossed = true;
-                                            break;
-                                        }
-                                    }
-
-                                    if (cancelGuess || valuesCrossed) {
-                                        // A new guess is needed.
-                                        iterationPrecision = oviinternal::updateIterationPrecision(env, *auxVector, *lowerX, relative, relevantValues);
+                                // Check whether the upper and lower bounds have crossed, i.e., the upper bound is smaller than the lower bound.
+                                bool valuesCrossed = false;
+                                for (uint64_t i = 0; i < lowerX->size(); ++i) {
+                                    if ((*upperX)[i] < (*lowerX)[i]) {
+                                        valuesCrossed = true;
                                         break;
                                     }
+                                }
+
+                                if (cancelGuess || valuesCrossed) {
+                                    // A new guess is needed.
+                                    iterationPrecision = oviinternal::updateIterationPrecision(env, *auxVector, *lowerX, relative, relevantValues);
+                                    break;
                                 }
                             }
                         }

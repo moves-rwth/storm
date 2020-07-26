@@ -14,7 +14,7 @@ namespace storm {
         relevantValuesForPrecisionUpdate = oviSettings.useRelevantValuesForPrecisionUpdate();
         upperBoundGuessingFactor = storm::utility::convertNumber<storm::RationalNumber>(oviSettings.getUpperBoundGuessingFactor());
         upperBoundOnlyIterations = oviSettings.getUpperBoundOnlyIterations();
-        terminationGuaranteedMinimumMethod = oviSettings.useTerminationGuaranteedMinimumMethod();
+        noTerminationGuaranteeMinimumMethod = oviSettings.useNoTerminationGuaranteeMinimumMethod();
     }
     
     OviSolverEnvironment::~OviSolverEnvironment() {
@@ -41,8 +41,8 @@ namespace storm {
         return upperBoundOnlyIterations;
     }
 
-    bool OviSolverEnvironment::useTerminationGuaranteedMinimumMethod() const {
-        return terminationGuaranteedMinimumMethod;
+    bool OviSolverEnvironment::useNoTerminationGuaranteeMinimumMethod() const {
+        return noTerminationGuaranteeMinimumMethod;
     }
     
 }

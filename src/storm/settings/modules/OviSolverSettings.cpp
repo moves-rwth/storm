@@ -17,7 +17,7 @@ namespace storm {
             const std::string OviSolverSettings::useRelevantValuesForPrecisionUpdateOptionName = "use-relevant-values";
             const std::string OviSolverSettings::upperBoundGuessingFactorOptionName = "upper-bound-factor";
             const std::string OviSolverSettings::upperBoundOnlyIterationsOptionName = "check-upper-only-iter";
-            const std::string OviSolverSettings::useTerminationGuaranteedMinimumMethodOptionName = "termination-guarantee";
+            const std::string OviSolverSettings::useNoTerminationGuaranteeMinimumMethodOptionName = "no-termination-guarantee";
 
             OviSolverSettings::OviSolverSettings() : ModuleSettings(moduleName) {
                 
@@ -31,7 +31,7 @@ namespace storm {
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, upperBoundOnlyIterationsOptionName, false, "Sets the max. iterations OVI will only iterate over the upper bound.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createIntegerArgument("iter", "The iterations.").setDefaultValueInteger(20000).addValidatorInteger(ArgumentValidatorFactory::createIntegerGreaterValidator(0)).build()).build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, useTerminationGuaranteedMinimumMethodOptionName, false, "Sets whether to perform calculations on element-wise minimum of iterated and old upper bound.").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, useNoTerminationGuaranteeMinimumMethodOptionName, false, "Sets whether to perform element-wise minimum of iterated and old upper bound. If this option is set, that will be skipped, slightly increasing performance but giving no termination guarantee.").setShortName("ntg").setIsAdvanced().build());
             }
             
             double OviSolverSettings::getPrecisionUpdateFactor() const {
@@ -54,8 +54,8 @@ namespace storm {
                 return this->getOption(upperBoundOnlyIterationsOptionName).getArgumentByName("iter").getValueAsInteger();
             }
 
-            bool OviSolverSettings::useTerminationGuaranteedMinimumMethod() const {
-                return this->getOption(useTerminationGuaranteedMinimumMethodOptionName).getHasOptionBeenSet();
+            bool OviSolverSettings::useNoTerminationGuaranteeMinimumMethod() const {
+                return this->getOption(useNoTerminationGuaranteeMinimumMethodOptionName).getHasOptionBeenSet();
             }
            
         }
