@@ -67,12 +67,16 @@ namespace storm {
                 this->parametricModel = parametricModel;
                 this->specifyFormula(env, checkTask);
             } else {
+                storm::utility::Stopwatch simplifyingWatch(true);
                 auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<SparseModelType>(*parametricModel);
                 if (!simplifier.simplify(checkTask.getFormula())) {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
                 }
                 this->parametricModel = simplifier.getSimplifiedModel();
                 this->specifyFormula(env, checkTask.substituteFormula(*simplifier.getSimplifiedFormula()));
+                simplifyingWatch.stop();
+                STORM_PRINT(std::endl << "Time for model simplification: " << simplifyingWatch << "." << std::endl << std::endl);
+                parametricModel->printModelInformationToStream(std::cout);
             }
         }
         
