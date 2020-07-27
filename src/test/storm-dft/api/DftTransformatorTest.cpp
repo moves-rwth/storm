@@ -17,7 +17,7 @@ namespace {
         uint64_t constBeFailedCount = 0;
         uint64_t constBeFailsafeCount = 0;
         for (auto &be : bes) {
-            if (be->type() == storm::storage::DFTElementType::BE_CONST) {
+            if (be->beType() == storm::storage::BEType::CONSTANT) {
                 if (be->canFail()) {
                     ++constBeFailedCount;
                 } else {

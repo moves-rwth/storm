@@ -7,7 +7,7 @@
 #include "storm/environment/solver/GmmxxSolverEnvironment.h"
 #include "storm/exceptions/AbortException.h"
 #include "storm/utility/constants.h"
-#include "storm/utility/gmm.h"
+#include "storm/adapters/gmm.h"
 #include "storm/utility/vector.h"
 #include "storm/utility/SignalHandler.h"
 

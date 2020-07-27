@@ -25,6 +25,7 @@ namespace storm {
 
             using DFTElementPointer = std::shared_ptr<storm::storage::DFTElement<ValueType>>;
             using DFTElementVector = std::vector<DFTElementPointer>;
+            using DFTBEPointer = std::shared_ptr<storm::storage::DFTBE<ValueType>>;
             using DFTGatePointer = std::shared_ptr<storm::storage::DFTGate<ValueType>>;
             using DFTGateVector = std::vector<DFTGatePointer>;
             using DFTDependencyPointer = std::shared_ptr<storm::storage::DFTDependency<ValueType>>;
@@ -213,6 +214,13 @@ namespace storm {
              * @param element Element to copy.
              */
             void copyElement(DFTElementPointer element);
+
+            /**
+             * Copy BE and insert it again in the builder.i
+             *
+             * @param be BE to copy.
+             */
+            void copyBE(DFTBEPointer be);
 
             /**
              * Copy gate with given children and insert it again in the builder. The current children of the element

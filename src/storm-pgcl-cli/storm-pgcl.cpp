@@ -23,7 +23,7 @@
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm/storage/SymbolicModelDescription.h"
 
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 
 /*!
  * Initialize the settings manager.

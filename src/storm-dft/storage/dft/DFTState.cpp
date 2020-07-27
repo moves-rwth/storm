@@ -49,8 +49,12 @@ namespace storm {
                 if (mDft.isBasicElement(index) && isOperational(index) && !isEventDisabledViaRestriction(index)) {
                     std::shared_ptr<const DFTBE<ValueType>> be = mDft.getBasicElement(index);
                     if (be->canFail()) {
-                        switch (be->type()) {
-                            case storm::storage::DFTElementType::BE_EXP:
+                        switch (be->beType()) {
+                            case storm::storage::BEType::CONSTANT:
+                                failableElements.addBE(index);
+                                STORM_LOG_TRACE("Currently failable: " << *be);
+                                break;
+                            case storm::storage::BEType::EXPONENTIAL:
                             {
                                 auto beExp = std::static_pointer_cast<BEExponential<ValueType> const>(be);
                                 if (!beExp->isColdBasicElement() || !mDft.hasRepresentant(index) || isActive(mDft.getRepresentant(index))) {
@@ -59,10 +63,6 @@ namespace storm {
                                 }
                                 break;
                             }
-                            case storm::storage::DFTElementType::BE_CONST:
-                                failableElements.addBE(index);
-                                STORM_LOG_TRACE("Currently failable: " << *be);
-                                break;
                             default:
                                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BE type '" << be->type() << "' is not supported.");
                                 break;
@@ -315,7 +315,7 @@ namespace storm {
         template<typename ValueType>
         ValueType DFTState<ValueType>::getBERate(size_t id) const {
             STORM_LOG_ASSERT(mDft.isBasicElement(id), "Element is no BE.");
-            STORM_LOG_THROW(mDft.getBasicElement(id)->type() == storm::storage::DFTElementType::BE_EXP, storm::exceptions::NotSupportedException, "BE of type '" << mDft.getBasicElement(id)->type() << "' is not supported.");
+            STORM_LOG_THROW(mDft.getBasicElement(id)->beType() == storm::storage::BEType::EXPONENTIAL, storm::exceptions::NotSupportedException, "BE of type '" << mDft.getBasicElement(id)->type() << "' is not supported.");
             auto beExp = std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(mDft.getBasicElement(id));
             if (mDft.hasRepresentant(id) && !isActive(mDft.getRepresentant(id))) {
                 // Return passive failure rate
@@ -380,8 +380,11 @@ namespace storm {
                 if(mDft.isBasicElement(elem) && isOperational(elem) && !isEventDisabledViaRestriction(elem)) {
                     std::shared_ptr<const DFTBE<ValueType>> be = mDft.getBasicElement(elem);
                     if (be->canFail()) {
-                        switch (be->type()) {
-                            case storm::storage::DFTElementType::BE_EXP: {
+                        switch (be->beType()) {
+                            case storm::storage::BEType::CONSTANT:
+                                // Nothing to do
+                                break;
+                            case storm::storage::BEType::EXPONENTIAL: {
                                 auto beExp = std::static_pointer_cast<BEExponential<ValueType> const>(be);
                                 if (beExp->isColdBasicElement()) {
                                     // Add to failable BEs
@@ -389,9 +392,6 @@ namespace storm {
                                 }
                                 break;
                             }
-                            case storm::storage::DFTElementType::BE_CONST:
-                                // Nothing to do
-                                break;
                             default:
                                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BE type '" << be->type() << "' is not supported.");
                         }
@@ -410,6 +410,11 @@ namespace storm {
             } else {
                 return mDft.getChild(id, nrUsedChild);
             }
+        }
+
+        template<typename ValueType>
+        uint_fast64_t DFTState<ValueType>::usesIndex(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) {
+            return state.getAsInt(stateGenerationInfo.getSpareUsageIndex(id), stateGenerationInfo.usageInfoBits());
         }
 
         template<typename ValueType>

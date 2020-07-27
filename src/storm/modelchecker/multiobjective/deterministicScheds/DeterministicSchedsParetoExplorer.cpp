@@ -16,7 +16,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
 
-#include "storm/utility/export.h"
+#include "storm/io/export.h"
 #include "storm/utility/solver.h"
 
 #include "storm/exceptions/UnexpectedException.h"

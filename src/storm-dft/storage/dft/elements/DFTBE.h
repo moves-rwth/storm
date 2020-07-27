@@ -22,9 +22,28 @@ namespace storm {
                 // Intentionally empty
             }
 
+            DFTElementType type() const override {
+                return DFTElementType::BE;
+            }
+
+            /*!
+             * Get type of BE (constant, exponential, etc.).
+             * @return BE type.
+             */
+            virtual BEType beType() const = 0;
+
             size_t nrChildren() const override {
                 return 0;
             }
+
+           /*!
+             * Return the unreliability of the BE up to the given time point.
+             * Computes the cumulative distribution function F(x) for time x.
+             * Note that the computation assumes the BE is always active.
+             *
+             * @return Cumulative failure probability.
+             */
+            virtual ValueType getUnreliability(ValueType time) const = 0;
 
             /*!
              * Return whether the BE can fail.
@@ -63,23 +82,7 @@ namespace storm {
                 return true;
             }
 
-            void extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents, bool sparesAsLeaves) const override {
-                if (elemsInSubtree.count(this->id())) {
-                    return;
-                }
-                DFTElement<ValueType>::extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
-                if (elemsInSubtree.empty()) {
-                    // Parent in the subDFT, i.e., it is *not* a subDFT
-                    return;
-                }
-                for (auto const& inDep : ingoingDependencies()) {
-                    inDep->extendSubDft(elemsInSubtree, parentsOfSubRoot, blockParents, sparesAsLeaves);
-                    if (elemsInSubtree.empty()) {
-                        // Parent in the subDFT, i.e., it is *not* a subDFT
-                        return;
-                    }
-                }
-            }
+            void extendSubDft(std::set<size_t>& elemsInSubtree, std::vector<size_t> const& parentsOfSubRoot, bool blockParents, bool sparesAsLeaves) const override;
 
             bool checkDontCareAnymore(storm::storage::DFTState<ValueType>& state, DFTStateSpaceGenerationQueues<ValueType>& queues) const override {
                 if (DFTElement<ValueType>::checkDontCareAnymore(state, queues)) {
@@ -87,6 +90,14 @@ namespace storm {
                     return true;
                 }
                 return false;
+            }
+
+            bool isTypeEqualTo(DFTElement<ValueType> const& other) const override {
+                if (!DFTElement<ValueType>::isTypeEqualTo(other)) {
+                    return false;
+                }
+                auto& otherBE = static_cast<DFTBE<ValueType> const&>(other);
+                return this->beType() == otherBE.beType();
             }
 
         private:

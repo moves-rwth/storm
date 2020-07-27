@@ -1,12 +1,4 @@
-/*
- * cstring.h
- *
- *  Created on: 30.01.2014
- *      Author: Manuel Sascha Weiand
- */
-
-#ifndef STORM_UTILITY_CSTRING_H_
-#define STORM_UTILITY_CSTRING_H_
+#pragma once
 
 #include <cstdint>
 
@@ -49,5 +41,3 @@ namespace storm {
 		} // namespace cstring
 	} // namespace utility
 } // namespace storm
-
-#endif /* STORM_UTILITY_CSTRING_H_ */

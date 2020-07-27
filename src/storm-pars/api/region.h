@@ -21,7 +21,7 @@
 #include "storm/environment/Environment.h"
 
 #include "storm/api/transformation.h"
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 #include "storm/models/sparse/Model.h"
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/InvalidOperationException.h"

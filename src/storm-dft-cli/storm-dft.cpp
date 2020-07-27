@@ -184,54 +184,16 @@ void processOptions() {
 
 
     // Set relevant event names
-    std::vector<std::string> relevantEventNames;
-    //Possible clash of relevantEvents and disableDC was already considered in FaultTreeSettings::check().
+    std::vector<std::string> additionalRelevantEventNames;
     if (faultTreeSettings.areRelevantEventsSet()) {
-        relevantEventNames = faultTreeSettings.getRelevantEvents();
+        //Possible clash of relevantEvents and disableDC was already considered in FaultTreeSettings::check().
+        additionalRelevantEventNames = faultTreeSettings.getRelevantEvents();
     } else if (faultTreeSettings.isDisableDC()) {
         // All events are relevant
-        relevantEventNames = {"all"};
+        additionalRelevantEventNames = {"all"};
     }
+    std::set<size_t> relevantEvents = storm::api::computeRelevantEvents<ValueType>(*dft, props, additionalRelevantEventNames);
 
-    // Events from properties are relevant as well
-    // Get necessary labels from properties
-    std::vector<std::shared_ptr<storm::logic::AtomicLabelFormula const>> atomicLabels;
-    for (auto property : props) {
-        property->gatherAtomicLabelFormulas(atomicLabels);
-    }
-    // Add relevant event names from properties
-    for (auto atomic : atomicLabels) {
-        std::string label = atomic->getLabel();
-        if (label == "failed" or label == "skipped") {
-            // Ignore as these label will always be added if necessary
-        } else {
-            // Get name of event
-            if (boost::ends_with(label, "_failed")) {
-                relevantEventNames.push_back(label.substr(0, label.size() - 7));
-            } else if (boost::ends_with(label, "_dc")) {
-                relevantEventNames.push_back(label.substr(0, label.size() - 3));
-            } else {
-                STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Label '" << label << "' not known.");
-            }
-        }
-    }
-
-    // Set relevant elements
-    std::set<size_t> relevantEvents; // Per default no event (except the toplevel event) is relevant
-    for (std::string const& relevantName : relevantEventNames) {
-        if (relevantName == "none") {
-            // Only toplevel event is relevant
-            relevantEvents = {};
-            break;
-        } else if (relevantName == "all") {
-            // All events are relevant
-            relevantEvents = dft->getAllIds();
-            break;
-        } else {
-            // Find and add corresponding event id
-            relevantEvents.insert(dft->getIndex(relevantName));
-        }
-    }
 
     // Analyze DFT
     // TODO allow building of state space even without properties

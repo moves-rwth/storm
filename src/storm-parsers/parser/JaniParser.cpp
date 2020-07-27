@@ -28,7 +28,7 @@
 #include "storm/storage/jani/ArrayVariable.h"
 
 #include "storm/utility/macros.h"
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 
 namespace storm {
     namespace parser {
