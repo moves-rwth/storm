@@ -188,6 +188,8 @@ namespace storm {
             storm::storage::BitVector nonConstVectorEntries;
             storm::storage::BitVector selectedRowsMinimize;
             storm::storage::BitVector selectedRowsMaximize;
+            std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>> matrixAssignmentMinimize; // Connection of matrix entries with placeholders
+            std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>> matrixAssignmentMaximize; // Connection of matrix entries with placeholders
         };
 
     }

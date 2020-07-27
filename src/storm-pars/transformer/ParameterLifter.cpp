@@ -83,6 +83,8 @@ namespace storm {
                                 builder.addNextValue(newRowIndex, oldToNewColumnIndexMapping[entry.getColumn()], storm::utility::one<ConstantType>());
                                 ConstantType& placeholder = functionValuationCollector.add(entry.getValue(), val);
                                 matrixAssignment.push_back(std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>(typename storm::storage::SparseMatrix<ConstantType>::iterator(), placeholder));
+                                matrixAssignmentMinimize.push_back(std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>(typename storm::storage::SparseMatrix<ConstantType>::iterator(), placeholder));
+                                matrixAssignmentMaximize.push_back(std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>(typename storm::storage::SparseMatrix<ConstantType>::iterator(), placeholder));
                                 countPlaceHolders++;
                             }
                         }
@@ -118,6 +120,8 @@ namespace storm {
             matrix = builder.build(newRowIndex);
             vector.shrink_to_fit();
             matrixAssignment.shrink_to_fit();
+            matrixAssignmentMinimize.shrink_to_fit();
+            matrixAssignmentMaximize.shrink_to_fit();
             vectorAssignment.shrink_to_fit();
             nonConstMatrixEntries.resize(pMatrixEntryCount);
             
@@ -155,16 +159,24 @@ namespace storm {
             functionValuationCollector.evaluateCollectedFunctions(region, dirForParameters);
 
             //apply the matrix and vector assignments to write the contents of the placeholder into the matrix/vector
-            for (auto &assignment : matrixAssignment) {
-                STORM_LOG_WARN_COND(!storm::utility::isZero(assignment.second), "Parameter lifting on region " << region.toString() << " affects the underlying graph structure (the region is not strictly well defined). The result for this region might be incorrect.");
-                if (!usePartialScheduler) {
+            if (!usePartialScheduler) {
+                for (auto &assignment : matrixAssignment) {
+                    STORM_LOG_WARN_COND(!storm::utility::isZero(assignment.second), "Parameter lifting on region " << region.toString() << " affects the underlying graph structure (the region is not strictly well defined). The result for this region might be incorrect.");
                     assignment.first->setValue(assignment.second);
-                } else if (useMinimize && assignment.first != specifiedMatrixMinimize.end()) {
-                    assignment.first->setValue(assignment.second);
-                } else if (!useMinimize && assignment.first != specifiedMatrixMaximize.end()) {
-                    assignment.first->setValue(assignment.second);
-                } else {
-                    assert (useMinimize && assignment.first == specifiedMatrixMinimize.end() || !useMinimize && assignment.first == specifiedMatrixMaximize.end());
+                }
+            } else if (useMinimize) {
+                for (auto &assignment : matrixAssignmentMinimize) {
+                    STORM_LOG_WARN_COND(!storm::utility::isZero(assignment.second), "Parameter lifting on region " << region.toString() << " affects the underlying graph structure (the region is not strictly well defined). The result for this region might be incorrect.");
+                    if (assignment.first != specifiedMatrixMinimize.end()) {
+                        assignment.first->setValue(assignment.second);
+                    }
+                }
+            } else {
+                for (auto &assignment : matrixAssignmentMaximize) {
+                    STORM_LOG_WARN_COND(!storm::utility::isZero(assignment.second), "Parameter lifting on region " << region.toString() << " affects the underlying graph structure (the region is not strictly well defined). The result for this region might be incorrect.");
+                    if (assignment.first != specifiedMatrixMaximize.end()) {
+                        assignment.first->setValue(assignment.second);
+                    }
                 }
             }
 
@@ -210,12 +222,10 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::Order> reachabilityOrder, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename ParameterLifter<ParametricType, ConstantType>::VariableType>> localMonotonicityResult) {
             usePartialScheduler = true;
-            bool oldMinimize = useMinimize;
             useMinimize = dirForParameters == storm::solver::OptimizationDirection::Minimize;
             // If they are both done (all states have local monotonicity, we can reuse the matrix)
             // Check localMonotonicityResult == lastMonotonicityResult to prevent checking a bitvector twice when the pointers are the same
             // If we can use the last matrix and we have the same localMonotonicityResult pointer we can reuse the whole thing
-
             if (useMinimize) {
                 useLastMatrixMinimize = localMonotonicityResult->isDone() && (localMonotonicityResult == lastMonotonicityResultMinimize || (lastMonotonicityResultMinimize != nullptr && lastMonotonicityResultMinimize->isDone()));
                 useLastMonotonicityResultMinimize = useLastMatrixMinimize && localMonotonicityResult == lastMonotonicityResultMinimize;
@@ -237,15 +247,20 @@ namespace storm {
                 }
                 specifyIteratorsPartialScheduler();
             }
-            if (useMinimize != oldMinimize) {
-                specifyIteratorsPartialScheduler();
-            }
             specifyRegion(region, dirForParameters);
+
         }
 
         template<typename ParametricType, typename ConstantType>
         void ParameterLifter<ParametricType, ConstantType>::setPartialSchedulerMonotonicity(storm::storage::ParameterRegion<ParametricType> const& region, std::shared_ptr<storm::analysis::Order> reachabilityOrder, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename ParameterLifter<ParametricType, ConstantType>::VariableType>> localMonotonicityResult) {
             auto state = reachabilityOrder->getNextAddedState(-1);
+            if (useMinimize) {
+                selectedRowsMinimize.fill();
+                assert (selectedRowsMinimize.full());
+            } else {
+                selectedRowsMaximize.fill();
+                assert (selectedRowsMaximize.full());
+            }
             while (state != reachabilityOrder->getNumberOfStates()) {
                 if (reachabilityOrder->isBottomState(state) || reachabilityOrder->isTopState(state)) {
                     localMonotonicityResult->setStateMonotone(state);
@@ -264,18 +279,12 @@ namespace storm {
                     if (variables.size() == 0) {
                         localMonotonicityResult->setStateMonotone(state);
                     }
+
                     for (auto var : variables) {
                         auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
                         if (monotonicity == Monotonicity::Unknown || monotonicity == Monotonicity::Not) {
-                            monotonicity = monotonicityChecker->checkLocalMonotonicity(reachabilityOrder, state,
-                                                                                       var, region);
+                            monotonicity = monotonicityChecker->checkLocalMonotonicity(reachabilityOrder, state, var, region);
                             localMonotonicityResult->setMonotonicity(state, var, monotonicity);
-                        }
-
-                        if (useMinimize) {
-                            selectedRowsMinimize.fill();
-                        } else {
-                            selectedRowsMaximize.fill();
                         }
 
                         bool ignoreUpperBound = monotonicity == Monotonicity::Constant || (useMinimize && monotonicity == Monotonicity::Incr) || (!useMinimize && monotonicity == Monotonicity::Decr);
@@ -315,7 +324,12 @@ namespace storm {
         void ParameterLifter<ParametricType, ConstantType>::specifyIteratorsPartialScheduler() {
             auto numberOfIgnoredRows = 0;
             // Insert the correct iterators for the matrix and vector assignment
-            auto matrixAssignmentIt = matrixAssignment.begin();
+            typename std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>>::iterator matrixAssignmentIt;
+            if (useMinimize) {
+                matrixAssignmentIt = matrixAssignmentMinimize.begin();
+            } else {
+                matrixAssignmentIt = matrixAssignmentMaximize.begin();
+            }
             uint_fast64_t startEntryOfRow = 0;
             for (uint_fast64_t group = 0; group < matrix.getRowGroupCount(); ++group) {
                 uint_fast64_t startEntryOfNextRow = startEntryOfRow + matrix.getRow(group, 0).getNumberOfEntries();
@@ -345,7 +359,7 @@ namespace storm {
                 }
                 startEntryOfRow = startEntryOfNextRow;
             }
-            STORM_LOG_ASSERT(matrixAssignmentIt == matrixAssignment.end(), "Unexpected number of entries in the matrix assignment.");
+            STORM_LOG_ASSERT(useMinimize && matrixAssignmentIt == matrixAssignmentMinimize.end() || !useMinimize && matrixAssignmentIt == matrixAssignmentMaximize.end(), "Unexpected number of entries in the matrix assignment.");
         }
     
         template<typename ParametricType, typename ConstantType>
