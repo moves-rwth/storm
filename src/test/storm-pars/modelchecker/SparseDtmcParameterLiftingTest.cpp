@@ -503,7 +503,7 @@ namespace {
         ASSERT_TRUE(order->getDoneBuilding());
 
         // Modelcheckers
-        auto regionCheckerMon = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, true);
+        auto regionCheckerMon = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, false, true);
         auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, false);
 
         //start testing
@@ -559,7 +559,7 @@ namespace {
         ASSERT_TRUE(order->getDoneBuilding());
 
         // Modelcheckers
-        auto regionCheckerMon = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, true);
+        auto regionCheckerMon = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, false, true);
         auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, false);
 
         //start testing
@@ -609,7 +609,7 @@ namespace {
         model = storm::api::performBisimulationMinimization<storm::RationalFunction>(model, formulas, bisimType)->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
         // Modelcheckers
-        auto regionCheckerMon = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, true);
+        auto regionCheckerMon = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, false, true);
         auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, false);
 
         // Start testing
@@ -651,7 +651,7 @@ namespace {
         modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
         // Modelcheckers
-        auto regionCheckerMon = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, true);
+        auto regionCheckerMon = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, false, true);
         auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false);
 
         // Start testing
@@ -694,7 +694,7 @@ namespace {
         modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
         // Modelcheckers
-        auto regionCheckerMon = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, true);
+        auto regionCheckerMon = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, false, true);
         auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false);
 
         // Start testing
@@ -736,7 +736,7 @@ namespace {
         modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
         // Modelcheckers
-        auto regionCheckerMon = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, true);
+        auto regionCheckerMon = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, false, true);
         auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false);
 
         // Start testing
@@ -779,7 +779,7 @@ namespace {
         modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
         // Modelcheckers
-        auto regionCheckerMon = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, true);
+        auto regionCheckerMon = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, false, true);
         auto regionChecker = storm::api::initializeParameterLiftingRegionModelChecker<storm::RationalFunction, ValueType>(this->env(), model, storm::api::createTask<storm::RationalFunction>(formulas[0], true), false, false);
 
         // Start testing

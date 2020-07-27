@@ -31,7 +31,7 @@ namespace storm {
             virtual ~RegionModelChecker() = default;
             
             virtual bool canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask) const = 0;
-            virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask, bool generateRegionSplitEstimates) = 0;
+            virtual void specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ParametricType> const& checkTask, bool generateRegionSplitEstimates, bool allowModelSimplifications = true) = 0;
 
             
             /*!

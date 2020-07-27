@@ -489,7 +489,8 @@ namespace storm {
                     if (regionSettings.isDepthLimitSet()) {
                         optionalDepthLimit = regionSettings.getDepthLimit();
                     }
-                    std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true), regions.front(), engine, refinementThreshold, optionalDepthLimit, regionSettings.getHypothesis(), useMonotonicity);
+                    // TODO: change allow model simplification when not using monotonicity, for benchmarking purposes simplification is moved forward.
+                    std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true), regions.front(), engine, refinementThreshold, optionalDepthLimit, regionSettings.getHypothesis(), false, useMonotonicity);
                     return result;
                 };
             } else {
@@ -585,8 +586,8 @@ namespace storm {
 
             STORM_LOG_THROW(model || input.properties.empty(), storm::exceptions::InvalidSettingsException, "No input model.");
 
-
-            if (model && (monSettings.isMonotonicityAnalysisSet() || parSettings.isUseMonotonicitySet())) {
+            // To make it easier to compare with monotonicity checking for pla to the one without we always simplify directly, and tell the parameterlifter not to simplify
+            if (model) { // && (monSettings.isMonotonicityAnalysisSet() || parSettings.isUseMonotonicitySet())) {
                 // Simplify the model for monotonicity analysis
 
                 storm::utility::Stopwatch simplifyingWatch(true);

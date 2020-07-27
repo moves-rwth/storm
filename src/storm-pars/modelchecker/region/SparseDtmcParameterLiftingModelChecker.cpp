@@ -47,40 +47,36 @@ namespace storm {
             result &= checkTask.getFormula().isInFragment(storm::logic::reachability().setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setBoundedUntilFormulasAllowed(true).setCumulativeRewardFormulasAllowed(true).setStepBoundedCumulativeRewardFormulasAllowed(true).setTimeBoundedCumulativeRewardFormulasAllowed(true).setTimeBoundedUntilFormulasAllowed(true).setStepBoundedUntilFormulasAllowed(true).setTimeBoundedUntilFormulasAllowed(true));
             return result;
         }
-        
+
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool generateRegionSplitEstimates) {
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool generateRegionSplitEstimates, bool allowModelSimplification) {
             auto dtmc = parametricModel->template as<SparseModelType>();
-            specify_internal(env, dtmc, checkTask, generateRegionSplitEstimates);
+            specify_internal(env, dtmc, checkTask, generateRegionSplitEstimates, !allowModelSimplification);
         }
-        
+
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specify_internal(Environment const& env, std::shared_ptr<SparseModelType> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool generateRegionSplitEstimates) {
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specify_internal(Environment const& env, std::shared_ptr<SparseModelType> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool generateRegionSplitEstimates, bool skipModelSimplification) {
             STORM_LOG_ASSERT(this->canHandle(parametricModel, checkTask), "specified model and formula can not be handled by this.");
-            
+
             reset();
-            
+
             regionSplitEstimationsEnabled = generateRegionSplitEstimates;
-            
-            if (RegionModelChecker<typename SparseModelType::ValueType>::isUseMonotonicitySet()) {
-                // We can skip model simplification
+
+            if (skipModelSimplification) {
                 this->parametricModel = parametricModel;
                 this->specifyFormula(env, checkTask);
             } else {
-                storm::utility::Stopwatch simplifyingWatch(true);
                 auto simplifier = storm::transformer::SparseParametricDtmcSimplifier<SparseModelType>(*parametricModel);
                 if (!simplifier.simplify(checkTask.getFormula())) {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Simplifying the model was not successfull.");
                 }
                 this->parametricModel = simplifier.getSimplifiedModel();
                 this->specifyFormula(env, checkTask.substituteFormula(*simplifier.getSimplifiedFormula()));
-                simplifyingWatch.stop();
-                STORM_PRINT(std::endl << "Time for model simplification: " << simplifyingWatch << "." << std::endl << std::endl);
-                parametricModel->printModelInformationToStream(std::cout);
             }
         }
-        
-        
+
+
+
         template <typename SparseModelType, typename ConstantType>
         void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyBoundedUntilFormula(Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ConstantType> const& checkTask) {
             // get the step bound
