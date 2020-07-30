@@ -14,7 +14,9 @@ namespace storm {
         typename LocalMonotonicityResult<VariableType>::Monotonicity LocalMonotonicityResult<VariableType>::getMonotonicity(uint_fast64_t state, VariableType var) const {
             if (stateMonRes[state] != nullptr) {
                 return stateMonRes[state]->getMonotonicity(var);
-            } else {
+            } else if (statesMonotone[state]) {
+                return Monotonicity::Constant;
+            } else{
                 return Monotonicity::Unknown;
             }
         }
@@ -56,7 +58,38 @@ namespace storm {
 
         template <typename VariableType>
         bool LocalMonotonicityResult<VariableType>::isDone() const {
-            return statesMonotone.full();
+            return done || statesMonotone.full();
+        }
+
+        template <typename VariableType>
+        void LocalMonotonicityResult<VariableType>::setDone(bool done) {
+            this->done = done;
+        }
+
+        template <typename VariableType>
+        void LocalMonotonicityResult<VariableType>::setIndexMinimize(int i) {
+            assert (indexMinimize == -1);
+            this->indexMinimize = i;
+        }
+
+        template <typename VariableType>
+        void LocalMonotonicityResult<VariableType>::setIndexMaximize(int i) {
+            this->indexMaximize = i;
+        }
+
+        template <typename VariableType>
+        int LocalMonotonicityResult<VariableType>::getIndexMinimize() const {
+            return indexMinimize;
+        }
+
+        template <typename VariableType>
+        int LocalMonotonicityResult<VariableType>::getIndexMaximize() const {
+            return indexMaximize;
+        }
+
+        template <typename VariableType>
+        bool LocalMonotonicityResult<VariableType>::isNoMonotonicity() const {
+            return statesMonotone.empty();
         }
 
         template <typename VariableType>
@@ -75,8 +108,26 @@ namespace storm {
         }
 
         template <typename VariableType>
-        void LocalMonotonicityResult<VariableType>::setStateMonotone(uint_fast64_t state) {
+        void LocalMonotonicityResult<VariableType>::setConstant(uint_fast64_t state) {
             this->statesMonotone.set(state);
+        }
+
+        template <typename VariableType>
+        std::string LocalMonotonicityResult<VariableType>::toString() const {
+            std::string result = "Local Monotonicity Result: \n";
+            for (auto i = 0; i < stateMonRes.size(); ++i) {
+                result += "state ";
+                result += std::to_string(i);
+                if (stateMonRes[i] != nullptr) {
+                    result += stateMonRes[i]->toString();
+                } else if (statesMonotone[i]) {
+                    result += "constant";
+                } else {
+                    result += "not analyzed";
+                }
+                result += "\n";
+            }
+            return result;
         }
 
         template class LocalMonotonicityResult<storm::RationalFunctionVariable>;

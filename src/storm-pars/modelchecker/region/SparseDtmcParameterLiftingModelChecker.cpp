@@ -248,7 +248,6 @@ namespace storm {
         
         template <typename SparseModelType, typename ConstantType>
         std::unique_ptr<CheckResult> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::Order> reachabilityOrder, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) {
-            
             if (maybeStates.empty()) {
                 return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(resultsForNonMaybeStates);
             }
@@ -456,10 +455,24 @@ namespace storm {
             }
         }
 
+        template<typename SparseModelType, typename ConstantType>
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::setConstantEntries(std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) {
+            parameterLifter->setConstantEntries(localMonotonicityResult);
+        }
+
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::splitAtCenter(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>>& regionVector, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>>& knownRegionVector, storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> const& monRes, storm::modelchecker::RegionResult const& regionRes) {
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::splitAtCenter(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>>& regionVector, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>>& knownRegionVector, storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> const& monRes, storm::modelchecker::RegionResult& regionRes) {
             auto optimizationDirection = isLowerBound(this->currentCheckTask->getBound().comparisonType) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
-            region.split(region.getCenterPoint(), regionVector, knownRegionVector, monRes, regionRes, optimizationDirection);
+            if (monRes.isAllMonotonicity()) {
+                regionRes = getInstantiationChecker().check(env, region.getCenterPoint())->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()] ? RegionResult::CenterSat : RegionResult::CenterViolated;
+                region.split(region.getCenterPoint(), regionVector, knownRegionVector, monRes, regionRes, optimizationDirection);
+            } else {
+                region.split(region.getCenterPoint(), regionVector);
+            }
+        }
+        template<typename SparseModelType, typename ConstantType>
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::setUseMonotonicityNow(bool monotonicity) {
+            parameterLifter->setUseMonotonicityNow(monotonicity);
         }
 
         template class SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;

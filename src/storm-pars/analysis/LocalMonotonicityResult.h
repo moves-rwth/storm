@@ -30,8 +30,22 @@ namespace storm {
             std::shared_ptr<LocalMonotonicityResult<VariableType>> copy();
 
             bool isDone() const;
+            void setDone(bool done = true);
 
-            void setStateMonotone(uint_fast64_t state);
+            bool isNoMonotonicity() const;
+
+            void setConstant(uint_fast64_t state);
+
+            void setIndexMinimize(int index);
+            void setIndexMaximize(int index);
+            int getIndexMinimize() const;
+            int getIndexMaximize() const;
+
+            /*!
+             * Constructs a string output of all variables and their corresponding Monotonicity
+             * @return Results so far
+             */
+            std::string toString() const;
 
 
         private:
@@ -46,6 +60,10 @@ namespace storm {
             void setStatesMonotone(storm::storage::BitVector statesMonotone);
 
             storm::storage::BitVector statesMonotone;
+            bool done = false;
+
+            int indexMinimize = -1;
+            int indexMaximize = -1;
         };
     }
 }

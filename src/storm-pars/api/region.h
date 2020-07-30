@@ -101,7 +101,7 @@ namespace storm {
             std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> checker;
             if (consideredModel->isOfType(storm::models::ModelType::Dtmc)) {
                 checker = std::make_shared<storm::modelchecker::SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<ParametricType>, ConstantType>>();
-                checker->setMonotonicity(useMonotonicity);
+                checker->setUseMonotonicityInFuture(useMonotonicity);
             } else if (consideredModel->isOfType(storm::models::ModelType::Mdp)) {
                 STORM_LOG_WARN_COND(!useMonotonicity, "Usage of monotonicity not supported for this type of model, continuing without montonicity checking");
                 checker = std::make_shared<storm::modelchecker::SparseMdpParameterLiftingModelChecker<storm::models::sparse::Mdp<ParametricType>, ConstantType>>();
@@ -209,6 +209,20 @@ namespace storm {
             Environment env;
             auto regionChecker = initializeRegionModelChecker(env, model, task, engine);
             return regionChecker->computeExtremalValue(env, region, dir, precision.is_initialized() ? precision.get() : storm::utility::zero<ValueType>());
+        }
+
+        /*!
+         * Finds the extremal value in the given region
+         * @param engine The considered region checking engine
+         * @param coverageThreshold if given, the refinement stops as soon as the fraction of the area of the subregions with inconclusive result is less then this threshold
+         * @param refinementDepthThreshold if given, the refinement stops at the given depth. depth=0 means no refinement.
+         * @param hypothesis if not 'unknown', it is only checked whether the hypothesis holds (and NOT the complementary result).
+         */
+        template <typename ValueType>
+        std::pair<ValueType, typename storm::storage::ParameterRegion<ValueType>::Valuation> computeFeasibleSolution(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, storm::solver::OptimizationDirection const& dir, boost::optional<ValueType> const& precision) {
+            Environment env;
+            auto regionChecker = initializeRegionModelChecker(env, model, task, engine);
+            return regionChecker->computeFeasibleSolution(env, region, dir, precision.is_initialized() ? precision.get() : storm::utility::zero<ValueType>());
         }
         
         template <typename ValueType>

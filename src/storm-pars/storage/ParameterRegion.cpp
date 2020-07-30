@@ -238,7 +238,6 @@ namespace storm {
                                                           || (newUpper == splittingPointEntry->second && monVar == analysis::MonotonicityResult<VariableType>::Monotonicity::Decr)))
                                                   || monVar == analysis::MonotonicityResult<VariableType>::Monotonicity::Constant;
                         }
-
                     }
                     ParameterRegion<ParametricType> subRegion(std::move(subLower), std::move(subUpper));
                     if(!storm::utility::isZero(subRegion.area())){
@@ -268,7 +267,6 @@ namespace storm {
                     }
                 }
             }
-
         }
 
         template<typename ParametricType>
