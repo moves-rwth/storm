@@ -54,8 +54,10 @@ namespace storm {
                 auto thresholdAsCoefficient = coverageThreshold ? storm::utility::convertNumber<CoefficientType>(coverageThreshold.get()) : storm::utility::zero<CoefficientType>();
                 auto areaOfParameterSpace = region.area();
                 auto fractionOfUndiscoveredArea = storm::utility::one<CoefficientType>();
+                auto fractionOfDiscoveredAreaWithMonotonicity = storm::utility::zero<CoefficientType>();
                 auto fractionOfAllSatArea = storm::utility::zero<CoefficientType>();
                 auto fractionOfAllViolatedArea = storm::utility::zero<CoefficientType>();
+                numberOfRegionsKnownThroughMonotonicity = 0;
                 
                 // The resulting (sub-)regions
                 std::vector<std::pair<storm::storage::ParameterRegion<ParametricType>, RegionResult>> result;
@@ -65,10 +67,10 @@ namespace storm {
                 std::queue<std::shared_ptr<storm::analysis::Order>> orders;
                 std::queue<std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>> localMonotonicityResults;
                 std::queue<uint64_t> refinementDepths;
-                setUseMonotonicityNow();
                 unprocessedRegions.emplace(region, RegionResult::Unknown);
                 refinementDepths.push(0);
                 if (useMonotonicity) {
+                    setUseMonotonicityNow();
                     orders.emplace(extendOrder(nullptr, region));
                     if (orders.front() != nullptr) {
                         auto monRes = std::shared_ptr< storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(orders.front()->getNumberOfStates()));
@@ -118,11 +120,14 @@ namespace storm {
                         case RegionResult::AllSat:
                             fractionOfUndiscoveredArea -= currentRegion.area() / areaOfParameterSpace;
                             fractionOfAllSatArea += currentRegion.area() / areaOfParameterSpace;
+                            STORM_LOG_INFO("Region " << unprocessedRegions.front() << " is AllSat");
                             result.push_back(std::move(unprocessedRegions.front()));
                             break;
                         case RegionResult::AllViolated:
                             fractionOfUndiscoveredArea -= currentRegion.area() / areaOfParameterSpace;
                             fractionOfAllViolatedArea += currentRegion.area() / areaOfParameterSpace;
+                            STORM_LOG_INFO("Region " << unprocessedRegions.front() << " is AllViolated");
+
                             result.push_back(std::move(unprocessedRegions.front()));
                             break;
                         default:
@@ -134,25 +139,27 @@ namespace storm {
                                                                      RegionResult::Unknown);
                                 if (useMonotonicity) {
                                     std::vector<storm::storage::ParameterRegion<ParametricType>> newKnownRegions;
-                                    // TODO: use split of currentRegion
                                     this->splitAtCenter(env, currentRegion, newRegions, newKnownRegions, *(localMonotonicityResult->getGlobalMonotonicityResult()), res);
                                     initResForNewRegions = (res == RegionResult::CenterSat) ? RegionResult::ExistsSat :
                                                            ((res == RegionResult::CenterViolated) ? RegionResult::ExistsViolated :
                                                             RegionResult::Unknown);
                                     for (auto& newKnownRegion : newKnownRegions) {
+                                        numberOfRegionsKnownThroughMonotonicity++;
+                                        auto area = newKnownRegion.area() / areaOfParameterSpace;
                                         if (res == RegionResult::CenterSat) {
-                                            result.push_back(std::move(std::make_pair(newKnownRegion, RegionResult::AllSat)));
                                             STORM_LOG_INFO("Region " << newKnownRegion << " is AllSat, discovered with help of monotonicity");
-                                            fractionOfAllSatArea += newKnownRegion.area() / areaOfParameterSpace;
+                                            fractionOfAllSatArea += area;
+                                            result.push_back(std::move(std::make_pair(std::move(newKnownRegion), RegionResult::AllSat)));
                                         }  else {
                                             assert (res == RegionResult::CenterViolated);
-                                            result.push_back(std::move(std::make_pair(newKnownRegion, RegionResult::AllViolated)));
                                             STORM_LOG_INFO("Region " << newKnownRegion << " is AllViolated, discovered with help of monotonicity");
-                                            fractionOfAllViolatedArea += newKnownRegion.area() / areaOfParameterSpace;
+                                            fractionOfAllViolatedArea += area;
+                                            result.push_back(std::move(std::make_pair(std::move(newKnownRegion), RegionResult::AllViolated)));
                                         }
 
                                         // Only add one to analyzed regions, don't pop
-                                        fractionOfUndiscoveredArea -= newKnownRegion.area() / areaOfParameterSpace;
+                                        fractionOfDiscoveredAreaWithMonotonicity += area;
+                                        fractionOfUndiscoveredArea -= area;
                                         ++numOfAnalyzedRegions;
                                     }
                                 } else {
@@ -222,6 +229,11 @@ namespace storm {
                     
                     STORM_PRINT_AND_LOG("Region Refinement Statistics:" << std::endl);
                     STORM_PRINT_AND_LOG("    Analyzed a total of " << numOfAnalyzedRegions << " regions." << std::endl);
+
+                    if (useMonotonicity) {
+                        STORM_PRINT_AND_LOG("    " << numberOfRegionsKnownThroughMonotonicity << " regions where discovered with help of monotonicity." << std::endl);
+
+                    }
                 }
                 
                 auto regionCopyForResult = region;

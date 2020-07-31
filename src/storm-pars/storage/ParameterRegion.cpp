@@ -193,8 +193,8 @@ namespace storm {
                         auto newUpper = std::max(vertexEntry->second, splittingPointEntry->second);
                         subLower.insert(typename Valuation::value_type(variable, newLower));
                         subUpper.insert(typename Valuation::value_type(variable, newUpper));
+                        auto monVar = monMap[variable];
                         if (knownByMonotonicity) {
-                            auto monVar = monMap[variable];
                             knownByMonotonicity = (parameterOptimizationDirection == storm::solver::OptimizationDirection::Maximize
                                                    && ((newLower == splittingPointEntry->second && monVar == analysis::MonotonicityResult<VariableType>::Monotonicity::Decr)
                                                        || (newUpper == splittingPointEntry->second && monVar == analysis::MonotonicityResult<VariableType>::Monotonicity::Incr)))
