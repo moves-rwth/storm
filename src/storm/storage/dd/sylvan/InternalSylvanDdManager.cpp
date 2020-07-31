@@ -11,7 +11,7 @@
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/exceptions/InvalidSettingsException.h"
 
-#include "storm/utility/sylvan.h"
+#include "storm/adapters/sylvan.h"
 
 #include "storm-config.h"
 

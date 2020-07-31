@@ -62,6 +62,13 @@ namespace storm {
                 void translateGSPNElements();
 
                 /*!
+                 * Translate a BE.
+                 *
+                 * @param dftBE The basic event.
+                 */
+                void translateBE(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE);
+
+                /*!
                  * Translate an exponential BE.
                  *
                  * @param dftBE The exponential Basic Event.

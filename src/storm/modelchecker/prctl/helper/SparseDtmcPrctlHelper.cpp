@@ -29,7 +29,7 @@
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
-#include "storm/utility/export.h"
+#include "storm/io/export.h"
 
 #include "storm/utility/macros.h"
 #include "storm/utility/ConstantsComparator.h"

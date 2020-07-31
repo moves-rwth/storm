@@ -26,8 +26,11 @@ namespace {
         STORM_SILENT_EXPECT_THROW(storm::api::loadDFTGalileoFile<double>(file), storm::exceptions::WrongFormatException);
     }
 
-    TEST(DftParserTest, CatchSeqChildren) {
+    TEST(DftParserTest, LoadSeqChildren) {
         std::string file = STORM_TEST_RESOURCES_DIR "/dft/seqChild.dft";
-        STORM_SILENT_EXPECT_THROW(storm::api::loadDFTGalileoFile<double>(file), storm::exceptions::WrongFormatException);
+        std::shared_ptr<storm::storage::DFT<double>> dft = storm::api::loadDFTGalileoFile<double>(file);
+        EXPECT_EQ(4ul, dft->nrElements());
+        EXPECT_EQ(2ul, dft->nrBasicElements());
+        EXPECT_TRUE(storm::api::isWellFormed(*dft).first);
     }
 }

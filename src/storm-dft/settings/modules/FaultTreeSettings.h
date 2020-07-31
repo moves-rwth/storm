@@ -62,6 +62,13 @@ namespace storm {
                 std::vector<std::string> getRelevantEvents() const;
 
                 /*!
+                 * Retrieves whether the labels for claimings should be added in the Markov chain.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isAddLabelsClaiming() const;
+
+                /*!
                  * Retrieves whether the option to compute an approximation is set.
                  *
                  * @return True iff the option was set.
@@ -136,6 +143,7 @@ namespace storm {
                 static const std::string disableDCOptionName;
                 static const std::string allowDCRelevantOptionName;
                 static const std::string relevantEventsOptionName;
+                static const std::string addLabelsClaimingOptionName;
                 static const std::string approximationErrorOptionName;
                 static const std::string approximationErrorOptionShortName;
                 static const std::string approximationHeuristicOptionName;

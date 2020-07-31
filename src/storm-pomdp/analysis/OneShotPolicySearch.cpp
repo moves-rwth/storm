@@ -1,4 +1,4 @@
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 
 #include "storm-pomdp/analysis/OneShotPolicySearch.h"
 

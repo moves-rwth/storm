@@ -1,7 +1,7 @@
 #include <iostream>
 #include <boost/algorithm/string.hpp>
 #include <storm/exceptions/WrongFormatException.h>
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 #include "storm/utility/constants.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"

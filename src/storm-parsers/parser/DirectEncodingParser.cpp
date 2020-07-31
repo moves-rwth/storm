@@ -23,7 +23,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/builder.h"
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/SignalHandler.h"
 

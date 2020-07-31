@@ -5,7 +5,7 @@
 #include "storm/builder/ParallelCompositionBuilder.h"
 #include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/utility/bitoperations.h"
-#include "storm/utility/DirectEncodingExporter.h"
+#include "storm/io/DirectEncodingExporter.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/ModelType.h"

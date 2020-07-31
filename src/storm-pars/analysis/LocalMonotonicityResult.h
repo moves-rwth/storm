@@ -60,13 +60,22 @@ namespace storm {
              * @return true if done is set to true, false otherwise.
              */
             bool isDone() const;
+            void setDone(bool done = true);
+
+            bool isNoMonotonicity() const;
+
+            void setConstant(uint_fast64_t state);
+
+            void setIndexMinimize(int index);
+            void setIndexMaximize(int index);
+            int getIndexMinimize() const;
+            int getIndexMaximize() const;
 
             /*!
-             * Sets the value of a given state to true in statesMonotone.
-             *
-             * @param state The state.
+             * Constructs a string output of all variables and their corresponding Monotonicity
+             * @return Results so far
              */
-            void setStateMonotone(uint_fast64_t state);
+            std::string toString() const;
 
 
         private:
@@ -81,6 +90,10 @@ namespace storm {
             void setStatesMonotone(storm::storage::BitVector statesMonotone);
 
             storm::storage::BitVector statesMonotone;
+            bool done = false;
+
+            int indexMinimize = -1;
+            int indexMaximize = -1;
         };
     }
 }

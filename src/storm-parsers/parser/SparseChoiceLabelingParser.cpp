@@ -5,7 +5,7 @@
 #include "storm/exceptions/OutOfRangeException.h"
 #include "storm/exceptions/FileIoException.h"
 #include "storm-parsers/parser/MappedFile.h"
-#include "storm/utility/cstring.h"
+#include "storm-parsers/util/cstring.h"
 
 namespace storm {
     namespace parser {

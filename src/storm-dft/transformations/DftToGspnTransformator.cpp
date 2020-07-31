@@ -122,11 +122,8 @@ namespace storm {
 
                     // Check which type the element is and call the corresponding translate-function.
                     switch (dftElement->type()) {
-                        case storm::storage::DFTElementType::BE_EXP:
-                            translateBEExponential(std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(dftElement));
-                            break;
-                        case storm::storage::DFTElementType::BE_CONST:
-                            translateBEConst(std::static_pointer_cast<storm::storage::BEConst<ValueType> const>(dftElement));
+                        case storm::storage::DFTElementType::BE:
+                            translateBE(std::static_pointer_cast<storm::storage::DFTBE<ValueType> const>(dftElement));
                             break;
                         case storm::storage::DFTElementType::AND:
                             translateAND(std::static_pointer_cast<storm::storage::DFTAnd<ValueType> const>(dftElement));
@@ -165,6 +162,21 @@ namespace storm {
                     }
                 }
 
+            }
+
+            template<typename ValueType>
+            void DftToGspnTransformator<ValueType>::translateBE(std::shared_ptr<storm::storage::DFTBE<ValueType> const> dftBE) {
+                switch (dftBE->beType()) {
+                    case storm::storage::BEType::CONSTANT:
+                        translateBEConst(std::static_pointer_cast<storm::storage::BEConst<ValueType> const>(dftBE));
+                        break;
+                    case storm::storage::BEType::EXPONENTIAL:
+                        translateBEExponential(std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(dftBE));
+                        break;
+                    default:
+                        STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE type '" << dftBE->beType() << "' not known.");
+                        break;
+                }
             }
 
             template<typename ValueType>

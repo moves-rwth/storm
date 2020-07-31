@@ -1,5 +1,5 @@
-#ifndef STORM_LATTICEEXTENDER_H
-#define STORM_LATTICEEXTENDER_H
+#ifndef STORM_ORDEREXTENDER_H
+#define STORM_ORDEREXTENDER_H
 
 #include "storm/api/storm.h"
 #include "storm/logic/Formula.h"

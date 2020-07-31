@@ -103,6 +103,10 @@ namespace storm {
             // Note: the returned vector might be empty if row label generaion was disabled initially
             std::vector<AbstractValuation> const& getRowLabels() const;
 
+            void setConstantEntries(std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
+
+            void setUseMonotonicityNow(bool useMonotonicity = true);
+
             
         private:
             /*
@@ -153,35 +157,40 @@ namespace storm {
 
             std::vector<uint_fast64_t> oldToNewColumnIndexMapping; // Mapping from old to new columnIndex used for monotonicity
 
-
             storm::storage::SparseMatrix<ConstantType> matrix; //The resulting matrix;
             std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>> matrixAssignment; // Connection of matrix entries with placeholders
-            
+
             std::vector<ConstantType> vector; //The resulting vector
             std::vector<std::pair<typename std::vector<ConstantType>::iterator, ConstantType&>> vectorAssignment; // Connection of vector entries with placeholders
 
             // For partial scheduler
             bool usePartialScheduler = false;
+            bool useMonotonicityInFuture = false;
+            std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>> specifyIteratorsPartialScheduler ();
 
             // Used for monotonicity
             std::vector<std::set<VariableType>> occurringVariablesAtState;
 
-            std::vector<ConstantType> specifiedVector; //The resulting vector, in which possibly some entries are deleted.
-            storm::storage::SparseMatrix<ConstantType> specifiedMatrix; // The resulting matrix, in which possibly some rows are deleted.
-
+            storm::storage::BitVector getPartialSchedulerMonotonicity (storm::storage::ParameterRegion<ParametricType> const& region, std::shared_ptr<storm::analysis::Order> reachabilityOrder, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult, bool useMinimize);
 
             storm::analysis::MonotonicityChecker<ParametricType>* monotonicityChecker; // MonotonicityChecker object, on the original pMatrix
 
-            std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> lastMonotonicityResult = nullptr;
-            bool useLastMonotonicityResult = false;
-            bool useLastMatrix = false;
-            storm::solver::OptimizationDirection lastDirForParameters = storm::solver::OptimizationDirection::Minimize;
+            // 1) matrix, 2) matrixassignment 3)selectedRows
+            std::vector<std::tuple<std::shared_ptr<storm::storage::SparseMatrix<ConstantType>>, std::shared_ptr<std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>>>, std::shared_ptr<storm::storage::BitVector>>>  monResResultsMinimize;
+            std::vector<std::tuple<std::shared_ptr<storm::storage::SparseMatrix<ConstantType>>, std::shared_ptr<std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>>>, std::shared_ptr<storm::storage::BitVector>>>  monResResultsMaximize;
+//            std::vector<std::pair<std::shared_ptr<storm::storage::SparseMatrix<ConstantType>>, std::shared_ptr<storm::storage::BitVector>>> monResResultsMinimize;
+//            std::vector<std::pair<std::shared_ptr<storm::storage::SparseMatrix<ConstantType>>, std::shared_ptr<storm::storage::BitVector>>> monResResultsMaximize;
+
+            storm::storage::SparseMatrix<ConstantType> lastMatrix;
+            std::vector<ConstantType> lastVector;
+            storm::storage::BitVector lastSelectedRows;
+            std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>> lastMatrixAssignment; // Connection of matrix entries with placeholders
+
 
             std::vector<std::pair<uint_fast64_t, uint_fast64_t>> numberOfPlaceHolders;
-
+            std::vector<int> constantStates;
             storm::storage::BitVector nonConstMatrixEntries;
             storm::storage::BitVector nonConstVectorEntries;
-            storm::storage::BitVector selectedRows;
         };
 
     }

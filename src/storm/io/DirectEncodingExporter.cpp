@@ -1,5 +1,5 @@
 #include <storm/exceptions/NotSupportedException.h>
-#include "DirectEncodingExporter.h"
+#include "storm/io/DirectEncodingExporter.h"
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/utility/constants.h"

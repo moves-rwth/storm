@@ -1,4 +1,4 @@
-#include "storm/utility/cstring.h"
+#include "storm-parsers/util/cstring.h"
 
 #include <cstring>
 

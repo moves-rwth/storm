@@ -14,7 +14,7 @@
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "FormulaParserGrammar.h"
 #include "storm/storage/expressions/ExpressionManager.h"
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 
 namespace storm {
     namespace parser {

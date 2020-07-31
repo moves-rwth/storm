@@ -1,4 +1,4 @@
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/analysis/GraphConditions.h"
