@@ -29,14 +29,20 @@ namespace storm {
             typedef typename utility::parametric::CoefficientType<ValueType>::type CoefficientType;
             typedef typename MonotonicityResult<VariableType>::Monotonicity Monotonicity;
             typedef typename storage::ParameterRegion<ValueType> Region;
-// TODO: @Svenja, could you update the documentation of the public methods?
 
+            /*!
+             * Constructs a new MonotonicityChecker object.
+             *
+             * @param matrix The Matrix of the model.
+             */
             MonotonicityChecker(storage::SparseMatrix<ValueType> matrix);
 
             /*!
-             * Checks if a derivative >=0 or/and <=0
-             * @param derivative The derivative you want to check
-             * @return pair of bools, >= 0 and <= 0
+             * Checks if a derivative >=0 or/and <=0.
+             *
+             * @param derivative The derivative you want to check.
+             * @param reg The region of the parameters.
+             * @return Pair of bools, >= 0 and <= 0.
              */
             static std::pair<bool, bool> checkDerivative(ValueType derivative, storage::ParameterRegion<ValueType> reg) {
                 bool monIncr = false;
@@ -85,10 +91,10 @@ namespace storm {
             /*!
              * Checks for local monotonicity at the given state.
              *
-             * @param order the order on which the monotonicity should be checked
-             * @param state the considerd state
-             * @param var the variable in which we check for monotonicity
-             * @param region the region on which we check the monotonicity
+             * @param order The order on which the monotonicity should be checked.
+             * @param state The considerd state.
+             * @param var The variable in which we check for monotonicity.
+             * @param region The region on which we check the monotonicity.
              * @return Incr, Decr, Constant, Unknown or Not
              */
             Monotonicity checkLocalMonotonicity(std::shared_ptr<Order> order, uint_fast64_t state, VariableType var, storage::ParameterRegion<ValueType> region);

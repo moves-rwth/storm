@@ -22,19 +22,28 @@ namespace storm {
             typedef typename utility::parametric::VariableType<ValueType>::type VariableType;
             typedef typename MonotonicityResult<VariableType>::Monotonicity Monotonicity;
 
-            // TODO: @Svenja, could you update the documentation of the public methods?
            /*!
-            * Constructs OrderExtender which can extend an order
+            * Constructs a new OrderExtender.
             *
             * @param model The model for which the order should be extended.
+            * @param formula The considered formula.
+            * @param region The Region of the model's parameters.
             */
            OrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, storage::ParameterRegion<ValueType> region);
 
+            /*!
+             * Constructs a new OrderExtender.
+             *
+             * @param topStates The top states of the order.
+             * @param bottomStates The bottom states of the order.
+             * @param matrix The matrix of the considered model.
+             */
            OrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix);
 
             /*!
              * Creates an order based on the given formula.
              *
+             * @param monRes The monotonicity result so far.
              * @return A triple with a pointer to the order and two states of which the current place in the order
              *         is unknown but needed. When the states have as number the number of states, no states are
              *         unplaced but needed.

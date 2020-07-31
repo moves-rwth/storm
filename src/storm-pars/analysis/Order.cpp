@@ -77,6 +77,10 @@ namespace storm {
             assert(*addedStates == *(order->getAddedStates()));
         }
 
+        Order::Order(){
+
+        }
+
         /*** Modifying the order ***/
 
         void Order::add(uint_fast64_t state) {
@@ -439,6 +443,45 @@ namespace storm {
                 }
             }
             return state;
+        }
+
+        std::shared_ptr<Order> Order::copy() const {
+            // TODO Maybe put some of this into the empty constructor?
+            std::shared_ptr<Order> copiedOrder = std::make_shared<Order>();
+            copiedOrder->setDoneBuilding(this->getDoneBuilding());
+            copiedOrder->onlyBottomTopOrder = this->isOnlyBottomTopOrder();
+            copiedOrder->numberOfStates = this->getNumberOfStates();
+            copiedOrder->statesToHandle = std::vector<uint_fast64_t>(this->getStatesToHandle());
+            copiedOrder->statesSorted = std::vector<uint_fast64_t>(this->getStatesSorted());
+
+            //copy nodes
+            copiedOrder->top = new Node();
+            copiedOrder->bottom = new Node();
+            copiedOrder->top->statesAbove = storm::storage::BitVector(numberOfStates);
+            copiedOrder->bottom->statesAbove = storm::storage::BitVector(numberOfStates);
+            auto oldNodes = this->getNodes();
+            for (auto itr = oldNodes.begin(); itr != oldNodes.end(); ++itr) {
+                Node *oldNode = (*itr);
+                if (oldNode != nullptr) {
+                    Node *newNode;
+                    if (oldNode == this->getTop()) {
+                        newNode = copiedOrder->top;
+                    } else if (oldNode == this->getBottom()) {
+                        newNode = copiedOrder->bottom;
+                    } else {
+                        newNode = new Node();
+                    }
+                    newNode->states = oldNode->states;
+                    for (auto const &i : newNode->states) {
+                        copiedOrder->addedStates->set(i);
+                        copiedOrder->nodes[i] = newNode;
+                    }
+                    newNode->statesAbove = storm::storage::BitVector(oldNode->statesAbove);
+                }
+                copiedOrder->numberOfAddedStates = this->addedStates->getNumberOfSetBits();
+
+            }
+            return copiedOrder;
         }
 
         /*** Setters ***/

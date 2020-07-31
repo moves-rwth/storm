@@ -37,20 +37,23 @@ namespace storm {
             typedef typename utility::parametric::CoefficientType<ValueType>::type CoefficientType;
             typedef typename MonotonicityResult<VariableType>::Monotonicity Monotonicity;
             typedef typename storage::ParameterRegion<ValueType> Region;
-// TODO: @Svenja, could you update the documentation of the public methods?
+
             /*!
-             * Constructor of MonotonicityHelper
-             * @param model the model considered
-             * @param formula the formula considered
-             * @param regions the regions to consider
-             * @param numberOfSamples number of samples taken for monotonicity checking, default 0,
-             *          if 0 then no check on samples is executed
-             * @param precision precision on which the samples are compared
+             * Constructor of MonotonicityHelper.
+             *
+             * @param model The model considered.
+             * @param formulas The formulas considered.
+             * @param regions The regions to consider.
+             * @param numberOfSamples Number of samples taken for monotonicity checking, default 0,
+             *          if 0 then no check on samples is executed.
+             * @param precision Precision on which the samples are compared
+             * @param dotOutput Whether or not dot output should be generated for the ROs.
              */
             MonotonicityHelper(std::shared_ptr<models::sparse::Model<ValueType>> model, std::vector<std::shared_ptr<logic::Formula const>> formulas, std::vector<storage::ParameterRegion<ValueType>> regions, uint_fast64_t numberOfSamples=0, double const& precision=0.000001, bool dotOutput = false);
 
             /*!
              * Checks if a derivative >=0 or/and <=0
+             *
              * @param derivative The derivative you want to check
              * @return pair of bools, >= 0 and <= 0
              */
@@ -100,7 +103,11 @@ namespace storm {
             }
 
             /*!
-             * Builds Reachability Orders for the given model and simultaneously uses them to check for Monotonicity
+             * Builds Reachability Orders for the given model and simultaneously uses them to check for Monotonicity.
+             *
+             * @param outfile Outfile to which results are written.
+             * @param dotOutfileName Name for the files of the dot outputs should they be generated
+             * @return Map which maps each order to its Reachability Order and used assumptions.
              */
             std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> checkMonotonicityInBuild(std::ostream& outfile, std::string dotOutfileName = "dotOutput");
 

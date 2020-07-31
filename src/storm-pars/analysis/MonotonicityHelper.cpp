@@ -151,7 +151,7 @@ namespace storm {
                         if (itr != newAssumptions.end()) {
                             // We make a copy of the order and the assumptions
                             // TODO: @Svenja create a copy method for order in the same way as for monResCopy, with the content of the Order Constructor.
-                            auto orderCopy = std::shared_ptr<Order>(order);
+                            auto orderCopy = order->copy();
                             auto assumptionsCopy = std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>(assumptions);
                             auto monResCopy = monRes->copy();
 

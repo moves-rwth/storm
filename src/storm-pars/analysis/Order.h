@@ -11,10 +11,10 @@
 namespace storm {
             namespace analysis {
                 class Order {
-// TODO: @Svenja, could you update the documentation of the public methods?
+
                 public:
                     /*!
-                     * Constants for comparison of nodes/states
+                     * Constants for comparison of nodes/states.
                      */
                     enum NodeComparison {
                         UNKNOWN,
@@ -23,28 +23,31 @@ namespace storm {
                         SAME,
                     };
 
+                    /*!
+                     * Nodes of the Reachability Order. Contains all states with the same reachability.
+                     */
                     struct Node {
                         boost::container::flat_set<uint_fast64_t> states;
                         storm::storage::BitVector statesAbove;
                     };
 
                     /*!
-                     * Constructs an order with the given top state and bottom state.
+                     * Constructs an order with the given top and bottom states.
                      *
-                     * @param topStates a Bitvector with the top states of the resulting order
-                     * @param bottomStates a Bitvector with the bottom states of the resulting order
-                     * @param numberOfStates maximum number of states in order
-                     * @param statesSorted pointer to a vector which contains the states which still need to added to the order
+                     * @param topStates A Bitvector with the top states of the resulting order.
+                     * @param bottomStates A Bitvector with the bottom states of the resulting order.
+                     * @param numberOfStates Maximum number of states in order.
+                     * @param statesSorted Pointer to a vector which contains the states which still need to added to the order.
                      */
                     Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates, uint_fast64_t numberOfStates, std::vector<uint_fast64_t>* statesSorted);
 
                     /*!
                      * Constructs an order with the given top state and bottom state.
                      *
-                     * @param top the top state of the resulting order
-                     * @param bottom the bottom state of the resulting order
-                     * @param numberOfStates maximum number of states in order
-                     * @param statesSorted pointer to a vector which contains the states which still need to added to the order
+                     * @param top The top state of the resulting order.
+                     * @param bottom The bottom state of the resulting order.
+                     * @param numberOfStates Maximum number of states in order.
+                     * @param statesSorted Pointer to a vector which contains the states which still need to added to the order.
                      */
                     Order(uint_fast64_t top, uint_fast64_t bottom, uint_fast64_t numberOfStates, std::vector<uint_fast64_t>* statesSorted);
 
@@ -56,33 +59,39 @@ namespace storm {
                     Order(std::shared_ptr<Order> order);
 
                     /*!
-                     * Adds state between the top and bottom node of the order
-                     * @param state the given state
+                     * Constructs a new Order.
+                     */
+                    Order();
+
+                    /*!
+                     * Adds state between the top and bottom node of the order.
+                     *
+                     * @param state The given state.
                      */
                     void add(uint_fast64_t state);
 
                     /*!
                     * Adds a node with the given state above the given node.
-                     *
-                    * @param state the state which is added
-                    * @param node the pointer to the node above which the state is added, should not be nullptr
+                    *
+                    * @param state The state which is added.
+                    * @param node The pointer to the node above which the state is added, should not be nullptr.
                     */
                     void addAbove(uint_fast64_t state, Node *node);
 
                     /*!
                     * Adds a node with the given state below the given node.
-                     *
-                    * @param state the state which is added
-                    * @param node the pointer to the node below which the state is added, should not be nullptr
+                    *
+                    * @param state The state which is added.
+                    * @param node The pointer to the node below which the state is added, should not be nullptr.
                     */
                     void addBelow(uint_fast64_t state, Node *node);
 
                     /*!
                      * Adds a node with the given state below node1 and above node2.
                      *
-                     * @param state the given state
-                     * @param node1 the pointer to the node below which a new node (with state) is added
-                     * @param node2 the pointer to the node above which a new node (with state) is added
+                     * @param state The given state.
+                     * @param node1 The pointer to the node below which a new node (with state) is added.
+                     * @param node2 The pointer to the node above which a new node (with state) is added.
                      */
                     void addBetween(uint_fast64_t state, Node *node1, Node *node2);
 
@@ -90,33 +99,33 @@ namespace storm {
                      * Adds a node with the given state between the nodes of below and above.
                      * Result: below -> state -> above
                      *
-                     * @param state the given state
-                     * @param above the state number of the state below which a new node (with state) is added
-                     * @param below the state number of the state above which a new node (with state) is added
+                     * @param state The given state.
+                     * @param above The state number of the state below which a new node (with state) is added.
+                     * @param below The state number of the state above which a new node (with state) is added.
                      */
                     void addBetween(uint_fast64_t state, uint_fast64_t above, uint_fast64_t below);
 
                     /*!
-                     * Adds a new relation between two nodes to the order
+                     * Adds a new relation between two nodes to the order.
                      *
-                     * @param above the node closest to the top Node of the Order
-                     * @param below the node closest to the bottom Node of the Order
+                     * @param above The node closest to the top Node of the Order.
+                     * @param below The node closest to the bottom Node of the Order.
                      */
                     void addRelationNodes(storm::analysis::Order::Node *above, storm::analysis::Order::Node * below);
 
                     /*!
-                    * Adds a new relation between two states to the order
+                    * Adds a new relation between two states to the order.
                      *
-                    * @param above the state closest to the top Node of the Order
-                    * @param below the state closest to the bottom Node of the Order
+                    * @param above The state closest to the top Node of the Order.
+                    * @param below The state closest to the bottom Node of the Order.
                     */
                     void addRelation(uint_fast64_t above, uint_fast64_t below);
 
                     /*!
                      * Adds state to the states of the given node.
                      *
-                     * @param state the state which is added
-                     * @param node the pointer to the node to which state is added, should not be nullptr
+                     * @param state The state which is added.
+                     * @param node The pointer to the node to which state is added, should not be nullptr.
                      */
                     void addToNode(uint_fast64_t state, Node *node);
 
@@ -134,43 +143,43 @@ namespace storm {
                      * Compares the level of the nodes of the states.
                      * Behaviour unknown when one or more of the states does not occur at any Node in the Order.
                      *
-                     * @param state1 the first state
-                     * @param state2 the second state
+                     * @param State1 the first state.
+                     * @param State2 the second state.
                      * @return SAME if the nodes are on the same level;
                      *         ABOVE if the node of the first state is closer to top than the node of the second state;
                      *         BELOW if the node of the second state is closer to top than the node of the first state;
-                     *         UNKNOWN if it is unclear from the structure of the order how the nodes relate
+                     *         UNKNOWN if it is unclear from the structure of the order how the nodes relate.
                      */
                     Order::NodeComparison compare(uint_fast64_t state1, uint_fast64_t state2);
 
                     /*!
                      * Compares the level of the two nodes.
                      *
-                     * @param node1 the first node
-                     * @param node2 the second node
+                     * @param node1 The first node.
+                     * @param node2 The second node.
                      * @return SAME if the nodes are on the same level;
                      *         ABOVE if node1 is closer to top than node2;
                      *         BELOW if node2 is closer to top than node1;
-                     *         UNKNOWN if it is unclear from the structure of the order how the nodes relate
+                     *         UNKNOWN if it is unclear from the structure of the order how the nodes relate.
                      */
                     NodeComparison compare(Node* node1, Node* node2);
 
                     /*!
-                     * Check if state is already contained in order
+                     * Check if state is already contained in order.
                      */
                     bool contains(uint_fast64_t state) const;
 
                     /*!
                      * Returns a BitVector in which all added states are set.
                      *
-                     * @return the BitVector with all added states
+                     * @return The BitVector with all added states.
                      */
                     storm::storage::BitVector* getAddedStates() const;
 
                     /*!
                      * Retrieves the bottom node of the order.
                      *
-                     * @return the bottom node
+                     * @return The bottom node.
                      */
                     Node* getBottom() const;
 
@@ -197,14 +206,14 @@ namespace storm {
                      * Each index in the vector refers to a state.
                      * When the state is not yet added at a node, it will contain the nullptr.
                      *
-                     * @return the vector with nodes of the order
+                     * @return The vector with nodes of the order.
                      */
                     std::vector<Node*> getNodes() const;
 
                     /*!
                      * Retrieves the top node of the order.
                      *
-                     * @return the top node
+                     * @return The top node.
                      */
                     Node* getTop() const;
 
@@ -218,8 +227,14 @@ namespace storm {
                      */
                     uint_fast64_t getNumberOfStates() const;
 
+                    /*!
+                     * Checks if the given state is a bottom state.
+                     */
                     bool isBottomState(uint_fast64_t) const;
 
+                    /*!
+                     * Checks if the given state is a top state.
+                     */
                     bool isTopState(uint_fast64_t) const;
 
                     /*!
@@ -230,27 +245,27 @@ namespace storm {
                     /*!
                      * Sorts the given states if possible.
                      *
-                     * @param states vector of the states to sort
-                     * @return vector with states sorted, length equals number of states to sort.
-                     * If states cannot be sorted, last state of the vector will always equal the length of the BitVector
+                     * @param states Vector of the states to be sorted.
+                     * @return Vector with states sorted, length equals number of states to sort.
+                     * If states cannot be sorted, last state of the vector will always equal the length of the BitVector.
                      */
                     std::vector<uint_fast64_t> sortStates(std::vector<uint_fast64_t>* states);
 
                     /*!
                      * Sorts the given states if possible.
                      *
-                     * @param states vector of the states to sort
-                     * @return pair of unsortabe states, vector with states sorted (so far)
-                     * If all states could be sorted, both values of the pair are numberOfStates and the vectors length will equal the number of states to sort
+                     * @param states Vector of the states to be sorted.
+                     * @return pair of unsortabe states, vector with states sorted (so far).
+                     * If all states could be sorted, both values of the pair are numberOfStates and the vectors length will equal the number of states to sort.
                      */
                     std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> sortStatesUnorderedPair(const std::vector<uint_fast64_t>* states);
 
                     /*!
                      * Sorts the given states if possible.
                      *
-                     * @param states Bitvector of the states to sort
+                     * @param states Bitvector of the states to be sorted.
                      * @return vector with states sorted, length equals number of states to sort.
-                     * If states cannot be sorted, last state of the vector will always equal the length of the BitVector
+                     * If states cannot be sorted, last state of the vector will always equal the length of the BitVector.
                      */
                     std::vector<uint_fast64_t> sortStates(storm::storage::BitVector* states);
 
@@ -263,26 +278,35 @@ namespace storm {
                     void addStateToHandle(uint_fast64_t state);
 
                     /*!
-                     * Returns the next state to handle, if the statesToHandle list is empty, it continues with the sorted states list
-                     * @return
+                     * Returns the next state to handle, if the statesToHandle list is empty, it continues with the sorted states list.
+                     *
+                     * @return The next state to be handled.
                      */
                     uint_fast64_t getNextSortedState();
 
                     /*!
-                     * If the order is fully build, this can be set to true.
+                     * If the order is fully built, this can be set to true.
                      */
                     void setDoneBuilding(bool done = true);
 
                     /*!
-                     * Prints to normal STORM_PRINT the dot output.
+                     * Prints the dot output to normal STORM_PRINT.
                      */
                     void toDotOutput() const;
 
                     /*!
-                     * Writes dotoutput to the file.
+                     * Writes dotoutput to the given file.
+                     *
                      * @param dotOutfile
                      */
                     void dotOutputToFile(std::ofstream& dotOutfile) const;
+
+                    /*!
+                     * Creates a copy of the calling Order.
+                     *
+                     * @return Pointer to the copy.
+                     */
+                    std::shared_ptr<Order> copy() const;
 
                 protected:
                     std::vector<uint_fast64_t> getStatesSorted() const;

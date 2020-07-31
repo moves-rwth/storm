@@ -27,9 +27,11 @@ namespace storm {
         public:
             typedef typename utility::parametric::VariableType<ValueType>::type VariableType;
             typedef typename utility::parametric::CoefficientType<ValueType>::type CoefficientType;
-            // TODO: @Svenja, could you update the documentation of the public methods?
+
             /*!
              * Constructs an AssumptionChecker.
+             *
+             * @param matrix The matrix of the considered model.
              */
             AssumptionChecker(storage::SparseMatrix<ValueType> matrix);
 
@@ -42,8 +44,21 @@ namespace storm {
              */
             AssumptionChecker(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t const numberOfSamples);
 
+            /*!
+             * Initializes the given number of sample points for a given model, formula and region.
+             *
+             * @param formula The formula to compute the samples for.
+             * @param model The considered model.
+             * @param region The region of the model's parameters.
+             * @param numberOfSamples Number of sample points.
+             */
             void initializeCheckingOnSamples(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Dtmc<ValueType>> model, storage::ParameterRegion<ValueType> region, uint_fast64_t numberOfSamples);
 
+            /*!
+             * Sets the sample values to the given vector and useSamples to true.
+             *
+             * @param samples The new value for samples.
+             */
             void setSampleValues(std::vector<std::vector<ConstantType>> samples);
 
             /*!
@@ -51,6 +66,7 @@ namespace storm {
              *
              * @param assumption The assumption to validate.
              * @param order The order.
+             * @param region The region of the considered model.
              * @return AssumptionStatus::VALID, or AssumptionStatus::UNKNOWN, or AssumptionStatus::INVALID
              */
             AssumptionStatus validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) const;

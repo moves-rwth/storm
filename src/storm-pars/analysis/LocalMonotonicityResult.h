@@ -12,25 +12,60 @@ namespace storm {
         class LocalMonotonicityResult {
 
         public:
-            // TODO: @Svenja, could you update the documentation of the public methods?
             typedef typename MonotonicityResult<VariableType>::Monotonicity Monotonicity;
 
+            /*!
+             * Constructs a new LocalMonotonicityResult object.
+             *
+             * @param numberOfStates The number of states in the considered model.
+             * @return The new object.
+             */
             LocalMonotonicityResult(uint_fast64_t numberOfStates);
 
+            /*!
+             * Returns the local Monotonicity of a parameter at a given state.
+             *
+             * @param state The state.
+             * @param var The parameter.
+             * @return The local Monotonicity.
+             */
             Monotonicity getMonotonicity(uint_fast64_t state, VariableType var) const;
 
+            /*!
+             * Sets the local Monotonicity of a parameter at a given state.
+             *
+             * @param mon The Monotonicity.
+             * @param state The state.
+             * @param var The parameter.
+             */
             void setMonotonicity(uint_fast64_t state, VariableType var, Monotonicity mon);
 
+            /*!
+             * Returns the Global MonotonicityResult object that corresponds to this object.
+             *
+             * @return The pointer to the global MonotonicityResult.
+             */
             std::shared_ptr<MonotonicityResult<VariableType>> getGlobalMonotonicityResult() const;
 
             /*!
-             * Constructs a new LocalMonotonicityResult object that is a copy of the current one
-             * @return Pointer to the copy
+             * Constructs a new LocalMonotonicityResult object that is a copy of the current one.
+             *
+             * @return Pointer to the copy.
              */
             std::shared_ptr<LocalMonotonicityResult<VariableType>> copy();
 
+            /*!
+             * Checks if the LocalMonotonicity is done yet.
+             *
+             * @return true if done is set to true, false otherwise.
+             */
             bool isDone() const;
 
+            /*!
+             * Sets the value of a given state to true in statesMonotone.
+             *
+             * @param state The state.
+             */
             void setStateMonotone(uint_fast64_t state);
 
 
