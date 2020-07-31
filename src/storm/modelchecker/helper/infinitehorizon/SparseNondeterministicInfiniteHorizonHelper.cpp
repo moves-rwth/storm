@@ -31,36 +31,56 @@ namespace storm {
             
             template <typename ValueType>
             std::vector<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLongRunAverageProbabilities(Environment const& env, storm::storage::BitVector const& psiStates) {
-                return computeLongRunAverageValues(env, [&psiStates] (uint64_t stateIndex, uint64_t) { return psiStates.get(stateIndex) ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>();});
+                return computeLongRunAverageValues(env,
+                            [&psiStates] (uint64_t stateIndex) { return psiStates.get(stateIndex) ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>(); },
+                            [] (uint64_t) { return storm::utility::zero<ValueType>(); }
+                    );
             }
             
             
             template <typename ValueType>
             std::vector<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLongRunAverageRewards(Environment const& env, storm::models::sparse::StandardRewardModel<ValueType> const& rewardModel) {
-                if (_markovianStates) {
-                    return computeLongRunAverageValues(env, [&] (uint64_t stateIndex, uint64_t globalChoiceIndex) {
-                        if (rewardModel.hasStateRewards() && _markovianStates->get(stateIndex)) {
-                            return rewardModel.getTotalStateActionReward(stateIndex, globalChoiceIndex, _transitionMatrix, (ValueType) (storm::utility::one<ValueType>() / (*_exitRates)[stateIndex]));
-                        } else {
-                            return rewardModel.getTotalStateActionReward(stateIndex, globalChoiceIndex, _transitionMatrix, storm::utility::zero<ValueType>());
-                        }
-                    });
+                std::function<ValueType(uint64_t stateIndex)> stateRewardsGetter;
+                if (rewardModel.hasStateRewards()) {
+                    stateRewardsGetter = [&rewardModel] (uint64_t stateIndex) { return rewardModel.getStateReward(stateIndex); };
                 } else {
-                    return computeLongRunAverageValues(env, [&] (uint64_t stateIndex, uint64_t globalChoiceIndex) {
-                        return rewardModel.getTotalStateActionReward(stateIndex, globalChoiceIndex, _transitionMatrix);
-                    });
+                    stateRewardsGetter = [] (uint64_t) { return storm::utility::zero<ValueType>(); };
                 }
+                std::function<ValueType(uint64_t globalChoiceIndex)> actionRewardsGetter;
+                if (rewardModel.hasStateActionRewards() || rewardModel.hasTransitionRewards()) {
+                    if (rewardModel.hasTransitionRewards()) {
+                        actionRewardsGetter = [&] (uint64_t globalChoiceIndex) { return rewardModel.getStateActionAndTransitionReward(globalChoiceIndex, this->_transitionMatrix); };
+                    } else {
+                        actionRewardsGetter = [&] (uint64_t globalChoiceIndex) { return rewardModel.getStateActionReward(globalChoiceIndex); };
+                    }
+                } else {
+                    stateRewardsGetter = [] (uint64_t) { return storm::utility::zero<ValueType>(); };
+                }
+                
+                return computeLongRunAverageValues(env, stateRewardsGetter, actionRewardsGetter);
             }
             
             template <typename ValueType>
-            std::vector<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLongRunAverageValues(Environment const& env, std::vector<ValueType> const& combinedStateActionRewards) {
-                return computeLongRunAverageValues(env, [&combinedStateActionRewards] (uint64_t, uint64_t globalChoiceIndex) {
-                    return combinedStateActionRewards[globalChoiceIndex];
-                });
+            std::vector<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLongRunAverageValues(Environment const& env, std::vector<ValueType> const* stateValues, std::vector<ValueType> const* actionValues) {
+                std::function<ValueType(uint64_t stateIndex)> stateValuesGetter;
+                if (stateValues) {
+                    stateValuesGetter = [&stateValues] (uint64_t stateIndex) { return (*stateValues)[stateIndex]; };
+                } else {
+                    stateValuesGetter = [] (uint64_t) { return storm::utility::zero<ValueType>(); };
+                }
+                std::function<ValueType(uint64_t actionIndex)> actionValuesGetter;
+                if (actionValues) {
+                    actionValuesGetter = [&actionValues] (uint64_t globalChoiceIndex) { return (*actionValues)[globalChoiceIndex]; };
+                } else {
+                    actionValuesGetter = [] (uint64_t) { return storm::utility::zero<ValueType>(); };
+                }
+                
+                return computeLongRunAverageValues(env, stateValuesGetter, actionValuesGetter);
+
             }
             
             template <typename ValueType>
-            std::vector<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLongRunAverageValues(Environment const& env, std::function<ValueType(uint64_t stateIndex, uint64_t globalChoiceIndex)> const& combinedStateActionRewardsGetter) {
+            std::vector<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLongRunAverageValues(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateRewardsGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionRewardsGetter) {
                 
                  // Prepare an environment for the underlying solvers
                 auto underlyingSolverEnvironment = env;
@@ -86,7 +106,7 @@ namespace storm {
                 std::vector<ValueType> mecLraValues;
                 mecLraValues.reserve(mecDecomposition.size());
                 for (auto const& mec : mecDecomposition) {
-                    mecLraValues.push_back(computeLraForMec(underlyingSolverEnvironment, combinedStateActionRewardsGetter, mec));
+                    mecLraValues.push_back(computeLraForMec(underlyingSolverEnvironment, stateRewardsGetter, actionRewardsGetter, mec));
                 }
                 
                 // Solve the resulting SSP where end components are collapsed into single auxiliary states
@@ -129,36 +149,45 @@ namespace storm {
             }
             
             template <typename ValueType>
-            ValueType SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLraForMec(Environment const& env, std::function<ValueType(uint64_t stateIndex, uint64_t globalChoiceIndex)> const& combinedStateActionRewardsGetter, storm::storage::MaximalEndComponent const& mec) {
+            bool SparseNondeterministicInfiniteHorizonHelper<ValueType>::isContinuousTime() const {
+                STORM_LOG_ASSERT((_markovianStates == nullptr) == (_exitRates == nullptr), "Inconsistent information given: Have Markovian states but no exit rates (or vice versa)." );
+                return _markovianStates != nullptr;
+            }
+    
+            template <typename ValueType>
+            ValueType SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLraForMec(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateRewardsGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionRewardsGetter, storm::storage::MaximalEndComponent const& mec) {
                 
-                // FIXME: MA
                 // If the mec only consists of a single state, we compute the LRA value directly
-                if (++mec.begin() == mec.end()) {
+                if (mec.size() == 1) {
                     uint64_t state = mec.begin()->first;
                     auto choiceIt = mec.begin()->second.begin();
-                    ValueType result = combinedStateActionRewardsGetter(state, *choiceIt);
-                    uint64_t bestChoice = *choiceIt;
-                    for (++choiceIt; choiceIt != mec.begin()->second.end(); ++choiceIt) {
-                        ValueType choiceValue = combinedStateActionRewardsGetter(state, *choiceIt);
-                        if (this->minimize()) {
-                            if (result > choiceValue) {
-                                result = std::move(choiceValue);
+                    if (isContinuousTime()) {
+                        // Singleton MECs have to consist of a Markovian state because of the non-Zenoness assumption. Then, there is just one possible choice.
+                        STORM_LOG_THROW(_markovianStates->get(state), storm::exceptions::InvalidOperationException, "Markov Automaton has Zeno behavior. Computation of Long Run Average values not supported.");
+                        STORM_LOG_ASSERT(mec.begin()->second.size() == 1, "Markovian state has Nondeterministic behavior.");
+                        if (isProduceSchedulerSet()) {
+                            _producedOptimalChoices.get()[state] = 0;
+                        }
+                        return stateRewardsGetter(state) + (*_exitRates)[state] * actionRewardsGetter(*choiceIt);
+                    } else {
+                        // Find the choice with the highest/lowest reward
+                        ValueType bestValue = actionRewardsGetter(*choiceIt);
+                        uint64_t bestChoice = *choiceIt;
+                        for (++choiceIt; choiceIt != mec.begin()->second.end(); ++choiceIt) {
+                            ValueType currentValue = actionRewardsGetter(*choiceIt);
+                            if ((this->minimize() &&  currentValue < bestValue) || (this->maximize() && currentValue > bestValue)) {
+                                bestValue = std::move(currentValue);
                                 bestChoice = *choiceIt;
                             }
-                        } else {
-                             if (result < choiceValue) {
-                                    result = std::move(choiceValue);
-                                    bestChoice = *choiceIt;
-                             }
                         }
+                        if (isProduceSchedulerSet()) {
+                            _producedOptimalChoices.get()[state] = bestChoice - _transitionMatrix.getRowGroupIndices()[state];
+                        }
+                        return bestValue + stateRewardsGetter(state);
                     }
-                    if (isProduceSchedulerSet()) {
-                        _producedOptimalChoices.get()[state] = bestChoice - _transitionMatrix.getRowGroupIndices()[state];
-                    }
-                    return result;
                 }
                 
-                // Solve MEC with the method specified in the settings
+                // Solve nontrivial MEC with the method specified in the settings
                 storm::solver::LraMethod method = env.solver().lra().getNondetLraMethod();
                 if ((storm::NumberTraits<ValueType>::IsExact || env.solver().isForceExact()) && env.solver().lra().isNondetLraMethodSetFromDefault() && method != storm::solver::LraMethod::LinearProgramming) {
                     STORM_LOG_INFO("Selecting 'LP' as the solution technique for long-run properties to guarantee exact results. If you want to override this, please explicitly specify a different LRA method.");
@@ -169,144 +198,281 @@ namespace storm {
                 }
                 STORM_LOG_ERROR_COND(!isProduceSchedulerSet() || method == storm::solver::LraMethod::ValueIteration, "Scheduler generation not supported for the chosen LRA method. Try value-iteration.");
                 if (method == storm::solver::LraMethod::LinearProgramming) {
-                    return computeLraForMecLp(env, combinedStateActionRewardsGetter, mec);
+                    return computeLraForMecLp(env, stateRewardsGetter, actionRewardsGetter, mec);
                 } else if (method == storm::solver::LraMethod::ValueIteration) {
-                    return computeLraForMecVi(env, combinedStateActionRewardsGetter, mec);
+                    return computeLraForMecVi(env, stateRewardsGetter, actionRewardsGetter, mec);
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "Unsupported technique.");
                 }
             }
+    
+            /*!
+             * Abstract helper class that performs a single iteration of the value iteration method
+             */
+            template <typename ValueType>
+            class LraViHelper {
+            public:
+                LraViHelper(storm::storage::MaximalEndComponent const& mec, storm::storage::SparseMatrix<ValueType> const& transitionMatrix) : _mec(mec), _transitionMatrix(transitionMatrix) {
+                    // Intentionally left empty
+                }
+                virtual ~LraViHelper() = default;
+
+                /*!
+                 * performs a single iteration step.
+                 * If a choices vector is given, the optimal choices will be inserted at the appropriate states.
+                 * Note that these choices will be inserted w.r.t. the original model states/choices, i.e. the size of the vector should match the state-count of the input model
+                 * @return the current estimate of the LRA value
+                 */
+                virtual void iterate(Environment const& env, storm::solver::OptimizationDirection const& dir, std::vector<uint64_t>* choices = nullptr) = 0;
+                
+                struct ConvergenceCheckResult {
+                    bool isPrecisionAchieved;
+                    ValueType currentValue;
+                };
+                
+                /*!
+                 * Checks whether the curently computed value achieves the desired precision
+                 */
+                virtual ConvergenceCheckResult checkConvergence(bool relative, ValueType precision) = 0;
+                
+                /*!
+                 * Must be called between two calls of iterate.
+                 */
+                virtual void prepareNextIteration() = 0;
+                
+            protected:
+                
+                /*!
+                 *
+                 * @param xPrevious the 'old' values
+                 * @param xCurrent the 'new' values
+                 * @param threshold the threshold
+                 * @param relative whether the relative difference should be considered
+                 * @return The first component is true if the (relative) difference between the maximal and the minimal entry-wise change of the two value vectors is below or equal to the provided threshold.
+                 *          In this case, the second component is the average of the maximal and the minimal change.
+                 *          If the threshold is exceeded, the computation is aborted early and the second component is only an approximation of the averages.
+                 */
+                std::pair<bool, ValueType> checkMinMaxDiffBelowThreshold(std::vector<ValueType> const& xPrevious, std::vector<ValueType> const& xCurrent, ValueType const& threshold, bool relative) const {
+                    STORM_LOG_ASSERT(xPrevious.size() == xCurrent.size(), "Unexpected Dimension Mismatch");
+                    STORM_LOG_ASSERT(threshold > storm::utility::zero<ValueType>(), "Did not expect a non-positive threshold.");
+                    auto x1It = xPrevious.begin();
+                    auto x1Ite = xPrevious.end();
+                    auto x2It = xCurrent.begin();
+                    ValueType maxDiff = (*x2It - *x1It);
+                    ValueType minDiff = maxDiff;
+                    bool result = true;
+                    // The difference between maxDiff and minDiff is zero at this point. Thus, it doesn't make sense to check the threshold now.
+                    for (++x1It, ++x2It; x1It != x1Ite; ++x1It, ++x2It) {
+                        ValueType diff = (*x2It - *x1It);
+                        // Potentially update maxDiff or minDiff
+                        bool skipCheck = false;
+                        if (maxDiff < diff) {
+                            maxDiff = diff;
+                        } else if (minDiff > diff) {
+                            minDiff = diff;
+                        } else {
+                            skipCheck = true;
+                        }
+                        // Check convergence
+                        if (!skipCheck && (maxDiff - minDiff) > (relative ? (threshold * minDiff) : threshold)) {
+                            result = false;
+                            break;
+                        }
+                    }
+                    ValueType avgDiff = (maxDiff + minDiff) / (storm::utility::convertNumber<ValueType>(2.0));
+                    return {result, avgDiff};
+                }
+                
+                storm::storage::MaximalEndComponent const& _mec;
+                storm::storage::SparseMatrix<ValueType> const& _transitionMatrix;
+            };
+    
+            /*!
+             * Abstract helper class that performs a single iteration of the value iteration method
+             * @see Ashok et al.: Value Iteration for Long-Run Average Reward in Markov Decision Processes (CAV'17), https://doi.org/10.1007/978-3-319-63387-9_10
+             */
+            template <typename ValueType>
+            class MdpLraViHelper : public LraViHelper<ValueType> {
+            public:
+                
+                MdpLraViHelper(storm::storage::MaximalEndComponent const& mec, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::function<ValueType(uint64_t stateIndex)> const& stateRewardsGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionRewardsGetter, ValueType const& aperiodicFactor) : LraViHelper<ValueType>(mec, transitionMatrix), _x1(mec.size(), storm::utility::zero<ValueType>()), _x2(_x1), _x1IsCurrent(true) {
+                    
+                    // We add a selfloop to each state (which is necessary for convergence)
+                    // Very roughly, this selfloop avoids that the values can flip around like this: [1, 0] -> [0, 1] -> [1, 0] -> ...
+                    ValueType selfLoopProb = aperiodicFactor;
+                    // Introducing the selfloop also requires the rewards to be scaled by the following factor.
+                    _scalingFactor = storm::utility::one<ValueType>() - selfLoopProb;
+                    
+                    uint64_t numMecStates = this->_mec.size();
+                    boost::container::flat_map<uint64_t, uint64_t> toSubModelStateMapping;
+                    toSubModelStateMapping.reserve(this->_mec.size());
+                    uint64_t currState = 0;
+                    uint64_t numMecChoices = 0;
+                    for (auto const& stateChoices : this->_mec) {
+                        toSubModelStateMapping.insert(std::pair<uint64_t, uint64_t>(stateChoices.first, currState));
+                        ++currState;
+                        numMecChoices += stateChoices.second.size();
+                    }
+                    assert(currState == numMecStates);
+                    
+                    // Get a transition matrix that only considers the states and choices within the MEC
+                    storm::storage::SparseMatrixBuilder<ValueType> mecTransitionBuilder(numMecChoices, numMecStates, 0, true, true, numMecStates);
+                    _choiceValues.reserve(numMecChoices);
+                    uint64_t currRow = 0;
+                    for (auto const& stateChoices : this->_mec) {
+                        auto const& mecState = stateChoices.first;
+                        auto const& mecChoices = stateChoices.second;
+                        mecTransitionBuilder.newRowGroup(currRow);
+                        for (auto const& choice : mecChoices) {
+                            bool insertedDiagElement = false;
+                            for (auto const& entry : this->_transitionMatrix.getRow(choice)) {
+                                uint64_t column = toSubModelStateMapping[entry.getColumn()];
+                                if (!insertedDiagElement && entry.getColumn() > mecState) {
+                                    mecTransitionBuilder.addNextValue(currRow, toSubModelStateMapping[mecState], selfLoopProb);
+                                    insertedDiagElement = true;
+                                }
+                                if (!insertedDiagElement && entry.getColumn() == mecState) {
+                                    mecTransitionBuilder.addNextValue(currRow, column, selfLoopProb + _scalingFactor * entry.getValue());
+                                    insertedDiagElement = true;
+                                } else {
+                                    mecTransitionBuilder.addNextValue(currRow, column,  _scalingFactor * entry.getValue());
+                                }
+                            }
+                            if (!insertedDiagElement) {
+                                mecTransitionBuilder.addNextValue(currRow, toSubModelStateMapping[mecState], selfLoopProb);
+                            }
+                            
+                            // Compute the rewards obtained for this choice
+                            _choiceValues.push_back(_scalingFactor * (stateRewardsGetter(mecState) + actionRewardsGetter(choice)));
+                            
+                            ++currRow;
+                        }
+                    }
+                    
+                    _mecTransitions = mecTransitionBuilder.build();
+                    
+                    STORM_LOG_ASSERT(_mecTransitions.isProbabilistic(), "The MEC-Matrix is not probabilistic.");
+                    STORM_LOG_ASSERT(_mecTransitions.getRowGroupCount() == _x1.size(), "Unexpected size mismatch for created matrix.");
+                    STORM_LOG_ASSERT(_x1.size() == _x2.size(), "Unexpected size mismatch for created matrix.");
+                }
+                
+                virtual void iterate(Environment const& env, storm::solver::OptimizationDirection const& dir, std::vector<uint64_t>* choices = nullptr) override {
+                    // Initialize a multipler if it does not exist, yet
+                    if (!_multiplier) {
+                        _multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, _mecTransitions);
+                    }
+                    
+                    if (choices == nullptr) {
+                        // Perform a simple matrix-vector multiplication
+                        _multiplier->multiplyAndReduce(env, dir, xCurrent(), &_choiceValues, xPrevious());
+                    } else {
+                        // Perform a simple matrix-vector multiplication but also keep track of the choices within the _mecTransitions
+                        std::vector<uint64_t> mecChoices(_mecTransitions.getRowGroupCount());
+                        _multiplier->multiplyAndReduce(env, dir, xCurrent(), &_choiceValues, xPrevious(), &mecChoices);
+                        // Transform the local choices (within this mec) to global indices
+                        uint64_t mecState = 0;
+                        for (auto const& stateChoices : this->_mec) {
+                            uint64_t mecChoice = mecChoices[mecState];
+                            STORM_LOG_ASSERT(mecChoice < stateChoices.second.size(), "The selected choice does not seem to exist.");
+                            uint64_t globalChoiceIndex = *(stateChoices.second.begin() + mecChoice);
+                            (*choices)[stateChoices.first] = globalChoiceIndex - this->_transitionMatrix.getRowGroupIndices()[stateChoices.first];
+                            ++mecState;
+                        }
+                    }
+                    
+                    // Swap current and previous x vectors
+                    _x1IsCurrent = !_x1IsCurrent;
+                    
+                }
+                
+                virtual typename LraViHelper<ValueType>::ConvergenceCheckResult checkConvergence(bool relative, ValueType precision) override {
+                    typename LraViHelper<ValueType>::ConvergenceCheckResult res;
+                    std::tie(res.isPrecisionAchieved, res.currentValue) = this->checkMinMaxDiffBelowThreshold(xPrevious(), xCurrent(), precision, relative);
+                    res.currentValue /= _scalingFactor; // "Undo" the scaling of the rewards
+                    return res;
+                }
+                
+                virtual void prepareNextIteration() override {
+                    // To avoid large (and numerically unstable) x-values, we substract a reference value.
+                    ValueType referenceValue = xCurrent().front();
+                    storm::utility::vector::applyPointwise<ValueType, ValueType>(xCurrent(), xCurrent(), [&referenceValue] (ValueType const& x_i) -> ValueType { return x_i - referenceValue; });
+                }
+                
+            private:
+                
+                std::vector<ValueType>& xCurrent() {
+                    return _x1IsCurrent ? _x1 : _x2;
+                }
+                
+                std::vector<ValueType>& xPrevious() {
+                    return _x1IsCurrent ? _x2 : _x1;
+                }
+                
+                storm::storage::SparseMatrix<ValueType> _mecTransitions;
+                std::vector<ValueType> _x1, _x2, _choiceValues;
+                bool _x1IsCurrent;
+                std::unique_ptr<storm::solver::Multiplier<ValueType>> _multiplier;
+                ValueType _scalingFactor;
+            };
             
             template <typename ValueType>
-            ValueType SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLraForMecVi(Environment const& env, std::function<ValueType(uint64_t stateIndex, uint64_t globalChoiceIndex)> const& combinedStateActionRewardsGetter, storm::storage::MaximalEndComponent const& mec) {
-                // Initialize data about the mec
-                storm::storage::BitVector mecStates(_transitionMatrix.getRowGroupCount(), false);
-                storm::storage::BitVector mecChoices(_transitionMatrix.getRowCount(), false);
-                for (auto const& stateChoicesPair : mec) {
-                    mecStates.set(stateChoicesPair.first);
-                    for (auto const& choice : stateChoicesPair.second) {
-                        mecChoices.set(choice);
-                    }
-                }
-                
-                boost::container::flat_map<uint64_t, uint64_t> toSubModelStateMapping;
-                uint64_t currState = 0;
-                toSubModelStateMapping.reserve(mecStates.getNumberOfSetBits());
-                for (auto const& mecState : mecStates) {
-                    toSubModelStateMapping.insert(std::pair<uint64_t, uint64_t>(mecState, currState));
-                    ++currState;
-                }
-                
-                // Get a transition matrix that only considers the states and choices within the MEC
-                storm::storage::SparseMatrixBuilder<ValueType> mecTransitionBuilder(mecChoices.getNumberOfSetBits(), mecStates.getNumberOfSetBits(), 0, true, true, mecStates.getNumberOfSetBits());
-                std::vector<ValueType> choiceValues;
-                choiceValues.reserve(mecChoices.getNumberOfSetBits());
-                uint64_t currRow = 0;
-                ValueType selfLoopProb = storm::utility::convertNumber<ValueType>(env.solver().lra().getAperiodicFactor());
-                ValueType scalingFactor = storm::utility::one<ValueType>() - selfLoopProb;
-                for (auto const& mecState : mecStates) {
-                    mecTransitionBuilder.newRowGroup(currRow);
-                    uint64_t groupStart = _transitionMatrix.getRowGroupIndices()[mecState];
-                    uint64_t groupEnd = _transitionMatrix.getRowGroupIndices()[mecState + 1];
-                    for (uint64_t choice = mecChoices.getNextSetIndex(groupStart); choice < groupEnd; choice = mecChoices.getNextSetIndex(choice + 1)) {
-                        bool insertedDiagElement = false;
-                        for (auto const& entry : _transitionMatrix.getRow(choice)) {
-                            uint64_t column = toSubModelStateMapping[entry.getColumn()];
-                            if (!insertedDiagElement && entry.getColumn() > mecState) {
-                                mecTransitionBuilder.addNextValue(currRow, toSubModelStateMapping[mecState], selfLoopProb);
-                                insertedDiagElement = true;
-                            }
-                            if (!insertedDiagElement && entry.getColumn() == mecState) {
-                                mecTransitionBuilder.addNextValue(currRow, column, selfLoopProb + scalingFactor * entry.getValue());
-                                insertedDiagElement = true;
-                            } else {
-                                mecTransitionBuilder.addNextValue(currRow, column,  scalingFactor * entry.getValue());
-                            }
-                        }
-                        if (!insertedDiagElement) {
-                            mecTransitionBuilder.addNextValue(currRow, toSubModelStateMapping[mecState], selfLoopProb);
-                        }
-                        
-                        // Compute the rewards obtained for this choice
-                        choiceValues.push_back(scalingFactor * combinedStateActionRewardsGetter(mecState, choice));
-                        
-                        ++currRow;
-                    }
-                }
-                auto mecTransitions = mecTransitionBuilder.build();
-                STORM_LOG_ASSERT(mecTransitions.isProbabilistic(), "The MEC-Matrix is not probabilistic.");
-                
-                // start the iterations
-                ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().lra().getPrecision()) / scalingFactor;
+            ValueType SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLraForMecVi(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateRewardsGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionRewardsGetter, storm::storage::MaximalEndComponent const& mec) {
+
+                // Collect some parameters of the computation.
+                ValueType aperiodicFactor = storm::utility::convertNumber<ValueType>(env.solver().lra().getAperiodicFactor());
+                ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().lra().getPrecision()) / aperiodicFactor;
                 bool relative = env.solver().lra().getRelativeTerminationCriterion();
-                std::vector<ValueType> x(mecTransitions.getRowGroupCount(), storm::utility::zero<ValueType>());
-                std::vector<ValueType> xPrime = x;
-                auto dir = this->getOptimizationDirection();
-                
-                auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, mecTransitions);
-                ValueType maxDiff, minDiff;
-                
-                uint64_t iter = 0;
                 boost::optional<uint64_t> maxIter;
                 if (env.solver().lra().isMaximalIterationCountSet()) {
                     maxIter = env.solver().lra().getMaximalIterationCount();
                 }
+                auto dir = this->getOptimizationDirection();
+                
+                // Create an object for the iterations
+                std::shared_ptr<LraViHelper<ValueType>> iterationHelper;
+                if (isContinuousTime()) {
+                    // TODO
+                } else {
+                    iterationHelper = std::make_shared<MdpLraViHelper<ValueType>>(mec, _transitionMatrix, stateRewardsGetter, actionRewardsGetter, aperiodicFactor);
+                }
+                
+                // start the iterations
+                ValueType result = storm::utility::zero<ValueType>();
+                uint64_t iter = 0;
                 while (!maxIter.is_initialized() || iter < maxIter.get()) {
                     ++iter;
-                    // Compute the obtained values for the next step
-                    multiplier->multiplyAndReduce(env, dir, x, &choiceValues, x);
-                    
-                    // update xPrime and check for convergence
-                    // to avoid large (and numerically unstable) x-values, we substract a reference value.
-                    auto xIt = x.begin();
-                    auto xPrimeIt = xPrime.begin();
-                    ValueType refVal = *xIt;
-                    maxDiff = *xIt - *xPrimeIt;
-                    minDiff = maxDiff;
-                    *xIt -= refVal;
-                    *xPrimeIt = *xIt;
-                    for (++xIt, ++xPrimeIt; xIt != x.end(); ++xIt, ++xPrimeIt) {
-                        ValueType diff = *xIt - *xPrimeIt;
-                        maxDiff = std::max(maxDiff, diff);
-                        minDiff = std::min(minDiff, diff);
-                        *xIt -= refVal;
-                        *xPrimeIt = *xIt;
-                    }
-
-                    if ((maxDiff - minDiff) <= (relative ? (precision * minDiff) : precision)) {
+                    iterationHelper->iterate(env, dir);
+                    // Check if we are done
+                    auto convergenceCheckResult = iterationHelper->checkConvergence(relative, precision);
+                    result = convergenceCheckResult.currentValue;
+                    if (convergenceCheckResult.isPrecisionAchieved) {
                         break;
                     }
                     if (storm::utility::resources::isTerminate()) {
                         break;
                     }
+                    
+                    iterationHelper->prepareNextIteration();
+                    
                 }
                 if (maxIter.is_initialized() && iter == maxIter.get()) {
                     STORM_LOG_WARN("LRA computation did not converge within " << iter << " iterations.");
+                } else if (storm::utility::resources::isTerminate()) {
+                    STORM_LOG_WARN("LRA computation aborted after " << iter << " iterations.");
                 } else {
                     STORM_LOG_TRACE("LRA computation converged after " << iter << " iterations.");
                 }
                 
                 if (isProduceSchedulerSet()) {
-                    std::vector<uint_fast64_t> localMecChoices(mecTransitions.getRowGroupCount(), 0);
-                    multiplier->multiplyAndReduce(env, dir, x, &choiceValues, x, &localMecChoices);
-                    auto localMecChoiceIt = localMecChoices.begin();
-                    for (auto const& mecState : mecStates) {
-                        // Get the choice index of the selected mec choice with respect to the global transition matrix.
-                        uint_fast64_t globalChoice = mecChoices.getNextSetIndex(_transitionMatrix.getRowGroupIndices()[mecState]);
-                        for (uint_fast64_t i = 0; i < *localMecChoiceIt; ++i) {
-                            globalChoice = mecChoices.getNextSetIndex(globalChoice + 1);
-                        }
-                        STORM_LOG_ASSERT(globalChoice < _transitionMatrix.getRowGroupIndices()[mecState + 1], "Invalid global choice for mec state.");
-                        _producedOptimalChoices.get()[mecState] = globalChoice - _transitionMatrix.getRowGroupIndices()[mecState];
-                        ++localMecChoiceIt;
-                    }
+                    // We will be doing one more iteration step and track scheduler choices this time.
+                    iterationHelper->prepareNextIteration();
+                    iterationHelper->iterate(env, dir, &_producedOptimalChoices.get());
                 }
-                return (maxDiff + minDiff) / (storm::utility::convertNumber<ValueType>(2.0) * scalingFactor);
-
+                return result;
             }
             
             template <typename ValueType>
-            ValueType SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLraForMecLp(Environment const& env, std::function<ValueType(uint64_t stateIndex, uint64_t globalChoiceIndex)> const& combinedStateActionRewardsGetter, storm::storage::MaximalEndComponent const& mec) {
+            ValueType SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLraForMecLp(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateRewardsGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionRewardsGetter, storm::storage::MaximalEndComponent const& mec) {
                 std::shared_ptr<storm::solver::LpSolver<ValueType>> solver = storm::utility::solver::getLpSolver<ValueType>("LRA for MEC");
                 solver->setOptimizationDirection(invert(this->getOptimizationDirection()));
                 
@@ -330,7 +496,7 @@ namespace storm {
                         for (auto element : _transitionMatrix.getRow(choice)) {
                             constraint = constraint + stateToVariableMap.at(element.getColumn()) * solver->getConstant(element.getValue());
                         }
-                        constraint = solver->getConstant(combinedStateActionRewardsGetter(state, choice)) + constraint;
+                        constraint = solver->getConstant(stateRewardsGetter(state) + actionRewardsGetter(choice)) + constraint;
                         
                         if (this->minimize()) {
                             constraint = stateToVariableMap.at(state) <= constraint;

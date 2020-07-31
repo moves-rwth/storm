@@ -44,13 +44,13 @@ namespace storm {
                  * Computes the long run average value given the provided action-based rewards
                  * @return a value for each state
                  */
-                std::vector<ValueType> computeLongRunAverageValues(Environment const& env, std::vector<ValueType> const& combinedStateActionRewards);
+                std::vector<ValueType> computeLongRunAverageValues(Environment const& env, std::vector<ValueType> const* stateValues = nullptr, std::vector<ValueType> const* actionValues = nullptr);
                 
                 /*!
                  * Computes the long run average value given the provided state-action-based rewards
                  * @return a value for each state
                  */
-                std::vector<ValueType> computeLongRunAverageValues(Environment const& env, std::function<ValueType(uint64_t stateIndex, uint64_t globalChoiceIndex)> const& combinedStateActionRewardsGetter);
+                std::vector<ValueType> computeLongRunAverageValues(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateValuesGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionValuesGetter);
                 
                 /*!
                  * Sets whether an optimal scheduler shall be constructed during the computation
@@ -81,21 +81,27 @@ namespace storm {
                 storm::storage::Scheduler<ValueType> extractScheduler() const;
 
             protected:
+                
+                /*!
+                 * @return true iff this is a computation on a continuous time model (i.e. MA)
+                 */
+                bool isContinuousTime() const;
+                
                 /*!
                  * @pre if scheduler production is enabled, the _producedOptimalChoices vector should be initialized and sufficiently large
                  * @return the (unique) optimal LRA value for the given mec.
                  * @post _producedOptimalChoices contains choices for the states of the given MEC which yield the returned LRA value.
                  */
-                ValueType computeLraForMec(Environment const& env, std::function<ValueType(uint64_t stateIndex, uint64_t globalChoiceIndex)> const& combinedStateActionRewardsGetter, storm::storage::MaximalEndComponent const& mec);
+                ValueType computeLraForMec(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateValuesGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionValuesGetter, storm::storage::MaximalEndComponent const& mec);
                 
                 /*!
                  * As computeLraForMec but uses value iteration as a solution method (independent of what is set in env)
                  */
-                ValueType computeLraForMecVi(Environment const& env, std::function<ValueType(uint64_t stateIndex, uint64_t globalChoiceIndex)> const& combinedStateActionRewardsGetter, storm::storage::MaximalEndComponent const& mec);
+                ValueType computeLraForMecVi(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateValuesGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionValuesGetter, storm::storage::MaximalEndComponent const& mec);
                 /*!
                  * As computeLraForMec but uses linear programming as a solution method (independent of what is set in env)
                  */
-                ValueType computeLraForMecLp(Environment const& env, std::function<ValueType(uint64_t stateIndex, uint64_t globalChoiceIndex)> const& combinedStateActionRewardsGetter, storm::storage::MaximalEndComponent const& mec);
+                ValueType computeLraForMecLp(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateValuesGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionValuesGetter, storm::storage::MaximalEndComponent const& mec);
                 
                 /*!
                  * @return Lra values for each state
