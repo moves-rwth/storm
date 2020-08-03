@@ -2080,7 +2080,7 @@ namespace gmm {
   
   template <typename L1, typename L2, typename L3> inline
   void mult_add_parallel_spec(const L1& l1, const L2& l2, L3& l3, row_major)
-  { mult_add_by_row_parallel(l1, l2, l3, typename linalg_traits<L4>::storage_type()); }
+  { mult_add_by_row_parallel(l1, l2, l3, typename linalg_traits<L3>::storage_type()); }
 #endif
 
   template <typename L1, typename L2, typename L3> inline
