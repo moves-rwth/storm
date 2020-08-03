@@ -12,7 +12,6 @@
 #include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
-#include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/UnmetRequirementException.h"
 
 namespace storm {
@@ -25,7 +24,7 @@ namespace storm {
             }
             
             template <typename ValueType>
-            SparseNondeterministicInfiniteHorizonHelper<ValueType>::SparseNondeterministicInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& markovianStates, std::vector<ValueType> const& exitRates) : _transitionMatrix(transitionMatrix), _backwardTransitions(backwardTransitions), _markovianStates(&markovianStates), _exitRates(&exitRates) {
+            SparseNondeterministicInfiniteHorizonHelper<ValueType>::SparseNondeterministicInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& markovianStates, std::vector<ValueType> const& exitRates) : _transitionMatrix(transitionMatrix), _backwardTransitions(backwardTransitions), _markovianStates(&markovianStates), _exitRates(&exitRates), _produceScheduler(false) {
                 // Intentionally left empty.
             }
             
@@ -36,7 +35,6 @@ namespace storm {
                             [] (uint64_t) { return storm::utility::zero<ValueType>(); }
                     );
             }
-            
             
             template <typename ValueType>
             std::vector<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLongRunAverageRewards(Environment const& env, storm::models::sparse::StandardRewardModel<ValueType> const& rewardModel) {
@@ -238,7 +236,7 @@ namespace storm {
                 /*!
                  * Must be called between two calls of iterate.
                  */
-                virtual void prepareNextIteration() = 0;
+                virtual void prepareNextIteration(Environment const& env) = 0;
                 
             protected:
                 
@@ -288,7 +286,7 @@ namespace storm {
             };
     
             /*!
-             * Abstract helper class that performs a single iteration of the value iteration method
+             * Abstract helper class that performs a single iteration of the value iteration method for MDP
              * @see Ashok et al.: Value Iteration for Long-Run Average Reward in Markov Decision Processes (CAV'17), https://doi.org/10.1007/978-3-319-63387-9_10
              */
             template <typename ValueType>
@@ -305,11 +303,11 @@ namespace storm {
                     
                     uint64_t numMecStates = this->_mec.size();
                     boost::container::flat_map<uint64_t, uint64_t> toSubModelStateMapping;
-                    toSubModelStateMapping.reserve(this->_mec.size());
+                    toSubModelStateMapping.reserve(numMecStates);
                     uint64_t currState = 0;
                     uint64_t numMecChoices = 0;
                     for (auto const& stateChoices : this->_mec) {
-                        toSubModelStateMapping.insert(std::pair<uint64_t, uint64_t>(stateChoices.first, currState));
+                        toSubModelStateMapping.emplace(stateChoices.first, currState);
                         ++currState;
                         numMecChoices += stateChoices.second.size();
                     }
@@ -392,7 +390,7 @@ namespace storm {
                     return res;
                 }
                 
-                virtual void prepareNextIteration() override {
+                virtual void prepareNextIteration(Environment const&) override {
                     // To avoid large (and numerically unstable) x-values, we substract a reference value.
                     ValueType referenceValue = xCurrent().front();
                     storm::utility::vector::applyPointwise<ValueType, ValueType>(xCurrent(), xCurrent(), [&referenceValue] (ValueType const& x_i) -> ValueType { return x_i - referenceValue; });
@@ -415,6 +413,282 @@ namespace storm {
                 ValueType _scalingFactor;
             };
             
+            /*!
+             * Abstract helper class that performs a single iteration of the value iteration method for MA
+             * @see Butkova, Wimmer, Hermanns: Long-Run Rewards for Markov Automata (TACAS'17), https://doi.org/10.1007/978-3-662-54580-5_11
+             */
+            template <typename ValueType>
+            class MaLraViHelper : public LraViHelper<ValueType> {
+            public:
+                
+                MaLraViHelper(storm::storage::MaximalEndComponent const& mec, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& markovianStates, std::vector<ValueType> const& exitRates, std::function<ValueType(uint64_t stateIndex)> const& stateRewardsGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionRewardsGetter, ValueType const& aperiodicFactor) : LraViHelper<ValueType>(mec, transitionMatrix), _markovianStates(markovianStates), _Msx1IsCurrent(false) {
+                    
+                    // Run through the Mec and collect some data:
+                    // We consider two submodels, one consisting of the Markovian MEC states and one consisting of the probabilistic MEC states.
+                    // For this, we create a state index map that point from state indices of the input model to indices of the corresponding submodel of that state.
+                    boost::container::flat_map<uint64_t, uint64_t> toSubModelStateMapping;
+                    // We also obtain state and choices counts of the two submodels
+                    uint64_t numPsSubModelStates(0), numPsSubModelChoices(0);
+                    uint64_t numMsSubModelStates(0); // The number of choices coincide
+                    // We will need to uniformize the Markovian MEC states by introducing a selfloop.
+                    // For this, we need to find a uniformization rate which will be a little higher (given by aperiodicFactor) than the maximum rate occurring in the MEC.
+                    _uniformizationRate = storm::utility::zero<ValueType>();
+                    // Now run over the MEC and collect the required data.
+                    for (auto const& stateChoices : this->_mec) {
+                        uint64_t const& mecState = stateChoices.first;
+                        if (_markovianStates.get(mecState)) {
+                            toSubModelStateMapping.emplace(mecState, numMsSubModelStates);
+                            ++numMsSubModelStates;
+                            STORM_LOG_ASSERT(stateChoices.second.size() == 1, "Markovian state has multiple MEC choices.");
+                            _uniformizationRate = std::max(_uniformizationRate, exitRates[mecState]);
+                        } else {
+                            toSubModelStateMapping.emplace(mecState, numPsSubModelStates);
+                            ++numPsSubModelStates;
+                            numPsSubModelChoices += stateChoices.second.size();
+                        }
+                    }
+                    assert(numPsSubModelStates + numMsSubModelStates == mec.size());
+                    STORM_LOG_THROW(numMsSubModelStates > 0, storm::exceptions::InvalidOperationException, "Markov Automaton has Zeno behavior. Computation of Long Run Average values not supported.");
+
+                    _hasProbabilisticStates = numPsSubModelStates > 0;
+                    
+                    // We make sure that every Markovian state gets a selfloop to make the model aperiodic
+                    _uniformizationRate *= storm::utility::one<ValueType>() + aperiodicFactor;
+
+                    // Now build the Markovian and the Probabilistic submodels.
+                    // In addition, we also need the transitions between the two.
+                    storm::storage::SparseMatrixBuilder<ValueType> msTransitionsBuilder(numMsSubModelStates, numMsSubModelStates);
+                    _MsChoiceValues.reserve(numMsSubModelStates);
+                    storm::storage::SparseMatrixBuilder<ValueType> msToPsTransitionsBuilder, psTransitionsBuilder, psToMsTransitionsBuilder;
+                    if (_hasProbabilisticStates) {
+                        msToPsTransitionsBuilder = storm::storage::SparseMatrixBuilder<ValueType>(numMsSubModelStates, numPsSubModelStates);
+                        psTransitionsBuilder = storm::storage::SparseMatrixBuilder<ValueType>(numPsSubModelChoices, numPsSubModelStates, 0, true, true, numPsSubModelStates);
+                        psToMsTransitionsBuilder = storm::storage::SparseMatrixBuilder<ValueType>(numPsSubModelChoices, numMsSubModelStates, 0, true, true, numPsSubModelStates);
+                        _PsChoiceValues.reserve(numPsSubModelChoices);
+                    }
+                    uint64_t currMsRow = 0;
+                    uint64_t currPsRow = 0;
+                    for (auto const& stateChoices : this->_mec) {
+                        uint64_t const& mecState = stateChoices.first;
+                        auto const& mecChoices = stateChoices.second;
+                        if (!_hasProbabilisticStates || _markovianStates.get(mecState)) {
+                            // The currently processed state is Markovian.
+                            // We need to uniformize!
+                            ValueType uniformizationFactor = exitRates[mecState] / _uniformizationRate;
+                            ValueType selfLoopProb = storm::utility::one<ValueType>() - uniformizationFactor;
+                            STORM_LOG_ASSERT(mecChoices.size() == 1, "Unexpected number of choices at Markovian state.");
+                            for (auto const& mecChoice : mecChoices) {
+                                bool insertedDiagElement = false;
+                                for (auto const& entry : this->_transitionMatrix.getRow(mecChoice)) {
+                                    uint64_t subModelColumn = toSubModelStateMapping[entry.getColumn()];
+                                    if (!_hasProbabilisticStates || _markovianStates.get(entry.getColumn())) {
+                                        // We have a transition from a Markovian state to a Markovian state
+                                        STORM_LOG_ASSERT(subModelColumn < numMsSubModelStates, "Invalid state for Markovian submodel");
+                                        if (!insertedDiagElement && subModelColumn > currMsRow) {
+                                            // We passed the diagonal entry, so add it now before moving on to the next entry
+                                            msTransitionsBuilder.addNextValue(currMsRow, currMsRow, selfLoopProb);
+                                            insertedDiagElement = true;
+                                        }
+                                        if (!insertedDiagElement && subModelColumn == currMsRow) {
+                                            // The current entry is the diagonal (selfloop) entry
+                                            msTransitionsBuilder.addNextValue(currMsRow, subModelColumn, selfLoopProb + uniformizationFactor * entry.getValue());
+                                            insertedDiagElement = true;
+                                        } else {
+                                            // The diagonal element either has been inserted already or still lies in front
+                                            msTransitionsBuilder.addNextValue(currMsRow, subModelColumn,  uniformizationFactor * entry.getValue());
+                                        }
+                                    } else {
+                                        // We have a transition from a Markovian to a probabilistic state
+                                        STORM_LOG_ASSERT(subModelColumn < numPsSubModelStates, "Invalid state for probabilistic submodel");
+                                        msToPsTransitionsBuilder.addNextValue(currMsRow, subModelColumn, uniformizationFactor * entry.getValue());
+                                    }
+                                }
+                                // If the diagonal entry for the MS matrix still has not been set, we do that now
+                                if (!insertedDiagElement) {
+                                    msTransitionsBuilder.addNextValue(currMsRow, currMsRow, selfLoopProb);
+                                }
+                                // Compute the rewards obtained for this choice.
+                                _MsChoiceValues.push_back(stateRewardsGetter(mecState) / _uniformizationRate + actionRewardsGetter(mecChoice) * exitRates[mecState] / _uniformizationRate);
+                                ++currMsRow;
+                            }
+                        } else {
+                            // The currently processed state is probabilistic
+                            psTransitionsBuilder.newRowGroup(currPsRow);
+                            psToMsTransitionsBuilder.newRowGroup(currPsRow);
+                            for (auto const& mecChoice : mecChoices) {
+                                for (auto const& entry : this->_transitionMatrix.getRow(mecChoice)) {
+                                    uint64_t subModelColumn = toSubModelStateMapping[entry.getColumn()];
+                                    if (_markovianStates.get(entry.getColumn())) {
+                                        // We have a transition from a probabilistic state to a Markovian state
+                                        STORM_LOG_ASSERT(subModelColumn < numMsSubModelStates, "Invalid state for Markovian submodel");
+                                        psToMsTransitionsBuilder.addNextValue(currPsRow, subModelColumn, entry.getValue());
+                                    } else {
+                                        // We have a transition from a probabilistic to a probabilistic state
+                                        STORM_LOG_ASSERT(subModelColumn < numPsSubModelStates, "Invalid state for probabilistic submodel");
+                                        psTransitionsBuilder.addNextValue(currPsRow, subModelColumn, entry.getValue());
+                                    }
+                                }
+                                // Compute the rewards obtained for this choice.
+                                // State rewards do not count here since no time passes in probabilistic states.
+                                _PsChoiceValues.push_back(actionRewardsGetter(mecChoice));
+                                ++currPsRow;
+                            }
+                        }
+                    }
+                    _MsTransitions = msTransitionsBuilder.build();
+                    if (_hasProbabilisticStates) {
+                        _MsToPsTransitions = msToPsTransitionsBuilder.build();
+                        _PsTransitions = psTransitionsBuilder.build();
+                        _PsToMsTransitions = psToMsTransitionsBuilder.build();
+                    }
+                }
+                
+                void initializeIterations(Environment const& env, storm::solver::OptimizationDirection const& dir) {
+                    _Msx1.resize(_MsTransitions.getRowGroupCount(), storm::utility::zero<ValueType>());
+                    _Msx2 = _Msx1;
+                    _MsMultiplier = storm::solver::MultiplierFactory<ValueType>().create(env, _MsTransitions);
+                    if (_hasProbabilisticStates) {
+                        if (_PsTransitions.getNonzeroEntryCount() > 0) {
+                            // Set-up a solver for transitions within PS states
+                            _PsSolverEnv = env;
+                            if (env.solver().isForceSoundness()) {
+                                // To get correct results, the inner equation systems are solved exactly.
+                                // TODO investigate how an error would propagate
+                                _PsSolverEnv.solver().setForceExact(true);
+                            }
+                            storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> factory;
+                            bool isAcyclic = !storm::utility::graph::hasCycle(_PsTransitions);
+                            if (isAcyclic) {
+                                STORM_LOG_INFO("Probabilistic transitions are acyclic.");
+                                _PsSolverEnv.solver().minMax().setMethod(storm::solver::MinMaxMethod::Acyclic);
+                            }
+                            _PsSolver = factory.create(_PsSolverEnv, _PsTransitions);
+                            _PsSolver->setHasUniqueSolution(true); // Assume non-zeno MA
+                            _PsSolver->setHasNoEndComponents(true); // assume non-zeno MA
+                            _PsSolver->setCachingEnabled(true);
+                            _PsSolver->setRequirementsChecked(true);
+                            auto req = _PsSolver->getRequirements(_PsSolverEnv, dir);
+                            req.clearUniqueSolution();
+                            if (isAcyclic) {
+                                req.clearAcyclic();
+                            }
+                            // Computing a priori lower/upper bounds is not particularly easy, as there might be selfloops with high probabilities
+                            // Which accumulate a lot of reward. Moreover, the right-hand-side of the equation system changes dynamically.
+                            STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UnmetRequirementException, "The solver requirement " << req.getEnabledRequirementsAsString() << " has not been checked.");
+                        }
+                        
+                        // Set up multipliers for transitions connecting Markovian and probabilistic states
+                        _MsToPsMultiplier = storm::solver::MultiplierFactory<ValueType>().create(env, _MsToPsTransitions);
+                        _PsToMsMultiplier = storm::solver::MultiplierFactory<ValueType>().create(env, _PsToMsTransitions);
+
+                        // Set-up vectors for storing intermediate results for PS states.
+                        _Psx.resize(_PsTransitions.getRowGroupCount(), storm::utility::zero<ValueType>());
+                        _Psb = _PsChoiceValues;
+                    }
+                    
+                }
+                
+                void setInputModelChoices(std::vector<uint64_t>& choices, std::vector<uint64_t> const& localMecChoices, bool setChoiceZeroToMarkovianStates) {
+                    // Transform the local choices (within this mec) to choice indices for the input model
+                    uint64_t mecState = 0;
+                    for (auto const& stateChoices : this->_mec) {
+                        if (setChoiceZeroToMarkovianStates && _markovianStates.get(stateChoices.first)) {
+                            choices[stateChoices.first] = 0;
+                        } else {
+                            uint64_t mecChoice = localMecChoices[mecState];
+                            STORM_LOG_ASSERT(mecChoice < stateChoices.second.size(), "The selected choice does not seem to exist.");
+                            uint64_t globalChoiceIndex = *(stateChoices.second.begin() + mecChoice);
+                            choices[stateChoices.first] = globalChoiceIndex - this->_transitionMatrix.getRowGroupIndices()[stateChoices.first];
+                            ++mecState;
+                        }
+                    }
+                    STORM_LOG_ASSERT(mecState == localMecChoices.size(), "Did not traverse all mec states.");
+                }
+                
+                virtual void iterate(Environment const& env, storm::solver::OptimizationDirection const& dir, std::vector<uint64_t>* choices = nullptr) override {
+                    // Initialize value vectors, multiplers, and solver if this has not been done, yet
+                    if (!_MsMultiplier) {
+                        initializeIterations(env, dir);
+                    }
+                    
+                    // Compute new x values for the Markovian states
+                    // Flip what is current and what is previous
+                    _Msx1IsCurrent = !_Msx1IsCurrent;
+                    // At this point, xPrevious() points to what has been computed in the previous call of iterate (initially, this is the 0-vector).
+                    // The result of this computation will be stored in xCurrent()
+                    
+                    // Compute the values obtained by a single uniformization step between Markovian states only
+                    _MsMultiplier->multiply(env, xPrevious(), &_MsChoiceValues, xCurrent());
+                    if (_hasProbabilisticStates) {
+                        // Add the values obtained by taking a single uniformization step that leads to a Probabilistic state followed by arbitrarily many probabilistic steps.
+                        // First compute the total values when taking arbitrarily many probabilistic transitions (in no time)
+                        if (_PsSolver) {
+                            // We might need to track the optimal choices.
+                            if (choices == nullptr) {
+                                _PsSolver->solveEquations(_PsSolverEnv, dir, _Psx, _Psb);
+                            } else {
+                                _PsSolver->setTrackScheduler();
+                                _PsSolver->solveEquations(_PsSolverEnv, dir, _Psx, _Psb);
+                                setInputModelChoices(*choices, _PsSolver->getSchedulerChoices(), true);
+                            }
+                        } else {
+                            STORM_LOG_ASSERT(_PsTransitions.getNonzeroEntryCount() == 0, "If no solver was initialized, an empty matrix would have been expected.");
+                            if (choices == nullptr) {
+                                storm::utility::vector::reduceVectorMinOrMax(dir, _Psb, _Psx, _PsTransitions.getRowGroupIndices());
+                            } else {
+                                std::vector<uint64_t> psMecChoices(_PsTransitions.getRowGroupCount());
+                                storm::utility::vector::reduceVectorMinOrMax(dir, _Psb, _Psx, _PsTransitions.getRowGroupIndices(), &psMecChoices);
+                                setInputModelChoices(*choices, _PsSolver->getSchedulerChoices(), true);
+                            }
+                        }
+                        // Now add the (weighted) values of the probabilistic states to the values of the Markovian states.
+                        _MsToPsMultiplier->multiply(env, _Psx, &xCurrent(), xCurrent());
+                    }
+                }
+                
+                virtual typename LraViHelper<ValueType>::ConvergenceCheckResult checkConvergence(bool relative, ValueType precision) override {
+                    typename LraViHelper<ValueType>::ConvergenceCheckResult res;
+                    // All values are scaled according to the uniformizationRate.
+                    // We need to 'revert' this scaling when computing the absolute precision.
+                    // However, for relative precision, the scaling cancels out.
+                    ValueType threshold = relative ? precision : ValueType(precision / _uniformizationRate);
+                    std::tie(res.isPrecisionAchieved, res.currentValue) = this->checkMinMaxDiffBelowThreshold(xPrevious(), xCurrent(), threshold, relative);
+                    res.currentValue *= _uniformizationRate; // "Undo" the scaling of the values
+                    return res;
+                }
+                
+                virtual void prepareNextIteration(Environment const& env) override {
+                    // To avoid large (and numerically unstable) x-values, we substract a reference value.
+                    ValueType referenceValue = xCurrent().front();
+                    storm::utility::vector::applyPointwise<ValueType, ValueType>(xCurrent(), xCurrent(), [&referenceValue] (ValueType const& x_i) -> ValueType { return x_i - referenceValue; });
+                    if (_hasProbabilisticStates) {
+                        // Update the RHS of the equation system for the probabilistic states by taking the new values of Markovian states into account.
+                        _PsToMsMultiplier->multiply(env, xCurrent(), &_PsChoiceValues, _Psb);
+                    }
+                }
+                
+            private:
+                
+                std::vector<ValueType>& xCurrent() {
+                    return _Msx1IsCurrent ? _Msx1 : _Msx2;
+                }
+                
+                std::vector<ValueType>& xPrevious() {
+                    return _Msx1IsCurrent ? _Msx2 : _Msx1;
+                }
+                
+                storm::storage::BitVector const& _markovianStates;
+                bool _hasProbabilisticStates;
+                ValueType _uniformizationRate;
+                storm::storage::SparseMatrix<ValueType> _MsTransitions, _MsToPsTransitions, _PsTransitions, _PsToMsTransitions;
+                std::vector<ValueType> _Msx1, _Msx2, _MsChoiceValues;
+                bool _Msx1IsCurrent;
+                std::vector<ValueType> _Psx, _Psb, _PsChoiceValues;
+                std::unique_ptr<storm::solver::Multiplier<ValueType>> _MsMultiplier, _MsToPsMultiplier, _PsToMsMultiplier;
+                std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> _PsSolver;
+                Environment _PsSolverEnv;
+            };
+            
             template <typename ValueType>
             ValueType SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLraForMecVi(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateRewardsGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionRewardsGetter, storm::storage::MaximalEndComponent const& mec) {
 
@@ -431,7 +705,7 @@ namespace storm {
                 // Create an object for the iterations
                 std::shared_ptr<LraViHelper<ValueType>> iterationHelper;
                 if (isContinuousTime()) {
-                    // TODO
+                    iterationHelper = std::make_shared<MaLraViHelper<ValueType>>(mec, _transitionMatrix, *_markovianStates, *_exitRates, stateRewardsGetter, actionRewardsGetter, aperiodicFactor);
                 } else {
                     iterationHelper = std::make_shared<MdpLraViHelper<ValueType>>(mec, _transitionMatrix, stateRewardsGetter, actionRewardsGetter, aperiodicFactor);
                 }
@@ -452,7 +726,7 @@ namespace storm {
                         break;
                     }
                     
-                    iterationHelper->prepareNextIteration();
+                    iterationHelper->prepareNextIteration(env);
                     
                 }
                 if (maxIter.is_initialized() && iter == maxIter.get()) {
@@ -465,7 +739,7 @@ namespace storm {
                 
                 if (isProduceSchedulerSet()) {
                     // We will be doing one more iteration step and track scheduler choices this time.
-                    iterationHelper->prepareNextIteration();
+                    iterationHelper->prepareNextIteration(env);
                     iterationHelper->iterate(env, dir, &_producedOptimalChoices.get());
                 }
                 return result;
@@ -493,7 +767,7 @@ namespace storm {
                     for (auto choice : stateChoicesPair.second) {
                         storm::expressions::Expression constraint = -lambda;
                         
-                        for (auto element : _transitionMatrix.getRow(choice)) {
+                        for (auto const& element : _transitionMatrix.getRow(choice)) {
                             constraint = constraint + stateToVariableMap.at(element.getColumn()) * solver->getConstant(element.getValue());
                         }
                         constraint = solver->getConstant(stateRewardsGetter(state) + actionRewardsGetter(choice)) + constraint;
@@ -522,7 +796,7 @@ namespace storm {
                 // As there could be multiple transitions to the same MEC, we accumulate them in this map before adding them to the matrix builder.
                 std::map<uint64_t, ValueType> auxiliaryStateToProbabilityMap;
                 
-                for (auto transition : inputTransitionMatrix.getRow(inputMatrixChoice)) {
+                for (auto const& transition : inputTransitionMatrix.getRow(inputMatrixChoice)) {
                     if (!storm::utility::isZero(transition.getValue())) {
                         auto const& sspTransitionTarget = inputToSspStateMap[transition.getColumn()];
                         // Since the auxiliary MEC states are appended at the end of the matrix, we can use this check to
