@@ -1797,6 +1797,11 @@ namespace gmm {
   void mult_add_by_row_parallel(const L1& l1, const L2& l2, const L3& l3, L4& l4, abstract_dense) {
     tbb::parallel_for(tbb::blocked_range<unsigned long>(0, vect_size(l4), 10), TbbMultAddFunctor<L1, L2, L3, L4>(l1, l2, l3, l4));
   }
+  
+  template <typename L1, typename L2, typename L3>
+  void mult_add_by_row_parallel(const L1& l1, const L2& l2, L3& l3, abstract_dense) {
+    tbb::parallel_for(tbb::blocked_range<unsigned long>(0, vect_size(l3), 10), TbbMultAddFunctor<L1, L2, L3, L3>(l1, l2, l3, l3));
+  }
 #endif
     
   template <typename L1, typename L2, typename L3>
@@ -1949,6 +1954,22 @@ namespace gmm {
     }
   }
     
+  /** Multiply-accumulate. l3 += l1*l2; */
+  template <typename L1, typename L2, typename L3> inline
+  void mult_add_parallel(const L1& l1, const L2& l2, L3& l3) {
+    size_type m = mat_nrows(l1), n = mat_ncols(l1);
+    if (!m || !n) return;
+    GMM_ASSERT2(n==vect_size(l2) && m==vect_size(l3), "dimensions mismatch");
+    if (!same_origin(l2, l3)) {
+      mult_add_parallel_spec(l1, l2, l3, typename principal_orientation_type<typename linalg_traits<L1>::sub_orientation>::potype());
+    } else {
+      GMM_WARNING2("Warning, A temporary is used for mult\n");
+      typename temporary_vector<L3>::vector_type temp(vect_size(l2));
+      copy(l2, temp);
+      mult_add_parallel_spec(l1, temp, l3, typename principal_orientation_type<typename linalg_traits<L1>::sub_orientation>::potype());
+    }
+  }
+  
   /** Multiply-accumulate. l4 = l1*l2 + l3; */
   template <typename L1, typename L2, typename L3, typename L4> inline
   void mult_add_parallel(const L1& l1, const L2& l2, const L3& l3, L4& l4) {
@@ -2056,6 +2077,10 @@ namespace gmm {
   template <typename L1, typename L2, typename L3, typename L4> inline
   void mult_add_parallel_spec(const L1& l1, const L2& l2, const L3& l3, L4& l4, row_major)
   { mult_add_by_row_parallel(l1, l2, l3, l4, typename linalg_traits<L4>::storage_type()); }
+  
+  template <typename L1, typename L2, typename L3> inline
+  void mult_add_parallel_spec(const L1& l1, const L2& l2, L3& l3, row_major)
+  { mult_add_by_row_parallel(l1, l2, l3, typename linalg_traits<L4>::storage_type()); }
 #endif
 
   template <typename L1, typename L2, typename L3> inline

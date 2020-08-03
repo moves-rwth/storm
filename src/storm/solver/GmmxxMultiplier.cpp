@@ -120,7 +120,11 @@ namespace storm {
         template<typename ValueType>
         void GmmxxMultiplier<ValueType>::multAdd(std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
             if (b) {
-                gmm::mult_add(gmmMatrix, x, *b, result);
+                if (b == &result) {
+                    gmm::mult_add(gmmMatrix, x, result);
+                } else {
+                    gmm::mult_add(gmmMatrix, x, *b, result);
+                }
             } else {
                 gmm::mult(gmmMatrix, x, result);
             }
@@ -257,7 +261,11 @@ namespace storm {
         void GmmxxMultiplier<ValueType>::multAddParallel(std::vector<ValueType> const& x, std::vector<ValueType> const* b, std::vector<ValueType>& result) const {
 #ifdef STORM_HAVE_INTELTBB
             if (b) {
-                gmm::mult_add_parallel(gmmMatrix, x, *b, result);
+                if (b == &result) {
+                    gmm::mult_add_parallel(gmmMatrix, x, result);
+                } else {
+                    gmm::mult_add_parallel(gmmMatrix, x, *b, result);
+                }
             } else {
                 gmm::mult_parallel(gmmMatrix, x, result);
             }
