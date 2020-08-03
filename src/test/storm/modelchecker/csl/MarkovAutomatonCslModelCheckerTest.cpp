@@ -341,7 +341,7 @@ namespace {
             EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
      
             result = checker->check(this->env(), tasks[8]);
-            EXPECT_NEAR(this->parseNumber("407"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            EXPECT_NEAR(this->parseNumber("407"), this->getQuantitativeResultAtInitialState(model, result), this->precision() * this->parseNumber("407")); // use relative precision!
      
             result = checker->check(this->env(), tasks[9]);
             EXPECT_NEAR(this->parseNumber("27"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
