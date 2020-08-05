@@ -26,7 +26,7 @@ namespace storm {
             size_t constFailedBeCounter = 0;
             std::shared_ptr<storm::storage::DFTBE<ValueType> const> constFailedBE = nullptr;
             for (auto &be : mDft.getBasicElements()) {
-                if (be->type() == storm::storage::DFTElementType::BE_CONST) {
+                if (be->beType() == storm::storage::BEType::CONSTANT) {
                     auto constBe = std::static_pointer_cast<storm::storage::BEConst<ValueType> const>(be);
                     if (constBe->failed()) {
                         constFailedBeCounter++;
@@ -143,7 +143,8 @@ namespace storm {
                 propagateFailure(newState, nextBE, queues);
 
                 bool transient = false;
-                if (nextBE->type() == storm::storage::DFTElementType::BE_EXP) {
+                // TODO handle for all types of BEs.
+                if (nextBE->beType() == storm::storage::BEType::EXPONENTIAL) {
                     auto beExp = std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(nextBE);
                     transient = beExp->isTransient();
                 }
@@ -194,7 +195,7 @@ namespace storm {
                 } else {
                     // Failure is due to "normal" BE failure
                     // Set failure rate according to activation
-                    STORM_LOG_THROW(nextBE->type() == storm::storage::DFTElementType::BE_EXP, storm::exceptions::NotSupportedException, "BE of type '" << nextBE->type() << "' is not supported.");
+                    STORM_LOG_THROW(nextBE->beType() == storm::storage::BEType::EXPONENTIAL, storm::exceptions::NotSupportedException, "BE of type '" << nextBE->type() << "' is not supported.");
                     auto beExp = std::static_pointer_cast<storm::storage::BEExponential<ValueType> const>(nextBE);
                     bool isActive = true;
                     if (mDft.hasRepresentant(beExp->id())) {

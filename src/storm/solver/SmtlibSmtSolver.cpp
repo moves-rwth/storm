@@ -17,7 +17,7 @@
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/IllegalFunctionCallException.h"
 #include "storm/utility/macros.h"
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/exceptions/UnexpectedException.h"
 

@@ -1,7 +1,7 @@
 #include "storm-gspn/api/storm-gspn.h"
 
 #include "storm/settings/SettingsManager.h"
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 #include "storm-gspn/settings/modules/GSPNExportSettings.h"
 #include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm-conv/api/storm-conv.h"

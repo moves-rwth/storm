@@ -2,9 +2,9 @@
 
 #include "storm/settings/SettingsManager.h"
 
-#include "storm/utility/DirectEncodingExporter.h"
-#include "storm/utility/DDEncodingExporter.h"
-#include "storm/utility/file.h"
+#include "storm/io/DirectEncodingExporter.h"
+#include "storm/io/DDEncodingExporter.h"
+#include "storm/io/file.h"
 #include "storm/utility/macros.h"
 #include "storm/storage/Scheduler.h"
 

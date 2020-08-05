@@ -3,7 +3,7 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/constants.h"
-#include "storm/utility/export.h"
+#include "storm/io/export.h"
 
 namespace storm {
     namespace models {

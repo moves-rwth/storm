@@ -9,7 +9,7 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/vector.h"
-#include "storm/utility/export.h"
+#include "storm/io/export.h"
 #include "storm/utility/NumberTraits.h"
 
 

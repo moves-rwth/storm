@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm/utility/sylvan.h"
+#include "storm/adapters/sylvan.h"
 
 #include <boost/functional/hash.hpp>
 

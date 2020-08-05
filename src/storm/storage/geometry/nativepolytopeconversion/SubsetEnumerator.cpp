@@ -2,7 +2,7 @@
 
 
 #include "storm/adapters/RationalFunctionAdapter.h"
-#include "storm/utility/eigen.h"
+#include "storm/adapters/eigen.h"
 
 namespace storm {
     namespace storage {

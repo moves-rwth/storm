@@ -7,7 +7,7 @@
 #include "storm/storage/jani/JaniScopeChanger.h"
 #include "storm/storage/jani/JSONExporter.h"
 
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 #include "storm/api/properties.h"
 
 #include "storm/settings/SettingsManager.h"

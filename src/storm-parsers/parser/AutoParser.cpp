@@ -12,7 +12,7 @@
 
 #include "storm/adapters/RationalFunctionAdapter.h"
 
-#include "storm/utility/cstring.h"
+#include "storm-parsers/util/cstring.h"
 #include "storm/utility/OsDetection.h"
 
 namespace storm {

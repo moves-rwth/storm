@@ -1,4 +1,4 @@
-#include "storm/utility/sylvan.h"
+#include "storm/adapters/sylvan.h"
 
 namespace storm {
     namespace dd {

@@ -10,7 +10,7 @@
 #include "storm/storage/geometry/Hyperrectangle.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
-#include "storm/utility/export.h"
+#include "storm/io/export.h"
 
 #include "storm/exceptions/UnexpectedException.h"
 
