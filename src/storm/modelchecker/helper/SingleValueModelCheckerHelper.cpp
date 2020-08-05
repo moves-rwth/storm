@@ -21,7 +21,7 @@ namespace storm {
             }
             
             template <typename ValueType, storm::dd::DdType DdType>
-            storm::solver::OptimizationDirection SingleValueModelCheckerHelper<ValueType, DdType>::getOptimizationDirection() const {
+            storm::solver::OptimizationDirection const& SingleValueModelCheckerHelper<ValueType, DdType>::getOptimizationDirection() const {
                 STORM_LOG_ASSERT(isOptimizationDirectionSet(), "Requested optimization direction but none was set.");
                 return _optimizationDirection.get();
             }

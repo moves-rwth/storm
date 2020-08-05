@@ -41,7 +41,7 @@ namespace storm {
                  * @pre an optimization direction has to be set before calling this.
                  * @return the optimization direction.
                  */
-                storm::solver::OptimizationDirection getOptimizationDirection() const;
+                storm::solver::OptimizationDirection const& getOptimizationDirection() const;
                 
                 /*!
                  * @pre an optimization direction has to be set before calling this.
