@@ -96,7 +96,9 @@ namespace storm {
                             // The currently processed state is timed.
                             if (nondetTs()) {
                                 tsTransitionsBuilder.newRowGroup(currTsRow);
-                                tsToIsTransitionsBuilder.newRowGroup(currTsRow);
+                                if (_hasInstantStates) {
+                                    tsToIsTransitionsBuilder.newRowGroup(currTsRow);
+                                }
                             }
                             // We need to uniformize which means that a diagonal entry for the selfloop will be inserted.
                             // If there are exit rates, the uniformization factor needs to be updated.
