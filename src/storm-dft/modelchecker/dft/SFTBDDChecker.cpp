@@ -1250,7 +1250,7 @@ Bdd SFTBDDChecker::minsol(Bdd const f) {
     auto const varOne{sylvanBddManager->getPositiveLiteral(currentVar)};
 
     auto const result{varOne.Ite(u, v)};
-    minsolCache[result.GetBDD()] = result;
+    minsolCache[f.GetBDD()] = result;
     return result;
 }
 
