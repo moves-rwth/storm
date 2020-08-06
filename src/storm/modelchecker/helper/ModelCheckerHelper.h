@@ -14,12 +14,14 @@ namespace storm {
             
             /*!
              * Helper class for solving a model checking query.
-             * @tparam ValueType The type of a single value.
+             * @tparam VT The value type of a single value.
              * @tparam DdType The used library for Dds (or None in case of a sparse representation).
              */
-            template <typename ValueType, storm::dd::DdType DdType = storm::dd::DdType::None>
+            template <typename VT, storm::dd::DdType DdType = storm::dd::DdType::None>
             class ModelCheckerHelper {
             public:
+                typedef VT ValueType;
+
                 ModelCheckerHelper() = default;
                 ~ModelCheckerHelper() = default;
                 
