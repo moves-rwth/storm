@@ -17,7 +17,8 @@ namespace storm {
             template <typename ValueType, storm::dd::DdType DdType = storm::dd::DdType::None>
             class SingleValueModelCheckerHelper : public ModelCheckerHelper<ValueType, DdType> {
             public:
-                SingleValueModelCheckerHelper() = default;
+
+                SingleValueModelCheckerHelper();
                 ~SingleValueModelCheckerHelper() = default;
                 
                 /*!
@@ -91,9 +92,20 @@ namespace storm {
                  */
                 ValueType const& getValueThresholdValue() const;
                 
+                /*!
+                 * Sets whether an optimal scheduler shall be constructed during the computation
+                 */
+                void setProduceScheduler(bool value);
+                
+                /*!
+                 * @return whether an optimal scheduler shall be constructed during the computation
+                 */
+                bool isProduceSchedulerSet() const;
+                
             private:
                 boost::optional<storm::solver::OptimizationDirection> _optimizationDirection;
                 boost::optional<std::pair<storm::logic::ComparisonType, ValueType>> _valueThreshold;
+                bool _produceScheduler;
             };
         }
     }

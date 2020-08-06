@@ -6,6 +6,11 @@ namespace storm {
         namespace helper {
             
             template <typename ValueType, storm::dd::DdType DdType>
+            SingleValueModelCheckerHelper<ValueType, DdType>::SingleValueModelCheckerHelper() : _produceScheduler(false) {
+                // Intentionally left empty
+            }
+            
+            template <typename ValueType, storm::dd::DdType DdType>
             void SingleValueModelCheckerHelper<ValueType, DdType>::setOptimizationDirection(storm::solver::OptimizationDirection const& direction) {
                 _optimizationDirection = direction;
             }
@@ -66,6 +71,16 @@ namespace storm {
             ValueType const& SingleValueModelCheckerHelper<ValueType, DdType>::getValueThresholdValue() const {
                 STORM_LOG_ASSERT(isValueThresholdSet(), "Value Threshold comparison type was requested but not set before.");
                 return _valueThreshold->second;
+            }
+            
+            template <typename ValueType, storm::dd::DdType DdType>
+            void SingleValueModelCheckerHelper<ValueType, DdType>::setProduceScheduler(bool value) {
+                _produceScheduler = value;
+            }
+            
+            template <typename ValueType, storm::dd::DdType DdType>
+            bool SingleValueModelCheckerHelper<ValueType, DdType>::isProduceSchedulerSet() const {
+                return _produceScheduler;
             }
  
             template class SingleValueModelCheckerHelper<double, storm::dd::DdType::None>;

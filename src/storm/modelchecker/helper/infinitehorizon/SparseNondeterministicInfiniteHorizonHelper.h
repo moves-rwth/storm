@@ -21,12 +21,26 @@ namespace storm {
                 /*!
                  * Initializes the helper for a discrete time (i.e. MDP)
                  */
-                SparseNondeterministicInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions);
+                SparseNondeterministicInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix);
                 
                 /*!
                  * Initializes the helper for a continuous time (i.e. MA)
                  */
-                SparseNondeterministicInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& markovianStates, std::vector<ValueType> const& exitRates);
+                SparseNondeterministicInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& markovianStates, std::vector<ValueType> const& exitRates);
+                
+                /*!
+                 * Provides backward transitions that can be used during the computation.
+                 * Providing them is optional. If they are not provided, they will be computed internally
+                 * Be aware that this class does not take ownership, i.e. the caller has to make sure that the reference to the backwardstransitions remains valid.
+                 */
+                void provideBackwardTransitions(storm::storage::SparseMatrix<ValueType> const& backwardsTransitions);
+    
+                /*!
+                 * Provides the maximal end component decomposition that can be used during the computation.
+                 * Providing the decomposition is optional. If they are not provided, they will be computed internally
+                 * Be aware that this class does not take ownership, i.e. the caller has to make sure that the reference to the decomposition remains valid.
+                 */
+                void provideMaximalEndComponentDecomposition(storm::storage::MaximalEndComponentDecomposition<ValueType> const& decomposition);
                 
                 /*!
                  * Computes the long run average probabilities, i.e., the fraction of the time we are in a psiState
@@ -51,16 +65,6 @@ namespace storm {
                  * @return a value for each state
                  */
                 std::vector<ValueType> computeLongRunAverageValues(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateValuesGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionValuesGetter);
-                
-                /*!
-                 * Sets whether an optimal scheduler shall be constructed during the computation
-                 */
-                void setProduceScheduler(bool value);
-                
-                /*!
-                 * @return whether an optimal scheduler shall be constructed during the computation
-                 */
-                bool isProduceSchedulerSet() const;
                 
                 /*!
                  * @pre before calling this, a computation call should have been performed during which scheduler production was enabled.
@@ -107,14 +111,16 @@ namespace storm {
                 /*!
                  * @return Lra values for each state
                  */
-                std::vector<ValueType> buildAndSolveSsp(Environment const& env, storm::storage::MaximalEndComponentDecomposition<ValueType> const& mecDecomposition, std::vector<ValueType> const& mecLraValues);
+                std::vector<ValueType> buildAndSolveSsp(Environment const& env, std::vector<ValueType> const& mecLraValues);
             
             private:
                 storm::storage::SparseMatrix<ValueType> const& _transitionMatrix;
-                storm::storage::SparseMatrix<ValueType> const& _backwardTransitions;
+                storm::storage::SparseMatrix<ValueType> const* _backwardTransitions;
+                storm::storage::SparseMatrix<ValueType> _computedBackwardTransitions;
+                storm::storage::MaximalEndComponentDecomposition<ValueType> const* _mecDecomposition;
+                storm::storage::MaximalEndComponentDecomposition<ValueType> _computedMecDecomposition;
                 storm::storage::BitVector const* _markovianStates;
                 std::vector<ValueType> const* _exitRates;
-                bool _produceScheduler;
                 boost::optional<std::vector<uint64_t>> _producedOptimalChoices;
             };
 

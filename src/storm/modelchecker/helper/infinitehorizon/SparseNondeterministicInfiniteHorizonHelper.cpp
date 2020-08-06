@@ -21,13 +21,25 @@ namespace storm {
         namespace helper {
         
             template <typename ValueType>
-            SparseNondeterministicInfiniteHorizonHelper<ValueType>::SparseNondeterministicInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions) : _transitionMatrix(transitionMatrix), _backwardTransitions(backwardTransitions), _markovianStates(nullptr), _exitRates(nullptr), _produceScheduler(false) {
+            SparseNondeterministicInfiniteHorizonHelper<ValueType>::SparseNondeterministicInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix) : _transitionMatrix(transitionMatrix), _backwardTransitions(nullptr), _mecDecomposition(nullptr), _markovianStates(nullptr), _exitRates(nullptr) {
                 // Intentionally left empty.
             }
             
             template <typename ValueType>
-            SparseNondeterministicInfiniteHorizonHelper<ValueType>::SparseNondeterministicInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& markovianStates, std::vector<ValueType> const& exitRates) : _transitionMatrix(transitionMatrix), _backwardTransitions(backwardTransitions), _markovianStates(&markovianStates), _exitRates(&exitRates), _produceScheduler(false) {
+            SparseNondeterministicInfiniteHorizonHelper<ValueType>::SparseNondeterministicInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& markovianStates, std::vector<ValueType> const& exitRates) : _transitionMatrix(transitionMatrix), _backwardTransitions(nullptr), _mecDecomposition(nullptr), _markovianStates(&markovianStates), _exitRates(&exitRates) {
                 // Intentionally left empty.
+            }
+            
+            template <typename ValueType>
+            void SparseNondeterministicInfiniteHorizonHelper<ValueType>::provideBackwardTransitions(storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
+                STORM_LOG_WARN_COND(_backwardTransitions == nullptr, "Backwards transitions were provided but they were already computed or set before.");
+                _backwardTransitions = &backwardTransitions;
+            }
+            
+            template <typename ValueType>
+            void SparseNondeterministicInfiniteHorizonHelper<ValueType>::provideMaximalEndComponentDecomposition(storm::storage::MaximalEndComponentDecomposition<ValueType> const& mecDecomposition) {
+                STORM_LOG_WARN_COND(_mecDecomposition == nullptr, "Backwards transitions were provided but they were already computed or set before.");
+                _mecDecomposition = &mecDecomposition;
             }
             
             template <typename ValueType>
@@ -96,7 +108,7 @@ namespace storm {
                 }
                 
                 // If requested, allocate memory for the choices made
-                if (isProduceSchedulerSet()) {
+                if (this->isProduceSchedulerSet()) {
                     if (!_producedOptimalChoices.is_initialized()) {
                         _producedOptimalChoices.emplace();
                     }
@@ -104,40 +116,37 @@ namespace storm {
                 }
                 
                 // Start by decomposing the Model into its MECs.
-                storm::storage::MaximalEndComponentDecomposition<ValueType> mecDecomposition(_transitionMatrix, _backwardTransitions);
+                if (_mecDecomposition == nullptr) {
+                    // The decomposition has not been provided or computed, yet.
+                    if (_backwardTransitions == nullptr) {
+                        _computedBackwardTransitions = _transitionMatrix.transpose(true);
+                        _backwardTransitions = &_computedBackwardTransitions;
+                    }
+                    _computedMecDecomposition = storm::storage::MaximalEndComponentDecomposition<ValueType>(_transitionMatrix, *_backwardTransitions);
+                    _mecDecomposition = &_computedMecDecomposition;
+                }
 
                 // Compute the long-run average for all end components in isolation.
                 std::vector<ValueType> mecLraValues;
-                mecLraValues.reserve(mecDecomposition.size());
-                for (auto const& mec : mecDecomposition) {
+                mecLraValues.reserve(_mecDecomposition->size());
+                for (auto const& mec : *_mecDecomposition) {
                     mecLraValues.push_back(computeLraForMec(underlyingSolverEnvironment, stateRewardsGetter, actionRewardsGetter, mec));
                 }
                 
                 // Solve the resulting SSP where end components are collapsed into single auxiliary states
-                return buildAndSolveSsp(underlyingSolverEnvironment, mecDecomposition, mecLraValues);
-            }
-            
-            
-            template <typename ValueType>
-            void SparseNondeterministicInfiniteHorizonHelper<ValueType>::setProduceScheduler(bool value) {
-                _produceScheduler = value;
-            }
-            
-            template <typename ValueType>
-            bool SparseNondeterministicInfiniteHorizonHelper<ValueType>::isProduceSchedulerSet() const {
-                return _produceScheduler;
+                return buildAndSolveSsp(underlyingSolverEnvironment, mecLraValues);
             }
             
             template <typename ValueType>
             std::vector<uint64_t> const& SparseNondeterministicInfiniteHorizonHelper<ValueType>::getProducedOptimalChoices() const {
-                STORM_LOG_ASSERT(isProduceSchedulerSet(), "Trying to get the produced optimal choices although no scheduler was requested.");
+                STORM_LOG_ASSERT(this->isProduceSchedulerSet(), "Trying to get the produced optimal choices although no scheduler was requested.");
                 STORM_LOG_ASSERT(_producedOptimalChoices.is_initialized(), "Trying to get the produced optimal choices but none were available. Was there a computation call before?");
                 return _producedOptimalChoices.get();
             }
             
             template <typename ValueType>
             std::vector<uint64_t>& SparseNondeterministicInfiniteHorizonHelper<ValueType>::getProducedOptimalChoices() {
-                STORM_LOG_ASSERT(isProduceSchedulerSet(), "Trying to get the produced optimal choices although no scheduler was requested.");
+                STORM_LOG_ASSERT(this->isProduceSchedulerSet(), "Trying to get the produced optimal choices although no scheduler was requested.");
                 STORM_LOG_ASSERT(_producedOptimalChoices.is_initialized(), "Trying to get the produced optimal choices but none were available. Was there a computation call before?");
                 return _producedOptimalChoices.get();
             }
@@ -169,7 +178,7 @@ namespace storm {
                         // Singleton MECs have to consist of a Markovian state because of the non-Zenoness assumption. Then, there is just one possible choice.
                         STORM_LOG_THROW(_markovianStates->get(state), storm::exceptions::InvalidOperationException, "Markov Automaton has Zeno behavior. Computation of Long Run Average values not supported.");
                         STORM_LOG_ASSERT(mec.begin()->second.size() == 1, "Markovian state has Nondeterministic behavior.");
-                        if (isProduceSchedulerSet()) {
+                        if (this->isProduceSchedulerSet()) {
                             _producedOptimalChoices.get()[state] = 0;
                         }
                         return stateRewardsGetter(state) + (*_exitRates)[state] * actionRewardsGetter(*choiceIt);
@@ -184,7 +193,7 @@ namespace storm {
                                 bestChoice = *choiceIt;
                             }
                         }
-                        if (isProduceSchedulerSet()) {
+                        if (this->isProduceSchedulerSet()) {
                             _producedOptimalChoices.get()[state] = bestChoice - _transitionMatrix.getRowGroupIndices()[state];
                         }
                         return bestValue + stateRewardsGetter(state);
@@ -200,7 +209,7 @@ namespace storm {
                     STORM_LOG_INFO("Selecting 'VI' as the solution technique for long-run properties to guarantee sound results. If you want to override this, please explicitly specify a different LRA method.");
                     method = storm::solver::LraMethod::ValueIteration;
                 }
-                STORM_LOG_ERROR_COND(!isProduceSchedulerSet() || method == storm::solver::LraMethod::ValueIteration, "Scheduler generation not supported for the chosen LRA method. Try value-iteration.");
+                STORM_LOG_ERROR_COND(!this->isProduceSchedulerSet() || method == storm::solver::LraMethod::ValueIteration, "Scheduler generation not supported for the chosen LRA method. Try value-iteration.");
                 if (method == storm::solver::LraMethod::LinearProgramming) {
                     return computeLraForMecLp(env, stateRewardsGetter, actionRewardsGetter, mec);
                 } else if (method == storm::solver::LraMethod::ValueIteration) {
@@ -216,7 +225,7 @@ namespace storm {
                 // Collect some parameters of the computation
                 ValueType aperiodicFactor = storm::utility::convertNumber<ValueType>(env.solver().lra().getAperiodicFactor());
                 std::vector<uint64_t>* optimalChoices = nullptr;
-                if (isProduceSchedulerSet()) {
+                if (this->isProduceSchedulerSet()) {
                     optimalChoices = &_producedOptimalChoices.get();
                 }
                 
@@ -296,7 +305,7 @@ namespace storm {
                 }
                 
                 solver->optimize();
-                STORM_LOG_THROW(!isProduceSchedulerSet(), storm::exceptions::NotImplementedException, "Scheduler extraction is not yet implemented for LP based LRA method.");
+                STORM_LOG_THROW(!this->isProduceSchedulerSet(), storm::exceptions::NotImplementedException, "Scheduler extraction is not yet implemented for LP based LRA method.");
                 return solver->getContinuousValue(k);
             }
             
@@ -339,7 +348,8 @@ namespace storm {
             }
             
             template <typename ValueType>
-            std::vector<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>::buildAndSolveSsp(Environment const& env, storm::storage::MaximalEndComponentDecomposition<ValueType> const& mecDecomposition, std::vector<ValueType> const& mecLraValues) {
+            std::vector<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>::buildAndSolveSsp(Environment const& env, std::vector<ValueType> const& mecLraValues) {
+                STORM_LOG_ASSERT(_mecDecomposition != nullptr, "Decomposition not computed, yet.");
                 
                 // Let's improve readability a bit
                 uint64_t numberOfStates = _transitionMatrix.getRowGroupCount();
@@ -353,8 +363,8 @@ namespace storm {
                 // and create a mapping from states that lie in a MEC to the corresponding MEC index.
                 storm::storage::BitVector statesInMecs(numberOfStates);
                 std::vector<uint64_t> inputToSspStateMap(numberOfStates, std::numeric_limits<uint64_t>::max());
-                for (uint64_t currentMecIndex = 0; currentMecIndex < mecDecomposition.size(); ++currentMecIndex) {
-                    for (auto const& stateChoicesPair : mecDecomposition[currentMecIndex]) {
+                for (uint64_t currentMecIndex = 0; currentMecIndex < _mecDecomposition->size(); ++currentMecIndex) {
+                    for (auto const& stateChoicesPair : (*_mecDecomposition)[currentMecIndex]) {
                         statesInMecs.set(stateChoicesPair.first);
                         inputToSspStateMap[stateChoicesPair.first] = currentMecIndex;
                     }
@@ -379,7 +389,7 @@ namespace storm {
                 
                 // The next step is to create the SSP matrix and the right-hand side of the SSP.
                 std::vector<ValueType> rhs;
-                uint64_t numberOfSspStates = numberOfStatesNotInMecs + mecDecomposition.size();
+                uint64_t numberOfSspStates = numberOfStatesNotInMecs + _mecDecomposition->size();
                 typename storm::storage::SparseMatrixBuilder<ValueType> sspMatrixBuilder(0, numberOfSspStates , 0, false, true, numberOfSspStates);
                 // If the source state of a transition is not contained in any MEC, we copy its choices (and perform the necessary modifications).
                 uint64_t currentSspChoice = 0;
@@ -392,8 +402,8 @@ namespace storm {
                     }
                 }
                 // Now we construct the choices for the auxiliary states which reflect former MEC states.
-                for (uint64_t mecIndex = 0; mecIndex < mecDecomposition.size(); ++mecIndex) {
-                    storm::storage::MaximalEndComponent const& mec = mecDecomposition[mecIndex];
+                for (uint64_t mecIndex = 0; mecIndex < _mecDecomposition->size(); ++mecIndex) {
+                    storm::storage::MaximalEndComponent const& mec = (*_mecDecomposition)[mecIndex];
                     sspMatrixBuilder.newRowGroup(currentSspChoice);
                     for (auto const& stateChoicesPair : mec) {
                         uint64_t const& mecState = stateChoicesPair.first;
@@ -403,7 +413,7 @@ namespace storm {
                             if (choicesInMec.find(choice) == choicesInMec.end()) {
                                 rhs.push_back(storm::utility::zero<ValueType>());
                                 addSspMatrixChoice(choice, _transitionMatrix, inputToSspStateMap, numberOfStatesNotInMecs, currentSspChoice, sspMatrixBuilder);
-                                if (isProduceSchedulerSet()) {
+                                if (this->isProduceSchedulerSet()) {
                                     // Later we need to be able to map this choice back to the original input model
                                     sspMecExitChoicesToOriginalMap.emplace_back(mecState, choice - nondeterministicChoiceIndices[mecState]);
                                 }
@@ -413,7 +423,7 @@ namespace storm {
                     }
                     // For each auxiliary state, there is the option to achieve the reward value of the LRA associated with the MEC.
                     rhs.push_back(mecLraValues[mecIndex]);
-                    if (isProduceSchedulerSet()) {
+                    if (this->isProduceSchedulerSet()) {
                         // Insert some invalid values so we can later detect that this choice is not an exit choice
                         sspMecExitChoicesToOriginalMap.emplace_back(std::numeric_limits<uint_fast64_t>::max(), std::numeric_limits<uint_fast64_t>::max());
                     }
@@ -429,7 +439,7 @@ namespace storm {
                 std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver = minMaxLinearEquationSolverFactory.create(env, sspMatrix);
                 solver->setHasUniqueSolution();
                 solver->setHasNoEndComponents();
-                solver->setTrackScheduler(isProduceSchedulerSet());
+                solver->setTrackScheduler(this->isProduceSchedulerSet());
                 auto lowerUpperBounds = std::minmax_element(mecLraValues.begin(), mecLraValues.end());
                 solver->setLowerBound(*lowerUpperBounds.first);
                 solver->setUpperBound(*lowerUpperBounds.second);
@@ -440,7 +450,7 @@ namespace storm {
                 solver->solveEquations(env, this->getOptimizationDirection(), x, rhs);
 
                 // Prepare scheduler (if requested)
-                if (isProduceSchedulerSet() && solver->hasScheduler()) {
+                if (this->isProduceSchedulerSet() && solver->hasScheduler()) {
                     // Translate result for ssp matrix to original model
                     auto const& sspChoices = solver->getSchedulerChoices();
                     // We first take care of non-mec states
@@ -451,7 +461,7 @@ namespace storm {
                     //      a) we take an exit (non-MEC) choice at the given state
                     //      b) we have to take a MEC choice at the given state in a way that eventually an exit state of the MEC is reached
                     uint64_t exitChoiceOffset = sspMatrix.getRowGroupIndices()[numberOfStatesNotInMecs];
-                    for (auto const& mec : mecDecomposition) {
+                    for (auto const& mec : *_mecDecomposition) {
                         // Get the sspState of this MEC (using one representative mec state)
                         auto const& sspState = inputToSspStateMap[mec.begin()->first];
                         uint64_t sspChoiceIndex = sspMatrix.getRowGroupIndices()[sspState] + sspChoices[sspState];
@@ -474,12 +484,17 @@ namespace storm {
                                     _producedOptimalChoices.get()[stateActions.first] = std::numeric_limits<uint64_t>::max();
                                 }
                             }
+                            // Ensure that backwards transitions are available
+                            if (_backwardTransitions == nullptr) {
+                                _computedBackwardTransitions = _transitionMatrix.transpose(true);
+                                _backwardTransitions = &_computedBackwardTransitions;
+                            }
                             // Now start a backwards DFS
                             std::vector<uint64_t> stack = {originalStateChoice.first};
                             while (!stack.empty()) {
                                 uint64_t currentState = stack.back();
                                 stack.pop_back();
-                                for (auto const& backwardsTransition : _backwardTransitions.getRowGroup(currentState)) {
+                                for (auto const& backwardsTransition : _backwardTransitions->getRowGroup(currentState)) {
                                     uint64_t predecessorState = backwardsTransition.getColumn();
                                     if (mec.containsState(predecessorState)) {
                                         auto& selectedPredChoice = _producedOptimalChoices.get()[predecessorState];
@@ -506,7 +521,7 @@ namespace storm {
                         }
                     }
                 } else {
-                    STORM_LOG_ERROR_COND(!isProduceSchedulerSet(), "Requested to produce a scheduler, but no scheduler was generated.");
+                    STORM_LOG_ERROR_COND(!this->isProduceSchedulerSet(), "Requested to produce a scheduler, but no scheduler was generated.");
                 }
                 
                 // Prepare result vector.

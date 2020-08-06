@@ -142,7 +142,7 @@ namespace storm {
             std::unique_ptr<CheckResult> subResultPointer = this->check(env, stateFormula);
             ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
 
-            storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType> helper(this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getMarkovianStates(), this->getModel().getExitRates());
+            storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType> helper(this->getModel().getTransitionMatrix(), this->getModel().getMarkovianStates(), this->getModel().getExitRates());
             storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, checkTask, this->getModel());
 			auto values = helper.computeLongRunAverageProbabilities(env, subResult.getTruthValuesVector());
 
@@ -159,7 +159,7 @@ namespace storm {
             STORM_LOG_THROW(this->getModel().isClosed(), storm::exceptions::InvalidPropertyException, "Unable to compute long run average rewards in non-closed Markov automaton.");
             auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
             
-            storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType> helper(this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getMarkovianStates(), this->getModel().getExitRates());
+            storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType> helper(this->getModel().getTransitionMatrix(), this->getModel().getMarkovianStates(), this->getModel().getExitRates());
             storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, checkTask, this->getModel());
             auto values = helper.computeLongRunAverageRewards(env, rewardModel.get());
 
