@@ -81,6 +81,8 @@ namespace storm {
             
             template <typename ValueType>
             std::vector<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLongRunAverageValues(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateRewardsGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionRewardsGetter) {
+                // We will compute the long run average value for each MEC individually and then set-up a MinMax Equation system to compute the value also at non-mec states.
+                // For a description of this approach see, e.g., Guck et al.: Modelling and Analysis of Markov Reward Automata (ATVA'14), https://doi.org/10.1007/978-3-319-11936-6_13
                 
                  // Prepare an environment for the underlying solvers
                 auto underlyingSolverEnvironment = env;
@@ -232,42 +234,70 @@ namespace storm {
             
             template <typename ValueType>
             ValueType SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLraForMecLp(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateRewardsGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionRewardsGetter, storm::storage::MaximalEndComponent const& mec) {
-                std::shared_ptr<storm::solver::LpSolver<ValueType>> solver = storm::utility::solver::getLpSolver<ValueType>("LRA for MEC");
+                // Create an LP solver
+                auto solver = storm::utility::solver::LpSolverFactory<ValueType>().create("LRA for MEC");
+                
+                // Now build the LP formulation as described in:
+                // Guck et al.: Modelling and Analysis of Markov Reward Automata (ATVA'14), https://doi.org/10.1007/978-3-319-11936-6_13
                 solver->setOptimizationDirection(invert(this->getOptimizationDirection()));
                 
-                // First, we need to create the variables for the problem.
+                // Create variables
+                // TODO: Investigate whether we can easily make the variables bounded
                 std::map<uint_fast64_t, storm::expressions::Variable> stateToVariableMap;
                 for (auto const& stateChoicesPair : mec) {
-                    std::string variableName = "h" + std::to_string(stateChoicesPair.first);
+                    std::string variableName = "x" + std::to_string(stateChoicesPair.first);
                     stateToVariableMap[stateChoicesPair.first] = solver->addUnboundedContinuousVariable(variableName);
                 }
-                storm::expressions::Variable lambda = solver->addUnboundedContinuousVariable("L", 1);
+                storm::expressions::Variable k = solver->addUnboundedContinuousVariable("k", storm::utility::one<ValueType>());
                 solver->update();
                 
-                // Now we encode the problem as constraints.
+                // Add constraints.
                 for (auto const& stateChoicesPair : mec) {
                     uint_fast64_t state = stateChoicesPair.first;
+                    bool stateIsMarkovian = _markovianStates && _markovianStates->get(state);
                     
-                    // Now, based on the type of the state, create a suitable constraint.
+                    // Now create a suitable constraint for each choice
+                    // x_s  {≤, ≥}  -k/rate(s) + sum_s' P(s,act,s') * x_s' + (value(s)/rate(s) + value(s,act))
                     for (auto choice : stateChoicesPair.second) {
-                        storm::expressions::Expression constraint = -lambda;
-                        
-                        for (auto const& element : _transitionMatrix.getRow(choice)) {
-                            constraint = constraint + stateToVariableMap.at(element.getColumn()) * solver->getConstant(element.getValue());
+                        std::vector<storm::expressions::Expression> summands;
+                        auto matrixRow = _transitionMatrix.getRow(choice);
+                        summands.reserve(matrixRow.getNumberOfEntries() + 2);
+                        // add -k/rate(s) (only if s is either a Markovian state or we have an MDP)
+                        if (stateIsMarkovian) {
+                            summands.push_back(-(k / solver->getManager().rational((*_exitRates)[state])));
+                        } else if (!isContinuousTime()) {
+                            summands.push_back(-k);
                         }
-                        constraint = solver->getConstant(stateRewardsGetter(state) + actionRewardsGetter(choice)) + constraint;
-                        
-                        if (this->minimize()) {
-                            constraint = stateToVariableMap.at(state) <= constraint;
+                        // add sum_s' P(s,act,s') * x_s'
+                        for (auto const& element : matrixRow) {
+                            summands.push_back(stateToVariableMap.at(element.getColumn()) * solver->getConstant(element.getValue()));
+                        }
+                        // add value for state and choice
+                        ValueType value;
+                        if (stateIsMarkovian) {
+                            // divide state reward with exit rate
+                            value = stateRewardsGetter(state) / (*_exitRates)[state] + actionRewardsGetter(choice);
+                        } else if (!isContinuousTime()) {
+                            // in discrete time models no scaling is needed
+                            value = stateRewardsGetter(state) + actionRewardsGetter(choice);
                         } else {
-                            constraint = stateToVariableMap.at(state) >= constraint;
+                            // state is a probabilistic state of a Markov automaton. The state reward is not collected
+                            value = actionRewardsGetter(choice);
                         }
-                        solver->addConstraint("state" + std::to_string(state) + "," + std::to_string(choice), constraint);
+                        summands.push_back(solver->getConstant(value));
+                        storm::expressions::Expression constraint;
+                        if (this->minimize()) {
+                            constraint = stateToVariableMap.at(state) <= storm::expressions::sum(summands);
+                        } else {
+                            constraint = stateToVariableMap.at(state) >= storm::expressions::sum(summands);
+                        }
+                        solver->addConstraint("s" + std::to_string(state) + "," + std::to_string(choice), constraint);
                     }
                 }
                 
                 solver->optimize();
-                return solver->getContinuousValue(lambda);
+                STORM_LOG_THROW(!isProduceSchedulerSet(), storm::exceptions::NotImplementedException, "Scheduler extraction is not yet implemented for LP based LRA method.");
+                return solver->getContinuousValue(k);
             }
             
             /*!

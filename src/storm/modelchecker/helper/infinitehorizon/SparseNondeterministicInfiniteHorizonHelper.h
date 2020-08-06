@@ -100,6 +100,7 @@ namespace storm {
                 ValueType computeLraForMecVi(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateValuesGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionValuesGetter, storm::storage::MaximalEndComponent const& mec);
                 /*!
                  * As computeLraForMec but uses linear programming as a solution method (independent of what is set in env)
+                 * @see Guck et al.: Modelling and Analysis of Markov Reward Automata (ATVA'14), https://doi.org/10.1007/978-3-319-11936-6_13
                  */
                 ValueType computeLraForMecLp(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateValuesGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionValuesGetter, storm::storage::MaximalEndComponent const& mec);
                 
