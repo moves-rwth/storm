@@ -1,5 +1,7 @@
 #include "LraViHelper.h"
 
+#include "storm/modelchecker/helper/infinitehorizon/internal/ComponentUtility.h"
+
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/Multiplier.h"
@@ -24,18 +26,6 @@ namespace storm {
     namespace modelchecker {
         namespace helper {
             namespace internal {
-                
-                /// Auxiliary functions that deal with the different kinds of components (MECs on potentially nondeterministic models and BSCCs on deterministic models)
-                // BSCCS:
-                uint64_t getComponentElementState(typename storm::storage::StronglyConnectedComponent::value_type const& element) { return element; }
-                uint64_t getComponentElementChoiceCount(typename storm::storage::StronglyConnectedComponent::value_type const& element) { return 1; } // Assumes deterministic model!
-                uint64_t const* getComponentChoicesBegin(typename storm::storage::StronglyConnectedComponent::value_type const& element) { return &element; }
-                uint64_t const* getComponentChoicesEnd(typename storm::storage::StronglyConnectedComponent::value_type const& element) { return &element + 1; }
-                // MECS:
-                uint64_t getComponentElementState(typename storm::storage::MaximalEndComponent::map_type::value_type const& element) { return element.first; }
-                uint64_t getComponentElementChoiceCount(typename storm::storage::MaximalEndComponent::map_type::value_type const& element) { return element.second.size(); }
-                typename storm::storage::MaximalEndComponent::set_type::const_iterator getComponentChoicesBegin(typename storm::storage::MaximalEndComponent::map_type::value_type const& element) { return element.second.begin(); }
-                typename storm::storage::MaximalEndComponent::set_type::const_iterator getComponentChoicesEnd(typename storm::storage::MaximalEndComponent::map_type::value_type const& element) { return element.second.end(); }
                 
                 template <typename ValueType, typename ComponentType, LraViTransitionsType TransitionsType>
                 LraViHelper<ValueType, ComponentType, TransitionsType>::LraViHelper(ComponentType const& component, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, ValueType const& aperiodicFactor, storm::storage::BitVector const* timedStates, std::vector<ValueType> const* exitRates) : _component(component), _transitionMatrix(transitionMatrix), _timedStates(timedStates), _hasInstantStates(TransitionsType == LraViTransitionsType::DetTsNondetIs || TransitionsType == LraViTransitionsType::DetTsDetIs) {
