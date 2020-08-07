@@ -1,6 +1,13 @@
 #include "SparseNondeterministicInfiniteHorizonHelper.h"
 
+#include "storm/modelchecker/helper/infinitehorizon/internal/ComponentUtility.h"
 #include "storm/modelchecker/helper/infinitehorizon/internal/LraViHelper.h"
+
+#include "storm/models/sparse/StandardRewardModel.h"
+
+#include "storm/storage/SparseMatrix.h"
+#include "storm/storage/MaximalEndComponentDecomposition.h"
+#include "storm/storage/StronglyConnectedComponentDecomposition.h"
 
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/solver/LinearEquationSolver.h"
@@ -20,38 +27,38 @@ namespace storm {
     namespace modelchecker {
         namespace helper {
         
-            template <typename ValueType>
-            SparseNondeterministicInfiniteHorizonHelper<ValueType>::SparseNondeterministicInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix) : _transitionMatrix(transitionMatrix), _backwardTransitions(nullptr), _mecDecomposition(nullptr), _markovianStates(nullptr), _exitRates(nullptr) {
+            template <typename ValueType, bool Nondeterministic>
+            SparseNondeterministicInfiniteHorizonHelper<ValueType, Nondeterministic>::SparseNondeterministicInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix) : _transitionMatrix(transitionMatrix), _backwardTransitions(nullptr), _longRunComponentDecomposition(nullptr), _markovianStates(nullptr), _exitRates(nullptr) {
                 // Intentionally left empty.
             }
             
-            template <typename ValueType>
-            SparseNondeterministicInfiniteHorizonHelper<ValueType>::SparseNondeterministicInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& markovianStates, std::vector<ValueType> const& exitRates) : _transitionMatrix(transitionMatrix), _backwardTransitions(nullptr), _mecDecomposition(nullptr), _markovianStates(&markovianStates), _exitRates(&exitRates) {
+            template <typename ValueType, bool Nondeterministic>
+            SparseNondeterministicInfiniteHorizonHelper<ValueType, Nondeterministic>::SparseNondeterministicInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& markovianStates, std::vector<ValueType> const& exitRates) : _transitionMatrix(transitionMatrix), _backwardTransitions(nullptr), _longRunComponentDecomposition(nullptr), _markovianStates(&markovianStates), _exitRates(&exitRates) {
                 // Intentionally left empty.
             }
             
-            template <typename ValueType>
-            void SparseNondeterministicInfiniteHorizonHelper<ValueType>::provideBackwardTransitions(storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
-                STORM_LOG_WARN_COND(_backwardTransitions == nullptr, "Backwards transitions were provided but they were already computed or set before.");
+            template <typename ValueType, bool Nondeterministic>
+            void SparseNondeterministicInfiniteHorizonHelper<ValueType, Nondeterministic>::provideBackwardTransitions(storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
+                STORM_LOG_WARN_COND(_backwardTransitions == nullptr, "Backwards transitions were provided but they were already computed or provided before.");
                 _backwardTransitions = &backwardTransitions;
             }
             
-            template <typename ValueType>
-            void SparseNondeterministicInfiniteHorizonHelper<ValueType>::provideMaximalEndComponentDecomposition(storm::storage::MaximalEndComponentDecomposition<ValueType> const& mecDecomposition) {
-                STORM_LOG_WARN_COND(_mecDecomposition == nullptr, "Backwards transitions were provided but they were already computed or set before.");
-                _mecDecomposition = &mecDecomposition;
+            template <typename ValueType, bool Nondeterministic>
+            void SparseNondeterministicInfiniteHorizonHelper<ValueType, Nondeterministic>::provideLongRunComponentDecomposition(storm::storage::Decomposition<LongRunComponent> const& decomposition) {
+                STORM_LOG_WARN_COND(_longRunComponentDecomposition == nullptr, "Long Run Component Decomposition was provided but it was already computed or provided before.");
+                _longRunComponentDecomposition = &decomposition;
             }
             
-            template <typename ValueType>
-            std::vector<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLongRunAverageProbabilities(Environment const& env, storm::storage::BitVector const& psiStates) {
+            template <typename ValueType, bool Nondeterministic>
+            std::vector<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType, Nondeterministic>::computeLongRunAverageProbabilities(Environment const& env, storm::storage::BitVector const& psiStates) {
                 return computeLongRunAverageValues(env,
                             [&psiStates] (uint64_t stateIndex) { return psiStates.get(stateIndex) ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>(); },
                             [] (uint64_t) { return storm::utility::zero<ValueType>(); }
                     );
             }
             
-            template <typename ValueType>
-            std::vector<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLongRunAverageRewards(Environment const& env, storm::models::sparse::StandardRewardModel<ValueType> const& rewardModel) {
+            template <typename ValueType, bool Nondeterministic>
+            std::vector<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType, Nondeterministic>::computeLongRunAverageRewards(Environment const& env, storm::models::sparse::StandardRewardModel<ValueType> const& rewardModel) {
                 std::function<ValueType(uint64_t stateIndex)> stateRewardsGetter;
                 if (rewardModel.hasStateRewards()) {
                     stateRewardsGetter = [&rewardModel] (uint64_t stateIndex) { return rewardModel.getStateReward(stateIndex); };
@@ -72,8 +79,8 @@ namespace storm {
                 return computeLongRunAverageValues(env, stateRewardsGetter, actionRewardsGetter);
             }
             
-            template <typename ValueType>
-            std::vector<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLongRunAverageValues(Environment const& env, std::vector<ValueType> const* stateValues, std::vector<ValueType> const* actionValues) {
+            template <typename ValueType, bool Nondeterministic>
+            std::vector<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType, Nondeterministic>::computeLongRunAverageValues(Environment const& env, std::vector<ValueType> const* stateValues, std::vector<ValueType> const* actionValues) {
                 std::function<ValueType(uint64_t stateIndex)> stateValuesGetter;
                 if (stateValues) {
                     stateValuesGetter = [&stateValues] (uint64_t stateIndex) { return (*stateValues)[stateIndex]; };
@@ -91,8 +98,8 @@ namespace storm {
 
             }
             
-            template <typename ValueType>
-            std::vector<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLongRunAverageValues(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateRewardsGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionRewardsGetter) {
+            template <typename ValueType, bool Nondeterministic>
+            std::vector<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType, Nondeterministic>::computeLongRunAverageValues(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateRewardsGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionRewardsGetter) {
                 // We will compute the long run average value for each MEC individually and then set-up a MinMax Equation system to compute the value also at non-mec states.
                 // For a description of this approach see, e.g., Guck et al.: Modelling and Analysis of Markov Reward Automata (ATVA'14), https://doi.org/10.1007/978-3-319-11936-6_13
                 
@@ -108,51 +115,58 @@ namespace storm {
                 }
                 
                 // If requested, allocate memory for the choices made
-                if (this->isProduceSchedulerSet()) {
+                if (Nondeterministic && this->isProduceSchedulerSet()) {
                     if (!_producedOptimalChoices.is_initialized()) {
                         _producedOptimalChoices.emplace();
                     }
                     _producedOptimalChoices->resize(_transitionMatrix.getRowGroupCount());
                 }
+                STORM_LOG_ASSERT(Nondeterministic || !this->isProduceSchedulerSet(), "Scheduler production enabled for deterministic model.");
                 
                 // Start by decomposing the Model into its MECs.
-                if (_mecDecomposition == nullptr) {
+                if (_longRunComponentDecomposition == nullptr) {
                     // The decomposition has not been provided or computed, yet.
-                    if (_backwardTransitions == nullptr) {
-                        _computedBackwardTransitions = _transitionMatrix.transpose(true);
-                        _backwardTransitions = &_computedBackwardTransitions;
+                    if (Nondeterministic) {
+                        if (_backwardTransitions == nullptr) {
+                            _computedBackwardTransitions = std::make_unique<storm::storage::SparseMatrix>(_transitionMatrix.transpose(true));
+                            _backwardTransitions = _computedBackwardTransitions.get();
+                        }
+                        _computedLongRunComponentDecomposition = std::make_unique<storm::storage::MaximalEndComponentDecomposition<ValueType>(_transitionMatrix, *_backwardTransitions);
+                    } else {
+                        _computedLongRunComponentDecomposition = std::make_unique<storm::storage::StronglyConnectedComponentDecomposition<ValueType>(_transitionMatrix, storm::storage::StronglyConnectedComponentDecompositionOptions().onlyBottomSccs());
                     }
-                    _computedMecDecomposition = storm::storage::MaximalEndComponentDecomposition<ValueType>(_transitionMatrix, *_backwardTransitions);
-                    _mecDecomposition = &_computedMecDecomposition;
+                    _longRunComponentDecomposition = _computedLongRunComponentDecomposition.get();
                 }
 
-                // Compute the long-run average for all end components in isolation.
-                std::vector<ValueType> mecLraValues;
-                mecLraValues.reserve(_mecDecomposition->size());
-                for (auto const& mec : *_mecDecomposition) {
-                    mecLraValues.push_back(computeLraForMec(underlyingSolverEnvironment, stateRewardsGetter, actionRewardsGetter, mec));
+                // Compute the long-run average for all components in isolation.
+                std::vector<ValueType> componentLraValues;
+                mecLraValues.reserve(_longRunComponentDecomposition->size());
+                for (auto const& c : *_longRunComponentDecomposition) {
+                    componentLraValues.push_back(computeLraForComponent(underlyingSolverEnvironment, stateRewardsGetter, actionRewardsGetter, c));
                 }
                 
                 // Solve the resulting SSP where end components are collapsed into single auxiliary states
-                return buildAndSolveSsp(underlyingSolverEnvironment, mecLraValues);
+                return buildAndSolveSsp(underlyingSolverEnvironment, componentLraValues);
             }
             
-            template <typename ValueType>
-            std::vector<uint64_t> const& SparseNondeterministicInfiniteHorizonHelper<ValueType>::getProducedOptimalChoices() const {
+            template <typename ValueType, bool Nondeterministic>
+            std::vector<uint64_t> const& SparseNondeterministicInfiniteHorizonHelper<ValueType, Nondeterministic>::getProducedOptimalChoices() const {
+                STORM_LOG_WARN_COND(Nondeterministic, "Getting optimal choices for deterministic model.");
                 STORM_LOG_ASSERT(this->isProduceSchedulerSet(), "Trying to get the produced optimal choices although no scheduler was requested.");
                 STORM_LOG_ASSERT(_producedOptimalChoices.is_initialized(), "Trying to get the produced optimal choices but none were available. Was there a computation call before?");
                 return _producedOptimalChoices.get();
             }
             
-            template <typename ValueType>
-            std::vector<uint64_t>& SparseNondeterministicInfiniteHorizonHelper<ValueType>::getProducedOptimalChoices() {
+            template <typename ValueType, bool Nondeterministic>
+            std::vector<uint64_t>& SparseNondeterministicInfiniteHorizonHelper<ValueType, Nondeterministic>::getProducedOptimalChoices() {
+                STORM_LOG_WARN_COND(Nondeterministic, "Getting optimal choices for deterministic model.");
                 STORM_LOG_ASSERT(this->isProduceSchedulerSet(), "Trying to get the produced optimal choices although no scheduler was requested.");
                 STORM_LOG_ASSERT(_producedOptimalChoices.is_initialized(), "Trying to get the produced optimal choices but none were available. Was there a computation call before?");
                 return _producedOptimalChoices.get();
             }
             
-            template <typename ValueType>
-            storm::storage::Scheduler<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>::extractScheduler() const {
+            template <typename ValueType, bool Nondeterministic>
+            storm::storage::Scheduler<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType, Nondeterministic>::extractScheduler() const {
                 auto const& optimalChoices = getProducedOptimalChoices();
                 storm::storage::Scheduler<ValueType> scheduler(optimalChoices.size());
                 for (uint64_t state = 0; state < optimalChoices.size(); ++state) {
@@ -161,43 +175,46 @@ namespace storm {
                 return scheduler;
             }
             
-            template <typename ValueType>
-            bool SparseNondeterministicInfiniteHorizonHelper<ValueType>::isContinuousTime() const {
-                STORM_LOG_ASSERT((_markovianStates == nullptr) == (_exitRates == nullptr), "Inconsistent information given: Have Markovian states but no exit rates (or vice versa)." );
-                return _markovianStates != nullptr;
+            template <typename ValueType, bool Nondeterministic>
+            bool SparseNondeterministicInfiniteHorizonHelper<ValueType, Nondeterministic>::isContinuousTime() const {
+                STORM_LOG_ASSERT((_markovianStates == nullptr) || (_exitRates != nullptr), "Inconsistent information given: Have Markovian states but no exit rates." );
+                return _exitRates != nullptr;
             }
     
-            template <typename ValueType>
-            ValueType SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLraForMec(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateRewardsGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionRewardsGetter, storm::storage::MaximalEndComponent const& mec) {
+            template <typename ValueType, bool Nondeterministic>
+            template < typename = typename std::enable_if< !Nondeterministic >::type >
+            ValueType SparseNondeterministicInfiniteHorizonHelper<ValueType, Nondeterministic>::computeLraForComponent(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateRewardsGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionRewardsGetter, LongRunComponentType const& component) {
+                // For deterministic models, we compute the LRA for a BSCC
                 
-                // If the mec only consists of a single state, we compute the LRA value directly
-                if (mec.size() == 1) {
-                    uint64_t state = mec.begin()->first;
-                    auto choiceIt = mec.begin()->second.begin();
-                    if (isContinuousTime()) {
-                        // Singleton MECs have to consist of a Markovian state because of the non-Zenoness assumption. Then, there is just one possible choice.
-                        STORM_LOG_THROW(_markovianStates->get(state), storm::exceptions::InvalidOperationException, "Markov Automaton has Zeno behavior. Computation of Long Run Average values not supported.");
-                        STORM_LOG_ASSERT(mec.begin()->second.size() == 1, "Markovian state has Nondeterministic behavior.");
-                        if (this->isProduceSchedulerSet()) {
-                            _producedOptimalChoices.get()[state] = 0;
-                        }
-                        return stateRewardsGetter(state) + (*_exitRates)[state] * actionRewardsGetter(*choiceIt);
-                    } else {
-                        // Find the choice with the highest/lowest reward
-                        ValueType bestValue = actionRewardsGetter(*choiceIt);
-                        uint64_t bestChoice = *choiceIt;
-                        for (++choiceIt; choiceIt != mec.begin()->second.end(); ++choiceIt) {
-                            ValueType currentValue = actionRewardsGetter(*choiceIt);
-                            if ((this->minimize() &&  currentValue < bestValue) || (this->maximize() && currentValue > bestValue)) {
-                                bestValue = std::move(currentValue);
-                                bestChoice = *choiceIt;
-                            }
-                        }
-                        if (this->isProduceSchedulerSet()) {
-                            _producedOptimalChoices.get()[state] = bestChoice - _transitionMatrix.getRowGroupIndices()[state];
-                        }
-                        return bestValue + stateRewardsGetter(state);
+                STORM_LOG_ASSERT(!this->isProduceSchedulerSet(), "Scheduler production enabled for deterministic model.");
+                
+                auto trivialResult = computeLraForTrivialComponent(env, stateReardsGetter, actionRewardsGetter, component);
+                if (trivialResult.first) {
+                    return trivialResult.second;
+                }
+                
+                // Solve nontrivial BSCC with the method specified  in the settings
+                
+                // TODO
+                
+            }
+            
+            template <typename ValueType, bool Nondeterministic>
+            template < typename = typename std::enable_if< Nondeterministic >::type >
+            ValueType SparseNondeterministicInfiniteHorizonHelper<ValueType, Nondeterministic>::computeLraForComponent(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateRewardsGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionRewardsGetter, LongRunComponentType const& component) {
+                // For models with potential nondeterminisim, we compute the LRA for a maximal end component (MEC)
+                
+                // Allocate memory for the nondeterministic choices.
+                if (this->isProduceSchedulerSet()) {
+                    if (!_producedOptimalChoices.is_initialized()) {
+                        _producedOptimalChoices.emplace();
                     }
+                    _producedOptimalChoices->resize(_transitionMatrix.getRowGroupCount());
+                }
+                
+                auto trivialResult = computeLraForTrivialComponent(env, stateReardsGetter, actionRewardsGetter, component);
+                if (trivialResult.first) {
+                    return trivialResult.second;
                 }
                 
                 // Solve nontrivial MEC with the method specified in the settings
@@ -219,8 +236,64 @@ namespace storm {
                 }
             }
     
-            template <typename ValueType>
-            ValueType SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLraForMecVi(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateRewardsGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionRewardsGetter, storm::storage::MaximalEndComponent const& mec) {
+            template <typename ValueType, bool Nondeterministic>
+            std::pair<bool, ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType, Nondeterministic>::computeLraForTrivialComponent(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateRewardsGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionRewardsGetter, LongRunComponentType const& component) {
+                
+                // If the component only consists of a single state, we compute the LRA value directly
+                if (component.size() == 1) {
+                    auto element const& = *component.begin();
+                    uint64_t state = internal::getComponentElementState(element);
+                    auto choiceIt = internal::getComponentChoicesBegin(element);
+                    if (Nondeterministic && !isContinuousTime()) {
+                        // This is an MDP.
+                        // Find the choice with the highest/lowest reward
+                        ValueType bestValue = actionRewardsGetter(*choiceIt);
+                        uint64_t bestChoice = *choiceIt;
+                        for (++choiceIt; choiceIt != getComponentChoicesEnd(element); ++choiceIt) {
+                            ValueType currentValue = actionRewardsGetter(*choiceIt);
+                            if ((this->minimize() &&  currentValue < bestValue) || (this->maximize() && currentValue > bestValue)) {
+                                bestValue = std::move(currentValue);
+                                bestChoice = *choiceIt;
+                            }
+                        }
+                        if (this->isProduceSchedulerSet()) {
+                            _producedOptimalChoices.get()[state] = bestChoice - _transitionMatrix.getRowGroupIndices()[state];
+                        }
+                        bestValue += stateRewardsGetter(state);
+                        return {true, bestValue};
+                    } else {
+                        // In a Markov Automaton, singleton components have to consist of a Markovian state because of the non-Zenoness assumption. Then, there is just one possible choice.
+                        STORM_LOG_THROW(!Nondeterministic || (_markovianStates != nullptr && _markovianStates->get(state)), storm::exceptions::InvalidOperationException, "Markov Automaton has Zeno behavior. Computation of Long Run Average values not supported.");
+                        STORM_LOG_ASSERT(internal::getComponentElementChoiceCount(element) == 1, "Markovian state has Nondeterministic behavior.");
+                        if (Nondeterministic && this->isProduceSchedulerSet()) {
+                            _producedOptimalChoices.get()[state] = 0;
+                        }
+                        ValueType result = stateRewardsGetter(state) + (isContinuousTime() ? (*_exitRates)[state] * actionRewardsGetter(*choiceIt) : actionRewardsGetter(*choiceIt));
+                        return {true, result};
+                    }
+                } else if (!Nondeterministic) {
+                    // For deterministic models, we can also easily catch the case where all values are the same
+                    bool first = true;
+                    ValueType val = storm::utility::zero<ValueType>();
+                    for (auto const& element : component) {
+                        auto state = getComponentElementState(element);
+                        STORM_LOG_ASSERT(state == *getComponentChoicesBegin(element), "Unexpected choice index at state " << state << " of deterministic model.");
+                        ValueType curr = stateRewardsGetter(state) + (isContinuousTime() ? (*_exitRates)[state] * actionRewardsGetter(state) : actionRewardsGetter(state));
+                        if (first) {
+                            first = false;
+                        } else if (val != curr) {
+                            return {false, storm::utility::zero<ValueType>()};
+                        }
+                    }
+                    // All values are the same
+                    return {true, val};
+                } else {
+                    return {false, storm::utility::zero<ValueType>()};
+                }
+            }
+            
+            template <typename ValueType, bool Nondeterministic>
+            ValueType SparseNondeterministicInfiniteHorizonHelper<ValueType, Nondeterministic>::computeLraForMecVi(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateRewardsGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionRewardsGetter, storm::storage::MaximalEndComponent const& mec) {
 
                 // Collect some parameters of the computation
                 ValueType aperiodicFactor = storm::utility::convertNumber<ValueType>(env.solver().lra().getAperiodicFactor());
@@ -241,8 +314,8 @@ namespace storm {
                 }
             }
             
-            template <typename ValueType>
-            ValueType SparseNondeterministicInfiniteHorizonHelper<ValueType>::computeLraForMecLp(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateRewardsGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionRewardsGetter, storm::storage::MaximalEndComponent const& mec) {
+            template <typename ValueType, bool Nondeterministic>
+            ValueType SparseNondeterministicInfiniteHorizonHelper<ValueType, Nondeterministic>::computeLraForMecLp(Environment const& env, std::function<ValueType(uint64_t stateIndex)> const& stateRewardsGetter,  std::function<ValueType(uint64_t globalChoiceIndex)> const& actionRewardsGetter, storm::storage::MaximalEndComponent const& mec) {
                 // Create an LP solver
                 auto solver = storm::utility::solver::LpSolverFactory<ValueType>().create("LRA for MEC");
                 
@@ -311,11 +384,11 @@ namespace storm {
             
             /*!
              * Auxiliary function that adds the entries of the Ssp Matrix for a single choice (i.e., row)
-             * Transitions that lead to a MEC state will be redirected to a new auxiliary state (there is one aux. state for each MEC).
-             * Transitions that don't lead to a MEC state are copied (taking a state index mapping into account).
+             * Transitions that lead to a Component state will be redirected to a new auxiliary state (there is one aux. state for each component).
+             * Transitions that don't lead to a Component state are copied (taking a state index mapping into account).
              */
             template <typename ValueType>
-            void addSspMatrixChoice(uint64_t const& inputMatrixChoice, storm::storage::SparseMatrix<ValueType> const& inputTransitionMatrix, std::vector<uint64_t> const& inputToSspStateMap, uint64_t const& numberOfStatesNotInMecs, uint64_t const& currentSspChoice, storm::storage::SparseMatrixBuilder<ValueType>& sspMatrixBuilder) {
+            void addSspMatrixChoice(uint64_t const& inputMatrixChoice, storm::storage::SparseMatrix<ValueType> const& inputTransitionMatrix, std::vector<uint64_t> const& inputToSspStateMap, uint64_t const& numberOfStatesNotInComponents, uint64_t const& currentSspChoice, storm::storage::SparseMatrixBuilder<ValueType>& sspMatrixBuilder) {
             
                 // As there could be multiple transitions to the same MEC, we accumulate them in this map before adding them to the matrix builder.
                 std::map<uint64_t, ValueType> auxiliaryStateToProbabilityMap;
@@ -323,17 +396,17 @@ namespace storm {
                 for (auto const& transition : inputTransitionMatrix.getRow(inputMatrixChoice)) {
                     if (!storm::utility::isZero(transition.getValue())) {
                         auto const& sspTransitionTarget = inputToSspStateMap[transition.getColumn()];
-                        // Since the auxiliary MEC states are appended at the end of the matrix, we can use this check to
-                        // decide whether the transition leads to a MEC state or not
+                        // Since the auxiliary Component states are appended at the end of the matrix, we can use this check to
+                        // decide whether the transition leads to a component state or not
                         if (sspTransitionTarget < numberOfStatesNotInMecs) {
-                            // If the target state is not contained in a MEC, we can copy over the entry.
+                            // If the target state is not contained in a component, we can copy over the entry.
                             sspMatrixBuilder.addNextValue(currentSspChoice, sspTransitionTarget, transition.getValue());
                         } else {
-                            // If the target state is contained in MEC i, we need to add the probability to the corresponding field in the vector
-                            // so that we are able to write the cumulative probability to the MEC into the matrix.
+                            // If the target state is contained in component i, we need to add the probability to the corresponding field in the vector
+                            // so that we are able to write the cumulative probability to the component into the matrix later.
                             auto insertionRes = auxiliaryStateToProbabilityMap.emplace(sspTransitionTarget, transition.getValue());
                             if (!insertionRes.second) {
-                                // sspTransitionTarget already existed in the map, i.e., there already was a transition to that MEC.
+                                // sspTransitionTarget already existed in the map, i.e., there already was a transition to that component.
                                 // Hence, we add up the probabilities.
                                 insertionRes.first->second += transition.getValue();
                             }
@@ -341,30 +414,28 @@ namespace storm {
                     }
                 }
                 
-                // Now insert all (cumulative) probability values that target a MEC.
-                for (auto const& mecToProbEntry : auxiliaryStateToProbabilityMap) {
-                    sspMatrixBuilder.addNextValue(currentSspChoice, mecToProbEntry.first, mecToProbEntry.second);
+                // Now insert all (cumulative) probability values that target a component.
+                for (auto const& componentToProbEntry : auxiliaryStateToProbabilityMap) {
+                    sspMatrixBuilder.addNextValue(currentSspChoice, componentToProbEntry.first, componentToProbEntry.second);
                 }
             }
             
-            template <typename ValueType>
-            std::vector<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType>::buildAndSolveSsp(Environment const& env, std::vector<ValueType> const& mecLraValues) {
-                STORM_LOG_ASSERT(_mecDecomposition != nullptr, "Decomposition not computed, yet.");
+            template <typename ValueType, bool Nondeterministic>
+            std::vector<ValueType> SparseNondeterministicInfiniteHorizonHelper<ValueType, Nondeterministic>::buildAndSolveSsp(Environment const& env, std::vector<ValueType> const& mecLraValues) {
+                STORM_LOG_ASSERT(_longRunComponentDecomposition != nullptr, "Decomposition not computed, yet.");
                 
-                // Let's improve readability a bit
                 uint64_t numberOfStates = _transitionMatrix.getRowGroupCount();
-                auto const& nondeterministicChoiceIndices = _transitionMatrix.getRowGroupIndices();
                 
                 // For fast transition rewriting, we build a mapping from the input state indices to the state indices of a new transition matrix
-                // which redirects all transitions leading to a former MEC state to a new auxiliary state.
-                // There will be one auxiliary state for each MEC. These states will be appended to the end of the matrix.
+                // which redirects all transitions leading to a former component state to a new auxiliary state.
+                // There will be one auxiliary state for each component. These states will be appended to the end of the matrix.
                 
-                // First gather the states that are part of a MEC
-                // and create a mapping from states that lie in a MEC to the corresponding MEC index.
+                // First gather the states that are part of a component
+                // and create a mapping from states that lie in a component to the corresponding component index.
                 storm::storage::BitVector statesInMecs(numberOfStates);
                 std::vector<uint64_t> inputToSspStateMap(numberOfStates, std::numeric_limits<uint64_t>::max());
-                for (uint64_t currentMecIndex = 0; currentMecIndex < _mecDecomposition->size(); ++currentMecIndex) {
-                    for (auto const& stateChoicesPair : (*_mecDecomposition)[currentMecIndex]) {
+                for (uint64_t currentMecIndex = 0; currentMecIndex < _longRunComponentDecomposition->size(); ++currentMecIndex) {
+                    for (auto const& stateChoicesPair : (*_longRunComponentDecomposition)[currentMecIndex]) {
                         statesInMecs.set(stateChoicesPair.first);
                         inputToSspStateMap[stateChoicesPair.first] = currentMecIndex;
                     }
@@ -389,7 +460,7 @@ namespace storm {
                 
                 // The next step is to create the SSP matrix and the right-hand side of the SSP.
                 std::vector<ValueType> rhs;
-                uint64_t numberOfSspStates = numberOfStatesNotInMecs + _mecDecomposition->size();
+                uint64_t numberOfSspStates = numberOfStatesNotInMecs + _longRunComponentDecomposition->size();
                 typename storm::storage::SparseMatrixBuilder<ValueType> sspMatrixBuilder(0, numberOfSspStates , 0, false, true, numberOfSspStates);
                 // If the source state of a transition is not contained in any MEC, we copy its choices (and perform the necessary modifications).
                 uint64_t currentSspChoice = 0;
@@ -402,8 +473,8 @@ namespace storm {
                     }
                 }
                 // Now we construct the choices for the auxiliary states which reflect former MEC states.
-                for (uint64_t mecIndex = 0; mecIndex < _mecDecomposition->size(); ++mecIndex) {
-                    storm::storage::MaximalEndComponent const& mec = (*_mecDecomposition)[mecIndex];
+                for (uint64_t mecIndex = 0; mecIndex < _longRunComponentDecomposition->size(); ++mecIndex) {
+                    storm::storage::MaximalEndComponent const& mec = (*_longRunComponentDecomposition)[mecIndex];
                     sspMatrixBuilder.newRowGroup(currentSspChoice);
                     for (auto const& stateChoicesPair : mec) {
                         uint64_t const& mecState = stateChoicesPair.first;
@@ -461,7 +532,7 @@ namespace storm {
                     //      a) we take an exit (non-MEC) choice at the given state
                     //      b) we have to take a MEC choice at the given state in a way that eventually an exit state of the MEC is reached
                     uint64_t exitChoiceOffset = sspMatrix.getRowGroupIndices()[numberOfStatesNotInMecs];
-                    for (auto const& mec : *_mecDecomposition) {
+                    for (auto const& mec : *_longRunComponentDecomposition) {
                         // Get the sspState of this MEC (using one representative mec state)
                         auto const& sspState = inputToSspStateMap[mec.begin()->first];
                         uint64_t sspChoiceIndex = sspMatrix.getRowGroupIndices()[sspState] + sspChoices[sspState];
@@ -533,8 +604,11 @@ namespace storm {
                 return result;
             }
             
-            template class SparseNondeterministicInfiniteHorizonHelper<double>;
-            template class SparseNondeterministicInfiniteHorizonHelper<storm::RationalNumber>;
+            template class SparseNondeterministicInfiniteHorizonHelper<double, false>;
+            template class SparseNondeterministicInfiniteHorizonHelper<storm::RationalNumber, false>;
+            
+            //template class SparseNondeterministicInfiniteHorizonHelper<double, true>;
+            //template class SparseNondeterministicInfiniteHorizonHelper<storm::RationalNumber, true>;
         }
     }
 }
