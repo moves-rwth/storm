@@ -491,7 +491,9 @@ namespace storage {
             // We can skip BEs, as they are identified by they're homomorphic if they are in the same class
             for(auto const& indexpair : bijection) {
                 // Check type first. Colouring takes care of a lot, but not necesarily everything (e.g. voting thresholds)
-                equalType(*dft.getElement(indexpair.first), *dft.getElement(indexpair.second));
+                if (!equalType(*dft.getElement(indexpair.first), *dft.getElement(indexpair.second))) {
+                    return false;
+                }
                 if(dft.isGate(indexpair.first)) {
                     STORM_LOG_ASSERT(dft.isGate(indexpair.second), "Element is no gate.");
                     auto const& lGate = dft.getGate(indexpair.first);
