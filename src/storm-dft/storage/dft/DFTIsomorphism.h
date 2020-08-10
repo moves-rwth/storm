@@ -494,6 +494,9 @@ namespace storage {
                 if (!equalType(*dft.getElement(indexpair.first), *dft.getElement(indexpair.second))) {
                     return false;
                 }
+                if (dft.getElement(indexpair.first)->isRelevant() || dft.getElement(indexpair.second)->isRelevant()) {
+                    return false;
+                }
                 if(dft.isGate(indexpair.first)) {
                     STORM_LOG_ASSERT(dft.isGate(indexpair.second), "Element is no gate.");
                     auto const& lGate = dft.getGate(indexpair.first);
