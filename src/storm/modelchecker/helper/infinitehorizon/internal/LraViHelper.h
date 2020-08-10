@@ -2,15 +2,13 @@
 
 
 #include "storm/storage/SparseMatrix.h"
+#include "storm/solver/LinearEquationSolver.h"
+#include "storm/solver/MinMaxLinearEquationSolver.h"
+#include "storm/solver/Multiplier.h"
 
 namespace storm {
     class Environment;
     
-    namespace solver {
-        template<typename ValueType> class LinearEquationSolver;
-        template<typename ValueType> class MinMaxLinearEquationSolver;
-        template<typename ValueType> class Multiplier;
-    }
     
     namespace modelchecker {
         namespace helper {

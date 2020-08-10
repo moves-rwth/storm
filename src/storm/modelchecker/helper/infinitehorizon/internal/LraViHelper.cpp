@@ -2,9 +2,6 @@
 
 #include "storm/modelchecker/helper/infinitehorizon/internal/ComponentUtility.h"
 
-#include "storm/solver/LinearEquationSolver.h"
-#include "storm/solver/MinMaxLinearEquationSolver.h"
-#include "storm/solver/Multiplier.h"
 
 #include "storm/storage/MaximalEndComponent.h"
 #include "storm/storage/StronglyConnectedComponent.h"
@@ -97,7 +94,7 @@ namespace storm {
                             }
                             ValueType selfLoopProb = storm::utility::one<ValueType>() - uniformizationFactor;
                             uint64_t selfLoopColumn = toSubModelStateMapping[componentState];
-                            for (auto componentChoiceIt = getComponentChoicesBegin(element); componentChoiceIt != getComponentChoicesEnd(element); ++componentChoiceIt) {
+                            for (auto componentChoiceIt = getComponentElementChoicesBegin(element); componentChoiceIt != getComponentElementChoicesEnd(element); ++componentChoiceIt) {
                                 bool insertedDiagElement = false;
                                 for (auto const& entry : this->_transitionMatrix.getRow(*componentChoiceIt)) {
                                     uint64_t subModelColumn = toSubModelStateMapping[entry.getColumn()];
@@ -135,7 +132,7 @@ namespace storm {
                                 isTransitionsBuilder.newRowGroup(currIsRow);
                                 isToTsTransitionsBuilder.newRowGroup(currIsRow);
                             }
-                            for (auto componentChoiceIt = getComponentChoicesBegin(element); componentChoiceIt != getComponentChoicesEnd(element); ++componentChoiceIt) {
+                            for (auto componentChoiceIt = getComponentElementChoicesBegin(element); componentChoiceIt != getComponentElementChoicesEnd(element); ++componentChoiceIt) {
                                 for (auto const& entry : this->_transitionMatrix.getRow(*componentChoiceIt)) {
                                     uint64_t subModelColumn = toSubModelStateMapping[entry.getColumn()];
                                     if (isTimedState(entry.getColumn())) {
@@ -226,12 +223,12 @@ namespace storm {
                             if (exitRates) {
                                 actionRewardScalingFactor = (*exitRates)[componentState] / _uniformizationRate;
                             }
-                            for (auto componentChoiceIt = getComponentChoicesBegin(element); componentChoiceIt != getComponentChoicesEnd(element); ++componentChoiceIt) {
+                            for (auto componentChoiceIt = getComponentElementChoicesBegin(element); componentChoiceIt != getComponentElementChoicesEnd(element); ++componentChoiceIt) {
                                 // Compute the values obtained for this choice.
                                 _TsChoiceValues.push_back(stateValueGetter(componentState) / _uniformizationRate + actionValueGetter(*componentChoiceIt) * actionRewardScalingFactor);
                             }
                         } else {
-                            for (auto componentChoiceIt = getComponentChoicesBegin(element); componentChoiceIt != getComponentChoicesEnd(element); ++componentChoiceIt) {
+                            for (auto componentChoiceIt = getComponentElementChoicesBegin(element); componentChoiceIt != getComponentElementChoicesEnd(element); ++componentChoiceIt) {
                                 // Compute the values obtained for this choice.
                                 // State values do not count here since no time passes in instant states.
                                 _IsChoiceValues.push_back(actionValueGetter(*componentChoiceIt));
@@ -329,7 +326,7 @@ namespace storm {
                         } else {
                             uint64_t choice = localMecChoices[localState];
                             STORM_LOG_ASSERT(choice < getComponentElementChoiceCount(element), "The selected choice does not seem to exist.");
-                            uint64_t globalChoiceIndex = *(getComponentChoicesBegin(element) + choice);
+                            uint64_t globalChoiceIndex = *(getComponentElementChoicesBegin(element) + choice);
                             choices[elementState] = globalChoiceIndex - _transitionMatrix.getRowGroupIndices()[elementState];
                             ++localState;
                         }
