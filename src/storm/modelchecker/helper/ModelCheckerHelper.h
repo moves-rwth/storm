@@ -23,7 +23,7 @@ namespace storm {
                 typedef VT ValueType;
 
                 ModelCheckerHelper() = default;
-                ~ModelCheckerHelper() = default;
+                virtual ~ModelCheckerHelper() = default;
                 
                 /*!
                  * Identifies a subset of the model states

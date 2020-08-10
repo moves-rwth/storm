@@ -19,7 +19,6 @@ namespace storm {
             public:
 
                 SingleValueModelCheckerHelper();
-                ~SingleValueModelCheckerHelper() = default;
                 
                 /*!
                  * Sets the optimization direction, i.e., whether we want to minimize or maximize the value for each state
