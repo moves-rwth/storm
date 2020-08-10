@@ -3,6 +3,8 @@
 #include "storm/modelchecker/helper/infinitehorizon/SparseNondeterministicInfiniteHorizonHelper.h"
 #include "storm/modelchecker/helper/utility/SetInformationFromOtherHelper.h"
 
+#include "storm/storage/SparseMatrix.h"
+
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/NotSupportedException.h"
