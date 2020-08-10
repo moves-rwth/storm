@@ -57,16 +57,16 @@ namespace storage {
 
         BEColourClass() = default;
 
-        BEColourClass(storm::storage::BEType t, ValueType a, ValueType p, size_t h) : type(t), hash(h), aRate(a), pRate(p) {
-            STORM_LOG_ASSERT(t == storm::storage::BEType::EXPONENTIAL, "Expected type EXPONENTIAL but got type " << t);
+        BEColourClass(storm::storage::BEType type, ValueType active, ValueType passive, size_t parents) : type(type), nrParents(parents), aRate(active), pRate(passive) {
+            STORM_LOG_ASSERT(type == storm::storage::BEType::EXPONENTIAL, "Expected type EXPONENTIAL but got type " << type);
         }
 
-        BEColourClass(storm::storage::BEType t, bool fail, size_t h) : type(t), hash(h), failed(fail) {
-            STORM_LOG_ASSERT(t == storm::storage::BEType::CONSTANT, "Expected type CONSTANT but got type " << t);
+        BEColourClass(storm::storage::BEType type, bool fail, size_t parents) : type(type), nrParents(parents), failed(fail) {
+            STORM_LOG_ASSERT(type == storm::storage::BEType::CONSTANT, "Expected type CONSTANT but got type " << type);
         }
 
         storm::storage::BEType type;
-        size_t hash;
+        size_t nrParents;
         ValueType aRate;
         ValueType pRate;
         bool failed;
@@ -80,9 +80,9 @@ namespace storage {
         }
         switch (lhs.type) {
             case storm::storage::BEType::EXPONENTIAL:
-                return lhs.hash == rhs.hash && lhs.aRate == rhs.aRate && lhs.pRate == rhs.pRate;
+                return lhs.nrParents == rhs.nrParents && lhs.aRate == rhs.aRate && lhs.pRate == rhs.pRate;
             case storm::storage::BEType::CONSTANT:
-                return lhs.hash == rhs.hash && lhs.failed == rhs.failed;
+                return lhs.nrParents == rhs.nrParents && lhs.failed == rhs.failed;
             default:
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << lhs.type << "' is not known.");
                 break;
@@ -701,22 +701,25 @@ namespace std {
     template<typename ValueType>
     struct hash<storm::storage::BEColourClass<ValueType>> {
         size_t operator()(storm::storage::BEColourClass<ValueType> const& bcc) const {
-            constexpr uint_fast64_t fivebitmask = (1 << 6) - 1;
-            constexpr uint_fast64_t eightbitmask = (1 << 9) - 1;
+            constexpr uint_fast64_t fivebitmask = (1ul << 6) - 1ul;
+            constexpr uint_fast64_t eightbitmask = (1ul << 9) - 1ul;
+            constexpr uint_fast64_t fortybitmask = (1ul << 41) - 1ul;
             std::hash<ValueType> hasher;
             uint_fast64_t groupHash = static_cast<uint_fast64_t>(1) << 63;
             groupHash |= (static_cast<uint_fast64_t>(bcc.type) & fivebitmask) << (62 - 5);
 
             switch (bcc.type) {
                 case storm::storage::BEType::CONSTANT:
-                    return (bcc.failed << 8);
+                    groupHash |= (static_cast<uint_fast64_t>(bcc.failed) & fortybitmask) << 8;
+                    break;
                 case storm::storage::BEType::EXPONENTIAL:
-                    return (hasher(bcc.aRate) ^ hasher(bcc.pRate) << 8);
+                    groupHash |= ((hasher(bcc.aRate) ^ hasher(bcc.pRate)) & fortybitmask) << 8;
+                    break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << bcc.type << "' is not known.");
                     break;
             }
-            groupHash |= static_cast<uint_fast64_t>(bcc.hash) & eightbitmask;
+            groupHash |= static_cast<uint_fast64_t>(bcc.nrParents) & eightbitmask;
             return groupHash;
         }
     };
