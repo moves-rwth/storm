@@ -500,6 +500,9 @@ namespace storm {
                 template class LraViHelper<double, storm::storage::MaximalEndComponent, LraViTransitionsType::DetTsNondetIs>;
                 template class LraViHelper<storm::RationalNumber, storm::storage::MaximalEndComponent, LraViTransitionsType::DetTsNondetIs>;
                 
+                template class LraViHelper<double, storm::storage::StronglyConnectedComponent, LraViTransitionsType::DetTsNoIs>;
+                template class LraViHelper<storm::RationalNumber, storm::storage::StronglyConnectedComponent, LraViTransitionsType::DetTsNoIs>;
+                
             }
         }
     }
