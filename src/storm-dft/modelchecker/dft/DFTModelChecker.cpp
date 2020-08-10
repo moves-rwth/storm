@@ -207,6 +207,7 @@ namespace storm {
                     STORM_LOG_DEBUG("Building Model via parallel composition...");
                     explorationTimer.start();
 
+                    ft.setRelevantEvents(relevantEvents, allowDCForRelevantEvents);
                     // Find symmetries
                     std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
                     storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
@@ -219,7 +220,7 @@ namespace storm {
 
                     // Build a single CTMC
                     STORM_LOG_DEBUG("Building Model from DFT with top level element " << ft.getElement(ft.getTopLevelIndex())->toString() << " ...");
-                    storm::builder::ExplicitDFTModelBuilder<ValueType> builder(ft, symmetries, relevantEvents, allowDCForRelevantEvents);
+                    storm::builder::ExplicitDFTModelBuilder<ValueType> builder(ft, symmetries);
                     builder.buildModel(0, 0.0);
                     std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
                     explorationTimer.stop();
@@ -267,6 +268,9 @@ namespace storm {
             } else {
                 // No composition was possible
                 explorationTimer.start();
+
+                dft.setRelevantEvents(relevantEvents, allowDCForRelevantEvents);
+
                 // Find symmetries
                 std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
                 storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
@@ -279,8 +283,7 @@ namespace storm {
                 // Build a single CTMC
                 STORM_LOG_DEBUG("Building Model...");
 
-                storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, relevantEvents,
-                                                                           allowDCForRelevantEvents);
+                storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries);
                 builder.buildModel(0, 0.0);
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
                 if (printInfo) {
@@ -306,6 +309,8 @@ namespace storm {
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
             auto dftIOSettings = storm::settings::getModule<storm::settings::modules::DftIOSettings>();
 
+            dft.setRelevantEvents(relevantEvents, allowDCForRelevantEvents);
+
             // Find symmetries
             std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
             storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
@@ -324,8 +329,7 @@ namespace storm {
                                                                    storm::utility::zero<ValueType>());
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
                 std::vector<ValueType> newResult;
-                storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, relevantEvents,
-                                                                           allowDCForRelevantEvents);
+                storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries);
 
                 // TODO: compute approximation for all properties simultaneously?
                 std::shared_ptr<const storm::logic::Formula> property = properties[0];
@@ -422,8 +426,7 @@ namespace storm {
                 // Build a single Markov Automaton
                 auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
                 STORM_LOG_DEBUG("Building Model...");
-                storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, relevantEvents,
-                                                                           allowDCForRelevantEvents);
+                storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries);
                 builder.buildModel(0, 0.0);
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
                 if (eliminateChains && model->isOfType(storm::models::ModelType::MarkovAutomaton)) {

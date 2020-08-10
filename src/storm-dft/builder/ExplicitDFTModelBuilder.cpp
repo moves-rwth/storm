@@ -34,19 +34,18 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        ExplicitDFTModelBuilder<ValueType, StateType>::ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, std::set<size_t> const& relevantEvents, bool allowDCForRelevantEvents) :
+        ExplicitDFTModelBuilder<ValueType, StateType>::ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries) :
                 dft(dft),
                 stateGenerationInfo(std::make_shared<storm::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries))),
-                relevantEvents(relevantEvents),
                 generator(dft, *stateGenerationInfo),
                 matrixBuilder(!generator.isDeterministicModel()),
                 stateStorage(dft.stateBitVectorSize()),
                 explorationQueue(1, 0, 0.9, false)
         {
             // Set relevant events
-            this->dft.setRelevantEvents(this->relevantEvents, allowDCForRelevantEvents);
             STORM_LOG_DEBUG("Relevant events: " << this->dft.getRelevantEventsString());
-            if (this->relevantEvents.empty()) {
+            if (dft.getRelevantEvents().size() <= 1) {
+                STORM_LOG_ASSERT(dft.getRelevantEvents()[0] == dft.getTopLevelIndex(), "TLE is not relevant");
                 // Only interested in top level event -> introduce unique failed state
                 this->uniqueFailedState = true;
                 STORM_LOG_DEBUG("Using unique failed state with id 0.");
