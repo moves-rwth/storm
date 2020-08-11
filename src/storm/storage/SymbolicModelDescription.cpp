@@ -15,37 +15,37 @@
 
 namespace storm {
     namespace storage {
-        
+
         SymbolicModelDescription::SymbolicModelDescription(storm::jani::Model const& model) : modelDescription(model) {
             // Intentionally left empty.
         }
-        
+
         SymbolicModelDescription::SymbolicModelDescription(storm::prism::Program const& program) : modelDescription(program) {
             // Intentionally left empty.
         }
-        
+
         SymbolicModelDescription& SymbolicModelDescription::operator=(storm::jani::Model const& model) {
             this->modelDescription = model;
             return *this;
         }
-        
+
         SymbolicModelDescription& SymbolicModelDescription::operator=(storm::prism::Program const& program) {
             this->modelDescription = program;
             return *this;
         }
-        
+
         bool SymbolicModelDescription::hasModel() const {
             return static_cast<bool>(modelDescription);
         }
-        
+
         bool SymbolicModelDescription::isJaniModel() const {
             return modelDescription.get().which() == 0;
         }
-        
+
         bool SymbolicModelDescription::isPrismProgram() const {
             return modelDescription.get().which() == 1;
         }
-        
+
         SymbolicModelDescription::ModelType SymbolicModelDescription::getModelType() const {
             if (this->isJaniModel()) {
                 storm::jani::Model const& janiModel = this->asJaniModel();
@@ -78,15 +78,15 @@ namespace storm {
                 return this->asJaniModel().getManager();
             }
         }
-        
+
         void SymbolicModelDescription::setModel(storm::jani::Model const& model) {
             modelDescription = model;
         }
-        
+
         void SymbolicModelDescription::setModel(storm::prism::Program const& program) {
             modelDescription = program;
         }
-        
+
         storm::jani::Model const& SymbolicModelDescription::asJaniModel() const {
             STORM_LOG_THROW(isJaniModel(), storm::exceptions::InvalidOperationException, "Cannot retrieve JANI model, because the symbolic description has a different type.");
             return boost::get<storm::jani::Model>(modelDescription.get());
@@ -120,7 +120,7 @@ namespace storm {
             }
             return result;
         }
-        
+
         SymbolicModelDescription SymbolicModelDescription::toJani(bool makeVariablesGlobal) const {
             if (this->isJaniModel()) {
                 return *this;
@@ -131,7 +131,7 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot transform model description to the JANI format.");
             }
         }
-        
+
         std::pair<SymbolicModelDescription, std::vector<storm::jani::Property>> SymbolicModelDescription::toJani(std::vector<storm::jani::Property> const& properties, bool makeVariablesGlobal) const {
             if (this->isJaniModel()) {
                 return std::make_pair(*this, std::vector<storm::jani::Property>());
@@ -143,12 +143,12 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot transform model description to the JANI format.");
             }
         }
-        
+
         SymbolicModelDescription SymbolicModelDescription::preprocess(std::string const& constantDefinitionString) const {
             std::map<storm::expressions::Variable, storm::expressions::Expression> substitution = parseConstantDefinitions(constantDefinitionString);
             return preprocess(substitution);
         }
-        
+
         SymbolicModelDescription SymbolicModelDescription::preprocess(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const {
             if (this->isJaniModel()) {
                 storm::jani::Model preparedModel = this->asJaniModel().defineUndefinedConstants(constantDefinitions).substituteConstantsFunctions();
@@ -158,7 +158,7 @@ namespace storm {
             }
             return *this;
         }
-        
+
         std::map<storm::expressions::Variable, storm::expressions::Expression> SymbolicModelDescription::parseConstantDefinitions(std::string const& constantDefinitionString) const {
             if (this->isJaniModel()) {
                 return storm::utility::cli::parseConstantDefinitionString(this->asJaniModel().getManager(), constantDefinitionString);
@@ -166,7 +166,7 @@ namespace storm {
                 return storm::utility::cli::parseConstantDefinitionString(this->asPrismProgram().getManager(), constantDefinitionString);
             }
         }
-        
+
         void SymbolicModelDescription::requireNoUndefinedConstants() const {
             if (this->isJaniModel()) {
                 storm::utility::jani::requireNoUndefinedConstants(this->asJaniModel());
@@ -174,7 +174,7 @@ namespace storm {
                 storm::utility::prism::requireNoUndefinedConstants(this->asPrismProgram());
             }
         }
-        
+
         bool SymbolicModelDescription::hasUndefinedConstants() const {
             if (this->isPrismProgram()) {
                 return this->asPrismProgram().hasUndefinedConstants();
@@ -182,7 +182,7 @@ namespace storm {
                 return this->asJaniModel().hasUndefinedConstants();
             }
         }
-        
+
         std::vector<storm::expressions::Variable> SymbolicModelDescription::getUndefinedConstants() const {
             std::vector<storm::expressions::Variable> result;
             if (this->isPrismProgram()) {
@@ -198,7 +198,7 @@ namespace storm {
             }
             return result;
         }
-        
+
         std::ostream& operator<<(std::ostream& out, SymbolicModelDescription const& model) {
             if (model.isPrismProgram()) {
                 out << model.asPrismProgram();

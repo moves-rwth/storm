@@ -49,20 +49,20 @@ namespace storm {
              * @note The returned property vector might be empty in case no renaming is necessary.
              */
             std::pair<SymbolicModelDescription, std::vector<storm::jani::Property>> toJani(std::vector<storm::jani::Property> const& properties, bool makeVariablesGlobal) const;
-            
+
             SymbolicModelDescription preprocess(std::string const& constantDefinitionString = "") const;
             SymbolicModelDescription preprocess(std::map<storm::expressions::Variable, storm::expressions::Expression> const& constantDefinitions) const;
-            
+
             std::map<storm::expressions::Variable, storm::expressions::Expression> parseConstantDefinitions(std::string const& constantDefinitionString) const;
-            
+
             void requireNoUndefinedConstants() const;
             bool hasUndefinedConstants() const;
             std::vector<storm::expressions::Variable> getUndefinedConstants() const;
-            
+
         private:
             boost::optional<boost::variant<storm::jani::Model, storm::prism::Program>> modelDescription;
         };
-        
+
         std::ostream& operator<<(std::ostream& out, SymbolicModelDescription const& model);
 
         std::ostream& operator<<(std::ostream& out, SymbolicModelDescription::ModelType const& type);

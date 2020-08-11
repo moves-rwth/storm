@@ -88,7 +88,7 @@ namespace storm {
              * @param remapping The remapping to apply.
              */
             void remapStateIds(std::function<StateType(StateType const&)> const& remapping);
-            
+
         protected:
             /*!
              * Creates the state labeling for the given states using the provided labels and expressions.
@@ -100,25 +100,25 @@ namespace storm {
             virtual storm::storage::sparse::StateValuationsBuilder initializeObservationValuationsBuilder() const;
 
             void postprocess(StateBehavior<ValueType, StateType>& result);
-            
+
             /// The options to be used for next-state generation.
             NextStateGeneratorOptions options;
-            
+
             /// The expression manager used for evaluating expressions.
             std::shared_ptr<storm::expressions::ExpressionManager const> expressionManager;
-            
+
             /// The expressions that define terminal states.
             std::vector<std::pair<storm::expressions::Expression, bool>> terminalStates;
-            
+
             /// Information about how the variables are packed.
             VariableInformation variableInformation;
-            
+
             /// An evaluator used to evaluate expressions.
             std::unique_ptr<storm::expressions::ExpressionEvaluator<ValueType>> evaluator;
-            
+
             /// The currently loaded state.
             CompressedState const* state;
-            
+
             /// A comparator used to compare constants.
             storm::utility::ConstantsComparator<ValueType> comparator;
 
