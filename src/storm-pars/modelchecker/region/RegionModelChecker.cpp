@@ -65,7 +65,7 @@ namespace storm {
                 std::queue<std::shared_ptr<storm::analysis::Order>> orders;
                 std::queue<std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>> localMonotonicityResults;
                 std::queue<uint64_t> refinementDepths;
-                // TODO commented out bc it causes storm to crash (assertion in ParameterLifter.cpp, line 266). Fix later.
+                // TODO @Jip commented out bc it causes storm to crash (assertion in ParameterLifter.cpp, line 266). Fix later.
                 // I don't exactly know what is happening there
                 // setUseMonotonicityNow();
                 unprocessedRegions.emplace(region, RegionResult::Unknown);
@@ -112,7 +112,6 @@ namespace storm {
                 uint64_t currentDepth = refinementDepths.front();
                 while (currentDepth < monThreshold && fractionOfUndiscoveredArea > thresholdAsCoefficient && !unprocessedRegions.empty()) {
                     assert(unprocessedRegions.size() == refinementDepths.size());
-                    //currentDepth = refinementDepths.front();
                     STORM_LOG_INFO("Analyzing region #" << numOfAnalyzedRegions << " (Refinement depth " << currentDepth << "; " << storm::utility::convertNumber<double>(fractionOfUndiscoveredArea) * 100 << "% still unknown)");
                     STORM_PRINT(" NO MON @ Refinement depth " << currentDepth << std::endl);
                     auto& currentRegion = unprocessedRegions.front().first;
@@ -238,7 +237,7 @@ namespace storm {
                                     } else {
                                         if (!order->getDoneBuilding()) {
                                             // we need to use copies for both order and local mon res
-                                            //TODO replace copy constructor with order->copy()?
+                                            //TODO @Jip Replace copy constructor with order->copy() here?
                                             orders.emplace(std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(order)));
                                             localMonotonicityResults.emplace(localMonotonicityResult->copy());
                                         } else if (!localMonotonicityResult->isDone()) {
@@ -262,8 +261,8 @@ namespace storm {
                                 result.push_back(std::move(unprocessedRegions.front()));
                             }
 
-                            // TODO moved here for now or else there will be more orders removed than added + segfault will occur.
-                            // is this correct here?
+                            // TODO @ Jip The pops are moved here for now or else there will be more orders removed than added + segfault will occur.
+                            // Is that alright or does it need to go somewhere else?
                             orders.pop();
                             localMonotonicityResults.pop();
                             break;
