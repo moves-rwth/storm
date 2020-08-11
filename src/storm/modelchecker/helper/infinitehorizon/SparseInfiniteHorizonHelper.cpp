@@ -78,7 +78,7 @@ namespace storm {
                         actionRewardsGetter = [&] (uint64_t globalChoiceIndex) { return rewardModel.getStateActionReward(globalChoiceIndex); };
                     }
                 } else {
-                    stateRewardsGetter = [] (uint64_t) { return storm::utility::zero<ValueType>(); };
+                    actionRewardsGetter = [] (uint64_t) { return storm::utility::zero<ValueType>(); };
                 }
                 
                 return computeLongRunAverageValues(env, stateRewardsGetter, actionRewardsGetter);
@@ -109,7 +109,7 @@ namespace storm {
                 // We will compute the long run average value for each MEC individually and then set-up an Equation system to compute the value also at non-mec states.
                 // For a description of this approach see, e.g., Guck et al.: Modelling and Analysis of Markov Reward Automata (ATVA'14), https://doi.org/10.1007/978-3-319-11936-6_13
                 
-                 // Prepare an environment for the underlying solvers
+                 // Prepare an environment for the underlying solvers.
                 auto underlyingSolverEnvironment = env;
                 if (env.solver().isForceSoundness()) {
                     // For sound computations, the error in the MECS plus the error in the remaining system should not exceed the user defined precsion.
@@ -151,10 +151,10 @@ namespace storm {
             
             template class SparseInfiniteHorizonHelper<double, true>;
             template class SparseInfiniteHorizonHelper<storm::RationalNumber, true>;
-            template class SparseInfiniteHorizonHelper<storm::RationalFunction, true>;
             
             template class SparseInfiniteHorizonHelper<double, false>;
             template class SparseInfiniteHorizonHelper<storm::RationalNumber, false>;
+            template class SparseInfiniteHorizonHelper<storm::RationalFunction, false>;
             
         }
     }
