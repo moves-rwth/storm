@@ -91,12 +91,31 @@ namespace storm {
                     expression.getSecondOperand()->accept(*this, data);
                     stream << ")";
                     break;
-                case BinaryNumericalFunctionExpression::OperatorType::Divide:
-                    stream << "(";
-                    expression.getFirstOperand()->accept(*this, data);
-                    stream << "/";
-                    expression.getSecondOperand()->accept(*this, data);
-                    stream << ")";
+                case BinaryNumericalFunctionExpression::OperatorType::Divide: {
+                    STORM_LOG_THROW(expression.getSecondOperand()->isIntegerLiteralExpression(),
+                                    storm::exceptions::NotSupportedException,
+                                    "Dice does not support modulo with nonconst rhs");
+                        uint64_t denominator = expression.getSecondOperand()->evaluateAsInt();
+                        int shifts = 0;
+                        while (denominator % 2 == 0) {
+                            denominator = denominator >> 1;
+                            shifts++;
+                        }
+                        denominator = denominator >> 1;
+                        if (denominator > 0) {
+                            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException,
+                                            "Dice does not support division with non-powers of two");
+                        }
+                        if (shifts > 0) {
+                            stream << "(";
+                            expression.getFirstOperand()->accept(*this, data);
+                            stream << " >> " << shifts;
+                            stream << ")";
+                        } else {
+                            expression.getFirstOperand()->accept(*this, data);
+                        }
+
+                    }
                     break;
                 case BinaryNumericalFunctionExpression::OperatorType::Power:
                     stream << "(";
@@ -109,7 +128,7 @@ namespace storm {
                     STORM_LOG_THROW(expression.getSecondOperand()->isIntegerLiteralExpression(), storm::exceptions::NotSupportedException, "Dice does not support modulo with nonconst rhs");
                     STORM_LOG_THROW(expression.getSecondOperand()->evaluateAsInt() == 2, storm::exceptions::NotSupportedException, "Dice does not support modulo with rhs != 2");
 
-                    stream << "( nth_bit(int(" << nrBits << "," << nrBits << "), ";
+                    stream << "( nth_bit(int(" << nrBits << "," << nrBits-1 << "), ";
                     expression.getFirstOperand()->accept(*this, data);
                     stream << "))";
                     break;
