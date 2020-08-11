@@ -187,7 +187,7 @@ namespace storm {
         }
 
         bool Program::isDiscreteTimeModel() const {
-            return modelType == ModelType::DTMC || modelType == ModelType::MDP || modelType == ModelType::POMDP;
+            return modelType == ModelType::DTMC || modelType == ModelType::MDP || modelType == ModelType::POMDP || modelType == ModelType::SMG;
         }
 
         bool Program::isDeterministicModel() const {

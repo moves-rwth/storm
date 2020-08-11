@@ -101,10 +101,11 @@ namespace storm {
                     ("ctmdp", storm::prism::Program::ModelType::CTMDP)
                     ("ma", storm::prism::Program::ModelType::MA)
                     ("pomdp", storm::prism::Program::ModelType::POMDP)
-                    ("pta", storm::prism::Program::ModelType::PTA);
+                    ("pta", storm::prism::Program::ModelType::PTA)
+                    ("smg", storm::prism::Program::ModelType::SMG);
                 }
             };
-            
+
             struct keywordsStruct : qi::symbols<char, uint_fast64_t> {
                 keywordsStruct() {
                     add
@@ -131,19 +132,20 @@ namespace storm {
                     ("init", 21)
                     ("endinit", 22)
                     ("invariant", 23)
-                    ("endinvariant", 24);
+                    ("endinvariant", 24)
+                    ("smg", 25);
                 }
             };
-            
+
             // Functor used for annotating entities with line number information.
             class PositionAnnotation {
             public:
                 typedef void result_type;
-                
+
                 PositionAnnotation(Iterator first) : first(first) {
                     // Intentionally left empty.
                 }
-                
+
                 template<typename Entity, typename First, typename Last>
                 result_type operator()(Entity& entity, First f, Last) const {
                     entity.setLineNumber(get_line(f));

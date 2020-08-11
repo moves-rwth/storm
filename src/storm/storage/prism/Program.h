@@ -15,6 +15,7 @@
 #include "storm/storage/prism/SystemCompositionConstruct.h"
 #include "storm/storage/prism/InitialConstruct.h"
 #include "storm/storage/prism/Composition.h"
+#include "storm/storage/prism/Player.h"
 #include "storm/storage/BoostTypes.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/OsDetection.h"
@@ -31,7 +32,7 @@ namespace storm {
             /*!
              * An enum for the different model types.
              */
-            enum class ModelType {UNDEFINED, DTMC, CTMC, MDP, CTMDP, MA, POMDP, PTA};
+            enum class ModelType {UNDEFINED, DTMC, CTMC, MDP, CTMDP, MA, POMDP, PTA, SMG};
 
             enum class ValidityCheckLevel  : unsigned {VALIDINPUT = 0, READYFORPROCESSING = 1};
 

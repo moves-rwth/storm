@@ -127,16 +127,17 @@ namespace storm {
                 case storm::prism::Program::ModelType::MDP: return ModelType::MDP;
                 case storm::prism::Program::ModelType::MA: return ModelType::MA;
                 case storm::prism::Program::ModelType::POMDP: return ModelType::POMDP;
+                case storm::prism::Program::ModelType::SMG: return ModelType::SMG;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Invalid model type.");
             }
         }
-        
+
         template<typename ValueType, typename StateType>
         bool PrismNextStateGenerator<ValueType, StateType>::isDeterministicModel() const {
             return program.isDeterministicModel();
         }
-        
+
         template<typename ValueType, typename StateType>
         bool PrismNextStateGenerator<ValueType, StateType>::isDiscreteTimeModel() const {
             return program.isDiscreteTimeModel();

@@ -7,39 +7,39 @@
 
 namespace storm {
     namespace storage {
-        
+
         class SymbolicModelDescription {
         public:
             enum class ModelType {
-                DTMC, CTMC, MDP, MA, POMDP
+                DTMC, CTMC, MDP, MA, POMDP, SMG
             };
-            
+
             SymbolicModelDescription() = default;
             SymbolicModelDescription(storm::jani::Model const& model);
             SymbolicModelDescription(storm::prism::Program const& program);
 
             SymbolicModelDescription& operator=(storm::jani::Model const& model);
             SymbolicModelDescription& operator=(storm::prism::Program const& program);
-            
+
             bool hasModel() const;
             bool isJaniModel() const;
             bool isPrismProgram() const;
-            
+
             ModelType getModelType() const;
             storm::expressions::ExpressionManager& getManager() const;
 
             void setModel(storm::jani::Model const& model);
             void setModel(storm::prism::Program const& program);
-            
+
             storm::jani::Model const& asJaniModel() const;
             storm::jani::Model& asJaniModel();
             storm::prism::Program const& asPrismProgram() const;
             storm::prism::Program& asPrismProgram();
-            
+
             std::vector<std::string> getParameterNames() const;
-            
+
             SymbolicModelDescription toJani(bool makeVariablesGlobal = true) const;
-            
+
             /*!
              * Ensures that this model is a JANI model by, e.g., converting prism to jani.
              * If labels or reward models had to be converted during conversion, the renamings are applied to the given properties

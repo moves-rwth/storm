@@ -24,44 +24,45 @@
 namespace storm {
     namespace generator {
         typedef storm::builder::BuilderOptions NextStateGeneratorOptions;
-        
+
         enum class ModelType {
             DTMC,
             CTMC,
             MDP,
             MA,
-            POMDP
+            POMDP,
+            SMG
         };
-        
+
         template<typename ValueType, typename StateType = uint32_t>
         class NextStateGenerator {
         public:
             typedef std::function<StateType (CompressedState const&)> StateToIdCallback;
 
             NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, VariableInformation const& variableInformation, NextStateGeneratorOptions const& options);
-            
+
             /*!
              * Creates a new next state generator. This version of the constructor default-constructs the variable information.
              * Hence, the subclass is responsible for suitably initializing it in its constructor.
              */
             NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, NextStateGeneratorOptions const& options);
-            
+
             virtual ~NextStateGenerator() = default;
-            
+
             uint64_t getStateSize() const;
             virtual ModelType getModelType() const = 0;
             virtual bool isDeterministicModel() const = 0;
             virtual bool isDiscreteTimeModel() const = 0;
             virtual bool isPartiallyObservable() const = 0;
             virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) = 0;
-            
+
             /// Initializes a builder for state valuations by adding the appropriate variables.
             virtual storm::storage::sparse::StateValuationsBuilder initializeStateValuationsBuilder() const;
-            
+
             void load(CompressedState const& state);
             virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) = 0;
             bool satisfies(storm::expressions::Expression const& expression) const;
-            
+
             /// Adds the valuation for the currently loaded state to the given builder
             virtual void addStateValuation(storm::storage::sparse::state_type const& currentStateIndex, storm::storage::sparse::StateValuationsBuilder& valuationsBuilder) const;
             /// Adds the valuation for the currently loaded state
@@ -69,7 +70,7 @@ namespace storm {
 
             virtual std::size_t getNumberOfRewardModels() const = 0;
             virtual storm::builder::RewardModelInformation getRewardModelInformation(uint64_t const& index) const = 0;
-            
+
             std::string stateToString(CompressedState const& state) const;
 
             uint32_t observabilityClass(CompressedState const& state) const;

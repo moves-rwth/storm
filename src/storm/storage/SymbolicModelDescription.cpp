@@ -65,12 +65,13 @@ namespace storm {
                     case storm::prism::Program::ModelType::MDP: return SymbolicModelDescription::ModelType::MDP;
                     case storm::prism::Program::ModelType::POMDP: return SymbolicModelDescription::ModelType::POMDP;
                     case storm::prism::Program::ModelType::MA: return SymbolicModelDescription::ModelType::MA;
+                    case storm::prism::Program::ModelType::SMG: return SymbolicModelDescription::ModelType::SMG;
                     default:
                         STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Expected other PRISM model type.");
                 }
             }
         }
-        
+
         storm::expressions::ExpressionManager& SymbolicModelDescription::getManager() const {
             if (this->isPrismProgram()) {
                 return this->asPrismProgram().getManager();
