@@ -25,7 +25,7 @@ namespace storm {
             namespace internal {
                 
                 template <typename ValueType, typename ComponentType, LraViTransitionsType TransitionsType>
-                LraViHelper<ValueType, ComponentType, TransitionsType>::LraViHelper(ComponentType const& component, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, ValueType const& aperiodicFactor, storm::storage::BitVector const* timedStates, std::vector<ValueType> const* exitRates) : _component(component), _transitionMatrix(transitionMatrix), _timedStates(timedStates), _hasInstantStates(TransitionsType == LraViTransitionsType::DetTsNondetIs || TransitionsType == LraViTransitionsType::DetTsDetIs) {
+                LraViHelper<ValueType, ComponentType, TransitionsType>::LraViHelper(ComponentType const& component, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, ValueType const& aperiodicFactor, storm::storage::BitVector const* timedStates, std::vector<ValueType> const* exitRates) : _component(component), _transitionMatrix(transitionMatrix), _timedStates(timedStates), _hasInstantStates(TransitionsType == LraViTransitionsType::DetTsNondetIs || TransitionsType == LraViTransitionsType::DetTsDetIs), _Tsx1IsCurrent(false) {
                     // Run through the component and collect some data:
                     // We create two submodels, one consisting of the timed states of the component and one consisting of the instant states of the component.
                     // For this, we create a state index map that point from state indices of the input model to indices of the corresponding submodel of that state.
@@ -461,6 +461,7 @@ namespace storm {
                 
                 template <typename ValueType, typename ComponentType, LraViTransitionsType TransitionsType>
                 bool LraViHelper<ValueType, ComponentType, TransitionsType>::isTimedState(uint64_t const& inputModelStateIndex) const {
+                    STORM_LOG_ASSERT(!_hasInstantStates || _timedStates != nullptr, "Model has instant states but no partition into timed and instant states is given.");
                     STORM_LOG_ASSERT(!_hasInstantStates || inputModelStateIndex < _timedStates->size(), "Unable to determine whether state " << inputModelStateIndex << " is timed.");
                     return !_hasInstantStates || _timedStates->get(inputModelStateIndex);
                 }
