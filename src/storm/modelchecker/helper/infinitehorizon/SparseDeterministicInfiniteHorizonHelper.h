@@ -46,10 +46,20 @@ namespace storm {
                 std::pair<bool, ValueType> computeLraForTrivialBscc(Environment const& env, ValueGetter const& stateValuesGetter,  ValueGetter const& actionValuesGetter, storm::storage::StronglyConnectedComponent const& bscc);
                 
                 /*!
-                 * As computeLraForMec but uses value iteration as a solution method (independent of what is set in env)
+                 * As computeLraForComponent but uses value iteration as a solution method (independent of what is set in env)
                  */
                 ValueType computeLraForBsccVi(Environment const& env, ValueGetter const& stateValuesGetter, ValueGetter const& actionValuesGetter, storm::storage::StronglyConnectedComponent const& bscc);
                 
+                /*!
+                 * As computeLraForComponent but solves a linear equation system encoding gain and bias (independent of what is set in env)
+                 * @see Kretinsky, Meggendorfer: Efficient Strategy Iteration for Mean Payoff in Markov Decision Processes (ATVA 2017), https://doi.org/10.1007/978-3-319-68167-2_25
+                 */
+                std::pair<ValueType, std::vector<ValueType>> computeLraForBsccGainBias(Environment const& env, ValueGetter const& stateValuesGetter, ValueGetter const& actionValuesGetter, storm::storage::StronglyConnectedComponent const& bscc);
+                /*!
+                 * As computeLraForComponent but solves a linear equation system consisting encoding the long run average (steady state) distribution (independent of what is set in env)
+                 */
+                std::pair<ValueType, std::vector<ValueType>> computeLraForBsccLraDistr(Environment const& env, ValueGetter const& stateValuesGetter, ValueGetter const& actionValuesGetter, storm::storage::StronglyConnectedComponent const& bscc);
+  
                 std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> buildSspMatrixVector(std::vector<ValueType> const& bsccLraValues, std::vector<uint64_t> const& inputStateToBsccIndexMap, storm::storage::BitVector const& statesNotInComponent, bool asEquationSystem);
                 
                 /*!
