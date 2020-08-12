@@ -361,7 +361,6 @@ namespace storm {
             auto transformedJani = std::make_shared<SymbolicInput>();
             ModelProcessingInformation mpi = getModelProcessingInformation(output, transformedJani);
 
-            auto builderType = storm::utility::getBuilderType(mpi.engine);
             
             // Check whether conversion for PRISM to JANI is requested or necessary.
             if (output.model && output.model.get().isPrismProgram()) {
@@ -383,7 +382,7 @@ namespace storm {
             }
             
             if (output.model && output.model.get().isJaniModel()) {
-                storm::jani::ModelFeatures supportedFeatures = storm::api::getSupportedJaniFeatures(builderType);
+                storm::jani::ModelFeatures supportedFeatures = storm::api::getSupportedJaniFeatures(storm::utility::getBuilderType(mpi.engine));
                 storm::api::simplifyJaniModel(output.model.get().asJaniModel(), output.properties, supportedFeatures);
             }
 
