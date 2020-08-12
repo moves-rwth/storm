@@ -87,42 +87,25 @@ namespace storm {
                                     tsToIsTransitionsBuilder.newRowGroup(currTsRow);
                                 }
                             }
-                            // We need to uniformize which means that a diagonal entry for the selfloop will be inserted.
                             // If there are exit rates, the uniformization factor needs to be updated.
                             if (exitRates) {
                                 uniformizationFactor = (*exitRates)[componentState] / _uniformizationRate;
                             }
+                            // We need to uniformize which means that a diagonal entry for the selfloop will be inserted.
                             ValueType selfLoopProb = storm::utility::one<ValueType>() - uniformizationFactor;
-                            uint64_t selfLoopColumn = toSubModelStateMapping[componentState];
                             for (auto componentChoiceIt = getComponentElementChoicesBegin(element); componentChoiceIt != getComponentElementChoicesEnd(element); ++componentChoiceIt) {
-                                bool insertedDiagElement = false;
+                                tsTransitionsBuilder.addDiagonalEntry(currTsRow, selfLoopProb);
                                 for (auto const& entry : this->_transitionMatrix.getRow(*componentChoiceIt)) {
                                     uint64_t subModelColumn = toSubModelStateMapping[entry.getColumn()];
                                     if (isTimedState(entry.getColumn())) {
                                         // We have a transition from a timed state to a timed state
                                         STORM_LOG_ASSERT(subModelColumn < numTsSubModelStates, "Invalid state for timed submodel");
-                                        if (!insertedDiagElement && subModelColumn > selfLoopColumn) {
-                                            // We passed the diagonal entry, so add it now before moving on to the next entry
-                                            tsTransitionsBuilder.addNextValue(currTsRow, selfLoopColumn, selfLoopProb);
-                                            insertedDiagElement = true;
-                                        }
-                                        if (!insertedDiagElement && subModelColumn == selfLoopColumn) {
-                                            // The current entry is the diagonal (selfloop) entry
-                                            tsTransitionsBuilder.addNextValue(currTsRow, selfLoopColumn, selfLoopProb + uniformizationFactor * entry.getValue());
-                                            insertedDiagElement = true;
-                                        } else {
-                                            // The diagonal element either has been inserted already or still lies in front
-                                            tsTransitionsBuilder.addNextValue(currTsRow, subModelColumn,  uniformizationFactor * entry.getValue());
-                                        }
+                                        tsTransitionsBuilder.addNextValue(currTsRow, subModelColumn,  uniformizationFactor * entry.getValue());
                                     } else {
                                         // We have a transition from a timed to a instant state
                                         STORM_LOG_ASSERT(subModelColumn < numIsSubModelStates, "Invalid state for instant submodel");
                                         tsToIsTransitionsBuilder.addNextValue(currTsRow, subModelColumn, uniformizationFactor * entry.getValue());
                                     }
-                                }
-                                // If the diagonal entry for the MS matrix still has not been set, we do that now
-                                if (!insertedDiagElement) {
-                                    tsTransitionsBuilder.addNextValue(currTsRow, selfLoopColumn, selfLoopProb);
                                 }
                                 ++currTsRow;
                             }

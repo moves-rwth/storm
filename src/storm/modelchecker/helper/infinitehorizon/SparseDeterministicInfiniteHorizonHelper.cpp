@@ -169,15 +169,13 @@ namespace storm {
                         builder.addNextValue(row, 0, -storm::utility::one<ValueType>());
                     }
                     // Compute weighted sum over successor state. As this is a BSCC, each successor state will again be in the BSCC.
-                    auto diagonalValue = storm::utility::zero<ValueType>();
                     if (row > 0) {
                         if (isEquationSystemFormat) {
-                            diagonalValue = rateAtState;
-                        } else {
-                            diagonalValue = storm::utility::one<ValueType>() - rateAtState;
+                            builder.addDiagonalEntry(row, rateAtState);
+                        } else if (!storm::utility::isOne(rateAtState)) {
+                            builder.addDiagonalEntry(row, storm::utility::one<ValueType>() - rateAtState);
                         }
                     }
-                    bool needDiagonalEntry = !storm::utility::isZero(diagonalValue);
                     for (auto const& entry : this->_transitionMatrix.getRow(globalState)) {
                         uint64_t col = toLocalIndexMap[entry.getColumn()];
                         if (col == 0) {
@@ -188,20 +186,8 @@ namespace storm {
                         if (isEquationSystemFormat) {
                             entryValue = -entryValue;
                         }
-                        if (needDiagonalEntry && col >= row) {
-                            if (col == row) {
-                                entryValue += diagonalValue;
-                            } else { // col > row
-                                builder.addNextValue(row, row, diagonalValue);
-                            }
-                            needDiagonalEntry = false;
-                        }
                         builder.addNextValue(row, col, entryValue);
                     }
-                    if (needDiagonalEntry) {
-                        builder.addNextValue(row, row, diagonalValue);
-                    }
-
                     eqSysVector.push_back(stateValuesGetter(globalState) + rateAtState * actionValuesGetter(globalState));
                     ++row;
                 }
