@@ -273,14 +273,20 @@ namespace storm {
             moduleDefinition = ((qi::lit("module") > freshModuleName > *(variableDefinition(qi::_a, qi::_b, qi::_c))) > -invariantConstruct > (*commandDefinition(qi::_r1)) > qi::lit("endmodule"))[qi::_val = phoenix::bind(&PrismParser::createModule, phoenix::ref(*this), qi::_1, qi::_a, qi::_b, qi::_c, qi::_2, qi::_3, qi::_r1)];
             moduleDefinition.name("module definition");
 
-            commandName = (qi::lit("[") >> identifier >> qi::lit("]"))[qi::_val = qi::_1];
-            moduleName = identifier[qi::_val = qi::_1];
+            freshPlayerName = (identifier[qi::_val = qi::_1])[qi::_pass = phoenix::bind(&PrismParser::isFreshPlayerName, phoenix::ref(*this), qi::_1)];
+            freshPlayerName.name("fresh player name");
 
-            playerDefinition = (qi::lit("player") >> identifier[qi::_a = qi::_1]
-                    >> +(   commandName(qi::_1)[phoenix::push_back(qi::_b, qi::_1)]
-                        |   moduleName(qi::_1)[phoenix::push_back(qi::_c, qi::_1)]
+            commandName = (qi::lit("[") >> identifier >> qi::lit("]"))[qi::_val = qi::_1];
+            commandName.name("command name");
+
+            moduleName = identifier[qi::_val = qi::_1];
+            moduleName.name("module name");
+
+            playerDefinition = (qi::lit("player") > freshPlayerName[qi::_a = qi::_1]
+                    > +(   (commandName[phoenix::push_back(qi::_c, qi::_1)]
+                        |   moduleName[phoenix::push_back(qi::_b, qi::_1)]) % ','
                         )
-                    >> qi::lit("endplayer"))[qi::_val = phoenix::bind(&PrismParser::createPlayer, phoenix::ref(*this), qi::_a, qi::_b, qi::_c)];
+                    > qi::lit("endplayer"))[qi::_val = phoenix::bind(&PrismParser::createPlayer, phoenix::ref(*this), qi::_a, qi::_b, qi::_c)];
             playerDefinition.name("player definition");
 
             moduleRenaming = (qi::lit("[") > ((identifier > qi::lit("=") > identifier)[phoenix::insert(qi::_a, phoenix::construct<std::pair<std::string,std::string>>(qi::_1, qi::_2))] % ",") > qi::lit("]"))[qi::_val = phoenix::bind(&PrismParser::createModuleRenaming, phoenix::ref(*this), qi::_a)];
@@ -481,6 +487,10 @@ namespace storm {
                     }
                 }
             }
+            return true;
+        }
+
+        bool PrismParser::isFreshPlayerName(std::string const& playerName) {
             return true;
         }
 
@@ -774,6 +784,10 @@ namespace storm {
 
         storm::prism::Player PrismParser::createPlayer(std::string const& playerName, std::vector<std::string> const& moduleNames, std::vector<std::string> const & commandNames) const {
             STORM_LOG_DEBUG("PLAYER created:" << playerName);
+            for(std::string moduleName : moduleNames)
+                STORM_LOG_DEBUG("moduleName:" << moduleName);
+            for(std::string commandName : commandNames)
+                STORM_LOG_DEBUG("commandName:" << commandName);
             std::vector<storm::prism::Module> modules;
             std::vector<storm::prism::Command> commands;
             return storm::prism::Player(playerName, modules, commands);

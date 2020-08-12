@@ -134,7 +134,8 @@ namespace storm {
                     ("endinit", 22)
                     ("invariant", 23)
                     ("endinvariant", 24)
-                    ("smg", 25);
+                    ("smg", 25)
+                    ("endplayer", 26);
                 }
             };
 
@@ -264,9 +265,10 @@ namespace storm {
             qi::rule<Iterator, storm::prism::TransitionReward(GlobalProgramInformation&), qi::locals<std::string, storm::expressions::Expression, storm::expressions::Expression,storm::expressions::Expression>, Skipper> transitionRewardDefinition;
 
             // Rules for player definitions
+            qi::rule<Iterator, std::string(), Skipper> freshPlayerName;
             qi::rule<Iterator, std::string(), qi::locals<std::string>, Skipper> commandName;
             qi::rule<Iterator, std::string(), qi::locals<std::string>, Skipper> moduleName;
-            qi::rule<Iterator, qi::unused_type(), Skipper> playerDefinition;
+            qi::rule<Iterator, qi::unused_type(), qi::locals<std::string, std::vector<std::string>, std::vector<std::string>>, Skipper> playerDefinition;
 
             // Rules for initial states expression.
             qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> initialStatesConstruct;
@@ -324,6 +326,7 @@ namespace storm {
             bool isFreshLabelName(std::string const& moduleName);
             bool isFreshObservationLabelName(std::string const& labelName);
             bool isFreshRewardModelName(std::string const& moduleName);
+            bool isFreshPlayerName(std::string const& playerName);
             bool isOfBoolType(storm::expressions::Expression const& expression);
             bool isOfIntType(storm::expressions::Expression const& expression);
             bool isOfNumericalType(storm::expressions::Expression const& expression);
