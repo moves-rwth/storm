@@ -62,11 +62,12 @@ namespace storm {
             std::vector<storm::prism::RewardModel> rewardModels;
             std::vector<storm::prism::Label> labels;
             std::vector<storm::prism::ObservationLabel> observationLabels;
+            std::vector<storm::prism::Player> players;
             bool hasInitialConstruct;
             storm::prism::InitialConstruct initialConstruct;
             boost::optional<storm::prism::SystemCompositionConstruct> systemCompositionConstruct;
 
-            
+
             // Counters to provide unique indexing for commands and updates.
             uint_fast64_t currentCommandIndex;
             uint_fast64_t currentUpdateIndex;
@@ -263,7 +264,8 @@ namespace storm {
             qi::rule<Iterator, storm::prism::TransitionReward(GlobalProgramInformation&), qi::locals<std::string, storm::expressions::Expression, storm::expressions::Expression,storm::expressions::Expression>, Skipper> transitionRewardDefinition;
 
             // Rules for player definitions
-            qi::rule<Iterator, std::string(), Skipper> commandName;
+            qi::rule<Iterator, std::string(), qi::locals<std::string>, Skipper> commandName;
+            qi::rule<Iterator, std::string(), qi::locals<std::string>, Skipper> moduleName;
             qi::rule<Iterator, qi::unused_type(), Skipper> playerDefinition;
 
             // Rules for initial states expression.
@@ -361,12 +363,13 @@ namespace storm {
             storm::prism::Module createModule(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::ClockVariable> const& clockVariables, boost::optional<storm::expressions::Expression> const& invariant, std::vector<storm::prism::Command> const& commands, GlobalProgramInformation& globalProgramInformation) const;
             storm::prism::ModuleRenaming createModuleRenaming(std::map<std::string,std::string> const& renaming) const;
             storm::prism::Module createRenamedModule(std::string const& newModuleName, std::string const& oldModuleName, storm::prism::ModuleRenaming const& renaming, GlobalProgramInformation& globalProgramInformation) const;
+            storm::prism::Player createPlayer(std::string const& playerName, std::vector<std::string> const& moduleNames, std::vector<std::string> const & commandNames) const;
             storm::prism::Program createProgram(GlobalProgramInformation const& globalProgramInformation) const;
             void createObservablesList(std::vector<std::string> const& observables);
 
 
             void removeInitialConstruct(GlobalProgramInformation& globalProgramInformation) const;
-            
+
             // An error handler function.
             phoenix::function<SpiritErrorHandler> handler;
         };
@@ -374,4 +377,3 @@ namespace storm {
 } // namespace storm
 
 #endif	/* STORM_PARSER_PRISMPARSER_H_ */
-

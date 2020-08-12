@@ -272,20 +272,31 @@ namespace storm {
             // We first check for a module renaming, i.e., for this rule we certainly have to see a module definition
             moduleDefinition = ((qi::lit("module") > freshModuleName > *(variableDefinition(qi::_a, qi::_b, qi::_c))) > -invariantConstruct > (*commandDefinition(qi::_r1)) > qi::lit("endmodule"))[qi::_val = phoenix::bind(&PrismParser::createModule, phoenix::ref(*this), qi::_1, qi::_a, qi::_b, qi::_c, qi::_2, qi::_3, qi::_r1)];
             moduleDefinition.name("module definition");
-            
+
+            commandName = (qi::lit("[") >> identifier >> qi::lit("]"))[qi::_val = qi::_1];
+            moduleName = identifier[qi::_val = qi::_1];
+
+            playerDefinition = (qi::lit("player") >> identifier[qi::_a = qi::_1]
+                    >> +(   commandName(qi::_1)[phoenix::push_back(qi::_b, qi::_1)]
+                        |   moduleName(qi::_1)[phoenix::push_back(qi::_c, qi::_1)]
+                        )
+                    >> qi::lit("endplayer"))[qi::_val = phoenix::bind(&PrismParser::createPlayer, phoenix::ref(*this), qi::_a, qi::_b, qi::_c)];
+            playerDefinition.name("player definition");
+
             moduleRenaming = (qi::lit("[") > ((identifier > qi::lit("=") > identifier)[phoenix::insert(qi::_a, phoenix::construct<std::pair<std::string,std::string>>(qi::_1, qi::_2))] % ",") > qi::lit("]"))[qi::_val = phoenix::bind(&PrismParser::createModuleRenaming, phoenix::ref(*this), qi::_a)];
             moduleRenaming.name("Module renaming list");
-            
+
             renamedModule = (((qi::lit("module") > freshModuleName) >> qi::lit("="))
                               > knownModuleName[qi::_a = qi::_1]
                               > (moduleRenaming[qi::_b = qi::_1])[qi::_pass = phoenix::bind(&PrismParser::isValidModuleRenaming, phoenix::ref(*this), qi::_a, qi::_b, qi::_r1)]
                               > qi::lit("endmodule"))[qi::_val = phoenix::bind(&PrismParser::createRenamedModule, phoenix::ref(*this), qi::_1, qi::_a, qi::_b, qi::_r1)];
             renamedModule.name("module definition via renaming");
-            
+
             start = (qi::eps[phoenix::bind(&PrismParser::removeInitialConstruct, phoenix::ref(*this), phoenix::ref(globalProgramInformation))]
                      > modelTypeDefinition[phoenix::bind(&PrismParser::setModelType, phoenix::ref(*this), phoenix::ref(globalProgramInformation), qi::_1)]
                      > -observablesConstruct
                      >  *( definedConstantDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::constants, phoenix::ref(globalProgramInformation)), qi::_1)]
+                         | playerDefinition
                          | undefinedConstantDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::constants, phoenix::ref(globalProgramInformation)), qi::_1)]
                          | formulaDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::formulas, phoenix::ref(globalProgramInformation)), qi::_1)]
                          | globalVariableDefinition(phoenix::ref(globalProgramInformation))
@@ -755,12 +766,19 @@ namespace storm {
             this->observables.insert(observables.begin(), observables.end());
             // We need this list to be filled in both runs.
         }
-        
+
         storm::prism::Module PrismParser::createModule(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::ClockVariable> const& clockVariables, boost::optional<storm::expressions::Expression> const& invariant, std::vector<storm::prism::Command> const& commands, GlobalProgramInformation& globalProgramInformation) const {
             globalProgramInformation.moduleToIndexMap[moduleName] = globalProgramInformation.modules.size();
             return storm::prism::Module(moduleName, booleanVariables, integerVariables, clockVariables, invariant.is_initialized()? invariant.get() : storm::expressions::Expression(), commands, this->getFilename());
         }
-        
+
+        storm::prism::Player PrismParser::createPlayer(std::string const& playerName, std::vector<std::string> const& moduleNames, std::vector<std::string> const & commandNames) const {
+            STORM_LOG_DEBUG("PLAYER created:" << playerName);
+            std::vector<storm::prism::Module> modules;
+            std::vector<storm::prism::Command> commands;
+            return storm::prism::Player(playerName, modules, commands);
+        }
+
         bool PrismParser::isValidModuleRenaming(std::string const& oldModuleName, storm::prism::ModuleRenaming const& moduleRenaming, GlobalProgramInformation const& globalProgramInformation) const {
             if (!this->secondRun) {
                 auto const& renaming = moduleRenaming.getRenaming();
