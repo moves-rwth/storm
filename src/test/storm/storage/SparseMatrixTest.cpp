@@ -148,6 +148,79 @@ TEST(SparseMatrix, Build) {
     ASSERT_EQ(5ul, matrix5.getEntryCount());
 }
 
+TEST(SparseMatrix, DiagonalEntries) {
+    {
+        // No row groupings
+        storm::storage::SparseMatrixBuilder<double> builder(4, 4, 7);
+        storm::storage::SparseMatrixBuilder<double> builderCmp(4, 4, 7);
+        for (uint64_t i = 0; i < 4; ++i) {
+            ASSERT_NO_THROW(builder.addDiagonalEntry(i, i));
+            ASSERT_NO_THROW(builder.addNextValue(i, 2, 100.0 + i));
+            if (i < 2) {
+                ASSERT_NO_THROW(builderCmp.addNextValue(i, i, i));
+                ASSERT_NO_THROW(builderCmp.addNextValue(i, 2, 100.0 + i));
+            } else {
+                ASSERT_NO_THROW(builderCmp.addNextValue(i, 2, 100.0 + i));
+                ASSERT_NO_THROW(builderCmp.addNextValue(i, i, i));
+            }
+        }
+        auto matrix = builder.build();
+        auto matrixCmp = builderCmp.build();
+        EXPECT_EQ(matrix, matrixCmp);
+    }
+    {
+        // With row groupings (each row group has 3 rows)
+        storm::storage::SparseMatrixBuilder<double> builder(12, 4, 21, true, true, 4);
+        storm::storage::SparseMatrixBuilder<double> builderCmp(12, 4, 21, true, true, 4);
+        for (uint64_t i = 0; i < 4; ++i) {
+            uint64_t row = 3*i;
+            builder.newRowGroup(row);
+            builderCmp.newRowGroup(row);
+            for (; row < 3*(i+1); ++row) {
+                ASSERT_NO_THROW(builder.addDiagonalEntry(row, row));
+                ASSERT_NO_THROW(builder.addNextValue(row, 2, 100 + row));
+                if (i < 2) {
+                    ASSERT_NO_THROW(builderCmp.addNextValue(row, i, row));
+                    ASSERT_NO_THROW(builderCmp.addNextValue(row, 2, 100.0 + row));
+                } else {
+                    ASSERT_NO_THROW(builderCmp.addNextValue(row, 2, 100.0 + row));
+                    ASSERT_NO_THROW(builderCmp.addNextValue(row, i, row));
+                }
+            }
+        }
+        auto matrix = builder.build();
+        auto matrixCmp = builderCmp.build();
+        EXPECT_EQ(matrix, matrixCmp);
+    }
+    {
+        // With row groupings (every second row is empty)
+        storm::storage::SparseMatrixBuilder<double> builder(12, 4, 10, true, true, 4);
+        storm::storage::SparseMatrixBuilder<double> builderCmp(12, 4, 10, true, true, 4);
+        for (uint64_t i = 0; i < 4; ++i) {
+            uint64_t row = 3*i;
+            builder.newRowGroup(row);
+            builderCmp.newRowGroup(row);
+            for (; row < 3*(i+1); ++row) {
+                if (row % 2 == 1) {
+                    continue;
+                }
+                ASSERT_NO_THROW(builder.addDiagonalEntry(row, row));
+                ASSERT_NO_THROW(builder.addNextValue(row, 2, 100 + row));
+                if (i < 2) {
+                    ASSERT_NO_THROW(builderCmp.addNextValue(row, i, row));
+                    ASSERT_NO_THROW(builderCmp.addNextValue(row, 2, 100.0 + row));
+                } else {
+                    ASSERT_NO_THROW(builderCmp.addNextValue(row, i, row));
+                    ASSERT_NO_THROW(builderCmp.addNextValue(row, 2, 100.0 + row));
+                }
+            }
+        }
+        auto matrix = builder.build();
+        auto matrixCmp = builderCmp.build();
+        EXPECT_EQ(matrix, matrixCmp);
+    }
+}
+
 TEST(SparseMatrix, CreationWithMovingContents) {
     std::vector<storm::storage::MatrixEntry<uint_fast64_t, double>> columnsAndValues;
     columnsAndValues.emplace_back(1, 1.0);
