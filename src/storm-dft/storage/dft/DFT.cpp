@@ -799,6 +799,11 @@ namespace storm {
             bool sharedSpareMode = false;
             std::map<size_t, size_t> bijection;
 
+            if (getElement(index1)->isRelevant() || getElement(index2)->isRelevant()) {
+                // Relevant events need to be uniquely identified and cannot be symmetric.
+                return {};
+            }
+
             if (isBasicElement(index1)) {
                 if (!isBasicElement(index2)) {
                     return {};

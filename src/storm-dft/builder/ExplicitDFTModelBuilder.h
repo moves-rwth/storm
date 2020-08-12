@@ -155,10 +155,8 @@ namespace storm {
              *
              * @param dft DFT.
              * @param symmetries Symmetries in the dft.
-             * @param relevantEvents List with ids of relevant events which should be observed.
-             * @param allowDCForRelevantEvents If true, Don't Care propagation is allowed even for relevant events.
              */
-            ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, std::set<size_t> const& relevantEvents, bool allowDCForRelevantEvents);
+            ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries);
 
             /*!
              * Build model from DFT.
@@ -290,9 +288,6 @@ namespace storm {
             // General information for state generation
             // TODO: use const reference
             std::shared_ptr<storm::storage::DFTStateGenerationInfo> stateGenerationInfo;
-
-            // List with ids of relevant events which should be observed.
-            std::set<size_t> const& relevantEvents;
 
             // Heuristic used for approximation
             storm::builder::ApproximationHeuristic usedHeuristic;
