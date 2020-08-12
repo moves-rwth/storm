@@ -4,6 +4,8 @@
 
 #include "storm/modelchecker/csl/helper/SparseCtmcCslHelper.h"
 #include "storm/modelchecker/csl/helper/HybridCtmcCslHelper.h"
+#include "storm/modelchecker/helper/infinitehorizon/HybridInfiniteHorizonHelper.h"
+#include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
 
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
@@ -123,13 +125,19 @@ namespace storm {
             std::unique_ptr<CheckResult> subResultPointer = this->check(env, stateFormula);
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             
-            return storm::modelchecker::helper::HybridCtmcCslHelper::computeLongRunAverageProbabilities<DdType, ValueType>(env, this->getModel(), checkTask.isOnlyInitialStatesRelevantSet(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), subResult.getTruthValuesVector());
+            auto probabilisticTransitions = this->getModel().computeProbabilityMatrix();
+            storm::modelchecker::helper::HybridInfiniteHorizonHelper<ValueType, DdType, false> helper(this->getModel(), probabilisticTransitions, this->getModel().getExitRateVector());
+            storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, this->getModel());
+            return helper.computeLongRunAverageProbabilities(env, subResult.getTruthValuesVector());
         }
         
         template<typename ModelType>
         std::unique_ptr<CheckResult> HybridCtmcCslModelChecker<ModelType>::computeLongRunAverageRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
             auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
-            return storm::modelchecker::helper::HybridCtmcCslHelper::computeLongRunAverageRewards<DdType, ValueType>(env, this->getModel(), checkTask.isOnlyInitialStatesRelevantSet(), this->getModel().getTransitionMatrix(), this->getModel().getExitRateVector(), rewardModel.get());
+            auto probabilisticTransitions = this->getModel().computeProbabilityMatrix();
+            storm::modelchecker::helper::HybridInfiniteHorizonHelper<ValueType, DdType, false> helper(this->getModel(), probabilisticTransitions, this->getModel().getExitRateVector());
+            storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, this->getModel());
+            return helper.computeLongRunAverageRewards(env, rewardModel.get());
         }
         
         // Explicitly instantiate the model checker.
