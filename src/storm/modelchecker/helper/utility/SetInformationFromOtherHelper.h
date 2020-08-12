@@ -26,6 +26,21 @@ namespace storm {
                 // Scheduler Production
 			    targetHelper.setProduceScheduler(sourceHelperType.isProduceSchedulerSet());
             }
+            
+            /*!
+             * Forwards relevant information stored in another helper to the given helper
+             */
+            template <typename TargetHelperType, typename SourceHelperType>
+            void setInformationFromOtherHelperDeterministic(TargetHelperType& targetHelper, SourceHelperType const& sourceHelperType, std::function<typename TargetHelperType::StateSet(typename SourceHelperType::StateSet const&)> const& stateSetTransformer) {
+                // Relevancy of initial states.
+			    if (sourceHelperType.hasRelevantStates()) {
+			        targetHelper.setRelevantStates(stateSetTransformer(sourceHelperType.getRelevantStates()));
+			    }
+                // Value threshold to which the result will be compared
+			    if (sourceHelperType.isValueThresholdSet()) {
+			        targetHelper.setValueThreshold(sourceHelperType.getValueThresholdComparisonType(), storm::utility::convertNumber<typename TargetHelperType::ValueType>(sourceHelperType.getValueThresholdValue()));
+			    }
+            }
         }
     }
 }
