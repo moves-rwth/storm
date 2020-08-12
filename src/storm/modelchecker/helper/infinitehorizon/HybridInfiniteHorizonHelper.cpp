@@ -18,17 +18,17 @@ namespace storm {
             
             template <typename ValueType, storm::dd::DdType DdType, bool Nondeterministic>
             HybridInfiniteHorizonHelper<ValueType, DdType, Nondeterministic>::HybridInfiniteHorizonHelper(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix) : _model(model), _transitionMatrix(transitionMatrix), _markovianStates(nullptr), _exitRates(nullptr) {
-                // Intentionally left empty.
+                STORM_LOG_ASSERT(model.isNondeterministicModel() == Nondeterministic, "Template Parameter does not match model type.");
             }
             
             template <typename ValueType, storm::dd::DdType DdType, bool Nondeterministic>
             HybridInfiniteHorizonHelper<ValueType, DdType, Nondeterministic>::HybridInfiniteHorizonHelper(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& markovianStates, storm::dd::Add<DdType, ValueType> const& exitRateVector) : _model(model), _transitionMatrix(transitionMatrix), _markovianStates(&markovianStates), _exitRates(&exitRateVector) {
-                // Intentionally left empty.
+                STORM_LOG_ASSERT(model.isNondeterministicModel() == Nondeterministic, "Template Parameter does not match model type.");
             }
             
             template <typename ValueType, storm::dd::DdType DdType, bool Nondeterministic>
             HybridInfiniteHorizonHelper<ValueType, DdType, Nondeterministic>::HybridInfiniteHorizonHelper(storm::models::symbolic::Model<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Add<DdType, ValueType> const& exitRateVector) : _model(model), _transitionMatrix(transitionMatrix), _markovianStates(nullptr), _exitRates(&exitRateVector) {
-                // Intentionally left empty.
+                STORM_LOG_ASSERT(model.isNondeterministicModel() == Nondeterministic, "Template Parameter does not match model type.");
             }
             
             template <typename ValueType, storm::dd::DdType DdType, bool Nondeterministic>
@@ -38,7 +38,7 @@ namespace storm {
                 storm::dd::Odd odd = _model.getReachableStates().createOdd();
                 // Translate all required components
                 storm::storage::SparseMatrix<ValueType> explicitTransitionMatrix;
-                if (_model.isNondeterministicModel()) {
+                if (Nondeterministic) {
                     explicitTransitionMatrix = _transitionMatrix.toMatrix(dynamic_cast<storm::models::symbolic::NondeterministicModel<DdType, ValueType> const&>(_model).getNondeterminismVariables(), odd, odd);
                 } else {
                     explicitTransitionMatrix = _transitionMatrix.toMatrix(odd, odd);
@@ -69,14 +69,18 @@ namespace storm {
                 if (rewardModel.hasStateRewards()) {
                     explicitStateRewards = rewardModel.getStateRewardVector().toVector(odd);
                 }
-                if (_model.isNondeterministicModel() && rewardModel.hasStateActionRewards()) {
+                if (Nondeterministic && rewardModel.hasStateActionRewards()) {
                     // Matrix and action-based vector have to be produced at the same time to guarantee the correct order
                     auto matrixRewards = _transitionMatrix.toMatrixVector(rewardModel.getStateActionRewardVector(), dynamic_cast<storm::models::symbolic::NondeterministicModel<DdType, ValueType> const&>(_model).getNondeterminismVariables(), odd, odd);
                     explicitTransitionMatrix = std::move(matrixRewards.first);
                     explicitActionRewards = std::move(matrixRewards.second);
                 } else {
                     // Translate matrix only
-                    explicitTransitionMatrix = _transitionMatrix.toMatrix(dynamic_cast<storm::models::symbolic::NondeterministicModel<DdType, ValueType> const&>(_model).getNondeterminismVariables(), odd, odd);
+                    if (Nondeterministic) {
+                        explicitTransitionMatrix = _transitionMatrix.toMatrix(dynamic_cast<storm::models::symbolic::NondeterministicModel<DdType, ValueType> const&>(_model).getNondeterminismVariables(), odd, odd);
+                    } else {
+                        explicitTransitionMatrix = _transitionMatrix.toMatrix(odd, odd);
+                    }
                     if (rewardModel.hasStateActionRewards()) {
                         // For deterministic models we can translate the action rewards easily
                         explicitActionRewards = rewardModel.getStateActionRewardVector().toVector(odd);
