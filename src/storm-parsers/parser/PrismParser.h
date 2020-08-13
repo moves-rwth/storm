@@ -37,7 +37,6 @@ namespace storm {
                 formulas.clear();
                 globalBooleanVariables.clear();
                 globalIntegerVariables.clear();
-                moduleToIndexMap.clear();
                 players.clear();
                 playerControlledModules.clear();
                 playerControlledCommands.clear();
