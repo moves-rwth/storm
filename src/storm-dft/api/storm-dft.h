@@ -18,12 +18,6 @@
 
 namespace storm {
     namespace api {
-        struct PreprocessingResult {
-            uint64_t lowerBEBound;
-            uint64_t upperBEBound;
-            std::vector<std::pair<uint64_t, uint64_t>> fdepConflicts;
-        };
-
 
         /*!
          * Load DFT from Galileo file.
@@ -93,29 +87,36 @@ namespace storm {
             return transformedDFT;
         }
 
-        template <typename ValueType>
-        bool computeDependencyConflicts(storm::storage::DFT<ValueType> const& dft, bool useSMT, double solverTimeout) {
-            std::vector<std::pair<uint64_t, uint64_t>> fdepConflicts = storm::dft::utility::FDEPConflictFinder<ValueType>::getDependencyConflicts(*dft, useSMT, solverTimeout);
+        template<typename ValueType>
+        std::pair<uint64_t, uint64_t> computeBEFailureBounds(storm::storage::DFT<ValueType> const& dft, bool useSMT, double solverTimeout) {
+            uint64_t lowerBEBound = storm::dft::utility::FailureBoundFinder::getLeastFailureBound(dft, useSMT, solverTimeout);
+            uint64_t upperBEBound = storm::dft::utility::FailureBoundFinder::getAlwaysFailedBound(dft, useSMT, solverTimeout);
+            return std::make_pair(lowerBEBound, upperBEBound);
+        }
 
-            if (fdepConflicts.empty()) {
-                return false;
-            }
-            for (auto pair: fdepConflicts) {
+        template<typename ValueType>
+        bool computeDependencyConflicts(storm::storage::DFT<ValueType>& dft, bool useSMT, double solverTimeout) {
+            // Initialize which DFT elements have dynamic behavior
+            dft.setDynamicBehaviorInfo();
+
+            std::vector<std::pair<uint64_t, uint64_t>> fdepConflicts = storm::dft::utility::FDEPConflictFinder<ValueType>::getDependencyConflicts(dft, useSMT, solverTimeout);
+
+            for (auto const& pair: fdepConflicts) {
                 STORM_LOG_DEBUG("Conflict between " << dft.getElement(pair.first)->name() << " and " << dft.getElement(pair.second)->name());
             }
 
             // Set the conflict map of the dft
             std::set<size_t> conflict_set;
-            for (auto conflict : fdepConflicts) {
+            for (auto const& conflict : fdepConflicts) {
                 conflict_set.insert(size_t(conflict.first));
                 conflict_set.insert(size_t(conflict.second));
             }
-            for (size_t depId : dft->getDependencies()) {
+            for (size_t depId : dft.getDependencies()) {
                 if (!conflict_set.count(depId)) {
-                    dft->setDependencyNotInConflict(depId);
+                    dft.setDependencyNotInConflict(depId);
                 }
             }
-            return true;
+            return !fdepConflicts.empty();
         }
 
         /*!

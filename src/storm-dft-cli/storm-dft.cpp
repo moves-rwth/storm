@@ -90,46 +90,25 @@ void processOptions() {
     dft = storm::api::applyTransformations(*dft, faultTreeSettings.isUniqueFailedBE(), true);
     STORM_LOG_DEBUG(dft->getElementsString());
 
-
-    dft->setDynamicBehaviorInfo();
-
-    storm::api::PreprocessingResult preResults;
+    // Compute minimal number of BE failures leading to system failure and
+    // maximal number of BE failures not leading to system failure yet.
     // TODO: always needed?
-    preResults.lowerBEBound = storm::dft::utility::FailureBoundFinder::getLeastFailureBound(*dft, useSMT, solverTimeout);
-    preResults.upperBEBound = storm::dft::utility::FailureBoundFinder::getAlwaysFailedBound(*dft, useSMT, solverTimeout);
-    STORM_LOG_DEBUG("BE failure bounds" << std::endl << "========================================" << std::endl <<
-                                        "Lower bound: " << std::to_string(preResults.lowerBEBound) << std::endl <<
-                                        "Upper bound: " << std::to_string(preResults.upperBEBound));
+    auto bounds = storm::api::computeBEFailureBounds(*dft, useSMT, solverTimeout);
+    STORM_LOG_DEBUG("BE failure bounds: lower bound: " << bounds.first << ", upper bound: " << bounds.second << ".");
 
-    // TODO: move into API call?
-    preResults.fdepConflicts = storm::dft::utility::FDEPConflictFinder<ValueType>::getDependencyConflicts(*dft, useSMT, solverTimeout);
-
-    if (preResults.fdepConflicts.empty()) {
-        STORM_LOG_DEBUG("No FDEP conflicts found");
+    // Check which FDEPs actually introduce conflicts which need non-deterministic resolution
+    bool hasConflicts = storm::api::computeDependencyConflicts(*dft, useSMT, solverTimeout);
+    if (hasConflicts) {
+        STORM_LOG_DEBUG("FDEP conflicts found.");
     } else {
-        STORM_LOG_DEBUG("========================================" << std::endl << "FDEP CONFLICTS" << std::endl << "========================================");
-    }
-    for (auto pair: preResults.fdepConflicts) {
-        STORM_LOG_DEBUG("Conflict between " << dft->getElement(pair.first)->name() << " and " << dft->getElement(pair.second)->name());
-    }
-
-    // Set the conflict map of the dft
-    std::set<size_t> conflict_set;
-    for (auto conflict : preResults.fdepConflicts) {
-        conflict_set.insert(size_t(conflict.first));
-        conflict_set.insert(size_t(conflict.second));
-    }
-    for (size_t depId : dft->getDependencies()) {
-        if (!conflict_set.count(depId)) {
-            dft->setDependencyNotInConflict(depId);
-        }
+        STORM_LOG_DEBUG("No FDEP conflicts found.");
     }
 
 
 #ifdef STORM_HAVE_Z3
     if (useSMT) {
         // Solve with SMT
-        STORM_LOG_DEBUG("Running DFT analysis with use of SMT");
+        STORM_LOG_DEBUG("Running DFT analysis with use of SMT.");
         // Set dynamic behavior vector
         storm::api::analyzeDFTSMT(*dft, true);
     }
