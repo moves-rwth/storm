@@ -24,16 +24,12 @@ namespace storm {
                 stream << " " << player.getName();
             }
             stream << std::endl;
-            //for (auto const& module : player.getModules()) {
-            //    stream << module.getName() << " ";
-            //    //&module != (player.getModules()).back ? std::cout << "," : std::cout << std::endl;
-            //}
-            //stream << std::endl;
-            //for (auto const& command : player.getCommands()) {
-            //    stream << "[" << command.getActionName() << "] ";
-            //    //&command != (player.getCommands()).back ? std::cout << "," : std::cout << std::endl;
-            //}
-            //stream << std::endl;
+            for (auto const& module : player.getModules()) {
+                stream << "\t" << module.first << std::endl;
+            }
+            for (auto const& command : player.getCommands()) {
+                stream << "\t[" << command.first << "]" << std::endl;
+            }
             stream << "endplayer" << std::endl;
             return stream;
         }
