@@ -137,12 +137,12 @@ namespace storm {
             std::set<std::string> appearingModules;
         };
 
-        Program::Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, std::vector<Label> const& labels, std::vector<ObservationLabel> const& observationLabels, boost::optional<InitialConstruct> const& initialConstruct, boost::optional<SystemCompositionConstruct> const& compositionConstruct, bool prismCompatibility, std::string const& filename, uint_fast64_t lineNumber, bool finalModel)
+        Program::Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Player> const& players, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, std::vector<Label> const& labels, std::vector<ObservationLabel> const& observationLabels, boost::optional<InitialConstruct> const& initialConstruct, boost::optional<SystemCompositionConstruct> const& compositionConstruct, bool prismCompatibility, std::string const& filename, uint_fast64_t lineNumber, bool finalModel)
         : LocatedInformation(filename, lineNumber), manager(manager),
         modelType(modelType), constants(constants), constantToIndexMap(),
         globalBooleanVariables(globalBooleanVariables), globalBooleanVariableToIndexMap(),
         globalIntegerVariables(globalIntegerVariables), globalIntegerVariableToIndexMap(),
-        formulas(formulas), formulaToIndexMap(), modules(modules), moduleToIndexMap(),
+        formulas(formulas), formulaToIndexMap(), players(players), modules(modules), moduleToIndexMap(),
         rewardModels(rewardModels), rewardModelToIndexMap(), systemCompositionConstruct(compositionConstruct),
         labels(labels), labelToIndexMap(), observationLabels(observationLabels), actionToIndexMap(actionToIndexMap), indexToActionMap(), actions(),
         synchronizingActionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap(), prismCompatibility(prismCompatibility)
@@ -479,6 +479,10 @@ namespace storm {
             return this->formulas;
         }
 
+        std::vector<Player> const& Program::getPlayers() const {
+            return this->players;
+        }
+
         std::size_t Program::getNumberOfFormulas() const {
             return this->getFormulas().size();
         }
@@ -778,7 +782,7 @@ namespace storm {
                 newModules.push_back(module.restrictCommands(indexSet));
             }
 
-            return Program(this->manager, this->getModelType(), this->getConstants(), this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), newModules, this->getActionNameToIndexMapping(), this->getRewardModels(), this->getLabels(), this->getObservationLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct(), prismCompatibility);
+            return Program(this->manager, this->getModelType(), this->getConstants(), this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), this->getPlayers(), newModules, this->getActionNameToIndexMapping(), this->getRewardModels(), this->getLabels(), this->getObservationLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct(), prismCompatibility);
         }
 
         void Program::createMappings() {
@@ -875,7 +879,7 @@ namespace storm {
                 }
             }
 
-            return Program(this->manager, this->getModelType(), newConstants, this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), this->getModules(), this->getActionNameToIndexMapping(), this->getRewardModels(), this->getLabels(), this->getObservationLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct(), prismCompatibility);
+            return Program(this->manager, this->getModelType(), newConstants, this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), this->getPlayers(), this->getModules(), this->getActionNameToIndexMapping(), this->getRewardModels(), this->getLabels(), this->getObservationLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct(), prismCompatibility);
         }
 
         Program Program::substituteConstants() const {
@@ -954,7 +958,7 @@ namespace storm {
                 newObservationLabels.emplace_back(label.substitute(substitution));
             }
 
-            return Program(this->manager, this->getModelType(), newConstants, newBooleanVariables, newIntegerVariables, newFormulas, newModules, this->getActionNameToIndexMapping(), newRewardModels, newLabels, newObservationLabels, newInitialConstruct, this->getOptionalSystemCompositionConstruct(), prismCompatibility);
+            return Program(this->manager, this->getModelType(), newConstants, newBooleanVariables, newIntegerVariables, newFormulas, this->getPlayers(), newModules, this->getActionNameToIndexMapping(), newRewardModels, newLabels, newObservationLabels, newInitialConstruct, this->getOptionalSystemCompositionConstruct(), prismCompatibility);
         }
 
         void Program::checkValidity(Program::ValidityCheckLevel lvl) const {
@@ -1512,7 +1516,7 @@ namespace storm {
                 newLabels.emplace_back(label.getName(), label.getStatePredicateExpression().simplify());
             }
 
-            return Program(this->manager, modelType, newConstants, getGlobalBooleanVariables(), getGlobalIntegerVariables(), getFormulas(), newModules, actionIndicesToDelete.empty() ? getActionNameToIndexMapping() : newActionToIndexMap, actionIndicesToDelete.empty() ? this->getRewardModels() : newRewardModels, newLabels, getObservationLabels(), getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct(), prismCompatibility);
+            return Program(this->manager, modelType, newConstants, getGlobalBooleanVariables(), getGlobalIntegerVariables(), getFormulas(), this->getPlayers(), newModules, actionIndicesToDelete.empty() ? getActionNameToIndexMapping() : newActionToIndexMap, actionIndicesToDelete.empty() ? this->getRewardModels() : newRewardModels, newLabels, getObservationLabels(), getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct(), prismCompatibility);
         }
 
         Program Program::flattenModules(std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) const {
@@ -1720,7 +1724,7 @@ namespace storm {
             // Finally, we can create the module and the program and return it.
             storm::prism::Module singleModule(newModuleName.str(), allBooleanVariables, allIntegerVariables, allClockVariables, newInvariant, newCommands, this->getFilename(), 0);
 
-            return Program(manager, this->getModelType(), this->getConstants(), std::vector<storm::prism::BooleanVariable>(), std::vector<storm::prism::IntegerVariable>(), this->getFormulas(), {singleModule}, actionToIndexMap, this->getRewardModels(), this->getLabels(), this->getObservationLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct(), prismCompatibility, this->getFilename(), 0, true);
+            return Program(manager, this->getModelType(), this->getConstants(), std::vector<storm::prism::BooleanVariable>(), std::vector<storm::prism::IntegerVariable>(), this->getFormulas(), this->getPlayers(), {singleModule}, actionToIndexMap, this->getRewardModels(), this->getLabels(), this->getObservationLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct(), prismCompatibility, this->getFilename(), 0, true);
         }
 
         std::vector<Constant> Program::usedConstants() const {
@@ -1946,6 +1950,10 @@ namespace storm {
                 stream << constant << std::endl;
             }
             stream << std::endl;
+
+            for (auto const& player : program.getPlayers()) {
+                stream << player << std::endl;
+            }
 
             for (auto const& variable : program.getGlobalBooleanVariables()) {
                 stream << "global " << variable << std::endl;

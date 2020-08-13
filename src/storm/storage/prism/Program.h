@@ -58,7 +58,7 @@ namespace storm {
              * @param lineNumber The line number in which the program is defined.
              * @param finalModel If set to true, the program is checked for input-validity, as well as some post-processing.
              */
-            Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, std::vector<Label> const& labels, std::vector<ObservationLabel> const& observationLabels, boost::optional<InitialConstruct> const& initialConstruct, boost::optional<SystemCompositionConstruct> const& compositionConstruct, bool prismCompatibility, std::string const& filename = "", uint_fast64_t lineNumber = 0, bool finalModel = true);
+            Program(std::shared_ptr<storm::expressions::ExpressionManager> manager, ModelType modelType, std::vector<Constant> const& constants, std::vector<BooleanVariable> const& globalBooleanVariables, std::vector<IntegerVariable> const& globalIntegerVariables, std::vector<Formula> const& formulas, std::vector<Player> const& players, std::vector<Module> const& modules, std::map<std::string, uint_fast64_t> const& actionToIndexMap, std::vector<RewardModel> const& rewardModels, std::vector<Label> const& labels, std::vector<ObservationLabel> const& observationLabels, boost::optional<InitialConstruct> const& initialConstruct, boost::optional<SystemCompositionConstruct> const& compositionConstruct, bool prismCompatibility, std::string const& filename = "", uint_fast64_t lineNumber = 0, bool finalModel = true);
 
             // Provide default implementations for constructors and assignments.
             Program() = default;
@@ -274,6 +274,13 @@ namespace storm {
              * @return The formulas defined in the program.
              */
             std::vector<Formula> const& getFormulas() const;
+
+            /*!
+             * Retrieves the players of the program.
+             *
+             * @return The players of the program.
+             */
+            std::vector<Player> const& getPlayers() const;
 
             /*!
              * Retrieves the number of formulas in the program.
@@ -738,6 +745,9 @@ namespace storm {
 
             // The modules associated with the program.
             std::vector<Module> modules;
+
+            // The players associated with the program.
+            std::vector<Player> players;
 
             // A mapping of module names to their indices.
             std::map<std::string, uint_fast64_t> moduleToIndexMap;

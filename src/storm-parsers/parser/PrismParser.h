@@ -38,6 +38,7 @@ namespace storm {
                 globalBooleanVariables.clear();
                 globalIntegerVariables.clear();
                 moduleToIndexMap.clear();
+                players.clear();
                 modules.clear();
                 rewardModels.clear();
                 labels.clear();
@@ -63,6 +64,7 @@ namespace storm {
             std::vector<storm::prism::Label> labels;
             std::vector<storm::prism::ObservationLabel> observationLabels;
             std::vector<storm::prism::Player> players;
+
             bool hasInitialConstruct;
             storm::prism::InitialConstruct initialConstruct;
             boost::optional<storm::prism::SystemCompositionConstruct> systemCompositionConstruct;
@@ -268,7 +270,7 @@ namespace storm {
             qi::rule<Iterator, std::string(), Skipper> freshPlayerName;
             qi::rule<Iterator, std::string(), qi::locals<std::string>, Skipper> commandName;
             qi::rule<Iterator, std::string(), qi::locals<std::string>, Skipper> moduleName;
-            qi::rule<Iterator, qi::unused_type(), qi::locals<std::string, std::vector<std::string>, std::vector<std::string>>, Skipper> playerDefinition;
+            qi::rule<Iterator, storm::prism::Player(GlobalProgramInformation&), qi::locals<std::string, std::vector<std::string>, std::vector<std::string>>, Skipper> playerDefinition;
 
             // Rules for initial states expression.
             qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> initialStatesConstruct;
