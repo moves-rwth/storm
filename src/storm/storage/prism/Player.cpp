@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace prism {
-        Player::Player(std::string const& playerName, std::vector<storm::prism::Module> const& controlledModules, std::vector<storm::prism::Command> const& controlledCommands, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), playerName(playerName), controlledModules(controlledModules), controlledCommands(controlledCommands) {
+        Player::Player(std::string const& playerName, std::map<std::string, uint_fast64_t> const& controlledModules, std::map<std::string, uint_fast64_t> const& controlledCommands, std::string const& filename, uint_fast64_t lineNumber) : LocatedInformation(filename, lineNumber), playerName(playerName), controlledModules(controlledModules), controlledCommands(controlledCommands) {
             // Nothing to do here.
         }
 
@@ -10,11 +10,11 @@ namespace storm {
             return this->playerName;
         }
 
-        std::vector<storm::prism::Module> const& Player::getModules() const {
+        std::map<std::string, uint_fast64_t> const& Player::getModules() const {
             return this->controlledModules;
         }
 
-        std::vector<storm::prism::Command> const& Player::getCommands() const {
+        std::map<std::string, uint_fast64_t> const& Player::getCommands() const {
             return this->controlledCommands;
         }
 
@@ -24,16 +24,16 @@ namespace storm {
                 stream << " " << player.getName();
             }
             stream << std::endl;
-            for (auto const& module : player.getModules()) {
-                stream << module.getName() << " ";
-                //&module != (player.getModules()).back ? std::cout << "," : std::cout << std::endl;
-            }
-            stream << std::endl;
-            for (auto const& command : player.getCommands()) {
-                stream << "[" << command.getActionName() << "] ";
-                //&command != (player.getCommands()).back ? std::cout << "," : std::cout << std::endl;
-            }
-            stream << std::endl;
+            //for (auto const& module : player.getModules()) {
+            //    stream << module.getName() << " ";
+            //    //&module != (player.getModules()).back ? std::cout << "," : std::cout << std::endl;
+            //}
+            //stream << std::endl;
+            //for (auto const& command : player.getCommands()) {
+            //    stream << "[" << command.getActionName() << "] ";
+            //    //&command != (player.getCommands()).back ? std::cout << "," : std::cout << std::endl;
+            //}
+            //stream << std::endl;
             stream << "endplayer" << std::endl;
             return stream;
         }
