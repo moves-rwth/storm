@@ -39,6 +39,8 @@ namespace storm {
                 globalIntegerVariables.clear();
                 moduleToIndexMap.clear();
                 players.clear();
+                playerControlledModules.clear();
+                playerControlledCommands.clear();
                 modules.clear();
                 rewardModels.clear();
                 labels.clear();
@@ -64,6 +66,9 @@ namespace storm {
             std::vector<storm::prism::Label> labels;
             std::vector<storm::prism::ObservationLabel> observationLabels;
             std::vector<storm::prism::Player> players;
+
+            std::vector<std::string> playerControlledModules;
+            std::vector<std::string> playerControlledCommands;
 
             bool hasInitialConstruct;
             storm::prism::InitialConstruct initialConstruct;
@@ -368,7 +373,7 @@ namespace storm {
             storm::prism::Module createModule(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::ClockVariable> const& clockVariables, boost::optional<storm::expressions::Expression> const& invariant, std::vector<storm::prism::Command> const& commands, GlobalProgramInformation& globalProgramInformation) const;
             storm::prism::ModuleRenaming createModuleRenaming(std::map<std::string,std::string> const& renaming) const;
             storm::prism::Module createRenamedModule(std::string const& newModuleName, std::string const& oldModuleName, storm::prism::ModuleRenaming const& renaming, GlobalProgramInformation& globalProgramInformation) const;
-            storm::prism::Player createPlayer(std::string const& playerName, std::vector<std::string> const& moduleNames, std::vector<std::string> const & commandNames) const;
+            storm::prism::Player createPlayer(std::string const& playerName, std::vector<std::string> const& moduleNames, std::vector<std::string> const & commandNames);
             storm::prism::Program createProgram(GlobalProgramInformation const& globalProgramInformation) const;
             void createObservablesList(std::vector<std::string> const& observables);
 
