@@ -21,7 +21,7 @@ namespace storm {
         std::ostream& operator<<(std::ostream& stream, Player const& player) {
             stream << "player";
             if (player.getName() != "") {
-                stream << " \"" << player.getName() << "\"";
+                stream << " " << player.getName();
             }
             stream << std::endl;
             for (auto const& module : player.getModules()) {
@@ -33,7 +33,8 @@ namespace storm {
                 stream << "[" << command.getActionName() << "] ";
                 //&command != (player.getCommands()).back ? std::cout << "," : std::cout << std::endl;
             }
-            stream << "player" << std::endl;
+            stream << std::endl;
+            stream << "endplayer" << std::endl;
             return stream;
         }
     } // namespace prism
