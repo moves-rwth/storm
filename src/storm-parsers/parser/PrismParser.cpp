@@ -778,7 +778,11 @@ namespace storm {
         }
 
         storm::prism::Module PrismParser::createModule(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::ClockVariable> const& clockVariables, boost::optional<storm::expressions::Expression> const& invariant, std::vector<storm::prism::Command> const& commands, GlobalProgramInformation& globalProgramInformation) const {
-            globalProgramInformation.moduleToIndexMap[moduleName] = globalProgramInformation.modules.size();
+            if (!this->secondRun) {
+                globalProgramInformation.moduleToIndexMap[moduleName] = globalProgramInformation.modules.size();
+            } else {
+                STORM_LOG_THROW(globalProgramInformation.moduleToIndexMap[moduleName] == globalProgramInformation.modules.size(), storm::exceptions::WrongFormatException, "Internal error while parsing: the index for module " << moduleName << " does not match the on in the first run.");
+            }
             return storm::prism::Module(moduleName, booleanVariables, integerVariables, clockVariables, invariant.is_initialized()? invariant.get() : storm::expressions::Expression(), commands, this->getFilename());
         }
 
