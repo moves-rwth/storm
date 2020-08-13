@@ -782,15 +782,31 @@ namespace storm {
             return storm::prism::Module(moduleName, booleanVariables, integerVariables, clockVariables, invariant.is_initialized()? invariant.get() : storm::expressions::Expression(), commands, this->getFilename());
         }
 
-        storm::prism::Player PrismParser::createPlayer(std::string const& playerName, std::vector<std::string> const& moduleNames, std::vector<std::string> const & commandNames) const {
-            STORM_LOG_DEBUG("PLAYER created:" << playerName);
-            for(std::string moduleName : moduleNames)
-                STORM_LOG_DEBUG("moduleName:" << moduleName);
-            for(std::string commandName : commandNames)
-                STORM_LOG_DEBUG("commandName:" << commandName);
-            std::vector<storm::prism::Module> modules;
-            std::vector<storm::prism::Command> commands;
-            return storm::prism::Player(playerName, modules, commands);
+        storm::prism::Player PrismParser::createPlayer(std::string const& playerName, std::vector<std::string> const& moduleNames, std::vector<std::string> const & actionNames) const {
+            if (this->secondRun) {
+                std::map<std::string, uint_fast64_t> controlledModuleIndices;
+                std::map<std::string, uint_fast64_t> controlledActionIndices;
+                for(std::string moduleName : moduleNames) {
+                    auto const& moduleIndexPair = globalProgramInformation.moduleToIndexMap.find(moduleName);
+                    if (moduleIndexPair != globalProgramInformation.moduleToIndexMap.end()) {
+                        controlledModuleIndices.insert(std::pair<std::string, uint_fast64_t>(moduleIndexPair->first, moduleIndexPair->second));
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << " for player " << playerName << ": No module named '" << moduleName << "' present.");
+                    }
+                }
+                for(std::string actionName : actionNames) {
+                    auto const& actionIndexPair = globalProgramInformation.actionIndices.find(actionName);
+                    if (actionIndexPair != globalProgramInformation.actionIndices.end()) {
+                        controlledActionIndices.insert(std::pair<std::string, uint_fast64_t>(actionIndexPair->first, actionIndexPair->second));
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << " for player " << playerName << ": No action named '" << actionName << "' present.");
+                    }
+                }
+                STORM_LOG_DEBUG("PLAYER created:" << playerName);
+                return storm::prism::Player(playerName, controlledModuleIndices, controlledActionIndices);
+            } else {
+                return storm::prism::Player();
+            }
         }
 
         bool PrismParser::isValidModuleRenaming(std::string const& oldModuleName, storm::prism::ModuleRenaming const& moduleRenaming, GlobalProgramInformation const& globalProgramInformation) const {
