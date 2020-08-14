@@ -448,17 +448,21 @@ namespace storm {
         std::shared_ptr<Order> Order::copy() const {
             // TODO Maybe put some of this into the empty constructor?
             std::shared_ptr<Order> copiedOrder = std::make_shared<Order>();
+
+            copiedOrder->nodes = std::vector<Node *>(numberOfStates, nullptr);
             copiedOrder->setDoneBuilding(this->getDoneBuilding());
             copiedOrder->onlyBottomTopOrder = this->isOnlyBottomTopOrder();
             copiedOrder->numberOfStates = this->getNumberOfStates();
             copiedOrder->statesToHandle = std::vector<uint_fast64_t>(this->getStatesToHandle());
             copiedOrder->statesSorted = std::vector<uint_fast64_t>(this->getStatesSorted());
+            copiedOrder->addedStates = new storm::storage::BitVector(numberOfStates);
 
             //copy nodes
             copiedOrder->top = new Node();
             copiedOrder->bottom = new Node();
             copiedOrder->top->statesAbove = storm::storage::BitVector(numberOfStates);
             copiedOrder->bottom->statesAbove = storm::storage::BitVector(numberOfStates);
+
             auto oldNodes = this->getNodes();
             for (auto itr = oldNodes.begin(); itr != oldNodes.end(); ++itr) {
                 Node *oldNode = (*itr);

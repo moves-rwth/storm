@@ -67,8 +67,7 @@ namespace storm {
                 unprocessedRegions.emplace(region, RegionResult::Unknown);
                 refinementDepths.push(0);
 
-                //TODO Only for testing purposes, delete later This should be done through setUseMonotonicityInFuture the api does this already so if you use the --use-monotonicity flag useMonotonicity should be true
-//                this->useMonotonicity = true;
+                //TODO Only for testing purposes, delete later
                 this->monThreshold = 2;
 
                 uint_fast64_t numOfAnalyzedRegions = 0;
@@ -87,18 +86,9 @@ namespace storm {
                     displayedProgress = storm::utility::zero<CoefficientType>();
                 }
 
-                // TODO @Svenja
-                // You could also do while ((!useMonotonicity || currentDepth < monThreshold) && fractionOfUndiscoveredArea > thresholdAsCoefficient && !unprocessedRegions.empty())
-                // I think it is a "lazy" checker, so wenn !useMonotonicity holds, it won't check for currentDepth < monThreshold anymore
-                if (!useMonotonicity) {
-                    monThreshold = depthThreshold.get() + 1;
-                    // To avoid overflow
-                    assert(monThreshold > depthThreshold);
-                }
-
                 //NORMAL WHILE LOOP
                 uint64_t currentDepth = refinementDepths.front();
-                while (currentDepth < monThreshold && fractionOfUndiscoveredArea > thresholdAsCoefficient && !unprocessedRegions.empty()) {
+                while ((!useMonotonicity || currentDepth < monThreshold) && fractionOfUndiscoveredArea > thresholdAsCoefficient && !unprocessedRegions.empty()) {
                     assert(unprocessedRegions.size() == refinementDepths.size());
                     STORM_LOG_INFO("Analyzing region #" << numOfAnalyzedRegions << " (Refinement depth " << currentDepth << "; " << storm::utility::convertNumber<double>(fractionOfUndiscoveredArea) * 100 << "% still unknown)");
                     STORM_PRINT(" NO MON @ Refinement depth " << currentDepth << std::endl);
@@ -153,7 +143,6 @@ namespace storm {
                     currentDepth = refinementDepths.front();
                 }
 
-                // TODO @Svenja, I moved this here and added an aditional check as orderextending can be expensive and we don't want this to happen if we don't need it.
                 // FIFO queues for the order and local monotonicity results
                 std::queue<std::shared_ptr<storm::analysis::Order>> orders;
                 std::queue<std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>> localMonotonicityResults;
@@ -166,8 +155,11 @@ namespace storm {
                     } else {
                         assert (false);
                     }
-                    // TODO @ Svenja, the modelchecker can actually also make use of the monotonicity now
                     setUseMonotonicityNow();
+                    while(unprocessedRegions.size() > orders.size()){
+                        orders.emplace(orders.front()->copy());
+                        localMonotonicityResults.emplace(localMonotonicityResults.front()->copy());
+                    }
                 }
 
                 //USEMON WHILE LOOP
@@ -240,9 +232,7 @@ namespace storm {
                                     } else {
                                         if (!order->getDoneBuilding()) {
                                             // we need to use copies for both order and local mon res
-                                            //TODO @Jip Replace copy constructor with order->copy() here?
-                                            // TODO @Svenja yess
-                                            orders.emplace(std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(order)));
+                                            orders.emplace(order->copy());
                                             localMonotonicityResults.emplace(localMonotonicityResult->copy());
                                         } else if (!localMonotonicityResult->isDone()) {
                                             // the order will not change anymore
@@ -265,16 +255,13 @@ namespace storm {
                                 result.push_back(std::move(unprocessedRegions.front()));
                             }
 
-                            // TODO @ Jip The pops are moved here for now or else there will be more orders removed than added + segfault will occur.
-                            // Is that alright or does it need to go somewhere else?
-                            // TODO @Svenja We need tot pop the orders/localMonRes at the same point as we pop the unprocessed Regions I think so I guess it should be at the same place as the unprocessedRegions, but I'm not a 100% sure.
-                            orders.pop();
-                            localMonotonicityResults.pop();
                             break;
                     }
                     ++numOfAnalyzedRegions;
                     unprocessedRegions.pop();
                     refinementDepths.pop();
+                    orders.pop();
+                    localMonotonicityResults.pop();
 
                     if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
                         while (displayedProgress < storm::utility::one<CoefficientType>() - fractionOfUndiscoveredArea) {
