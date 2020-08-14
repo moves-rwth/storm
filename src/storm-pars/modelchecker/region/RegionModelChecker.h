@@ -58,9 +58,9 @@ namespace storm {
              * @param coverageThreshold if given, the refinement stops as soon as the fraction of the area of the subregions with inconclusive result is less then this threshold
              * @param depthThreshold if given, the refinement stops at the given depth. depth=0 means no refinement.
              * @param hypothesis if not 'unknown', it is only checked whether the hypothesis holds within the given region.
-             *
+             * @param monThresh if given, determines at which depth to start using monotonicity
              */
-            std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> performRegionRefinement(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, boost::optional<ParametricType> const& coverageThreshold, boost::optional<uint64_t> depthThreshold = boost::none, RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown);
+            std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> performRegionRefinement(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, boost::optional<ParametricType> const& coverageThreshold, boost::optional<uint64_t> depthThreshold = boost::none, RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown, uint64_t monThresh = 0);
             
             /*!
              * Finds the extremal value within the given region and with the given precision.
@@ -81,6 +81,7 @@ namespace storm {
             virtual std::map<VariableType, double> getRegionSplitEstimate() const;
 
             virtual std::shared_ptr<storm::analysis::Order> extendOrder(std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ParametricType> region);
+
             virtual void setConstantEntries(std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
 
             bool isUseMonotonicitySet();
@@ -95,6 +96,8 @@ namespace storm {
             bool useMonotonicity = false;
 
         protected:
+
+            // TODO @Jip Do we even need this if we get the monThresh via parameter in PerformRegionRefinement?
 
             void setMonThreshold(uint64_t monThresh = 0);
 

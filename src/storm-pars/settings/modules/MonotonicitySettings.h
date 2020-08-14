@@ -34,7 +34,7 @@ namespace storm {
                 bool isDotOutputSet() const;
 
                 /*!
-                 * R
+                 * Retrieves the name of the file for a possible dot output
                  */
                 std::string getDotOutputFilename() const;
 
@@ -49,14 +49,19 @@ namespace storm {
                 double getMonotonicityAnalysisPrecision() const;
 
                 /*!
-               *
-               */
+                 *
+                 */
                 bool isExportMonotonicitySet() const;
 
                 /*!
                  *
                  */
                 std::string getExportMonotonicityFilename() const;
+
+                /*!
+                 * Retrieves the depth threshold from which on monotonicity should be used in parameter lifting
+                 */
+                uint64_t getMonotonicityThreshold() const;
 
 
                 const static std::string moduleName;
@@ -69,6 +74,7 @@ namespace storm {
                 const static std::string dotOutput;
                 const static std::string dotOutputName;
                 static const std::string exportMonotonicityName;
+                const static std::string monotonicityThreshold;
 
             };
 

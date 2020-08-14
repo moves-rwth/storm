@@ -453,7 +453,7 @@ namespace storm {
         }
         
         template <typename ValueType>
-        void verifyRegionsWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, bool const& useMonotonicity = false) {
+        void verifyRegionsWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, bool const& useMonotonicity = false, uint64_t monThresh = 0) {
             STORM_LOG_ASSERT(!regions.empty(), "Can not analyze an empty set of regions.");
 
             auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
@@ -490,7 +490,7 @@ namespace storm {
                         optionalDepthLimit = regionSettings.getDepthLimit();
                     }
                     // TODO: change allow model simplification when not using monotonicity, for benchmarking purposes simplification is moved forward.
-                    std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true), regions.front(), engine, refinementThreshold, optionalDepthLimit, regionSettings.getHypothesis(), false, useMonotonicity);
+                    std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true), regions.front(), engine, refinementThreshold, optionalDepthLimit, regionSettings.getHypothesis(), false, useMonotonicity, monThresh);
                     return result;
                 };
             } else {
@@ -511,7 +511,7 @@ namespace storm {
         }
 
         template <typename ValueType>
-        void verifyWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, SampleInformation<ValueType> const& samples, bool const& useMonotonicity=false) {
+        void verifyWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, SampleInformation<ValueType> const& samples, bool const& useMonotonicity=false, uint64_t monThresh = 0) {
             if (regions.empty()) {
                 storm::pars::verifyPropertiesWithSparseEngine(model, input, samples);
             } else {
@@ -519,7 +519,7 @@ namespace storm {
                 if (regionSettings.isExtremumSet()) {
                     storm::pars::computeRegionExtremumWithSparseEngine(model, input, regions);
                 } else {
-                    storm::pars::verifyRegionsWithSparseEngine(model, input, regions, useMonotonicity);
+                    storm::pars::verifyRegionsWithSparseEngine(model, input, regions, useMonotonicity, monThresh);
                 }
             }
         }
@@ -558,9 +558,9 @@ namespace storm {
         }
 
         template <storm::dd::DdType DdType, typename ValueType>
-        void verifyParametricModel(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, SampleInformation<ValueType> const& samples, bool const& useMonotonicity=false) {
+        void verifyParametricModel(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, SampleInformation<ValueType> const& samples, bool const& useMonotonicity=false, uint64_t monThresh = 0) {
             if (model->isSparseModel()) {
-                storm::pars::verifyWithSparseEngine<ValueType>(model->as<storm::models::sparse::Model<ValueType>>(), input, regions, samples, useMonotonicity);
+                storm::pars::verifyWithSparseEngine<ValueType>(model->as<storm::models::sparse::Model<ValueType>>(), input, regions, samples, useMonotonicity, monThresh);
             } else {
                 storm::pars::verifyWithDdEngine<DdType, ValueType>(model->as<storm::models::symbolic::Model<DdType, ValueType>>(), input, regions, samples);
             }
@@ -754,7 +754,7 @@ namespace storm {
             }
 
             if (model) {
-                verifyParametricModel<DdType, ValueType>(model, input, regions, samples, parSettings.isUseMonotonicitySet());
+                verifyParametricModel<DdType, ValueType>(model, input, regions, samples, parSettings.isUseMonotonicitySet(), monSettings.getMonotonicityThreshold());
             }
         }
 

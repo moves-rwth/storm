@@ -48,7 +48,7 @@ namespace storm {
             }
         
             template <typename ParametricType>
-            std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> RegionModelChecker<ParametricType>::performRegionRefinement(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, boost::optional<ParametricType> const& coverageThreshold, boost::optional<uint64_t> depthThreshold, RegionResultHypothesis const& hypothesis) {
+            std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ParametricType>> RegionModelChecker<ParametricType>::performRegionRefinement(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, boost::optional<ParametricType> const& coverageThreshold, boost::optional<uint64_t> depthThreshold, RegionResultHypothesis const& hypothesis, uint64_t monThresh) {
                 STORM_LOG_INFO("Applying refinement on region: " << region.toString(true) << " .");
                 
                 auto thresholdAsCoefficient = coverageThreshold ? storm::utility::convertNumber<CoefficientType>(coverageThreshold.get()) : storm::utility::zero<CoefficientType>();
@@ -67,8 +67,7 @@ namespace storm {
                 unprocessedRegions.emplace(region, RegionResult::Unknown);
                 refinementDepths.push(0);
 
-                //TODO Only for testing purposes, delete later
-                this->monThreshold = 2;
+                setMonThreshold(monThresh);
 
                 uint_fast64_t numOfAnalyzedRegions = 0;
                 CoefficientType displayedProgress = storm::utility::zero<CoefficientType>();
@@ -86,7 +85,7 @@ namespace storm {
                     displayedProgress = storm::utility::zero<CoefficientType>();
                 }
 
-                //NORMAL WHILE LOOP
+                // NORMAL WHILE LOOP
                 uint64_t currentDepth = refinementDepths.front();
                 while ((!useMonotonicity || currentDepth < monThreshold) && fractionOfUndiscoveredArea > thresholdAsCoefficient && !unprocessedRegions.empty()) {
                     assert(unprocessedRegions.size() == refinementDepths.size());
@@ -162,7 +161,7 @@ namespace storm {
                     }
                 }
 
-                //USEMON WHILE LOOP
+                // USEMON WHILE LOOP
                 while (useMonotonicity && fractionOfUndiscoveredArea > thresholdAsCoefficient && !unprocessedRegions.empty()) {
                     assert(unprocessedRegions.size() == refinementDepths.size());
                     currentDepth = refinementDepths.front();

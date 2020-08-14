@@ -20,6 +20,7 @@ namespace storm {
             const std::string MonotonicitySettings::dotOutput = "dotOutput";
             const std::string MonotonicitySettings::dotOutputName = "exportDotOutput";
             const std::string MonotonicitySettings::exportMonotonicityName = "exportmonotonicity";
+            const std::string MonotonicitySettings::monotonicityThreshold ="mon-threshold";
 
 
 
@@ -34,6 +35,8 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportMonotonicityName, false, "Exports the result of monotonicity checking to the given file.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The output file.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, dotOutputName, false, "Exports the dot output to the given file.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("dotFilename", "The output file.").build()).build());
 
+                this->addOption(storm::settings::OptionBuilder(moduleName, monotonicityThreshold, false, "Sets whether monotonotonicity should only be used beyond a certain depth threshold").setIsAdvanced()
+                                        .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("mon-threshold", "The depth threshold from which on monotonicity is used for Parameter Lifting").setDefaultValueUnsignedInteger(0).build()).build());
 
             }
 
@@ -70,6 +73,10 @@ namespace storm {
 
             std::string MonotonicitySettings::getExportMonotonicityFilename() const {
                 return this->getOption(exportMonotonicityName).getArgumentByName("filename").getValueAsString();
+            }
+
+            uint_fast64_t MonotonicitySettings::getMonotonicityThreshold() const {
+                return this->getOption(monotonicityThreshold).getArgumentByName("mon-threshold").getValueAsUnsignedInteger();
             }
         } // namespace modules
     } // namespace settings
