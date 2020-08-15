@@ -1,3 +1,5 @@
+#include <tuple>
+
 #include "storm-dft/modelchecker/dft/SFTBDDChecker.h"
 #include "storm-dft/transformations/SftToBddTransformator.h"
 #include "storm/adapters/eigen.h"
@@ -1185,13 +1187,10 @@ Bdd SFTBDDChecker::without(Bdd const f, Bdd const g) {
         return sylvanBddManager->getOne();
     }
 
-    auto const it1{withoutCache.find(f.GetBDD())};
-    if (it1 != withoutCache.end()) {
-        auto const &fCache{it1->second};
-        auto const it2{fCache.find(g.GetBDD())};
-        if (it2 != fCache.end()) {
-            return it2->second;
-        }
+    auto const inputPair{std::make_pair(f.GetBDD(), g.GetBDD())};
+    auto const it{withoutCache.find(inputPair)};
+    if (it != withoutCache.end()) {
+        return it->second;
     }
 
     // f = Ite(x, f1, f2)
@@ -1225,7 +1224,7 @@ Bdd SFTBDDChecker::without(Bdd const f, Bdd const g) {
         auto const v{without(f2, g2)};
 
         auto const result{varOne.Ite(u, v)};
-        withoutCache[f.GetBDD()][g.GetBDD()] = result;
+        withoutCache[inputPair] = result;
         return result;
     }
 }

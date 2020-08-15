@@ -3,12 +3,14 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <utility>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "storm-dft/storage/SylvanBddManager.h"
 #include "storm-dft/storage/dft/DFT.h"
+#include "storm/storage/PairHash.h"
 
 namespace storm {
 namespace modelchecker {
@@ -367,7 +369,7 @@ class SFTBDDChecker {
         std::vector<ValueType> const &timepoints, size_t chunksize = 0);
 
    private:
-    std::map<uint64_t, std::map<uint64_t, Bdd>> withoutCache{};
+    std::unordered_map<std::pair<uint64_t, uint64_t>, Bdd, std::hash<std::pair<uint_fast64_t, uint_fast64_t>>> withoutCache;
     /**
      * The without operator as defined by Rauzy93
      * https://doi.org/10.1016/0951-8320(93)90060-C
