@@ -31,6 +31,7 @@ namespace storm {
             const std::string DftIOSettings::exportToBddDotOptionName = "export-bdd-dot";
             const std::string DftIOSettings::dftStatisticsOptionName = "dft-statistics";
             const std::string DftIOSettings::dftStatisticsOptionShortName = "dftstats";
+            const std::string DftIOSettings::importanceMeasureOptionName = "importance";
 
 
             DftIOSettings::DftIOSettings() : ModuleSettings(moduleName) {
@@ -81,6 +82,10 @@ namespace storm {
                                                                                                             "The name of the dot file to export to.").build())
                                         .build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, dftStatisticsOptionName, false, "Sets whether to display DFT statistics if available.").setShortName(dftStatisticsOptionShortName).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, importanceMeasureOptionName, false, "Calculate importance measures for all basic events in the SFT.")
+                                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument("measure", "The name of the measure. Valid values: [MIF,DIF,CIF,RAW,RRW]")
+                                                             .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(
+                                                                     {"MIF", "DIF", "CIF", "RAW", "RRW"})).build()).build());
             }
 
             bool DftIOSettings::isDftFileSet() const {
@@ -172,6 +177,14 @@ namespace storm {
 
             bool DftIOSettings::isShowDftStatisticsSet() const {
                 return this->getOption(dftStatisticsOptionName).getHasOptionBeenSet();
+            }
+
+            bool DftIOSettings::isImportanceMeasureSet() const {
+                return this->getOption(importanceMeasureOptionName).getHasOptionBeenSet();
+            }
+
+            std::string DftIOSettings::getImportanceMeasure() const {
+                return this->getOption(importanceMeasureOptionName).getArgumentByName("measure").getValueAsString();
             }
 
             void DftIOSettings::finalize() {

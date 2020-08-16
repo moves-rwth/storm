@@ -163,7 +163,21 @@ namespace storm {
                  * @return True if the statistics option was set.
                  */
                 bool isShowDftStatisticsSet() const;
-                
+
+                /*!
+                 * Retrieves whether to calculate an importance measure.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isImportanceMeasureSet() const;
+
+                /*!
+                 * Retrieves the name of the importance measure to calculate.
+                 *
+                 * @return The name of the importance measure.
+                 */
+                std::string getImportanceMeasure() const;
+
                 bool check() const override;
                 void finalize() override;
 
@@ -190,7 +204,7 @@ namespace storm {
                 static const std::string exportToBddDotOptionName;
                 static const std::string dftStatisticsOptionName;
                 static const std::string dftStatisticsOptionShortName;
-
+                static const std::string importanceMeasureOptionName;
             };
 
         } // namespace modules
