@@ -135,6 +135,12 @@ namespace storm {
                  */
                 bool isChunksizeSet() const;
 
+                /*!
+                 * Retrieves the size of the chunks
+                 * to calculate proabilities with.
+                 *
+                 * @return The size of the chunks.
+                 */
                 size_t getChunksize() const;
 
                 bool check() const override;
