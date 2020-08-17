@@ -80,22 +80,24 @@ namespace storm {
                     return storm::utility::builder::buildModelFromComponents(storm::models::ModelType::Pomdp, buildModelComponents());
                 case storm::generator::ModelType::MA:
                     return storm::utility::builder::buildModelFromComponents(storm::models::ModelType::MarkovAutomaton, buildModelComponents());
+                case storm::generator::ModelType::SMG:
+                    return storm::utility::builder::buildModelFromComponents(storm::models::ModelType::Smg, buildModelComponents());
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Error while creating model: cannot handle this model type.");
             }
-            
+
             return nullptr;
         }
-        
+
         template <typename ValueType, typename RewardModelType, typename StateType>
         StateType ExplicitModelBuilder<ValueType, RewardModelType, StateType>::getOrAddStateIndex(CompressedState const& state) {
             StateType newIndex = static_cast<StateType>(stateStorage.getNumberOfStates());
-            
+
             // Check, if the state was already registered.
             std::pair<StateType, std::size_t> actualIndexBucketPair = stateStorage.stateToId.findOrAddAndGetBucket(state, newIndex);
-            
+
             StateType actualIndex = actualIndexBucketPair.first;
-            
+
             if (actualIndex == newIndex) {
                 if (options.explorationOrder == ExplorationOrder::Dfs) {
                     statesToExplore.emplace_front(state, actualIndex);
