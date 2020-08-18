@@ -2,6 +2,9 @@
 
 #include <boost/algorithm/string/join.hpp>
 
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/NotImplementedException.h"
+
 #include "storm/generator/VariableInformation.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/SimpleValuation.h"
@@ -131,6 +134,33 @@ namespace storm {
             CompressedState result(varInfo.getTotalBitOffset(roundTo64Bit));
             assert(varInfo.hasOutOfBoundsBit());
             result.set(varInfo.getOutOfBoundsBit());
+            return result;
+        }
+
+        CompressedState createCompressedState(VariableInformation const& varInfo, std::map<storm::expressions::Variable, storm::expressions::Expression> const& stateDescription, bool checkOutOfBounds) {
+            CompressedState result(varInfo.getTotalBitOffset(true));
+            auto boolItEnd = varInfo.booleanVariables.end();
+
+            for (auto boolIt = varInfo.booleanVariables.begin(); boolIt != boolItEnd; ++boolIt) {
+                STORM_LOG_THROW(stateDescription.count(boolIt->variable) > 0,storm::exceptions::InvalidArgumentException, "Assignment for Boolean variable " << boolIt->getName() << " missing." );
+                result.set(boolIt->bitOffset, stateDescription.at(boolIt->variable).evaluateAsBool());
+            }
+
+            // Iterate over all integer assignments and carry them out.
+            auto integerItEnd = varInfo.integerVariables.end();
+            for (auto integerIt = varInfo.integerVariables.begin(); integerIt != integerItEnd; ++integerIt) {
+                STORM_LOG_THROW(stateDescription.count(integerIt->variable) > 0,storm::exceptions::InvalidArgumentException, "Assignment for Integer variable " << integerIt->getName() << " missing." );
+
+                int64_t assignedValue = stateDescription.at(integerIt->variable).evaluateAsInt();
+                if (checkOutOfBounds) {
+                    STORM_LOG_THROW(assignedValue >= integerIt->lowerBound, storm::exceptions::InvalidArgumentException, "The assignment leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << integerIt->getName() << "'.");
+                    STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::InvalidArgumentException, "The assignment leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << integerIt->getName() << "'.");
+                }
+                result.setFromInt(integerIt->bitOffset, integerIt->bitWidth, assignedValue - integerIt->lowerBound);
+                STORM_LOG_ASSERT(static_cast<int_fast64_t>(result.getAsInt(integerIt->bitOffset, integerIt->bitWidth)) + integerIt->lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << result.getAsInt(integerIt->bitOffset, integerIt->bitWidth) << " but wrote " << assignedValue << ").");
+            }
+
+            STORM_LOG_THROW(varInfo.locationVariables.size() == 0, storm::exceptions::NotImplementedException, "Support for JANI is not implemented");
             return result;
         }
 

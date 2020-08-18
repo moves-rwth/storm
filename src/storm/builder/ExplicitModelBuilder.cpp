@@ -8,6 +8,7 @@
 
 #include "storm/exceptions/AbortException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm/exceptions/IllegalArgumentException.h"
 
 #include "storm/generator/PrismNextStateGenerator.h"
 #include "storm/generator/JaniNextStateGenerator.h"
@@ -36,7 +37,14 @@
 
 namespace storm {
     namespace builder {
-                        
+
+        template<typename StateType>
+        StateType ExplicitStateLookup<StateType>::lookup(std::map<storm::expressions::Variable, storm::expressions::Expression> const& stateDescription) const {
+            auto cs = storm::generator::createCompressedState(this->varInfo, stateDescription, true);
+            STORM_LOG_THROW(stateToId.contains(cs), storm::exceptions::IllegalArgumentException, "State unknown.");
+            return this->stateToId.getValue(cs);
+        }
+
         template <typename ValueType, typename RewardModelType, typename StateType>
         ExplicitModelBuilder<ValueType, RewardModelType, StateType>::Options::Options() : explorationOrder(storm::settings::getModule<storm::settings::modules::BuildSettings>().getExplorationOrder()) {
             // Intentionally left empty.
@@ -103,7 +111,12 @@ namespace storm {
             
             return actualIndex;
         }
-        
+
+        template <typename ValueType, typename RewardModelType, typename StateType>
+        ExplicitStateLookup<StateType> ExplicitModelBuilder<ValueType, RewardModelType, StateType>::exportExplicitStateLookup() const {
+            return ExplicitStateLookup<StateType>(this->generator->getVariableInformation(), this->stateStorage.stateToId);
+        }
+
         template <typename ValueType, typename RewardModelType, typename StateType>
         void ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders, ChoiceInformationBuilder& choiceInformationBuilder, boost::optional<storm::storage::BitVector>& markovianStates, boost::optional<storm::storage::sparse::StateValuationsBuilder>& stateValuationsBuilder) {
             
@@ -419,6 +432,7 @@ namespace storm {
         
         // Explicitly instantiate the class.
         template class ExplicitModelBuilder<double, storm::models::sparse::StandardRewardModel<double>, uint32_t>;
+        template class ExplicitStateLookup<uint32_t>;
 
 #ifdef STORM_HAVE_CARL
         template class ExplicitModelBuilder<RationalNumber, storm::models::sparse::StandardRewardModel<RationalNumber>, uint32_t>;

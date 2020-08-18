@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_SPARSE_STATESTORAGE_H_
-#define STORM_STORAGE_SPARSE_STATESTORAGE_H_
+#pragma once
 
 #include <cstdint>
 
@@ -28,11 +27,10 @@ namespace storm {
                 uint64_t bitsPerState;
                 
                 // Get the number of states that were found in the exploration so far.
-                uint_fast64_t getNumberOfStates() const;
+                uint64_t getNumberOfStates() const;
             };
             
         }
     }
 }
 
-#endif /* STORM_STORAGE_SPARSE_STATESTORAGE_H_ */

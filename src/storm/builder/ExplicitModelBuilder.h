@@ -44,6 +44,21 @@ namespace storm {
         // Forward-declare classes.
         template <typename ValueType> class RewardModelBuilder;
         class ChoiceInformationBuilder;
+
+        template<typename StateType>
+        class ExplicitStateLookup {
+        public:
+            ExplicitStateLookup(VariableInformation const& varInfo,
+                                storm::storage::BitVectorHashMap<StateType> const& stateToId ) : varInfo(varInfo), stateToId(stateToId) {
+                // intentionally left empty.
+            }
+
+            StateType lookup(std::map<storm::expressions::Variable, storm::expressions::Expression> const& stateDescription) const;
+
+        private:
+            VariableInformation varInfo;
+            storm::storage::BitVectorHashMap<StateType>  stateToId;
+        };
         
         template<typename ValueType, typename RewardModelType = storm::models::sparse::StandardRewardModel<ValueType>, typename StateType = uint32_t>
         class ExplicitModelBuilder {
@@ -88,7 +103,13 @@ namespace storm {
              *         information (if requested).
              */
             std::shared_ptr<storm::models::sparse::Model<ValueType, RewardModelType>> build();
-            
+
+            /*!
+             * Export a wrapper that contains (a copy of) the internal information that maps states to ids.
+             * This wrapper can be helpful to find states in later stages.
+             * @return
+             */
+            ExplicitStateLookup<StateType> exportExplicitStateLookup() const;
         private:
             /*!
              * Retrieves the state id of the given state. If the state has not been encountered yet, it will be added to
