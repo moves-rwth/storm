@@ -31,7 +31,7 @@ namespace storm {
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, upperBoundOnlyIterationsOptionName, false, "Sets the max. iterations OVI will only iterate over the upper bound.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createIntegerArgument("iter", "The iterations.").setDefaultValueInteger(20000).addValidatorInteger(ArgumentValidatorFactory::createIntegerGreaterValidator(0)).build()).build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, useNoTerminationGuaranteeMinimumMethodOptionName, false, "Sets whether to perform element-wise minimum of iterated and old upper bound. If this option is set, that will be skipped, slightly increasing performance but giving no termination guarantee.").setShortName("ntg").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, useNoTerminationGuaranteeMinimumMethodOptionName, false, "If set, we don't take the element-wise minimum for the upper bound, which is often faster but theoretically incomplete.").setShortName("ntg").setIsAdvanced().build());
             }
             
             double OviSolverSettings::getPrecisionUpdateFactor() const {
