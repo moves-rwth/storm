@@ -24,7 +24,7 @@ namespace storm {
              * @tparam Nondeterministic true if there is nondeterminism in the Model (MDP or MA)
              */
             template <typename ValueType, bool Nondeterministic>
-            class SparseInfiniteHorizonHelper : public SingleValueModelCheckerHelper<ValueType> {
+            class SparseInfiniteHorizonHelper : public SingleValueModelCheckerHelper<ValueType, storm::models::ModelRepresentation::Sparse> {
 
             public:
                 

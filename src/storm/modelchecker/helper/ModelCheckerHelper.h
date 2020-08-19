@@ -3,7 +3,7 @@
 #include <type_traits>
 #include <boost/optional.hpp>
 
-#include "storm/storage/dd/DdType.h"
+#include "storm/models/ModelRepresentation.h"
 #include "storm/storage/dd/Bdd.h"
 
 #include "storm/storage/BitVector.h"
@@ -15,9 +15,9 @@ namespace storm {
             /*!
              * Helper class for solving a model checking query.
              * @tparam VT The value type of a single value.
-             * @tparam DdType The used library for Dds (or None in case of a sparse representation).
+             * @tparam ModelRepresentation The used kind of model representation
              */
-            template <typename VT, storm::dd::DdType DdType = storm::dd::DdType::None>
+            template <typename VT, storm::models::ModelRepresentation ModelRepresentation>
             class ModelCheckerHelper {
             public:
                 typedef VT ValueType;
@@ -28,7 +28,7 @@ namespace storm {
                 /*!
                  * Identifies a subset of the model states
                  */
-                using StateSet = typename std::conditional<DdType == storm::dd::DdType::None, storm::storage::BitVector, storm::dd::Bdd<DdType>>::type;
+                using StateSet = typename std::conditional<ModelRepresentation == storm::models::ModelRepresentation::Sparse, storm::storage::BitVector, storm::dd::Bdd<storm::models::GetDdType<ModelRepresentation>::ddType>>::type;
                 
                 /*!
                  * Sets relevant states.

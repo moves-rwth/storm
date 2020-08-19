@@ -12,10 +12,10 @@ namespace storm {
             /*!
              * Helper for model checking queries where we are interested in (optimizing) a single value per state.
              * @tparam ValueType The type of a value
-             * @tparam DdType The used library for Dds (or None in case of a sparse representation)
+             * @tparam ModelRepresentation The used kind of model representation
              */
-            template <typename ValueType, storm::dd::DdType DdType = storm::dd::DdType::None>
-            class SingleValueModelCheckerHelper : public ModelCheckerHelper<ValueType, DdType> {
+            template <typename ValueType, storm::models::ModelRepresentation ModelRepresentation>
+            class SingleValueModelCheckerHelper : public ModelCheckerHelper<ValueType, ModelRepresentation> {
             public:
 
                 SingleValueModelCheckerHelper();
