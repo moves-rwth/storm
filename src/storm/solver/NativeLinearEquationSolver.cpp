@@ -686,7 +686,11 @@ namespace storm {
                             multiplier.multiply(env, *y, &b, *yPrime);
                             std::swap(y, yPrime);
                         }
-                    }, relevantValues);
+                    },
+                    env.solver().native().getRelativeTerminationCriterion(),
+                    storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()),
+                    env.solver().native().getMaximalNumberOfIterations(),
+                    relevantValues);
             auto two = storm::utility::convertNumber<ValueType>(2.0);
             storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(*lowerX, *upperX, x, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
             this->logIterations(statusIters.first == SolverStatus::Converged, statusIters.first == SolverStatus::TerminatedEarly, statusIters.second);

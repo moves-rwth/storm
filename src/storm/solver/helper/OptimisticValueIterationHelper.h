@@ -103,7 +103,7 @@ namespace storm {
              * with precision parameters as given by the environment env.
              */
             template<typename ValueType, typename ValueIterationCallback, typename SingleIterationCallback>
-            std::pair<SolverStatus, uint64_t> solveEquationsOptimisticValueIteration(Environment const& env, std::vector<ValueType>* lowerX, std::vector<ValueType>* upperX, std::vector<ValueType>* auxVector, ValueIterationCallback const& valueIterationCallback, SingleIterationCallback const& singleIterationCallback, boost::optional<storm::storage::BitVector> relevantValues = boost::none) {
+            std::pair<SolverStatus, uint64_t> solveEquationsOptimisticValueIteration(Environment const& env, std::vector<ValueType>* lowerX, std::vector<ValueType>* upperX, std::vector<ValueType>* auxVector, ValueIterationCallback const& valueIterationCallback, SingleIterationCallback const& singleIterationCallback, bool relative, ValueType precision, uint64_t maxOverallIterations, boost::optional<storm::storage::BitVector> relevantValues = boost::none) {
                 STORM_LOG_ASSERT(lowerX->size() == upperX->size(), "Dimension missmatch.");
                 STORM_LOG_ASSERT(lowerX->size() == auxVector->size(), "Dimension missmatch.");
                 
@@ -120,18 +120,12 @@ namespace storm {
                 // Get some parameters for the algorithm
                 // 2
                 ValueType two = storm::utility::convertNumber<ValueType>(2.0);
-                // Relative errors
-                bool relative = env.solver().minMax().getRelativeTerminationCriterion();
                 // Use no termination guaranteed upper bound iteration method
                 bool noTerminationGuarantee = env.solver().ovi().useNoTerminationGuaranteeMinimumMethod();
-                // Goal precision
-                ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision());
                 // Desired max difference between upperX and lowerX
                 ValueType doublePrecision = precision * two;
                 // Upper bound only iterations
                 uint64_t upperBoundOnlyIterations = env.solver().ovi().getUpperBoundOnlyIterations();
-                // Maximum number of iterations done overall
-                uint64_t maxOverallIterations = env.solver().minMax().getMaximalNumberOfIterations();
                 ValueType relativeBoundGuessingScaler = (storm::utility::one<ValueType>() + storm::utility::convertNumber<ValueType>(env.solver().ovi().getUpperBoundGuessingFactor()) * precision);
                 // Initial precision for the value iteration calls
                 ValueType iterationPrecision = precision;
