@@ -489,7 +489,7 @@ namespace storm {
                     if (regionSettings.isDepthLimitSet()) {
                         optionalDepthLimit = regionSettings.getDepthLimit();
                     }
-                    // TODO: change allow model simplification when not using monotonicity, for benchmarking purposes simplification is moved forward.
+                    // TODO @Jip: change allow model simplification when not using monotonicity, for benchmarking purposes simplification is moved forward.
                     std::unique_ptr<storm::modelchecker::RegionRefinementCheckResult<ValueType>> result = storm::api::checkAndRefineRegionWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(formula, true), regions.front(), engine, refinementThreshold, optionalDepthLimit, regionSettings.getHypothesis(), false, useMonotonicity, monThresh);
                     return result;
                 };
@@ -698,7 +698,7 @@ namespace storm {
                     selectedStates.complement();
                     auto keptRows = matrix.getRowFilter(selectedStates);
                     storm::storage::SparseMatrix<ValueType> newTransitionMatrix = flexibleMatrix.createSparseMatrix(keptRows, selectedStates);
-                    // TODO: note that rewards get lost
+                    // TODO @Jip: note that rewards get lost
                     model = std::make_shared<storm::models::sparse::Dtmc<ValueType>>(std::move(newTransitionMatrix), sparseModel->getStateLabeling().getSubLabeling(selectedStates));
 
                     eliminationWatch.stop();
@@ -720,7 +720,7 @@ namespace storm {
                 storm::utility::Stopwatch monotonicityWatch(true);
 
                 STORM_LOG_THROW(regions.size() <= 1, storm::exceptions::InvalidArgumentException, "Monotonicity analysis only allowed on single region");
-                // TODO: type, should this be double?
+                // TODO @Jip: type, should this be double?
                 storm::analysis::MonotonicityHelper<ValueType, double> monotonicityHelper = storm::analysis::MonotonicityHelper<ValueType, double>(model->as<models::sparse::Model<ValueType>>(), formulas, regions, monSettings.getNumberOfSamples(), monSettings.getMonotonicityAnalysisPrecision(), monSettings.isDotOutputSet());
                 if (monSettings.isExportMonotonicitySet()) {
                     std::ofstream outfile;
