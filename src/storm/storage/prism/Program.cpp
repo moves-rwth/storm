@@ -491,6 +491,10 @@ namespace storm {
             return this->getModules().size();
         }
 
+        std::size_t Program::getNumberOfPlayers() const {
+            return this->getPlayers().size();
+        }
+
         storm::prism::Module const& Program::getModule(uint_fast64_t index) const {
             return this->modules[index];
         }
@@ -507,6 +511,10 @@ namespace storm {
 
         std::vector<storm::prism::Module> const& Program::getModules() const {
             return this->modules;
+        }
+
+        uint_fast32_t const& Program::getIndexOfPlayer(std::string playerName) const {
+            return this->playerToIndexMap.at(playerName);
         }
 
         std::map<std::string, uint_fast64_t> const& Program::getActionNameToIndexMapping() const {
@@ -804,6 +812,9 @@ namespace storm {
             }
             for (uint_fast64_t moduleIndex = 0; moduleIndex < this->getNumberOfModules(); ++moduleIndex) {
                 this->moduleToIndexMap[this->getModules()[moduleIndex].getName()] = moduleIndex;
+            }
+            for (uint_fast64_t playerIndex = 0; playerIndex < this->getNumberOfPlayers(); ++playerIndex) {
+                this->playerToIndexMap[this->getPlayers()[playerIndex].getName()] = playerIndex;
             }
             for (uint_fast64_t rewardModelIndex = 0; rewardModelIndex < this->getNumberOfRewardModels(); ++rewardModelIndex) {
                 this->rewardModelToIndexMap[this->getRewardModels()[rewardModelIndex].getName()] = rewardModelIndex;

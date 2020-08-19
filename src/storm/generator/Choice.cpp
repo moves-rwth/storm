@@ -81,17 +81,32 @@ namespace storm {
                 labels = newLabels;
             }
         }
-            
+
         template<typename ValueType, typename StateType>
         bool Choice<ValueType, StateType>::hasLabels() const {
             return labels.is_initialized();
         }
-            
+
         template<typename ValueType, typename StateType>
         std::set<std::string> const& Choice<ValueType, StateType>::getLabels() const {
             return labels.get();
         }
-            
+
+        template<typename ValueType, typename StateType>
+        void Choice<ValueType, StateType>::setPlayerIndex(uint_fast32_t playerIndex) {
+            this->playerIndex = playerIndex;
+        }
+
+        template<typename ValueType, typename StateType>
+        bool Choice<ValueType, StateType>::hasPlayerIndex() const {
+            return playerIndex.is_initialized();
+        }
+
+        template<typename ValueType, typename StateType>
+        uint_fast32_t const& Choice<ValueType, StateType>::getPlayerIndex() const {
+            return playerIndex.get();
+        }
+
         template<typename ValueType, typename StateType>
         void Choice<ValueType, StateType>::addOriginData(boost::any const& data) {
             if (!this->originData || this->originData->empty()) {

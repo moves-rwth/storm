@@ -276,13 +276,6 @@ namespace storm {
             std::vector<Formula> const& getFormulas() const;
 
             /*!
-             * Retrieves the players of the program.
-             *
-             * @return The players of the program.
-             */
-            std::vector<Player> const& getPlayers() const;
-
-            /*!
              * Retrieves the number of formulas in the program.
              *
              * @return The number of formulas in the program.
@@ -325,6 +318,27 @@ namespace storm {
              * @return All modules of the program.
              */
             std::vector<Module> const& getModules() const;
+
+            /*!
+             * Retrieves the players of the program.
+             *
+             * @return The players of the program.
+             */
+            std::vector<Player> const& getPlayers() const;
+
+            /*!
+             * Retrieves the number of players in the program.
+             *
+             * @return The number of players in the program.
+             */
+            std::size_t getNumberOfPlayers() const;
+
+            /*!
+             * Retrieves the index of the player in the program.
+             *
+             * @return The index of the player in the program.
+             */
+            uint_fast32_t const& getIndexOfPlayer(std::string playerName) const;
 
             /*!
              * Retrieves the mapping of action names to their indices.
@@ -746,11 +760,14 @@ namespace storm {
             // The modules associated with the program.
             std::vector<Module> modules;
 
+            // A mapping of module names to their indices.
+            std::map<std::string, uint_fast64_t> moduleToIndexMap;
+
             // The players associated with the program.
             std::vector<Player> players;
 
-            // A mapping of module names to their indices.
-            std::map<std::string, uint_fast64_t> moduleToIndexMap;
+            // A mapping of player names to their indices.
+            std::map<std::string, uint_fast64_t> playerToIndexMap;
 
             // The reward models associated with the program.
             std::vector<RewardModel> rewardModels;

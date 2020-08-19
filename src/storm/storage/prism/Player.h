@@ -24,7 +24,7 @@ namespace storm {
              * @param filename The filename in which the player is defined.
              * @param lineNumber The line number in which the player is defined.
              */
-            Player(std::string const& playerName, std::map<std::string, uint_fast64_t> const& controlledModules, std::map<std::string, uint_fast64_t> const& controlledCommands, std::string const& filename = "", uint_fast64_t lineNumber = 0);
+            Player(std::string const& playerName, std::map<std::string, uint_fast32_t> const& controlledModules, std::map<std::string, uint_fast32_t> const& controlledCommands, std::string const& filename = "", uint_fast32_t lineNumber = 0);
 
             // Create default implementations of constructors/assignment.
             Player() = default;
@@ -45,14 +45,14 @@ namespace storm {
              *
              * @return The modules controlled by the player.
              */
-            std::map<std::string, uint_fast64_t> const& getModules() const; // TODO
+            std::map<std::string, uint_fast32_t> const& getModules() const; // TODO
 
             /*!
              * Retrieves all controlled Commands of the player.
              *
              * @return The commands controlled by the player.
              */
-            std::map<std::string, uint_fast64_t> const& getCommands() const;
+            std::map<std::string, uint_fast32_t> const& getCommands() const;
 
             friend std::ostream& operator<<(std::ostream& stream, Player const& player);
         private:
@@ -60,10 +60,10 @@ namespace storm {
             std::string playerName;
 
             // The modules associated with this player.
-            std::map<std::string, uint_fast64_t> controlledModules;
+            std::map<std::string, uint_fast32_t> controlledModules;
 
             // The commands associated with this player.
-            std::map<std::string, uint_fast64_t> controlledCommands;
+            std::map<std::string, uint_fast32_t> controlledCommands;
         };
 
     } // namespace prism
