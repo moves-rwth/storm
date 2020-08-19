@@ -29,7 +29,7 @@ namespace storm {
                     // Run through the component and collect some data:
                     // We create two submodels, one consisting of the timed states of the component and one consisting of the instant states of the component.
                     // For this, we create a state index map that point from state indices of the input model to indices of the corresponding submodel of that state.
-                    boost::container::flat_map<uint64_t, uint64_t> toSubModelStateMapping;
+                    std::map<uint64_t, uint64_t> toSubModelStateMapping;
                     // We also obtain state and choices counts of the two submodels
                     uint64_t numTsSubModelStates(0), numTsSubModelChoices(0);
                     uint64_t numIsSubModelStates(0), numIsSubModelChoices(0);
@@ -38,7 +38,7 @@ namespace storm {
                     _uniformizationRate = exitRates == nullptr ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>();
                     // Now run over the MEC and collect the required data.
                     for (auto const& element : _component) {
-                        uint64_t const& componentState = getComponentElementState(element);
+                        uint64_t componentState = getComponentElementState(element);
                         if (isTimedState(componentState)) {
                             toSubModelStateMapping.emplace(componentState, numTsSubModelStates);
                             ++numTsSubModelStates;
@@ -78,7 +78,7 @@ namespace storm {
                     uint64_t currTsRow = 0;
                     uint64_t currIsRow = 0;
                     for (auto const& element : _component) {
-                        uint64_t const& componentState = getComponentElementState(element);
+                        uint64_t componentState = getComponentElementState(element);
                         if (isTimedState(componentState)) {
                             // The currently processed state is timed.
                             if (nondetTs()) {
@@ -142,9 +142,7 @@ namespace storm {
                 
                 template <typename ValueType, typename ComponentType, LraViTransitionsType TransitionsType>
                 ValueType LraViHelper<ValueType, ComponentType, TransitionsType>::performValueIteration(Environment const& env, ValueGetter const& stateValueGetter, ValueGetter const& actionValueGetter, std::vector<ValueType> const* exitRates, storm::solver::OptimizationDirection const* dir, std::vector<uint64_t>* choices) {
-                    
                     initializeNewValues(stateValueGetter, actionValueGetter, exitRates);
-                    
                     ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().lra().getPrecision());
                     bool relative = env.solver().lra().getRelativeTerminationCriterion();
                     boost::optional<uint64_t> maxIter;
@@ -201,7 +199,7 @@ namespace storm {
                     // Set the new choice-based values
                     ValueType actionRewardScalingFactor = storm::utility::one<ValueType>() / _uniformizationRate;
                     for (auto const& element : _component) {
-                        uint64_t const& componentState = getComponentElementState(element);
+                        uint64_t componentState = getComponentElementState(element);
                         if (isTimedState(componentState)) {
                             if (exitRates) {
                                 actionRewardScalingFactor = (*exitRates)[componentState] / _uniformizationRate;
