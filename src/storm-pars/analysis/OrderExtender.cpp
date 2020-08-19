@@ -245,6 +245,8 @@ namespace storm {
                     if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
                         handleAssumption(order, assumptions.begin()->first);
                     } else {
+                        // Put currentState in the list of states we should handle as we couldn't add it yet.
+                        order->addStateToHandle(currentState);
                         break;
                     }
                 }
