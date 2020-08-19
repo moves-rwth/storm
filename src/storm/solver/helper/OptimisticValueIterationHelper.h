@@ -166,40 +166,35 @@ namespace storm {
 
                             // Upper bound iteration
                             singleIterationCallback(upperX, auxVector, overallIterations);
-                            // At this point,h auxVector contains the old values for the upper bound whereas upperX contains the new ones.
+                            // At this point, auxVector contains the old values for the upper bound whereas upperX contains the new ones.
 
                             // Compare the new upper bound candidate with the old one
                             bool newUpperBoundAlwaysHigherEqual = true;
                             bool newUpperBoundAlwaysLowerEqual = true;
-                            if(noTerminationGuarantee) {
+                            if (noTerminationGuarantee) {
                                 bool cancelOuterScan = false;
-                                for (uint64_t i = 0; i < upperX->size() &! cancelOuterScan; ++i) {
+                                for (uint64_t i = 0; i < upperX->size() & !cancelOuterScan; ++i) {
                                     if ((*upperX)[i] < (*auxVector)[i]) {
                                         newUpperBoundAlwaysHigherEqual = false;
-                                        ++i;
-                                        while (i < upperX->size()) {
+                                        for (++i; i < upperX->size(); ++i) {
                                             if ((*upperX)[i] > (*auxVector)[i]) {
                                                 newUpperBoundAlwaysLowerEqual = false;
                                                 cancelOuterScan = true;
                                                 break;
                                             }
-                                            ++i;
                                         }
                                     } else if ((*upperX)[i] != (*auxVector)[i]) {
                                         newUpperBoundAlwaysLowerEqual = false;
-                                        ++i;
-                                        while (i < upperX->size()) {
+                                        for (++i; i < upperX->size(); ++i) {
                                             if ((*upperX)[i] < (*auxVector)[i]) {
                                                 newUpperBoundAlwaysHigherEqual = false;
                                                 cancelOuterScan = true;
                                                 break;
                                             }
-                                            ++i;
                                         }
                                     }
                                 }
-                            }
-                            else {
+                            } else {
                                 for (uint64_t i = 0; i < upperX->size(); ++i) {
                                     if ((*upperX)[i] < (*auxVector)[i]) {
                                         newUpperBoundAlwaysHigherEqual = false;
@@ -210,7 +205,7 @@ namespace storm {
                                 }
                             }
 
-                            if (newUpperBoundAlwaysHigherEqual &! newUpperBoundAlwaysLowerEqual) {
+                            if (newUpperBoundAlwaysHigherEqual & !newUpperBoundAlwaysLowerEqual) {
                                 // All values moved up or stayed the same
                                 // That means the guess for an upper bound is actually a lower bound
                                 iterationPrecision = oviinternal::updateIterationPrecision(env, *auxVector, *upperX, relative, relevantValues);
@@ -218,7 +213,7 @@ namespace storm {
                                 // Set lowerX to the upper bound candidate
                                 std::swap(lowerX, upperX);
                                 break;
-                            } else if (newUpperBoundAlwaysLowerEqual &! newUpperBoundAlwaysHigherEqual) {
+                            } else if (newUpperBoundAlwaysLowerEqual & !newUpperBoundAlwaysHigherEqual) {
                                 // All values moved down or stayed the same and we have a maximum difference of twice the requested precision
                                 // We can safely use twice the requested precision, as we calculate the center of both vectors
                                 bool reachedPrecision;
