@@ -10,6 +10,7 @@ Version 1.6.x
 
 ## Version 1.6.1 (??)
 - Prism program simplification improved
+- Revamped implementation of long-run-average algorithms, including scheduler export for LRA properties on Markov automata
 - `storm-pomdp`: Fix for --transformsimple and --transformbinary when used with until formulae
 
 ## Version 1.6.0 (2020/06)
