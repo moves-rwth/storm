@@ -208,7 +208,7 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region) {
-            // TODO: dit niet zo doen maar meegeven via functie?
+            // TODO @Jip: dit niet zo doen maar meegeven via functie?
             this->region = region;
             if (order == nullptr) {
                 order = getBottomTopOrder();
@@ -239,7 +239,7 @@ namespace storm {
                     assert (stateSucc2 == numberOfStates);
                     currentState = order->getNextSortedState();
                 } else {
-                    // TODO: do this only once
+                    // TODO: make assumptionMaker a private class variable
                     auto assumptionMaker = analysis::AssumptionMaker<ValueType, ConstantType>(matrix);
                     auto assumptions = assumptionMaker.createAndCheckAssumptions(stateSucc1, stateSucc2, order, region);
                     if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {

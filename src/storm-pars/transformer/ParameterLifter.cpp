@@ -188,7 +188,7 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::storage::BitVector const& selectedRows) {
             usePartialScheduler = true;
-            // TODO: implement
+            // TODO @Jip: implement
             lastSelectedRows = selectedRows;
             auto selectedColumns = storm::storage::BitVector(matrix.getColumnCount(), true);
             lastMatrix = matrix.getSubmatrix(false, selectedRows, selectedColumns);
@@ -211,7 +211,7 @@ namespace storm {
                             std::move(matrix.getSubmatrix(false, *selectedRows, selectedColumns)));
                     lastMatrix = *selectedMatrix;
                     lastSelectedRows = *selectedRows;
-                    // TODO: change this s.t. specifyiterator thing works for matrix and rows, and lastMatrix setting can be done later
+                    // TODO @Jip: change this s.t. specifyiterator thing works for matrix and rows, and lastMatrix setting can be done later
                     auto selectedMatrixAssignment = std::make_shared<std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType &>>>(
                             specifyIteratorsPartialScheduler());
                     lastMatrixAssignment = *selectedMatrixAssignment;

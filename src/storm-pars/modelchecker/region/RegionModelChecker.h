@@ -98,6 +98,7 @@ namespace storm {
         protected:
 
             // TODO @Jip Do we even need this if we get the monThresh via parameter in PerformRegionRefinement?
+            // True, we don't need this.
 
             void setMonThreshold(uint64_t monThresh = 0);
 
