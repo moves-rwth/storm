@@ -103,7 +103,7 @@ namespace storm {
              * with precision parameters as given by the environment env.
              */
             template<typename ValueType, typename ValueIterationCallback, typename SingleIterationCallback>
-            std::pair<SolverStatus, uint64_t> solveEquationsOptimisticValueIteration(Environment const& env, std::vector<ValueType>* lowerX, std::vector<ValueType>* upperX, std::vector<ValueType>* auxVector, ValueIterationCallback const& valueIterationCallback, SingleIterationCallback const& singleIterationCallback, boost::optional<storm::storage::BitVector> relevantValues = boost::none) {
+            std::pair<SolverStatus, uint64_t> solveEquationsOptimisticValueIteration(Environment const& env, std::vector<ValueType>* lowerX, std::vector<ValueType>* upperX, std::vector<ValueType>* auxVector, ValueIterationCallback const& valueIterationCallback, SingleIterationCallback const& singleIterationCallback, bool relative, ValueType precision, uint64_t maxOverallIterations, boost::optional<storm::storage::BitVector> relevantValues = boost::none) {
                 STORM_LOG_ASSERT(lowerX->size() == upperX->size(), "Dimension missmatch.");
                 STORM_LOG_ASSERT(lowerX->size() == auxVector->size(), "Dimension missmatch.");
                 
@@ -120,18 +120,12 @@ namespace storm {
                 // Get some parameters for the algorithm
                 // 2
                 ValueType two = storm::utility::convertNumber<ValueType>(2.0);
-                // Relative errors
-                bool relative = env.solver().minMax().getRelativeTerminationCriterion();
                 // Use no termination guaranteed upper bound iteration method
                 bool noTerminationGuarantee = env.solver().ovi().useNoTerminationGuaranteeMinimumMethod();
-                // Goal precision
-                ValueType precision = storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision());
                 // Desired max difference between upperX and lowerX
                 ValueType doublePrecision = precision * two;
                 // Upper bound only iterations
                 uint64_t upperBoundOnlyIterations = env.solver().ovi().getUpperBoundOnlyIterations();
-                // Maximum number of iterations done overall
-                uint64_t maxOverallIterations = env.solver().minMax().getMaximalNumberOfIterations();
                 ValueType relativeBoundGuessingScaler = (storm::utility::one<ValueType>() + storm::utility::convertNumber<ValueType>(env.solver().ovi().getUpperBoundGuessingFactor()) * precision);
                 // Initial precision for the value iteration calls
                 ValueType iterationPrecision = precision;
@@ -205,7 +199,7 @@ namespace storm {
                                 }
                             }
 
-                            if (newUpperBoundAlwaysHigherEqual & !newUpperBoundAlwaysLowerEqual) {
+                            if (newUpperBoundAlwaysHigherEqual && !newUpperBoundAlwaysLowerEqual) {
                                 // All values moved up or stayed the same
                                 // That means the guess for an upper bound is actually a lower bound
                                 iterationPrecision = oviinternal::updateIterationPrecision(env, *auxVector, *upperX, relative, relevantValues);
@@ -213,7 +207,7 @@ namespace storm {
                                 // Set lowerX to the upper bound candidate
                                 std::swap(lowerX, upperX);
                                 break;
-                            } else if (newUpperBoundAlwaysLowerEqual & !newUpperBoundAlwaysHigherEqual) {
+                            } else if (newUpperBoundAlwaysLowerEqual && !newUpperBoundAlwaysHigherEqual) {
                                 // All values moved down or stayed the same and we have a maximum difference of twice the requested precision
                                 // We can safely use twice the requested precision, as we calculate the center of both vectors
                                 bool reachedPrecision;
@@ -229,6 +223,11 @@ namespace storm {
                                     // From now on, we keep updating both bounds
                                     intervalIterationNeeded = true;
                                 }
+                            } else if (newUpperBoundAlwaysHigherEqual && newUpperBoundAlwaysLowerEqual) {
+                                // In this case, the guessed upper bound is the precise fixpoint
+                                status = SolverStatus::Converged;
+                                std::swap(lowerX, auxVector);
+                                break;
                             }
                             // At this point, the old upper bounds (auxVector) are not needed anymore.
 
