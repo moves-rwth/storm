@@ -450,7 +450,6 @@ namespace storm {
             std::shared_ptr<Order> copiedOrder = std::make_shared<Order>();
 
             copiedOrder->nodes = std::vector<Node *>(numberOfStates, nullptr);
-            copiedOrder->setDoneBuilding(this->getDoneBuilding());
             copiedOrder->onlyBottomTopOrder = this->isOnlyBottomTopOrder();
             copiedOrder->numberOfStates = this->getNumberOfStates();
             copiedOrder->statesToHandle = std::vector<uint_fast64_t>(this->getStatesToHandle());
@@ -485,13 +484,16 @@ namespace storm {
                 copiedOrder->numberOfAddedStates = this->addedStates->getNumberOfSetBits();
 
             }
+
+            copiedOrder->setDoneBuilding(this->getDoneBuilding());
+
             return copiedOrder;
         }
 
         /*** Setters ***/
 
         void Order::setDoneBuilding(bool done) {
-            assert (addedStates->full());
+            assert (!done || addedStates->full());
             doneBuilding = done;
         }
 
