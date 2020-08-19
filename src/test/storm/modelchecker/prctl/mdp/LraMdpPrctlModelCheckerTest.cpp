@@ -445,7 +445,7 @@ namespace {
     TYPED_TEST(LraMdpPrctlModelCheckerTest, cs_nfail) {
         typedef typename TestFixture::ValueType ValueType;
 
-        std::string formulasString = "R{\"grants\"}max=? [ MP ]";
+        std::string formulasString = "R{\"grants\"}max=? [ MP ]; R{\"grants\"}min=? [ MP ];";
         
         auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/cs_nfail3.nm", formulasString);
         auto model = std::move(modelFormulas.first);
@@ -455,14 +455,14 @@ namespace {
         ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
         auto mdp = model->template as<storm::models::sparse::Mdp<ValueType>>();
         storm::modelchecker::SparseMdpPrctlModelChecker<storm::models::sparse::Mdp<ValueType>> checker(*mdp);
-        std::unique_ptr<storm::modelchecker::CheckResult> result;
         
-        result = checker.check(this->env(), tasks[0]);
-        storm::modelchecker::ExplicitQuantitativeCheckResult<ValueType>& quantitativeResult = result->asExplicitQuantitativeCheckResult<ValueType>();
-
-        EXPECT_NEAR(this->parseNumber("333/1000"), quantitativeResult[*mdp->getInitialStates().begin()], this->precision());
-
+        auto result = checker.check(this->env(), tasks[0])->template asExplicitQuantitativeCheckResult<ValueType>();
+        EXPECT_NEAR(this->parseNumber("333/1000"), result[*mdp->getInitialStates().begin()], this->precision());
+        
+        result = checker.check(this->env(), tasks[1])->template asExplicitQuantitativeCheckResult<ValueType>();
+        EXPECT_NEAR(this->parseNumber("0"), result[*mdp->getInitialStates().begin()], this->precision());
     }
+    
 
     
 }
