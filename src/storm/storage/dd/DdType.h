@@ -4,7 +4,6 @@
 namespace storm {
     namespace dd {
         enum class DdType {
-            None,
             CUDD,
             Sylvan
         };
