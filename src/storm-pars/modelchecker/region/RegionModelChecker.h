@@ -102,6 +102,8 @@ namespace storm {
             void setMonThreshold(uint64_t monThresh = 0);
 
             uint64_t monThreshold = 0;
+
+            uint_fast64_t numberOfRegionsKnownThroughMonotonicity;
         };
 
     } //namespace modelchecker

@@ -237,6 +237,26 @@ namespace storm {
         }
         
         template <typename SparseModelType, typename ConstantType>
+        storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationCheckerSAT() {
+            if (!instantiationCheckerSAT) {
+                instantiationCheckerSAT = std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(*this->parametricModel);
+                instantiationCheckerSAT->specifyFormula(this->currentCheckTask->template convertValueType<typename SparseModelType::ValueType>());
+                instantiationCheckerSAT->setInstantiationsAreGraphPreserving(true);
+            }
+            return *instantiationCheckerSAT;
+        }
+
+        template <typename SparseModelType, typename ConstantType>
+        storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationCheckerVIO() {
+            if (!instantiationCheckerVIO) {
+                instantiationCheckerVIO = std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(*this->parametricModel);
+                instantiationCheckerVIO->specifyFormula(this->currentCheckTask->template convertValueType<typename SparseModelType::ValueType>());
+                instantiationCheckerVIO->setInstantiationsAreGraphPreserving(true);
+            }
+            return *instantiationCheckerVIO;
+        }
+
+        template <typename SparseModelType, typename ConstantType>
         storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationChecker() {
             if (!instantiationChecker) {
                 instantiationChecker = std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(*this->parametricModel);
@@ -257,7 +277,7 @@ namespace storm {
             } else {
                 parameterLifter->specifyRegion(region, dirForParameters, reachabilityOrder, localMonotonicityResult);
             }
-            
+
             if (stepBound) {
                 assert(*stepBound > 0);
                 x = std::vector<ConstantType>(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
@@ -275,37 +295,47 @@ namespace storm {
                     std::vector<ConstantType> oneStepProbs;
                     oneStepProbs.reserve(parameterLifter->getMatrix().getRowCount());
                     for (uint64_t row = 0; row < parameterLifter->getMatrix().getRowCount(); ++row) {
-                        oneStepProbs.push_back(storm::utility::one<ConstantType>() - parameterLifter->getMatrix().getRowSum(row));
+                        oneStepProbs.push_back(
+                                storm::utility::one<ConstantType>() - parameterLifter->getMatrix().getRowSum(row));
                     }
                     if (dirForParameters == storm::OptimizationDirection::Minimize) {
-                        storm::modelchecker::helper::DsMpiMdpUpperRewardBoundsComputer<ConstantType> dsmpi(parameterLifter->getMatrix(), parameterLifter->getVector(), oneStepProbs);
+                        storm::modelchecker::helper::DsMpiMdpUpperRewardBoundsComputer<ConstantType> dsmpi(
+                                parameterLifter->getMatrix(), parameterLifter->getVector(), oneStepProbs);
                         solver->setUpperBounds(dsmpi.computeUpperBounds());
                     } else {
-                        storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ConstantType> baier(parameterLifter->getMatrix(), parameterLifter->getVector(), oneStepProbs);
+                        storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ConstantType> baier(
+                                parameterLifter->getMatrix(), parameterLifter->getVector(), oneStepProbs);
                         solver->setUpperBound(baier.computeUpperBound());
                     }
                 }
                 solver->setTrackScheduler(true);
-                if (storm::solver::minimize(dirForParameters) && minSchedChoices) solver->setInitialScheduler(std::move(minSchedChoices.get()));
-                if (storm::solver::maximize(dirForParameters) && maxSchedChoices) solver->setInitialScheduler(std::move(maxSchedChoices.get()));
+                if (storm::solver::minimize(dirForParameters) && minSchedChoices)
+                    solver->setInitialScheduler(std::move(minSchedChoices.get()));
+                if (storm::solver::maximize(dirForParameters) && maxSchedChoices)
+                    solver->setInitialScheduler(std::move(maxSchedChoices.get()));
                 if (this->currentCheckTask->isBoundSet() && solver->hasInitialScheduler()) {
                     // If we reach this point, we know that after applying the hint, the x-values can only become larger (if we maximize) or smaller (if we minimize).
                     std::unique_ptr<storm::solver::TerminationCondition<ConstantType>> termCond;
-                    storm::storage::BitVector relevantStatesInSubsystem = this->currentCheckTask->isOnlyInitialStatesRelevantSet() ? this->parametricModel->getInitialStates() % maybeStates : storm::storage::BitVector(maybeStates.getNumberOfSetBits(), true);
+                    storm::storage::BitVector relevantStatesInSubsystem = this->currentCheckTask->isOnlyInitialStatesRelevantSet()
+                                                                          ? this->parametricModel->getInitialStates() %
+                                                                            maybeStates : storm::storage::BitVector(
+                                    maybeStates.getNumberOfSetBits(), true);
                     if (storm::solver::minimize(dirForParameters)) {
                         // Terminate if the value for ALL relevant states is already below the threshold
-                        termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumBelowThreshold<ConstantType>> (relevantStatesInSubsystem, true, this->currentCheckTask->getBoundThreshold(), false);
+                        termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumBelowThreshold<ConstantType>>(
+                                relevantStatesInSubsystem, true, this->currentCheckTask->getBoundThreshold(), false);
                     } else {
                         // Terminate if the value for ALL relevant states is already above the threshold
-                        termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumExceedsThreshold<ConstantType>> (relevantStatesInSubsystem, true, this->currentCheckTask->getBoundThreshold(), true);
+                        termCond = std::make_unique<storm::solver::TerminateIfFilteredExtremumExceedsThreshold<ConstantType>>(
+                                relevantStatesInSubsystem, true, this->currentCheckTask->getBoundThreshold(), true);
                     }
                     solver->setTerminationCondition(std::move(termCond));
                 }
-            
+
                 // Invoke the solver
                 x.resize(maybeStates.getNumberOfSetBits(), storm::utility::zero<ConstantType>());
                 solver->solveEquations(env, dirForParameters, x, parameterLifter->getVector());
-                if(storm::solver::minimize(dirForParameters)) {
+                if (storm::solver::minimize(dirForParameters)) {
                     minSchedChoices = solver->getSchedulerChoices();
                 } else {
                     maxSchedChoices = solver->getSchedulerChoices();
@@ -314,6 +344,7 @@ namespace storm {
                     computeRegionSplitEstimates(x, solver->getSchedulerChoices(), region, dirForParameters);
                 }
             }
+
             
             // Get the result for the complete model (including maybestates)
             std::vector<ConstantType> result = resultsForNonMaybeStates;
@@ -463,7 +494,7 @@ namespace storm {
         template <typename SparseModelType, typename ConstantType>
         void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::splitAtCenter(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>>& regionVector, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>>& knownRegionVector, storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> const& monRes, storm::modelchecker::RegionResult& regionRes) {
             auto optimizationDirection = isLowerBound(this->currentCheckTask->getBound().comparisonType) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
-            if (monRes.isAllMonotonicity()) {
+            if (monRes.isDone() && monRes.isAllMonotonicity()) {
                 regionRes = getInstantiationChecker().check(env, region.getCenterPoint())->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()] ? RegionResult::CenterSat : RegionResult::CenterViolated;
                 region.split(region.getCenterPoint(), regionVector, knownRegionVector, monRes, regionRes, optimizationDirection);
             } else {

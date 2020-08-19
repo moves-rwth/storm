@@ -8,14 +8,15 @@ namespace storm {
             stateMonRes = std::vector<std::shared_ptr<MonotonicityResult<VariableType>>>(numberOfStates, nullptr);
             globalMonotonicityResult = std::make_shared<MonotonicityResult<VariableType>>();
             statesMonotone = storm::storage::BitVector(numberOfStates, false);
+            dummyPointer = std::make_shared<MonotonicityResult<VariableType>>();
         }
 
         template <typename VariableType>
         typename LocalMonotonicityResult<VariableType>::Monotonicity LocalMonotonicityResult<VariableType>::getMonotonicity(uint_fast64_t state, VariableType var) const {
-            if (stateMonRes[state] != nullptr) {
-                return stateMonRes[state]->getMonotonicity(var);
-            } else if (statesMonotone[state]) {
+            if (stateMonRes[state] == dummyPointer) {
                 return Monotonicity::Constant;
+            } else if (stateMonRes[state] != nullptr) {
+                return stateMonRes[state]->getMonotonicity(var);
             } else{
                 return Monotonicity::Unknown;
             }
@@ -28,6 +29,7 @@ namespace storm {
 
         template <typename VariableType>
         void LocalMonotonicityResult<VariableType>::setMonotonicity(uint_fast64_t state, VariableType var, typename LocalMonotonicityResult<VariableType>::Monotonicity mon) {
+            assert (stateMonRes[state] != dummyPointer);
             if (stateMonRes[state] == nullptr) {
                 stateMonRes[state] = std::make_shared<MonotonicityResult<VariableType>>();
             }
@@ -36,7 +38,11 @@ namespace storm {
             if (mon == Monotonicity::Unknown || mon == Monotonicity::Not) {
                 statesMonotone.set(state, false);
             } else {
-                statesMonotone.set(state, stateMonRes[state]->isAllMonotonicity());
+                bool stateMonotone = stateMonRes[state]->isAllMonotonicity();
+                if (stateMonotone) {
+                    statesMonotone.set(state);
+                    done |= statesMonotone.full();
+                }
                 if (isDone()) {
                     globalMonotonicityResult->setDone();
                 }
@@ -58,12 +64,7 @@ namespace storm {
 
         template <typename VariableType>
         bool LocalMonotonicityResult<VariableType>::isDone() const {
-            return done || statesMonotone.full();
-        }
-
-        template <typename VariableType>
-        void LocalMonotonicityResult<VariableType>::setDone(bool done) {
-            this->done = done;
+            return done;
         }
 
         template <typename VariableType>
@@ -109,6 +110,9 @@ namespace storm {
 
         template <typename VariableType>
         void LocalMonotonicityResult<VariableType>::setConstant(uint_fast64_t state) {
+            if (stateMonRes[state] == nullptr) {
+                stateMonRes[state] = dummyPointer;
+            }
             this->statesMonotone.set(state);
         }
 

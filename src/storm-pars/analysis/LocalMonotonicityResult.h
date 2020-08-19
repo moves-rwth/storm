@@ -60,7 +60,6 @@ namespace storm {
              * @return true if done is set to true, false otherwise.
              */
             bool isDone() const;
-            void setDone(bool done = true);
 
             bool isNoMonotonicity() const;
 
@@ -94,6 +93,8 @@ namespace storm {
 
             int indexMinimize = -1;
             int indexMaximize = -1;
+            std::shared_ptr<MonotonicityResult<VariableType>> dummyPointer;
+
         };
     }
 }
