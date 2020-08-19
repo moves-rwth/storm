@@ -199,7 +199,7 @@ namespace storm {
                                 }
                             }
 
-                            if (newUpperBoundAlwaysHigherEqual & !newUpperBoundAlwaysLowerEqual) {
+                            if (newUpperBoundAlwaysHigherEqual && !newUpperBoundAlwaysLowerEqual) {
                                 // All values moved up or stayed the same
                                 // That means the guess for an upper bound is actually a lower bound
                                 iterationPrecision = oviinternal::updateIterationPrecision(env, *auxVector, *upperX, relative, relevantValues);
@@ -207,7 +207,7 @@ namespace storm {
                                 // Set lowerX to the upper bound candidate
                                 std::swap(lowerX, upperX);
                                 break;
-                            } else if (newUpperBoundAlwaysLowerEqual & !newUpperBoundAlwaysHigherEqual) {
+                            } else if (newUpperBoundAlwaysLowerEqual && !newUpperBoundAlwaysHigherEqual) {
                                 // All values moved down or stayed the same and we have a maximum difference of twice the requested precision
                                 // We can safely use twice the requested precision, as we calculate the center of both vectors
                                 bool reachedPrecision;
@@ -223,6 +223,11 @@ namespace storm {
                                     // From now on, we keep updating both bounds
                                     intervalIterationNeeded = true;
                                 }
+                            } else if (newUpperBoundAlwaysHigherEqual && newUpperBoundAlwaysLowerEqual) {
+                                // In this case, the guessed upper bound is the precise fixpoint
+                                status = SolverStatus::Converged;
+                                std::swap(lowerX, auxVector);
+                                break;
                             }
                             // At this point, the old upper bounds (auxVector) are not needed anymore.
 
