@@ -46,7 +46,7 @@ namespace storm {
                 
                 std::vector<std::string> ddLibraries = {"cudd", "sylvan"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, ddLibraryOptionName, false, "Sets which library is preferred for decision-diagram operations.")
-                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the library to prefer.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(ddLibraries)).setDefaultValueString("cudd").build()).build());
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the library to prefer.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(ddLibraries)).setDefaultValueString("sylvan").build()).build());
                 
                 std::vector<std::string> lpSolvers = {"gurobi", "glpk", "z3"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, lpSolverOptionName, false, "Sets which LP solver is preferred.")

@@ -57,16 +57,16 @@ namespace storage {
 
         BEColourClass() = default;
 
-        BEColourClass(storm::storage::DFTElementType t, ValueType a, ValueType p, size_t h) : type(t), hash(h), aRate(a), pRate(p) {
-            STORM_LOG_ASSERT(t == storm::storage::DFTElementType::BE_EXP, "Expected type BE_EXP but got type " << t);
+        BEColourClass(storm::storage::BEType type, ValueType active, ValueType passive, size_t parents) : type(type), nrParents(parents), aRate(active), pRate(passive) {
+            STORM_LOG_ASSERT(type == storm::storage::BEType::EXPONENTIAL, "Expected type EXPONENTIAL but got type " << type);
         }
 
-        BEColourClass(storm::storage::DFTElementType t, bool fail, size_t h) : type(t), hash(h), failed(fail) {
-            STORM_LOG_ASSERT(t == storm::storage::DFTElementType::BE_CONST, "Expected type BE_CONST but got type " << t);
+        BEColourClass(storm::storage::BEType type, bool fail, size_t parents) : type(type), nrParents(parents), failed(fail) {
+            STORM_LOG_ASSERT(type == storm::storage::BEType::CONSTANT, "Expected type CONSTANT but got type " << type);
         }
 
-        storm::storage::DFTElementType type;
-        size_t hash;
+        storm::storage::BEType type;
+        size_t nrParents;
         ValueType aRate;
         ValueType pRate;
         bool failed;
@@ -79,10 +79,10 @@ namespace storage {
             return false;
         }
         switch (lhs.type) {
-            case storm::storage::DFTElementType::BE_EXP:
-                return lhs.hash == rhs.hash && lhs.aRate == rhs.aRate && lhs.pRate == rhs.pRate;
-            case storm::storage::DFTElementType::BE_CONST:
-                return lhs.hash == rhs.hash && lhs.failed == rhs.failed;
+            case storm::storage::BEType::EXPONENTIAL:
+                return lhs.nrParents == rhs.nrParents && lhs.aRate == rhs.aRate && lhs.pRate == rhs.pRate;
+            case storm::storage::BEType::CONSTANT:
+                return lhs.nrParents == rhs.nrParents && lhs.failed == rhs.failed;
             default:
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << lhs.type << "' is not known.");
                 break;
@@ -271,21 +271,21 @@ namespace storage {
 
     protected:
         void colourize(std::shared_ptr<const DFTBE<ValueType>> const& be) {
-            switch (be->type()) {
-                case storm::storage::DFTElementType::BE_EXP:
-                {
-                    auto beExp = std::static_pointer_cast<BEExponential<ValueType> const>(be);
-                    beColour[beExp->id()] = BEColourClass<ValueType>(beExp->type(), beExp->activeFailureRate(), beExp->passiveFailureRate(), beExp->nrParents());
-                    break;
-                }
-                case storm::storage::DFTElementType::BE_CONST:
+            switch (be->beType()) {
+                case storm::storage::BEType::CONSTANT:
                 {
                     auto beConst = std::static_pointer_cast<BEConst<ValueType> const>(be);
-                    beColour[beConst->id()] = BEColourClass<ValueType>(beConst->type(), beConst->failed(), beConst->nrParents());
+                    beColour[beConst->id()] = BEColourClass<ValueType>(beConst->beType(), beConst->failed(), beConst->nrParents());
+                    break;
+                }
+                case storm::storage::BEType::EXPONENTIAL:
+                {
+                    auto beExp = std::static_pointer_cast<BEExponential<ValueType> const>(be);
+                    beColour[beExp->id()] = BEColourClass<ValueType>(beExp->beType(), beExp->activeFailureRate(), beExp->passiveFailureRate(), beExp->nrParents());
                     break;
                 }
                 default:
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << be->type() << "' is not known.");
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << be->beType() << "' is not known.");
                     break;
             }
         }
@@ -299,21 +299,21 @@ namespace storage {
         void colourize(std::shared_ptr<const DFTDependency<ValueType>> const& dep) {
             // TODO this can be improved for n-ary dependencies.
             std::shared_ptr<DFTBE<ValueType> const> be = dep->dependentEvents()[0];
-            switch (be->type()) {
-                case storm::storage::DFTElementType::BE_EXP:
-                {
-                    auto beExp = std::static_pointer_cast<BEExponential<ValueType> const>(be);
-                    depColour[dep->id()] = std::pair<ValueType, ValueType>(dep->probability(), beExp->activeFailureRate());
-                    break;
-                }
-                case storm::storage::DFTElementType::BE_CONST:
+            switch (be->beType()) {
+                case storm::storage::BEType::CONSTANT:
                 {
                     auto beConst = std::static_pointer_cast<BEConst<ValueType> const>(be);
                     depColour[dep->id()] = std::pair<ValueType, ValueType>(dep->probability(), beConst->failed() ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>());
                     break;
                 }
+                case storm::storage::BEType::EXPONENTIAL:
+                {
+                    auto beExp = std::static_pointer_cast<BEExponential<ValueType> const>(be);
+                    depColour[dep->id()] = std::pair<ValueType, ValueType>(dep->probability(), beExp->activeFailureRate());
+                    break;
+                }
                 default:
-                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << be->type() << "' is not known.");
+                    STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << be->beType() << "' is not known.");
                     break;
             }
         }
@@ -491,7 +491,12 @@ namespace storage {
             // We can skip BEs, as they are identified by they're homomorphic if they are in the same class
             for(auto const& indexpair : bijection) {
                 // Check type first. Colouring takes care of a lot, but not necesarily everything (e.g. voting thresholds)
-                equalType(*dft.getElement(indexpair.first), *dft.getElement(indexpair.second));
+                if (!equalType(*dft.getElement(indexpair.first), *dft.getElement(indexpair.second))) {
+                    return false;
+                }
+                if (dft.getElement(indexpair.first)->isRelevant() || dft.getElement(indexpair.second)->isRelevant()) {
+                    return false;
+                }
                 if(dft.isGate(indexpair.first)) {
                     STORM_LOG_ASSERT(dft.isGate(indexpair.second), "Element is no gate.");
                     auto const& lGate = dft.getGate(indexpair.first);
@@ -699,22 +704,25 @@ namespace std {
     template<typename ValueType>
     struct hash<storm::storage::BEColourClass<ValueType>> {
         size_t operator()(storm::storage::BEColourClass<ValueType> const& bcc) const {
-            constexpr uint_fast64_t fivebitmask = (1 << 6) - 1;
-            constexpr uint_fast64_t eightbitmask = (1 << 9) - 1;
+            constexpr uint_fast64_t fivebitmask = (1ul << 6) - 1ul;
+            constexpr uint_fast64_t eightbitmask = (1ul << 9) - 1ul;
+            constexpr uint_fast64_t fortybitmask = (1ul << 41) - 1ul;
             std::hash<ValueType> hasher;
             uint_fast64_t groupHash = static_cast<uint_fast64_t>(1) << 63;
             groupHash |= (static_cast<uint_fast64_t>(bcc.type) & fivebitmask) << (62 - 5);
 
             switch (bcc.type) {
-                case storm::storage::DFTElementType::BE_EXP:
-                    return (hasher(bcc.aRate) ^ hasher(bcc.pRate) << 8);
-                case storm::storage::DFTElementType::BE_CONST:
-                    return (bcc.failed << 8);
+                case storm::storage::BEType::CONSTANT:
+                    groupHash |= (static_cast<uint_fast64_t>(bcc.failed) & fortybitmask) << 8;
+                    break;
+                case storm::storage::BEType::EXPONENTIAL:
+                    groupHash |= ((hasher(bcc.aRate) ^ hasher(bcc.pRate)) & fortybitmask) << 8;
+                    break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "BE of type '" << bcc.type << "' is not known.");
                     break;
             }
-            groupHash |= static_cast<uint_fast64_t>(bcc.hash) & eightbitmask;
+            groupHash |= static_cast<uint_fast64_t>(bcc.nrParents) & eightbitmask;
             return groupHash;
         }
     };

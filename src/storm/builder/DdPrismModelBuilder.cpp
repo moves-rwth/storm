@@ -56,7 +56,7 @@ namespace storm {
             void create(storm::prism::Program const& program, storm::adapters::AddExpressionAdapter<Type, storm::RationalFunction>& rowExpressionAdapter) {
                 for (auto const& constant : program.getConstants()) {
                     if (!constant.isDefined()) {
-                        storm::RationalFunctionVariable carlVariable = carl::freshRealVariable(constant.getExpressionVariable().getName());
+                        storm::RationalFunctionVariable carlVariable = storm::createRFVariable(constant.getExpressionVariable().getName());
                         parameters.insert(carlVariable);
                         auto rf = convertVariableToPolynomial(carlVariable);
                         rowExpressionAdapter.setValue(constant.getExpressionVariable(), rf);
@@ -1349,7 +1349,7 @@ namespace storm {
                 transitionMatrixBdd = transitionMatrixBdd.existsAbstract(generationInfo.allNondeterminismVariables);
             }
             
-            storm::dd::Bdd<Type> reachableStates = storm::utility::dd::computeReachableStates<Type>(initialStates, transitionMatrixBdd, generationInfo.rowMetaVariables, generationInfo.columnMetaVariables);
+            storm::dd::Bdd<Type> reachableStates = storm::utility::dd::computeReachableStates<Type>(initialStates, transitionMatrixBdd, generationInfo.rowMetaVariables, generationInfo.columnMetaVariables).first;
             storm::dd::Add<Type, ValueType> reachableStatesAdd = reachableStates.template toAdd<ValueType>();
             transitionMatrix *= reachableStatesAdd;
             if (system.stateActionDd) {

@@ -196,7 +196,7 @@ namespace storm {
                 // Do a reachability analysis on the raw transition relation.
                 storm::dd::Bdd<DdType> transitionRelation = extendedTransitionRelation.existsAbstract(variablesToAbstract);
                 initialStates.addMetaVariables(abstractionInformation.getSourcePredicateVariables());
-                storm::dd::Bdd<DdType> reachableStates = storm::utility::dd::computeReachableStates(initialStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables());
+                storm::dd::Bdd<DdType> reachableStates = storm::utility::dd::computeReachableStates(initialStates, transitionRelation, abstractionInformation.getSourceVariables(), abstractionInformation.getSuccessorVariables()).first;
 
                 relevantStatesWatch.start();
                 if (this->isRestrictToRelevantStatesSet() && this->hasTargetStateExpression()) {

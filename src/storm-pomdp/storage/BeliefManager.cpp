@@ -1,4 +1,9 @@
-#include "BeliefManager.h"
+#include "storm-pomdp/storage/BeliefManager.h"
+
+#include "storm/adapters/RationalNumberAdapter.h"
+#include "storm/utility/macros.h"
+#include "storm/utility/constants.h"
+#include "storm/models/sparse/Pomdp.h"
 
 namespace storm {
     namespace storage {
@@ -84,9 +89,8 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
-        template<typename SummandsType>
         typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType
-        BeliefManager<PomdpType, BeliefValueType, StateType>::getWeightedSum(BeliefId const &beliefId, SummandsType const &summands) {
+        BeliefManager<PomdpType, BeliefValueType, StateType>::getWeightedSum(BeliefId const &beliefId, std::vector<ValueType> const &summands) {
             ValueType result = storm::utility::zero<ValueType>();
             for (auto const &entry : getBelief(beliefId)) {
                 result += storm::utility::convertNumber<ValueType>(entry.second) * storm::utility::convertNumber<ValueType>(summands.at(entry.first));
@@ -179,7 +183,7 @@ namespace storm {
             uint32_t obs = getBeliefObservation(belief);
             STORM_LOG_ASSERT(obs < beliefToIdMap.size(), "Belief has unknown observation.");
             auto idIt = beliefToIdMap[obs].find(belief);
-            STORM_LOG_ASSERT(idIt != beliefToIdMap.end(), "Unknown Belief.");
+            STORM_LOG_ASSERT(idIt != beliefToIdMap[obs].end(), "Unknown Belief.");
             return idIt->second;
         }
 
@@ -506,10 +510,8 @@ namespace storm {
             return insertioRes.first->second;
         }
 
-        template
-        class BeliefManager<storm::models::sparse::Pomdp<double>>;
+        template class BeliefManager<storm::models::sparse::Pomdp<double>>;
 
-        template
-        class BeliefManager<storm::models::sparse::Pomdp<storm::RationalNumber>>;
+        template class BeliefManager<storm::models::sparse::Pomdp<storm::RationalNumber>>;
     }
 }

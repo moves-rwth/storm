@@ -575,6 +575,8 @@ namespace storm {
              */
             void filterLabels(std::set<std::string> const& labelSet);
 
+            void removeRewardModels();
+
             /*!
              * Retrieves all observation labels that are defined by this program
              *

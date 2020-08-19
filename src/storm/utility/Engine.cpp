@@ -108,6 +108,7 @@ namespace storm {
             switch (engine) {
                 case Engine::Sparse:
                 case Engine::DdSparse:
+                case Engine::Jit:
                     switch (modelType) {
                         case ModelType::DTMC:
                             return storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<ValueType>>::canHandleStatic(checkTask);
@@ -120,6 +121,7 @@ namespace storm {
                         case ModelType::POMDP:
                             return false;
                     }
+                    break;
                 case Engine::Hybrid:
                     switch (modelType) {
                         case ModelType::DTMC:
@@ -133,6 +135,7 @@ namespace storm {
                         case ModelType::POMDP:
                             return false;
                     }
+                    break;
                 case Engine::Dd:
                     switch (modelType) {
                         case ModelType::DTMC:
@@ -144,8 +147,9 @@ namespace storm {
                         case ModelType::POMDP:
                             return false;
                     }
+                    break;
                 default:
-                    STORM_LOG_ERROR("The selected engine" << engine << " is not considered.");
+                    STORM_LOG_ERROR("The selected engine " << engine << " is not considered.");
             }
             STORM_LOG_ERROR("The selected combination of engine (" << engine << ") and model type (" << modelType << ") does not seem to be supported for this value type.");
             return false;
@@ -171,6 +175,7 @@ namespace storm {
                         case ModelType::POMDP:
                             return false;
                     }
+                    break;
                 case Engine::Hybrid:
                     switch (modelType) {
                         case ModelType::DTMC:
@@ -182,6 +187,7 @@ namespace storm {
                         case ModelType::POMDP:
                             return false;
                     }
+                    break;
                 case Engine::Dd:
                     switch (modelType) {
                         case ModelType::DTMC:
@@ -192,6 +198,7 @@ namespace storm {
                         case ModelType::POMDP:
                             return false;
                     }
+                    break;
                 default:
                     STORM_LOG_ERROR("The selected engine" << engine << " is not considered.");
             }
@@ -206,7 +213,7 @@ namespace storm {
                 for (auto const& f : {p.getRawFormula(), p.getFilter().getStatesFormula()}) {
                     auto task = storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*f, true);
                     if (!canHandle(engine, modelDescription.getModelType(), task)) {
-                        STORM_LOG_INFO("Engine " << engine << " can not handle formula '" << *f << "'.");
+                        STORM_LOG_INFO("Engine " << engine << " can not handle formula '" << *f << "' on models of type " << modelDescription.getModelType() << ".");
                         return false;
                     }
                 }

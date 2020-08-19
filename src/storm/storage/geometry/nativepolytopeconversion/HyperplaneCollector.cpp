@@ -15,7 +15,7 @@ namespace storm {
             template< typename ValueType>
             bool HyperplaneCollector<ValueType>::insert(EigenVector && normal, ValueType && offset, std::vector<uint_fast64_t>const* indexList) {
                 //Normalize
-                ValueType infinityNorm = normal.template lpNorm<StormEigen::Infinity>();
+                ValueType infinityNorm = normal.template lpNorm<Eigen::Infinity>();
                 if(infinityNorm != (ValueType)0 ){
                     normal /= infinityNorm;
                     offset /= infinityNorm;

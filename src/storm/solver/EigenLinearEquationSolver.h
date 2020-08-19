@@ -2,7 +2,7 @@
 
 #include "storm/solver/LinearEquationSolver.h"
 #include "storm/solver/SolverSelectionOptions.h"
-#include "storm/utility/eigen.h"
+#include "storm/adapters/eigen.h"
 
 namespace storm {
     namespace solver {
@@ -32,7 +32,7 @@ namespace storm {
             virtual uint64_t getMatrixColumnCount() const override;
             
             // The (eigen) matrix associated with this equation solver.
-            std::unique_ptr<StormEigen::SparseMatrix<ValueType>> eigenA;
+            std::unique_ptr<Eigen::SparseMatrix<ValueType>> eigenA;
 
         };
         

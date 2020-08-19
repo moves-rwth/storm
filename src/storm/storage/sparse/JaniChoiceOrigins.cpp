@@ -79,6 +79,10 @@ namespace storm {
                     this->identifierToJson.push_back(std::move(setJson));
                 }
             }
+
+            std::size_t JaniChoiceOrigins::hash() const {
+                return 0;
+            }
         }
     }
 }

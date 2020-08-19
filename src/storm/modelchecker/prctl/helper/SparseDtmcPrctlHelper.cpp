@@ -29,7 +29,7 @@
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/ProgressMeasurement.h"
 #include "storm/utility/SignalHandler.h"
-#include "storm/utility/export.h"
+#include "storm/io/export.h"
 
 #include "storm/utility/macros.h"
 #include "storm/utility/ConstantsComparator.h"
@@ -529,21 +529,6 @@ namespace storm {
                     }
                 }
                 return result;
-            }
-            
-            template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeLongRunAverageProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& psiStates) {
-                return SparseCtmcCslHelper::computeLongRunAverageProbabilities<ValueType>(env, std::move(goal), transitionMatrix, psiStates, nullptr);
-            }
-            
-            template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeLongRunAverageRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel) {
-                return SparseCtmcCslHelper::computeLongRunAverageRewards<ValueType, RewardModelType>(env, std::move(goal), transitionMatrix, rewardModel, nullptr);
-            }
-            
-            template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeLongRunAverageRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::vector<ValueType> const& stateRewards) {
-                return SparseCtmcCslHelper::computeLongRunAverageRewards<ValueType>(env, std::move(goal), transitionMatrix, stateRewards, nullptr);
             }
             
             template<typename ValueType, typename RewardModelType>

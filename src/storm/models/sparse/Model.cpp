@@ -9,7 +9,7 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/vector.h"
-#include "storm/utility/export.h"
+#include "storm/io/export.h"
 #include "storm/utility/NumberTraits.h"
 
 
@@ -297,6 +297,26 @@ namespace storm {
             void Model<ValueType, RewardModelType>::printModelInformationToStream(std::ostream& out) const {
                 this->printModelInformationHeaderToStream(out);
                 this->printModelInformationFooterToStream(out);
+            }
+
+            template<typename ValueType, typename RewardModelType>
+            std::size_t Model<ValueType, RewardModelType>::hash() const {
+                std::size_t seed = 0;
+                boost::hash_combine(seed,transitionMatrix.hash());
+                boost::hash_combine(seed,stateLabeling.hash());
+                for (auto const& rewModel : rewardModels) {
+                    boost::hash_combine(seed,rewModel.second.hash());
+                }
+                if(choiceLabeling) {
+                    boost::hash_combine(seed,choiceLabeling->hash());
+                }
+                if(stateValuations) {
+                    boost::hash_combine(seed,stateValuations->hash());
+                }
+                if(choiceOrigins) {
+                    boost::hash_combine(seed,choiceOrigins.get()->hash());
+                }
+                return seed;
             }
             
             template<typename ValueType, typename RewardModelType>

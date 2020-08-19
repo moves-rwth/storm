@@ -88,7 +88,8 @@ namespace storm {
                 if (name.compare("name") == 0) {
                     builder.setGspnName(storm::adapters::XMLtoString(attr->getNodeValue()));
                 } else if (name.compare("show-color-cmd") == 0 ||
-                           name.compare("show-fluid-cmd") == 0) {
+                           name.compare("show-fluid-cmd") == 0 ||
+                           name.compare("zoom") == 0) {
                     // ignore node
                 } else {
                     // Found node or attribute which is at the moment not handled by this parser.

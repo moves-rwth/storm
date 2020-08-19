@@ -63,6 +63,7 @@ namespace storm {
              */
             template<class T>
             void setVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, std::vector<T> const& values) {
+                STORM_LOG_ASSERT(positions.getNumberOfSetBits() <= values.size(), "The number of selected positions (" << positions.getNumberOfSetBits() << ") exceeds the size of the input vector (" << values.size() << ").");
                 uint_fast64_t oldPosition = 0;
                 for (auto position : positions) {
                     vector[position] = values[oldPosition++];
@@ -156,6 +157,8 @@ namespace storm {
              */
             template<class T>
             void selectVectorValues(std::vector<T>& vector, storm::storage::BitVector const& positions, std::vector<T> const& values) {
+                STORM_LOG_ASSERT(positions.getNumberOfSetBits() <= vector.size(), "The number of selected positions (" << positions.getNumberOfSetBits() << ") exceeds the size of the target vector (" << vector.size() << ").");
+                STORM_LOG_ASSERT(positions.size() == values.size(), "Size mismatch of the positions vector (" << positions.size() << ") and the values vector (" << values.size() << ").");
                 auto targetIt = vector.begin();
                 for (auto position : positions) {
                     *targetIt = values[position];
@@ -207,6 +210,8 @@ namespace storm {
              */
             template<class T>
             void selectVectorValues(std::vector<T>& vector, std::vector<uint_fast64_t> const& indexSequence, std::vector<T> const& values) {
+                STORM_LOG_ASSERT(indexSequence.size() <= vector.size(), "The number of selected positions (" << indexSequence.size() << ") exceeds the size of the target vector (" << vector.size() << ").");
+                
                 for (uint_fast64_t vectorIndex = 0; vectorIndex < vector.size(); ++vectorIndex){
                     vector[vectorIndex] = values[indexSequence[vectorIndex]];
                 }

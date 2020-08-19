@@ -50,7 +50,13 @@ namespace storm {
             virtual bool isPartiallyObservable() const override;
             virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) override;
             
+            /// Initializes a builder for state valuations by adding the appropriate variables.
+            virtual storm::storage::sparse::StateValuationsBuilder initializeStateValuationsBuilder() const override;
+            
             virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) override;
+            
+            /// Adds the valuation for the currently loaded state to the given builder
+            virtual void addStateValuation(storm::storage::sparse::state_type const& currentStateIndex, storm::storage::sparse::StateValuationsBuilder& valuationsBuilder) const override;
             
             virtual std::size_t getNumberOfRewardModels() const override;
             virtual storm::builder::RewardModelInformation getRewardModelInformation(uint64_t const& index) const override;
@@ -102,7 +108,7 @@ namespace storm {
              * @params assignmentLevel The assignmentLevel that is to be considered for the update.
              * @return The resulting state.
              */
-            void applyTransientUpdate(TransientVariableValuation<ValueType>& transientValuation, storm::jani::detail::ConstAssignments const& transientAssignments, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator);
+            void applyTransientUpdate(TransientVariableValuation<ValueType>& transientValuation, storm::jani::detail::ConstAssignments const& transientAssignments, storm::expressions::ExpressionEvaluator<ValueType> const& expressionEvaluator) const;
 
             /**
              * Required method to overload, but currently throws an error as POMDPs are not yet specified in JANI.
@@ -113,6 +119,8 @@ namespace storm {
              */
             virtual storm::storage::BitVector evaluateObservationLabels(CompressedState const& state) const override;
 
+            TransientVariableValuation<ValueType> getTransientVariableValuationAtLocations(std::vector<uint64_t> const& locations) const;
+            
             /*!
              * Retrieves all choices possible from the given state.
              *

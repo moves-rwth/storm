@@ -24,7 +24,9 @@ namespace storm {
         // A structure storing information about the boolean variables of the model.
         struct BooleanVariableInformation {
             BooleanVariableInformation(storm::expressions::Variable const& variable, uint_fast64_t bitOffset, bool global, bool observable);
-            
+
+            std::string const& getName() const { return variable.getName(); }
+
             // The boolean variable.
             storm::expressions::Variable variable;
             
@@ -42,6 +44,8 @@ namespace storm {
         struct IntegerVariableInformation {
 
             IntegerVariableInformation(storm::expressions::Variable const& variable, int_fast64_t lowerBound, int_fast64_t upperBound, uint_fast64_t bitOffset, uint_fast64_t bitWidth, bool global = false, bool observable = true, bool forceOutOfBoundsCheck = false);
+
+            std::string const& getName() const { return variable.getName(); }
 
             // The integer variable.
             storm::expressions::Variable variable;

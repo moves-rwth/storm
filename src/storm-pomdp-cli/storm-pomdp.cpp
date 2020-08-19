@@ -1,13 +1,13 @@
-
-
 #include "storm/utility/initialize.h"
 
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
+#include "storm-pomdp-cli/settings/modules/QualitativePOMDPAnalysisSettings.h"
 #include "storm-pomdp-cli/settings/modules/BeliefExplorationSettings.h"
-#include "storm-pomdp-cli/settings/PomdpSettings.h"
+#include "storm-pomdp-cli/settings/modules/ToParametricSettings.h"
 
+#include "storm-pomdp-cli/settings/PomdpSettings.h"
 #include "storm/analysis/GraphConditions.h"
 
 #include "storm-cli-utilities/cli.h"
@@ -21,11 +21,11 @@
 #include "storm-pomdp/transformer/BinaryPomdpTransformer.h"
 #include "storm-pomdp/transformer/MakePOMDPCanonic.h"
 #include "storm-pomdp/analysis/UniqueObservationStates.h"
-#include "storm-pomdp/analysis/QualitativeAnalysis.h"
-#include "storm-pomdp/modelchecker/ApproximatePOMDPModelchecker.h"
+#include "storm-pomdp/analysis/QualitativeAnalysisOnGraphs.h"
+#include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelChecker.h"
 #include "storm-pomdp/analysis/FormulaInformation.h"
-#include "storm-pomdp/analysis/MemlessStrategySearchQualitative.h"
-#include "storm-pomdp/analysis/QualitativeStrategySearchNaive.h"
+#include "storm-pomdp/analysis/IterativePolicySearch.h"
+#include "storm-pomdp/analysis/OneShotPolicySearch.h"
 
 #include "storm/api/storm.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -33,7 +33,6 @@
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/Stopwatch.h"
 #include "storm/utility/SignalHandler.h"
-#include "storm/utility/NumberTraits.h"
 
 #include "storm/exceptions/UnexpectedException.h"
 #include "storm/exceptions/NotSupportedException.h"
@@ -50,27 +49,26 @@ namespace storm {
                 auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
                 bool preprocessingPerformed = false;
                 if (pomdpSettings.isSelfloopReductionSet()) {
-                    bool apply = formulaInfo.isNonNestedReachabilityProbability() && formulaInfo.maximize();
-                    apply = apply || (formulaInfo.isNonNestedExpectedRewardFormula() && formulaInfo.minimize());
-                    if (apply) {
+                    storm::transformer::GlobalPOMDPSelfLoopEliminator<ValueType> selfLoopEliminator(*pomdp);
+                    if (selfLoopEliminator.preservesFormula(formula)) {
                         STORM_PRINT_AND_LOG("Eliminating self-loop choices ...");
                         uint64_t oldChoiceCount = pomdp->getNumberOfChoices();
-                        storm::transformer::GlobalPOMDPSelfLoopEliminator<ValueType> selfLoopEliminator(*pomdp);
                         pomdp = selfLoopEliminator.transform();
                         STORM_PRINT_AND_LOG(oldChoiceCount - pomdp->getNumberOfChoices() << " choices eliminated through self-loop elimination." << std::endl);
                         preprocessingPerformed = true;
+                    } else {
+                        STORM_PRINT_AND_LOG("Not eliminating self-loop choices as it does not preserve the formula." << std::endl);
                     }
                 }
                 if (pomdpSettings.isQualitativeReductionSet() && formulaInfo.isNonNestedReachabilityProbability()) {
-                    storm::analysis::QualitativeAnalysis<ValueType> qualitativeAnalysis(*pomdp);
+                    storm::analysis::QualitativeAnalysisOnGraphs<ValueType> qualitativeAnalysis(*pomdp);
                     STORM_PRINT_AND_LOG("Computing states with probability 0 ...");
                     storm::storage::BitVector prob0States = qualitativeAnalysis.analyseProb0(formula.asProbabilityOperatorFormula());
                     std::cout << prob0States << std::endl;
-                    STORM_PRINT_AND_LOG(" done." << std::endl);
+                    STORM_PRINT_AND_LOG(" done. " << prob0States.getNumberOfSetBits() << " states found." << std::endl);
                     STORM_PRINT_AND_LOG("Computing states with probability 1 ...");
                     storm::storage::BitVector  prob1States = qualitativeAnalysis.analyseProb1(formula.asProbabilityOperatorFormula());
-                    std::cout << prob1States << std::endl;
-                    STORM_PRINT_AND_LOG(" done." << std::endl);
+                    STORM_PRINT_AND_LOG(" done. " << prob1States.getNumberOfSetBits() << " states found." << std::endl);
                     storm::pomdp::transformer::KnownProbabilityTransformer<ValueType> kpt = storm::pomdp::transformer::KnownProbabilityTransformer<ValueType>();
                     pomdp = kpt.transform(*pomdp, prob0States, prob1States);
                     // Update formulaInfo to changes from Preprocessing
@@ -109,6 +107,117 @@ namespace storm {
                     STORM_PRINT_AND_LOG(")");
                 }
             }
+
+            MemlessSearchOptions fillMemlessSearchOptionsFromSettings() {
+                storm::pomdp::MemlessSearchOptions options;
+                auto const& qualSettings = storm::settings::getModule<storm::settings::modules::QualitativePOMDPAnalysisSettings>();
+
+
+                options.onlyDeterministicStrategies = qualSettings.isOnlyDeterministicSet();
+                uint64_t loglevel = 0;
+                // TODO a big ugly, but we have our own loglevels (for technical reasons)
+                if(storm::utility::getLogLevel() == l3pp::LogLevel::INFO) {
+                    loglevel = 1;
+                }
+                else if(storm::utility::getLogLevel() == l3pp::LogLevel::DEBUG) {
+                    loglevel = 2;
+                }
+                else if(storm::utility::getLogLevel() == l3pp::LogLevel::TRACE) {
+                    loglevel = 3;
+                }
+                options.setDebugLevel(loglevel);
+                options.validateEveryStep = qualSettings.validateIntermediateSteps();
+                options.validateResult = qualSettings.validateFinalResult();
+
+                options.pathVariableType = storm::pomdp::pathVariableTypeFromString(qualSettings.getLookaheadType());
+
+                if (qualSettings.isExportSATCallsSet()) {
+                    options.setExportSATCalls(qualSettings.getExportSATCallsPath());
+                }
+
+                return options;
+            }
+
+            template<typename ValueType>
+            void performQualitativeAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& origpomdp, storm::pomdp::analysis::FormulaInformation const& formulaInfo, storm::logic::Formula const& formula) {
+                auto const& qualSettings = storm::settings::getModule<storm::settings::modules::QualitativePOMDPAnalysisSettings>();
+                auto const& coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
+                std::stringstream sstr;
+                origpomdp->printModelInformationToStream(sstr);
+                STORM_LOG_INFO(sstr.str());
+                STORM_LOG_THROW(formulaInfo.isNonNestedReachabilityProbability(), storm::exceptions::NotSupportedException, "Qualitative memoryless scheduler search is not implemented for this property type.");
+                STORM_LOG_TRACE("Run qualitative preprocessing...");
+                storm::models::sparse::Pomdp<ValueType> pomdp(*origpomdp);
+                storm::analysis::QualitativeAnalysisOnGraphs<ValueType> qualitativeAnalysis(pomdp);
+                // After preprocessing, this might be done cheaper.
+                storm::storage::BitVector surelyNotAlmostSurelyReachTarget = qualitativeAnalysis.analyseProbSmaller1(
+                        formula.asProbabilityOperatorFormula());
+                pomdp.getTransitionMatrix().makeRowGroupsAbsorbing(surelyNotAlmostSurelyReachTarget);
+                storm::storage::BitVector targetStates = qualitativeAnalysis.analyseProb1(formula.asProbabilityOperatorFormula());
+
+                storm::expressions::ExpressionManager expressionManager;
+                std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
+                storm::pomdp::MemlessSearchOptions options = fillMemlessSearchOptionsFromSettings();
+                uint64_t lookahead = qualSettings.getLookahead();
+                if (lookahead == 0) {
+                    lookahead = pomdp.getNumberOfStates();
+                }
+                if (qualSettings.getMemlessSearchMethod() == "one-shot") {
+                    storm::pomdp::OneShotPolicySearch<ValueType> memlessSearch(pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory);
+                    if (qualSettings.isWinningRegionSet()) {
+                        STORM_LOG_ERROR("Computing winning regions is not supported by ccd-memless.");
+                    } else {
+                        memlessSearch.analyzeForInitialStates(lookahead);
+                    }
+                } else if (qualSettings.getMemlessSearchMethod() == "iterative") {
+                    storm::pomdp::IterativePolicySearch<ValueType> search(pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory, options);
+                    if (qualSettings.isWinningRegionSet()) {
+                        search.computeWinningRegion(lookahead);
+                    } else {
+                        search.analyzeForInitialStates(lookahead);
+                    }
+
+                    if (qualSettings.isPrintWinningRegionSet()) {
+                        search.getLastWinningRegion().print();
+                        std::cout << std::endl;
+                    }
+                    if (qualSettings.isExportWinningRegionSet()) {
+                        std::size_t hash = pomdp.hash();
+                        search.getLastWinningRegion().storeToFile(qualSettings.exportWinningRegionPath(), "model hash: " + std::to_string(hash));
+                    }
+
+                    search.finalizeStatistics();
+                    if(pomdp.getInitialStates().getNumberOfSetBits() == 1) {
+                        uint64_t initialState = pomdp.getInitialStates().getNextSetIndex(0);
+                        uint64_t initialObservation = pomdp.getObservation(initialState);
+                        // TODO this is inefficient.
+                        uint64_t offset = 0;
+                        for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
+                            if (state == initialState) {
+                                break;
+                            }
+                            if (pomdp.getObservation(state) == initialObservation) {
+                                ++offset;
+                            }
+                        }
+                        STORM_PRINT_AND_LOG("Initial state is safe: " << search.getLastWinningRegion().isWinning(initialObservation, offset));
+                    } else {
+                        STORM_LOG_WARN("Output for multiple initial states is incomplete");
+                    }
+                    std::cout << "Number of belief support states: " << search.getLastWinningRegion().beliefSupportStates() << std::endl;
+                    if (coreSettings.isShowStatisticsSet() && qualSettings.computeExpensiveStats()) {
+                        auto wbss = search.getLastWinningRegion().computeNrWinningBeliefs();
+                        STORM_PRINT_AND_LOG( "Number of winning belief support states: [" << wbss.first << "," << wbss.second
+                                  << "]");
+                    }
+                    if (coreSettings.isShowStatisticsSet()) {
+                        search.getStatistics().print();
+                    }
+
+                } else {
+                    STORM_LOG_ERROR("This method is not implemented.");
+                }
+            }
             
             template<typename ValueType, storm::dd::DdType DdType>
             bool performAnalysis(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> const& pomdp, storm::pomdp::analysis::FormulaInformation const& formulaInfo, storm::logic::Formula const& formula) {
@@ -116,10 +225,10 @@ namespace storm {
                 bool analysisPerformed = false;
                 if (pomdpSettings.isBeliefExplorationSet()) {
                     STORM_PRINT_AND_LOG("Exploring the belief MDP... ");
-                    auto options = storm::pomdp::modelchecker::ApproximatePOMDPModelCheckerOptions<ValueType>(pomdpSettings.isBeliefExplorationDiscretizeSet(), pomdpSettings.isBeliefExplorationUnfoldSet());
+                    auto options = storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>(pomdpSettings.isBeliefExplorationDiscretizeSet(), pomdpSettings.isBeliefExplorationUnfoldSet());
                     auto const& beliefExplorationSettings = storm::settings::getModule<storm::settings::modules::BeliefExplorationSettings>();
                     beliefExplorationSettings.setValuesInOptionsStruct(options);
-                    storm::pomdp::modelchecker::ApproximatePOMDPModelchecker<storm::models::sparse::Pomdp<ValueType>> checker(*pomdp, options);
+                    storm::pomdp::modelchecker::BeliefExplorationPomdpModelChecker<storm::models::sparse::Pomdp<ValueType>> checker(pomdp, options);
                     auto result = checker.check(formula);
                     checker.printStatisticsToStream(std::cout);
                     if (storm::utility::resources::isTerminate()) {
@@ -131,25 +240,10 @@ namespace storm {
                     STORM_PRINT_AND_LOG(std::endl);
                     analysisPerformed = true;
                 }
-                if (pomdpSettings.isMemlessSearchSet()) {
-                    STORM_LOG_THROW(formulaInfo.isNonNestedReachabilityProbability(), storm::exceptions::NotSupportedException, "Qualitative memoryless scheduler search is not implemented for this property type.");
-
-    //                    std::cout << std::endl;
-    //                    pomdp->writeDotToStream(std::cout);
-    //                    std::cout << std::endl;
-    //                    std::cout << std::endl;
-                    storm::expressions::ExpressionManager expressionManager;
-                    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
-                    if (pomdpSettings.getMemlessSearchMethod() == "ccd16memless") {
-                        storm::pomdp::QualitativeStrategySearchNaive<ValueType> memlessSearch(*pomdp, formulaInfo.getTargetStates().observations, formulaInfo.getTargetStates().states, formulaInfo.getSinkStates().states, smtSolverFactory);
-                        memlessSearch.findNewStrategyForSomeState(5);
-                    } else if (pomdpSettings.getMemlessSearchMethod() == "iterative") {
-                        storm::pomdp::MemlessStrategySearchQualitative<ValueType> memlessSearch(*pomdp, formulaInfo.getTargetStates().observations, formulaInfo.getTargetStates().states, formulaInfo.getSinkStates().states, smtSolverFactory);
-                        memlessSearch.findNewStrategyForSomeState(5);
-                    } else {
-                        STORM_LOG_ERROR("This method is not implemented.");
-                    }
+                if (pomdpSettings.isQualitativeAnalysisSet()) {
+                    performQualitativeAnalysis(pomdp, formulaInfo, formula);
                     analysisPerformed = true;
+
                 }
                 if (pomdpSettings.isCheckFullyObservableSet()) {
                     STORM_PRINT_AND_LOG("Analyzing the formula on the fully observable MDP ... ");
@@ -176,6 +270,8 @@ namespace storm {
             template<typename ValueType, storm::dd::DdType DdType>
             bool performTransformation(std::shared_ptr<storm::models::sparse::Pomdp<ValueType>>& pomdp, storm::logic::Formula const& formula) {
                 auto const& pomdpSettings = storm::settings::getModule<storm::settings::modules::POMDPSettings>();
+                auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
+                auto const& transformSettings = storm::settings::getModule<storm::settings::modules::ToParametricSettings>();
                 bool transformationPerformed = false;
                 bool memoryUnfolded = false;
                 if (pomdpSettings.getMemoryBound() > 1) {
@@ -192,7 +288,7 @@ namespace storm {
         
                 // From now on the pomdp is considered memoryless
         
-                if (pomdpSettings.isMecReductionSet()) {
+                if (transformSettings.isMecReductionSet()) {
                     STORM_PRINT_AND_LOG("Eliminating mec choices ...");
                     // Note: Elimination of mec choices only preserves memoryless schedulers.
                     uint64_t oldChoiceCount = pomdp->getNumberOfChoices();
@@ -204,8 +300,8 @@ namespace storm {
                     transformationPerformed = true;
                 }
         
-                if (pomdpSettings.isTransformBinarySet() || pomdpSettings.isTransformSimpleSet()) {
-                    if (pomdpSettings.isTransformSimpleSet()) {
+                if (transformSettings.isTransformBinarySet() || transformSettings.isTransformSimpleSet()) {
+                    if (transformSettings.isTransformSimpleSet()) {
                         STORM_PRINT_AND_LOG("Transforming the POMDP to a simple POMDP.");
                         pomdp = storm::transformer::BinaryPomdpTransformer<ValueType>().transform(*pomdp, true);
                     } else {
@@ -220,17 +316,16 @@ namespace storm {
                 if (pomdpSettings.isExportToParametricSet()) {
                     STORM_PRINT_AND_LOG("Transforming memoryless POMDP to pMC...");
                     storm::transformer::ApplyFiniteSchedulerToPomdp<ValueType> toPMCTransformer(*pomdp);
-                    std::string transformMode = pomdpSettings.getFscApplicationTypeString();
+                    std::string transformMode = transformSettings.getFscApplicationTypeString();
                     auto pmc = toPMCTransformer.transform(storm::transformer::parsePomdpFscApplicationMode(transformMode));
                     STORM_PRINT_AND_LOG(" done." << std::endl);
                     pmc->printModelInformationToStream(std::cout);
-                    STORM_PRINT_AND_LOG("Simplifying pMC...");
-                    //if (generalSettings.isBisimulationSet()) {
-                    pmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>(),{formula.asSharedPointer()}, storm::storage::BisimulationType::Strong)->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
-        
-                    //}
-                    STORM_PRINT_AND_LOG(" done." << std::endl);
-                    pmc->printModelInformationToStream(std::cout);
+                    if (transformSettings.allowPostSimplifications()) {
+                        STORM_PRINT_AND_LOG("Simplifying pMC...");
+                        pmc = storm::api::performBisimulationMinimization<storm::RationalFunction>(pmc->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>(),{formula.asSharedPointer()}, storm::storage::BisimulationType::Strong)->template as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
+                        STORM_PRINT_AND_LOG(" done." << std::endl);
+                        pmc->printModelInformationToStream(std::cout);
+                    }
                     STORM_PRINT_AND_LOG("Exporting pMC...");
                     storm::analysis::ConstraintCollector<storm::RationalFunction> constraints(*pmc);
                     auto const& parameterSet = constraints.getVariables();
@@ -239,7 +334,7 @@ namespace storm {
                     for (auto const& parameter : parameters) {
                         parameterNames.push_back(parameter.name());
                     }
-                    storm::api::exportSparseModelAsDrn(pmc, pomdpSettings.getExportToParametricFilename(), parameterNames);
+                    storm::api::exportSparseModelAsDrn(pmc, pomdpSettings.getExportToParametricFilename(), parameterNames, !ioSettings.isExplicitExportPlaceholdersDisabled());
                     STORM_PRINT_AND_LOG(" done." << std::endl);
                     transformationPerformed = true;
                 }
@@ -290,18 +385,20 @@ namespace storm {
                         STORM_PRINT_AND_LOG("Time for graph-based POMDP (pre-)processing: " << sw << "." << std::endl);
                         pomdp->printModelInformationToStream(std::cout);
                     }
+
+                    sw.restart();
+                    if (performTransformation<ValueType, DdType>(pomdp, *formula)) {
+                        sw.stop();
+                        STORM_PRINT_AND_LOG("Time for POMDP transformation(s): " << sw << "s." << std::endl);
+                    }
                     
                     sw.restart();
                     if (performAnalysis<ValueType, DdType>(pomdp, formulaInfo, *formula)) {
                         sw.stop();
-                        STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << "." << std::endl);
+                        STORM_PRINT_AND_LOG("Time for POMDP analysis: " << sw << "s." << std::endl);
                     }
                     
-                    sw.restart();
-                    if (performTransformation<ValueType, DdType>(pomdp, *formula)) {
-                        sw.stop();
-                        STORM_PRINT_AND_LOG("Time for POMDP transformation(s): " << sw << "." << std::endl);
-                    }
+
                 } else {
                     STORM_LOG_WARN("Nothing to be done. Did you forget to specify a formula?");
                 }

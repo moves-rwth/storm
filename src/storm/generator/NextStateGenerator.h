@@ -10,6 +10,7 @@
 #include "storm/storage/sparse/StateStorage.h"
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/sparse/ChoiceOrigins.h"
+#include "storm/storage/sparse/StateValuations.h"
 
 #include "storm/builder/BuilderOptions.h"
 #include "storm/builder/RewardModelInformation.h"
@@ -54,14 +55,20 @@ namespace storm {
             virtual bool isPartiallyObservable() const = 0;
             virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) = 0;
             
+            /// Initializes a builder for state valuations by adding the appropriate variables.
+            virtual storm::storage::sparse::StateValuationsBuilder initializeStateValuationsBuilder() const;
+            
             void load(CompressedState const& state);
             virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) = 0;
             bool satisfies(storm::expressions::Expression const& expression) const;
             
+            /// Adds the valuation for the currently loaded state to the given builder
+            virtual void addStateValuation(storm::storage::sparse::state_type const& currentStateIndex, storm::storage::sparse::StateValuationsBuilder& valuationsBuilder) const;
+            
             virtual std::size_t getNumberOfRewardModels() const = 0;
             virtual storm::builder::RewardModelInformation getRewardModelInformation(uint64_t const& index) const = 0;
             
-            storm::expressions::SimpleValuation toValuation(CompressedState const& state) const;
+            std::string stateToString(CompressedState const& state) const;
 
             uint32_t observabilityClass(CompressedState const& state) const;
 
@@ -69,8 +76,8 @@ namespace storm {
 
             NextStateGeneratorOptions const& getOptions() const;
 
+            VariableInformation const& getVariableInformation() const;
 
-            
             virtual std::shared_ptr<storm::storage::sparse::ChoiceOrigins> generateChoiceOrigins(std::vector<boost::any>& dataForChoiceOrigins) const;
 
             /*!

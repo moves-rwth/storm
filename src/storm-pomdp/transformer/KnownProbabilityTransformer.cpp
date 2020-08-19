@@ -109,11 +109,7 @@ namespace storm {
                 storm::storage::sparse::ModelComponents<ValueType> components(newTransitionMatrix, newLabeling);
                 components.observabilityClasses = newObservations;
 
-                auto newPomdp = storm::models::sparse::Pomdp<ValueType>(components);
-
-                newPomdp.printModelInformationToStream(std::cout);
-
-                return std::make_shared<storm::models::sparse::Pomdp<ValueType>>(newPomdp);
+                return std::make_shared<storm::models::sparse::Pomdp<ValueType>>(std::move(components), true);
             }
 
             template class KnownProbabilityTransformer<double>;

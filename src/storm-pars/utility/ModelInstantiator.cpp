@@ -137,10 +137,7 @@ namespace storm {
             template<typename ParametricSparseModelType, typename ConstantSparseModelType>
             ConstantSparseModelType const& ModelInstantiator<ParametricSparseModelType, ConstantSparseModelType>::instantiate(storm::utility::parametric::Valuation<ParametricType> const& valuation){
                 //Write results into the placeholders
-                for(auto& functionResult : this->functions){
-                    functionResult.second=storm::utility::convertNumber<ConstantType>(
-                            storm::utility::parametric::evaluate(functionResult.first, valuation));
-                }
+                instantiate_helper(valuation);
                 
                 //Write the instantiated values to the matrices and vectors according to the stored mappings
                 for(auto& entryValuePair : this->matrixMapping){
@@ -170,6 +167,12 @@ namespace storm {
             template class ModelInstantiator<storm::models::sparse::Ctmc<storm::RationalFunction>, storm::models::sparse::Ctmc<storm::RationalNumber>>;
             template class ModelInstantiator<storm::models::sparse::MarkovAutomaton<storm::RationalFunction>, storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
             template class ModelInstantiator<storm::models::sparse::StochasticTwoPlayerGame<storm::RationalFunction>, storm::models::sparse::StochasticTwoPlayerGame<storm::RationalNumber>>;
+
+            // For stormpy:
+            template class ModelInstantiator<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::models::sparse::Dtmc<storm::RationalFunction>>;
+            template class ModelInstantiator<storm::models::sparse::Mdp<storm::RationalFunction>, storm::models::sparse::Mdp<storm::RationalFunction>>;
+            template class ModelInstantiator<storm::models::sparse::Ctmc<storm::RationalFunction>, storm::models::sparse::Ctmc<storm::RationalFunction>>;
+            template class ModelInstantiator<storm::models::sparse::MarkovAutomaton<storm::RationalFunction>, storm::models::sparse::MarkovAutomaton<storm::RationalFunction>>;
 #endif
     } //namespace utility
 } //namespace storm

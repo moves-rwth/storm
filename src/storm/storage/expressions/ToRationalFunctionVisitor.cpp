@@ -82,7 +82,7 @@ namespace storm {
             if (variablePair != variableToVariableMap.end()) {
                 return convertVariableToPolynomial(variablePair->second);
             } else {
-                storm::RationalFunctionVariable carlVariable = carl::freshRealVariable(expression.getVariableName());
+                storm::RationalFunctionVariable carlVariable = storm::createRFVariable(expression.getVariableName());
                 variableToVariableMap.emplace(expression.getVariable(), carlVariable);
                 return convertVariableToPolynomial(carlVariable);
             }

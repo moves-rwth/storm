@@ -21,7 +21,13 @@ namespace storm {
             typename CoefficientType<storm::RationalFunction>::type evaluate<storm::RationalFunction>(storm::RationalFunction const& function, Valuation<storm::RationalFunction> const& valuation){
                 return function.evaluate(valuation);
             }
-            
+
+            template<>
+            typename storm::RationalFunction substitute<storm::RationalFunction>(storm::RationalFunction const& function, Valuation<storm::RationalFunction> const& valuation){
+                return function.substitute(valuation);
+            }
+
+
             template<>
             void gatherOccurringVariables<storm::RationalFunction>(storm::RationalFunction const& function, std::set<typename VariableType<storm::RationalFunction>::type>& variableSet){
                 function.gatherVariables(variableSet);

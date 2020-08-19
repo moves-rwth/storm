@@ -1,13 +1,12 @@
 #pragma once
 
-#include "storm/api/storm.h"
+#include <vector>
 #include <unordered_map>
 #include <boost/optional.hpp>
 #include <boost/container/flat_map.hpp>
 #include <boost/container/flat_set.hpp>
-#include "storm/adapters/RationalNumberAdapter.h"
-#include "storm/utility/macros.h"
-#include "storm/exceptions/UnexpectedException.h"
+
+#include "storm/utility/ConstantsComparator.h"
 
 namespace storm {
     namespace storage {
@@ -46,9 +45,7 @@ namespace storm {
 
             std::string toString(Triangulation const &t) const;
 
-            template<typename SummandsType>
-            ValueType getWeightedSum(BeliefId const &beliefId, SummandsType const &summands);
-
+            ValueType getWeightedSum(BeliefId const &beliefId, std::vector<ValueType> const &summands);
 
             BeliefId const &getInitialBelief() const;
 

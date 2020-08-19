@@ -732,6 +732,11 @@ namespace storm {
             STORM_LOG_THROW(it != this->labels.end(), storm::exceptions::InvalidArgumentException, "Canno remove unknown label '" << name << "'.");
             this->labels.erase(it);
         }
+
+        void Program::removeRewardModels() {
+            this->rewardModels.clear();
+            this->rewardModelToIndexMap.clear();
+        }
         
         void Program::filterLabels(std::set<std::string> const& labelSet) {
             std::vector<storm::prism::Label> newLabels;
@@ -1493,8 +1498,13 @@ namespace storm {
                     }
                 }
             }
-            
-            return Program(this->manager, modelType, newConstants, getGlobalBooleanVariables(), getGlobalIntegerVariables(), getFormulas(), newModules, actionIndicesToDelete.empty() ? getActionNameToIndexMapping() : newActionToIndexMap, actionIndicesToDelete.empty() ? this->getRewardModels() : newRewardModels, getLabels(), getObservationLabels(), getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct(), prismCompatibility);
+
+            std::vector<Label> newLabels;
+            for(auto const& label : this->getLabels()) {
+                newLabels.emplace_back(label.getName(), label.getStatePredicateExpression().simplify());
+            }
+
+            return Program(this->manager, modelType, newConstants, getGlobalBooleanVariables(), getGlobalIntegerVariables(), getFormulas(), newModules, actionIndicesToDelete.empty() ? getActionNameToIndexMapping() : newActionToIndexMap, actionIndicesToDelete.empty() ? this->getRewardModels() : newRewardModels, newLabels, getObservationLabels(), getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct(), prismCompatibility);
         }
         
         Program Program::flattenModules(std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) const {

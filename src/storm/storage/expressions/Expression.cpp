@@ -133,9 +133,12 @@ namespace storm {
         
         bool Expression::containsVariable(std::set<storm::expressions::Variable> const& variables) const {
             std::set<storm::expressions::Variable> appearingVariables = this->getVariables();
-            std::set<storm::expressions::Variable> intersection;
-            std::set_intersection(variables.begin(), variables.end(), appearingVariables.begin(), appearingVariables.end(), std::inserter(intersection, intersection.begin()));
-            return !intersection.empty();
+            for (auto const& v : variables) {
+                if (appearingVariables.count(v) > 0) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         bool Expression::containsVariableInITEGuard(std::set<storm::expressions::Variable> const& variables) const {
@@ -445,6 +448,10 @@ namespace storm {
         
         Expression sum(std::vector<storm::expressions::Expression> const& expressions) {
             return applyAssociative(expressions, [] (Expression const& e1, Expression const& e2) { return e1 + e2; });
+        }
+
+        Expression modulo(Expression const& first, Expression const& second) {
+            return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType().minimumMaximum(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Modulo)));
         }
         
         Expression apply(std::vector<storm::expressions::Expression> const& expressions, std::function<Expression (Expression const&, Expression const&)> const& function) {

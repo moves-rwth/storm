@@ -13,7 +13,7 @@
 #include "storm/storage/dd/InternalBdd.h"
 #include "storm/storage/dd/InternalAdd.h"
 
-#include "storm/utility/sylvan.h"
+#include "storm/adapters/sylvan.h"
 
 namespace storm {
     namespace storage {

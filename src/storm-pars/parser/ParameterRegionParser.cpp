@@ -4,7 +4,7 @@
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/constants.h"
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 
 namespace storm {
     namespace parser {

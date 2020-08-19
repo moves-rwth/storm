@@ -1,6 +1,8 @@
 #include "storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
 
 #include "storm/modelchecker/csl/helper/SparseMarkovAutomatonCslHelper.h"
+#include "storm/modelchecker/helper/infinitehorizon/SparseNondeterministicInfiniteHorizonHelper.h"
+#include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
 
 #include "storm/modelchecker/multiobjective/multiObjectiveModelChecking.h"
 
@@ -42,6 +44,7 @@ namespace storm {
                 if (requiresSingleInitialState) {
                     *requiresSingleInitialState = true;
                 }
+                return true;
             }
             return false;
         }
@@ -139,8 +142,15 @@ namespace storm {
             std::unique_ptr<CheckResult> subResultPointer = this->check(env, stateFormula);
             ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
 
-            std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper::computeLongRunAverageProbabilities(env, checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), subResult.getTruthValuesVector());
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
+            storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType> helper(this->getModel().getTransitionMatrix(), this->getModel().getMarkovianStates(), this->getModel().getExitRates());
+            storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, checkTask, this->getModel());
+			auto values = helper.computeLongRunAverageProbabilities(env, subResult.getTruthValuesVector());
+
+            std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<ValueType>(std::move(values)));
+            if (checkTask.isProduceSchedulersSet()) {
+                result->asExplicitQuantitativeCheckResult<ValueType>().setScheduler(std::make_unique<storm::storage::Scheduler<ValueType>>(helper.extractScheduler()));
+            }
+            return result;
         }
         
         template<typename SparseMarkovAutomatonModelType>
@@ -148,8 +158,16 @@ namespace storm {
             STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
             STORM_LOG_THROW(this->getModel().isClosed(), storm::exceptions::InvalidPropertyException, "Unable to compute long run average rewards in non-closed Markov automaton.");
             auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
-            std::vector<ValueType> result = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper::computeLongRunAverageRewards<ValueType, RewardModelType>(env, checkTask.getOptimizationDirection(), this->getModel().getTransitionMatrix(), this->getModel().getBackwardTransitions(), this->getModel().getExitRates(), this->getModel().getMarkovianStates(), rewardModel.get());
-            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
+            
+            storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType> helper(this->getModel().getTransitionMatrix(), this->getModel().getMarkovianStates(), this->getModel().getExitRates());
+            storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, checkTask, this->getModel());
+            auto values = helper.computeLongRunAverageRewards(env, rewardModel.get());
+
+            std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<ValueType>(std::move(values)));
+            if (checkTask.isProduceSchedulersSet()) {
+                result->asExplicitQuantitativeCheckResult<ValueType>().setScheduler(std::make_unique<storm::storage::Scheduler<ValueType>>(helper.extractScheduler()));
+            }
+            return result;
         }
         
         template<typename SparseMarkovAutomatonModelType>

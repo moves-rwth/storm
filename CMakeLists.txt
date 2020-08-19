@@ -66,7 +66,9 @@ set(GUROBI_ROOT "" CACHE STRING "A hint to the root directory of Gurobi (optiona
 set(Z3_ROOT "" CACHE STRING "A hint to the root directory of Z3 (optional).")
 set(CUDA_ROOT "" CACHE STRING "The hint to the root directory of CUDA (optional).")
 set(MSAT_ROOT "" CACHE STRING "The hint to the root directory of MathSAT (optional).")
-set(STORM_QVBS_ROOT "" CACHE STRING "The hint to the root directory of the Quantitative Verification Benchmark Set (QVBS) (optional).")
+option(STORM_LOAD_QVBS "Sets whether the Quantitative Verification Benchmark Set (QVBS) should be downloaded." OFF)
+set(STORM_QVBS_ROOT "" CACHE STRING "The root directory of the Quantitative Verification Benchmark Set (QVBS) in case it should not be downloaded (optional).")
+MARK_AS_ADVANCED(STORM_QVBS_ROOT)
 set(ADDITIONAL_INCLUDE_DIRS "" CACHE STRING "Additional directories added to the include directories.")
 set(ADDITIONAL_LINK_DIRS "" CACHE STRING "Additional directories added to the link directories.")
 set(USE_XERCESC ${XML_SUPPORT})
@@ -192,9 +194,11 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
 	# using AppleClang
 	if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.3)
 		message(FATAL_ERROR "AppleClang version must be at least 7.3.")
-	elseif ((CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 11.0) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 11.0))
-		message(WARNING "Temporarily disabling stack checks for AppleClang 11.0 or higher.")
-		# TODO: In release mode, stack checks currently fail at runtime. Might be a compiler bug as there does not seem to be faulty behavior. 
+	elseif ((CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 11.0.0) OR (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 11.0.0))
+		message(WARNING "Disabling stack checks for AppleClang version 11.0.0 or higher.")
+		# Stack checks are known to produce errors with the following Clang versions:
+		# 11.0.0: Runtime errors (stack_not_16_byte_aligned_error) when invoking storm in release mode
+		# 11.0.3: Catching exceptions thrown within PRISM parser does not work (The exception just falls through)
 		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-stack-check")
 	endif()
 
@@ -273,13 +277,17 @@ elseif (STORM_COMPILER_GCC)
 endif ()
 
 if (STORM_USE_THIN_LTO)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto=thin")
-	message(STATUS "Storm - Enabling link-time optimizations using ThinLTO.")
+    if (STORM_COMPILER_CLANG OR STORM_COMPILER_APPLECLANG)
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto=thin")
+        message(STATUS "Storm - Enabling link-time optimizations using ThinLTO.")
+    else()
+        message(FATAL_ERROR "Storm - ThinLTO only supported for Clang. Use regular LTO instead.")
+    endif()
 elseif (STORM_USE_LTO)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
 
     # Fix for problems that occurred when using LTO on gcc. This should be removed when it
-    # is not needed anymore as it makes the the already long link-step potentially longer.
+    # is not needed anymore as it makes the already long link-step potentially longer.
     if (STORM_COMPILER_GCC)
         set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto-partition=none")
     endif()
@@ -437,15 +445,15 @@ set(STORM_VERSION_APPENDIX "${CMAKE_MATCH_5}") # might be empty
 if (STORM_GIT_VERSION_STRING MATCHES "NOTFOUND")
 	set(STORM_VERSION_SOURCE "VersionSource::Static")
 	set(STORM_VERSION_COMMITS_AHEAD 0)
-	set(STORM_VERSION_DIRTY boost::none)
+	set(STORM_VERSION_DIRTY DirtyState:Unknown)
 	include(version.cmake)
 	message(WARNING "Storm - Git version information not available, statically assuming version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}.")
 else()
 	set(STORM_VERSION_SOURCE "VersionSource::Git")
 	if ("${STORM_VERSION_APPENDIX}" MATCHES "^.*dirty.*$")
-		set(STORM_VERSION_DIRTY "true")
+		set(STORM_VERSION_DIRTY "DirtyState::Dirty")
 	else()
-		set(STORM_VERSION_DIRTY "false")
+		set(STORM_VERSION_DIRTY "DirtyState::Clean")
 	endif()
 endif()
 
@@ -486,14 +494,6 @@ configure_file (
 	"${PROJECT_BINARY_DIR}/include/storm-config.h"
 )
 
-# Configure a source file to pass the Storm version to the source code
-configure_file (
-	"${PROJECT_SOURCE_DIR}/storm-version.cpp.in"
-	"${PROJECT_SOURCE_DIR}/src/storm/utility/storm-version.cpp"
-)
-
-set(STORM_GENERATED_SOURCES "${PROJECT_BINARY_DIR}/src/storm/utility/storm-version.cpp")
-
 # Add the binary dir include directory for storm-config.h
 include_directories("${PROJECT_BINARY_DIR}/include")
 
@@ -509,6 +509,8 @@ add_dependencies(check-verbose tests)
 
 set(STORM_TARGETS "")
 add_subdirectory(src)
+
+export_option(STORM_HAVE_XERCES)
 
 include(export)
 

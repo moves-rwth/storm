@@ -6,23 +6,13 @@
 #include <map>
 #include <boost/optional.hpp>
 
-#include "storm-parsers/api/properties.h"
-#include "storm/api/properties.h"
-//#include "storm/api/verification.h"
 
 #include "storm/storage/BitVector.h"
-#include "storm/storage/SparseMatrix.h"
-#include "storm/utility/macros.h"
-#include "storm-pomdp/storage/BeliefManager.cpp"
+#include "storm-pomdp/storage/BeliefManager.h"
 #include "storm-pomdp/modelchecker/TrivialPomdpValueBoundsModelChecker.h"
-#include "storm/utility/SignalHandler.h"
-#include "storm/modelchecker/results/CheckResult.h"
-#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/modelchecker/hints/ExplicitModelCheckerHint.cpp"
-
 
 namespace storm {
+    
     namespace builder {
         template<typename PomdpType, typename BeliefValueType = typename PomdpType::ValueType>
         class BeliefMdpExplorer {

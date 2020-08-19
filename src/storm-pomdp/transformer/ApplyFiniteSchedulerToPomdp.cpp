@@ -19,7 +19,7 @@ namespace storm {
         }
 
         struct RationalFunctionConstructor {
-            RationalFunctionConstructor() : cache(std::make_shared<RawPolynomialCache>()) {
+            RationalFunctionConstructor(std::shared_ptr<RawPolynomialCache> const& cache) : cache(cache) {
 
             }
 
@@ -31,11 +31,25 @@ namespace storm {
             std::shared_ptr<RawPolynomialCache> cache;
         };
 
+        template<typename ValueType>
+        std::shared_ptr<RawPolynomialCache> getCache(storm::models::sparse::Pomdp<ValueType> const& model) {
+            return std::make_shared<RawPolynomialCache>();
+        }
+
+        template<>
+        std::shared_ptr<RawPolynomialCache> getCache(storm::models::sparse::Pomdp<storm::RationalFunction> const& model) {
+            for (auto const& entry : model.getTransitionMatrix()) {
+                if(!entry.getValue().isConstant()) {
+                    return entry.getValue().nominatorAsPolynomial().pCache();
+                }
+            }
+            return std::make_shared<RawPolynomialCache>();
+        }
 
         template<typename ValueType>
         std::unordered_map<uint32_t, std::vector<storm::RationalFunction>> ApplyFiniteSchedulerToPomdp<ValueType>::getObservationChoiceWeights(PomdpFscApplicationMode applicationMode ) const {
             std::unordered_map<uint32_t, std::vector<storm::RationalFunction>> res;
-            RationalFunctionConstructor ratFuncConstructor;
+            RationalFunctionConstructor ratFuncConstructor(getCache(pomdp));
 
             for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
                 auto observation = pomdp.getObservation(state);
@@ -46,7 +60,7 @@ namespace storm {
                     storm::RationalFunction lastWeight = storm::utility::one<storm::RationalFunction>();
                     for (uint64_t a = 0; a < pomdp.getNumberOfChoices(state) - 1; ++a) {
                         std::string varName = "p" + std::to_string(observation) + "_" + std::to_string(a);
-                        storm::RationalFunction var = ratFuncConstructor.translate(carl::freshRealVariable(varName));
+                        storm::RationalFunction var = ratFuncConstructor.translate(storm::createRFVariable(varName));
                         if (applicationMode == PomdpFscApplicationMode::SIMPLE_LINEAR) {
                             weights.push_back(collected * var);
                             collected *= storm::utility::one<storm::RationalFunction>() - var;
@@ -122,6 +136,8 @@ namespace storm {
             }
             
             modelComponents.stateLabeling = pomdp.getStateLabeling();
+            modelComponents.stateValuations = pomdp.getOptionalStateValuations();
+
             
             return std::make_shared<storm::models::sparse::Dtmc<storm::RationalFunction>>(modelComponents);
             
@@ -131,5 +147,6 @@ namespace storm {
 
         template
         class ApplyFiniteSchedulerToPomdp<double>;
+        template class ApplyFiniteSchedulerToPomdp<storm::RationalFunction>;
     }
 }

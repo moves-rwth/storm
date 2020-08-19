@@ -2201,7 +2201,7 @@ namespace storm {
             if (preparedModel.getModelType() == storm::jani::ModelType::MDP || preparedModel.getModelType() == storm::jani::ModelType::LTS || preparedModel.getModelType() == storm::jani::ModelType::MA) {
                 transitionMatrixBdd = transitionMatrixBdd.existsAbstract(variables.allNondeterminismVariables);
             }
-            modelComponents.reachableStates = storm::utility::dd::computeReachableStates(modelComponents.initialStates, transitionMatrixBdd, variables.rowMetaVariables, variables.columnMetaVariables);
+            modelComponents.reachableStates = storm::utility::dd::computeReachableStates(modelComponents.initialStates, transitionMatrixBdd, variables.rowMetaVariables, variables.columnMetaVariables).first;
             
             // Check that the reachable fragment does not overlap with the illegal fragment.
             storm::dd::Bdd<Type> reachableIllegalFragment = modelComponents.reachableStates && system.illegalFragment;

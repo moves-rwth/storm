@@ -6,7 +6,6 @@
 #include "storm/logic/LiftableTransitionRewardsVisitor.h"
 
 #include "storm/settings/SettingsManager.h"
-#include "storm/settings/modules/BuildSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 
 #include "storm/utility/macros.h"
@@ -58,13 +57,12 @@ namespace storm {
                 }
             }
             
-            auto const& buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
             auto const& generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
             if (modelDescription.hasModel()) {
                 this->setApplyMaximalProgressAssumption(modelDescription.getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA);
+                this->setBuildChoiceOrigins(modelDescription.getModelType() == storm::storage::SymbolicModelDescription::ModelType::POMDP);
+                this->setBuildChoiceLabels(modelDescription.getModelType() == storm::storage::SymbolicModelDescription::ModelType::POMDP);
             }
-            explorationChecks = buildSettings.isExplorationChecksSet();
-            reservedBitsForUnboundedVariables = buildSettings.getBitsForUnboundedVariables();
             showProgress = generalSettings.isVerboseSet();
             showProgressDelay = generalSettings.getShowProgressDelay();
         }

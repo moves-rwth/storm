@@ -60,7 +60,7 @@ namespace storm {
         using detail::PreviousExplicitResult;
 
         template<storm::dd::DdType Type, typename ModelType>
-        GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model, GameBasedMdpModelCheckerOptions const& options, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : options(options), smtSolverFactory(smtSolverFactory), comparator(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPrecision(), storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getRelativeTerminationCriterion()), reuseQualitativeResults(false), reuseQuantitativeResults(false), solveMode(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getSolveMode()), debug(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isDebugSet()) {
+        GameBasedMdpModelChecker<Type, ModelType>::GameBasedMdpModelChecker(storm::storage::SymbolicModelDescription const& model, GameBasedMdpModelCheckerOptions const& options, std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory) : options(options), smtSolverFactory(smtSolverFactory), comparator(storm::utility::convertNumber<ValueType>(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getPrecision()), storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getRelativeTerminationCriterion()), reuseQualitativeResults(false), reuseQuantitativeResults(false), solveMode(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().getSolveMode()), debug(storm::settings::getModule<storm::settings::modules::AbstractionSettings>().isDebugSet()) {
 
             if (model.hasUndefinedConstants()) {
                 auto undefinedConstants = model.getUndefinedConstants();
@@ -1119,7 +1119,7 @@ namespace storm {
             }
             
             if (sanityCheck) {
-                storm::utility::ConstantsComparator<ValueType> sanityComparator( 1e-6, true);
+                storm::utility::ConstantsComparator<ValueType> sanityComparator( storm::utility::convertNumber<ValueType>(1e-6), true);
                 
                 ///////// SANITY CHECK: apply lower strategy, obtain DTMC matrix and model check it. the values should
                 ///////// still be the lower ones.

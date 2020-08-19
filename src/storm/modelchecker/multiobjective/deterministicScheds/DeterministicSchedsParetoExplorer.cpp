@@ -16,7 +16,7 @@
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
 
-#include "storm/utility/export.h"
+#include "storm/io/export.h"
 #include "storm/utility/solver.h"
 
 #include "storm/exceptions/UnexpectedException.h"
@@ -476,7 +476,7 @@ namespace storm {
             void DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::negateMinObjectives(std::vector<GeometryValueType>& vector) const {
                 for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                     if (objectiveHelper[objIndex].minimizing()) {
-                        vector[objIndex] *= -storm::utility::one<ModelValueType>();
+                        vector[objIndex] *= -storm::utility::one<GeometryValueType>();
                     }
                 }
             }
@@ -484,7 +484,7 @@ namespace storm {
             template <class SparseModelType, typename GeometryValueType>
             void DeterministicSchedsParetoExplorer<SparseModelType, GeometryValueType>::initializeFacets(Environment const& env) {
                 for (uint64_t objIndex = 0; objIndex < objectives.size(); ++objIndex) {
-                    std::vector<GeometryValueType> weightVector(objectives.size(), storm::utility::zero<ModelValueType>());
+                    std::vector<GeometryValueType> weightVector(objectives.size(), storm::utility::zero<GeometryValueType>());
                     weightVector[objIndex] = storm::utility::one<GeometryValueType>();
                     std::vector<GeometryValueType> point;
                     if (wvChecker) {

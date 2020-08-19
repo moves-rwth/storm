@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "storm-parsers/parser/MarkovAutomatonSparseTransitionParser.h"
-#include "storm/utility/cstring.h"
+#include "storm-parsers/util/cstring.h"
 #include "storm-parsers/parser/MarkovAutomatonParser.h"
 #include "storm/settings/SettingMemento.h"
 #include "storm/exceptions/WrongFormatException.h"

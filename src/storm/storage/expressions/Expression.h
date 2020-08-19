@@ -436,6 +436,7 @@ namespace storm {
         Expression floor(Expression const& first);
         Expression ceil(Expression const& first);
         Expression round(Expression const& first);
+        Expression modulo(Expression const& first, Expression const& second);
         Expression minimum(Expression const& first, Expression const& second);
         Expression maximum(Expression const& first, Expression const& second);
         Expression disjunction(std::vector<storm::expressions::Expression> const& expressions);

@@ -5,7 +5,7 @@
 #include "storm/builder/ParallelCompositionBuilder.h"
 #include "storm/exceptions/UnmetRequirementException.h"
 #include "storm/utility/bitoperations.h"
-#include "storm/utility/DirectEncodingExporter.h"
+#include "storm/io/DirectEncodingExporter.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/models/ModelType.h"
@@ -130,17 +130,14 @@ namespace storm {
                         ValueType result = storm::utility::zero<ValueType>();
                         int limK = invResults ? -1 : nrM + 1;
                         int chK = invResults ? -1 : 1;
-                        // WARNING: there is a bug for computing permutations with more than 32 elements
-                        STORM_LOG_THROW(res.size() < 32, storm::exceptions::NotSupportedException,
-                                        "Permutations work only for < 32 elements");
                         for (int cK = nrK; cK != limK; cK += chK) {
                             STORM_LOG_ASSERT(cK >= 0, "ck negative.");
-                            size_t permutation = smallestIntWithNBitsSet(static_cast<size_t>(cK));
+                            uint64_t permutation = smallestIntWithNBitsSet(static_cast<uint64_t>(cK));
                             do {
                                 STORM_LOG_TRACE("Permutation=" << permutation);
                                 ValueType permResult = storm::utility::one<ValueType>();
                                 for (size_t i = 0; i < res.size(); ++i) {
-                                    if (permutation & (1 << i)) {
+                                    if (permutation & (1ul << i)) {
                                         permResult *= res[i];
                                     } else {
                                         permResult *= storm::utility::one<ValueType>() - res[i];
@@ -149,7 +146,7 @@ namespace storm {
                                 STORM_LOG_TRACE("Result for permutation:" << permResult);
                                 permutation = nextBitPermutation(permutation);
                                 result += permResult;
-                            } while (permutation < (1 << nrM) && permutation != 0);
+                            } while (permutation < (1ul << nrM) && permutation != 0);
                         }
                         if (invResults) {
                             result = storm::utility::one<ValueType>() - result;
@@ -210,6 +207,7 @@ namespace storm {
                     STORM_LOG_DEBUG("Building Model via parallel composition...");
                     explorationTimer.start();
 
+                    ft.setRelevantEvents(relevantEvents, allowDCForRelevantEvents);
                     // Find symmetries
                     std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
                     storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
@@ -222,7 +220,7 @@ namespace storm {
 
                     // Build a single CTMC
                     STORM_LOG_DEBUG("Building Model from DFT with top level element " << ft.getElement(ft.getTopLevelIndex())->toString() << " ...");
-                    storm::builder::ExplicitDFTModelBuilder<ValueType> builder(ft, symmetries, relevantEvents, allowDCForRelevantEvents);
+                    storm::builder::ExplicitDFTModelBuilder<ValueType> builder(ft, symmetries);
                     builder.buildModel(0, 0.0);
                     std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
                     explorationTimer.stop();
@@ -270,6 +268,9 @@ namespace storm {
             } else {
                 // No composition was possible
                 explorationTimer.start();
+
+                dft.setRelevantEvents(relevantEvents, allowDCForRelevantEvents);
+
                 // Find symmetries
                 std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
                 storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
@@ -282,8 +283,7 @@ namespace storm {
                 // Build a single CTMC
                 STORM_LOG_DEBUG("Building Model...");
 
-                storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, relevantEvents,
-                                                                           allowDCForRelevantEvents);
+                storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries);
                 builder.buildModel(0, 0.0);
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
                 if (printInfo) {
@@ -309,6 +309,8 @@ namespace storm {
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
             auto dftIOSettings = storm::settings::getModule<storm::settings::modules::DftIOSettings>();
 
+            dft.setRelevantEvents(relevantEvents, allowDCForRelevantEvents);
+
             // Find symmetries
             std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
             storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
@@ -327,8 +329,7 @@ namespace storm {
                                                                    storm::utility::zero<ValueType>());
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
                 std::vector<ValueType> newResult;
-                storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, relevantEvents,
-                                                                           allowDCForRelevantEvents);
+                storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries);
 
                 // TODO: compute approximation for all properties simultaneously?
                 std::shared_ptr<const storm::logic::Formula> property = properties[0];
@@ -367,7 +368,7 @@ namespace storm {
                     if (ioSettings.isExportExplicitSet()) {
                         std::vector<std::string> parameterNames;
                         // TODO fill parameter names
-                        storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), parameterNames);
+                        storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), parameterNames, !ioSettings.isExplicitExportPlaceholdersDisabled());
                     }
 
                     // Check lower bounds
@@ -425,8 +426,7 @@ namespace storm {
                 // Build a single Markov Automaton
                 auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
                 STORM_LOG_DEBUG("Building Model...");
-                storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries, relevantEvents,
-                                                                           allowDCForRelevantEvents);
+                storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries);
                 builder.buildModel(0, 0.0);
                 std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
                 if (eliminateChains && model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
@@ -445,7 +445,7 @@ namespace storm {
                 if (ioSettings.isExportExplicitSet()) {
                     std::vector<std::string> parameterNames;
                     // TODO fill parameter names
-                    storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), parameterNames);
+                    storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), parameterNames, !ioSettings.isExplicitExportPlaceholdersDisabled());
                 }
                 if (ioSettings.isExportDotSet()) {
                     storm::api::exportSparseModelAsDot(model, ioSettings.getExportDotFilename(), ioSettings.getExportDotMaxWidth());

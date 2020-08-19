@@ -243,7 +243,16 @@ namespace storm {
              * @param offset Offset to add to each id in vector index.
              */
             void replaceColumns(std::vector<index_type> const& replacements, index_type offset);
-                        
+            
+            /*!
+             * Makes sure that a diagonal entry will be inserted at the given row.
+             * All other entries of this row must be set immediately after calling this (without setting values at other rows in between)
+             * The provided row must not be smaller than the row of the most recent insertion.
+             * If there is a row grouping, the column of the diagonal entry will correspond to the current row group.
+             * If addNextValue is called on the given row and the diagonal column, we take the sum of the two values provided to addDiagonalEntry and addNextValue
+             */
+            void addDiagonalEntry(index_type row, ValueType const& value);
+            
         private:
             // A flag indicating whether a row count was set upon construction.
             bool initialRowCountSet;
@@ -305,6 +314,8 @@ namespace storm {
             // Stores the currently active row group. This is used for correctly constructing the row grouping of the
             // matrix.
             index_type currentRowGroupCount;
+            
+            boost::optional<ValueType> pendingDiagonalEntry;
         };
         
         /*!

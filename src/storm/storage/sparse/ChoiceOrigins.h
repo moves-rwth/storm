@@ -93,6 +93,8 @@ namespace storm {
                 
                 storm::models::sparse::ChoiceLabeling toChoiceLabeling() const;
 
+                virtual std::size_t hash() const = 0;
+
             protected:
                 ChoiceOrigins(std::vector<uint_fast64_t> const& indexToIdentifierMapping);
                 ChoiceOrigins(std::vector<uint_fast64_t>&& indexToIdentifierMapping);

@@ -19,6 +19,7 @@ namespace storm {
             template<typename ValueType>
             std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> PomdpMemoryUnfolder<ValueType>::transform() const {
                 // For simplicity we first build the 'full' product of pomdp and memory (with pomdp.numStates * memory.numStates states).
+                STORM_LOG_THROW(pomdp.isCanonic() , storm::exceptions::InvalidArgumentException, "POMDP must be canonical to unfold memory into it");
                 storm::storage::sparse::ModelComponents<ValueType> components;
                 components.transitionMatrix = transformTransitions();
                 components.stateLabeling = transformStateLabeling();
@@ -34,7 +35,8 @@ namespace storm {
                 for (auto const& rewModel : pomdp.getRewardModels()) {
                     components.rewardModels.emplace(rewModel.first, transformRewardModel(rewModel.second, reachableStates));
                 }
-                return std::make_shared<storm::models::sparse::Pomdp<ValueType>>(std::move(components));
+
+                return std::make_shared<storm::models::sparse::Pomdp<ValueType>>(std::move(components), true);
             }
         
             template<typename ValueType>
@@ -185,6 +187,7 @@ namespace storm {
             }
 
             template class PomdpMemoryUnfolder<storm::RationalNumber>;
+        template class PomdpMemoryUnfolder<storm::RationalFunction>;
 
         template
         class PomdpMemoryUnfolder<double>;

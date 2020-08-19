@@ -32,8 +32,9 @@ namespace storm {
             const std::string buildChoiceLabelOptionName = "buildchoicelab";
             const std::string buildChoiceOriginsOptionName = "buildchoiceorig";
             const std::string buildStateValuationsOptionName = "buildstateval";
-            const std::string buildOutOfBoundsStateOptionName = "buildoutofboundsstate";
-            const std::string buildOverlappingGuardsLabelOptionName = "overlappingguardslabel";
+            const std::string buildAllLabelsOptionName = "build-all-labels";
+            const std::string buildOutOfBoundsStateOptionName = "build-out-of-bounds-state";
+            const std::string buildOverlappingGuardsLabelOptionName = "build-overlapping-guards-label";
             const std::string bitsForUnboundedVariablesOptionName = "int-bits";
 
             BuildSettings::BuildSettings() : ModuleSettings(moduleName) {
@@ -45,6 +46,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, buildChoiceLabelOptionName, false, "If set, also build the choice labels").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, buildChoiceOriginsOptionName, false, "If set, also build information that for each choice indicates the part(s) of the input that yielded the choice.").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, buildStateValuationsOptionName, false, "If set, also build the state valuations").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, buildAllLabelsOptionName, false, "If set, build all labels").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, noBuildOptionName, false, "If set, do not build the model.").setIsAdvanced().build());
 
                 std::vector<std::string> explorationOrders = {"dfs", "bfs"};
@@ -103,6 +105,10 @@ namespace storm {
 
             bool BuildSettings::isAddOverlappingGuardsLabelSet() const {
                 return this->getOption(buildOverlappingGuardsLabelOptionName).getHasOptionBeenSet();
+            }
+
+            bool BuildSettings::isBuildAllLabelsSet() const {
+                return this->getOption(buildAllLabelsOptionName).getHasOptionBeenSet();
             }
 
             storm::builder::ExplorationOrder BuildSettings::getExplorationOrder() const {

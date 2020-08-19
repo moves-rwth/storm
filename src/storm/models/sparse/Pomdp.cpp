@@ -75,6 +75,12 @@ namespace storm {
                 return observations;
             }
             
+            template<typename ValueType, typename RewardModelType>
+            void Pomdp<ValueType, RewardModelType>::updateObservations(std::vector<uint32_t>&& newObservations, bool preservesCanonicity) {
+                observations = std::move(newObservations);
+                computeNrObservations();
+                setIsCanonic(isCanonic() && preservesCanonicity);
+            }
 
             template<typename ValueType, typename RewardModelType>
             std::string Pomdp<ValueType, RewardModelType>::additionalDotStateInfo(uint64_t state) const {
@@ -99,6 +105,19 @@ namespace storm {
                 return canonicFlag;
             }
 
+            template<typename ValueType, typename RewardModelType>
+            void Pomdp<ValueType, RewardModelType>::setIsCanonic(bool newValue) {
+                this->canonicFlag = newValue;
+            }
+
+            template<typename ValueType, typename RewardModelType>
+            std::size_t Pomdp<ValueType, RewardModelType>::hash() const {
+
+                std::size_t seed = 0;
+                boost::hash_combine(seed,sparse::Model<ValueType,RewardModelType>::hash());
+                boost::hash_combine(seed,boost::hash_range(observations.begin(), observations.end()));
+                return seed;
+            }
 
 
             template class Pomdp<double>;

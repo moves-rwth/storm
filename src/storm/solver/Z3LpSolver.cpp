@@ -9,7 +9,7 @@
 
 #include "storm/utility/macros.h"
 #include "storm/utility/constants.h"
-#include "storm/utility/file.h"
+#include "storm/io/file.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
@@ -323,7 +323,6 @@ namespace storm {
             storm::utility::openFile(filename, stream);
             stream << Z3_optimize_to_string(*context, *solver);
             storm::utility::closeFile(stream);
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Exporting LP Problems to a file is not implemented for z3.");
         }
         
         template<typename ValueType>

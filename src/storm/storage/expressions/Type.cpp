@@ -210,7 +210,7 @@ namespace storm {
         }
         
         Type Type::divide(Type const& other) const {
-            STORM_LOG_THROW(this->isNumericalType() && other.isNumericalType(), storm::exceptions::InvalidTypeException, "Operator requires numerical operands.");
+            STORM_LOG_THROW(this->isNumericalType() && other.isNumericalType(), storm::exceptions::InvalidTypeException, "Operator division requires numerical operands, got " << this->isNumericalType() << " and " << other.isNumericalType() << "." );
             STORM_LOG_THROW(!this->isBitVectorType() && !other.isBitVectorType(), storm::exceptions::InvalidTypeException, "Operator requires non-bitvector operands.");
             return std::max(*this, other);
         }

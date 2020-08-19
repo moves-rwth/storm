@@ -8,7 +8,7 @@
 #include "storm/storage/memorystructure/MemoryStructureBuilder.h"
 #include "storm/storage/memorystructure/SparseModelMemoryProduct.h"
 #include "storm/transformer/SubsystemBuilder.h"
-#include "storm/utility/export.h"
+#include "storm/io/export.h"
 
 namespace storm {
     namespace models {

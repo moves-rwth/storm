@@ -77,73 +77,19 @@ namespace storm {
 
             }
             
-            template<storm::dd::DdType DdType, class ValueType>
-            std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeLongRunAverageProbabilities(Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& markovianStates, storm::dd::Add<DdType, ValueType> const& exitRateVector, storm::dd::Bdd<DdType> const& psiStates) {
-                
-                // Convert this query to an instance for the sparse engine.
-                storm::utility::Stopwatch conversionWatch(true);
-                // Create ODD for the translation.
-                storm::dd::Odd odd = model.getReachableStates().createOdd();
-                storm::storage::SparseMatrix<ValueType> explicitTransitionMatrix = transitionMatrix.toMatrix(model.getNondeterminismVariables(), odd, odd);
-                std::vector<ValueType> explicitExitRateVector = exitRateVector.toVector(odd);
-                conversionWatch.stop();
-                STORM_LOG_INFO("Converting symbolic matrix to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
-                
-                auto explicitResult = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper::computeLongRunAverageProbabilities(env, dir, explicitTransitionMatrix, explicitTransitionMatrix.transpose(true), explicitExitRateVector, markovianStates.toVector(odd), psiStates.toVector(odd));
-                return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(explicitResult)));
-                
-            }
-            
-            template<storm::dd::DdType DdType, class ValueType>
-            std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeLongRunAverageRewards(Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<DdType, ValueType> const& model, storm::dd::Add<DdType, ValueType> const& transitionMatrix, storm::dd::Bdd<DdType> const& markovianStates, storm::dd::Add<DdType, ValueType> const& exitRateVector, typename storm::models::symbolic::Model<DdType, ValueType>::RewardModelType const& rewardModel) {
-                
-                // Convert this query to an instance for the sparse engine.
-                storm::utility::Stopwatch conversionWatch(true);
-                // Create ODD for the translation.
-                storm::dd::Odd odd = model.getReachableStates().createOdd();
-                std::vector<ValueType> explicitExitRateVector = exitRateVector.toVector(odd);
-                storm::storage::SparseMatrix<ValueType> explicitTransitionMatrix;
-                boost::optional<std::vector<ValueType>> optionalStateRewards, optionalStateActionRewards;
-                if (rewardModel.hasStateRewards()) {
-                    optionalStateRewards = rewardModel.getStateRewardVector().toVector(odd);
-                }
-                if (rewardModel.hasStateActionRewards()) {
-                    auto matrixRewards = transitionMatrix.toMatrixVector(rewardModel.getStateActionRewardVector(), model.getNondeterminismVariables(), odd, odd);
-                    explicitTransitionMatrix = std::move(matrixRewards.first);
-                    optionalStateActionRewards = std::move(matrixRewards.second);
-                } else {
-                    explicitTransitionMatrix = transitionMatrix.toMatrix(model.getNondeterminismVariables(), odd, odd);
-                }
-                STORM_LOG_THROW(!rewardModel.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Transition rewards are not supported in this engine.");
-                storm::models::sparse::StandardRewardModel<ValueType> explicitRewardModel(optionalStateRewards, optionalStateActionRewards);
-                conversionWatch.stop();
-                STORM_LOG_INFO("Converting symbolic matrix to explicit representation done in " << conversionWatch.getTimeInMilliseconds() << "ms.");
-                
-                auto explicitResult = storm::modelchecker::helper::SparseMarkovAutomatonCslHelper::computeLongRunAverageRewards(env, dir, explicitTransitionMatrix, explicitTransitionMatrix.transpose(true), explicitExitRateVector, markovianStates.toVector(odd), explicitRewardModel);
-                return std::unique_ptr<CheckResult>(new HybridQuantitativeCheckResult<DdType, ValueType>(model.getReachableStates(), model.getManager().getBddZero(), model.getManager().template getAddZero<ValueType>(), model.getReachableStates(), std::move(odd), std::move(explicitResult)));
-                
-            }
- 
             // Explicit instantiations.
             
             // Cudd, double.
             template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeReachabilityRewards(Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::CUDD, double> const& model, storm::dd::Add<storm::dd::DdType::CUDD, double> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& markovianStates, storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::CUDD, double>::RewardModelType const& rewardModel, storm::dd::Bdd<storm::dd::DdType::CUDD> const& targetStates, bool qualitative);
             template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::CUDD, double> const& model, storm::dd::Add<storm::dd::DdType::CUDD, double> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& markovianStates, storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::CUDD> const& phiStates,  storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates, bool qualitative, double lowerBound, double upperBound);
-            template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeLongRunAverageProbabilities(Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::CUDD, double> const& model, storm::dd::Add<storm::dd::DdType::CUDD, double> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& markovianStates, storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::CUDD> const& psiStates);
-            template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeLongRunAverageRewards(Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::CUDD, double> const& model, storm::dd::Add<storm::dd::DdType::CUDD, double> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::CUDD> const& markovianStates, storm::dd::Add<storm::dd::DdType::CUDD, double> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::CUDD, double>::RewardModelType const& rewardModel);
  
             // Sylvan, double.
             template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeReachabilityRewards(Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::Sylvan, double> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& markovianStates, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>::RewardModelType const& rewardModel, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& targetStates, bool qualitative);
             template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::Sylvan, double> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& markovianStates, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, bool qualitative, double lowerBound, double upperBound);
-            template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeLongRunAverageProbabilities(Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::Sylvan, double> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& markovianStates, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates);
-            template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeLongRunAverageRewards(Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::Sylvan, double> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& markovianStates, storm::dd::Add<storm::dd::DdType::Sylvan, double> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>::RewardModelType const& rewardModel);
   
             // Sylvan, rational number.
             template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeReachabilityRewards(Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& markovianStates, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalNumber>::RewardModelType const& rewardModel, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& targetStates, bool qualitative);
             template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeBoundedUntilProbabilities(Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& markovianStates, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& phiStates, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates, bool qualitative, double lowerBound, double upperBound);
-            template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeLongRunAverageProbabilities(Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& markovianStates, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& exitRateVector, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& psiStates);
-            template std::unique_ptr<CheckResult> HybridMarkovAutomatonCslHelper::computeLongRunAverageRewards(Environment const& env, OptimizationDirection dir, storm::models::symbolic::MarkovAutomaton<storm::dd::DdType::Sylvan, storm::RationalNumber> const& model, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& transitionMatrix, storm::dd::Bdd<storm::dd::DdType::Sylvan> const& markovianStates, storm::dd::Add<storm::dd::DdType::Sylvan, storm::RationalNumber> const& exitRateVector, typename storm::models::symbolic::Model<storm::dd::DdType::Sylvan, storm::RationalNumber>::RewardModelType const& rewardModel);
-
 
         }
     }

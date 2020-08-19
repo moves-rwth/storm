@@ -160,17 +160,17 @@ namespace storm {
                     if (elem->isBasicElement()) {
                         std::shared_ptr<DFTBE<ValueType>> be = std::static_pointer_cast<DFTBE<ValueType>>(elem);
                         if (be->canFail()) {
-                            switch (be->type()) {
-                                case storm::storage::DFTElementType::BE_EXP: {
+                            switch (be->beType()) {
+                                case storm::storage::BEType::CONSTANT:
+                                    result.push_back(be->id());
+                                    break;
+                                case storm::storage::BEType::EXPONENTIAL: {
                                     auto beExp = std::static_pointer_cast<BEExponential<ValueType>>(be);
                                     if (!beExp->isColdBasicElement()) {
                                         result.push_back(be->id());
                                     }
                                     break;
                                 }
-                                case storm::storage::DFTElementType::BE_CONST:
-                                    result.push_back(be->id());
-                                    break;
                                 default:
                                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BE type '" << be->type() << "' is not supported.");
                             }
@@ -287,7 +287,25 @@ namespace storm {
             bool isFailsafe(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo) const {
                 return storm::storage::DFTState<ValueType>::isFailsafe(state, stateGenerationInfo.getStateIndex(mTopLevelIndex));
             }
-            
+
+            /*!
+             * Return id of used child for a given spare gate.
+             * If no child is used the id of the spare gate is returned.
+             *
+             * @param state DFT state.
+             * @param stateGenerationInfo State generation information.
+             * @param id Id of spare gate.
+             * @return Id of used child. Id of spare gate if no child is used.
+             */
+            size_t uses(storm::storage::BitVector const& state, DFTStateGenerationInfo const& stateGenerationInfo, size_t id) const {
+                size_t nrUsedChild = storm::storage::DFTState<ValueType>::usesIndex(state, stateGenerationInfo, id);
+                if (nrUsedChild == getMaxSpareChildCount()) {
+                    return id;
+                } else {
+                    return getChild(id, nrUsedChild);
+                }
+            }
+
             size_t getChild(size_t spareId, size_t nrUsedChild) const;
             
             size_t getNrChild(size_t spareId, size_t childId) const;

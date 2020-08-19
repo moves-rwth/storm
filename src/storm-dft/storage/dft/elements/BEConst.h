@@ -23,8 +23,8 @@ namespace storm {
                 // Intentionally empty
             }
 
-            DFTElementType type() const override {
-                return DFTElementType::BE_CONST;
+            BEType beType() const override {
+                return BEType::CONSTANT;
             }
 
             /*!
@@ -39,8 +39,10 @@ namespace storm {
                 return this->failed();
             }
 
+            ValueType getUnreliability(ValueType time) const override;
+
             bool isTypeEqualTo(DFTElement<ValueType> const& other) const override {
-                if (!DFTElement<ValueType>::isTypeEqualTo(other)) {
+                if (!DFTBE<ValueType>::isTypeEqualTo(other)) {
                     return false;
                 }
                 auto& otherBE = static_cast<BEConst<ValueType> const&>(other);

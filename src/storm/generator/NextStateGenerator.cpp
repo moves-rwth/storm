@@ -48,6 +48,21 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
+        storm::storage::sparse::StateValuationsBuilder NextStateGenerator<ValueType, StateType>::initializeStateValuationsBuilder() const {
+            storm::storage::sparse::StateValuationsBuilder result;
+            for (auto const& v : variableInformation.locationVariables) {
+                result.addVariable(v.variable);
+            }
+            for (auto const& v : variableInformation.booleanVariables) {
+                result.addVariable(v.variable);
+            }
+            for (auto const& v : variableInformation.integerVariables) {
+                result.addVariable(v.variable);
+            }
+            return result;
+        }
+        
+        template<typename ValueType, typename StateType>
         void NextStateGenerator<ValueType, StateType>::load(CompressedState const& state) {
             // Since almost all subsequent operations are based on the evaluator, we load the state into it now.
             unpackStateIntoEvaluator(state, variableInformation, *evaluator);
@@ -62,6 +77,21 @@ namespace storm {
                 return true;
             }
             return evaluator->asBool(expression);
+        }
+
+        template<typename ValueType, typename StateType>
+        VariableInformation const& NextStateGenerator<ValueType, StateType>::getVariableInformation() const {
+            return variableInformation;
+        }
+        
+        template<typename ValueType, typename StateType>
+        void NextStateGenerator<ValueType, StateType>::addStateValuation(storm::storage::sparse::state_type const& currentStateIndex, storm::storage::sparse::StateValuationsBuilder& valuationsBuilder) const {
+            std::vector<bool> booleanValues;
+            booleanValues.reserve(variableInformation.booleanVariables.size());
+            std::vector<int64_t> integerValues;
+            integerValues.reserve(variableInformation.locationVariables.size() + variableInformation.integerVariables.size());
+            extractVariableValues(*this->state, variableInformation, integerValues, booleanValues, integerValues);
+            valuationsBuilder.addState(currentStateIndex, std::move(booleanValues), std::move(integerValues));
         }
         
         template<typename ValueType, typename StateType>
@@ -168,8 +198,8 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        storm::expressions::SimpleValuation NextStateGenerator<ValueType, StateType>::toValuation(CompressedState const& state) const {
-            return unpackStateIntoValuation(state, variableInformation, *expressionManager);
+        std::string NextStateGenerator<ValueType, StateType>::stateToString(CompressedState const& state) const {
+            return toString(state, variableInformation);
         }
         
         template<typename ValueType, typename StateType>

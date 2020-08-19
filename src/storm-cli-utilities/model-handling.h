@@ -6,8 +6,7 @@
 #include "storm-parsers/api/storm-parsers.h"
 
 #include "storm/utility/SignalHandler.h"
-#include "storm/utility/file.h"
-#include "storm/utility/storm-version.h"
+#include "storm/io/file.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/Engine.h"
@@ -301,8 +300,8 @@ namespace storm {
                 auto builderType = storm::utility::getBuilderType(mpi.engine);
                 bool transformToJaniForJit = builderType == storm::builder::BuilderType::Jit;
                 STORM_LOG_WARN_COND(mpi.transformToJani || !transformToJaniForJit, "The JIT-based model builder is only available for JANI models, automatically converting the PRISM input model.");
-                bool transformToJaniForDdMA = (builderType == storm::builder::BuilderType::Dd) && (input.model->getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA);
-                STORM_LOG_WARN_COND(mpi.transformToJani || !transformToJaniForDdMA, "Dd-based model builder for Markov Automata is only available for JANI models, automatically converting the PRISM input model.");
+                bool transformToJaniForDdMA = (builderType == storm::builder::BuilderType::Dd) && (input.model->getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA) && (!input.model->isJaniModel());
+                STORM_LOG_WARN_COND(mpi.transformToJani || !transformToJaniForDdMA, "Dd-based model builder for Markov Automata is only available for JANI models, automatically converting the input model.");
                 mpi.transformToJani |= (transformToJaniForJit || transformToJaniForDdMA);
             }
 
@@ -362,7 +361,6 @@ namespace storm {
             auto transformedJani = std::make_shared<SymbolicInput>();
             ModelProcessingInformation mpi = getModelProcessingInformation(output, transformedJani);
 
-            auto builderType = storm::utility::getBuilderType(mpi.engine);
             
             // Check whether conversion for PRISM to JANI is requested or necessary.
             if (output.model && output.model.get().isPrismProgram()) {
@@ -384,7 +382,7 @@ namespace storm {
             }
             
             if (output.model && output.model.get().isJaniModel()) {
-                storm::jani::ModelFeatures supportedFeatures = storm::api::getSupportedJaniFeatures(builderType);
+                storm::jani::ModelFeatures supportedFeatures = storm::api::getSupportedJaniFeatures(storm::utility::getBuilderType(mpi.engine));
                 storm::api::simplifyJaniModel(output.model.get().asJaniModel(), output.properties, supportedFeatures);
             }
 
@@ -422,9 +420,10 @@ namespace storm {
         template <typename ValueType>
         std::shared_ptr<storm::models::ModelBase> buildModelSparse(SymbolicInput const& input, storm::settings::modules::BuildSettings const& buildSettings, bool useJit) {
             storm::builder::BuilderOptions options(createFormulasToRespect(input.properties), input.model.get());
-            options.setBuildChoiceLabels(buildSettings.isBuildChoiceLabelsSet());
-            options.setBuildStateValuations(buildSettings.isBuildStateValuationsSet());
-            bool buildChoiceOrigins = buildSettings.isBuildChoiceOriginsSet();
+            options.setBuildChoiceLabels(options.isBuildChoiceLabelsSet() || buildSettings.isBuildChoiceLabelsSet());
+            options.setBuildStateValuations(options.isBuildStateValuationsSet() || buildSettings.isBuildStateValuationsSet());
+            options.setBuildAllLabels(options.isBuildAllLabelsSet() || buildSettings.isBuildAllLabelsSet());
+            bool buildChoiceOrigins = options.isBuildChoiceOriginsSet() || buildSettings.isBuildChoiceOriginsSet();
             if (storm::settings::manager().hasModule(storm::settings::modules::CounterexampleGeneratorSettings::moduleName)) {
                 auto counterexampleGeneratorSettings = storm::settings::getModule<storm::settings::modules::CounterexampleGeneratorSettings>();
                 if (counterexampleGeneratorSettings.isCounterexampleSet()) {
@@ -432,15 +431,16 @@ namespace storm {
                 }
             }
             options.setBuildChoiceOrigins(buildChoiceOrigins);
-            if (input.model->getModelType() == storm::storage::SymbolicModelDescription::ModelType::POMDP) {
-                options.setBuildChoiceOrigins(true);
-                options.setBuildChoiceLabels(true);
-            }
 
             if (buildSettings.isApplyNoMaximumProgressAssumptionSet()) {
                 options.setApplyMaximalProgressAssumption(false);
             }
-            
+
+            if (buildSettings.isExplorationChecksSet()) {
+                options.setExplorationChecks();
+            }
+            options.setReservedBitsForUnboundedVariables(buildSettings.getBitsForUnboundedVariables());
+
             options.setAddOutOfBoundsState(buildSettings.isBuildOutOfBoundsStateSet());
             if (buildSettings.isBuildFullModelSet()) {
                 options.clearTerminalStates();
@@ -569,7 +569,7 @@ namespace storm {
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
             
             if (ioSettings.isExportExplicitSet()) {
-                storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), input.model ? input.model.get().getParameterNames() : std::vector<std::string>());
+                storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), input.model ? input.model.get().getParameterNames() : std::vector<std::string>(), !ioSettings.isExplicitExportPlaceholdersDisabled());
             }
 
             if (ioSettings.isExportDdSet()) {

@@ -1,5 +1,10 @@
 #include "storm/generator/CompressedState.h"
 
+#include <boost/algorithm/string/join.hpp>
+
+#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/NotImplementedException.h"
+
 #include "storm/generator/VariableInformation.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/expressions/SimpleValuation.h"
@@ -41,6 +46,41 @@ namespace storm {
                 result.setIntegerValue(integerVariable.variable, state.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth) + integerVariable.lowerBound);
             }
             return result;
+        }
+
+        void extractVariableValues(CompressedState const& state, VariableInformation const& variableInformation, std::vector<int64_t>& locationValues, std::vector<bool>& booleanValues, std::vector<int64_t>& integerValues) {
+            for (auto const& locationVariable : variableInformation.locationVariables) {
+                if (locationVariable.bitWidth != 0) {
+                    locationValues.push_back(state.getAsInt(locationVariable.bitOffset, locationVariable.bitWidth));
+                } else {
+                    locationValues.push_back(0);
+                }
+            }
+            for (auto const& booleanVariable : variableInformation.booleanVariables) {
+                booleanValues.push_back(state.get(booleanVariable.bitOffset));
+            }
+            for (auto const& integerVariable : variableInformation.integerVariables) {
+                integerValues.push_back(state.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth) + integerVariable.lowerBound);
+            }
+        }
+        
+        std::string toString(CompressedState const& state, VariableInformation const& variableInformation) {
+            std::vector<std::string> assignments;
+            for (auto const& locationVariable : variableInformation.locationVariables) {
+                assignments.push_back(locationVariable.variable.getName() + "=");
+                    assignments.back() += std::to_string(locationVariable.bitWidth == 0 ? 0 : state.getAsInt(locationVariable.bitOffset, locationVariable.bitWidth));
+            }
+            for (auto const& booleanVariable : variableInformation.booleanVariables) {
+                if (!state.get(booleanVariable.bitOffset)) {
+                    assignments.push_back("!" + booleanVariable.variable.getName());
+                } else {
+                    assignments.push_back(booleanVariable.variable.getName());
+                }
+            }
+            for (auto const& integerVariable : variableInformation.integerVariables) {
+                assignments.push_back(integerVariable.variable.getName() + "=" + std::to_string(state.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth) + integerVariable.lowerBound));
+            }
+            return boost::join(assignments, " & ");
         }
 
         storm::storage::BitVector computeObservabilityMask(VariableInformation const& variableInformation) {
@@ -94,6 +134,33 @@ namespace storm {
             CompressedState result(varInfo.getTotalBitOffset(roundTo64Bit));
             assert(varInfo.hasOutOfBoundsBit());
             result.set(varInfo.getOutOfBoundsBit());
+            return result;
+        }
+
+        CompressedState createCompressedState(VariableInformation const& varInfo, std::map<storm::expressions::Variable, storm::expressions::Expression> const& stateDescription, bool checkOutOfBounds) {
+            CompressedState result(varInfo.getTotalBitOffset(true));
+            auto boolItEnd = varInfo.booleanVariables.end();
+
+            for (auto boolIt = varInfo.booleanVariables.begin(); boolIt != boolItEnd; ++boolIt) {
+                STORM_LOG_THROW(stateDescription.count(boolIt->variable) > 0,storm::exceptions::InvalidArgumentException, "Assignment for Boolean variable " << boolIt->getName() << " missing." );
+                result.set(boolIt->bitOffset, stateDescription.at(boolIt->variable).evaluateAsBool());
+            }
+
+            // Iterate over all integer assignments and carry them out.
+            auto integerItEnd = varInfo.integerVariables.end();
+            for (auto integerIt = varInfo.integerVariables.begin(); integerIt != integerItEnd; ++integerIt) {
+                STORM_LOG_THROW(stateDescription.count(integerIt->variable) > 0,storm::exceptions::InvalidArgumentException, "Assignment for Integer variable " << integerIt->getName() << " missing." );
+
+                int64_t assignedValue = stateDescription.at(integerIt->variable).evaluateAsInt();
+                if (checkOutOfBounds) {
+                    STORM_LOG_THROW(assignedValue >= integerIt->lowerBound, storm::exceptions::InvalidArgumentException, "The assignment leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << integerIt->getName() << "'.");
+                    STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::InvalidArgumentException, "The assignment leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << integerIt->getName() << "'.");
+                }
+                result.setFromInt(integerIt->bitOffset, integerIt->bitWidth, assignedValue - integerIt->lowerBound);
+                STORM_LOG_ASSERT(static_cast<int_fast64_t>(result.getAsInt(integerIt->bitOffset, integerIt->bitWidth)) + integerIt->lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << result.getAsInt(integerIt->bitOffset, integerIt->bitWidth) << " but wrote " << assignedValue << ").");
+            }
+
+            STORM_LOG_THROW(varInfo.locationVariables.size() == 0, storm::exceptions::NotImplementedException, "Support for JANI is not implemented");
             return result;
         }
 
