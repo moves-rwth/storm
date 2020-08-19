@@ -182,7 +182,7 @@ namespace storm {
 
             if (regionRes == modelchecker::RegionResult::CenterSat && monRes.isDone() && monRes.isAllMonotonicity()) {
                 for(auto const& vertex : vertices){
-                    bool knownByMonotonicity = monMap.size() > 0;
+                    bool knownByMonotonicity = true;
                     //The resulting subregion is the smallest region containing vertex and splittingPoint.
                     Valuation subLower, subUpper;
                     for(auto variableBound : this->lowerBoundaries){
@@ -215,7 +215,7 @@ namespace storm {
                 }
             } else if (regionRes == modelchecker::RegionResult::CenterViolated && monRes.isDone() && monRes.isAllMonotonicity()) {
                 for(auto const& vertex : vertices){
-                    bool knownByMonotonicity = monMap.size() > 0;
+                    bool knownByMonotonicity = true;
                     //The resulting subregion is the smallest region containing vertex and splittingPoint.
                     Valuation subLower, subUpper;
                     for(auto variableBound : this->lowerBoundaries){

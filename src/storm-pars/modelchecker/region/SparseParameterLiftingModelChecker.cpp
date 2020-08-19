@@ -28,7 +28,7 @@ namespace storm {
             currentFormula = checkTask.getFormula().asSharedPointer();
             currentCheckTask = std::make_unique<storm::modelchecker::CheckTask<storm::logic::Formula, ConstantType>>(checkTask.substituteFormula(*currentFormula).template convertValueType<ConstantType>());
             
-            if(currentCheckTask->getFormula().isProbabilityOperatorFormula()) {
+            if (currentCheckTask->getFormula().isProbabilityOperatorFormula()) {
                 auto const& probOpFormula = currentCheckTask->getFormula().asProbabilityOperatorFormula();
                 if(probOpFormula.getSubformula().isBoundedUntilFormula()) {
                     specifyBoundedUntilFormula(env, currentCheckTask->substituteFormula(probOpFormula.getSubformula().asBoundedUntilFormula()));
@@ -61,10 +61,15 @@ namespace storm {
             
             RegionResult result = initialResult;
 
+            // Check if we need to check the formula on one point to decide whether to show AllSat or AllViolated
+            if (hypothesis == RegionResultHypothesis::Unknown && result == RegionResult::Unknown) {
+                result = getInstantiationChecker().check(env, region.getCenterPoint())->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()] ? RegionResult::CenterSat : RegionResult::CenterViolated;
+            }
+
             if (localMonotonicityResult != nullptr && localMonotonicityResult->isDone()) {
                 // Try to check it with a global monotonicity result
                 auto monRes = localMonotonicityResult->getGlobalMonotonicityResult();
-                storm::solver::OptimizationDirection dirForParameters = isLowerBound(this->currentCheckTask->getBound().comparisonType) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
+                bool lowerBound = isLowerBound(this->currentCheckTask->getBound().comparisonType);
 
                 if (monRes->isDone() && monRes->isAllMonotonicity()) {
                     auto monMap = monRes->getMonotonicityResult();
@@ -76,7 +81,7 @@ namespace storm {
                             valuationToCheckSat.insert(std::pair<VariableType, CoefficientType>(var, region.getLowerBoundary(var)));
                             valuationToCheckViolated.insert(std::pair<VariableType, CoefficientType>(var, region.getLowerBoundary(var)));
                         } else if (monVar == Monotonicity::Decr) {
-                            if (dirForParameters == storm::solver::OptimizationDirection::Minimize) {
+                            if (lowerBound) {
                                 valuationToCheckSat.insert(std::pair<VariableType, CoefficientType>(var, region.getUpperBoundary(var)));
                                 valuationToCheckViolated.insert(std::pair<VariableType, CoefficientType>(var, region.getLowerBoundary(var)));
                             } else {
@@ -84,7 +89,7 @@ namespace storm {
                                 valuationToCheckViolated.insert(std::pair<VariableType, CoefficientType>(var, region.getUpperBoundary(var)));
                             }
                         } else if (monVar == Monotonicity::Incr) {
-                            if (dirForParameters == storm::solver::OptimizationDirection::Minimize) {
+                            if (lowerBound) {
                                 valuationToCheckSat.insert(std::pair<VariableType, CoefficientType>(var, region.getLowerBoundary(var)));
                                 valuationToCheckViolated.insert(std::pair<VariableType, CoefficientType>(var, region.getUpperBoundary(var)));
                             } else {
@@ -94,25 +99,20 @@ namespace storm {
                         }
                     }
 
-                    if (getInstantiationChecker().check(env, valuationToCheckSat)->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
-                        STORM_LOG_INFO("Region " << region << " is AllSat, discovered with instantiation checker and help of monotonicity");
+                    if ((hypothesis == RegionResultHypothesis::AllSat || result == RegionResult::ExistsSat || result == RegionResult::CenterSat) && getInstantiationCheckerSAT().check(env, valuationToCheckSat)->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
+                        STORM_LOG_INFO("Region " << region << " is AllSat, discovered with instantiation checker and help of monotonicity" << std::endl);
                         RegionModelChecker<typename SparseModelType::ValueType>::numberOfRegionsKnownThroughMonotonicity++;
                         return RegionResult::AllSat;
                     }
-                    // TODO !?
-                    if (!getInstantiationChecker().check(env, valuationToCheckViolated)->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
-                        STORM_LOG_INFO("Region " << region << " is AllViolated, discovered with instantiation checker and help of monotonicity");
+
+                    if ((hypothesis == RegionResultHypothesis::AllViolated || result == RegionResult::ExistsViolated || result == RegionResult::CenterViolated) && !getInstantiationCheckerVIO().check(env, valuationToCheckViolated)->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
+                        STORM_LOG_INFO("Region " << region << " is AllViolated, discovered with instantiation checker and help of monotonicity" << std::endl);
                         RegionModelChecker<typename SparseModelType::ValueType>::numberOfRegionsKnownThroughMonotonicity++;
                         return RegionResult::AllViolated;
                     }
                 }
             }
 
-            // Check if we need to check the formula on one point to decide whether to show AllSat or AllViolated
-            if (hypothesis == RegionResultHypothesis::Unknown && result == RegionResult::Unknown) {
-                 result = getInstantiationChecker().check(env, region.getCenterPoint())->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()] ? RegionResult::CenterSat : RegionResult::CenterViolated;
-            }
-            
             // try to prove AllSat or AllViolated, depending on the hypothesis or the current result
             if (hypothesis == RegionResultHypothesis::AllSat || result == RegionResult::ExistsSat || result == RegionResult::CenterSat) {
                 // show AllSat:
@@ -193,7 +193,17 @@ namespace storm {
             STORM_LOG_THROW(this->parametricModel->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException, "Getting a bound at the initial state requires a model with a single initial state.");
             return storm::utility::convertNumber<typename SparseModelType::ValueType>(getBound(env, region, dirForParameters)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()]);
         }
-        
+
+        template <typename SparseModelType, typename ConstantType>
+        storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationCheckerSAT() {
+            return getInstantiationChecker();
+        }
+
+        template <typename SparseModelType, typename ConstantType>
+        storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationCheckerVIO() {
+            return getInstantiationChecker();
+        }
+
         template <typename SparseModelType, typename ConstantType>
         struct RegionBound {
             RegionBound(RegionBound<SparseModelType, ConstantType> const& other) = default;

@@ -444,6 +444,7 @@ namespace storm {
         /*** Setters ***/
 
         void Order::setDoneBuilding(bool done) {
+            assert (addedStates->full());
             doneBuilding = done;
         }
 

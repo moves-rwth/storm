@@ -237,6 +237,26 @@ namespace storm {
         }
         
         template <typename SparseModelType, typename ConstantType>
+        storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationCheckerSAT() {
+            if (!instantiationCheckerSAT) {
+                instantiationCheckerSAT = std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(*this->parametricModel);
+                instantiationCheckerSAT->specifyFormula(this->currentCheckTask->template convertValueType<typename SparseModelType::ValueType>());
+                instantiationCheckerSAT->setInstantiationsAreGraphPreserving(true);
+            }
+            return *instantiationCheckerSAT;
+        }
+
+        template <typename SparseModelType, typename ConstantType>
+        storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationCheckerVIO() {
+            if (!instantiationCheckerVIO) {
+                instantiationCheckerVIO = std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(*this->parametricModel);
+                instantiationCheckerVIO->specifyFormula(this->currentCheckTask->template convertValueType<typename SparseModelType::ValueType>());
+                instantiationCheckerVIO->setInstantiationsAreGraphPreserving(true);
+            }
+            return *instantiationCheckerVIO;
+        }
+
+        template <typename SparseModelType, typename ConstantType>
         storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationChecker() {
             if (!instantiationChecker) {
                 instantiationChecker = std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(*this->parametricModel);
