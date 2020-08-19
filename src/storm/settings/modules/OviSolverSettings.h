@@ -24,7 +24,8 @@ namespace storm {
                 double getUpperBoundGuessingFactor() const;
 
                 uint64_t getUpperBoundOnlyIterations() const;
-                
+
+                bool useNoTerminationGuaranteeMinimumMethod() const;
                 
                 // The name of the module.
                 static const std::string moduleName;
@@ -35,6 +36,7 @@ namespace storm {
                 static const std::string useRelevantValuesForPrecisionUpdateOptionName;
                 static const std::string upperBoundGuessingFactorOptionName;
                 static const std::string upperBoundOnlyIterationsOptionName;
+                static const std::string useNoTerminationGuaranteeMinimumMethodOptionName;
             };
             
         }
