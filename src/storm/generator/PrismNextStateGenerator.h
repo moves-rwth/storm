@@ -111,17 +111,21 @@ namespace storm {
              * A recursive helper function to generate a synchronziing distribution.
              */
             void generateSynchronizedDistribution(storm::storage::BitVector const& state, ValueType const& probability, uint64_t position, std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>::const_iterator> const& iteratorList, storm::builder::jit::Distribution<StateType, ValueType>& distribution, StateToIdCallback stateToIdCallback);
-            
+
             // The program used for the generation of next states.
             storm::prism::Program program;
-            
+
             // The reward models that need to be considered.
             std::vector<std::reference_wrapper<storm::prism::RewardModel const>> rewardModels;
-            
+
             // A flag that stores whether at least one of the selected reward models has state-action rewards.
             bool hasStateActionRewards;
+
+            // A mapping from modules/commands to the programs players
+            std::map<uint_fast32_t, uint_fast32_t> moduleIndexToPlayerIndexMap;
+            std::map<uint_fast32_t, uint_fast32_t> commandIndexToPlayerIndexMap;
         };
-        
+
     }
 }
 

@@ -80,6 +80,18 @@ namespace storm {
                     }
                 }
             }
+
+            if (program.getModelType() == storm::prism::Program::ModelType::SMG) {
+                for (auto const& player : program.getPlayers()) {
+                    uint_fast32_t playerIndex = program.getIndexOfPlayer(player.getName());
+                    for (auto const& moduleIndexPair : player.getModules()) {
+                        moduleIndexToPlayerIndexMap[moduleIndexPair.second] = playerIndex;
+                    }
+                    for (auto const& commandIndexPair : player.getCommands()) {
+                        commandIndexToPlayerIndexMap[commandIndexPair.second] = playerIndex;
+                    }
+                }
+            }
         }
 
         template<typename ValueType, typename StateType>
@@ -369,6 +381,19 @@ namespace storm {
                 allChoices.push_back(std::move(globalChoice));
             }
 
+            if (program.getModelType() == storm::prism::Program::ModelType::SMG) {
+                uint_fast32_t statePlayerIndex = allChoices.at(0).getPlayerIndex();
+                for(auto& choice : allChoices) {
+                    if (allChoices.size() == 1) break;
+                    // getPlayerIndex().is_initialized()?
+                    if (choice.hasPlayerIndex()) {
+                        STORM_LOG_ASSERT(choice.getPlayerIndex() == statePlayerIndex, "State '" << this->stateToString(*this->state) << "' comprises choices for different players.");
+                    } else {
+                        STORM_LOG_WARN("State '" << this->stateToString(*this->state) << "' features a choice without player index.");
+                    }
+                }
+            }
+
             // Move all remaining choices in place.
             for (auto& choice : allChoices) {
                 result.addChoice(std::move(choice));
@@ -584,6 +609,12 @@ namespace storm {
                         choice.addReward(stateActionRewardValue);
                     }
 
+                    if (program.getModelType() == storm::prism::Program::ModelType::SMG) {
+                        // Can we trust the model ordering here?
+                        // I.e. is i the correct moduleIndex set in Program.cpp:805? TODO
+                        choice.setPlayerIndex(moduleIndexToPlayerIndexMap[i]);
+                    }
+
                     if (this->options.isExplorationChecksSet()) {
                         // Check that the resulting distribution is in fact a distribution.
                         STORM_LOG_THROW(!program.isDiscreteTimeModel() || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for command '" << command << "' (actually sum to " << probabilitySum << ").");
@@ -645,6 +676,10 @@ namespace storm {
 
                         // Now create the actual distribution.
                         Choice<ValueType>& choice = choices.back();
+
+                        if (program.getModelType() == storm::prism::Program::ModelType::SMG) {
+                            choice.setPlayerIndex(commandIndexToPlayerIndexMap[actionIndex]);
+                        }
 
                         // Remember the choice label and origins only if we were asked to.
                         if (this->options.isBuildChoiceLabelsSet()) {
