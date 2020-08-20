@@ -10,6 +10,7 @@
 #include "storm-pars/analysis/Order.h"
 #include "storm-pars/analysis/MonotonicityResult.h"
 #include "storm-pars/storage/ParameterRegion.h"
+#include "AssumptionMaker.h"
 
 
 namespace storm {
@@ -114,6 +115,8 @@ namespace storm {
             ValueType getDerivative(ValueType function, VariableType param);
 
             std::unordered_map<ValueType, std::unordered_map<VariableType, ValueType>> derivatives;
+
+            analysis::AssumptionMaker<ValueType, ConstantType>* assumptionMaker;
         };
     }
 }

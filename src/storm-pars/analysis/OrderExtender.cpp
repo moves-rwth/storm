@@ -41,6 +41,7 @@ namespace storm {
             this->region = region;
             this->formula = formula;
             usePLA = false;
+            this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(matrix);
         }
 
         template <typename ValueType, typename ConstantType>
@@ -66,6 +67,7 @@ namespace storm {
             }
             cyclic = storm::utility::graph::hasCycle(matrix);
             this->bottomTopOrder = std::shared_ptr<Order>(new Order(topStates, bottomStates, numberOfStates, &statesSorted));
+            this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(matrix);
         }
 
         template <typename ValueType, typename ConstantType>
@@ -237,11 +239,12 @@ namespace storm {
 
                 if (stateSucc1 == numberOfStates) {
                     assert (stateSucc2 == numberOfStates);
+            std::shared_ptr<logic::Formula const> formula;
+
+            storage::ParameterRegion<ValueType> region;
                     currentState = order->getNextSortedState();
                 } else {
-                    // TODO: make assumptionMaker a private class variable
-                    auto assumptionMaker = analysis::AssumptionMaker<ValueType, ConstantType>(matrix);
-                    auto assumptions = assumptionMaker.createAndCheckAssumptions(stateSucc1, stateSucc2, order, region);
+                    auto assumptions = assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, region);
                     if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
                         handleAssumption(order, assumptions.begin()->first);
                     } else {
@@ -312,7 +315,6 @@ namespace storm {
                         // next is the lowest one in the order
                         order->addRelationNodes(order->getNode(currentState), order->getNode(next));
                     } else {
-                        auto assumptionMaker = new AssumptionMaker<ValueType, ConstantType>(matrix);
                         auto res = assumptionMaker->createAndCheckAssumptions(currentState, next, order, region);
                         if (res.size() == 1 && res.begin()->second == VALID) {
                             handleAssumption(order, res.begin()->first);

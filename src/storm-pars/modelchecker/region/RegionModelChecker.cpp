@@ -68,8 +68,6 @@ namespace storm {
                 unprocessedRegions.emplace(region, RegionResult::Unknown);
                 refinementDepths.push(0);
 
-                setMonThreshold(monThresh);
-
                 uint_fast64_t numOfAnalyzedRegions = 0;
                 CoefficientType displayedProgress = storm::utility::zero<CoefficientType>();
                 if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
@@ -88,7 +86,7 @@ namespace storm {
 
                 // NORMAL WHILE LOOP
                 uint64_t currentDepth = refinementDepths.front();
-                while ((!useMonotonicity || currentDepth < monThreshold) && fractionOfUndiscoveredArea > thresholdAsCoefficient && !unprocessedRegions.empty()) {
+                while ((!useMonotonicity || currentDepth < monThresh) && fractionOfUndiscoveredArea > thresholdAsCoefficient && !unprocessedRegions.empty()) {
                     assert(unprocessedRegions.size() == refinementDepths.size());
                     STORM_LOG_INFO("Analyzing region #" << numOfAnalyzedRegions << " (Refinement depth " << currentDepth << "; " << storm::utility::convertNumber<double>(fractionOfUndiscoveredArea) * 100 << "% still unknown)");
                     STORM_PRINT(" NO MON @ Refinement depth " << currentDepth << std::endl);
@@ -350,11 +348,6 @@ namespace storm {
         template <typename ParametricType>
         void RegionModelChecker<ParametricType>::splitAtCenter(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, std::vector<storm::storage::ParameterRegion<ParametricType>>& regionVector, std::vector<storm::storage::ParameterRegion<ParametricType>>& knownRegionVector, storm::analysis::MonotonicityResult<VariableType> const& monRes, storm::modelchecker::RegionResult& regionRes) {
             region.split(region.getCenterPoint(), regionVector);
-        }
-
-        template <typename ParametricType>
-        void RegionModelChecker<ParametricType>::setMonThreshold(uint64_t monThresh) {
-            this->monThreshold = monThresh;
         }
     
 #ifdef STORM_HAVE_CARL
