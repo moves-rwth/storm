@@ -5,7 +5,6 @@
 #include <storm/exceptions/IllegalArgumentException.h>
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/UnexpectedException.h"
-#include "storm/logic/AtomicLabelFormula.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/utility/bitoperations.h"
@@ -530,6 +529,9 @@ namespace storm {
             if (this->uniqueFailedState) {
                 // Unique failed state has label 0
                 modelComponents.stateLabeling.addLabelToState("failed", 0);
+                std::shared_ptr<storage::DFTElement<ValueType> const> element = dft.getElement(dft.getTopLevelIndex());
+                STORM_LOG_ASSERT(element->isRelevant(), "TLE should be relevant if unique failed state is used.");
+                modelComponents.stateLabeling.addLabelToState(element->name() + "_failed", 0);
             }
             for (auto const& stateIdPair : stateStorage.stateToId) {
                 storm::storage::BitVector state = stateIdPair.first;

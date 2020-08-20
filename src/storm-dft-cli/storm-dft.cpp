@@ -171,7 +171,7 @@ void processOptions() {
         // All events are relevant
         additionalRelevantEventNames = {"all"};
     }
-    std::set<size_t> relevantEvents = storm::api::computeRelevantEvents<ValueType>(*dft, props, additionalRelevantEventNames);
+    storm::utility::RelevantEvents relevantEvents = storm::api::computeRelevantEvents<ValueType>(*dft, props, additionalRelevantEventNames, faultTreeSettings.isAllowDCForRelevantEvents());
 
 
     // Analyze DFT
@@ -183,9 +183,7 @@ void processOptions() {
         if (faultTreeSettings.isApproximationErrorSet()) {
             approximationError = faultTreeSettings.getApproximationError();
         }
-        storm::api::analyzeDFT<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), relevantEvents,
-                                          faultTreeSettings.isAllowDCForRelevantEvents(), approximationError, faultTreeSettings.getApproximationHeuristic(),
-                                          transformationSettings.isChainEliminationSet(), transformationSettings.getLabelBehavior(), true);
+        storm::api::analyzeDFT<ValueType>(*dft, props, faultTreeSettings.useSymmetryReduction(), faultTreeSettings.useModularisation(), relevantEvents, approximationError, faultTreeSettings.getApproximationHeuristic(), transformationSettings.isChainEliminationSet(), transformationSettings.getLabelBehavior(), true);
     }
 }
 
