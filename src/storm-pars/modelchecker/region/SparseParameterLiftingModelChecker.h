@@ -82,6 +82,8 @@ namespace storm {
             std::shared_ptr<SparseModelType> parametricModel;
             std::unique_ptr<CheckTask<storm::logic::Formula, ConstantType>> currentCheckTask;
 
+            std::shared_ptr<storm::models::sparse::Model<>> getModel() override;
+
         private:
             // store the current formula. Note that currentCheckTask only stores a reference to the formula.
             std::shared_ptr<storm::logic::Formula const> currentFormula;

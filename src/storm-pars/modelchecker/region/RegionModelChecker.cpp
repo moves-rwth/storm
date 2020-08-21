@@ -144,8 +144,10 @@ namespace storm {
                 std::queue<std::shared_ptr<storm::analysis::Order>> orders;
                 std::queue<std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>> localMonotonicityResults;
                 if (useMonotonicity && fractionOfUndiscoveredArea > thresholdAsCoefficient && !unprocessedRegions.empty()) {
+                    // TODO CONSTRUCTION ZONE START
                     orders.emplace(extendOrder(nullptr, region));
                     if (orders.front() != nullptr) {
+                        // TODO call initializeLocalMonRes here
                         auto monRes = std::shared_ptr< storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(orders.front()->getNumberOfStates()));
                         setConstantEntries(monRes);
                         localMonotonicityResults.emplace(monRes);
@@ -153,10 +155,37 @@ namespace storm {
                         assert (false);
                     }
                     setUseMonotonicityNow();
+
+                    auto order = orders.front();
+                    auto localMonotonicityResult = localMonotonicityResults.front();
+
+                    if (!order->getDoneBuilding()) {
+                        // we need to use copies for both order and local mon res
+                        while(unprocessedRegions.size() > orders.size()){
+                            orders.emplace(order->copy());
+                            localMonotonicityResults.emplace(localMonotonicityResult->copy());
+                        }
+                    } else if (!localMonotonicityResult->isDone()) {
+                        // the order will not change anymore
+                        while(unprocessedRegions.size() > orders.size()) {
+                            orders.emplace(order);
+                            localMonotonicityResults.emplace(localMonotonicityResult->copy());
+                        }
+                    } else {
+                        // both will not change anymore
+                        while (unprocessedRegions.size() > orders.size()) {
+                            orders.emplace(order);
+                            localMonotonicityResults.emplace(localMonotonicityResult);
+                        }
+                    }
+
+                    /*
                     while(unprocessedRegions.size() > orders.size()){
                         orders.emplace(orders.front()->copy());
                         localMonotonicityResults.emplace(localMonotonicityResults.front()->copy());
                     }
+                    */
+                    // TODO CONSTRUCTION ZONE END
                 }
 
                 // USEMON WHILE LOOP
@@ -297,6 +326,31 @@ namespace storm {
                 return std::make_unique<storm::modelchecker::RegionRefinementCheckResult<ParametricType>>(std::move(result), std::move(regionCopyForResult));
             }
 
+
+        template <typename ParametricType>
+        void RegionModelChecker<ParametricType>::initializeLocalMonotonicityResults(storm::storage::ParameterRegion<ParametricType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult){
+            auto state = order->getNextAddedState(-1);
+
+            auto model = getModel();
+            auto monotonicityChecker = new storm::analysis::MonotonicityChecker<ParametricType>(model->getTransitionMatrix());
+            auto variables = storm::models::sparse::getProbabilityParameters(model);
+
+            while (state != order->getNumberOfStates()) {
+                if (order->isBottomState(state) || order->isTopState(state)) {
+                    localMonotonicityResult->setConstant(state);
+                } else {
+                    for (auto var : variables) {
+                        auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
+                        if (monotonicity == storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Unknown || monotonicity == storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Not) {
+                            monotonicity = monotonicityChecker->checkLocalMonotonicity(order, state, var, region);
+                            localMonotonicityResult->setMonotonicity(state, var, monotonicity);
+                        }
+                    }
+                }
+                state = order->getNextAddedState(state);
+            }
+        }
+
         template <typename ParametricType>
         std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation> RegionModelChecker<ParametricType>::computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing extremal values is not supported for this region model checker.");
@@ -341,6 +395,12 @@ namespace storm {
         template <typename ParametricType>
         void RegionModelChecker<ParametricType>::setUseMonotonicityNow(bool monotonicity) {
             STORM_LOG_WARN("Setting usage of local monotonicity result not implemented");
+        }
+
+        // TODO which template Types?
+        template <typename ParametricType>
+        std::shared_ptr<storm::models::sparse::Model<>> RegionModelChecker<ParametricType>::getModel() {
+            STORM_LOG_WARN("Getting Model not implemented");
         }
 
         template <typename ParametricType>

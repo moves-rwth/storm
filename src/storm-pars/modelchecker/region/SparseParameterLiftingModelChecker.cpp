@@ -311,6 +311,12 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameter lifting is not supported for the given property.");
         }
 
+        // TODO which template Types?
+        template <typename SparseModelType, typename ConstantType>
+        std::shared_ptr<storm::models::sparse::Model<>> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getModel() {
+            return parametricModel;
+        }
+
         template class SparseParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
         template class SparseParameterLiftingModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>;
         template class SparseParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber>;
