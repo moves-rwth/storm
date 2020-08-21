@@ -504,6 +504,8 @@ namespace storm {
         template<typename SparseModelType, typename ConstantType>
         void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::setUseMonotonicityNow(bool monotonicity) {
             parameterLifter->setUseMonotonicityNow(monotonicity);
+            maxSchedChoices = boost::none;
+            minSchedChoices = boost::none;
         }
 
         template class SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
