@@ -37,6 +37,14 @@ namespace storm {
             }
         }
         
+            //        @shahid constructor for next state generator
+        template<typename ValueType, typename StateType>
+        NextStateGenerator<ValueType, StateType>::NextStateGenerator( NextStateGeneratorOptions const& options) : options(options),
+        variableInformation(),
+        evaluator(nullptr), state(nullptr) {
+//            Intentionally left blank
+        }
+        
         template<typename ValueType, typename StateType>
         NextStateGeneratorOptions const& NextStateGenerator<ValueType, StateType>::getOptions() const {
             return options;

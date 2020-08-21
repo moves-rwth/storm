@@ -46,6 +46,9 @@ namespace storm {
              */
             NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, NextStateGeneratorOptions const& options);
             
+//        shahid: added new constructor
+            NextStateGenerator(NextStateGeneratorOptions const& options);
+            
             virtual ~NextStateGenerator() = default;
             
             uint64_t getStateSize() const;
@@ -58,7 +61,7 @@ namespace storm {
             /// Initializes a builder for state valuations by adding the appropriate variables.
             virtual storm::storage::sparse::StateValuationsBuilder initializeStateValuationsBuilder() const;
             
-            void load(CompressedState const& state);
+            virtual void load(CompressedState const& state);
             virtual StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) = 0;
             bool satisfies(storm::expressions::Expression const& expression) const;
             

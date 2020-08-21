@@ -23,6 +23,9 @@ add_subdirectory(storm-pomdp-cli)
 add_subdirectory(storm-conv)
 add_subdirectory(storm-conv-cli)
 
+add_subdirectory(storm-figaro)
+add_subdirectory(storm-figaro-cli)
+
 
 add_subdirectory(test)
 
