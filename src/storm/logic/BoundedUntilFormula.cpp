@@ -164,6 +164,7 @@ namespace storm {
         
         bool BoundedUntilFormula::isLowerBoundStrict(unsigned i) const {
             assert(i < lowerBound.size());
+            if (!hasLowerBound(i)) { return false; }
             return lowerBound.at(i).get().isStrict();
         }
         
@@ -181,6 +182,7 @@ namespace storm {
         }
         
         bool BoundedUntilFormula::hasIntegerLowerBound(unsigned i) const {
+            if (!hasLowerBound(i)) { return true; }
             return lowerBound.at(i).get().getBound().hasIntegerType();
         }
 
@@ -215,6 +217,7 @@ namespace storm {
         
         template <>
         double BoundedUntilFormula::getLowerBound(unsigned i) const {
+            if (!hasLowerBound(i)) { return 0.0; }
             checkNoVariablesInBound(this->getLowerBound());
             double bound = this->getLowerBound(i).evaluateAsDouble();
             STORM_LOG_THROW(bound >= 0, storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
@@ -231,6 +234,7 @@ namespace storm {
         
         template <>
         storm::RationalNumber BoundedUntilFormula::getLowerBound(unsigned i) const {
+            if (!hasLowerBound(i)) { return storm::utility::zero<storm::RationalNumber>(); }
             checkNoVariablesInBound(this->getLowerBound(i));
             storm::RationalNumber bound = this->getLowerBound(i).evaluateAsRational();
             STORM_LOG_THROW(bound >= storm::utility::zero<storm::RationalNumber>(), storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
@@ -247,6 +251,7 @@ namespace storm {
         
         template <>
         uint64_t BoundedUntilFormula::getLowerBound(unsigned i) const {
+            if (!hasLowerBound(i)) { return 0; }
             checkNoVariablesInBound(this->getLowerBound(i));
             int_fast64_t bound = this->getLowerBound(i).evaluateAsInt();
             STORM_LOG_THROW(bound >= 0, storm::exceptions::InvalidPropertyException, "Time-bound must not evaluate to negative number.");
@@ -274,6 +279,23 @@ namespace storm {
             if (isUpperBoundStrict(i)) {
                 STORM_LOG_THROW(bound > 0, storm::exceptions::InvalidPropertyException, "Cannot retrieve non-strict bound from strict zero-bound.");
                 return bound - 1;
+            } else {
+                return bound;
+            }
+        }
+
+        template <>
+        double BoundedUntilFormula::getNonStrictLowerBound(unsigned i) const {
+            double bound = getLowerBound<double>(i);
+            STORM_LOG_THROW(!isLowerBoundStrict(i), storm::exceptions::InvalidPropertyException, "Cannot retrieve non-strict lower bound from strict lower-bound.");
+            return bound;
+        }
+
+        template <>
+        uint64_t BoundedUntilFormula::getNonStrictLowerBound(unsigned i) const {
+            int_fast64_t bound = getLowerBound<uint64_t>(i);
+            if (isLowerBoundStrict(i)) {
+                return bound + 1;
             } else {
                 return bound;
             }
