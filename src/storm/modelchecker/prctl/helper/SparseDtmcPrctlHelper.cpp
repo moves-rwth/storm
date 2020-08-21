@@ -43,44 +43,7 @@
 namespace storm {
     namespace modelchecker {
         namespace helper {
-            template<typename ValueType, typename RewardModelType>
-            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeStepBoundedUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, ModelCheckerHint const& hint) {
-                std::vector<ValueType> result(transitionMatrix.getRowCount(), storm::utility::zero<ValueType>());
-                
-                // If we identify the states that have probability 0 of reaching the target states, we can exclude them in the further analysis.
-                storm::storage::BitVector maybeStates;
-                
-                if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().getComputeOnlyMaybeStates()) {
-                    maybeStates = hint.template asExplicitModelCheckerHint<ValueType>().getMaybeStates();
-                } else {
-                    maybeStates = storm::utility::graph::performProbGreater0(backwardTransitions, phiStates, psiStates, true, stepBound);
-                    maybeStates &= ~psiStates;
-                }
-                
-                STORM_LOG_INFO("Preprocessing: " << maybeStates.getNumberOfSetBits() << " non-target states with probability greater 0.");
-                
-                storm::utility::vector::setVectorValues<ValueType>(result, psiStates, storm::utility::one<ValueType>());
-                
-                if (!maybeStates.empty()) {
-                    // We can eliminate the rows and columns from the original transition probability matrix that have probability 0.
-                    storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, true);
-                    
-                    // Create the vector of one-step probabilities to go to target states.
-                    std::vector<ValueType> b = transitionMatrix.getConstrainedRowSumVector(maybeStates, psiStates);
-                    
-                    // Create the vector with which to multiply.
-                    std::vector<ValueType> subresult(maybeStates.getNumberOfSetBits());
-                    
-                    // Perform the matrix vector multiplication
-                    auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, submatrix);
-                    multiplier->repeatedMultiply(env, subresult, &b, stepBound);
-                    
-                    // Set the values of the resulting vector accordingly.
-                    storm::utility::vector::setVectorValues(result, maybeStates, subresult);
-                }
-                
-                return result;
-            }
+
             
             template<>
             std::map<storm::storage::sparse::state_type, storm::RationalFunction> SparseDtmcPrctlHelper<storm::RationalFunction>::computeRewardBoundedValues(Environment const& env, storm::models::sparse::Dtmc<storm::RationalFunction> const& model, std::shared_ptr<storm::logic::OperatorFormula const> rewardBoundedFormula) {
