@@ -11,7 +11,9 @@ Version 1.6.x
 ## Version 1.6.1 (??)
 - Prism program simplification improved
 - Revamped implementation of long-run-average algorithms, including scheduler export for LRA properties on Markov automata
-- `storm-pomdp`: Fix for --transformsimple and --transformbinary when used with until formulae
+- Support for step-bounded properties of the form ... [F[x,y] ... ] for DTMCs and MDPs (sparse engine). 
+- `storm-pomdp`: Fix for --transformsimple and --transformbinary when used with until formulae.
+- `storm-pomdp`: POMDPs can be parametric as well
 
 ## Version 1.6.0 (2020/06)
 - Changed default Dd library from `cudd` to `sylvan`. The Dd library can be changed back to `cudd` using the command line switch `--ddlib`.
