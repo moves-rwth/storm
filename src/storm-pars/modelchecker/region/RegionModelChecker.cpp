@@ -89,7 +89,6 @@ namespace storm {
                 while ((!useMonotonicity || currentDepth < monThresh) && fractionOfUndiscoveredArea > thresholdAsCoefficient && !unprocessedRegions.empty()) {
                     assert(unprocessedRegions.size() == refinementDepths.size());
                     STORM_LOG_INFO("Analyzing region #" << numOfAnalyzedRegions << " (Refinement depth " << currentDepth << "; " << storm::utility::convertNumber<double>(fractionOfUndiscoveredArea) * 100 << "% still unknown)");
-                    STORM_PRINT(" NO MON @ Refinement depth " << currentDepth << std::endl);
                     auto& currentRegion = unprocessedRegions.front().first;
                     auto& res = unprocessedRegions.front().second;
                     std::shared_ptr<storm::analysis::Order> order;
@@ -165,7 +164,6 @@ namespace storm {
                     assert(unprocessedRegions.size() == refinementDepths.size());
                     currentDepth = refinementDepths.front();
                     STORM_LOG_INFO("Analyzing region #" << numOfAnalyzedRegions << " (Refinement depth " << currentDepth << "; " << storm::utility::convertNumber<double>(fractionOfUndiscoveredArea) * 100 << "% still unknown)");
-                    STORM_PRINT(" YES MON @ Refinement depth " << currentDepth << std::endl);
                     auto& currentRegion = unprocessedRegions.front().first;
                     auto& res = unprocessedRegions.front().second;
                     std::shared_ptr<storm::analysis::Order> order;
