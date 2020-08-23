@@ -1,5 +1,4 @@
-#ifndef STORM_STORAGE_SPARSEMATRIX_H_
-#define STORM_STORAGE_SPARSEMATRIX_H_
+#pragma once
 
 #include <algorithm>
 #include <iostream>
@@ -10,6 +9,7 @@
 #include <boost/functional/hash.hpp>
 #include <boost/optional.hpp>
 
+#include "storm/storage/BitVector.h"
 #include "storm/solver/OptimizationDirection.h"
 
 #include "storm/utility/OsDetection.h"
@@ -34,8 +34,7 @@ namespace storm {
 
 namespace storm {
     namespace storage {
-        
-        class BitVector;
+
         
         // Forward declare matrix class.
         template<typename T>
@@ -719,7 +718,7 @@ namespace storm {
              * @return A matrix corresponding to a submatrix of the current matrix in which only rows and columns given
              * by the constraints are kept and all others are dropped.
              */
-            SparseMatrix getSubmatrix(bool useGroups, storm::storage::BitVector const& rowConstraint, storm::storage::BitVector const& columnConstraint, bool insertDiagonalEntries = false) const;
+            SparseMatrix getSubmatrix(bool useGroups, storm::storage::BitVector const& rowConstraint, storm::storage::BitVector const& columnConstraint, bool insertDiagonalEntries = false, storm::storage::BitVector const& makeZeroColumns = storm::storage::BitVector()) const;
             
             /*!
              * Restrict rows in grouped rows matrix. Ensures that the number of groups stays the same. 
@@ -1169,7 +1168,7 @@ namespace storm {
              * @return A matrix corresponding to a submatrix of the current matrix in which only row groups and columns
              * given by the row group constraint are kept and all others are dropped.
              */
-            SparseMatrix getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint, std::vector<index_type> const& rowGroupIndices, bool insertDiagonalEntries = false) const;
+            SparseMatrix getSubmatrix(storm::storage::BitVector const& rowGroupConstraint, storm::storage::BitVector const& columnConstraint, std::vector<index_type> const& rowGroupIndices, bool insertDiagonalEntries = false, storm::storage::BitVector const& makeZeroColumns = storm::storage::BitVector()) const;
             
             // The number of rows of the matrix.
             index_type rowCount;
@@ -1206,5 +1205,3 @@ namespace storm {
         
     } // namespace storage
 } // namespace storm
-
-#endif // STORM_STORAGE_SPARSEMATRIX_H_

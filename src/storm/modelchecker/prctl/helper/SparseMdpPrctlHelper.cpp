@@ -52,45 +52,7 @@ namespace storm {
     namespace modelchecker {
         namespace helper {
 
-            template<typename ValueType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeStepBoundedUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, uint_fast64_t stepBound, ModelCheckerHint const& hint) {
-                std::vector<ValueType> result(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
-                
-                // Determine the states that have 0 probability of reaching the target states.
-                storm::storage::BitVector maybeStates;
-                if (hint.isExplicitModelCheckerHint() && hint.template asExplicitModelCheckerHint<ValueType>().getComputeOnlyMaybeStates()) {
-                    maybeStates = hint.template asExplicitModelCheckerHint<ValueType>().getMaybeStates();
-                } else {
-                    if (goal.minimize()) {
-                        maybeStates = storm::utility::graph::performProbGreater0A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, phiStates, psiStates, true, stepBound);
-                    } else {
-                        maybeStates = storm::utility::graph::performProbGreater0E(backwardTransitions, phiStates, psiStates, true, stepBound);
-                    }
-                    maybeStates &= ~psiStates;
-                }
-                
-                STORM_LOG_INFO("Preprocessing: " << maybeStates.getNumberOfSetBits() << " non-target states with probability greater 0.");
-                
-                if (!maybeStates.empty()) {
-                    // We can eliminate the rows and columns from the original transition probability matrix that have probability 0.
-                    storm::storage::SparseMatrix<ValueType> submatrix = transitionMatrix.getSubmatrix(true, maybeStates, maybeStates, false);
-                    std::vector<ValueType> b = transitionMatrix.getConstrainedRowGroupSumVector(maybeStates, psiStates);
-                    
-                    // Create the vector with which to multiply.
-                    std::vector<ValueType> subresult(maybeStates.getNumberOfSetBits());
-                    
-                    auto multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, submatrix);
-                    multiplier->repeatedMultiplyAndReduce(env, goal.direction(), subresult, &b, stepBound);
-                    
-                    // Set the values of the resulting vector accordingly.
-                    storm::utility::vector::setVectorValues(result, maybeStates, subresult);
-                }
-                storm::utility::vector::setVectorValues(result, psiStates, storm::utility::one<ValueType>());
-                
-                return result;
-            }
-
-
+            
             template<typename ValueType>
             std::map<storm::storage::sparse::state_type, ValueType> SparseMdpPrctlHelper<ValueType>::computeRewardBoundedValues(Environment const& env, OptimizationDirection dir, rewardbounded::MultiDimensionalRewardUnfolding<ValueType, true>& rewardUnfolding, storm::storage::BitVector const& initialStates) {
                 storm::utility::Stopwatch swAll(true), swBuild, swCheck;

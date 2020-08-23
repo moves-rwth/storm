@@ -20,7 +20,7 @@ namespace storm {
                 inline uint64_t getComponentElementChoiceCount(typename storm::storage::MaximalEndComponent::map_type::value_type const& element) { return element.second.size(); }
                 inline typename storm::storage::MaximalEndComponent::set_type::const_iterator getComponentElementChoicesBegin(typename storm::storage::MaximalEndComponent::map_type::value_type const& element) { return element.second.begin(); }
                 inline typename storm::storage::MaximalEndComponent::set_type::const_iterator getComponentElementChoicesEnd(typename storm::storage::MaximalEndComponent::map_type::value_type const& element) { return element.second.end(); }
-                inline bool componentElementChoicesContains(storm::storage::MaximalEndComponent::map_type::value_type const& element, uint64_t choice) { return element.second.contains(choice); }
+                inline bool componentElementChoicesContains(storm::storage::MaximalEndComponent::map_type::value_type const& element, uint64_t choice) { return element.second.count(choice) > 0; }
             }
         }
     }
