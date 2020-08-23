@@ -174,8 +174,12 @@ namespace {
     TYPED_TEST(DftModelCheckerTest, PdepMTTF) {
         double result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep.dft");
         EXPECT_FLOAT_EQ(result, 8 / 3.0);
-        result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep2.dft");
-        EXPECT_FLOAT_EQ(result, 38 / 15.0);
+        if (this->getConfig().useMod && !this->getConfig().useDC) {
+            STORM_SILENT_EXPECT_THROW(this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep2.dft"), storm::exceptions::NotSupportedException);
+        } else {
+            result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep2.dft");
+            EXPECT_FLOAT_EQ(result, 38 / 15.0);
+        }
         result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/pdep3.dft");
         EXPECT_FLOAT_EQ(result, 67 / 24.0);
 
@@ -236,6 +240,11 @@ namespace {
     }
 
     TYPED_TEST(DftModelCheckerTest, HecsReliability) {
+        if (!this->getConfig().useDC) {
+            // Skip configurations because it takes too long
+            GTEST_SKIP();
+            return;
+        }
         double result = this->analyzeReliability(STORM_TEST_RESOURCES_DIR "/dft/hecs_2_2.dft", 1.0);
         EXPECT_FLOAT_EQ(result, 0.00021997582);
     }
