@@ -1,4 +1,4 @@
-#define newimplementation
+
 #include "FigaroNextStateGenerator.h"
 
 #include <boost/container/flat_map.hpp>
@@ -15,48 +15,29 @@
 #include "storm/exceptions/UnexpectedException.h"
 
 namespace storm{
-    namespace bdmp{
+    namespace figaro{
         namespace generator{
             
           
             template<typename ValueType, typename StateType>
-            FigaroNextStateGenerator<ValueType, StateType>::FigaroNextStateGenerator( storm::bdmp::FigaroProgram & model, storm::generator::NextStateGeneratorOptions const& options)
+            FigaroNextStateGenerator<ValueType, StateType>::FigaroNextStateGenerator( storm::figaro::FigaroProgram & model, storm::generator::NextStateGeneratorOptions const& options)
             : storm::generator::NextStateGenerator<ValueType, StateType>(options), figaromodel(model)
             {
             std::cout<<"\n FigaroNextStateGenerator constructor is called\n";
             }
             template<typename ValueType, typename StateType>
-            FigaroNextStateGenerator<ValueType, StateType>::FigaroNextStateGenerator( storm::bdmp::FigaroProgram & model, storm::expressions::ExpressionManager const& manager, storm::generator::VariableInformation const& varinfo, storm::generator::NextStateGeneratorOptions const& options)
+            FigaroNextStateGenerator<ValueType, StateType>::FigaroNextStateGenerator( storm::figaro::FigaroProgram & model, storm::expressions::ExpressionManager const& manager, storm::generator::VariableInformation const& varinfo, storm::generator::NextStateGeneratorOptions const& options)
             : storm::generator::NextStateGenerator<ValueType, StateType>(manager, varinfo, options), figaromodel(model)
             {
             std::cout<<"\n FigaroNextStateGenerator Experssion manager and variable information included constructor is called\n";
             }
-#ifndef newimplementation
-            template<typename ValueType, typename StateType>
-            uint64_t FigaroNextStateGenerator<ValueType, StateType>::getStateSize() const {
-//#TODO: remove this state size function
-          uint_fast64_t result = figaromodel.stateSize();
-                if (((result & ((1ull << 6) - 1)) != 0))
-                    {
-                    result = ((result >> 6) + 1) << 6;
-                }
-                return result;
-            }
 
-            template<typename ValueType, typename StateType>
-            uint_fast64_t  FigaroNextStateGenerator<ValueType, StateType>::getTotalBitOffset(uint_fast64_t result) const {
-                if (((result & ((1ull << 6) - 1)) != 0)) {
-                    result = ((result >> 6) + 1) << 6;
-                }
-                return result;
-            }
-            #endif
             template<typename ValueType, typename StateType>
             std::vector<StateType> FigaroNextStateGenerator<ValueType,StateType>::getInitialStates(StateToIdCallback const& stateToIdCallback)
             {
             
             std::vector<StateType> initialStateIndices;
-#ifdef newimplementation
+
               storm::generator::CompressedState initialState(this->variableInformation.getTotalBitOffset(true));
             figaromodel.init();
             figaromodel.runInteractions();
@@ -68,13 +49,7 @@ namespace storm{
                 std::cout<<initialState[i];
 //            exit(6);
             
-#else
-            storm::generator::CompressedState initialState(getTotalBitOffset(getStateSize())); //size of state vector
 
-            figaromodel.init();
-            figaromodel.runInteractions();
-            retreiveFigaroModelState(initialState);
-#endif
             
             // Register initial state and return it.
 //            std::cout<<"\n\nI come hereeeeeeeee";
@@ -91,22 +66,13 @@ namespace storm{
             template<typename ValueType, typename StateType>
             void FigaroNextStateGenerator<ValueType, StateType>::load(storm::generator::CompressedState const& state) {
                     // Since almost all subsequent operations are based on the evaluator, we load the state into it now. We use figaro program as evaluator
-#ifdef newimplementation
+
                 unpackStateIntoFigaroModel(state);
                 std::cout<<"First Loaded State";
                 figaromodel.printstatetuple();
                 this->state = &state;
 
 
-#else
-//                std::cout<<"\nTo Do: unpack state into evaluator\n";
-//                storm::generator::unpackStateIntoEvaluator(state, this->variableInformation, *this->evaluator);
-                unpackStateIntoFigaroModel(state);
-                std::cout<<"First Loaded State";
-                figaromodel.printstatetuple();
-                    // Also, we need to store a pointer to the state itself, because we need to be able to access it when expanding it.
-                this->state = &state;
-#endif
             }
             
             
@@ -153,11 +119,9 @@ namespace storm{
                 
                 if (std::get<2>(menue[0]) == "EXP")
                     {
-#ifdef newimplementation
+
                     storm::generator::CompressedState tempstate(this->variableInformation.getTotalBitOffset(true));
-#else
-                                storm::generator::CompressedState tempstate(figaromodel.boolState.size());
-#endif
+
                 
                     
                 for (auto i = 0; i<menue.size(); ++i){
@@ -174,21 +138,16 @@ namespace storm{
                 }
                 printmenue(menuestates, menue, *this->state);
                     for (auto i = 0; i<menue.size(); ++i){
-#ifdef newimplementation
+
                         choice.addProbability(stateToIdCallback((menuestates[i])), std::get<1>(menue[i]));
-#else
-                        choice.addProbability(stateToIdCallback(maskstate(menuestates[i])), std::get<1>(menue[i]));
-#endif
+
                     }
                     }
                 else if (std::get<2>(menue[0]) == "INS")
                     {
-#ifdef newimplementation
+
                     storm::generator::CompressedState tempstate(this->variableInformation.getTotalBitOffset(true));
 
-#else
-                storm::generator::CompressedState tempstate(figaromodel.boolState.size());
-#endif
                     
                     std::vector<std::pair<std::string, double>> inst_menue = create_inst_menue(menue);
                     for (auto i = 0; i<inst_menue.size(); ++i){
@@ -203,11 +162,9 @@ namespace storm{
                     printinstmenue(menuestates, inst_menue, *this->state);
                     
                     for (auto i = 0; i<inst_menue.size(); ++i){
-#ifdef newimplementation
+
                         choice.addProbability(stateToIdCallback((menuestates[i])), inst_menue[i].second);
-#else
-                                            choice.addProbability(stateToIdCallback(maskstate(menuestates[i])), inst_menue[i].second);
-#endif
+
                         
                     }
                     }
@@ -282,7 +239,7 @@ namespace storm{
                 labels.addLabel("deadlock");
                 labels.addLabel("failed");
                 
-#ifdef newimplementation
+
 //                for ( auto const& elements: figaromodel.mFigaroelementfailureindex)
 //                    {
 //                    labels.addLabel(elements.first);
@@ -331,41 +288,7 @@ namespace storm{
                 
 //                compstate.get(booleanVariable.bitOffset);
                 
-#else
-                
-//                for ( auto const& elements: figaromodel.mFigaroelementfailureindex)
-//                    {
-//                    labels.addLabel(elements.first);
-//                    }
-            
-            
-                for (int i = 0; i< initialStateIndices.size(); ++i){
-                labels.addLabelToState("init", initialStateIndices.at(i));
-                }
-                for (int i = 0; i< deadlockStateIndices.size(); ++i){
-                    labels.addLabelToState("deadlock", deadlockStateIndices.at(i));
-                }
-                for (auto const& stateIdPair : stateStorage.stateToId)
-                    {
-                    storm::storage::BitVector state = stateIdPair.first;
-                    if(state.get(figaromodel.mFigaroboolelementindex[figaromodel.topevent]))
-                        labels.addLabelToState("failed", stateIdPair.second);
-                }
-                
-                
-//                for ( auto const& elements: figaromodel.mFigaroelementfailureindex)
-//                    {
-//                    for (auto const& stateIdPair : stateStorage.stateToId)
-//                        {
-//                        storm::storage::BitVector state = stateIdPair.first;
-//                        
-//                        if(state.get(figaromodel.mFigaroelementfailureindex[elements.first]))
-//                            labels.addLabelToState(elements.first, stateIdPair.second);
-//                        }
-//                    
-//                    }
-                
-#endif
+
 //                if (this->options.isBuildAllLabelsSet()) {
 //                    for (auto const& label : program.getLabels()) {
 //                        labels.push_back(std::make_pair(label.getName(), label.getStatePredicateExpression()));
@@ -439,7 +362,7 @@ namespace storm{
             }
             template<typename ValueType, typename StateType>
             void FigaroNextStateGenerator<ValueType,StateType>::retreiveFigaroModelState(storm::generator::CompressedState &compstate){
-#ifdef newimplementation
+
 //                figaromodel.updateState();
                 for (auto const& booleanVariable: this->variableInformation.booleanVariables) {
                     
@@ -486,13 +409,7 @@ namespace storm{
                         }
 //                    std::cout<<std::endl<<figaromodel.intState[figaromodel.nb_failures_OF_Failure_counter]<<std::endl;
                 }
-#else
-//                figaromodel.updateState();
-                for (auto i = 0; i < figaromodel.boolState.size(); i++){
-                    compstate.set(i, figaromodel.boolState.at(i));
-                    
-                }
-#endif
+
 //                std::cout<<StateToIdCallback(compstate);
 //                exit(2);
             }
@@ -501,7 +418,7 @@ namespace storm{
             template<typename ValueType, typename StateType>
             void FigaroNextStateGenerator<ValueType,StateType>::unpackStateIntoFigaroModel(storm::generator::CompressedState const& compstate)
             {
-#ifdef newimplementation
+
             for (auto const& booleanVariable : this->variableInformation.booleanVariables) {
                 figaromodel.boolState[figaromodel.mFigaroboolelementindex[booleanVariable.variable.getName()]] = compstate.get(booleanVariable.bitOffset);
             }
@@ -545,15 +462,7 @@ namespace storm{
                 figaromodel.intState[figaromodel.mFigarointelementindex[integerVariable.variable.getName()]] = (compstate.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth) + integerVariable.lowerBound);
             }
             }
-#else
-            //set state bit vector
-                
-            
-            for (int i = 0; i < figaromodel.boolState.size(); i++){
-            figaromodel.boolState[i] = compstate.get(i);
-            }
-//            figaromodel.updateSF();
-#endif
+
             
             figaromodel.printState();
             }
@@ -698,11 +607,9 @@ namespace storm{
             
             template<typename ValueType, typename StateType>
             storm::generator::CompressedState FigaroNextStateGenerator<ValueType,StateType>::maskstate(storm::generator::CompressedState &figarostate)
-#ifdef newimplementation
+
             {storm::generator::CompressedState result(this->variableInformation.getTotalBitOffset(true));
-#else
-                    {storm::generator::CompressedState result(  getTotalBitOffset(getStateSize()));
-#endif
+
                 for (int i =0; i<figarostate.size(); i++){
                     result.set(i, figarostate.get(i));
                 }

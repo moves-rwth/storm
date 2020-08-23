@@ -1,4 +1,4 @@
-#define newimplementation
+
     // to avoid multiple inclusions of header file
 #ifndef STORM_GENERATOR_FIGARONEXTSTATEGENERATOR_H_
 #define STORM_GENERATOR_FIGARONEXTSTATEGENERATOR_H_
@@ -20,7 +20,7 @@
 
 
 namespace storm {
-    namespace bdmp{
+    namespace figaro{
         namespace generator{
             
             template<typename ValueType, typename StateType>
@@ -29,26 +29,23 @@ namespace storm {
             public:
             typedef typename storm::generator::NextStateGenerator<ValueType, StateType>::StateToIdCallback StateToIdCallback;
 //            Without expression Manger
-            FigaroNextStateGenerator(storm::bdmp::FigaroProgram & model, storm::generator::NextStateGeneratorOptions const& options = storm::generator::NextStateGeneratorOptions());
+            FigaroNextStateGenerator(storm::figaro::FigaroProgram & model, storm::generator::NextStateGeneratorOptions const& options = storm::generator::NextStateGeneratorOptions());
 
             //with expression manager and variable information
-            FigaroNextStateGenerator(storm::bdmp::FigaroProgram & model, storm::expressions::ExpressionManager const& manger, storm::generator::VariableInformation const& varinfo, storm::generator::NextStateGeneratorOptions const& options = storm::generator::NextStateGeneratorOptions());
+            FigaroNextStateGenerator(storm::figaro::FigaroProgram & model, storm::expressions::ExpressionManager const& manger, storm::generator::VariableInformation const& varinfo, storm::generator::NextStateGeneratorOptions const& options = storm::generator::NextStateGeneratorOptions());
             
             
 //            following three functions require implementation
             virtual std::vector<StateType> getInitialStates(StateToIdCallback const& stateToIdCallback) override;
             void printmenue(std::vector<storm::generator::CompressedState> menuestates, std::vector<std::tuple<int, double,std::string,int>> menue,storm::generator::CompressedState compstate);
             void printinstmenue(std::vector<storm::generator::CompressedState> menuestates, std::vector<std::pair<std::string,double>> menue,storm::generator::CompressedState compstate);
-#ifndef newimplementation
             uint_fast64_t getTotalBitOffset(uint_fast64_t result) const;
-            virtual uint64_t getStateSize() const override;
-#endif
+ 
             virtual void load(storm::generator::CompressedState const& state) override;
-            virtual storm::generator::StateBehavior<ValueType, StateType>
-            expand(StateToIdCallback const& stateToIdCallback) override;
+            virtual storm::generator::StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) override;
             void retreiveFigaroModelState(storm::generator::CompressedState &state);
             
-//            ~FigaroNextStateGenerator();
+
             void printhello();
             storm::generator::CompressedState maskstate(storm::generator::CompressedState &figarostate);
             virtual storm::generator::ModelType getModelType() const override;
@@ -74,7 +71,7 @@ namespace storm {
                 // A flag that stores whether at least one of the selected reward models has state-action rewards.
             bool hasStateActionRewards;
             public:
-            storm::bdmp::FigaroProgram &figaromodel;
+            storm::figaro::FigaroProgram &figaromodel;
             };
             
         }

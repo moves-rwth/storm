@@ -44,6 +44,14 @@ namespace storm {
                 return this->getOption(figaroFileOptionName).getArgumentByName("filename").getValueAsString();
             }
 //
+            bool FIGAROSettings::isxmlFileSet() const {
+                return this->getOption(xmlFileOptionName).getHasOptionBeenSet();
+            }
+            
+            std::string FIGAROSettings::getxmlFilename() const {
+                return this->getOption(xmlFileOptionName).getArgumentByName("filename").getValueAsString();
+            }
+                //
             bool FIGAROSettings::isToDotSet() const {
                 return this->getOption(figaroToDotOptionName).getHasOptionBeenSet();
             }

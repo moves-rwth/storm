@@ -42,7 +42,7 @@ namespace storm {
         NextStateGenerator<ValueType, StateType>::NextStateGenerator( NextStateGeneratorOptions const& options) : options(options),
         variableInformation(),
         evaluator(nullptr), state(nullptr) {
-//            Intentionally left blank
+            std::cout<<"\n NextStateGenerator constructor is called\n";
         }
         
         template<typename ValueType, typename StateType>

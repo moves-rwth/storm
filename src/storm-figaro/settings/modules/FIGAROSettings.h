@@ -23,6 +23,15 @@ namespace storm {
                  * Retrieves the figaro file name
                  */
                 std::string getfigaroFilename() const;
+                /**
+                 * Retrievew whether the xml file option was set
+                 */
+                bool isxmlFileSet() const;
+                
+                /**
+                 * Retrieves the xml file name
+                 */
+                std::string getxmlFilename() const;
                 
                 /**
                  * Whether the figaro should be  should be drawn (dot output)

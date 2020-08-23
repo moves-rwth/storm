@@ -19,7 +19,9 @@ namespace storm {
         struct ArrayEliminatorData;
         class VariableSet;
     }
-    
+    namespace figaro{
+        class FigaroProgram;
+    }
     namespace generator {
         // A structure storing information about the boolean variables of the model.
         struct BooleanVariableInformation {
@@ -94,6 +96,11 @@ namespace storm {
         struct VariableInformation {
             VariableInformation(storm::prism::Program const& program, bool outOfBoundsState = false);
             VariableInformation(storm::jani::Model const& model, std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& parallelAutomata, uint64_t reservedBitsForUnboundedVariables, bool outOfBoundsState);
+//            Shahid added this coonstructor
+            VariableInformation(storm::figaro::FigaroProgram & model,
+                                std::vector<storm::expressions::Variable> boolean_variables,
+                                std::vector<storm::expressions::Variable> integer_variables,
+                                bool outOfBoundsState = false);
             
             VariableInformation() = default;
             uint_fast64_t getTotalBitOffset(bool roundTo64Bit = false) const;

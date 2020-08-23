@@ -3,54 +3,94 @@
 #include <array>
 #include <map>
 #include <vector>
-#include <sstream> 
+#include <sstream>
 #include<math.h>
 #include <set>
 
 namespace storm{
-    namespace bdmp{
+    namespace figaro{
         class FigaroProgram{
         public:
             FigaroProgram();
             
             
-            std::map<std::string, size_t> mFigaroboolelementindex = { };
-
-            std::map<std::string, size_t> mFigarofloatelementindex = {  
-            	{"calculated_lambda_OF_Arrival" , 0},
-            	{"calculated_lambda_OF_end_of_payment" , 1},
-            	{"calculated_lambda_OF_tank_is_full_1" , 2},
-            	{"calculated_lambda_OF_tank_is_full_2" , 3},
-            	{"calculated_lambda_OF_tank_is_full_3" , 4}};
-
-            std::map<std::string, size_t> mFigarointelementindex = {  
-            	{"mark_OF_Cashdesk" , 0},
-            	{"mark_OF_First_waiting_area" , 1},
-            	{"mark_OF_Pump_1" , 2},
-            	{"mark_OF_Pump_2" , 3},
-            	{"mark_OF_Pump_3" , 4},
-            	{"mark_OF_Second_waiting_area" , 5}};
-
-            std::map<std::string, size_t> mFigaroenumelementindex = { };
-
-            std::set<std::string> enum_variables_names = { };
-
-            std::set<std::string> float_variables_names = {  
-            	"float calculated_lambda_OF_Arrival" ,
-            	"float calculated_lambda_OF_end_of_payment" ,
-            	"float calculated_lambda_OF_tank_is_full_1" ,
-            	"float calculated_lambda_OF_tank_is_full_2" ,
-            	"float calculated_lambda_OF_tank_is_full_3" };
-
-
+            std::map<std::string, size_t> mFigaroboolelementindex = {
+                {"null_production_OF_Backup_1" , 0},
+                {"dequeue_OF_Backup_1" , 1},
+                {"fail_OF_Backup_1" , 2},
+                {"null_production_OF_Block_1" , 3},
+                {"dequeue_OF_Block_1" , 4},
+                {"fail_OF_Block_1" , 5},
+                {"null_production_OF_Block_2" , 6},
+                {"dequeue_OF_Block_2" , 7},
+                {"fail_OF_Block_2" , 8},
+                {"null_production_OF_Block_3" , 9},
+                {"dequeue_OF_Block_3" , 10},
+                {"fail_OF_Block_3" , 11},
+                {"null_production_OF_Block_4" , 12},
+                {"dequeue_OF_Block_4" , 13},
+                {"fail_OF_Block_4" , 14},
+                {"null_production_OF_SS1" , 15},
+                {"null_production_OF_SS2" , 16},
+                {"null_production_OF_min_1" , 17},
+                {"free_OF_rep_1" , 18},
+                {"dequeue_OF_rep_1" , 19}};
+            
+            std::map<std::string, size_t> mFigarofloatelementindex = {
+                {"capacity_OF_Backup_1" , 0},
+                {"capacity_OF_Block_1" , 1},
+                {"capacity_OF_Block_2" , 2},
+                {"capacity_OF_Block_3" , 3},
+                {"capacity_OF_Block_4" , 4},
+                {"capacity_OF_SS1" , 5},
+                {"potential_capacity_OF_SS1" , 6},
+                {"capacity_OF_SS2" , 7},
+                {"potential_capacity_OF_SS2" , 8},
+                {"capacity_OF_min_1" , 9}};
+            
+            std::map<std::string, size_t> mFigarointelementindex = {
+                {"rank_OF_Backup_1" , 0},
+                {"rank_OF_Block_1" , 1},
+                {"rank_OF_Block_2" , 2},
+                {"rank_OF_Block_3" , 3},
+                {"rank_OF_Block_4" , 4},
+                {"max_rank_OF_rep_1" , 5}};
+            
+            std::map<std::string, size_t> mFigaroenumelementindex = {
+                {"state_OF_Backup_1" , 0},
+                {"state_OF_Block_1" , 1},
+                {"state_OF_Block_2" , 2},
+                {"state_OF_Block_3" , 3},
+                {"state_OF_Block_4" , 4}};
+            
+            std::set<std::string> enum_variables_names = {
+                "state_OF_Backup_1" ,
+                "state_OF_Block_1" ,
+                "state_OF_Block_2" ,
+                "state_OF_Block_3" ,
+                "state_OF_Block_4" };
+            
+            std::set<std::string> float_variables_names = {
+                "float capacity_OF_Backup_1" ,
+                "float capacity_OF_Block_1" ,
+                "float capacity_OF_Block_2" ,
+                "float capacity_OF_Block_3" ,
+                "float capacity_OF_Block_4" ,
+                "float capacity_OF_SS1" ,
+                "float potential_capacity_OF_SS1" ,
+                "float capacity_OF_SS2" ,
+                "float potential_capacity_OF_SS2" ,
+                "float capacity_OF_min_1" };
+            
+            
             /* ---------- CODING ENUMERATED VARIABLES STATES ------------ */
-            enum enum_status {};
-
-            std::string const topevent="mark_OF_Cashdesk";
-            static int const numBoolState = 0 ;
-            static int const numFloatState = 5 ;
+            enum enum_status {  working = 0, standby = 1, under_repair = 2, waiting_for_rep = 3, required = 4};
+            
+            std::string const topevent="null_production_OF_min_1";
+            static int const numBoolState = 20 ;
+            static int const numFloatState = 10 ;
             static int const numIntState = 6 ;
-            static int const numEnumState = 0 ;
+            static int const numEnumState = 5 ;
             std::array<bool, numBoolState> boolState;
             std::array<bool, numBoolState> backupBoolState;
             std::array<float, numFloatState> floatState;
@@ -60,60 +100,113 @@ namespace storm{
             std::array<int, numEnumState> enumState;
             std::array<int, numEnumState> backupEnumState;
             bool ins_transition_found = false;
-
             
-		/* ---------- DECLARATION OF CONSTANTS ------------ */
-			int const weight_OF_av_1 = 1;
-			int const weight_OF_am_8 = 1;
-			int const weight_OF_ia_4 = 3;
-			int const weight_OF_am_7 = 1;
-			int const weight_OF_ia_1_1 = 1;
-			int const weight_OF_av_4 = 1;
-			int const weight_OF_am_5 = 1;
-			int const weight_OF_av_8 = 1;
-			int const weight_OF_ia_1_2 = 1;
-			int const weight_OF_av_2 = 1;
-			int const weight_OF_av_6 = 1;
-			double const lambda_OF_end_of_payment = 0.001;
-			double const lambda_OF_tank_is_full_3 = 0.001;
-			double const lambda_OF_Arrival = 0.001;
-			int const weight_OF_av_3 = 1;
-			int const weight_OF_ia_1 = 1;
-			double const lambda_OF_tank_is_full_1 = 0.001;
-			int const weight_OF_am_4 = 1;
-			int const weight_OF_am_2 = 1;
-			int const weight_OF_av_5 = 1;
-			int const weight_OF_am_1 = 1;
-			int const weight_OF_ia_5 = 2;
-			double const lambda_OF_tank_is_full_2 = 0.001;
-			bool const Profil1_OF___ARBRE__EIRM = true;
-			int const weight_OF_av_7 = 1;
-			int const weight_OF_am_6 = 1;
-			int const weight_OF_am_3 = 1;
-		
-/* ---------- DECLARATION OF OCCURRENCE RULES FIRING FLAGS ------------ */
-            bool FIRE_xx2_OF_Arrival;
-            bool FIRE_xx2_OF_end_of_payment;
-            bool FIRE_xx2_OF_tank_is_full_1;
-            bool FIRE_xx2_OF_tank_is_full_2;
-            bool FIRE_xx2_OF_tank_is_full_3;
-
-
-            int calculated_lambda_OF_Arrival = 0 ;
-            int calculated_lambda_OF_end_of_payment = 1 ;
-            int calculated_lambda_OF_tank_is_full_1 = 2 ;
-            int calculated_lambda_OF_tank_is_full_2 = 3 ;
-            int calculated_lambda_OF_tank_is_full_3 = 4 ;
-
-            int mark_OF_Cashdesk = 0 ;
-            int mark_OF_First_waiting_area = 1 ;
-            int mark_OF_Pump_1 = 2 ;
-            int mark_OF_Pump_2 = 3 ;
-            int mark_OF_Pump_3 = 4 ;
-            int mark_OF_Second_waiting_area = 5 ;
-
-
-
+            bool REINITIALISATION_OF_capacity_OF_Backup_1 ;
+            bool REINITIALISATION_OF_null_production_OF_Backup_1 ;
+            bool REINITIALISATION_OF_dequeue_OF_Backup_1 ;
+            bool REINITIALISATION_OF_capacity_OF_Block_1 ;
+            bool REINITIALISATION_OF_null_production_OF_Block_1 ;
+            bool REINITIALISATION_OF_dequeue_OF_Block_1 ;
+            bool REINITIALISATION_OF_capacity_OF_Block_2 ;
+            bool REINITIALISATION_OF_null_production_OF_Block_2 ;
+            bool REINITIALISATION_OF_dequeue_OF_Block_2 ;
+            bool REINITIALISATION_OF_capacity_OF_Block_3 ;
+            bool REINITIALISATION_OF_null_production_OF_Block_3 ;
+            bool REINITIALISATION_OF_dequeue_OF_Block_3 ;
+            bool REINITIALISATION_OF_capacity_OF_Block_4 ;
+            bool REINITIALISATION_OF_null_production_OF_Block_4 ;
+            bool REINITIALISATION_OF_dequeue_OF_Block_4 ;
+            bool REINITIALISATION_OF_capacity_OF_SS1 ;
+            bool REINITIALISATION_OF_null_production_OF_SS1 ;
+            bool REINITIALISATION_OF_potential_capacity_OF_SS1 ;
+            bool REINITIALISATION_OF_capacity_OF_SS2 ;
+            bool REINITIALISATION_OF_null_production_OF_SS2 ;
+            bool REINITIALISATION_OF_potential_capacity_OF_SS2 ;
+            bool REINITIALISATION_OF_capacity_OF_min_1 ;
+            bool REINITIALISATION_OF_null_production_OF_min_1 ;
+            bool REINITIALISATION_OF_max_rank_OF_rep_1 ;
+            
+            /* ---------- DECLARATION OF CONSTANTS ------------ */
+            double const nominal_capacity_OF_Backup_1 = 70;
+            double const mu_OF_Block_2 = 0.1;
+            double const nominal_capacity_OF_Block_3 = 30;
+            double const mu_OF_Block_3 = 0.1;
+            double const lambda_OF_Block_2 = 0.0001;
+            double const mu_OF_Block_4 = 0.1;
+            double const nominal_capacity_OF_Block_2 = 70;
+            double const functioning_threshold_OF_SS1 = 0;
+            double const lambda_OF_Block_3 = 0.0001;
+            double const functioning_threshold_OF_SS2 = 0;
+            double const nominal_capacity_OF_Block_1 = 30;
+            double const mu_OF_Block_1 = 0.1;
+            double const gamma_OF_Backup_1 = 0.01;
+            double const lambda_OF_Block_4 = 0.0001;
+            double const mu_OF_Backup_1 = 0.1;
+            bool const Profil1_OF___ARBRE__EIRM = true;
+            double const nominal_capacity_OF_Block_4 = 70;
+            double const lambda_OF_Block_1 = 0.0001;
+            double const lambda_OF_Backup_1 = 0.0001;
+            
+            /* ---------- DECLARATION OF OCCURRENCE RULES FIRING FLAGS ------------ */
+            bool FIRE_fail_in_op_OF_Backup_1;
+            bool FIRE_xx1_OF_Backup_1;
+            bool FIRE_xx2_OF_Backup_1_INS_2;
+            bool FIRE_xx2_OF_Backup_1_INS_3;
+            bool FIRE_fail_in_op_OF_Block_1;
+            bool FIRE_xx1_OF_Block_1;
+            bool FIRE_fail_in_op_OF_Block_2;
+            bool FIRE_xx1_OF_Block_2;
+            bool FIRE_fail_in_op_OF_Block_3;
+            bool FIRE_xx1_OF_Block_3;
+            bool FIRE_fail_in_op_OF_Block_4;
+            bool FIRE_xx1_OF_Block_4;
+            
+            int null_production_OF_Backup_1 = 0 ;
+            int dequeue_OF_Backup_1 = 1 ;
+            int fail_OF_Backup_1 = 2 ;
+            int null_production_OF_Block_1 = 3 ;
+            int dequeue_OF_Block_1 = 4 ;
+            int fail_OF_Block_1 = 5 ;
+            int null_production_OF_Block_2 = 6 ;
+            int dequeue_OF_Block_2 = 7 ;
+            int fail_OF_Block_2 = 8 ;
+            int null_production_OF_Block_3 = 9 ;
+            int dequeue_OF_Block_3 = 10 ;
+            int fail_OF_Block_3 = 11 ;
+            int null_production_OF_Block_4 = 12 ;
+            int dequeue_OF_Block_4 = 13 ;
+            int fail_OF_Block_4 = 14 ;
+            int null_production_OF_SS1 = 15 ;
+            int null_production_OF_SS2 = 16 ;
+            int null_production_OF_min_1 = 17 ;
+            int free_OF_rep_1 = 18 ;
+            int dequeue_OF_rep_1 = 19 ;
+            
+            int capacity_OF_Backup_1 = 0 ;
+            int capacity_OF_Block_1 = 1 ;
+            int capacity_OF_Block_2 = 2 ;
+            int capacity_OF_Block_3 = 3 ;
+            int capacity_OF_Block_4 = 4 ;
+            int capacity_OF_SS1 = 5 ;
+            int potential_capacity_OF_SS1 = 6 ;
+            int capacity_OF_SS2 = 7 ;
+            int potential_capacity_OF_SS2 = 8 ;
+            int capacity_OF_min_1 = 9 ;
+            
+            int rank_OF_Backup_1 = 0 ;
+            int rank_OF_Block_1 = 1 ;
+            int rank_OF_Block_2 = 2 ;
+            int rank_OF_Block_3 = 3 ;
+            int rank_OF_Block_4 = 4 ;
+            int max_rank_OF_rep_1 = 5 ;
+            
+            int state_OF_Backup_1 = 0 ;
+            int state_OF_Block_1 = 1 ;
+            int state_OF_Block_2 = 2 ;
+            int state_OF_Block_3 = 3 ;
+            int state_OF_Block_4 = 4 ;
+            
+            
             /* ---------- DECLARATION OF FUNCTIONS ------------ */
             void init();
             void saveCurrentState();
@@ -121,6 +214,8 @@ namespace storm{
             void fireOccurrence(int numFire);
             std::vector<std::tuple<int, double, std::string, int>> showFireableOccurrences();
             void runOnceInteractionStep_default_step();
+            void runOnceInteractionStep_compute_max_rank();
+            void runOnceInteractionStep_rep_management();
             int compareStates();
             void doReinitialisations();
             void runInteractions();
@@ -131,3 +226,4 @@ namespace storm{
         };
     }
 }
+
