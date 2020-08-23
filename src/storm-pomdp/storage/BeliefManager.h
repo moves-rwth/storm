@@ -7,6 +7,8 @@
 #include <boost/container/flat_set.hpp>
 
 #include "storm/utility/ConstantsComparator.h"
+#include "storm/utility/solver.h"
+#include "storm/solver/LpSolver.h"
 
 namespace storm {
     namespace storage {
@@ -34,6 +36,13 @@ namespace storm {
                 std::vector<BeliefId> gridPoints;
                 std::vector<BeliefValueType> weights;
                 uint64_t size() const;
+            };
+
+            struct BeliefCulling {
+                bool isCullable;
+                BeliefId startingBelief;
+                BeliefId targetBelief;
+                BeliefValueType delta;
             };
 
             BeliefId noId() const;
@@ -68,6 +77,8 @@ namespace storm {
             expandAndTriangulate(BeliefId const &beliefId, uint64_t actionIndex, std::vector<BeliefValueType> const &observationResolutions);
 
             std::vector<std::pair<BeliefId, ValueType>> expand(BeliefId const &beliefId, uint64_t actionIndex);
+
+            BeliefCulling cullBelief(BeliefId const &beliefId);
 
         private:
 
@@ -118,6 +129,8 @@ namespace storm {
             BeliefId initialBeliefId;
             
             storm::utility::ConstantsComparator<ValueType> cc;
+
+            std::shared_ptr<storm::solver::LpSolver<ValueType>> lpSolver;
             
             TriangulationMode triangulationMode;
             

@@ -4,6 +4,7 @@
 #include "storm/utility/macros.h"
 #include "storm/utility/constants.h"
 #include "storm/models/sparse/Pomdp.h"
+#include "storm/storage/expressions/Expression.h"
 
 namespace storm {
     namespace storage {
@@ -173,7 +174,7 @@ namespace storm {
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
         typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefType const &BeliefManager<PomdpType, BeliefValueType, StateType>::getBelief(BeliefId const &id) const {
-            STORM_LOG_ASSERT(id != noId(), "Tried to get a non-existend belief.");
+            STORM_LOG_ASSERT(id != noId(), "Tried to get a non-existent belief.");
             STORM_LOG_ASSERT(id < getNumberOfBeliefIds(), "Belief index " << id << " is out of range.");
             return beliefs[id];
         }
@@ -482,6 +483,62 @@ namespace storm {
 
             return destinations;
 
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefCulling
+        BeliefManager<PomdpType, BeliefValueType, StateType>::cullBelief(BeliefId const &beliefId){
+            uint32_t obs = getBeliefObservation(beliefId);
+            STORM_LOG_ASSERT(obs < beliefToIdMap.size(), "Belief has unknown observation.");
+            if(!lpSolver){
+                auto lpSolverFactory = storm::utility::solver::LpSolverFactory<ValueType>();
+                lpSolver = lpSolverFactory.create("POMDP LP Solver");
+            }
+
+            // Some counters for naming
+            uint64_t i = 0;
+            uint64_t j = 0;
+            // Iterate over all possible candidates TODO optimize this
+            std::vector<storm::expressions::Expression> decisionVariables;
+            for(auto const &candidate : beliefToIdMap[obs]){
+                if(candidate.first.size() > getBelief(beliefId).size()){
+                    STORM_LOG_DEBUG("Belief with ID " << candidate.second << " has larger support and is not suitable");
+                } else {
+                    // Add variables a_j, D_j
+                    auto decisionVar = lpSolver->addBinaryVariable("a_" + std::to_string(j));
+                    decisionVariables.push_back(storm::expressions::Expression(decisionVar));
+                    // Add variables for the DELTA values, their overall sum is to be minimized
+                    auto bigDelta = lpSolver->addBoundedContinuousVariable("D_"+ std::to_string(j), storm::utility::zero<ValueType>(), storm::utility::one<ValueType>(), storm::utility::one<ValueType>());
+                    std::vector<storm::expressions::Expression> deltas;
+                    i=0;
+                    for(auto const &state : getBelief(beliefId)){
+                        auto localDelta = lpSolver->addBoundedContinuousVariable("d_"+ std::to_string(i) + "_" + std::to_string(j), storm::utility::zero<ValueType>(), storm::utility::one<ValueType>());
+                        deltas.push_back(storm::expressions::Expression(localDelta));
+                        // Add the constraint to describe the transformation between the state values in the beliefs
+                        // b(s_i) - d_i_j
+                        storm::expressions::Expression leftSide = lpSolver->getConstant(state.second) - localDelta;
+                        storm::expressions::Expression targetValue;
+                        try {
+                            targetValue = lpSolver->getConstant(candidate.first.at(state.first));
+                        } catch (const std::out_of_range&) {
+                            targetValue = lpSolver->getConstant(storm::utility::zero<ValueType>());
+                        }
+                        // b_j(s_i) * (1 - D_j) + (1-a_j) * (b(s_i) - b_j(s_i))
+                        storm::expressions::Expression rightSide = targetValue * (lpSolver->getConstant(storm::utility::one<ValueType>()) - storm::expressions::Expression(bigDelta))
+                                + (lpSolver->getConstant(storm::utility::one<ValueType>()) - storm::expressions::Expression(decisionVar)) * (lpSolver->getConstant(state.second) - targetValue);
+                        // Add equality
+                        lpSolver->addConstraint("state_eq_"+ std::to_string(i) + "_" + std::to_string(j), leftSide == rightSide);
+                        ++i;
+                    }
+                    // Link decision and D_j
+                    lpSolver->addConstraint("dec_"+ std::to_string(j), storm::expressions::Expression(bigDelta) <= storm::expressions::Expression(decisionVar));
+                    // Link D_j and d_i_j
+                    lpSolver->addConstraint("delta_" + std::to_string(j), storm::expressions::Expression(bigDelta) == storm::expressions::sum(deltas));
+                    ++j;
+                }
+            }
+            // Only one target belief should be chosen
+            lpSolver->addConstraint("choice", storm::expressions::sum(decisionVariables) == lpSolver->getConstant(storm::utility::one<ValueType>()));
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
