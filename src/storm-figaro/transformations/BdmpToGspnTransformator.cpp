@@ -1,4 +1,4 @@
-#include "BDMPToGspnTransformator.h"
+#include "BdmpToGspnTransformator.h"
 #include "storm/exceptions/NotImplementedException.h"
 #include <memory>
 

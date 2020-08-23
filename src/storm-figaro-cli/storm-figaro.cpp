@@ -96,10 +96,10 @@ void processOptions() {
  
     auto figarooptions = storm::settings::getModule<storm::settings::modules::FIGAROSettings>();
     if (!figarooptions.isfigaroFileSet()) {
-        return -1;
+        return;
     }
     if (!figarooptions.isxmlFileSet()) {
-        return -1;
+        return;
     }
     //build model from Figaro file
     //@TODO We need to parse figarofile with the definitive figaroAPI
