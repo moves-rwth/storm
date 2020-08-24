@@ -44,7 +44,18 @@ namespace storm {
             
             return pctl;
         }
-        
+
+        FragmentSpecification pctlstar() {
+            FragmentSpecification pctlstar = pctl();
+
+            pctlstar.setBinaryBooleanPathFormulasAllowed(true);
+            pctlstar.setUnaryBooleanPathFormulasAllowed(true);
+            pctlstar.setNestedOperatorsAllowed(true);
+            pctlstar.setNestedPathFormulasAllowed(true);
+
+            return pctlstar;
+        }
+
         FragmentSpecification flatPctl() {
             FragmentSpecification flatPctl = pctl();
             
@@ -66,7 +77,22 @@ namespace storm {
             
             return prctl;
         }
-        
+
+        FragmentSpecification prctlstar() {
+            FragmentSpecification prctlstar = pctlstar();
+
+            prctlstar.setRewardOperatorsAllowed(true);
+            prctlstar.setCumulativeRewardFormulasAllowed(true);
+            prctlstar.setInstantaneousFormulasAllowed(true);
+            prctlstar.setReachabilityRewardFormulasAllowed(true);
+            prctlstar.setLongRunAverageOperatorsAllowed(true);
+            prctlstar.setStepBoundedCumulativeRewardFormulasAllowed(true);
+            prctlstar.setTimeBoundedCumulativeRewardFormulasAllowed(true);
+
+            return prctlstar;
+
+        }
+
         FragmentSpecification csl() {
             FragmentSpecification csl = pctl();
             
