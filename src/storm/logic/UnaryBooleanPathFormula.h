@@ -3,6 +3,7 @@
 
 #include "storm/logic/UnaryPathFormula.h"
 #include "storm/logic/UnaryBooleanOperatorType.h"
+#include "storm/logic/FormulaContext.h"
 
 namespace storm {
     namespace logic {
@@ -10,13 +11,16 @@ namespace storm {
         public:
             typedef storm::logic::UnaryBooleanOperatorType OperatorType;
 
-            UnaryBooleanPathFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& subformula);
+            UnaryBooleanPathFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& subformula, FormulaContext context = FormulaContext::Probability);
             
             virtual ~UnaryBooleanPathFormula() {
                 // Intentionally left empty.
             };
             
+            FormulaContext const& getContext() const;
+
             virtual bool isUnaryBooleanPathFormula() const override;
+            virtual bool isProbabilityPathFormula() const override;
 
             virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
             
@@ -28,6 +32,7 @@ namespace storm {
 
         private:
             OperatorType operatorType;
+            FormulaContext context;
         };
     }
 }

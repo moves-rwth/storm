@@ -7,15 +7,24 @@
 
 namespace storm {
     namespace logic {
-        BinaryBooleanPathFormula::BinaryBooleanPathFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula) : BinaryPathFormula(leftSubformula, rightSubformula), operatorType(operatorType) {
+        BinaryBooleanPathFormula::BinaryBooleanPathFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, FormulaContext context) : BinaryPathFormula(leftSubformula, rightSubformula), operatorType(operatorType), context(context) {
             STORM_LOG_THROW(this->getLeftSubformula().isStateFormula() || this->getLeftSubformula().isPathFormula(), storm::exceptions::InvalidPropertyException, "Boolean path formula must have either path or state subformulas");
             STORM_LOG_THROW(this->getRightSubformula().isStateFormula() || this->getRightSubformula().isPathFormula(), storm::exceptions::InvalidPropertyException, "Boolean path formula must have either path or state subformulas");
+            STORM_LOG_THROW(context == FormulaContext::Probability, storm::exceptions::InvalidPropertyException, "Invalid context for formula.");
         }
         
+        FormulaContext const& BinaryBooleanPathFormula::getContext() const {
+            return context;
+        }
+
         bool BinaryBooleanPathFormula::isBinaryBooleanPathFormula() const {
             return true;
         }
         
+        bool BinaryBooleanPathFormula::isProbabilityPathFormula() const {
+            return true;
+        }
+
         boost::any BinaryBooleanPathFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }

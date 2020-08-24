@@ -5,6 +5,7 @@
 
 #include "storm/logic/BinaryPathFormula.h"
 #include "storm/logic/BinaryBooleanOperatorType.h"
+#include "storm/logic/FormulaContext.h"
 
 namespace storm {
     namespace logic {
@@ -12,13 +13,16 @@ namespace storm {
         public:
             typedef storm::logic::BinaryBooleanOperatorType OperatorType;
 
-            BinaryBooleanPathFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula);
+            BinaryBooleanPathFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula, FormulaContext context = FormulaContext::Probability);
             
             virtual ~BinaryBooleanPathFormula() {
                 // Intentionally left empty.
             };
             
+            FormulaContext const& getContext() const;
+
             virtual bool isBinaryBooleanPathFormula() const override;
+            virtual bool isProbabilityPathFormula() const override;
             
             virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
             
@@ -31,6 +35,7 @@ namespace storm {
             
         private:
             OperatorType operatorType;
+            FormulaContext context;
         };
     }
 }
