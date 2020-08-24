@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace logic {
-        FormulaInformation::FormulaInformation() : mContainsRewardOperator(false), mContainsNextFormula(false), mContainsBoundedUntilFormula(false), mContainsCumulativeRewardFormula(false), mContainsRewardBoundedFormula(false), mContainsLongRunFormula(false) {
+        FormulaInformation::FormulaInformation() : mContainsRewardOperator(false), mContainsNextFormula(false), mContainsBoundedUntilFormula(false), mContainsCumulativeRewardFormula(false), mContainsRewardBoundedFormula(false), mContainsLongRunFormula(false), mContainsComplexPathFormula(false) {
             // Intentionally left empty
         }
         
@@ -30,6 +30,10 @@ namespace storm {
             return this->mContainsLongRunFormula;
         }
         
+        bool FormulaInformation::containsComplexPathFormula() const {
+            return this->mContainsComplexPathFormula;
+        }
+
         FormulaInformation FormulaInformation::join(FormulaInformation const& other) {
             FormulaInformation result;
             result.mContainsRewardOperator = this->containsRewardOperator() || other.containsRewardOperator();
@@ -38,6 +42,7 @@ namespace storm {
             result.mContainsCumulativeRewardFormula = this->containsCumulativeRewardFormula() || other.containsCumulativeRewardFormula();
             result.mContainsRewardBoundedFormula = this->containsRewardBoundedFormula() || other.containsRewardBoundedFormula();
             result.mContainsLongRunFormula = this->containsLongRunFormula() || other.containsLongRunFormula();
+            result.mContainsComplexPathFormula = this->containsComplexPathFormula() || other.containsComplexPathFormula();
             return result;
         }
         
@@ -70,5 +75,11 @@ namespace storm {
             this->mContainsLongRunFormula = newValue;
             return *this;
         }
+
+        FormulaInformation& FormulaInformation::setContainsComplexPathFormula(bool newValue) {
+            this->mContainsComplexPathFormula = newValue;
+            return *this;
+        }
+
     }
 }

@@ -97,7 +97,7 @@ namespace storm {
             virtual bool hasQuantitativeResult() const;
             
             bool isInFragment(FragmentSpecification const& fragment) const;
-            FormulaInformation info() const;
+            FormulaInformation info(bool recurseIntoOperators = true) const;
 
             virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data = boost::any()) const = 0;
             

@@ -4,11 +4,15 @@
 
 namespace storm {
     namespace logic {
-        FormulaInformation FormulaInformationVisitor::getInformation(Formula const& f) const {
-            boost::any result = f.accept(*this, boost::any());
+        FormulaInformation FormulaInformationVisitor::getInformation(Formula const& f, bool recurseIntoOperators) {
+            FormulaInformationVisitor visitor(recurseIntoOperators);
+            boost::any result = f.accept(visitor, boost::any());
             return boost::any_cast<FormulaInformation>(result);
         }
         
+        FormulaInformationVisitor::FormulaInformationVisitor(bool recurseIntoOperators) : recurseIntoOperators(recurseIntoOperators) {
+        }
+
         boost::any FormulaInformationVisitor::visit(AtomicExpressionFormula const&, boost::any const&) const {
             return FormulaInformation();
         }
@@ -22,7 +26,8 @@ namespace storm {
         }
         
         boost::any FormulaInformationVisitor::visit(BinaryBooleanPathFormula const& f, boost::any const& data) const {
-            return boost::any_cast<FormulaInformation>(f.getLeftSubformula().accept(*this, data)).join(boost::any_cast<FormulaInformation>(f.getRightSubformula().accept(*this)));
+            FormulaInformation result = boost::any_cast<FormulaInformation>(f.getLeftSubformula().accept(*this, data)).join(boost::any_cast<FormulaInformation>(f.getRightSubformula().accept(*this)));
+            return result.setContainsComplexPathFormula();
         }
 
         boost::any FormulaInformationVisitor::visit(BooleanLiteralFormula const&, boost::any const&) const {
@@ -42,10 +47,16 @@ namespace storm {
                 for (unsigned i = 0; i < f.getDimension(); ++i) {
                     result.join(boost::any_cast<FormulaInformation>(f.getLeftSubformula(i).accept(*this, data)));
                     result.join(boost::any_cast<FormulaInformation>(f.getRightSubformula(i).accept(*this, data)));
+                    if (f.getLeftSubformula(i).isPathFormula() || f.getRightSubformula(i).isPathFormula()) {
+                        result.setContainsComplexPathFormula();
+                    }
                 }
             } else {
                 result.join(boost::any_cast<FormulaInformation>(f.getLeftSubformula().accept(*this, data)));
                 result.join(boost::any_cast<FormulaInformation>(f.getRightSubformula().accept(*this, data)));
+                if (f.getLeftSubformula().isPathFormula() || f.getRightSubformula().isPathFormula()) {
+                    result.setContainsComplexPathFormula();
+                }
             }
             return result;
         }
@@ -66,7 +77,11 @@ namespace storm {
         }
         
         boost::any FormulaInformationVisitor::visit(EventuallyFormula const& f, boost::any const& data) const {
-            return f.getSubformula().accept(*this, data);
+            FormulaInformation result = boost::any_cast<FormulaInformation>(f.getSubformula().accept(*this, data));
+            if (f.getSubformula().isPathFormula()) {
+                result.setContainsComplexPathFormula();
+            }
+            return result;
         }
         
         boost::any FormulaInformationVisitor::visit(TimeOperatorFormula const& f, boost::any const& data) const {
@@ -74,7 +89,11 @@ namespace storm {
         }
         
         boost::any FormulaInformationVisitor::visit(GloballyFormula const& f, boost::any const& data) const {
-            return f.getSubformula().accept(*this, data);
+            FormulaInformation result = boost::any_cast<FormulaInformation>(f.getSubformula().accept(*this, data));
+            if (f.getSubformula().isPathFormula()) {
+                result.setContainsComplexPathFormula();
+            }
+            return result;
         }
         
         boost::any FormulaInformationVisitor::visit(InstantaneousRewardFormula const&, boost::any const&) const {
@@ -84,7 +103,9 @@ namespace storm {
         boost::any FormulaInformationVisitor::visit(LongRunAverageOperatorFormula const& f, boost::any const& data) const {
             FormulaInformation result;
             result.setContainsLongRunFormula(true);
-            result.join(boost::any_cast<FormulaInformation>(f.getSubformula().accept(*this, data)));
+            if (recurseIntoOperators) {
+                result.join(boost::any_cast<FormulaInformation>(f.getSubformula().accept(*this, data)));
+	    }
             return result;
         }
         
@@ -96,26 +117,45 @@ namespace storm {
         
         boost::any FormulaInformationVisitor::visit(MultiObjectiveFormula const& f, boost::any const& data) const {
             FormulaInformation result;
-            for(auto const& subF : f.getSubformulas()){
-                result.join(boost::any_cast<FormulaInformation>(subF->accept(*this, data)));
+            if (recurseIntoOperators) {
+                for(auto const& subF : f.getSubformulas()){
+                    result.join(boost::any_cast<FormulaInformation>(subF->accept(*this, data)));
+                }
             }
             return result;
         }
         
         boost::any FormulaInformationVisitor::visit(QuantileFormula const& f, boost::any const& data) const {
-            return f.getSubformula().accept(*this, data);
+            // TODO (joachim): check is this correct?
+            if (recurseIntoOperators) {
+                return f.getSubformula().accept(*this, data);
+	    } else {
+	        return FormulaInformation();
+	    }
         }
         
         boost::any FormulaInformationVisitor::visit(NextFormula const& f, boost::any const& data) const {
-            return boost::any_cast<FormulaInformation>(f.getSubformula().accept(*this, data)).setContainsNextFormula();
+            FormulaInformation result = boost::any_cast<FormulaInformation>(f.getSubformula().accept(*this, data)).setContainsNextFormula();
+            if (f.getSubformula().isPathFormula()) {
+                result.setContainsComplexPathFormula();
+            }
+            return result;
         }
         
         boost::any FormulaInformationVisitor::visit(ProbabilityOperatorFormula const& f, boost::any const& data) const {
-            return f.getSubformula().accept(*this, data);
+            if (recurseIntoOperators) {
+                return f.getSubformula().accept(*this, data);
+            } else {
+                return FormulaInformation();
+            }
         }
         
         boost::any FormulaInformationVisitor::visit(RewardOperatorFormula const& f, boost::any const& data) const {
-            return boost::any_cast<FormulaInformation>(f.getSubformula().accept(*this, data)).setContainsRewardOperator();
+            if (recurseIntoOperators) {
+                return boost::any_cast<FormulaInformation>(f.getSubformula().accept(*this, data)).setContainsRewardOperator();
+            } else {
+                return FormulaInformation();
+            }
         }
         
         boost::any FormulaInformationVisitor::visit(TotalRewardFormula const&, boost::any const&) const {
@@ -127,17 +167,25 @@ namespace storm {
         }
         
         boost::any FormulaInformationVisitor::visit(UnaryBooleanPathFormula const& f, boost::any const& data) const {
-            return f.getSubformula().accept(*this, data);
+            FormulaInformation result = boost::any_cast<FormulaInformation>(f.getSubformula().accept(*this, data));
+            result.setContainsComplexPathFormula();
+            return result;
         }
 
         boost::any FormulaInformationVisitor::visit(UntilFormula const& f, boost::any const& data) const {
-            return boost::any_cast<FormulaInformation>(f.getLeftSubformula().accept(*this, data)).join(boost::any_cast<FormulaInformation>(f.getRightSubformula().accept(*this)));
+            FormulaInformation result = boost::any_cast<FormulaInformation>(f.getLeftSubformula().accept(*this, data)).join(boost::any_cast<FormulaInformation>(f.getRightSubformula().accept(*this)));
+            if (f.getLeftSubformula().isPathFormula() || f.getRightSubformula().isPathFormula()) {
+                result.setContainsComplexPathFormula();
+            }
+            return result;
         }
 
         boost::any FormulaInformationVisitor::visit(HOAPathFormula const& f, boost::any const& data) const {
             FormulaInformation info;
-            for (auto& mapped : f.getAPMapping()) {
-                info = info.join(boost::any_cast<FormulaInformation>(mapped.second->accept(*this, data)));
+            if (recurseIntoOperators) {
+                for (auto& mapped : f.getAPMapping()) {
+                    info = info.join(boost::any_cast<FormulaInformation>(mapped.second->accept(*this, data)));
+                }
             }
             return info;
         }
