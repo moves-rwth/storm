@@ -8,6 +8,7 @@
 #include "storm/logic/LabelSubstitutionVisitor.h"
 #include "storm/logic/RewardModelNameSubstitutionVisitor.h"
 #include "storm/logic/ToExpressionVisitor.h"
+#include "storm/logic/ToPrefixStringVisitor.h"
 
 namespace storm {
     namespace logic {
@@ -543,5 +544,11 @@ namespace storm {
         std::ostream& operator<<(std::ostream& out, Formula const& formula) {
             return formula.writeToStream(out);
         }
+
+        std::string Formula::toPrefixString() const {
+            ToPrefixStringVisitor visitor;
+            return visitor.toPrefixString(*this);
+        }
+
     }
 }
