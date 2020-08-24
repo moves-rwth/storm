@@ -252,10 +252,16 @@ namespace storm {
 
         // Regular CSL.
         FragmentSpecification csl();
-        
+
+        // CSL*, i.e., CSL with LTL path formulas.
+        FragmentSpecification cslstar();
+
         // CSL + cumulative, instantaneous, reachability and long-run rewards.
         FragmentSpecification csrl();
         
+        // CSL* + cumulative, instantaneous, reachability and long-run rewards.
+        FragmentSpecification csrlstar();
+
         // Multi-Objective formulas.
         FragmentSpecification multiObjective();
         

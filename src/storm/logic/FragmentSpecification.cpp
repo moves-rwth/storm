@@ -100,7 +100,18 @@ namespace storm {
             
             return csl;
         }
-        
+
+        FragmentSpecification cslstar() {
+            FragmentSpecification cslstar = csl();
+
+            cslstar.setBinaryBooleanPathFormulasAllowed(true);
+            cslstar.setUnaryBooleanPathFormulasAllowed(true);
+            cslstar.setNestedOperatorsAllowed(true);
+            cslstar.setNestedPathFormulasAllowed(true);
+
+            return cslstar;
+        }
+
         FragmentSpecification csrl() {
             FragmentSpecification csrl = csl();
             
@@ -113,7 +124,20 @@ namespace storm {
             
             return csrl;
         }
-        
+
+        FragmentSpecification csrlstar() {
+            FragmentSpecification csrlstar = cslstar();
+
+            csrlstar.setRewardOperatorsAllowed(true);
+            csrlstar.setCumulativeRewardFormulasAllowed(true);
+            csrlstar.setInstantaneousFormulasAllowed(true);
+            csrlstar.setReachabilityRewardFormulasAllowed(true);
+            csrlstar.setLongRunAverageOperatorsAllowed(true);
+            csrlstar.setTimeBoundedCumulativeRewardFormulasAllowed(true);
+
+            return csrlstar;
+        }
+
         FragmentSpecification multiObjective() {
             FragmentSpecification multiObjective = propositional();
             
