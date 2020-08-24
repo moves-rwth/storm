@@ -62,6 +62,10 @@ namespace storm {
         std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeProbabilities(Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
             storm::logic::Formula const& formula = checkTask.getFormula();
 
+            if (formula.isStateFormula() || formula.hasQualitativeResult()) {
+                return this->computeStateFormulaProbabilities(env, checkTask.substituteFormula(formula));
+            }
+
             if (formula.info(false).containsComplexPathFormula()) {
                 // we need to do LTL model checking
                 return this->computeLTLProbabilities(env, checkTask.substituteFormula(formula.asPathFormula()));
@@ -124,6 +128,11 @@ namespace storm {
 
         template<typename ModelType>
         std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeLTLProbabilities(Environment const& env, CheckTask<storm::logic::PathFormula, ValueType> const& checkTask) {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
+        }
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeStateFormulaProbabilities(Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
 

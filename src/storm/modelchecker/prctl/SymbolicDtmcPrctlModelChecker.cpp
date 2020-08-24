@@ -60,6 +60,14 @@ namespace storm {
         }
         
         template<typename ModelType>
+        std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<ModelType>::computeStateFormulaProbabilities(Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
+            storm::logic::Formula const& formula = checkTask.getFormula();
+            std::unique_ptr<CheckResult> resultPointer = this->check(env, formula);
+            SymbolicQualitativeCheckResult<DdType> const& result = resultPointer->asSymbolicQualitativeCheckResult<DdType>();
+            return std::make_unique<SymbolicQuantitativeCheckResult<DdType, ValueType>>(result);
+        }
+
+        template<typename ModelType>
         std::unique_ptr<CheckResult> SymbolicDtmcPrctlModelChecker<ModelType>::computeNextProbabilities(Environment const& env, CheckTask<storm::logic::NextFormula, ValueType> const& checkTask) {
             storm::logic::NextFormula const& pathFormula = checkTask.getFormula();
             std::unique_ptr<CheckResult> subResultPointer = this->check(env, pathFormula.getSubformula());

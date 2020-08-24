@@ -134,6 +134,15 @@ namespace storm {
         }
         
         template<typename SparseMdpModelType>
+        std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::computeStateFormulaProbabilities(Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
+            storm::logic::Formula const& formula = checkTask.getFormula();
+            STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
+            std::unique_ptr<CheckResult> resultPointer = this->check(env, formula);
+            ExplicitQualitativeCheckResult const& result = resultPointer->asExplicitQualitativeCheckResult();
+            return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(result);
+        }
+
+        template<typename SparseMdpModelType>
         std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::computeConditionalProbabilities(Environment const& env, CheckTask<storm::logic::ConditionalFormula, ValueType> const& checkTask) {
             storm::logic::ConditionalFormula const& conditionalFormula = checkTask.getFormula();
             STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");

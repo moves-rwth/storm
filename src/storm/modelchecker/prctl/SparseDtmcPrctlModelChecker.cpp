@@ -193,6 +193,14 @@ namespace storm {
         }
 
         template<typename SparseDtmcModelType>
+        std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeStateFormulaProbabilities(Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
+            // recurse
+            std::unique_ptr<CheckResult> resultPointer = this->check(env, checkTask.getFormula());
+            ExplicitQualitativeCheckResult const& result = resultPointer->asExplicitQualitativeCheckResult();
+            return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(result);
+        }
+
+        template<typename SparseDtmcModelType>
         std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeCumulativeRewards(Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) {
 
             storm::logic::CumulativeRewardFormula const& rewardPathFormula = checkTask.getFormula();
