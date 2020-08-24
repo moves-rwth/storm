@@ -1,5 +1,8 @@
 #include "AcceptanceCondition.h"
 
+#include "storm/utility/macros.h"
+#include "storm/exceptions/InvalidOperationException.h"
+
 namespace storm {
 namespace automata {
 
@@ -78,6 +81,48 @@ bool AcceptanceCondition::isAccepting(const storm::storage::StateBlock& scc, acc
 
     throw std::runtime_error("Missing case statement");
 }
+
+std::vector<std::vector<AcceptanceCondition::acceptance_expr::ptr>> AcceptanceCondition::extractFromDNF() const {
+    std::vector<std::vector<AcceptanceCondition::acceptance_expr::ptr>> dnf;
+
+    extractFromDNFRecursion(getAcceptanceExpression(), dnf, true);
+
+    return dnf;
+}
+
+
+void AcceptanceCondition::extractFromDNFRecursion(AcceptanceCondition::acceptance_expr::ptr e, std::vector<std::vector<acceptance_expr::ptr>>& dnf, bool topLevel) const {
+    if (topLevel) {
+        if (e->isOR()) {
+            if (e->getLeft()->isOR()) {
+                extractFromDNFRecursion(e->getLeft(), dnf, true);
+            } else {
+                dnf.emplace_back();
+                extractFromDNFRecursion(e->getLeft(), dnf, false);
+            }
+
+            if (e->getRight()->isOR()) {
+                extractFromDNFRecursion(e->getRight(), dnf, true);
+            } else {
+                dnf.emplace_back();
+                extractFromDNFRecursion(e->getRight(), dnf, false);
+            }
+        } else {
+            dnf.emplace_back();
+            extractFromDNFRecursion(e, dnf, false);
+        }
+    } else {
+        if (e->isOR() || e->isNOT()) {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Acceptance condition is not in DNF");
+        } else if (e->isAND()) {
+            extractFromDNFRecursion(e->getLeft(), dnf, false);
+            extractFromDNFRecursion(e->getRight(), dnf, false);
+        } else {
+            dnf.back().push_back(e);
+        }
+    }
+}
+
 
 AcceptanceCondition::ptr AcceptanceCondition::lift(std::size_t productNumberOfStates, std::function<std::size_t (std::size_t)> mapping) const {
     AcceptanceCondition::ptr lifted(new AcceptanceCondition(productNumberOfStates, numberOfAcceptanceSets, acceptance));
