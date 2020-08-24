@@ -1,6 +1,8 @@
 #include "FormulaParserGrammar.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
+#include <memory>
+
 namespace storm {
     namespace parser {
         
@@ -74,7 +76,15 @@ namespace storm {
             untilFormula = pathFormulaWithoutUntil(qi::_r1)[qi::_val = qi::_1] >> *(qi::lit("U") >> (-timeBounds) >> pathFormulaWithoutUntil(qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createUntilFormula, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
             untilFormula.name("until formula");
             
-            conditionalFormula = untilFormula(qi::_r1)[qi::_val = qi::_1] >> *(qi::lit("||") >> untilFormula(storm::logic::FormulaContext::Probability))[qi::_val = phoenix::bind(&FormulaParserGrammar::createConditionalFormula, phoenix::ref(*this), qi::_val, qi::_1, qi::_r1)];
+            hoaPathFormula = qi::lit("HOA:") > qi::lit("{")
+                > quotedString[qi::_val = phoenix::bind(&FormulaParserGrammar::createHOAPathFormula, phoenix::ref(*this), qi::_1)]
+                >> *(qi::lit(",") > quotedString > qi::lit("->") > stateFormula )[phoenix::bind(&FormulaParserGrammar::addHoaAPMapping, phoenix::ref(*this), *qi::_val, qi::_1, qi::_2)]
+                > qi::lit("}");
+
+            basicPathFormula = (hoaPathFormula(qi::_r1)[qi::_val = qi::_1]) | untilFormula(qi::_r1)[qi::_val = qi::_1];
+            basicPathFormula.name("basic path formula");
+
+            conditionalFormula = basicPathFormula(qi::_r1)[qi::_val = qi::_1] >> *(qi::lit("||") >> basicPathFormula(storm::logic::FormulaContext::Probability))[qi::_val = phoenix::bind(&FormulaParserGrammar::createConditionalFormula, phoenix::ref(*this), qi::_val, qi::_1, qi::_r1)];
             conditionalFormula.name("conditional formula");
             
             timeBoundReference = (-qi::lit("rew") >> rewardModelName)[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundReference, phoenix::ref(*this), storm::logic::TimeBoundType::Reward, qi::_1)]
@@ -137,6 +147,9 @@ namespace storm {
             stateFormula = (orStateFormula | multiFormula | quantileFormula);
             stateFormula.name("state formula");
             
+            quotedString %= qi::as_string[qi::lexeme[qi::omit[qi::char_('"')] > qi::raw[*(!qi::char_('"') >> qi::char_)] > qi::omit[qi::lit('"')]]];
+            quotedString.name("quoted string");
+
             formulaName = qi::lit("\"") >> identifier >> qi::lit("\"") >> qi::lit(":");
             formulaName.name("formula name");
             
@@ -197,6 +210,8 @@ namespace storm {
             qi::on_error<qi::fail>(pathFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(conditionalFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(untilFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            qi::on_error<qi::fail>(hoaPathFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            qi::on_error<qi::fail>(basicPathFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(nextFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(globallyFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(eventuallyFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
@@ -340,7 +355,18 @@ namespace storm {
                 return std::shared_ptr<storm::logic::Formula const>(new storm::logic::UntilFormula(leftSubformula, rightSubformula));
             }
         }
+
+        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createHOAPathFormula(std::string const& automatonFile) const {
+            return std::shared_ptr<storm::logic::Formula const>(new storm::logic::HOAPathFormula(automatonFile));
+        }
         
+        void FormulaParserGrammar::addHoaAPMapping(storm::logic::Formula const& hoaFormula, const std::string& ap, std::shared_ptr<storm::logic::Formula const>& expression) const {
+            // taking a const Formula reference and doing static_ and const_cast from Formula to allow non-const access to
+            // qi::_val of the hoaPathFormula rule
+            storm::logic::HOAPathFormula& hoaFormula_ = static_cast<storm::logic::HOAPathFormula&>(const_cast<storm::logic::Formula&>(hoaFormula));
+            hoaFormula_.addAPMapping(ap, expression);
+        }
+
         std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createConditionalFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, std::shared_ptr<storm::logic::Formula const> const& rightSubformula, storm::logic::FormulaContext context) const {
             return std::shared_ptr<storm::logic::Formula const>(new storm::logic::ConditionalFormula(leftSubformula, rightSubformula, context));
         }

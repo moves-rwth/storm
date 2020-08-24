@@ -153,6 +153,7 @@ namespace storm {
             qi::rule<Iterator, qi::unused_type(), qi::locals<ConstantDataType>, Skipper> constantDefinition;
             qi::rule<Iterator, std::string(), Skipper> identifier;
             qi::rule<Iterator, std::string(), Skipper> formulaName;
+            qi::rule<Iterator, std::string(), Skipper> quotedString;
             
             qi::rule<Iterator, storm::logic::OperatorInformation(), qi::locals<boost::optional<storm::OptimizationDirection>, boost::optional<storm::logic::ComparisonType>, boost::optional<storm::expressions::Expression>>, Skipper> operatorInformation;
             qi::rule<Iterator, storm::logic::RewardMeasureType(), Skipper> rewardMeasureType;
@@ -185,7 +186,12 @@ namespace storm {
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> nextFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> globallyFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> untilFormula;
-            
+
+            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> basicPathFormula;
+            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> hoaPathFormula;
+
+            void addHoaAPMapping(storm::logic::Formula const& hoaFormula, const std::string& ap, std::shared_ptr<storm::logic::Formula const>& expression) const;
+
             qi::rule<Iterator, std::shared_ptr<storm::logic::TimeBoundReference>, Skipper> timeBoundReference;
             qi::rule<Iterator, std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, std::shared_ptr<storm::logic::TimeBoundReference>>(), qi::locals<bool, bool>, Skipper> timeBound;
             qi::rule<Iterator, std::vector<std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, std::shared_ptr<storm::logic::TimeBoundReference>>>(), qi::locals<bool, bool>, Skipper> timeBounds;
@@ -223,6 +229,7 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula const> createGloballyFormula(std::shared_ptr<storm::logic::Formula const> const& subformula) const;
             std::shared_ptr<storm::logic::Formula const> createNextFormula(std::shared_ptr<storm::logic::Formula const> const& subformula) const;
             std::shared_ptr<storm::logic::Formula const> createUntilFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, boost::optional<std::vector<std::tuple<boost::optional<storm::logic::TimeBound>, boost::optional<storm::logic::TimeBound>, std::shared_ptr<storm::logic::TimeBoundReference>>>> const& timeBounds, std::shared_ptr<storm::logic::Formula const> const& rightSubformula);
+            std::shared_ptr<storm::logic::Formula const> createHOAPathFormula(const std::string& automataFile) const;
             std::shared_ptr<storm::logic::Formula const> createConditionalFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, std::shared_ptr<storm::logic::Formula const> const& rightSubformula, storm::logic::FormulaContext context) const;
             storm::logic::OperatorInformation createOperatorInformation(boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<storm::logic::ComparisonType> const& comparisonType, boost::optional<storm::expressions::Expression> const& threshold) const;
             std::shared_ptr<storm::logic::Formula const> createLongRunAverageOperatorFormula(storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula const> const& subformula) const;
