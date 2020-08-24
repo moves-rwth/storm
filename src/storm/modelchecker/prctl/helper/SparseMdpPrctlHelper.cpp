@@ -689,7 +689,6 @@ namespace storm {
             template<typename ValueType>
             storm::storage::BitVector SparseMdpPrctlHelper<ValueType>::computeSurelyAcceptingPmaxStates(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
                 STORM_LOG_INFO("Computing accepting states for acceptance condition " << *acceptance.getAcceptanceExpression());
-                std::cout << transitionMatrix.getRowGroupCount() << std::endl;
                 if (acceptance.getAcceptanceExpression()->isTRUE()) {
                     STORM_LOG_INFO(" TRUE -> all states accepting (assumes no deadlock in the model)");
                     return storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true);
@@ -702,16 +701,18 @@ namespace storm {
 
                 storm::storage::BitVector acceptingStates(transitionMatrix.getRowGroupCount(), false);
 
+                std::size_t accMECs = 0;
+                std::size_t allMECs = 0;
                 std::size_t i = 0;
                 for (auto const& conjunction : dnf) {
                     // determine the set of states of the subMDP that can satisfy the condition
                     //  => remove all states that would violate Fins in the conjunction
                     storm::storage::BitVector allowed(transitionMatrix.getRowGroupCount(), true);
 
-                    STORM_LOG_INFO("Handle conjunction " << i);
+                    STORM_LOG_DEBUG("Handle conjunction " << i);
 
                     for (auto const& literal : conjunction) {
-                        STORM_LOG_INFO(" " << *literal);
+                        STORM_LOG_DEBUG(" " << *literal);
                         if (literal->isTRUE()) {
                             // skip
                         } else if (literal->isFALSE()) {
@@ -738,12 +739,13 @@ namespace storm {
                         continue;
                     }
 
-                    STORM_LOG_INFO(" Allowed states: " << allowed);
+                    STORM_LOG_DEBUG(" Allowed states: " << allowed);
 
                     // compute MECs in the allowed fragment
                     storm::storage::MaximalEndComponentDecomposition<ValueType> mecs(transitionMatrix, backwardTransitions, allowed);
+                    allMECs += mecs.size();
                     for (const auto& mec : mecs) {
-                        STORM_LOG_INFO("Inspect MEC: " << mec);
+                        STORM_LOG_DEBUG("Inspect MEC: " << mec);
 
                         bool accepting = true;
                         for (auto const& literal : conjunction) {
@@ -757,16 +759,16 @@ namespace storm {
                                 const storm::storage::BitVector& accSet = acceptance.getAcceptanceSet(atom.getAcceptanceSet());
                                 if (atom.getType() == cpphoafparser::AtomAcceptance::TEMPORAL_INF) {
                                     if (atom.isNegated()) {
-                                        STORM_LOG_INFO("Checking against " << ~accSet);
+                                        STORM_LOG_DEBUG("Checking against " << ~accSet);
                                         if (!mec.containsAnyState(~accSet)) {
-                                            STORM_LOG_INFO("  -> not satisfied");
+                                            STORM_LOG_DEBUG("  -> not satisfied");
                                             accepting = false;
                                             break;
                                         }
                                     } else {
-                                        STORM_LOG_INFO("Checking against " << accSet);
+                                        STORM_LOG_DEBUG("Checking against " << accSet);
                                         if (!mec.containsAnyState(accSet)) {
-                                            STORM_LOG_INFO("  -> not satisfied");
+                                            STORM_LOG_DEBUG("  -> not satisfied");
                                             accepting = false;
                                             break;
                                         }
@@ -779,7 +781,8 @@ namespace storm {
                         }
 
                         if (accepting) {
-                            STORM_LOG_INFO("MEC is accepting");
+                            accMECs++;
+                            STORM_LOG_DEBUG("MEC is accepting");
                             for (auto const& stateChoicePair : mec) {
                                 acceptingStates.set(stateChoicePair.first);
                             }
@@ -788,7 +791,9 @@ namespace storm {
                     }
                 }
 
-                STORM_LOG_INFO("Accepting states: " << acceptingStates);
+                STORM_LOG_DEBUG("Accepting states: " << acceptingStates);
+                STORM_LOG_INFO("Found " << acceptingStates.getNumberOfSetBits() << " states in " << accMECs << " accepting MECs (considered " << allMECs << " MECs).");
+
                 return acceptingStates;
             }
             
