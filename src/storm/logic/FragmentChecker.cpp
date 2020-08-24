@@ -52,6 +52,14 @@ namespace storm {
             return result;
         }
         
+        boost::any FragmentChecker::visit(BinaryBooleanPathFormula const& f, boost::any const& data) const {
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            bool result = inherited.getSpecification().areBinaryBooleanPathFormulasAllowed();
+            result = result && boost::any_cast<bool>(f.getLeftSubformula().accept(*this, data));
+            result = result && boost::any_cast<bool>(f.getRightSubformula().accept(*this, data));
+            return result;
+        }
+
         boost::any FragmentChecker::visit(BooleanLiteralFormula const&, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             return inherited.getSpecification().areBooleanLiteralFormulasAllowed();
@@ -295,6 +303,13 @@ namespace storm {
             return result;
         }
         
+        boost::any FragmentChecker::visit(UnaryBooleanPathFormula const& f, boost::any const& data) const {
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            bool result = inherited.getSpecification().areUnaryBooleanPathFormulasAllowed();
+            result = result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
+            return result;
+        }
+
         boost::any FragmentChecker::visit(UntilFormula const& f, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             bool result = inherited.getSpecification().areUntilFormulasAllowed();

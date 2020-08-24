@@ -164,19 +164,19 @@ namespace storm {
             
             qi::rule<Iterator, storm::jani::Property(), Skipper> filterProperty;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> simpleFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> stateFormula;
+            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> stateFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> pathFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> pathFormulaWithoutUntil;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> simplePathFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> atomicStateFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> atomicStateFormulaWithoutExpression;
+            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> atomicStateFormula;
+            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> atomicStateFormulaWithoutExpression;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> operatorFormula;
             qi::rule<Iterator, std::string(), Skipper> label;
             qi::rule<Iterator, std::string(), Skipper> rewardModelName;
             
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> andStateFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> orStateFormula;
-            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> notStateFormula;
+            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> andStateFormula;
+            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> orStateFormula;
+            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(storm::logic::FormulaContext), Skipper> notStateFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> labelFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> expressionFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), qi::locals<bool>, Skipper> booleanLiteralFormula;
@@ -237,7 +237,11 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula const> createTimeOperatorFormula(boost::optional<storm::logic::RewardMeasureType> const& rewardMeasureType, storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula const> const& subformula) const;
             std::shared_ptr<storm::logic::Formula const> createProbabilityOperatorFormula(storm::logic::OperatorInformation const& operatorInformation, std::shared_ptr<storm::logic::Formula const> const& subformula);
             std::shared_ptr<storm::logic::Formula const> createBinaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, std::shared_ptr<storm::logic::Formula const> const& rightSubformula, storm::logic::BinaryBooleanStateFormula::OperatorType operatorType);
+            std::shared_ptr<storm::logic::Formula const> createBinaryBooleanPathFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, std::shared_ptr<storm::logic::Formula const> const& rightSubformula, storm::logic::BinaryBooleanPathFormula::OperatorType operatorType);
+            std::shared_ptr<storm::logic::Formula const> createBinaryBooleanStateOrPathFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, std::shared_ptr<storm::logic::Formula const> const& rightSubformula, storm::logic::BinaryBooleanOperatorType operatorType);
             std::shared_ptr<storm::logic::Formula const> createUnaryBooleanStateFormula(std::shared_ptr<storm::logic::Formula const> const& subformula, boost::optional<storm::logic::UnaryBooleanStateFormula::OperatorType> const& operatorType);
+            std::shared_ptr<storm::logic::Formula const> createUnaryBooleanPathFormula(std::shared_ptr<storm::logic::Formula const> const& subformula, boost::optional<storm::logic::UnaryBooleanPathFormula::OperatorType> const& operatorType);
+            std::shared_ptr<storm::logic::Formula const> createUnaryBooleanStateOrPathFormula(std::shared_ptr<storm::logic::Formula const> const& subformula, boost::optional<storm::logic::UnaryBooleanOperatorType> const& operatorType);
             std::shared_ptr<storm::logic::Formula const> createMultiFormula(std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas);
             storm::expressions::Variable createQuantileBoundVariables(boost::optional<storm::solver::OptimizationDirection> const& dir, std::string const& variableName);
             std::shared_ptr<storm::logic::Formula const> createQuantileFormula(std::vector<storm::expressions::Variable> const& boundVariables, std::shared_ptr<storm::logic::Formula const> const& subformula);

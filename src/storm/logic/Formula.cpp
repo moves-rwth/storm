@@ -43,6 +43,14 @@ namespace storm {
             return false;
         }
         
+        bool Formula::isBinaryBooleanPathFormula() const {
+            return false;
+        }
+
+        bool Formula::isUnaryBooleanPathFormula() const {
+            return false;
+        }
+
         bool Formula::isBooleanLiteralFormula() const {
             return false;
         }

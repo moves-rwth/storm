@@ -15,6 +15,7 @@ namespace storm {
             virtual boost::any visit(AtomicExpressionFormula const& f, boost::any const& data) const = 0;
             virtual boost::any visit(AtomicLabelFormula const& f, boost::any const& data) const = 0;
             virtual boost::any visit(BinaryBooleanStateFormula const& f, boost::any const& data) const = 0;
+            virtual boost::any visit(BinaryBooleanPathFormula const& f, boost::any const& data) const = 0;
             virtual boost::any visit(BooleanLiteralFormula const& f, boost::any const& data) const = 0;
             virtual boost::any visit(BoundedUntilFormula const& f, boost::any const& data) const = 0;
             virtual boost::any visit(ConditionalFormula const& f, boost::any const& data) const = 0;
@@ -32,6 +33,7 @@ namespace storm {
             virtual boost::any visit(RewardOperatorFormula const& f, boost::any const& data) const = 0;
             virtual boost::any visit(TotalRewardFormula const& f, boost::any const& data) const = 0;
             virtual boost::any visit(UnaryBooleanStateFormula const& f, boost::any const& data) const = 0;
+            virtual boost::any visit(UnaryBooleanPathFormula const& f, boost::any const& data) const = 0;
             virtual boost::any visit(UntilFormula const& f, boost::any const& data) const = 0;
             virtual boost::any visit(HOAPathFormula const& f, boost::any const& data) const = 0;
         };

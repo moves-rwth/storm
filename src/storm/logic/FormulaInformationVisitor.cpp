@@ -17,10 +17,14 @@ namespace storm {
             return FormulaInformation();
         }
         
-        boost::any FormulaInformationVisitor::visit(BinaryBooleanStateFormula const&, boost::any const&) const {
-            return FormulaInformation();
+        boost::any FormulaInformationVisitor::visit(BinaryBooleanStateFormula const& f, boost::any const& data) const {
+            return boost::any_cast<FormulaInformation>(f.getLeftSubformula().accept(*this, data)).join(boost::any_cast<FormulaInformation>(f.getRightSubformula().accept(*this)));
         }
         
+        boost::any FormulaInformationVisitor::visit(BinaryBooleanPathFormula const& f, boost::any const& data) const {
+            return boost::any_cast<FormulaInformation>(f.getLeftSubformula().accept(*this, data)).join(boost::any_cast<FormulaInformation>(f.getRightSubformula().accept(*this)));
+        }
+
         boost::any FormulaInformationVisitor::visit(BooleanLiteralFormula const&, boost::any const&) const {
             return FormulaInformation();
         }
@@ -122,6 +126,10 @@ namespace storm {
             return f.getSubformula().accept(*this, data);
         }
         
+        boost::any FormulaInformationVisitor::visit(UnaryBooleanPathFormula const& f, boost::any const& data) const {
+            return f.getSubformula().accept(*this, data);
+        }
+
         boost::any FormulaInformationVisitor::visit(UntilFormula const& f, boost::any const& data) const {
             return boost::any_cast<FormulaInformation>(f.getLeftSubformula().accept(*this, data)).join(boost::any_cast<FormulaInformation>(f.getRightSubformula().accept(*this)));
         }

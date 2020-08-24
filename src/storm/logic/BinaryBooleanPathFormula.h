@@ -1,24 +1,24 @@
-#ifndef STORM_LOGIC_BINARYBOOLEANSTATEFORMULA_H_
-#define STORM_LOGIC_BINARYBOOLEANSTATEFORMULA_H_
+#ifndef STORM_LOGIC_BINARYBOOLEANPATHFORMULA_H_
+#define STORM_LOGIC_BINARYBOOLEANPATHFORMULA_H_
 
 #include <map>
 
-#include "storm/logic/BinaryStateFormula.h"
+#include "storm/logic/BinaryPathFormula.h"
 #include "storm/logic/BinaryBooleanOperatorType.h"
 
 namespace storm {
     namespace logic {
-        class BinaryBooleanStateFormula : public BinaryStateFormula {
+        class BinaryBooleanPathFormula : public BinaryPathFormula {
         public:
             typedef storm::logic::BinaryBooleanOperatorType OperatorType;
 
-            BinaryBooleanStateFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula);
+            BinaryBooleanPathFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula);
             
-            virtual ~BinaryBooleanStateFormula() {
+            virtual ~BinaryBooleanPathFormula() {
                 // Intentionally left empty.
             };
             
-            virtual bool isBinaryBooleanStateFormula() const override;
+            virtual bool isBinaryBooleanPathFormula() const override;
             
             virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
             
@@ -35,4 +35,4 @@ namespace storm {
     }
 }
 
-#endif /* STORM_LOGIC_BINARYBOOLEANSTATEFORMULA_H_ */
+#endif /* STORM_LOGIC_BINARYBOOLEANPATHFORMULA_H_ */

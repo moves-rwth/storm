@@ -23,8 +23,14 @@ namespace storm {
         }
         
         boost::any LiftableTransitionRewardsVisitor::visit(BinaryBooleanStateFormula const&, boost::any const&) const {
+	  // TODO joachim: is this correct?
             return true;
         }
+
+        boost::any LiftableTransitionRewardsVisitor::visit(BinaryBooleanPathFormula const& f, boost::any const& data) const {
+            return boost::any_cast<bool>(f.getLeftSubformula().accept(*this, data)) && boost::any_cast<bool>(f.getRightSubformula().accept(*this));
+        }
+
         
         boost::any LiftableTransitionRewardsVisitor::visit(BooleanLiteralFormula const&, boost::any const&) const {
             return true;
@@ -116,6 +122,10 @@ namespace storm {
         }
         
         boost::any LiftableTransitionRewardsVisitor::visit(UnaryBooleanStateFormula const& f, boost::any const& data) const {
+            return f.getSubformula().accept(*this, data);
+        }
+
+        boost::any LiftableTransitionRewardsVisitor::visit(UnaryBooleanPathFormula const& f, boost::any const& data) const {
             return f.getSubformula().accept(*this, data);
         }
         

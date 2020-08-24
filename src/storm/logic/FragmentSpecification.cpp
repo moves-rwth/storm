@@ -152,6 +152,8 @@ namespace storm {
             booleanLiteralFormula = false;
             unaryBooleanStateFormula = false;
             binaryBooleanStateFormula = false;
+            unaryBooleanPathFormula = false;
+            binaryBooleanPathFormula = false;
             
             cumulativeRewardFormula = false;
             instantaneousRewardFormula = false;
@@ -338,15 +340,33 @@ namespace storm {
             return *this;
         }
         
+        bool FragmentSpecification::areUnaryBooleanPathFormulasAllowed() const {
+            return unaryBooleanPathFormula;
+        }
+
+        FragmentSpecification& FragmentSpecification::setUnaryBooleanPathFormulasAllowed(bool newValue) {
+            this->unaryBooleanPathFormula = newValue;
+            return *this;
+        }
+
         bool FragmentSpecification::areBinaryBooleanStateFormulasAllowed() const {
             return binaryBooleanStateFormula;
         }
-            
+
         FragmentSpecification& FragmentSpecification::setBinaryBooleanStateFormulasAllowed(bool newValue) {
             this->binaryBooleanStateFormula = newValue;
             return *this;
         }
         
+        bool FragmentSpecification::areBinaryBooleanPathFormulasAllowed() const {
+            return binaryBooleanPathFormula;
+        }
+
+        FragmentSpecification& FragmentSpecification::setBinaryBooleanPathFormulasAllowed(bool newValue) {
+            this->binaryBooleanPathFormula = newValue;
+            return *this;
+        }
+
         bool FragmentSpecification::areCumulativeRewardFormulasAllowed() const {
             return cumulativeRewardFormula;
         }

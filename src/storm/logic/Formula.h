@@ -46,7 +46,10 @@ namespace storm {
 
             virtual bool isBinaryBooleanStateFormula() const;
             virtual bool isUnaryBooleanStateFormula() const;
-            
+
+            virtual bool isBinaryBooleanPathFormula() const;
+            virtual bool isUnaryBooleanPathFormula() const;
+
             virtual bool isMultiObjectiveFormula() const;
             virtual bool isQuantileFormula() const;
 

@@ -37,6 +37,10 @@ namespace storm {
             return boost::any();
         }
         
+        boost::any ToExpressionVisitor::visit(BinaryBooleanPathFormula const& f, boost::any const& data) const {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
+        }
+
         boost::any ToExpressionVisitor::visit(BooleanLiteralFormula const& f, boost::any const& data) const {
             storm::expressions::Expression result;
             if (f.isTrueFormula()) {
@@ -116,7 +120,11 @@ namespace storm {
             }
             return boost::any();
         }
-        
+
+        boost::any ToExpressionVisitor::visit(UnaryBooleanPathFormula const& f, boost::any const& data) const {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
+        }
+
         boost::any ToExpressionVisitor::visit(UntilFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
         }

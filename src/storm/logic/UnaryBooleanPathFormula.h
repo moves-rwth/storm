@@ -1,22 +1,22 @@
-#ifndef STORM_LOGIC_UNARYBOOLEANSTATEFORMULA_H_
-#define STORM_LOGIC_UNARYBOOLEANSTATEFORMULA_H_
+#ifndef STORM_LOGIC_UNARYBOOLEANPATHFORMULA_H_
+#define STORM_LOGIC_UNARYBOOLEANPATHFORMULA_H_
 
-#include "storm/logic/UnaryStateFormula.h"
+#include "storm/logic/UnaryPathFormula.h"
 #include "storm/logic/UnaryBooleanOperatorType.h"
 
 namespace storm {
     namespace logic {
-        class UnaryBooleanStateFormula : public UnaryStateFormula {
+        class UnaryBooleanPathFormula : public UnaryPathFormula {
         public:
             typedef storm::logic::UnaryBooleanOperatorType OperatorType;
 
-            UnaryBooleanStateFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& subformula);
+            UnaryBooleanPathFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& subformula);
             
-            virtual ~UnaryBooleanStateFormula() {
+            virtual ~UnaryBooleanPathFormula() {
                 // Intentionally left empty.
             };
             
-            virtual bool isUnaryBooleanStateFormula() const override;
+            virtual bool isUnaryBooleanPathFormula() const override;
 
             virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
             
@@ -32,4 +32,4 @@ namespace storm {
     }
 }
 
-#endif /* STORM_LOGIC_UNARYBOOLEANSTATEFORMULA_H_ */
+#endif /* STORM_LOGIC_UNARYBOOLEANPATHFORMULA_H_ */
