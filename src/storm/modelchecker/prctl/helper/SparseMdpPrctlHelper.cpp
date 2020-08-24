@@ -685,6 +685,112 @@ namespace storm {
                     return std::move(result); // move() required by, e.g., clang 3.8
                 }
             }
+
+            template<typename ValueType>
+            storm::storage::BitVector SparseMdpPrctlHelper<ValueType>::computeSurelyAcceptingPmaxStates(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
+                STORM_LOG_INFO("Computing accepting states for acceptance condition " << *acceptance.getAcceptanceExpression());
+                std::cout << transitionMatrix.getRowGroupCount() << std::endl;
+                if (acceptance.getAcceptanceExpression()->isTRUE()) {
+                    STORM_LOG_INFO(" TRUE -> all states accepting (assumes no deadlock in the model)");
+                    return storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true);
+                } else if (acceptance.getAcceptanceExpression()->isFALSE()) {
+                    STORM_LOG_INFO(" FALSE -> all states rejecting");
+                    return storm::storage::BitVector(transitionMatrix.getRowGroupCount(), false);
+                }
+
+                std::vector<std::vector<automata::AcceptanceCondition::acceptance_expr::ptr>> dnf = acceptance.extractFromDNF();
+
+                storm::storage::BitVector acceptingStates(transitionMatrix.getRowGroupCount(), false);
+
+                std::size_t i = 0;
+                for (auto const& conjunction : dnf) {
+                    // determine the set of states of the subMDP that can satisfy the condition
+                    //  => remove all states that would violate Fins in the conjunction
+                    storm::storage::BitVector allowed(transitionMatrix.getRowGroupCount(), true);
+
+                    STORM_LOG_INFO("Handle conjunction " << i);
+
+                    for (auto const& literal : conjunction) {
+                        STORM_LOG_INFO(" " << *literal);
+                        if (literal->isTRUE()) {
+                            // skip
+                        } else if (literal->isFALSE()) {
+                            allowed.clear();
+                            break;
+                        } else if (literal->isAtom()) {
+                            const cpphoafparser::AtomAcceptance& atom = literal->getAtom();
+                            if (atom.getType() == cpphoafparser::AtomAcceptance::TEMPORAL_FIN) {
+                                // only deal with FIN, ignore INF here
+                                const storm::storage::BitVector& accSet = acceptance.getAcceptanceSet(atom.getAcceptanceSet());
+                                if (atom.isNegated()) {
+                                    // allowed = allowed \ ~accSet = allowed & accSet
+                                    allowed &= accSet;
+                                } else {
+                                    // allowed = allowed \ accSet = allowed & ~accSet
+                                    allowed &= ~accSet;
+                                }
+                            }
+                        }
+                    }
+
+                    if (allowed.empty()) {
+                        // skip
+                        continue;
+                    }
+
+                    STORM_LOG_INFO(" Allowed states: " << allowed);
+
+                    // compute MECs in the allowed fragment
+                    storm::storage::MaximalEndComponentDecomposition<ValueType> mecs(transitionMatrix, backwardTransitions, allowed);
+                    for (const auto& mec : mecs) {
+                        STORM_LOG_INFO("Inspect MEC: " << mec);
+
+                        bool accepting = true;
+                        for (auto const& literal : conjunction) {
+                            if (literal->isTRUE()) {
+                                // skip
+                            } else if (literal->isFALSE()) {
+                                accepting = false;
+                                break;
+                            } else if (literal->isAtom()) {
+                                const cpphoafparser::AtomAcceptance& atom = literal->getAtom();
+                                const storm::storage::BitVector& accSet = acceptance.getAcceptanceSet(atom.getAcceptanceSet());
+                                if (atom.getType() == cpphoafparser::AtomAcceptance::TEMPORAL_INF) {
+                                    if (atom.isNegated()) {
+                                        STORM_LOG_INFO("Checking against " << ~accSet);
+                                        if (!mec.containsAnyState(~accSet)) {
+                                            STORM_LOG_INFO("  -> not satisfied");
+                                            accepting = false;
+                                            break;
+                                        }
+                                    } else {
+                                        STORM_LOG_INFO("Checking against " << accSet);
+                                        if (!mec.containsAnyState(accSet)) {
+                                            STORM_LOG_INFO("  -> not satisfied");
+                                            accepting = false;
+                                            break;
+                                        }
+                                    }
+                                } else if (atom.getType() == cpphoafparser::AtomAcceptance::TEMPORAL_FIN) {
+                                    // do only sanity checks here
+                                    STORM_LOG_ASSERT(atom.isNegated() ? !mec.containsAnyState(~accSet) : !mec.containsAnyState(accSet), "MEC contains Fin-states, which should have been removed");
+                                }
+                            }
+                        }
+
+                        if (accepting) {
+                            STORM_LOG_INFO("MEC is accepting");
+                            for (auto const& stateChoicePair : mec) {
+                                acceptingStates.set(stateChoicePair.first);
+                            }
+                        }
+
+                    }
+                }
+
+                STORM_LOG_INFO("Accepting states: " << acceptingStates);
+                return acceptingStates;
+            }
             
             template<typename ValueType>
             template<typename RewardModelType>
