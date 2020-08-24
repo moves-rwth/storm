@@ -23,6 +23,7 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/models/symbolic/StandardRewardModel.h"
+#include "storm/logic/FormulaInformation.h"
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"
 
@@ -60,6 +61,12 @@ namespace storm {
         template<typename ModelType>
         std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeProbabilities(Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
             storm::logic::Formula const& formula = checkTask.getFormula();
+
+            if (formula.info(false).containsComplexPathFormula()) {
+                // we need to do LTL model checking
+                return this->computeLTLProbabilities(env, checkTask.substituteFormula(formula.asPathFormula()));
+            }
+
             if (formula.isBoundedUntilFormula()) {
                 return this->computeBoundedUntilProbabilities(env, checkTask.substituteFormula(formula.asBoundedUntilFormula()));
             } else if (formula.isReachabilityProbabilityFormula()) {
@@ -112,6 +119,11 @@ namespace storm {
 
         template<typename ModelType>
         std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeHOAPathProbabilities(Environment const& env, CheckTask<storm::logic::HOAPathFormula, ValueType> const& checkTask) {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
+        }
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeLTLProbabilities(Environment const& env, CheckTask<storm::logic::PathFormula, ValueType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
 
