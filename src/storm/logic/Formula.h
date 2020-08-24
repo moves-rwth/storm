@@ -71,6 +71,7 @@ namespace storm {
             virtual bool isGloballyFormula() const;
             virtual bool isEventuallyFormula() const;
             virtual bool isReachabilityProbabilityFormula() const;
+            virtual bool isHOAPathFormula() const;
 
             // Reward formulas.
             virtual bool isCumulativeRewardFormula() const;
@@ -137,6 +138,9 @@ namespace storm {
             UntilFormula& asUntilFormula();
             UntilFormula const& asUntilFormula() const;
             
+            HOAPathFormula& asHOAPathFormula();
+            HOAPathFormula const& asHOAPathFormula() const;
+
             BoundedUntilFormula& asBoundedUntilFormula();
             BoundedUntilFormula const& asBoundedUntilFormula() const;
             

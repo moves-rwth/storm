@@ -83,6 +83,10 @@ namespace storm {
             return false;
         }
         
+        bool Formula::isHOAPathFormula() const {
+            return false;
+        }
+
         bool Formula::isBinaryPathFormula() const {
             return false;
         }
@@ -279,6 +283,14 @@ namespace storm {
         
         AtomicLabelFormula const& Formula::asAtomicLabelFormula() const {
             return dynamic_cast<AtomicLabelFormula const&>(*this);
+        }
+
+        HOAPathFormula& Formula::asHOAPathFormula() {
+            return dynamic_cast<HOAPathFormula&>(*this);
+        }
+
+        HOAPathFormula const& Formula::asHOAPathFormula() const {
+            return dynamic_cast<HOAPathFormula const&>(*this);
         }
         
         UntilFormula& Formula::asUntilFormula() {

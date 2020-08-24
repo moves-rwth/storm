@@ -26,6 +26,7 @@
 #include "storm/logic/UnaryPathFormula.h"
 #include "storm/logic/UnaryStateFormula.h"
 #include "storm/logic/UntilFormula.h"
+#include "storm/logic/HOAPathFormula.h"
 #include "storm/logic/ConditionalFormula.h"
 #include "storm/logic/ProbabilityOperatorFormula.h"
 #include "storm/logic/RewardOperatorFormula.h"

@@ -126,5 +126,13 @@ namespace storm {
             return boost::any_cast<FormulaInformation>(f.getLeftSubformula().accept(*this, data)).join(boost::any_cast<FormulaInformation>(f.getRightSubformula().accept(*this)));
         }
 
+        boost::any FormulaInformationVisitor::visit(HOAPathFormula const& f, boost::any const& data) const {
+            FormulaInformation info;
+            for (auto& mapped : f.getAPMapping()) {
+                info = info.join(boost::any_cast<FormulaInformation>(mapped.second->accept(*this, data)));
+            }
+            return info;
+        }
+
     }
 }

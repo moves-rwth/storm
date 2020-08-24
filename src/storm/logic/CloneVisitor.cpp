@@ -142,6 +142,14 @@ namespace storm {
             std::shared_ptr<Formula> right = boost::any_cast<std::shared_ptr<Formula>>(f.getRightSubformula().accept(*this, data));
             return std::static_pointer_cast<Formula>(std::make_shared<UntilFormula>(left, right));
         }
-        
+
+        boost::any CloneVisitor::visit(HOAPathFormula const& f, boost::any const& data) const {
+            std::shared_ptr<HOAPathFormula> result =  std::make_shared<HOAPathFormula>(f.getAutomatonFile());
+            for (auto& mapped : f.getAPMapping()) {
+                std::shared_ptr<Formula> clonedExpression = boost::any_cast<std::shared_ptr<Formula>>(mapped.second->accept(*this, data));
+                result->addAPMapping(mapped.first, clonedExpression);
+            }
+            return std::static_pointer_cast<Formula>(result);
+        }
     }
 }

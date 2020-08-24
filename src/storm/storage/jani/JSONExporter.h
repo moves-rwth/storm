@@ -69,6 +69,7 @@ namespace storm {
             virtual boost::any visit(storm::logic::TotalRewardFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::UnaryBooleanStateFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::UntilFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::HOAPathFormula const& f, boost::any const& data) const;
       
         private:
             FormulaToJaniJson(storm::jani::Model const& model) : model(model), stateExitRewards(false) { }

@@ -544,6 +544,10 @@ namespace storm {
             return opDecl;
         }
         
+        boost::any FormulaToJaniJson::visit(storm::logic::HOAPathFormula const&, boost::any const&) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Jani currently does not support HOA path formulae");
+        }
+
         std::string operatorTypeToJaniString(storm::expressions::OperatorType optype) {
             
             using OpType = storm::expressions::OperatorType;

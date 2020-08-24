@@ -145,6 +145,7 @@ namespace storm {
             nextFormula = false;
             untilFormula = false;
             boundedUntilFormula = false;
+            hoaPathFormula = false;
             
             atomicExpressionFormula = false;
             atomicLabelFormula = false;
@@ -291,7 +292,16 @@ namespace storm {
             this->boundedUntilFormula = newValue;
             return *this;
         }
+
+        bool FragmentSpecification::areHOAPathFormulasAllowed() const {
+            return hoaPathFormula;
+        }
         
+        FragmentSpecification& FragmentSpecification::setHOAPathFormulasAllowed(bool newValue) {
+            this->hoaPathFormula = newValue;
+            return *this;
+        }
+
         bool FragmentSpecification::areAtomicExpressionFormulasAllowed() const {
             return atomicExpressionFormula;
         }

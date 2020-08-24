@@ -121,5 +121,8 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
         }
         
+        boost::any ToExpressionVisitor::visit(HOAPathFormula const&, boost::any const&) const {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
+        }
     }
 }
