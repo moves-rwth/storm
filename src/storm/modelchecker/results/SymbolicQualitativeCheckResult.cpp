@@ -61,6 +61,16 @@ namespace storm {
             return this->truthValues;
         }
         
+        template<storm::dd::DdType Type>
+        storm::dd::Bdd<Type> const& SymbolicQualitativeCheckResult<Type>::getStates() const {
+            return states;
+        }
+
+        template<storm::dd::DdType Type>
+        storm::dd::Bdd<Type> const& SymbolicQualitativeCheckResult<Type>::getReachableStates() const {
+            return reachableStates;
+        }
+
         template <storm::dd::DdType Type>
         bool SymbolicQualitativeCheckResult<Type>::existsTrue() const {
             return !this->truthValues.isZero();
