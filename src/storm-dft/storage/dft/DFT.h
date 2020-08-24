@@ -17,6 +17,7 @@
 #include "storm-dft/storage/dft/SymmetricUnits.h"
 #include "storm-dft/storage/dft/DFTStateGenerationInfo.h"
 #include "storm-dft/storage/dft/DFTLayoutInfo.h"
+#include "storm-dft/utility/RelevantEvents.h"
 
 namespace storm {
     namespace builder {
@@ -353,6 +354,13 @@ namespace storm {
             std::set<size_t> getAllIds() const;
 
             /*!
+             * Check whether an element with the given name exists.
+             * @param name Name of element.
+             * @return True iff element with given name exists.
+             */
+            bool existsName(std::string const& name) const;
+
+            /*!
              * Get id for the given element name.
              * @param name Name of element.
              * @return Index of element.
@@ -368,9 +376,8 @@ namespace storm {
             /*!
              * Set the relevance flag for all elements according to the given relevant events.
              * @param relevantEvents All elements which should be to relevant. All elements not occurring are set to irrelevant.
-             * @param allowDCForRelevantEvents Flag whether Don't Care propagation is allowed even for relevant events.
              */
-            void setRelevantEvents(std::set<size_t> const& relevantEvents, bool allowDCForRelevantEvents) const;
+            void setRelevantEvents(storm::utility::RelevantEvents const& relevantEvents) const;
 
             /*!
              * Get a string containing the list of all relevant events.

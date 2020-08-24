@@ -125,13 +125,14 @@ namespace storm {
          * @param dft DFT.
          * @param properties List of properties. All events occurring in a property are relevant.
          * @param additionalRelevantEventNames List of names of additional relevant events.
-         * @return Set of relevant event ids.
+         * @param allowDCForRelevant Whether to allow Don't Care propagation for relevant events.
+         * @return Relevant events.
          */
         template<typename ValueType>
-        std::set<size_t> computeRelevantEvents(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, std::vector<std::string> const additionalRelevantEventNames) {
-            std::vector<std::string> relevantNames = storm::utility::getRelevantEventNames<ValueType>(dft, properties);
-            relevantNames.insert(relevantNames.end(), additionalRelevantEventNames.begin(), additionalRelevantEventNames.end());
-            return storm::utility::getRelevantEvents<ValueType>(dft, relevantNames);
+        storm::utility::RelevantEvents computeRelevantEvents(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, std::vector<std::string> const& additionalRelevantEventNames, bool allowDCForRelevant) {
+            storm::utility::RelevantEvents events(additionalRelevantEventNames, allowDCForRelevant);
+            events.addNamesFromProperty(properties);
+            return events;
         }
 
         /*!
@@ -142,8 +143,7 @@ namespace storm {
          * @param properties PCTL formulas capturing the properties to check.
          * @param symred Flag whether symmetry reduction should be used.
          * @param allowModularisation Flag whether modularisation should be applied if possible.
-         * @param relevantEvents List of relevant events which should be observed.
-         * @param allowDCForRelevantEvents If true, Don't Care propagation is allowed even for relevant events.
+         * @param relevantEvents Relevant events which should be observed.
          * @param approximationError Allowed approximation error.  Value 0 indicates no approximation.
          * @param approximationHeuristic Heuristic used for state space exploration.
          * @param eliminateChains If true, chains of non-Markovian states are eliminated from the resulting MA.
@@ -153,14 +153,11 @@ namespace storm {
          */
         template<typename ValueType>
         typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results
-        analyzeDFT(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred = true,
-                   bool allowModularisation = true, std::set<size_t> const& relevantEvents = {}, bool allowDCForRelevantEvents = true, double approximationError = 0.0,
-                   storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH, bool eliminateChains = false,
+        analyzeDFT(storm::storage::DFT<ValueType> const& dft, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties, bool symred = true, bool allowModularisation = true, storm::utility::RelevantEvents const& relevantEvents = storm::utility::RelevantEvents(),
+                   double approximationError = 0.0, storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH, bool eliminateChains = false,
                    storm::transformer::EliminationLabelBehavior labelBehavior = storm::transformer::EliminationLabelBehavior::KeepLabels, bool printOutput = false) {
             storm::modelchecker::DFTModelChecker<ValueType> modelChecker(printOutput);
-            typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(dft, properties, symred, allowModularisation, relevantEvents,
-                                                                                                               allowDCForRelevantEvents, approximationError, approximationHeuristic,
-                                                                                                               eliminateChains, labelBehavior);
+            typename storm::modelchecker::DFTModelChecker<ValueType>::dft_results results = modelChecker.check(dft, properties, symred, allowModularisation, relevantEvents, approximationError, approximationHeuristic, eliminateChains, labelBehavior);
             if (printOutput) {
                 modelChecker.printTimings();
                 modelChecker.printResults(results);
