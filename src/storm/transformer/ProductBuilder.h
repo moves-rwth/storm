@@ -49,6 +49,7 @@ namespace storm {
                 }
 
                 storm::storage::SparseMatrixBuilder<typename Model::ValueType> builder(0, 0, 0, false, deterministic ? false : true, 0);
+                std::size_t curRow = 0;
                 while (!todo.empty()) {
                     state_type prodIndexFrom = todo.front();
                     todo.pop_front();
@@ -79,7 +80,33 @@ namespace storm {
                             builder.addNextValue(prodIndexFrom, prodIndexTo, entry.getValue());
                         }
                     } else {
-                        throw std::runtime_error("nondeterministic product not yet supported");
+                        std::size_t numRows = originalMatrix.getRowGroupSize(from.first);
+                        builder.newRowGroup(curRow);
+                        for (std::size_t i = 0; i < numRows; i++) {
+                            auto const& row = originalMatrix.getRow(from.first, i);
+                            for (auto const& entry : row) {
+                                state_type t = entry.getColumn();
+                                state_type p = prodOp.getSuccessor(from.first, from.second, t);
+                                // std::cout << " p = " << p << "\n";
+                                product_state_type t_p(t, p);
+                                state_type prodIndexTo;
+                                auto it = productStateToProductIndex.find(t_p);
+                                if (it == productStateToProductIndex.end()) {
+                                    prodIndexTo = nextState++;
+                                    todo.push_back(prodIndexTo);
+                                    productIndexToProductState.push_back(t_p);
+                                    productStateToProductIndex[t_p] = prodIndexTo;
+                                    // std::cout << " Adding " << t_p.first << "," << t_p.second << " as " << prodIndexTo << "\n";
+                                } else {
+                                    prodIndexTo = it->second;
+                                }
+                                // std::cout << " " << t_p.first << "," << t_p.second << ": to = " << prodIndexTo << "\n";
+
+                                // std::cout << " addNextValue(" << prodIndexFrom << "," << prodIndexTo << "," << entry.getValue() << ")\n";
+                                builder.addNextValue(curRow, prodIndexTo, entry.getValue());
+                            }
+                            curRow++;
+                        }
                     }
                 }
 
