@@ -13,6 +13,9 @@
 
 namespace storm {
     namespace modelchecker {
+        // fwd
+        class ExplicitQualitativeCheckResult;
+
         template<typename ValueType>
         class ExplicitQuantitativeCheckResult : public QuantitativeCheckResult<ValueType> {
         public:
@@ -34,6 +37,8 @@ namespace storm {
             ExplicitQuantitativeCheckResult(ExplicitQuantitativeCheckResult&& other) = default;
             ExplicitQuantitativeCheckResult& operator=(ExplicitQuantitativeCheckResult&& other) = default;
 #endif
+            explicit ExplicitQuantitativeCheckResult(ExplicitQualitativeCheckResult const& other);
+
             virtual ~ExplicitQuantitativeCheckResult() = default;
             
             virtual std::unique_ptr<CheckResult> clone() const override;

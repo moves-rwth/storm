@@ -8,6 +8,10 @@
 
 namespace storm {
     namespace modelchecker {
+        // fwd
+        template<storm::dd::DdType Type>
+        class SymbolicQualitativeCheckResult;
+
         template<storm::dd::DdType Type, typename ValueType = double>
         class SymbolicQuantitativeCheckResult : public QuantitativeCheckResult<ValueType> {
         public:
@@ -21,6 +25,8 @@ namespace storm {
             SymbolicQuantitativeCheckResult(SymbolicQuantitativeCheckResult&& other) = default;
             SymbolicQuantitativeCheckResult& operator=(SymbolicQuantitativeCheckResult&& other) = default;
 #endif
+
+            SymbolicQuantitativeCheckResult(SymbolicQualitativeCheckResult<Type> const& other);
             
             virtual std::unique_ptr<CheckResult> clone() const override;
 
