@@ -68,6 +68,8 @@ namespace storm {
                 return this->computeGloballyProbabilities(env, checkTask.substituteFormula(formula.asGloballyFormula()));
             } else if (formula.isUntilFormula()) {
                 return this->computeUntilProbabilities(env, checkTask.substituteFormula(formula.asUntilFormula()));
+            } else if (formula.isHOAPathFormula()) {
+                return this->computeHOAPathProbabilities(env, checkTask.substituteFormula(formula.asHOAPathFormula()));
             } else if (formula.isNextFormula()) {
                 return this->computeNextProbabilities(env, checkTask.substituteFormula(formula.asNextFormula()));
             } else if (formula.isConditionalProbabilityFormula()) {
@@ -106,6 +108,11 @@ namespace storm {
         template<typename ModelType>
         std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeUntilProbabilities(Environment const& env, CheckTask<storm::logic::UntilFormula, ValueType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
+        }
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeHOAPathProbabilities(Environment const& env, CheckTask<storm::logic::HOAPathFormula, ValueType> const& checkTask) {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker does not support the formula: " << checkTask.getFormula() << ".");
         }
 
         template<typename ModelType>
