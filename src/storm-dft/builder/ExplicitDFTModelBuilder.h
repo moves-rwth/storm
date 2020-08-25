@@ -26,7 +26,7 @@ namespace storm {
          */
         template<typename ValueType, typename StateType = uint32_t>
         class ExplicitDFTModelBuilder {
-
+            friend classs storm::figaro::builder::ExplicitFIGAROModelBuilder;
             using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
             using ExplorationHeuristic = DFTExplorationHeuristic<ValueType>;
             using ExplorationHeuristicPointer = std::shared_ptr<ExplorationHeuristic>;

@@ -240,10 +240,10 @@ namespace storm{
                 labels.addLabel("failed");
                 
 
-//                for ( auto const& elements: figaromodel.mFigaroelementfailureindex)
-//                    {
-//                    labels.addLabel(elements.first);
-//                    }
+                for ( auto const& elements: figaromodel.mFigaroelementfailureindex)
+                    {
+                    labels.addLabel(elements.first);
+                    }
                 for (int i = 0; i< initialStateIndices.size(); ++i){
                     labels.addLabelToState("init", initialStateIndices.at(i));
                 }
@@ -253,7 +253,7 @@ namespace storm{
                 int failure_bit_offset = 0;
                 for (auto const& booleanvariables : this->variableInformation.booleanVariables)
                     {
-                    if (booleanvariables.variable.getName() ==figaromodel.topevent ) {
+                    if (booleanvariables.variable.getName() == figaromodel.topevent ) {
                         failure_bit_offset = booleanvariables.bitOffset;
                     }}
                 
@@ -261,6 +261,7 @@ namespace storm{
                     {
                     storm::storage::BitVector state = stateIdPair.first;
                     if(state.get(failure_bit_offset)) {
+           
                         labels.addLabelToState("failed", stateIdPair.second);
                     }
 //                    for (auto const& booleanvariables : this->variableInformation.booleanVariables)
@@ -274,15 +275,21 @@ namespace storm{
                 
                
                 
-//                for ( auto const& elements: figaromodel.mFigaroelementfailureindex)
-//                    {
-//                    for (auto const& stateIdPair : stateStorage.stateToId)
-//                        {
-//                        storm::storage::BitVector state = stateIdPair.first;
-//
-//                        if(state.get(figaromodel.mFigaroelementfailureindex[elements.first]))
-//                            labels.addLabelToState(elements.first, stateIdPair.second);
-//                        }
+                for ( auto const& elements: figaromodel.mFigaroelementfailureindex)
+                    {
+                    for (auto const& stateIdPair : stateStorage.stateToId)
+                        {
+                        storm::storage::BitVector state = stateIdPair.first;
+                        for (auto const& booleanvariables : this->variableInformation.booleanVariables)
+                            {
+                            if (booleanvariables.variable.getName() == elements.first ) {
+                                if(state.get(booleanvariables.bitOffset)){
+                            labels.addLabelToState(elements.first, stateIdPair.second);
+                                }
+                        }
+                    }
+                        }
+                    }
                     
                     
                 

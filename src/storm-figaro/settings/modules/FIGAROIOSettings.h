@@ -5,14 +5,15 @@
 
 
 namespace storm {
+
     namespace settings {
         namespace modules {
-            class FIGAROSettings : public ModuleSettings {
+            class FIGAROIOSettings : public ModuleSettings {
             public:
                 /*!
                  * Creates a new FIGARO setting
                  */
-                FIGAROSettings();
+                FIGAROIOSettings();
                 
                 /**
                  * Retrievew whether the figaro file option was set
@@ -32,6 +33,15 @@ namespace storm {
                  * Retrieves the xml file name
                  */
                 std::string getxmlFilename() const;
+                /**
+                 * Retrievew whether the result text  file option was set
+                 */
+                bool isrslttxtFileSet() const;
+                
+                /**
+                 * Retrieves the result file name
+                 */
+                std::string getrlsttxtFilename() const;
                 
                 /**
                  * Whether the figaro should be  should be drawn (dot output)
@@ -90,6 +100,8 @@ namespace storm {
                 static const std::string figaroToExplicitOptionShortName;
                 static const std::string figaroToDotOptionName;
                 static const std::string figaroToDotOptionShortName;
+                static const std::string outputtextFileOptionName;
+                static const std::string outputtextFileOptionShortName;
                 static const std::string propertyOptionName;
                 static const std::string propertyOptionShortName;
             };

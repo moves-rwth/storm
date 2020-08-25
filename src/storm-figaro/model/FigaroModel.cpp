@@ -25,61 +25,51 @@ namespace storm{
         {
         cout <<">>>>>>>>>>>>>>>>>>>> Initialization of variables <<<<<<<<<<<<<<<<<<<<<<<" << endl;
         
-        REINITIALISATION_OF_capacity_OF_Backup_1 = 100;
-        REINITIALISATION_OF_null_production_OF_Backup_1 = false;
-        enumState[state_OF_Backup_1] = standby;
-        intState[rank_OF_Backup_1] = 0;
-        REINITIALISATION_OF_dequeue_OF_Backup_1 = false;
-        boolState[fail_OF_Backup_1] = false;
-        REINITIALISATION_OF_capacity_OF_Block_1 = 100;
-        REINITIALISATION_OF_null_production_OF_Block_1 = false;
-        enumState[state_OF_Block_1] = working;
-        intState[rank_OF_Block_1] = 0;
-        REINITIALISATION_OF_dequeue_OF_Block_1 = false;
-        boolState[fail_OF_Block_1] = false;
-        REINITIALISATION_OF_capacity_OF_Block_2 = 100;
-        REINITIALISATION_OF_null_production_OF_Block_2 = false;
-        enumState[state_OF_Block_2] = working;
-        intState[rank_OF_Block_2] = 0;
-        REINITIALISATION_OF_dequeue_OF_Block_2 = false;
-        boolState[fail_OF_Block_2] = false;
-        REINITIALISATION_OF_capacity_OF_Block_3 = 100;
-        REINITIALISATION_OF_null_production_OF_Block_3 = false;
-        enumState[state_OF_Block_3] = working;
-        intState[rank_OF_Block_3] = 0;
-        REINITIALISATION_OF_dequeue_OF_Block_3 = false;
-        boolState[fail_OF_Block_3] = false;
-        REINITIALISATION_OF_capacity_OF_Block_4 = 100;
-        REINITIALISATION_OF_null_production_OF_Block_4 = false;
-        enumState[state_OF_Block_4] = working;
-        intState[rank_OF_Block_4] = 0;
-        REINITIALISATION_OF_dequeue_OF_Block_4 = false;
-        boolState[fail_OF_Block_4] = false;
-        REINITIALISATION_OF_capacity_OF_SS1 = 100;
-        REINITIALISATION_OF_null_production_OF_SS1 = false;
-        REINITIALISATION_OF_potential_capacity_OF_SS1 = 100;
-        REINITIALISATION_OF_capacity_OF_SS2 = 100;
-        REINITIALISATION_OF_null_production_OF_SS2 = false;
-        REINITIALISATION_OF_potential_capacity_OF_SS2 = 100;
-        REINITIALISATION_OF_capacity_OF_min_1 = 100;
-        REINITIALISATION_OF_null_production_OF_min_1 = false;
-        REINITIALISATION_OF_max_rank_OF_rep_1 = 0;
-        boolState[free_OF_rep_1] = true;
-        boolState[dequeue_OF_rep_1] = false;
+        intState[nb_failures_OF_Failure_counter] = 0;
+        boolState[fail_OF_Node_1] = false;
+        REINITIALISATION_OF_connected_OF_Node_1 = false;
+        boolState[fail_OF_Node_2] = false;
+        REINITIALISATION_OF_connected_OF_Node_2 = false;
+        boolState[interruption_OF_ud_1] = false;
+        boolState[interruption_OF_bidir_3] = false;
+        boolState[fail_OF_Node_6] = false;
+        REINITIALISATION_OF_connected_OF_Node_6 = false;
+        boolState[fail_OF_Node_8] = false;
+        REINITIALISATION_OF_connected_OF_Node_8 = false;
+        boolState[fail_OF_Source] = false;
+        REINITIALISATION_OF_connected_OF_Source = false;
+        boolState[fail_OF_Target] = false;
+        REINITIALISATION_OF_connected_OF_Target = false;
+        boolState[interruption_OF_ud_3] = false;
+        boolState[interruption_OF_bidir_7] = false;
+        boolState[interruption_OF_bidir_12] = false;
+        boolState[interruption_OF_bidir_2] = false;
         
         /* ---------- DECLARATION OF OCCURRENCE RULES FIRING FLAGS ------------ */
-        FIRE_fail_in_op_OF_Backup_1 = false;
-        FIRE_xx1_OF_Backup_1 = false;
-        FIRE_xx2_OF_Backup_1_INS_2 = false;
-        FIRE_xx2_OF_Backup_1_INS_3 = false;
-        FIRE_fail_in_op_OF_Block_1 = false;
-        FIRE_xx1_OF_Block_1 = false;
-        FIRE_fail_in_op_OF_Block_2 = false;
-        FIRE_xx1_OF_Block_2 = false;
-        FIRE_fail_in_op_OF_Block_3 = false;
-        FIRE_xx1_OF_Block_3 = false;
-        FIRE_fail_in_op_OF_Block_4 = false;
-        FIRE_xx1_OF_Block_4 = false;
+        FIRE_xx1_OF_Node_1 = false;
+        FIRE_xx2_OF_Node_1 = false;
+        FIRE_xx1_OF_Node_2 = false;
+        FIRE_xx2_OF_Node_2 = false;
+        FIRE_xx3_OF_ud_1 = false;
+        FIRE_xx4_OF_ud_1 = false;
+        FIRE_xx3_OF_bidir_3 = false;
+        FIRE_xx4_OF_bidir_3 = false;
+        FIRE_xx1_OF_Node_6 = false;
+        FIRE_xx2_OF_Node_6 = false;
+        FIRE_xx1_OF_Node_8 = false;
+        FIRE_xx2_OF_Node_8 = false;
+        FIRE_xx1_OF_Source = false;
+        FIRE_xx2_OF_Source = false;
+        FIRE_xx1_OF_Target = false;
+        FIRE_xx2_OF_Target = false;
+        FIRE_xx3_OF_ud_3 = false;
+        FIRE_xx4_OF_ud_3 = false;
+        FIRE_xx3_OF_bidir_7 = false;
+        FIRE_xx4_OF_bidir_7 = false;
+        FIRE_xx3_OF_bidir_12 = false;
+        FIRE_xx4_OF_bidir_12 = false;
+        FIRE_xx3_OF_bidir_2 = false;
+        FIRE_xx4_OF_bidir_2 = false;
         
         }
         
@@ -103,80 +93,40 @@ namespace storm{
         {
         cout <<"\n==================== Print of the current state :  ====================" << endl;
         
-        cout << "Attribute :  floatState[capacity_OF_Backup_1] | Value : " << floatState[capacity_OF_Backup_1] << endl;
-        cout << "Attribute :  boolState[null_production_OF_Backup_1] | Value : " << boolState[null_production_OF_Backup_1] << endl;
-        cout << "Attribute :  enumState[state_OF_Backup_1] | Value : " << enumState[state_OF_Backup_1] << endl;
-        cout << "Attribute :  intState[rank_OF_Backup_1] | Value : " << intState[rank_OF_Backup_1] << endl;
-        cout << "Attribute :  boolState[dequeue_OF_Backup_1] | Value : " << boolState[dequeue_OF_Backup_1] << endl;
-        cout << "Attribute :  boolState[fail_OF_Backup_1] | Value : " << boolState[fail_OF_Backup_1] << endl;
-        cout << "Attribute :  floatState[capacity_OF_Block_1] | Value : " << floatState[capacity_OF_Block_1] << endl;
-        cout << "Attribute :  boolState[null_production_OF_Block_1] | Value : " << boolState[null_production_OF_Block_1] << endl;
-        cout << "Attribute :  enumState[state_OF_Block_1] | Value : " << enumState[state_OF_Block_1] << endl;
-        cout << "Attribute :  intState[rank_OF_Block_1] | Value : " << intState[rank_OF_Block_1] << endl;
-        cout << "Attribute :  boolState[dequeue_OF_Block_1] | Value : " << boolState[dequeue_OF_Block_1] << endl;
-        cout << "Attribute :  boolState[fail_OF_Block_1] | Value : " << boolState[fail_OF_Block_1] << endl;
-        cout << "Attribute :  floatState[capacity_OF_Block_2] | Value : " << floatState[capacity_OF_Block_2] << endl;
-        cout << "Attribute :  boolState[null_production_OF_Block_2] | Value : " << boolState[null_production_OF_Block_2] << endl;
-        cout << "Attribute :  enumState[state_OF_Block_2] | Value : " << enumState[state_OF_Block_2] << endl;
-        cout << "Attribute :  intState[rank_OF_Block_2] | Value : " << intState[rank_OF_Block_2] << endl;
-        cout << "Attribute :  boolState[dequeue_OF_Block_2] | Value : " << boolState[dequeue_OF_Block_2] << endl;
-        cout << "Attribute :  boolState[fail_OF_Block_2] | Value : " << boolState[fail_OF_Block_2] << endl;
-        cout << "Attribute :  floatState[capacity_OF_Block_3] | Value : " << floatState[capacity_OF_Block_3] << endl;
-        cout << "Attribute :  boolState[null_production_OF_Block_3] | Value : " << boolState[null_production_OF_Block_3] << endl;
-        cout << "Attribute :  enumState[state_OF_Block_3] | Value : " << enumState[state_OF_Block_3] << endl;
-        cout << "Attribute :  intState[rank_OF_Block_3] | Value : " << intState[rank_OF_Block_3] << endl;
-        cout << "Attribute :  boolState[dequeue_OF_Block_3] | Value : " << boolState[dequeue_OF_Block_3] << endl;
-        cout << "Attribute :  boolState[fail_OF_Block_3] | Value : " << boolState[fail_OF_Block_3] << endl;
-        cout << "Attribute :  floatState[capacity_OF_Block_4] | Value : " << floatState[capacity_OF_Block_4] << endl;
-        cout << "Attribute :  boolState[null_production_OF_Block_4] | Value : " << boolState[null_production_OF_Block_4] << endl;
-        cout << "Attribute :  enumState[state_OF_Block_4] | Value : " << enumState[state_OF_Block_4] << endl;
-        cout << "Attribute :  intState[rank_OF_Block_4] | Value : " << intState[rank_OF_Block_4] << endl;
-        cout << "Attribute :  boolState[dequeue_OF_Block_4] | Value : " << boolState[dequeue_OF_Block_4] << endl;
-        cout << "Attribute :  boolState[fail_OF_Block_4] | Value : " << boolState[fail_OF_Block_4] << endl;
-        cout << "Attribute :  floatState[capacity_OF_SS1] | Value : " << floatState[capacity_OF_SS1] << endl;
-        cout << "Attribute :  boolState[null_production_OF_SS1] | Value : " << boolState[null_production_OF_SS1] << endl;
-        cout << "Attribute :  floatState[potential_capacity_OF_SS1] | Value : " << floatState[potential_capacity_OF_SS1] << endl;
-        cout << "Attribute :  floatState[capacity_OF_SS2] | Value : " << floatState[capacity_OF_SS2] << endl;
-        cout << "Attribute :  boolState[null_production_OF_SS2] | Value : " << boolState[null_production_OF_SS2] << endl;
-        cout << "Attribute :  floatState[potential_capacity_OF_SS2] | Value : " << floatState[potential_capacity_OF_SS2] << endl;
-        cout << "Attribute :  floatState[capacity_OF_min_1] | Value : " << floatState[capacity_OF_min_1] << endl;
-        cout << "Attribute :  boolState[null_production_OF_min_1] | Value : " << boolState[null_production_OF_min_1] << endl;
-        cout << "Attribute :  intState[max_rank_OF_rep_1] | Value : " << intState[max_rank_OF_rep_1] << endl;
-        cout << "Attribute :  boolState[free_OF_rep_1] | Value : " << boolState[free_OF_rep_1] << endl;
-        cout << "Attribute :  boolState[dequeue_OF_rep_1] | Value : " << boolState[dequeue_OF_rep_1] << endl;
+        cout << "Attribute :  intState[nb_failures_OF_Failure_counter] | Value : " << intState[nb_failures_OF_Failure_counter] << endl;
+        cout << "Attribute :  boolState[fail_OF_Node_1] | Value : " << boolState[fail_OF_Node_1] << endl;
+        cout << "Attribute :  boolState[connected_OF_Node_1] | Value : " << boolState[connected_OF_Node_1] << endl;
+        cout << "Attribute :  boolState[fail_OF_Node_2] | Value : " << boolState[fail_OF_Node_2] << endl;
+        cout << "Attribute :  boolState[connected_OF_Node_2] | Value : " << boolState[connected_OF_Node_2] << endl;
+        cout << "Attribute :  boolState[interruption_OF_ud_1] | Value : " << boolState[interruption_OF_ud_1] << endl;
+        cout << "Attribute :  boolState[interruption_OF_bidir_3] | Value : " << boolState[interruption_OF_bidir_3] << endl;
+        cout << "Attribute :  boolState[fail_OF_Node_6] | Value : " << boolState[fail_OF_Node_6] << endl;
+        cout << "Attribute :  boolState[connected_OF_Node_6] | Value : " << boolState[connected_OF_Node_6] << endl;
+        cout << "Attribute :  boolState[fail_OF_Node_8] | Value : " << boolState[fail_OF_Node_8] << endl;
+        cout << "Attribute :  boolState[connected_OF_Node_8] | Value : " << boolState[connected_OF_Node_8] << endl;
+        cout << "Attribute :  boolState[fail_OF_Source] | Value : " << boolState[fail_OF_Source] << endl;
+        cout << "Attribute :  boolState[connected_OF_Source] | Value : " << boolState[connected_OF_Source] << endl;
+        cout << "Attribute :  boolState[fail_OF_Target] | Value : " << boolState[fail_OF_Target] << endl;
+        cout << "Attribute :  boolState[connected_OF_Target] | Value : " << boolState[connected_OF_Target] << endl;
+        cout << "Attribute :  boolState[interruption_OF_ud_3] | Value : " << boolState[interruption_OF_ud_3] << endl;
+        cout << "Attribute :  boolState[interruption_OF_bidir_7] | Value : " << boolState[interruption_OF_bidir_7] << endl;
+        cout << "Attribute :  boolState[interruption_OF_bidir_12] | Value : " << boolState[interruption_OF_bidir_12] << endl;
+        cout << "Attribute :  boolState[interruption_OF_bidir_2] | Value : " << boolState[interruption_OF_bidir_2] << endl;
         }
         
         bool storm::figaro::FigaroProgram::figaromodelhasinstransitions()
         {
-        return true;
+        return false;
         }
         
         void storm::figaro::FigaroProgram::doReinitialisations()
         {
-        floatState[capacity_OF_Backup_1] = REINITIALISATION_OF_capacity_OF_Backup_1;
-        boolState[null_production_OF_Backup_1] = REINITIALISATION_OF_null_production_OF_Backup_1;
-        boolState[dequeue_OF_Backup_1] = REINITIALISATION_OF_dequeue_OF_Backup_1;
-        floatState[capacity_OF_Block_1] = REINITIALISATION_OF_capacity_OF_Block_1;
-        boolState[null_production_OF_Block_1] = REINITIALISATION_OF_null_production_OF_Block_1;
-        boolState[dequeue_OF_Block_1] = REINITIALISATION_OF_dequeue_OF_Block_1;
-        floatState[capacity_OF_Block_2] = REINITIALISATION_OF_capacity_OF_Block_2;
-        boolState[null_production_OF_Block_2] = REINITIALISATION_OF_null_production_OF_Block_2;
-        boolState[dequeue_OF_Block_2] = REINITIALISATION_OF_dequeue_OF_Block_2;
-        floatState[capacity_OF_Block_3] = REINITIALISATION_OF_capacity_OF_Block_3;
-        boolState[null_production_OF_Block_3] = REINITIALISATION_OF_null_production_OF_Block_3;
-        boolState[dequeue_OF_Block_3] = REINITIALISATION_OF_dequeue_OF_Block_3;
-        floatState[capacity_OF_Block_4] = REINITIALISATION_OF_capacity_OF_Block_4;
-        boolState[null_production_OF_Block_4] = REINITIALISATION_OF_null_production_OF_Block_4;
-        boolState[dequeue_OF_Block_4] = REINITIALISATION_OF_dequeue_OF_Block_4;
-        floatState[capacity_OF_SS1] = REINITIALISATION_OF_capacity_OF_SS1;
-        boolState[null_production_OF_SS1] = REINITIALISATION_OF_null_production_OF_SS1;
-        floatState[potential_capacity_OF_SS1] = REINITIALISATION_OF_potential_capacity_OF_SS1;
-        floatState[capacity_OF_SS2] = REINITIALISATION_OF_capacity_OF_SS2;
-        boolState[null_production_OF_SS2] = REINITIALISATION_OF_null_production_OF_SS2;
-        floatState[potential_capacity_OF_SS2] = REINITIALISATION_OF_potential_capacity_OF_SS2;
-        floatState[capacity_OF_min_1] = REINITIALISATION_OF_capacity_OF_min_1;
-        boolState[null_production_OF_min_1] = REINITIALISATION_OF_null_production_OF_min_1;
-        intState[max_rank_OF_rep_1] = REINITIALISATION_OF_max_rank_OF_rep_1;
+        boolState[connected_OF_Node_1] = REINITIALISATION_OF_connected_OF_Node_1;
+        boolState[connected_OF_Node_2] = REINITIALISATION_OF_connected_OF_Node_2;
+        boolState[connected_OF_Node_6] = REINITIALISATION_OF_connected_OF_Node_6;
+        boolState[connected_OF_Node_8] = REINITIALISATION_OF_connected_OF_Node_8;
+        boolState[connected_OF_Source] = REINITIALISATION_OF_connected_OF_Source;
+        boolState[connected_OF_Target] = REINITIALISATION_OF_connected_OF_Target;
         }
         
         void storm::figaro::FigaroProgram::fireOccurrence(int numFire)
@@ -185,224 +135,387 @@ namespace storm{
         
         if (numFire == 0)
             {
-            FIRE_fail_in_op_OF_Backup_1 = true;
+            FIRE_xx1_OF_Node_1 = true;
             }
         
         if (numFire == 1)
             {
-            FIRE_xx1_OF_Backup_1 = true;
+            FIRE_xx2_OF_Node_1 = true;
             }
         
         if (numFire == 2)
             {
-            FIRE_xx2_OF_Backup_1_INS_2 = true;
+            FIRE_xx1_OF_Node_2 = true;
             }
         
         if (numFire == 3)
             {
-            FIRE_xx2_OF_Backup_1_INS_3 = true;
+            FIRE_xx2_OF_Node_2 = true;
             }
         
         if (numFire == 4)
             {
-            FIRE_fail_in_op_OF_Block_1 = true;
+            FIRE_xx3_OF_ud_1 = true;
             }
         
         if (numFire == 5)
             {
-            FIRE_xx1_OF_Block_1 = true;
+            FIRE_xx4_OF_ud_1 = true;
             }
         
         if (numFire == 6)
             {
-            FIRE_fail_in_op_OF_Block_2 = true;
+            FIRE_xx3_OF_bidir_3 = true;
             }
         
         if (numFire == 7)
             {
-            FIRE_xx1_OF_Block_2 = true;
+            FIRE_xx4_OF_bidir_3 = true;
             }
         
         if (numFire == 8)
             {
-            FIRE_fail_in_op_OF_Block_3 = true;
+            FIRE_xx1_OF_Node_6 = true;
             }
         
         if (numFire == 9)
             {
-            FIRE_xx1_OF_Block_3 = true;
+            FIRE_xx2_OF_Node_6 = true;
             }
         
         if (numFire == 10)
             {
-            FIRE_fail_in_op_OF_Block_4 = true;
+            FIRE_xx1_OF_Node_8 = true;
             }
         
         if (numFire == 11)
             {
-            FIRE_xx1_OF_Block_4 = true;
+            FIRE_xx2_OF_Node_8 = true;
+            }
+        
+        if (numFire == 12)
+            {
+            FIRE_xx1_OF_Source = true;
+            }
+        
+        if (numFire == 13)
+            {
+            FIRE_xx2_OF_Source = true;
+            }
+        
+        if (numFire == 14)
+            {
+            FIRE_xx1_OF_Target = true;
+            }
+        
+        if (numFire == 15)
+            {
+            FIRE_xx2_OF_Target = true;
+            }
+        
+        if (numFire == 16)
+            {
+            FIRE_xx3_OF_ud_3 = true;
+            }
+        
+        if (numFire == 17)
+            {
+            FIRE_xx4_OF_ud_3 = true;
+            }
+        
+        if (numFire == 18)
+            {
+            FIRE_xx3_OF_bidir_7 = true;
+            }
+        
+        if (numFire == 19)
+            {
+            FIRE_xx4_OF_bidir_7 = true;
+            }
+        
+        if (numFire == 20)
+            {
+            FIRE_xx3_OF_bidir_12 = true;
+            }
+        
+        if (numFire == 21)
+            {
+            FIRE_xx4_OF_bidir_12 = true;
+            }
+        
+        if (numFire == 22)
+            {
+            FIRE_xx3_OF_bidir_2 = true;
+            }
+        
+        if (numFire == 23)
+            {
+            FIRE_xx4_OF_bidir_2 = true;
             }
         
         /* ---------- DECLARATION OF OCCURRENCE RULES------------ */
         
-            // Occurrence fail_in_op_OF_Backup_1
-        if ((boolState[fail_OF_Backup_1] == false) && (enumState[state_OF_Backup_1] == working))
+            // Occurrence xx1_OF_Node_1
+        if (boolState[fail_OF_Node_1] == false)
             {
             
-            if (FIRE_fail_in_op_OF_Backup_1)
+            if (FIRE_xx1_OF_Node_1)
                 {
-                boolState[fail_OF_Backup_1]  =  true;
-                enumState[state_OF_Backup_1]  =  waiting_for_rep;
-                intState[rank_OF_Backup_1]  =  (intState[max_rank_OF_rep_1] + 1);
-                FIRE_fail_in_op_OF_Backup_1 = false;
+                boolState[fail_OF_Node_1]  =  true;
+                FIRE_xx1_OF_Node_1 = false;
                 }
             }
         
-            // Occurrence xx1_OF_Backup_1
-        if ((boolState[fail_OF_Backup_1] == true) && (enumState[state_OF_Backup_1] == under_repair))
+            // Occurrence xx2_OF_Node_1
+        if (boolState[fail_OF_Node_1] == true)
             {
             
-            if (FIRE_xx1_OF_Backup_1)
+            if (FIRE_xx2_OF_Node_1)
                 {
-                boolState[fail_OF_Backup_1]  =  false;
-                enumState[state_OF_Backup_1]  =  working;
-                boolState[free_OF_rep_1]  =  true;
-                boolState[dequeue_OF_rep_1]  =  true;
-                FIRE_xx1_OF_Backup_1 = false;
+                boolState[fail_OF_Node_1]  =  false;
+                FIRE_xx2_OF_Node_1 = false;
                 }
             }
         
-            // Occurrence xx2_OF_Backup_1
-        
-        if ((boolState[fail_OF_Backup_1] == false) && (enumState[state_OF_Backup_1] == required))
+            // Occurrence xx1_OF_Node_2
+        if (boolState[fail_OF_Node_2] == false)
             {
             
-            
-            if (FIRE_xx2_OF_Backup_1_INS_2)
+            if (FIRE_xx1_OF_Node_2)
                 {
-                boolState[fail_OF_Backup_1]  =  true;
-                enumState[state_OF_Backup_1]  =  waiting_for_rep;
-                intState[rank_OF_Backup_1]  =  (intState[max_rank_OF_rep_1] + 1);
-                FIRE_xx2_OF_Backup_1_INS_2 = false;
-                }
-            
-            }
-        if ((boolState[fail_OF_Backup_1] == false) && (enumState[state_OF_Backup_1] == required))
-            {
-            
-            
-            if (FIRE_xx2_OF_Backup_1_INS_3)
-                {
-                enumState[state_OF_Backup_1]  =  working;
-                FIRE_xx2_OF_Backup_1_INS_3 = false;
-                }
-            
-            }
-            // Occurrence fail_in_op_OF_Block_1
-        if ((boolState[fail_OF_Block_1] == false) && (enumState[state_OF_Block_1] == working))
-            {
-            
-            if (FIRE_fail_in_op_OF_Block_1)
-                {
-                boolState[fail_OF_Block_1]  =  true;
-                enumState[state_OF_Block_1]  =  waiting_for_rep;
-                intState[rank_OF_Block_1]  =  (intState[max_rank_OF_rep_1] + 1);
-                FIRE_fail_in_op_OF_Block_1 = false;
+                boolState[fail_OF_Node_2]  =  true;
+                FIRE_xx1_OF_Node_2 = false;
                 }
             }
         
-            // Occurrence xx1_OF_Block_1
-        if ((boolState[fail_OF_Block_1] == true) && (enumState[state_OF_Block_1] == under_repair))
+            // Occurrence xx2_OF_Node_2
+        if (boolState[fail_OF_Node_2] == true)
             {
             
-            if (FIRE_xx1_OF_Block_1)
+            if (FIRE_xx2_OF_Node_2)
                 {
-                boolState[fail_OF_Block_1]  =  false;
-                enumState[state_OF_Block_1]  =  working;
-                boolState[free_OF_rep_1]  =  true;
-                boolState[dequeue_OF_rep_1]  =  true;
-                FIRE_xx1_OF_Block_1 = false;
+                boolState[fail_OF_Node_2]  =  false;
+                FIRE_xx2_OF_Node_2 = false;
                 }
             }
         
-            // Occurrence fail_in_op_OF_Block_2
-        if ((boolState[fail_OF_Block_2] == false) && (enumState[state_OF_Block_2] == working))
+            // Occurrence xx3_OF_ud_1
+        if (boolState[interruption_OF_ud_1] == false)
             {
             
-            if (FIRE_fail_in_op_OF_Block_2)
+            if (FIRE_xx3_OF_ud_1)
                 {
-                boolState[fail_OF_Block_2]  =  true;
-                enumState[state_OF_Block_2]  =  waiting_for_rep;
-                intState[rank_OF_Block_2]  =  (intState[max_rank_OF_rep_1] + 1);
-                FIRE_fail_in_op_OF_Block_2 = false;
+                boolState[interruption_OF_ud_1]  =  true;
+                FIRE_xx3_OF_ud_1 = false;
                 }
             }
         
-            // Occurrence xx1_OF_Block_2
-        if ((boolState[fail_OF_Block_2] == true) && (enumState[state_OF_Block_2] == under_repair))
+            // Occurrence xx4_OF_ud_1
+        if (boolState[interruption_OF_ud_1] == true)
             {
             
-            if (FIRE_xx1_OF_Block_2)
+            if (FIRE_xx4_OF_ud_1)
                 {
-                boolState[fail_OF_Block_2]  =  false;
-                enumState[state_OF_Block_2]  =  working;
-                boolState[free_OF_rep_1]  =  true;
-                boolState[dequeue_OF_rep_1]  =  true;
-                FIRE_xx1_OF_Block_2 = false;
+                boolState[interruption_OF_ud_1]  =  false;
+                FIRE_xx4_OF_ud_1 = false;
                 }
             }
         
-            // Occurrence fail_in_op_OF_Block_3
-        if ((boolState[fail_OF_Block_3] == false) && (enumState[state_OF_Block_3] == working))
+            // Occurrence xx3_OF_bidir_3
+        if (boolState[interruption_OF_bidir_3] == false)
             {
             
-            if (FIRE_fail_in_op_OF_Block_3)
+            if (FIRE_xx3_OF_bidir_3)
                 {
-                boolState[fail_OF_Block_3]  =  true;
-                enumState[state_OF_Block_3]  =  waiting_for_rep;
-                intState[rank_OF_Block_3]  =  (intState[max_rank_OF_rep_1] + 1);
-                FIRE_fail_in_op_OF_Block_3 = false;
+                boolState[interruption_OF_bidir_3]  =  true;
+                FIRE_xx3_OF_bidir_3 = false;
                 }
             }
         
-            // Occurrence xx1_OF_Block_3
-        if ((boolState[fail_OF_Block_3] == true) && (enumState[state_OF_Block_3] == under_repair))
+            // Occurrence xx4_OF_bidir_3
+        if (boolState[interruption_OF_bidir_3] == true)
             {
             
-            if (FIRE_xx1_OF_Block_3)
+            if (FIRE_xx4_OF_bidir_3)
                 {
-                boolState[fail_OF_Block_3]  =  false;
-                enumState[state_OF_Block_3]  =  working;
-                boolState[free_OF_rep_1]  =  true;
-                boolState[dequeue_OF_rep_1]  =  true;
-                FIRE_xx1_OF_Block_3 = false;
+                boolState[interruption_OF_bidir_3]  =  false;
+                FIRE_xx4_OF_bidir_3 = false;
                 }
             }
         
-            // Occurrence fail_in_op_OF_Block_4
-        if ((boolState[fail_OF_Block_4] == false) && (enumState[state_OF_Block_4] == working))
+            // Occurrence xx1_OF_Node_6
+        if (boolState[fail_OF_Node_6] == false)
             {
             
-            if (FIRE_fail_in_op_OF_Block_4)
+            if (FIRE_xx1_OF_Node_6)
                 {
-                boolState[fail_OF_Block_4]  =  true;
-                enumState[state_OF_Block_4]  =  waiting_for_rep;
-                intState[rank_OF_Block_4]  =  (intState[max_rank_OF_rep_1] + 1);
-                FIRE_fail_in_op_OF_Block_4 = false;
+                boolState[fail_OF_Node_6]  =  true;
+                FIRE_xx1_OF_Node_6 = false;
                 }
             }
         
-            // Occurrence xx1_OF_Block_4
-        if ((boolState[fail_OF_Block_4] == true) && (enumState[state_OF_Block_4] == under_repair))
+            // Occurrence xx2_OF_Node_6
+        if (boolState[fail_OF_Node_6] == true)
             {
             
-            if (FIRE_xx1_OF_Block_4)
+            if (FIRE_xx2_OF_Node_6)
                 {
-                boolState[fail_OF_Block_4]  =  false;
-                enumState[state_OF_Block_4]  =  working;
-                boolState[free_OF_rep_1]  =  true;
-                boolState[dequeue_OF_rep_1]  =  true;
-                FIRE_xx1_OF_Block_4 = false;
+                boolState[fail_OF_Node_6]  =  false;
+                FIRE_xx2_OF_Node_6 = false;
+                }
+            }
+        
+            // Occurrence xx1_OF_Node_8
+        if (boolState[fail_OF_Node_8] == false)
+            {
+            
+            if (FIRE_xx1_OF_Node_8)
+                {
+                boolState[fail_OF_Node_8]  =  true;
+                FIRE_xx1_OF_Node_8 = false;
+                }
+            }
+        
+            // Occurrence xx2_OF_Node_8
+        if (boolState[fail_OF_Node_8] == true)
+            {
+            
+            if (FIRE_xx2_OF_Node_8)
+                {
+                boolState[fail_OF_Node_8]  =  false;
+                FIRE_xx2_OF_Node_8 = false;
+                }
+            }
+        
+            // Occurrence xx1_OF_Source
+        if (boolState[fail_OF_Source] == false)
+            {
+            
+            if (FIRE_xx1_OF_Source)
+                {
+                boolState[fail_OF_Source]  =  true;
+                FIRE_xx1_OF_Source = false;
+                }
+            }
+        
+            // Occurrence xx2_OF_Source
+        if (boolState[fail_OF_Source] == true)
+            {
+            
+            if (FIRE_xx2_OF_Source)
+                {
+                boolState[fail_OF_Source]  =  false;
+                FIRE_xx2_OF_Source = false;
+                }
+            }
+        
+            // Occurrence xx1_OF_Target
+        if (boolState[fail_OF_Target] == false)
+            {
+            
+            if (FIRE_xx1_OF_Target)
+                {
+                boolState[fail_OF_Target]  =  true;
+                FIRE_xx1_OF_Target = false;
+                }
+            }
+        
+            // Occurrence xx2_OF_Target
+        if (boolState[fail_OF_Target] == true)
+            {
+            
+            if (FIRE_xx2_OF_Target)
+                {
+                boolState[fail_OF_Target]  =  false;
+                FIRE_xx2_OF_Target = false;
+                }
+            }
+        
+            // Occurrence xx3_OF_ud_3
+        if (boolState[interruption_OF_ud_3] == false)
+            {
+            
+            if (FIRE_xx3_OF_ud_3)
+                {
+                boolState[interruption_OF_ud_3]  =  true;
+                FIRE_xx3_OF_ud_3 = false;
+                }
+            }
+        
+            // Occurrence xx4_OF_ud_3
+        if (boolState[interruption_OF_ud_3] == true)
+            {
+            
+            if (FIRE_xx4_OF_ud_3)
+                {
+                boolState[interruption_OF_ud_3]  =  false;
+                FIRE_xx4_OF_ud_3 = false;
+                }
+            }
+        
+            // Occurrence xx3_OF_bidir_7
+        if (boolState[interruption_OF_bidir_7] == false)
+            {
+            
+            if (FIRE_xx3_OF_bidir_7)
+                {
+                boolState[interruption_OF_bidir_7]  =  true;
+                FIRE_xx3_OF_bidir_7 = false;
+                }
+            }
+        
+            // Occurrence xx4_OF_bidir_7
+        if (boolState[interruption_OF_bidir_7] == true)
+            {
+            
+            if (FIRE_xx4_OF_bidir_7)
+                {
+                boolState[interruption_OF_bidir_7]  =  false;
+                FIRE_xx4_OF_bidir_7 = false;
+                }
+            }
+        
+            // Occurrence xx3_OF_bidir_12
+        if (boolState[interruption_OF_bidir_12] == false)
+            {
+            
+            if (FIRE_xx3_OF_bidir_12)
+                {
+                boolState[interruption_OF_bidir_12]  =  true;
+                FIRE_xx3_OF_bidir_12 = false;
+                }
+            }
+        
+            // Occurrence xx4_OF_bidir_12
+        if (boolState[interruption_OF_bidir_12] == true)
+            {
+            
+            if (FIRE_xx4_OF_bidir_12)
+                {
+                boolState[interruption_OF_bidir_12]  =  false;
+                FIRE_xx4_OF_bidir_12 = false;
+                }
+            }
+        
+            // Occurrence xx3_OF_bidir_2
+        if (boolState[interruption_OF_bidir_2] == false)
+            {
+            
+            if (FIRE_xx3_OF_bidir_2)
+                {
+                boolState[interruption_OF_bidir_2]  =  true;
+                FIRE_xx3_OF_bidir_2 = false;
+                }
+            }
+        
+            // Occurrence xx4_OF_bidir_2
+        if (boolState[interruption_OF_bidir_2] == true)
+            {
+            
+            if (FIRE_xx4_OF_bidir_2)
+                {
+                boolState[interruption_OF_bidir_2]  =  false;
+                FIRE_xx4_OF_bidir_2 = false;
                 }
             }
         
@@ -413,16 +526,6 @@ namespace storm{
         std::vector<std::tuple<int, double, std::string, int>> list = {};
         cout <<"\n==================== List of fireable occurrences :  ====================" << endl;
         
-        if ((boolState[fail_OF_Backup_1] == false) && (enumState[state_OF_Backup_1] == required))
-            {
-            cout << "2 :  INS_SUB_COUNT (1) |FAULT | fail | DIST INS (gamma_OF_Backup_1) | INDUCING boolState[fail_OF_Backup_1]  =  TRUE,state_OF_Backup_1  =  waiting_for_rep,rank_OF_Backup_1  =  (intState[max_rank_OF_rep_1] + 1)" << endl;
-            list.push_back(make_tuple(2, gamma_OF_Backup_1, "INS", 1));
-            }
-        if ((boolState[fail_OF_Backup_1] == false) && (enumState[state_OF_Backup_1] == required))
-            {
-            cout << "3 :  INS_SUB_COUNT (1) |TRANSITION | startup | DIST INS (1 - gamma_OF_Backup_1) | INDUCING enumState[state_OF_Backup_1]  =  working" << endl;
-            list.push_back(make_tuple(3, 1 - gamma_OF_Backup_1, "INS", 1));
-            }
         if (list.size() > 0)
             {
             ins_transition_found = true;
@@ -433,55 +536,125 @@ namespace storm{
             ins_transition_found = false;
             }
         
-        if ((boolState[fail_OF_Backup_1] == false) && (enumState[state_OF_Backup_1] == working))
+        if (boolState[fail_OF_Node_1] == false)
             {
-            cout << "0 : fail_in_op_OF_Backup_1 : FAULT fail  DIST EXP (lambda_OF_Backup_1)  INDUCING boolState[fail_OF_Backup_1]  =  TRUE,state_OF_Backup_1  =  'waiting_for_rep',rank_OF_Backup_1  =  (intState[max_rank_OF_rep_1] + 1)" << endl;
-            list.push_back(make_tuple(0, lambda_OF_Backup_1, "EXP", 0));
+            cout << "0 : xx1_OF_Node_1 : FAULT fail  DIST EXP (1e-05)  INDUCING boolState[fail_OF_Node_1]  =  TRUE" << endl;
+            list.push_back(make_tuple(0, 1e-05, "EXP", 0));
             }
-        if ((boolState[fail_OF_Backup_1] == true) && (enumState[state_OF_Backup_1] == under_repair))
+        if (boolState[fail_OF_Node_1] == true)
             {
-            cout << "1 : xx1_OF_Backup_1 : REPAIR rep  DIST EXP (mu_OF_Backup_1)  INDUCING boolState[fail_OF_Backup_1]  =  FALSE,state_OF_Backup_1  =  'working',free_OF_rep_1  =  TRUE,dequeue_OF_rep_1  =  TRUE" << endl;
-            list.push_back(make_tuple(1, mu_OF_Backup_1, "EXP", 0));
+            cout << "1 : xx2_OF_Node_1 : REPAIR rep  DIST EXP (0.1)  INDUCING boolState[fail_OF_Node_1]  =  FALSE" << endl;
+            list.push_back(make_tuple(1, 0.1, "EXP", 0));
             }
-        if ((boolState[fail_OF_Block_1] == false) && (enumState[state_OF_Block_1] == working))
+        if (boolState[fail_OF_Node_2] == false)
             {
-            cout << "4 : fail_in_op_OF_Block_1 : FAULT fail  DIST EXP (lambda_OF_Block_1)  INDUCING boolState[fail_OF_Block_1]  =  TRUE,state_OF_Block_1  =  'waiting_for_rep',rank_OF_Block_1  =  (intState[max_rank_OF_rep_1] + 1)" << endl;
-            list.push_back(make_tuple(4, lambda_OF_Block_1, "EXP", 0));
+            cout << "2 : xx1_OF_Node_2 : FAULT fail  DIST EXP (1e-05)  INDUCING boolState[fail_OF_Node_2]  =  TRUE" << endl;
+            list.push_back(make_tuple(2, 1e-05, "EXP", 0));
             }
-        if ((boolState[fail_OF_Block_1] == true) && (enumState[state_OF_Block_1] == under_repair))
+        if (boolState[fail_OF_Node_2] == true)
             {
-            cout << "5 : xx1_OF_Block_1 : REPAIR rep  DIST EXP (mu_OF_Block_1)  INDUCING boolState[fail_OF_Block_1]  =  FALSE,state_OF_Block_1  =  'working',free_OF_rep_1  =  TRUE,dequeue_OF_rep_1  =  TRUE" << endl;
-            list.push_back(make_tuple(5, mu_OF_Block_1, "EXP", 0));
+            cout << "3 : xx2_OF_Node_2 : REPAIR rep  DIST EXP (0.1)  INDUCING boolState[fail_OF_Node_2]  =  FALSE" << endl;
+            list.push_back(make_tuple(3, 0.1, "EXP", 0));
             }
-        if ((boolState[fail_OF_Block_2] == false) && (enumState[state_OF_Block_2] == working))
+        if (boolState[interruption_OF_ud_1] == false)
             {
-            cout << "6 : fail_in_op_OF_Block_2 : FAULT fail  DIST EXP (lambda_OF_Block_2)  INDUCING boolState[fail_OF_Block_2]  =  TRUE,state_OF_Block_2  =  'waiting_for_rep',rank_OF_Block_2  =  (intState[max_rank_OF_rep_1] + 1)" << endl;
-            list.push_back(make_tuple(6, lambda_OF_Block_2, "EXP", 0));
+            cout << "4 : xx3_OF_ud_1 : FAULT interruption  DIST EXP (1e-05)  INDUCING boolState[interruption_OF_ud_1]  =  TRUE" << endl;
+            list.push_back(make_tuple(4, 1e-05, "EXP", 0));
             }
-        if ((boolState[fail_OF_Block_2] == true) && (enumState[state_OF_Block_2] == under_repair))
+        if (boolState[interruption_OF_ud_1] == true)
             {
-            cout << "7 : xx1_OF_Block_2 : REPAIR rep  DIST EXP (mu_OF_Block_2)  INDUCING boolState[fail_OF_Block_2]  =  FALSE,state_OF_Block_2  =  'working',free_OF_rep_1  =  TRUE,dequeue_OF_rep_1  =  TRUE" << endl;
-            list.push_back(make_tuple(7, mu_OF_Block_2, "EXP", 0));
+            cout << "5 : xx4_OF_ud_1 : REPAIR rep  DIST EXP (1e-05)  INDUCING boolState[interruption_OF_ud_1]  =  FALSE" << endl;
+            list.push_back(make_tuple(5, 1e-05, "EXP", 0));
             }
-        if ((boolState[fail_OF_Block_3] == false) && (enumState[state_OF_Block_3] == working))
+        if (boolState[interruption_OF_bidir_3] == false)
             {
-            cout << "8 : fail_in_op_OF_Block_3 : FAULT fail  DIST EXP (lambda_OF_Block_3)  INDUCING boolState[fail_OF_Block_3]  =  TRUE,state_OF_Block_3  =  'waiting_for_rep',rank_OF_Block_3  =  (intState[max_rank_OF_rep_1] + 1)" << endl;
-            list.push_back(make_tuple(8, lambda_OF_Block_3, "EXP", 0));
+            cout << "6 : xx3_OF_bidir_3 : FAULT interruption  DIST EXP (1e-05)  INDUCING boolState[interruption_OF_bidir_3]  =  TRUE" << endl;
+            list.push_back(make_tuple(6, 1e-05, "EXP", 0));
             }
-        if ((boolState[fail_OF_Block_3] == true) && (enumState[state_OF_Block_3] == under_repair))
+        if (boolState[interruption_OF_bidir_3] == true)
             {
-            cout << "9 : xx1_OF_Block_3 : REPAIR rep  DIST EXP (mu_OF_Block_3)  INDUCING boolState[fail_OF_Block_3]  =  FALSE,state_OF_Block_3  =  'working',free_OF_rep_1  =  TRUE,dequeue_OF_rep_1  =  TRUE" << endl;
-            list.push_back(make_tuple(9, mu_OF_Block_3, "EXP", 0));
+            cout << "7 : xx4_OF_bidir_3 : REPAIR rep  DIST EXP (1e-05)  INDUCING boolState[interruption_OF_bidir_3]  =  FALSE" << endl;
+            list.push_back(make_tuple(7, 1e-05, "EXP", 0));
             }
-        if ((boolState[fail_OF_Block_4] == false) && (enumState[state_OF_Block_4] == working))
+        if (boolState[fail_OF_Node_6] == false)
             {
-            cout << "10 : fail_in_op_OF_Block_4 : FAULT fail  DIST EXP (lambda_OF_Block_4)  INDUCING boolState[fail_OF_Block_4]  =  TRUE,state_OF_Block_4  =  'waiting_for_rep',rank_OF_Block_4  =  (intState[max_rank_OF_rep_1] + 1)" << endl;
-            list.push_back(make_tuple(10, lambda_OF_Block_4, "EXP", 0));
+            cout << "8 : xx1_OF_Node_6 : FAULT fail  DIST EXP (1e-05)  INDUCING boolState[fail_OF_Node_6]  =  TRUE" << endl;
+            list.push_back(make_tuple(8, 1e-05, "EXP", 0));
             }
-        if ((boolState[fail_OF_Block_4] == true) && (enumState[state_OF_Block_4] == under_repair))
+        if (boolState[fail_OF_Node_6] == true)
             {
-            cout << "11 : xx1_OF_Block_4 : REPAIR rep  DIST EXP (mu_OF_Block_4)  INDUCING boolState[fail_OF_Block_4]  =  FALSE,state_OF_Block_4  =  'working',free_OF_rep_1  =  TRUE,dequeue_OF_rep_1  =  TRUE" << endl;
-            list.push_back(make_tuple(11, mu_OF_Block_4, "EXP", 0));
+            cout << "9 : xx2_OF_Node_6 : REPAIR rep  DIST EXP (0.1)  INDUCING boolState[fail_OF_Node_6]  =  FALSE" << endl;
+            list.push_back(make_tuple(9, 0.1, "EXP", 0));
+            }
+        if (boolState[fail_OF_Node_8] == false)
+            {
+            cout << "10 : xx1_OF_Node_8 : FAULT fail  DIST EXP (1e-05)  INDUCING boolState[fail_OF_Node_8]  =  TRUE" << endl;
+            list.push_back(make_tuple(10, 1e-05, "EXP", 0));
+            }
+        if (boolState[fail_OF_Node_8] == true)
+            {
+            cout << "11 : xx2_OF_Node_8 : REPAIR rep  DIST EXP (0.1)  INDUCING boolState[fail_OF_Node_8]  =  FALSE" << endl;
+            list.push_back(make_tuple(11, 0.1, "EXP", 0));
+            }
+        if (boolState[fail_OF_Source] == false)
+            {
+            cout << "12 : xx1_OF_Source : FAULT fail  DIST EXP (1e-05)  INDUCING boolState[fail_OF_Source]  =  TRUE" << endl;
+            list.push_back(make_tuple(12, 1e-05, "EXP", 0));
+            }
+        if (boolState[fail_OF_Source] == true)
+            {
+            cout << "13 : xx2_OF_Source : REPAIR rep  DIST EXP (0.1)  INDUCING boolState[fail_OF_Source]  =  FALSE" << endl;
+            list.push_back(make_tuple(13, 0.1, "EXP", 0));
+            }
+        if (boolState[fail_OF_Target] == false)
+            {
+            cout << "14 : xx1_OF_Target : FAULT fail  DIST EXP (1e-05)  INDUCING boolState[fail_OF_Target]  =  TRUE" << endl;
+            list.push_back(make_tuple(14, 1e-05, "EXP", 0));
+            }
+        if (boolState[fail_OF_Target] == true)
+            {
+            cout << "15 : xx2_OF_Target : REPAIR rep  DIST EXP (0.1)  INDUCING boolState[fail_OF_Target]  =  FALSE" << endl;
+            list.push_back(make_tuple(15, 0.1, "EXP", 0));
+            }
+        if (boolState[interruption_OF_ud_3] == false)
+            {
+            cout << "16 : xx3_OF_ud_3 : FAULT interruption  DIST EXP (1e-05)  INDUCING boolState[interruption_OF_ud_3]  =  TRUE" << endl;
+            list.push_back(make_tuple(16, 1e-05, "EXP", 0));
+            }
+        if (boolState[interruption_OF_ud_3] == true)
+            {
+            cout << "17 : xx4_OF_ud_3 : REPAIR rep  DIST EXP (1e-05)  INDUCING boolState[interruption_OF_ud_3]  =  FALSE" << endl;
+            list.push_back(make_tuple(17, 1e-05, "EXP", 0));
+            }
+        if (boolState[interruption_OF_bidir_7] == false)
+            {
+            cout << "18 : xx3_OF_bidir_7 : FAULT interruption  DIST EXP (1e-05)  INDUCING boolState[interruption_OF_bidir_7]  =  TRUE" << endl;
+            list.push_back(make_tuple(18, 1e-05, "EXP", 0));
+            }
+        if (boolState[interruption_OF_bidir_7] == true)
+            {
+            cout << "19 : xx4_OF_bidir_7 : REPAIR rep  DIST EXP (1e-05)  INDUCING boolState[interruption_OF_bidir_7]  =  FALSE" << endl;
+            list.push_back(make_tuple(19, 1e-05, "EXP", 0));
+            }
+        if (boolState[interruption_OF_bidir_12] == false)
+            {
+            cout << "20 : xx3_OF_bidir_12 : FAULT interruption  DIST EXP (1e-05)  INDUCING boolState[interruption_OF_bidir_12]  =  TRUE" << endl;
+            list.push_back(make_tuple(20, 1e-05, "EXP", 0));
+            }
+        if (boolState[interruption_OF_bidir_12] == true)
+            {
+            cout << "21 : xx4_OF_bidir_12 : REPAIR rep  DIST EXP (1e-05)  INDUCING boolState[interruption_OF_bidir_12]  =  FALSE" << endl;
+            list.push_back(make_tuple(21, 1e-05, "EXP", 0));
+            }
+        if (boolState[interruption_OF_bidir_2] == false)
+            {
+            cout << "22 : xx3_OF_bidir_2 : FAULT interruption  DIST EXP (1e-05)  INDUCING boolState[interruption_OF_bidir_2]  =  TRUE" << endl;
+            list.push_back(make_tuple(22, 1e-05, "EXP", 0));
+            }
+        if (boolState[interruption_OF_bidir_2] == true)
+            {
+            cout << "23 : xx4_OF_bidir_2 : REPAIR rep  DIST EXP (1e-05)  INDUCING boolState[interruption_OF_bidir_2]  =  FALSE" << endl;
+            list.push_back(make_tuple(23, 1e-05, "EXP", 0));
             }
         return list;
         }
@@ -489,200 +662,49 @@ namespace storm{
         
         void storm::figaro::FigaroProgram::runOnceInteractionStep_default_step()
         {
-        if (enumState[state_OF_Backup_1] == working )
-            {
-            floatState[capacity_OF_Backup_1]  =  nominal_capacity_OF_Backup_1;
-            } else { floatState[capacity_OF_Backup_1]  =   0; }
         
         
-        if ( !(boolState[fail_OF_Backup_1] == false) )
+        intState[nb_failures_OF_Failure_counter]  =  (((((( boolState[fail_OF_Node_1]  +    boolState[fail_OF_Node_2])  +   boolState[fail_OF_Node_6])  +   boolState[fail_OF_Node_8])  +    boolState[fail_OF_Source])  +   boolState[fail_OF_Target])  +  ((((( boolState[interruption_OF_ud_1]  +   boolState[interruption_OF_bidir_3])  +   boolState[interruption_OF_ud_3])  +    boolState[interruption_OF_bidir_7])  +   boolState[interruption_OF_bidir_12])  +    boolState[interruption_OF_bidir_2]))  ;
+        
+        if (((boolState[interruption_OF_ud_1] == false) && boolState[connected_OF_Source]) && (boolState[fail_OF_Node_1] == false) )
             {
-            boolState[null_production_OF_Backup_1]  =  true;
+            boolState[connected_OF_Node_1]  =  true;
             }
         
-        if (boolState[dequeue_OF_Backup_1] && (intState[rank_OF_Backup_1] > 0) )
+        if (((boolState[interruption_OF_bidir_3] == false) && ((boolState[fail_OF_Node_2] ==  false) && (boolState[fail_OF_Node_8] == false))) && (boolState[connected_OF_Node_2] || boolState[connected_OF_Node_8]) )
             {
-            boolState[dequeue_OF_Backup_1]  =  false;
-            intState[rank_OF_Backup_1]  =  (intState[rank_OF_Backup_1] - 1);
+            boolState[connected_OF_Node_2]  =  true;
+            boolState[connected_OF_Node_8]  =  true;
             }
         
-        if (((enumState[state_OF_Backup_1] == working) || (enumState[state_OF_Backup_1] ==  required)) && (boolState[fail_OF_Block_4] == false) )
+        if (boolState[fail_OF_Source] == false )
             {
-            enumState[state_OF_Backup_1]  =  standby;
+            boolState[connected_OF_Source]  =  true;
             }
         
-        if ((enumState[state_OF_Backup_1] == standby) && (boolState[fail_OF_Block_4] == true) )
+        if (((boolState[interruption_OF_ud_3] == false) && boolState[connected_OF_Node_1]) && (boolState[fail_OF_Node_6] == false) )
             {
-            enumState[state_OF_Backup_1]  =  required;
+            boolState[connected_OF_Node_6]  =  true;
             }
         
-        if (boolState[fail_OF_Block_1] == false )
+        if (((boolState[interruption_OF_bidir_7] == false) && ((boolState[fail_OF_Node_8] ==  false) && (boolState[fail_OF_Target] == false))) && (boolState[connected_OF_Node_8] || boolState[connected_OF_Target]) )
             {
-            floatState[capacity_OF_Block_1]  =  nominal_capacity_OF_Block_1;
-            } else { floatState[capacity_OF_Block_1]  =   0; }
-        
-        
-        if ( !(boolState[fail_OF_Block_1] == false) )
-            {
-            boolState[null_production_OF_Block_1]  =  true;
+            boolState[connected_OF_Node_8]  =  true;
+            boolState[connected_OF_Target]  =  true;
             }
         
-        if (boolState[dequeue_OF_Block_1] && (intState[rank_OF_Block_1] > 0) )
+        if (((boolState[interruption_OF_bidir_12] == false) && ((boolState[fail_OF_Node_6] ==  false) && (boolState[fail_OF_Target] == false))) && (boolState[connected_OF_Node_6] || boolState[connected_OF_Target]) )
             {
-            boolState[dequeue_OF_Block_1]  =  false;
-            intState[rank_OF_Block_1]  =  (intState[rank_OF_Block_1] - 1);
+            boolState[connected_OF_Node_6]  =  true;
+            boolState[connected_OF_Target]  =  true;
             }
         
-        if (boolState[fail_OF_Block_2] == false )
+        if (((boolState[interruption_OF_bidir_2] == false) && ((boolState[fail_OF_Node_2] ==  false) && (boolState[fail_OF_Source] == false))) && (boolState[connected_OF_Node_2] || boolState[connected_OF_Source]) )
             {
-            floatState[capacity_OF_Block_2]  =  nominal_capacity_OF_Block_2;
-            } else { floatState[capacity_OF_Block_2]  =   0; }
-        
-        
-        if ( !(boolState[fail_OF_Block_2] == false) )
-            {
-            boolState[null_production_OF_Block_2]  =  true;
+            boolState[connected_OF_Node_2]  =  true;
+            boolState[connected_OF_Source]  =  true;
             }
-        
-        if (boolState[dequeue_OF_Block_2] && (intState[rank_OF_Block_2] > 0) )
-            {
-            boolState[dequeue_OF_Block_2]  =  false;
-            intState[rank_OF_Block_2]  =  (intState[rank_OF_Block_2] - 1);
-            }
-        
-        if (boolState[fail_OF_Block_3] == false )
-            {
-            floatState[capacity_OF_Block_3]  =  nominal_capacity_OF_Block_3;
-            } else { floatState[capacity_OF_Block_3]  =   0; }
-        
-        
-        if ( !(boolState[fail_OF_Block_3] == false) )
-            {
-            boolState[null_production_OF_Block_3]  =  true;
-            }
-        
-        if (boolState[dequeue_OF_Block_3] && (intState[rank_OF_Block_3] > 0) )
-            {
-            boolState[dequeue_OF_Block_3]  =  false;
-            intState[rank_OF_Block_3]  =  (intState[rank_OF_Block_3] - 1);
-            }
-        
-        if (boolState[fail_OF_Block_4] == false )
-            {
-            floatState[capacity_OF_Block_4]  =  nominal_capacity_OF_Block_4;
-            } else { floatState[capacity_OF_Block_4]  =   0; }
-        
-        
-        if ( !(boolState[fail_OF_Block_4] == false) )
-            {
-            boolState[null_production_OF_Block_4]  =  true;
-            }
-        
-        if (boolState[dequeue_OF_Block_4] && (intState[rank_OF_Block_4] > 0) )
-            {
-            boolState[dequeue_OF_Block_4]  =  false;
-            intState[rank_OF_Block_4]  =  (intState[rank_OF_Block_4] - 1);
-            }
-        
-        
-        
-        floatState[potential_capacity_OF_SS1]  =  fmin(floatState[capacity_OF_Block_1]  +   floatState[capacity_OF_Block_2],  100)  ;
-        
-        if (floatState[potential_capacity_OF_SS1] < functioning_threshold_OF_SS1 )
-            {
-            floatState[capacity_OF_SS1]  =   0;
-            } else { floatState[capacity_OF_SS1]  =  floatState[potential_capacity_OF_SS1]; }
-        
-        
-        if (boolState[null_production_OF_Block_1] && boolState[null_production_OF_Block_2] )
-            {
-            boolState[null_production_OF_SS1]  =  true;
-            }
-        
-        
-        
-        floatState[potential_capacity_OF_SS2]  =  fmin((floatState[capacity_OF_Backup_1]  +   floatState[capacity_OF_Block_3])  +  floatState[capacity_OF_Block_4],  100)  ;
-        
-        if (floatState[potential_capacity_OF_SS2] < functioning_threshold_OF_SS2 )
-            {
-            floatState[capacity_OF_SS2]  =   0;
-            } else { floatState[capacity_OF_SS2]  =  floatState[potential_capacity_OF_SS2]; }
-        
-        
-        if ((boolState[null_production_OF_Backup_1] && boolState[null_production_OF_Block_3]) && boolState[null_production_OF_Block_4] )
-            {
-            boolState[null_production_OF_SS2]  =  true;
-            }
-        
-        if (floatState[capacity_OF_SS1] < floatState[capacity_OF_min_1] )
-            {
-            floatState[capacity_OF_min_1]  =  floatState[capacity_OF_SS1];
-            }
-        
-        if (floatState[capacity_OF_SS2] < floatState[capacity_OF_min_1] )
-            {
-            floatState[capacity_OF_min_1]  =  floatState[capacity_OF_SS2];
-            }
-        
-        if (boolState[null_production_OF_SS1] || boolState[null_production_OF_SS2] )
-            {
-            boolState[null_production_OF_min_1]  =  true;
-            }
-        
-        if (boolState[dequeue_OF_rep_1] )
-            {
-            boolState[dequeue_OF_rep_1]  =  false;
-            boolState[dequeue_OF_Block_1]  =  true;
-            boolState[dequeue_OF_Block_3]  =  true;
-            boolState[dequeue_OF_Block_2]  =  true;
-            boolState[dequeue_OF_Block_4]  =  true;
-            boolState[dequeue_OF_Backup_1]  =  true;
-            }
-        
-        }
-        
-        
-        void storm::figaro::FigaroProgram::runOnceInteractionStep_compute_max_rank()
-        {
-        
-        
-        intState[max_rank_OF_rep_1]  =  fmax(intState[max_rank_OF_rep_1], fmax(intState[rank_OF_Block_1], fmax( intState[rank_OF_Block_3], fmax( intState[rank_OF_Block_2], fmax( intState[rank_OF_Block_4],  intState[rank_OF_Backup_1])))))  ;
-        
-        }
-        
-        
-        void storm::figaro::FigaroProgram::runOnceInteractionStep_rep_management()
-        {
-        if (((enumState[state_OF_Backup_1] == waiting_for_rep) && ((intState[rank_OF_Backup_1] == 1) || (1 == 0))) && boolState[free_OF_rep_1] )
-            {
-            enumState[state_OF_Backup_1]  =  under_repair;
-            boolState[free_OF_rep_1]  =  false;
-            }
-        
-        if (((enumState[state_OF_Block_1] == waiting_for_rep) && ((intState[rank_OF_Block_1] == 1) || (1 == 0))) && boolState[free_OF_rep_1] )
-            {
-            enumState[state_OF_Block_1]  =  under_repair;
-            boolState[free_OF_rep_1]  =  false;
-            }
-        
-        if (((enumState[state_OF_Block_2] == waiting_for_rep) && ((intState[rank_OF_Block_2] == 1) || (1 == 0))) && boolState[free_OF_rep_1] )
-            {
-            enumState[state_OF_Block_2]  =  under_repair;
-            boolState[free_OF_rep_1]  =  false;
-            }
-        
-        if (((enumState[state_OF_Block_3] == waiting_for_rep) && ((intState[rank_OF_Block_3] == 1) || (1 == 0))) && boolState[free_OF_rep_1] )
-            {
-            enumState[state_OF_Block_3]  =  under_repair;
-            boolState[free_OF_rep_1]  =  false;
-            }
-        
-        if (((enumState[state_OF_Block_4] == waiting_for_rep) && ((intState[rank_OF_Block_4] == 1) || (1 == 0))) && boolState[free_OF_rep_1] )
-            {
-            enumState[state_OF_Block_4]  =  under_repair;
-            boolState[free_OF_rep_1]  =  false;
-            }
-        
+        boolState[not_connected_OF_Target] = !boolState[connected_OF_Target];
         }
         
         void storm::figaro::FigaroProgram::runInteractions() {
@@ -709,46 +731,6 @@ namespace storm{
                 }
             else {
                 cout << "==> Maximum of interactions loop  reached : #" << counter <<" for runOnceInteractionStep_default_step()." << endl;
-            }
-            
-            counter = 0;
-            comparator = 1;
-            do
-                {
-                    //cout << counter << endl;
-                saveCurrentState();
-                runOnceInteractionStep_compute_max_rank();
-                
-                comparator = compareStates();
-                counter++;
-                
-                } while (comparator > 0 && counter < max_interactions_loop);
-            if (comparator <= 0)
-                {
-                cout << "==> Stabilisation of interactions at loop #" << counter << " for runInteractionStep_compute_max_rank() ." << endl;
-                }
-            else {
-                cout << "==> Maximum of interactions loop  reached : #" << counter <<" for runOnceInteractionStep_compute_max_rank()." << endl;
-            }
-            
-            counter = 0;
-            comparator = 1;
-            do
-                {
-                    //cout << counter << endl;
-                saveCurrentState();
-                runOnceInteractionStep_rep_management();
-                
-                comparator = compareStates();
-                counter++;
-                
-                } while (comparator > 0 && counter < max_interactions_loop);
-            if (comparator <= 0)
-                {
-                cout << "==> Stabilisation of interactions at loop #" << counter << " for runInteractionStep_rep_management() ." << endl;
-                }
-            else {
-                cout << "==> Maximum of interactions loop  reached : #" << counter <<" for runOnceInteractionStep_rep_management()." << endl;
             }
             
             cout << endl;

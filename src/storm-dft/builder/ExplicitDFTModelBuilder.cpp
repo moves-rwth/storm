@@ -113,7 +113,7 @@ namespace storm {
 
             if (approximationThreshold > 0 && !this->uniqueFailedState) {
                 // Approximation requires unique failed states
-                // TODO lift this restriction
+                // TODO: lift this restriction
                 STORM_LOG_WARN("Approximation requires unique failed state. Forcing use of unique failed state.");
                 this->uniqueFailedState = true;
             }

@@ -16,7 +16,8 @@
 #include "storm/settings/modules/ModelCheckerSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
 #include "storm/settings/modules/DebugSettings.h"
-#include "storm-figaro/settings/modules/FIGAROSettings.h"
+#include "storm-figaro/settings/FIGAROSettings.h"
+#include "storm-figaro/settings/modules/FIGAROIOSettings.h"
 #include "storm-conv/settings/modules/JaniExportSettings.h"
 #include "storm-conv/api/storm-conv.h"
 #include "storm-parsers/api/storm-parsers.h"
@@ -37,33 +38,7 @@
 #include "storm/settings/modules/TransformationSettings.h"
 #include "storm/settings/modules/TimeBoundedSolverSettings.h"
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
-/*!
- * Initialize the settings manager.
- */
-void initializeSettings() {
-    storm::settings::mutableManager().setName("Storm-FIGARO", "storm-figaro");
-    
-    // Register all known settings modules.
-    storm::settings::addModule<storm::settings::modules::GeneralSettings>();
-    storm::settings::addModule<storm::settings::modules::ResourceSettings>();
-    storm::settings::addModule<storm::settings::modules::CoreSettings>();
-    storm::settings::addModule<storm::settings::modules::DebugSettings>();
-    storm::settings::addModule<storm::settings::modules::FIGAROSettings>();
-    storm::settings::addModule<storm::settings::modules::ModelCheckerSettings>();
-    storm::settings::addModule<storm::settings::modules::BuildSettings>();
-    storm::settings::addModule<storm::settings::modules::IOSettings>();
-    
-    
-    storm::settings::addModule<storm::settings::modules::HintSettings>();
-    storm::settings::addModule<storm::settings::modules::TransformationSettings>();
-    storm::settings::addModule<storm::settings::modules::EigenEquationSolverSettings>();
-    storm::settings::addModule<storm::settings::modules::NativeEquationSolverSettings>();
-    storm::settings::addModule<storm::settings::modules::TopologicalEquationSolverSettings>();
-    storm::settings::addModule<storm::settings::modules::EliminationSettings>();
-    storm::settings::addModule<storm::settings::modules::MinMaxEquationSolverSettings>();
-    storm::settings::addModule<storm::settings::modules::MultiplierSettings>();
-    storm::settings::addModule<storm::settings::modules::TimeBoundedSolverSettings>();
-}
+
 
 template<typename ValueType>
 std::vector<std::string> parseproperties(std::string filepath){
@@ -82,7 +57,7 @@ std::vector<std::string> parseproperties(std::string filepath){
         //#include <xercesc/parsers/XercesDOMParser.hpp>
         //#include <xercesc/util/XMLString.hpp>
        
-    int missiontime = 10000;
+    int missiontime = 100;
     properties.push_back("Pmax=?  [F<="+ std::to_string(missiontime) + " \"failed\"]");
     
     std::stringstream stream;
@@ -94,13 +69,8 @@ template<typename ValueType>
 void processOptions() {
     
  
-    auto figarooptions = storm::settings::getModule<storm::settings::modules::FIGAROSettings>();
-    if (!figarooptions.isfigaroFileSet()) {
-        return;
-    }
-    if (!figarooptions.isxmlFileSet()) {
-        return;
-    }
+    auto figarooptions = storm::settings::getModule<storm::settings::modules::FIGAROIOSettings>();
+    
     //build model from Figaro file
     //@TODO We need to parse figarofile with the definitive figaroAPI
     // Construct properties to analyse.
@@ -121,7 +91,15 @@ void processOptions() {
         }
 //    }
     
-    
+    model->printModelInformationToStream(std::cout);
+    std::ofstream stream;
+    if (figarooptions.isrslttxtFileSet())
+        {
+        storm::utility::openFile(figarooptions.getrlsttxtFilename(), stream);
+//        storm::utility::openFile("hello.txt", stream);
+        model->printModelInformationToStream(stream);
+
+        }
    //get properties form the xml file and command line
     std::vector<std::string> properties;
     if (figarooptions.isxmlFileSet()) {
@@ -144,16 +122,18 @@ void processOptions() {
         }
         props = storm::api::extractFormulasFromProperties(storm::api::parseProperties(propString));
     }
-    //Now we have our figaro model as spaarse model and properties as vector of properties
+    //Now we have our figaro model as sparse model and properties as vector of properties
     // Check the model
     STORM_LOG_DEBUG("Model checking...");
 //    modelCheckingTimer.start();
     std::vector<ValueType> results;
     storm::utility::Stopwatch singleModelCheckingTimer;
+    
     for (auto property : props) {
-//        singleModelCheckingTimer.reset();
-//        singleModelCheckingTimer.start();
+        singleModelCheckingTimer.reset();
+        singleModelCheckingTimer.start();
         STORM_PRINT_AND_LOG("Model checking property " << *property << " ..." << std::endl);
+        stream<<"Model checking property " << *property << " ..." << std::endl;
         std::unique_ptr<storm::modelchecker::CheckResult> result(
                                                                  storm::api::verifyWithSparseEngine<ValueType>(model, storm::api::createTask<ValueType>(property,true)));
 //
@@ -162,14 +142,22 @@ void processOptions() {
             ValueType resultValue = result->asExplicitQuantitativeCheckResult<ValueType>().getValueMap().begin()->second;
             results.push_back(resultValue);
             STORM_PRINT_AND_LOG("Result (initial states): " << resultValue << std::endl);
+            stream<<"Result (initial states): " << resultValue << std::endl;
         } else {
             STORM_LOG_WARN("The property '" << *property << "' could not be checked with the current settings.");
             results.push_back(-storm::utility::one<ValueType>());
+            stream<<"The property '" << *property << "' could not be checked with the current settings.";
         }
 
-//        singleModelCheckingTimer.stop();
-            //STORM_PRINT_AND_LOG("Time for model checking: " << singleModelCheckingTimer << "." << std::endl);
+        singleModelCheckingTimer.stop();
+            STORM_PRINT_AND_LOG("Time for model checking: " << singleModelCheckingTimer << "." << std::endl);
+        stream<<"Time for model checking: " << singleModelCheckingTimer << "." << std::endl
+        ;
     }
+    if (figarooptions.isrslttxtFileSet())
+        {
+                storm::utility::closeFile(stream);
+        }
     
     
 //    model->printModelInformationToStream(std::cout);
@@ -233,9 +221,19 @@ int main(const int argc, const char** argv) {
     try {
         storm::utility::setUp();
         storm::cli::printHeader("Storm-FIGARO", argc, argv);
-        initializeSettings();
+         storm::settings::initializeFigaroSettings("Storm-FIARO", "storm-figaro");
+        storm::utility::Stopwatch totalTimer(true);
         bool optionsCorrect = storm::cli::parseOptions(argc, argv);
         if (!optionsCorrect) {
+            return -1;
+        }
+        auto figarooptions = storm::settings::getModule<storm::settings::modules::FIGAROIOSettings>();
+        if (!figarooptions.isfigaroFileSet()) {
+            std::cout<<"Please input dummy figaro file. We will later replace this file with valid figaro models for definitive API";
+            return -1;
+        }
+        if (!figarooptions.isxmlFileSet()) {
+            std::cout<<"Please input dummy xml file. We will later replace this file with valid xml information for definitive API";
             return -1;
         }
 
@@ -244,7 +242,14 @@ int main(const int argc, const char** argv) {
 
        
         processOptions<double>();
+        totalTimer.stop();
+        if (storm::settings::getModule<storm::settings::modules::ResourceSettings>().isPrintTimeAndMemorySet()) {
+            storm::cli::printTimeAndMemoryStatistics(totalTimer.getTimeInMilliseconds());
+        }
         
+            // All operations have now been performed, so we clean up everything and terminate.
+        storm::utility::cleanUp();
+        return 0;
         
     }catch (storm::exceptions::BaseException const& exception) {
         STORM_LOG_ERROR("An exception caused Storm-FIGARO to terminate. The message of the exception is: " << exception.what());
