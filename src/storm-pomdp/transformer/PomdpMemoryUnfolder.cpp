@@ -11,7 +11,8 @@ namespace storm {
 
             
             template<typename ValueType>
-            PomdpMemoryUnfolder<ValueType>::PomdpMemoryUnfolder(storm::models::sparse::Pomdp<ValueType> const& pomdp, storm::storage::PomdpMemory const& memory) : pomdp(pomdp), memory(memory) {
+            PomdpMemoryUnfolder<ValueType>::PomdpMemoryUnfolder(storm::models::sparse::Pomdp<ValueType> const& pomdp, storm::storage::PomdpMemory const& memory, bool addMemoryLabels)
+            : pomdp(pomdp), memory(memory), addMemoryLabels(addMemoryLabels) {
                 // intentionally left empty
             }
 
@@ -93,6 +94,15 @@ namespace storm {
                         }
                     }
                     labeling.addLabel(labelName, std::move(newStates));
+                }
+                if (addMemoryLabels) {
+                    for (uint64_t memState = 0; memState < memory.getNumberOfStates(); ++memState) {
+                        storm::storage::BitVector newStates(pomdp.getNumberOfStates() * memory.getNumberOfStates(), false);
+                        for (uint64_t modelState = 0; modelState < pomdp.getNumberOfStates(); ++modelState) {
+                            newStates.set(getUnfoldingState(modelState, memState));
+                        }
+                        labeling.addLabel("memstate_"+std::to_string(memState), newStates);
+                    }
                 }
                 return labeling;
             }
