@@ -12,7 +12,7 @@ namespace storm {
 
         public:
             
-            PomdpMemoryUnfolder(storm::models::sparse::Pomdp<ValueType> const& pomdp, storm::storage::PomdpMemory const& memory, bool addMemoryLabels = false);
+            PomdpMemoryUnfolder(storm::models::sparse::Pomdp<ValueType> const& pomdp, storm::storage::PomdpMemory const& memory, bool addMemoryLabels = false, bool keepStateValuations = false);
             
             std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> transform() const;
 
@@ -35,6 +35,7 @@ namespace storm {
             storm::storage::PomdpMemory const& memory;
 
             bool addMemoryLabels;
+            bool keepStateValuations;
         };
     }
 }
