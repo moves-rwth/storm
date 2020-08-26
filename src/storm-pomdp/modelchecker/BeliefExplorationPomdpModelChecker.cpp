@@ -255,7 +255,8 @@ namespace storm {
                             STORM_LOG_INFO("Heuristically selected an under-approximation mdp size threshold of " << heuristicParameters.sizeThreshold << ".");
                         }
                     }
-                    buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, heuristicParameters, manager, approx);
+                    buildUnderApproximationWithCulling(targetObservations, min, rewardModelName.is_initialized(), false, heuristicParameters, manager, approx);
+                    //TODO add culling option
                     if (approx->hasComputedValues()) {
                         auto printInfo = [&approx]() {
                             std::stringstream str;
@@ -853,6 +854,144 @@ namespace storm {
                 underApproximation->computeValuesOfExploredMdp(min ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize);
                 statistics.underApproximationCheckTime.stop();
                 
+                // don't overwrite statistics of a previous, successful computation
+                if (!storm::utility::resources::isTerminate() || !statistics.underApproximationStates) {
+                    statistics.underApproximationStates = underApproximation->getExploredMdp()->getNumberOfStates();
+                }
+                return fixPoint;
+
+            }
+
+            //TODO integrate into regular underapproximation scheme
+            template<typename PomdpModelType, typename BeliefValueType>
+            bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::buildUnderApproximationWithCulling(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation) {
+                STORM_LOG_ASSERT(!computeRewards, "Reward Computation with Belief Culling is not impemented yet!");
+                statistics.underApproximationBuildTime.start();
+                bool fixPoint = true;
+                if (heuristicParameters.sizeThreshold != std::numeric_limits<uint64_t>::max()) {
+                    statistics.underApproximationStateLimit = heuristicParameters.sizeThreshold;
+                }
+                if (!refine) {
+                    // Build a new under approximation
+                    if (computeRewards) {
+                        underApproximation->startNewExploration(storm::utility::zero<ValueType>());
+                    } else {
+                        underApproximation->startNewExploration(storm::utility::one<ValueType>(), storm::utility::zero<ValueType>());
+                    }
+                } else {
+                    // Restart the building process
+                    underApproximation->restartExploration();
+                }
+
+                // Expand the beliefs
+                storm::utility::Stopwatch explorationTime;
+                if (options.explorationTimeLimit) {
+                    explorationTime.start();
+                }
+                bool timeLimitExceeded = false;
+                while (underApproximation->hasUnexploredState()) {
+                    if (!timeLimitExceeded && options.explorationTimeLimit && static_cast<uint64_t>(explorationTime.getTimeInSeconds()) > options.explorationTimeLimit.get()) {
+                        STORM_LOG_INFO("Exploration time limit exceeded.");
+                        timeLimitExceeded = true;
+                    }
+                    uint64_t currId = underApproximation->exploreNextState();
+
+                    uint32_t currObservation = beliefManager->getBeliefObservation(currId);
+                    bool stateAlreadyExplored = refine && underApproximation->currentStateHasOldBehavior() && !underApproximation->getCurrentStateWasTruncated();
+                    if (!stateAlreadyExplored || timeLimitExceeded) {
+                        fixPoint = false;
+                    }
+                    if (targetObservations.count(currObservation) != 0) {
+                        underApproximation->setCurrentStateIsTarget();
+                        underApproximation->addSelfloopTransition();
+                    } else {
+                        bool stopExploration = false;
+                        bool cullBelief = false;
+                        if (timeLimitExceeded) {
+                            stopExploration = true;
+                            underApproximation->setCurrentStateIsTruncated();
+                        } else if (!stateAlreadyExplored) {
+                            // Check whether we want to explore the state now!
+                            /* We ignore gaps for now, integrating them should be quite easy later on
+                            ValueType gap = getGap(underApproximation->getLowerValueBoundAtCurrentState(), underApproximation->getUpperValueBoundAtCurrentState());
+                            if (gap < heuristicParameters.gapThreshold) {
+                                stopExploration = true;
+                                underApproximation->setCurrentStateIsTruncated();
+                            } else */if (underApproximation->getCurrentNumberOfMdpStates() >= heuristicParameters.sizeThreshold) {
+                                cullBelief = true;
+                                underApproximation->setCurrentStateIsTruncated();
+                            }
+                        }
+                        if(cullBelief){
+                            // Belief is to be culled, find the best candidate
+                            auto cullingResult = beliefManager->cullBelief(currId);
+                            if(cullingResult.isCullable){
+                                bool addedSucc = underApproximation->addTransitionToBelief(0, cullingResult.targetBelief, storm::utility::one<ValueType>() - cullingResult.delta, false);
+                                underApproximation->addTransitionsToExtraStates(0, storm::utility::zero<ValueType>(), cullingResult.delta);
+                                STORM_LOG_ASSERT(addedSucc, "Didn't add a transition after culling.");
+                            } else {
+                                stopExploration = true;
+                            }
+                        }
+                        if(!cullBelief || stopExploration) {
+                            for (uint64 action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
+                                // Always restore old behavior if available
+                                if (stateAlreadyExplored) {
+                                    underApproximation->restoreOldBehaviorAtCurrentState(action);
+                                } else {
+                                    ValueType truncationProbability = storm::utility::zero<ValueType>();
+                                    ValueType truncationValueBound = storm::utility::zero<ValueType>();
+                                    auto successors = beliefManager->expand(currId, action);
+                                    for (auto const &successor : successors) {
+                                        bool added = underApproximation->addTransitionToBelief(action, successor.first, successor.second, stopExploration);
+                                        if (!added) {
+                                            STORM_LOG_ASSERT(stopExploration, "Didn't add a transition although exploration shouldn't be stopped.");
+                                            // We did not explore this successor state. Get a bound on the "missing" value
+                                            truncationProbability += successor.second;
+                                            // Some care has to be taken here: Essentially, we are triangulating a value for the under-approximation out of other
+                                            // under-approximation values. In general, this does not yield a sound underapproximation anymore.
+                                            // However, in our case this is still the case as the under-approximation values are based on a memoryless scheduler.
+                                            truncationValueBound += successor.second * (min ? underApproximation->computeUpperValueBoundAtBelief(successor.first)
+                                                                                            : underApproximation->computeLowerValueBoundAtBelief(successor.first));
+                                        }
+                                    }
+                                    if (stopExploration) {
+                                        if (computeRewards) {
+                                            underApproximation->addTransitionsToExtraStates(action, truncationProbability);
+                                        } else {
+                                            underApproximation->addTransitionsToExtraStates(action, truncationValueBound, truncationProbability - truncationValueBound);
+                                        }
+                                    }
+                                    if (computeRewards) {
+                                        // The truncationValueBound will be added on top of the reward introduced by the current belief state.
+                                        underApproximation->computeRewardAtCurrentState(action, truncationValueBound);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (storm::utility::resources::isTerminate()) {
+                        break;
+                    }
+                }
+
+                if (storm::utility::resources::isTerminate()) {
+                    // don't overwrite statistics of a previous, successful computation
+                    if (!statistics.underApproximationStates) {
+                        statistics.underApproximationBuildAborted = true;
+                        statistics.underApproximationStates = underApproximation->getCurrentNumberOfMdpStates();
+                    }
+                    statistics.underApproximationBuildTime.stop();
+                    return false;
+                }
+
+                underApproximation->finishExploration();
+                statistics.underApproximationBuildTime.stop();
+
+                statistics.underApproximationCheckTime.start();
+                underApproximation->computeValuesOfExploredMdp(min ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize);
+                statistics.underApproximationCheckTime.stop();
+
                 // don't overwrite statistics of a previous, successful computation
                 if (!storm::utility::resources::isTerminate() || !statistics.underApproximationStates) {
                     statistics.underApproximationStates = underApproximation->getExploredMdp()->getNumberOfStates();
