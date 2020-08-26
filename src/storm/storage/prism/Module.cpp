@@ -114,6 +114,16 @@ namespace storm {
         bool Module::hasActionIndex(uint_fast64_t actionIndex) const {
             return this->actionIndicesToCommandIndexMap.find(actionIndex) != this->actionIndicesToCommandIndexMap.end();
         }
+
+        uint64_t Module::getNumberOfUnlabeledCommands() const {
+            uint64_t result = 0;
+            for (auto const& cmd : commands) {
+                if(!cmd.isLabeled()) {
+                    result++;
+                }
+            }
+            return result;
+        }
         
         bool Module::isRenamedFromModule() const {
             return this->renamedFromModule != "";
