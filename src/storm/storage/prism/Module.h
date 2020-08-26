@@ -263,6 +263,11 @@ namespace storm {
              * Equips all of the modules' variables without initial values with initial values based on their type.
              */
             void createMissingInitialValues();
+
+            /*
+             * Gets the number of commands without a label
+             */
+            uint64_t getNumberOfUnlabeledCommands() const;
             
             /*!
              * Returns true, if an invariant was specified (only relevant for PTA models)
