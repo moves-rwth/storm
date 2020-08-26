@@ -682,7 +682,7 @@ namespace storm {
                     for (auto& element : result) {
                         element = storm::utility::one<ValueType>() - element;
                     }
-                    return std::move(result);
+                    return std::move(result); // move() required by, e.g., clang 3.8
                 }
             }
             

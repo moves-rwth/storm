@@ -11,7 +11,8 @@ namespace storm {
 
             
             template<typename ValueType>
-            PomdpMemoryUnfolder<ValueType>::PomdpMemoryUnfolder(storm::models::sparse::Pomdp<ValueType> const& pomdp, storm::storage::PomdpMemory const& memory) : pomdp(pomdp), memory(memory) {
+            PomdpMemoryUnfolder<ValueType>::PomdpMemoryUnfolder(storm::models::sparse::Pomdp<ValueType> const& pomdp, storm::storage::PomdpMemory const& memory, bool addMemoryLabels, bool keepStateValuations)
+            : pomdp(pomdp), memory(memory), addMemoryLabels(addMemoryLabels), keepStateValuations(keepStateValuations) {
                 // intentionally left empty
             }
 
@@ -29,6 +30,13 @@ namespace storm {
                 auto reachableStates = storm::utility::graph::getReachableStates(components.transitionMatrix, components.stateLabeling.getStates("init"), allStates, ~allStates);
                 components.transitionMatrix = components.transitionMatrix.getSubmatrix(true, reachableStates, reachableStates);
                 components.stateLabeling = components.stateLabeling.getSubLabeling(reachableStates);
+                if (keepStateValuations && pomdp.hasStateValuations()) {
+                    std::vector<uint64_t> newToOldStates(pomdp.getNumberOfStates() * memory.getNumberOfStates(), 0);
+                    for (uint64_t newState = 0; newState < newToOldStates.size(); newState++) {
+                        newToOldStates[newState] = getModelState(newState);
+                    }
+                    components.stateValuations = pomdp.getStateValuations().blowup(newToOldStates).selectStates(reachableStates);
+                }
 
                 // build the remaining components
                 components.observabilityClasses = transformObservabilityClasses(reachableStates);
@@ -93,6 +101,15 @@ namespace storm {
                         }
                     }
                     labeling.addLabel(labelName, std::move(newStates));
+                }
+                if (addMemoryLabels) {
+                    for (uint64_t memState = 0; memState < memory.getNumberOfStates(); ++memState) {
+                        storm::storage::BitVector newStates(pomdp.getNumberOfStates() * memory.getNumberOfStates(), false);
+                        for (uint64_t modelState = 0; modelState < pomdp.getNumberOfStates(); ++modelState) {
+                            newStates.set(getUnfoldingState(modelState, memState));
+                        }
+                        labeling.addLabel("memstate_"+std::to_string(memState), newStates);
+                    }
                 }
                 return labeling;
             }
