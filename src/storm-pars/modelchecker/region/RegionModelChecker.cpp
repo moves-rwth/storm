@@ -147,10 +147,10 @@ namespace storm {
                     // TODO CONSTRUCTION ZONE START
                     orders.emplace(extendOrder(nullptr, region));
                     if (orders.front() != nullptr) {
-                        // TODO call initializeLocalMonRes here
                         auto monRes = std::shared_ptr< storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(orders.front()->getNumberOfStates()));
-                        setConstantEntries(monRes);
+                        initializeLocalMonotonicityResults(region, orders.front(), monRes);
                         localMonotonicityResults.emplace(monRes);
+
                     } else {
                         assert (false);
                     }
@@ -179,12 +179,6 @@ namespace storm {
                         }
                     }
 
-                    /*
-                    while(unprocessedRegions.size() > orders.size()){
-                        orders.emplace(orders.front()->copy());
-                        localMonotonicityResults.emplace(localMonotonicityResults.front()->copy());
-                    }
-                    */
                     // TODO CONSTRUCTION ZONE END
                 }
 
@@ -329,26 +323,7 @@ namespace storm {
 
         template <typename ParametricType>
         void RegionModelChecker<ParametricType>::initializeLocalMonotonicityResults(storm::storage::ParameterRegion<ParametricType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult){
-            auto state = order->getNextAddedState(-1);
-
-            auto model = getModel();
-            auto monotonicityChecker = new storm::analysis::MonotonicityChecker<ParametricType>(model->getTransitionMatrix());
-            auto variables = storm::models::sparse::getProbabilityParameters(model);
-
-            while (state != order->getNumberOfStates()) {
-                if (order->isBottomState(state) || order->isTopState(state)) {
-                    localMonotonicityResult->setConstant(state);
-                } else {
-                    for (auto var : variables) {
-                        auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
-                        if (monotonicity == storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Unknown || monotonicity == storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Not) {
-                            monotonicity = monotonicityChecker->checkLocalMonotonicity(order, state, var, region);
-                            localMonotonicityResult->setMonotonicity(state, var, monotonicity);
-                        }
-                    }
-                }
-                state = order->getNextAddedState(state);
-            }
+            STORM_LOG_WARN("Initializing local Monotonicity Results not implemented for RegionModelChecker.");
         }
 
         template <typename ParametricType>
@@ -395,12 +370,6 @@ namespace storm {
         template <typename ParametricType>
         void RegionModelChecker<ParametricType>::setUseMonotonicityNow(bool monotonicity) {
             STORM_LOG_WARN("Setting usage of local monotonicity result not implemented");
-        }
-
-        // TODO which template Types?
-        template <typename ParametricType>
-        std::shared_ptr<storm::models::sparse::Model<>> RegionModelChecker<ParametricType>::getModel() {
-            STORM_LOG_WARN("Getting Model not implemented");
         }
 
         template <typename ParametricType>

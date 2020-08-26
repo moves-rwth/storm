@@ -90,20 +90,17 @@ namespace storm {
 
             virtual void setUseMonotonicityNow(bool monotonicity = true);
 
-            // TODO which template Types?
-            virtual std::shared_ptr<storm::models::sparse::Model<>> getModel();
-
         private:
 
             virtual void splitAtCenter(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, std::vector<storm::storage::ParameterRegion<ParametricType>>& regionVector, std::vector<storm::storage::ParameterRegion<ParametricType>>& knownRegionVector, storm::analysis::MonotonicityResult<VariableType> const& monRes, storm::modelchecker::RegionResult& regionRes);
 
             bool useMonotonicity = false;
 
-            void initializeLocalMonotonicityResults(storm::storage::ParameterRegion<ParametricType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
-
         protected:
 
             uint_fast64_t numberOfRegionsKnownThroughMonotonicity;
+
+            virtual void initializeLocalMonotonicityResults(storm::storage::ParameterRegion<ParametricType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
         };
 
     } //namespace modelchecker

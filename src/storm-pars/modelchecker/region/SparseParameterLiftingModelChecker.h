@@ -82,7 +82,8 @@ namespace storm {
             std::shared_ptr<SparseModelType> parametricModel;
             std::unique_ptr<CheckTask<storm::logic::Formula, ConstantType>> currentCheckTask;
 
-            std::shared_ptr<storm::models::sparse::Model<>> getModel() override;
+            // TODO are the template types correct?
+            virtual void initializeLocalMonotonicityResults(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) override;
 
         private:
             // store the current formula. Note that currentCheckTask only stores a reference to the formula.
