@@ -69,13 +69,14 @@ namespace storm {
             }
 
             if(calculateMCS) {
-                auto const minimalCutSets {checker.getMinimalCutSets()};
+                auto const minimalCutSets {checker.getMinimalCutSetsAsIndices()};
+                auto const sylvanBddManager{checker.getSylvanBddManager()};
 
                 std::cout << "{\n";
                 for(auto const &minimalCutSet : minimalCutSets) {
                     std::cout << '{';
                     for(auto const &be : minimalCutSet) {
-                        std::cout << be << ' ';
+                        std::cout << sylvanBddManager->getName(be) << ' ';
                     }
                     std::cout << "},\n";
                 }

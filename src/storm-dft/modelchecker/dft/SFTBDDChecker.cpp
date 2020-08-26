@@ -1,5 +1,3 @@
-#include <tuple>
-
 #include "storm-dft/modelchecker/dft/SFTBDDChecker.h"
 #include "storm-dft/transformations/SftToBddTransformator.h"
 #include "storm/adapters/eigen.h"
@@ -305,14 +303,32 @@ std::map<std::string, Bdd> SFTBDDChecker::getRelevantEventBdds(
     return results;
 }
 
-std::set<std::set<std::string>> SFTBDDChecker::getMinimalCutSets() {
-    auto bdd{minsol(getTopLevelGateBdd())};
+std::vector<std::vector<std::string>> SFTBDDChecker::getMinimalCutSets() {
+    std::vector<std::vector<uint32_t>> mcs{getMinimalCutSetsAsIndices()};
 
-    std::set<std::set<std::string>> rval{};
-    std::vector<uint32_t> buffer{};
-    recursiveMCS(bdd, buffer, rval);
+    std::vector<std::vector<std::string>> rval{};
+    rval.reserve(mcs.size());
+    while (!mcs.empty()) {
+        std::vector<std::string> tmp{};
+        tmp.reserve(mcs.back().size());
+        for (auto const &be : mcs.back()) {
+            tmp.push_back(sylvanBddManager->getName(be));
+        }
+        rval.push_back(std::move(tmp));
+        mcs.pop_back();
+    }
 
     return rval;
+}
+
+std::vector<std::vector<uint32_t>> SFTBDDChecker::getMinimalCutSetsAsIndices() {
+    auto bdd{minsol(getTopLevelGateBdd())};
+
+    std::vector<std::vector<uint32_t>> mcs{};
+    std::vector<uint32_t> buffer{};
+    recursiveMCS(bdd, buffer, mcs);
+
+    return mcs;
 }
 
 template <typename T>
@@ -1255,13 +1271,9 @@ Bdd SFTBDDChecker::minsol(Bdd const f) {
 
 void SFTBDDChecker::recursiveMCS(
     Bdd const bdd, std::vector<uint32_t> &buffer,
-    std::set<std::set<std::string>> &minimalCutSets) const {
+    std::vector<std::vector<uint32_t>> &minimalCutSets) const {
     if (bdd.isOne()) {
-        std::set<std::string> minimalCutSet{};
-        for (auto const &var : buffer) {
-            minimalCutSet.insert(sylvanBddManager->getName(var));
-        }
-        minimalCutSets.insert(std::move(minimalCutSet));
+        minimalCutSets.push_back(buffer);
     } else if (!bdd.isZero()) {
         auto const currentVar{bdd.TopVar()};
 

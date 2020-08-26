@@ -3,7 +3,6 @@
 #include <map>
 #include <memory>
 #include <set>
-#include <utility>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -29,6 +28,14 @@ class SFTBDDChecker {
     SFTBDDChecker(
         std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager,
         std::shared_ptr<storm::storage::DFT<ValueType>> dft);
+
+    /**
+     * \return
+     * The internal sylvanBddManager
+     */
+    std::shared_ptr<storm::storage::SylvanBddManager> getSylvanBddManager() {
+        return sylvanBddManager;
+    }
 
     /**
      * Exports the Bdd that represents the top level gate to a file
@@ -59,7 +66,15 @@ class SFTBDDChecker {
      * A set of minimal cut sets,
      * where the basic events are identified by their name
      */
-    std::set<std::set<std::string>> getMinimalCutSets();
+    std::vector<std::vector<std::string>> getMinimalCutSets();
+
+    /**
+     * \return
+     * A set of minimal cut sets,
+     * where the basic events are identified by their index
+     * in the bdd manager
+     */
+    std::vector<std::vector<uint32_t>> getMinimalCutSetsAsIndices();
 
     /**
      * \return
@@ -369,7 +384,9 @@ class SFTBDDChecker {
         std::vector<ValueType> const &timepoints, size_t chunksize = 0);
 
    private:
-    std::unordered_map<std::pair<uint64_t, uint64_t>, Bdd, std::hash<std::pair<uint_fast64_t, uint_fast64_t>>> withoutCache;
+    std::unordered_map<std::pair<uint64_t, uint64_t>, Bdd,
+                       std::hash<std::pair<uint_fast64_t, uint_fast64_t>>>
+        withoutCache;
     /**
      * The without operator as defined by Rauzy93
      * https://doi.org/10.1016/0951-8320(93)90060-C
@@ -410,7 +427,7 @@ class SFTBDDChecker {
      * Will be populated by the function.
      */
     void recursiveMCS(Bdd const bdd, std::vector<uint32_t> &buffer,
-                      std::set<std::set<std::string>> &minimalCutSets) const;
+                      std::vector<std::vector<uint32_t>> &minimalCutSets) const;
 
     template <typename FuncType>
     void chunkCalculationTemplate(FuncType func,
