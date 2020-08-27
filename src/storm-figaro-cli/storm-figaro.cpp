@@ -1,6 +1,6 @@
-
 #include "logic/Formula.h"
-#include "storm-figaro/api/storm-figaro.cpp"
+#include "storm-figaro/api/storm-figaro.h"
+
 #include "utility/initialize.h"
 #include "storm-cli-utilities/cli.h"
 #include "storm/exceptions/BaseException.h"
@@ -43,6 +43,7 @@
 template<typename ValueType>
 std::vector<std::string> parseproperties(std::string filepath){
     auto ioSettings =  storm::settings::getModule<storm::settings::modules::IOSettings>();
+    
     std::vector<std::string> properties;
     std::ofstream contents;
     storm::utility::openFile(filepath, contents);
@@ -71,12 +72,47 @@ void processOptions() {
  
     auto figarooptions = storm::settings::getModule<storm::settings::modules::FIGAROIOSettings>();
     
+//    std::string PREFIX= "storm::figaro::api";
+    std::shared_ptr<storm::figaro::FigaroProgram> figaromodel=  storm::figaro::api::loadFigaroProgram();
+
+    
+        //get properties form the xml file and command line
+    std::vector<std::string> properties;
+    if (figarooptions.isxmlFileSet()) {
+        STORM_LOG_DEBUG("Loading Properties from .xml file " << figarooptions.getxmlFilename());
+        
+        properties = parseproperties<ValueType>(figarooptions.getxmlFilename());
+    } else {
+        STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model given.");
+    }
+        //    Now build these properties
+        // Build properties
+    std::vector<std::shared_ptr<storm::logic::Formula const>> props;
+    if (!properties.empty()) {
+        std::string propString;
+        for (size_t i = 0; i < properties.size(); ++i) {
+            propString += properties[i];
+            if (i + 1 < properties.size()) {
+                propString += ";";
+            }
+        }
+        props = storm::api::extractFormulasFromProperties(storm::api::parseProperties(propString));
+    }
+        //Now we have our figaro model as sparse model and properties as vector of properties
     //build model from Figaro file
-    //@TODO We need to parse figarofile with the definitive figaroAPI
+    //@TODO: We need to parse figarofile with the definitive figaroAPI
     // Construct properties to analyse.
     // We allow multiple properties to be checked at once.
     
-    std::shared_ptr<storm::models::sparse::Model<ValueType>> model = storm::figaro::checkfigaro<ValueType>();
+    storm::utility::Stopwatch singleModelCheckingTimer;
+    double approximationError = 0.0;
+    std::shared_ptr<storm::models::sparse::Model<ValueType>> model; //merge this
+    
+    if (figarooptions.isApproximationErrorSet()) {
+        approximationError = figarooptions.getApproximationError();
+    }
+        
+    model = storm::figaro::api::checkfigaro<ValueType>(*figaromodel, props, approximationError, figarooptions.getApproximationHeuristic(), true);
     
     //convert this model to CTMC
    
@@ -100,34 +136,12 @@ void processOptions() {
         model->printModelInformationToStream(stream);
 
         }
-   //get properties form the xml file and command line
-    std::vector<std::string> properties;
-    if (figarooptions.isxmlFileSet()) {
-        STORM_LOG_DEBUG("Loading Properties from .xml file " << figarooptions.getxmlFilename());
-
-        properties = parseproperties<ValueType>(figarooptions.getxmlFilename());
-    } else {
-        STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "No input model given.");
-    }
-//    Now build these properties
-// Build properties
-    std::vector<std::shared_ptr<storm::logic::Formula const>> props;
-    if (!properties.empty()) {
-        std::string propString;
-        for (size_t i = 0; i < properties.size(); ++i) {
-            propString += properties[i];
-            if (i + 1 < properties.size()) {
-                propString += ";";
-            }
-        }
-        props = storm::api::extractFormulasFromProperties(storm::api::parseProperties(propString));
-    }
-    //Now we have our figaro model as sparse model and properties as vector of properties
+   
     // Check the model
     STORM_LOG_DEBUG("Model checking...");
 //    modelCheckingTimer.start();
     std::vector<ValueType> results;
-    storm::utility::Stopwatch singleModelCheckingTimer;
+  
     
     for (auto property : props) {
         singleModelCheckingTimer.reset();
@@ -221,7 +235,7 @@ int main(const int argc, const char** argv) {
     try {
         storm::utility::setUp();
         storm::cli::printHeader("Storm-FIGARO", argc, argv);
-         storm::settings::initializeFigaroSettings("Storm-FIARO", "storm-figaro");
+         storm::settings::initializeFigaroSettings("Storm-FIGARO", "storm-figaro");
         storm::utility::Stopwatch totalTimer(true);
         bool optionsCorrect = storm::cli::parseOptions(argc, argv);
         if (!optionsCorrect) {

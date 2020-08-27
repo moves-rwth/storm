@@ -7,14 +7,14 @@
 #include<math.h>
 #include <set>
 
+#include "FigaroModelTemplate.h"
+
 namespace storm{
     namespace figaro{
-        class FigaroProgram{
+    class FigaroProgram1: public storm::figaro::FigaroProgram{
         public:
-            FigaroProgram();
-            
-            
-            std::map<std::string, size_t> mFigaroboolelementindex = {
+        FigaroProgram1(): FigaroProgram(
+            {
                 {"fail_OF_Node_1" , 0},
                 {"connected_OF_Node_1" , 1},
                 {"fail_OF_Node_2" , 2},
@@ -34,39 +34,39 @@ namespace storm{
                 {"interruption_OF_bidir_12" , 16},
                 {"interruption_OF_bidir_2" , 17},
                 {"not_connected_OF_Target", 18}
-            };
+            },
             
-            std::map<std::string, size_t> mFigaroelementfailureindex = {{"not_connected_OF_Target", 18}};
-            std::map<std::string, size_t> mFigarofloatelementindex = { };
+             {{"not_connected_OF_Target", 18}},
+             { },
             
-            std::map<std::string, size_t> mFigarointelementindex = {
-                {"nb_failures_OF_Failure_counter" , 0}};
+            {
+                {"nb_failures_OF_Failure_counter" , 0}},
             
-            std::map<std::string, size_t> mFigaroenumelementindex = { };
+            { },
             
-            std::set<std::string> enum_variables_names = { };
+             { },
             
-            std::set<std::string> float_variables_names = { };
-            
-            
-            /* ---------- CODING ENUMERATED VARIABLES STATES ------------ */
-            enum enum_status {};
-            
-            std::string const topevent="not_connected_OF_Target";
-            static int const numBoolState = 19 ;
-            static int const numFloatState = 0 ;
-            static int const numIntState = 1 ;
-            static int const numEnumState = 0 ;
-            std::array<bool, numBoolState> boolState;
-            std::array<bool, numBoolState> backupBoolState;
-            std::array<float, numFloatState> floatState;
-            std::array<float, numFloatState> backupFloatState;
-            std::array<int, numIntState> intState;
-            std::array<int, numIntState> backupIntState;
-            std::array<int, numEnumState> enumState;
-            std::array<int, numEnumState> backupEnumState;
-            bool ins_transition_found = false;
-            
+            { },
+            "not_connected_OF_Target",
+            19 ,
+            0 ,
+            1 ,
+            0 ,
+            false
+        ){ }
+
+        /* ---------- CODING ENUMERATED VARIABLES STATES ------------ */
+        enum enum_status {};
+//            std::array<bool, numBoolState> boolState;
+//            std::array<bool, numBoolState> backupBoolState;
+//            std::array<float, numFloatState> floatState;
+//            std::array<float, numFloatState> backupFloatState;
+//            std::array<int, numIntState> intState;
+//            std::array<int, numIntState> backupIntState;
+//            std::array<int, numEnumState> enumState;
+//            std::array<int, numEnumState> backupEnumState;
+
+
             bool REINITIALISATION_OF_connected_OF_Node_1 ;
             bool REINITIALISATION_OF_connected_OF_Node_2 ;
             bool REINITIALISATION_OF_connected_OF_Node_6 ;

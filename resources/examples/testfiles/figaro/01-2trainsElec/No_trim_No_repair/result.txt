@@ -1,0 +1,48 @@
+-------------------------------------------------------------- 
+Model type: 	Markov Automaton (sparse)
+States: 	51
+Transitions: 	82
+Choices: 	51
+Markovian St.: 	41
+Max. Rate.: 	1
+Reward Models:  none
+State Labels: 	13 labels
+   * S_OF_LossOfDieselLine -> 44 item(s)
+   * S_OF_LossOfLine_1 -> 50 item(s)
+   * failed -> 44 item(s)
+   * S_OF_Dies_gen_RS -> 24 item(s)
+   * S_OF_Dies_gen -> 24 item(s)
+   * S_OF_CB1_RO -> 16 item(s)
+   * S_OF_CB1_IO -> 41 item(s)
+   * S_OF_Grid -> 33 item(s)
+   * deadlock -> 0 item(s)
+   * S_OF_AND_1 -> 44 item(s)
+   * S_OF_UE_1 -> 44 item(s)
+   * S_OF_CB2_RC -> 24 item(s)
+   * init -> 1 item(s)
+Choice Labels: 	none
+-------------------------------------------------------------- 
+ WARN (NonMarkovianChainTransformer.cpp:27): Labels are not preserved! Results may be incorrect. Continue at your own caution.
+-------------------------------------------------------------- 
+Model type: 	CTMC (sparse)
+States: 	41
+Transitions: 	72
+Reward Models:  none
+State Labels: 	13 labels
+   * init -> 1 item(s)
+   * S_OF_AND_1 -> 37 item(s)
+   * S_OF_CB2_RC -> 20 item(s)
+   * S_OF_UE_1 -> 37 item(s)
+   * deadlock -> 0 item(s)
+   * S_OF_Grid -> 24 item(s)
+   * S_OF_CB1_IO -> 32 item(s)
+   * S_OF_CB1_RO -> 16 item(s)
+   * S_OF_Dies_gen -> 20 item(s)
+   * S_OF_Dies_gen_RS -> 20 item(s)
+   * failed -> 37 item(s)
+   * S_OF_LossOfLine_1 -> 40 item(s)
+   * S_OF_LossOfDieselLine -> 37 item(s)
+Choice Labels: 	none
+-------------------------------------------------------------- 
+0.000103935911
+[0.000103935911, 1] (range)Program ended with exit code: 0

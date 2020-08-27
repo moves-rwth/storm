@@ -6,8 +6,9 @@
 #include "storm/settings/OptionBuilder.h"
 #include "storm/settings/ArgumentBuilder.h"
 #include "storm/settings/Argument.h"
-
+#include "storm/exceptions/IllegalArgumentValueException.h"
 #include "storm/exceptions/InvalidSettingsException.h"
+#include "storm/parser/CSVParser.h"
 
 namespace storm {
 
@@ -28,7 +29,10 @@ namespace storm {
             const std::string FIGAROIOSettings::propertyOptionName = "prop";
             const std::string FIGAROIOSettings::propertyOptionShortName = "prop";
             
-            
+            const std::string FIGAROIOSettings::approximationErrorOptionName = "approximation";
+            const std::string FIGAROIOSettings::approximationErrorOptionShortName = "approx";
+            const std::string FIGAROIOSettings::approximationHeuristicOptionName = "approximationheuristic";
+            const std::string FIGAROIOSettings::maxDepthOptionName = "maxdepth";
             
             
             FIGAROIOSettings::FIGAROIOSettings() : ModuleSettings(moduleName) {
@@ -41,6 +45,17 @@ namespace storm {
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("property or filename", "The formula or the file containing the formulas.").build())
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "The names of the properties to check.").setDefaultValueString("all").makeOptional().build())
                         .build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, approximationErrorOptionName, false, "Approximation error allowed.").setShortName(
+                                                                                                                                                             approximationErrorOptionShortName).addArgument(
+                                                                                                                                                                                                            storm::settings::ArgumentBuilder::createDoubleArgument("error", "The relative approximation error to use.").addValidatorDouble(
+                                                                                                                                                                                                                                                                                                                                           ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0.0)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, approximationHeuristicOptionName, false, "Set the heuristic used for approximation.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("heuristic", "The name of the heuristic used for approximation.")
+                                             .setDefaultValueString("depth")
+                                             .addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(
+                                                                                                                         {"depth", "probability", "bounddifference"})).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, maxDepthOptionName, false, "Maximal depth for state space exploration.").addArgument(
+                                                                                                                                                                storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("depth", "The maximal depth.").build()).build());
             }
             
             bool FIGAROIOSettings::isfigaroFileSet() const {
@@ -103,6 +118,33 @@ namespace storm {
 
             bool FIGAROIOSettings::check() const {
                 return true;
+            }
+            bool FIGAROIOSettings::isApproximationErrorSet() const {
+                return this->getOption(approximationErrorOptionName).getHasOptionBeenSet();
+            }
+            
+            double FIGAROIOSettings::getApproximationError() const {
+                return this->getOption(approximationErrorOptionName).getArgumentByName("error").getValueAsDouble();
+            }
+            
+            storm::builder::ApproximationHeuristic FIGAROIOSettings::getApproximationHeuristic() const {
+                std::string heuristicAsString = this->getOption(approximationHeuristicOptionName).getArgumentByName("heuristic").getValueAsString();
+                if (heuristicAsString == "depth") {
+                    return storm::builder::ApproximationHeuristic::DEPTH;
+                } else if (heuristicAsString == "probability") {
+                    return storm::builder::ApproximationHeuristic::PROBABILITY;
+                } else if (heuristicAsString == "bounddifference") {
+                    return storm::builder::ApproximationHeuristic::BOUNDDIFFERENCE;
+                }
+                STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Illegal value '" << heuristicAsString << "' set as heuristic for approximation.");
+            }
+            
+            bool FIGAROIOSettings::isMaxDepthSet() const {
+                return this->getOption(maxDepthOptionName).getHasOptionBeenSet();
+            }
+            
+            uint_fast64_t FIGAROIOSettings::getMaxDepth() const {
+                return this->getOption(maxDepthOptionName).getArgumentByName("depth").getValueAsUnsignedInteger();
             }
         }
     }

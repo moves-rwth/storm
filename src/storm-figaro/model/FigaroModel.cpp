@@ -14,17 +14,17 @@ using namespace std;
 namespace storm{
     namespace figaro{
         /* ---------- DECLARATION OF OCCURRENCE RULES FIRING FLAGS ------------ */
-        storm::figaro::FigaroProgram::FigaroProgram()
-        {
-        for(int i=0; i < numBoolState; i++)
-            boolState[i]=0;
-        
-        }
-        
-        void storm::figaro::FigaroProgram::init()
+//        storm::figaro::FigaroProgram1::FigaroProgram1()
+//        {
+//        for(int i=0; i < numBoolState; i++)
+//            boolState[i]=0;
+//
+//        }
+
+        void storm::figaro::FigaroProgram1::init()
         {
         cout <<">>>>>>>>>>>>>>>>>>>> Initialization of variables <<<<<<<<<<<<<<<<<<<<<<<" << endl;
-        
+
         intState[nb_failures_OF_Failure_counter] = 0;
         boolState[fail_OF_Node_1] = false;
         REINITIALISATION_OF_connected_OF_Node_1 = false;
@@ -44,7 +44,7 @@ namespace storm{
         boolState[interruption_OF_bidir_7] = false;
         boolState[interruption_OF_bidir_12] = false;
         boolState[interruption_OF_bidir_2] = false;
-        
+
         /* ---------- DECLARATION OF OCCURRENCE RULES FIRING FLAGS ------------ */
         FIRE_xx1_OF_Node_1 = false;
         FIRE_xx2_OF_Node_1 = false;
@@ -70,29 +70,29 @@ namespace storm{
         FIRE_xx4_OF_bidir_12 = false;
         FIRE_xx3_OF_bidir_2 = false;
         FIRE_xx4_OF_bidir_2 = false;
-        
+
         }
-        
-        void storm::figaro::FigaroProgram::saveCurrentState()
+
+        void storm::figaro::FigaroProgram1::saveCurrentState()
         {
-            // cout <<">>>>>>>>>>>>>>>>>>>> Saving current state  <<<<<<<<<<<<<<<<<<<<<<<" << endl;
+             std::cout <<">>>>>>>>>>>>>>>>>>>> Saving current state  <<<<<<<<<<<<<<<<<<<<<<<" << endl;
         backupBoolState = boolState ;
         backupFloatState = floatState ;
         backupIntState = intState ;
         backupEnumState = enumState ;
         }
-        
-        int storm::figaro::FigaroProgram::compareStates()
+
+        int storm::figaro::FigaroProgram1::compareStates()
         {
             // cout <<">>>>>>>>>>>>>>>>>>>> Comparing state with previous one (return number of differences) <<<<<<<<<<<<<<<<<<<<<<<" << endl;
-        
+
         return (backupBoolState != boolState) + (backupFloatState != floatState) + (backupIntState != intState) + (backupEnumState != enumState);
         }
-        
-        void storm::figaro::FigaroProgram::printState()
+
+        void storm::figaro::FigaroProgram1::printState()
         {
         cout <<"\n==================== Print of the current state :  ====================" << endl;
-        
+
         cout << "Attribute :  intState[nb_failures_OF_Failure_counter] | Value : " << intState[nb_failures_OF_Failure_counter] << endl;
         cout << "Attribute :  boolState[fail_OF_Node_1] | Value : " << boolState[fail_OF_Node_1] << endl;
         cout << "Attribute :  boolState[connected_OF_Node_1] | Value : " << boolState[connected_OF_Node_1] << endl;
@@ -113,13 +113,13 @@ namespace storm{
         cout << "Attribute :  boolState[interruption_OF_bidir_12] | Value : " << boolState[interruption_OF_bidir_12] << endl;
         cout << "Attribute :  boolState[interruption_OF_bidir_2] | Value : " << boolState[interruption_OF_bidir_2] << endl;
         }
-        
-        bool storm::figaro::FigaroProgram::figaromodelhasinstransitions()
+
+        bool storm::figaro::FigaroProgram1::figaromodelhasinstransitions()
         {
         return false;
         }
-        
-        void storm::figaro::FigaroProgram::doReinitialisations()
+
+        void storm::figaro::FigaroProgram1::doReinitialisations()
         {
         boolState[connected_OF_Node_1] = REINITIALISATION_OF_connected_OF_Node_1;
         boolState[connected_OF_Node_2] = REINITIALISATION_OF_connected_OF_Node_2;
@@ -128,404 +128,404 @@ namespace storm{
         boolState[connected_OF_Source] = REINITIALISATION_OF_connected_OF_Source;
         boolState[connected_OF_Target] = REINITIALISATION_OF_connected_OF_Target;
         }
-        
-        void storm::figaro::FigaroProgram::fireOccurrence(int numFire)
+
+        void storm::figaro::FigaroProgram1::fireOccurrence(int numFire)
         {
         cout <<">>>>>>>>>>>>>>>>>>>> Fire of occurrence #" << numFire << " <<<<<<<<<<<<<<<<<<<<<<<" << endl;
-        
+
         if (numFire == 0)
             {
             FIRE_xx1_OF_Node_1 = true;
             }
-        
+
         if (numFire == 1)
             {
             FIRE_xx2_OF_Node_1 = true;
             }
-        
+
         if (numFire == 2)
             {
             FIRE_xx1_OF_Node_2 = true;
             }
-        
+
         if (numFire == 3)
             {
             FIRE_xx2_OF_Node_2 = true;
             }
-        
+
         if (numFire == 4)
             {
             FIRE_xx3_OF_ud_1 = true;
             }
-        
+
         if (numFire == 5)
             {
             FIRE_xx4_OF_ud_1 = true;
             }
-        
+
         if (numFire == 6)
             {
             FIRE_xx3_OF_bidir_3 = true;
             }
-        
+
         if (numFire == 7)
             {
             FIRE_xx4_OF_bidir_3 = true;
             }
-        
+
         if (numFire == 8)
             {
             FIRE_xx1_OF_Node_6 = true;
             }
-        
+
         if (numFire == 9)
             {
             FIRE_xx2_OF_Node_6 = true;
             }
-        
+
         if (numFire == 10)
             {
             FIRE_xx1_OF_Node_8 = true;
             }
-        
+
         if (numFire == 11)
             {
             FIRE_xx2_OF_Node_8 = true;
             }
-        
+
         if (numFire == 12)
             {
             FIRE_xx1_OF_Source = true;
             }
-        
+
         if (numFire == 13)
             {
             FIRE_xx2_OF_Source = true;
             }
-        
+
         if (numFire == 14)
             {
             FIRE_xx1_OF_Target = true;
             }
-        
+
         if (numFire == 15)
             {
             FIRE_xx2_OF_Target = true;
             }
-        
+
         if (numFire == 16)
             {
             FIRE_xx3_OF_ud_3 = true;
             }
-        
+
         if (numFire == 17)
             {
             FIRE_xx4_OF_ud_3 = true;
             }
-        
+
         if (numFire == 18)
             {
             FIRE_xx3_OF_bidir_7 = true;
             }
-        
+
         if (numFire == 19)
             {
             FIRE_xx4_OF_bidir_7 = true;
             }
-        
+
         if (numFire == 20)
             {
             FIRE_xx3_OF_bidir_12 = true;
             }
-        
+
         if (numFire == 21)
             {
             FIRE_xx4_OF_bidir_12 = true;
             }
-        
+
         if (numFire == 22)
             {
             FIRE_xx3_OF_bidir_2 = true;
             }
-        
+
         if (numFire == 23)
             {
             FIRE_xx4_OF_bidir_2 = true;
             }
-        
+
         /* ---------- DECLARATION OF OCCURRENCE RULES------------ */
-        
+
             // Occurrence xx1_OF_Node_1
         if (boolState[fail_OF_Node_1] == false)
             {
-            
+
             if (FIRE_xx1_OF_Node_1)
                 {
                 boolState[fail_OF_Node_1]  =  true;
                 FIRE_xx1_OF_Node_1 = false;
                 }
             }
-        
+
             // Occurrence xx2_OF_Node_1
         if (boolState[fail_OF_Node_1] == true)
             {
-            
+
             if (FIRE_xx2_OF_Node_1)
                 {
                 boolState[fail_OF_Node_1]  =  false;
                 FIRE_xx2_OF_Node_1 = false;
                 }
             }
-        
+
             // Occurrence xx1_OF_Node_2
         if (boolState[fail_OF_Node_2] == false)
             {
-            
+
             if (FIRE_xx1_OF_Node_2)
                 {
                 boolState[fail_OF_Node_2]  =  true;
                 FIRE_xx1_OF_Node_2 = false;
                 }
             }
-        
+
             // Occurrence xx2_OF_Node_2
         if (boolState[fail_OF_Node_2] == true)
             {
-            
+
             if (FIRE_xx2_OF_Node_2)
                 {
                 boolState[fail_OF_Node_2]  =  false;
                 FIRE_xx2_OF_Node_2 = false;
                 }
             }
-        
+
             // Occurrence xx3_OF_ud_1
         if (boolState[interruption_OF_ud_1] == false)
             {
-            
+
             if (FIRE_xx3_OF_ud_1)
                 {
                 boolState[interruption_OF_ud_1]  =  true;
                 FIRE_xx3_OF_ud_1 = false;
                 }
             }
-        
+
             // Occurrence xx4_OF_ud_1
         if (boolState[interruption_OF_ud_1] == true)
             {
-            
+
             if (FIRE_xx4_OF_ud_1)
                 {
                 boolState[interruption_OF_ud_1]  =  false;
                 FIRE_xx4_OF_ud_1 = false;
                 }
             }
-        
+
             // Occurrence xx3_OF_bidir_3
         if (boolState[interruption_OF_bidir_3] == false)
             {
-            
+
             if (FIRE_xx3_OF_bidir_3)
                 {
                 boolState[interruption_OF_bidir_3]  =  true;
                 FIRE_xx3_OF_bidir_3 = false;
                 }
             }
-        
+
             // Occurrence xx4_OF_bidir_3
         if (boolState[interruption_OF_bidir_3] == true)
             {
-            
+
             if (FIRE_xx4_OF_bidir_3)
                 {
                 boolState[interruption_OF_bidir_3]  =  false;
                 FIRE_xx4_OF_bidir_3 = false;
                 }
             }
-        
+
             // Occurrence xx1_OF_Node_6
         if (boolState[fail_OF_Node_6] == false)
             {
-            
+
             if (FIRE_xx1_OF_Node_6)
                 {
                 boolState[fail_OF_Node_6]  =  true;
                 FIRE_xx1_OF_Node_6 = false;
                 }
             }
-        
+
             // Occurrence xx2_OF_Node_6
         if (boolState[fail_OF_Node_6] == true)
             {
-            
+
             if (FIRE_xx2_OF_Node_6)
                 {
                 boolState[fail_OF_Node_6]  =  false;
                 FIRE_xx2_OF_Node_6 = false;
                 }
             }
-        
+
             // Occurrence xx1_OF_Node_8
         if (boolState[fail_OF_Node_8] == false)
             {
-            
+
             if (FIRE_xx1_OF_Node_8)
                 {
                 boolState[fail_OF_Node_8]  =  true;
                 FIRE_xx1_OF_Node_8 = false;
                 }
             }
-        
+
             // Occurrence xx2_OF_Node_8
         if (boolState[fail_OF_Node_8] == true)
             {
-            
+
             if (FIRE_xx2_OF_Node_8)
                 {
                 boolState[fail_OF_Node_8]  =  false;
                 FIRE_xx2_OF_Node_8 = false;
                 }
             }
-        
+
             // Occurrence xx1_OF_Source
         if (boolState[fail_OF_Source] == false)
             {
-            
+
             if (FIRE_xx1_OF_Source)
                 {
                 boolState[fail_OF_Source]  =  true;
                 FIRE_xx1_OF_Source = false;
                 }
             }
-        
+
             // Occurrence xx2_OF_Source
         if (boolState[fail_OF_Source] == true)
             {
-            
+
             if (FIRE_xx2_OF_Source)
                 {
                 boolState[fail_OF_Source]  =  false;
                 FIRE_xx2_OF_Source = false;
                 }
             }
-        
+
             // Occurrence xx1_OF_Target
         if (boolState[fail_OF_Target] == false)
             {
-            
+
             if (FIRE_xx1_OF_Target)
                 {
                 boolState[fail_OF_Target]  =  true;
                 FIRE_xx1_OF_Target = false;
                 }
             }
-        
+
             // Occurrence xx2_OF_Target
         if (boolState[fail_OF_Target] == true)
             {
-            
+
             if (FIRE_xx2_OF_Target)
                 {
                 boolState[fail_OF_Target]  =  false;
                 FIRE_xx2_OF_Target = false;
                 }
             }
-        
+
             // Occurrence xx3_OF_ud_3
         if (boolState[interruption_OF_ud_3] == false)
             {
-            
+
             if (FIRE_xx3_OF_ud_3)
                 {
                 boolState[interruption_OF_ud_3]  =  true;
                 FIRE_xx3_OF_ud_3 = false;
                 }
             }
-        
+
             // Occurrence xx4_OF_ud_3
         if (boolState[interruption_OF_ud_3] == true)
             {
-            
+
             if (FIRE_xx4_OF_ud_3)
                 {
                 boolState[interruption_OF_ud_3]  =  false;
                 FIRE_xx4_OF_ud_3 = false;
                 }
             }
-        
+
             // Occurrence xx3_OF_bidir_7
         if (boolState[interruption_OF_bidir_7] == false)
             {
-            
+
             if (FIRE_xx3_OF_bidir_7)
                 {
                 boolState[interruption_OF_bidir_7]  =  true;
                 FIRE_xx3_OF_bidir_7 = false;
                 }
             }
-        
+
             // Occurrence xx4_OF_bidir_7
         if (boolState[interruption_OF_bidir_7] == true)
             {
-            
+
             if (FIRE_xx4_OF_bidir_7)
                 {
                 boolState[interruption_OF_bidir_7]  =  false;
                 FIRE_xx4_OF_bidir_7 = false;
                 }
             }
-        
+
             // Occurrence xx3_OF_bidir_12
         if (boolState[interruption_OF_bidir_12] == false)
             {
-            
+
             if (FIRE_xx3_OF_bidir_12)
                 {
                 boolState[interruption_OF_bidir_12]  =  true;
                 FIRE_xx3_OF_bidir_12 = false;
                 }
             }
-        
+
             // Occurrence xx4_OF_bidir_12
         if (boolState[interruption_OF_bidir_12] == true)
             {
-            
+
             if (FIRE_xx4_OF_bidir_12)
                 {
                 boolState[interruption_OF_bidir_12]  =  false;
                 FIRE_xx4_OF_bidir_12 = false;
                 }
             }
-        
+
             // Occurrence xx3_OF_bidir_2
         if (boolState[interruption_OF_bidir_2] == false)
             {
-            
+
             if (FIRE_xx3_OF_bidir_2)
                 {
                 boolState[interruption_OF_bidir_2]  =  true;
                 FIRE_xx3_OF_bidir_2 = false;
                 }
             }
-        
+
             // Occurrence xx4_OF_bidir_2
         if (boolState[interruption_OF_bidir_2] == true)
             {
-            
+
             if (FIRE_xx4_OF_bidir_2)
                 {
                 boolState[interruption_OF_bidir_2]  =  false;
                 FIRE_xx4_OF_bidir_2 = false;
                 }
             }
-        
+
         }
-        
-        std::vector<std::tuple<int, double, std::string, int>> storm::figaro::FigaroProgram::showFireableOccurrences()
+
+        std::vector<std::tuple<int, double, std::string, int>> storm::figaro::FigaroProgram1::showFireableOccurrences()
         {
         std::vector<std::tuple<int, double, std::string, int>> list = {};
         cout <<"\n==================== List of fireable occurrences :  ====================" << endl;
-        
+
         if (list.size() > 0)
             {
             ins_transition_found = true;
@@ -535,7 +535,7 @@ namespace storm{
             {
             ins_transition_found = false;
             }
-        
+
         if (boolState[fail_OF_Node_1] == false)
             {
             cout << "0 : xx1_OF_Node_1 : FAULT fail  DIST EXP (1e-05)  INDUCING boolState[fail_OF_Node_1]  =  TRUE" << endl;
@@ -658,47 +658,47 @@ namespace storm{
             }
         return list;
         }
-        
-        
-        void storm::figaro::FigaroProgram::runOnceInteractionStep_default_step()
+
+
+        void storm::figaro::FigaroProgram1::runOnceInteractionStep_default_step()
         {
-        
-        
+
+
         intState[nb_failures_OF_Failure_counter]  =  (((((( boolState[fail_OF_Node_1]  +    boolState[fail_OF_Node_2])  +   boolState[fail_OF_Node_6])  +   boolState[fail_OF_Node_8])  +    boolState[fail_OF_Source])  +   boolState[fail_OF_Target])  +  ((((( boolState[interruption_OF_ud_1]  +   boolState[interruption_OF_bidir_3])  +   boolState[interruption_OF_ud_3])  +    boolState[interruption_OF_bidir_7])  +   boolState[interruption_OF_bidir_12])  +    boolState[interruption_OF_bidir_2]))  ;
-        
+
         if (((boolState[interruption_OF_ud_1] == false) && boolState[connected_OF_Source]) && (boolState[fail_OF_Node_1] == false) )
             {
             boolState[connected_OF_Node_1]  =  true;
             }
-        
+
         if (((boolState[interruption_OF_bidir_3] == false) && ((boolState[fail_OF_Node_2] ==  false) && (boolState[fail_OF_Node_8] == false))) && (boolState[connected_OF_Node_2] || boolState[connected_OF_Node_8]) )
             {
             boolState[connected_OF_Node_2]  =  true;
             boolState[connected_OF_Node_8]  =  true;
             }
-        
+
         if (boolState[fail_OF_Source] == false )
             {
             boolState[connected_OF_Source]  =  true;
             }
-        
+
         if (((boolState[interruption_OF_ud_3] == false) && boolState[connected_OF_Node_1]) && (boolState[fail_OF_Node_6] == false) )
             {
             boolState[connected_OF_Node_6]  =  true;
             }
-        
+
         if (((boolState[interruption_OF_bidir_7] == false) && ((boolState[fail_OF_Node_8] ==  false) && (boolState[fail_OF_Target] == false))) && (boolState[connected_OF_Node_8] || boolState[connected_OF_Target]) )
             {
             boolState[connected_OF_Node_8]  =  true;
             boolState[connected_OF_Target]  =  true;
             }
-        
+
         if (((boolState[interruption_OF_bidir_12] == false) && ((boolState[fail_OF_Node_6] ==  false) && (boolState[fail_OF_Target] == false))) && (boolState[connected_OF_Node_6] || boolState[connected_OF_Target]) )
             {
             boolState[connected_OF_Node_6]  =  true;
             boolState[connected_OF_Target]  =  true;
             }
-        
+
         if (((boolState[interruption_OF_bidir_2] == false) && ((boolState[fail_OF_Node_2] ==  false) && (boolState[fail_OF_Source] == false))) && (boolState[connected_OF_Node_2] || boolState[connected_OF_Source]) )
             {
             boolState[connected_OF_Node_2]  =  true;
@@ -706,13 +706,13 @@ namespace storm{
             }
         boolState[not_connected_OF_Target] = !boolState[connected_OF_Target];
         }
-        
-        void storm::figaro::FigaroProgram::runInteractions() {
+
+        void storm::figaro::FigaroProgram1::runInteractions() {
             int counter = 0;
             int comparator = 1;
             doReinitialisations();
             int max_interactions_loop = 200;
-            
+
             counter = 0;
             comparator = 1;
             do
@@ -720,10 +720,10 @@ namespace storm{
                     //cout << counter << endl;
                 saveCurrentState();
                 runOnceInteractionStep_default_step();
-                
+
                 comparator = compareStates();
                 counter++;
-                
+
                 } while (comparator > 0 && counter < max_interactions_loop);
             if (comparator <= 0)
                 {
@@ -732,23 +732,23 @@ namespace storm{
             else {
                 cout << "==> Maximum of interactions loop  reached : #" << counter <<" for runOnceInteractionStep_default_step()." << endl;
             }
-            
+
             cout << endl;
         }
-        void storm::figaro::FigaroProgram::printstatetuple(){
+        void storm::figaro::FigaroProgram1::printstatetuple(){
             std::cout<<"\n State information: (";
             for (int i=0; i<boolState.size(); i++)
                 {
                 std::cout<<boolState.at(i);
                 }
             std::cout<<")";
-            
+
         }
-        int_fast64_t FigaroProgram::stateSize() const{
+        int_fast64_t FigaroProgram1::stateSize() const{
             return numBoolState;
         }
-        
-        void storm::figaro::FigaroProgram::fireinsttransitiongroup(std::string user_input_ins)
+
+        void storm::figaro::FigaroProgram1::fireinsttransitiongroup(std::string user_input_ins)
         {
         std::vector<int> list_user_inputs = {};
         int user_input = -2;

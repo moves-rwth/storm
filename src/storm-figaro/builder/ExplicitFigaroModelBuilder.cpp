@@ -27,8 +27,8 @@ namespace storm {
              * @param figaro Figaro.
              * @param symmetries Symmetries in the figaro model.
              */
-//            template<typename ValueType, typename StateType>
-//            ExplicitFIGAROModelBuilder<ValueType, StateType>::ExplicitFIGAROModelBuilder(storm::figaro::FigaroProgram::<ValueType> const& fogaromodel, storm::storage::DFTIndependentSymmetries const& symmetries);
+            template<typename ValueType, typename StateType>
+            storm::figaro::builder::ExplicitFIGAROModelBuilder<ValueType, StateType>::ExplicitFIGAROModelBuilder(storm::figaro::FigaroProgram const& fogaromodel, storm::storage::DFTIndependentSymmetries const& symmetries){std::cout<<"hello world";}
             
 } //builder
 } //figaro

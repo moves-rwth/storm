@@ -15,7 +15,7 @@
 #include "storm-dft/builder/DftExplorationHeuristic.h"
 #include "storm-figaro/generator/FigaroNextStateGenerator.h"
 #include "storm-figaro/model/FigaroModel.h"
-//#include "storm-dft/storage/dft/SymmetricUnits.h" We donot need the explortiion heurisitc
+#include "storm-dft/storage/dft/SymmetricUnits.h" ///We donot need the explortiion heurisitc
 #include "storm-dft/storage/BucketPriorityQueue.h"
 
 namespace storm{
@@ -23,6 +23,7 @@ namespace storm{
         namespace builder{
             template<typename ValueType, typename StateType = uint32_t>
             class ExplicitFIGAROModelBuilder {
+                
             public:
                 /*!
                  * Constructor.
@@ -30,7 +31,7 @@ namespace storm{
                  * @param figaro Figaro.
                  * @param symmetries Symmetries in the figaro model.
                  */
-//                ExplicitFIGAROModelBuilder(storm::figaro::FigaroProgram::<ValueType> const& fogaromodel, storm::storage::DFTIndependentSymmetries const& symmetries);
+                ExplicitFIGAROModelBuilder(storm::figaro::FigaroProgram const& fogaromodel, storm::storage::DFTIndependentSymmetries const& symmetries);
                 
             };
                 

@@ -2,7 +2,7 @@
 
 #include "storm-config.h"
 #include "storm/settings/modules/ModuleSettings.h"
-
+#include "storm-dft/builder/DftExplorationHeuristic.h"
 
 namespace storm {
 
@@ -86,6 +86,41 @@ namespace storm {
 //                 */
                 std::string getPropertyInputFilter() const;
 //
+                /*!
+                 * Retrieves whether the option to compute an approximation is set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isApproximationErrorSet() const;
+                
+                /*!
+                 * Retrieves the relative error allowed for approximating the model checking result.
+                 *
+                 * @return The allowed errorbound.
+                 */
+                double getApproximationError() const;
+                
+                /*!
+                 * Retrieves the heuristic used for approximation.
+                 *
+                 * @return The heuristic to use.
+                 */
+                storm::builder::ApproximationHeuristic getApproximationHeuristic() const;
+                
+                /*!
+                 * Retrieves whether the option to set a maximal exploration depth is set.
+                 *
+                 * @return True iff the option was set.
+                 */
+                bool isMaxDepthSet() const;
+                
+                /*!
+                 * Retrieves the maximal exploration depth.
+                 *
+                 * @return The maximal exploration depth.
+                 */
+                uint_fast64_t getMaxDepth() const;
+                //
                 bool check() const override;
                 void finalize() override;
                 
@@ -104,6 +139,10 @@ namespace storm {
                 static const std::string outputtextFileOptionShortName;
                 static const std::string propertyOptionName;
                 static const std::string propertyOptionShortName;
+                static const std::string approximationErrorOptionName;
+                static const std::string approximationErrorOptionShortName;
+                static const std::string approximationHeuristicOptionName;
+                static const std::string maxDepthOptionName;
             };
         }
     }

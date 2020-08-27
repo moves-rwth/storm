@@ -47,7 +47,6 @@ void initializeFigaroSettings(std::string const& name, std::string const& execut
     storm::settings::addModule<storm::settings::modules::BuildSettings>();
     storm::settings::addModule<storm::settings::modules::IOSettings>();
     
-    
     storm::settings::addModule<storm::settings::modules::HintSettings>();
     storm::settings::addModule<storm::settings::modules::TransformationSettings>();
     storm::settings::addModule<storm::settings::modules::EigenEquationSolverSettings>();
@@ -57,6 +56,7 @@ void initializeFigaroSettings(std::string const& name, std::string const& execut
     storm::settings::addModule<storm::settings::modules::MinMaxEquationSolverSettings>();
     storm::settings::addModule<storm::settings::modules::MultiplierSettings>();
     storm::settings::addModule<storm::settings::modules::TimeBoundedSolverSettings>();
+    storm::settings::addModule<storm::settings::modules::GmmxxEquationSolverSettings>();
     
 }
    }
