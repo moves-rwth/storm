@@ -1,72 +1,62 @@
 
 #pragma once
+
 #include <array>
 #include <map>
 #include <vector>
 #include <sstream>
-#include<math.h>
+#include <math.h>
 #include <set>
 
 #include "FigaroModelTemplate.h"
 
-namespace storm{
-    namespace figaro{
-    class FigaroProgram1: public storm::figaro::FigaroProgram{
+namespace storm {
+    namespace figaro {
+        
+        class FigaroProgram1: public storm::figaro::FigaroProgram{
         public:
-        FigaroProgram1(): FigaroProgram(
-            {
-                {"fail_OF_Node_1" , 0},
-                {"connected_OF_Node_1" , 1},
-                {"fail_OF_Node_2" , 2},
-                {"connected_OF_Node_2" , 3},
-                {"interruption_OF_ud_1" , 4},
-                {"interruption_OF_bidir_3" , 5},
-                {"fail_OF_Node_6" , 6},
-                {"connected_OF_Node_6" , 7},
-                {"fail_OF_Node_8" , 8},
-                {"connected_OF_Node_8" , 9},
-                {"fail_OF_Source" , 10},
-                {"connected_OF_Source" , 11},
-                {"fail_OF_Target" , 12},
-                {"connected_OF_Target" , 13},
-                {"interruption_OF_ud_3" , 14},
-                {"interruption_OF_bidir_7" , 15},
-                {"interruption_OF_bidir_12" , 16},
-                {"interruption_OF_bidir_2" , 17},
-                {"not_connected_OF_Target", 18}
-            },
-            
-             {{"not_connected_OF_Target", 18}},
-             { },
-            
-            {
-                {"nb_failures_OF_Failure_counter" , 0}},
-            
-            { },
-            
-             { },
-            
-            { },
-            "not_connected_OF_Target",
-            19 ,
-            0 ,
-            1 ,
-            0 ,
-            false
-        ){ }
-
-        /* ---------- CODING ENUMERATED VARIABLES STATES ------------ */
-        enum enum_status {};
-//            std::array<bool, numBoolState> boolState;
-//            std::array<bool, numBoolState> backupBoolState;
-//            std::array<float, numFloatState> floatState;
-//            std::array<float, numFloatState> backupFloatState;
-//            std::array<int, numIntState> intState;
-//            std::array<int, numIntState> backupIntState;
-//            std::array<int, numEnumState> enumState;
-//            std::array<int, numEnumState> backupEnumState;
+            // Constructor
+            FigaroProgram1(): FigaroProgram(
+                {
+                    {"fail_OF_Node_1" , 0},
+                    {"connected_OF_Node_1" , 1},
+                    {"fail_OF_Node_2" , 2},
+                    {"connected_OF_Node_2" , 3},
+                    {"interruption_OF_ud_1" , 4},
+                    {"interruption_OF_bidir_3" , 5},
+                    {"fail_OF_Node_6" , 6},
+                    {"connected_OF_Node_6" , 7},
+                    {"fail_OF_Node_8" , 8},
+                    {"connected_OF_Node_8" , 9},
+                    {"fail_OF_Source" , 10},
+                    {"connected_OF_Source" , 11},
+                    {"fail_OF_Target" , 12},
+                    {"connected_OF_Target" , 13},
+                    {"interruption_OF_ud_3" , 14},
+                    {"interruption_OF_bidir_7" , 15},
+                    {"interruption_OF_bidir_12" , 16},
+                    {"interruption_OF_bidir_2" , 17},
+                    {"not_connected_OF_Target", 18}
+                },
+                {{"not_connected_OF_Target", 18}},
+                {},
+                {{"nb_failures_OF_Failure_counter" , 0}},
+                {},
+                {},
+                {},
+                "not_connected_OF_Target",
+                19,
+                0,
+                1,
+                0,
+                false
+            ) {
+                // body left empty
+            }
 
 
+            /* ---------- CODING ENUMERATED VARIABLES STATES ------------ */
+            enum enum_status {};
             bool REINITIALISATION_OF_connected_OF_Node_1 ;
             bool REINITIALISATION_OF_connected_OF_Node_2 ;
             bool REINITIALISATION_OF_connected_OF_Node_6 ;
@@ -74,6 +64,7 @@ namespace storm{
             bool REINITIALISATION_OF_connected_OF_Source ;
             bool REINITIALISATION_OF_connected_OF_Target ;
             
+
             /* ---------- DECLARATION OF CONSTANTS ------------ */
             double const link_mu_OF_ud_3 = 1;
             double const link_lambda_OF_bidir_7 = 1e-05;
@@ -107,6 +98,7 @@ namespace storm{
             double const mu_OF_Node_1 = 0.1;
             std::string const function_OF_Source = "source";
             
+
             /* ---------- DECLARATION OF OCCURRENCE RULES FIRING FLAGS ------------ */
             bool FIRE_xx1_OF_Node_1;
             bool FIRE_xx2_OF_Node_1;
@@ -153,12 +145,11 @@ namespace storm{
             int interruption_OF_bidir_2 = 17 ;
             int not_connected_OF_Target = 18;
             
-            
             int nb_failures_OF_Failure_counter = 0 ;
             
             
-            
             /* ---------- DECLARATION OF FUNCTIONS ------------ */
+            // Override virtual functions of base class
             void init();
             void saveCurrentState();
             void printState();
