@@ -26,45 +26,65 @@ namespace storm {
                 public:
                     friend class StateValuations;
                     StateValuation() = default;
-                    StateValuation(std::vector<bool>&& booleanValues, std::vector<int64_t>&& integerValues, std::vector<storm::RationalNumber>&& rationalValues);
+                    StateValuation(std::vector<bool>&& booleanValues, std::vector<int64_t>&& integerValues, std::vector<storm::RationalNumber>&& rationalValues, std::vector<int64_t>&& observationLabelValues = {});
     
                 private:
                     
                     std::vector<bool> booleanValues;
                     std::vector<int64_t> integerValues;
                     std::vector<storm::RationalNumber> rationalValues;
+                    std::vector<int64_t> observationLabelValues;
                 };
                 
                 class StateValueIterator {
                 public:
-                    StateValueIterator(typename std::map<storm::expressions::Variable, uint64_t>::const_iterator variableIt, StateValuation const* valuation);
+                    StateValueIterator(typename std::map<storm::expressions::Variable, uint64_t>::const_iterator variableIt,
+                                       typename std::map<std::string, uint64_t>::const_iterator labelIt,
+                                       typename std::map<storm::expressions::Variable, uint64_t>::const_iterator variableBegin ,
+                                       typename std::map<storm::expressions::Variable, uint64_t>::const_iterator variableEnd,
+                                       typename std::map<std::string, uint64_t>::const_iterator labelBegin,
+                                       typename std::map<std::string, uint64_t>::const_iterator labelEnd,
+                                       StateValuation const* valuation);
                     bool operator==(StateValueIterator const& other);
                     bool operator!=(StateValueIterator const& other);
                     StateValueIterator& operator++();
                     StateValueIterator& operator--();
-                    
+
+                    bool isVariableAssignment() const;
+                    bool isLabelAssignment() const;
                     storm::expressions::Variable const& getVariable() const;
+                    std::string const& getLabel() const;
                     bool isBoolean() const;
                     bool isInteger() const;
                     bool isRational() const;
-                    
+
+                    std::string const& getName() const;
+
                     // These shall only be called if the variable has the correct type
                     bool getBooleanValue() const;
                     int64_t getIntegerValue() const;
                     storm::RationalNumber getRationalValue() const;
+                    int64_t getLabelValue() const;
                     
                 private:
                     typename std::map<storm::expressions::Variable, uint64_t>::const_iterator variableIt;
+                    typename std::map<std::string, uint64_t>::const_iterator labelIt;
+                    typename std::map<storm::expressions::Variable, uint64_t>::const_iterator variableBegin;
+                    typename std::map<storm::expressions::Variable, uint64_t>::const_iterator variableEnd;
+                    typename std::map<std::string, uint64_t>::const_iterator labelBegin;
+                    typename std::map<std::string, uint64_t>::const_iterator labelEnd;
+
                     StateValuation const* const valuation;
                 };
                 
                 class StateValueIteratorRange {
                 public:
-                    StateValueIteratorRange(std::map<storm::expressions::Variable, uint64_t> const& variableMap, StateValuation const* valuation);
+                    StateValueIteratorRange(std::map<storm::expressions::Variable, uint64_t> const& variableMap, std::map<std::string, uint64_t> const& labelMap, StateValuation const* valuation);
                     StateValueIterator begin() const;
                     StateValueIterator end() const;
                 private:
                     std::map<storm::expressions::Variable, uint64_t> const& variableMap;
+                    std::map<std::string, uint64_t> const& labelMap;
                     StateValuation const* const valuation;
                 };
                 
@@ -117,6 +137,7 @@ namespace storm {
                 StateValuation const& getValuation(storm::storage::sparse::state_type const& stateIndex) const;
                 
                 std::map<storm::expressions::Variable, uint64_t> variableToIndexMap;
+                std::map<std::string, uint64_t> observationLabels;
                 // A mapping from state indices to their variable valuations.
                 std::vector<StateValuation> valuations;
                 
@@ -127,28 +148,35 @@ namespace storm {
                 StateValuationsBuilder();
                 
                 /*! Adds a new variable to keep track of for the state valuations.
-                 *! All variables need to be added before adding new states.
+                 * All variables need to be added before adding new states.
                  */
                 void addVariable(storm::expressions::Variable const& variable);
-                
+
+                void addObservationLabel(std::string const& label);
+
                 /*!
                  * Adds a new state.
                  * The variable values have to be given in the same order as the variables have been added.
                  * The number of given variable values for each type needs to match the number of added variables.
                  * After calling this method, no more variables should be added.
                  */
-                 void addState(storm::storage::sparse::state_type const& state, std::vector<bool>&& booleanValues = {}, std::vector<int64_t>&& integerValues = {}, std::vector<storm::RationalNumber>&& rationalValues = {});
+                 void addState(storm::storage::sparse::state_type const& state, std::vector<bool>&& booleanValues = {}, std::vector<int64_t>&& integerValues = {}, std::vector<storm::RationalNumber>&& rationalValues = {}, std::vector<int64_t>&& observationLabelValues = {});
                  
                  /*!
                   * Creates the finalized state valuations object.
                   */
                  StateValuations build(std::size_t totalStateCount);
 
+                 uint64_t getBooleanVarCount() const;
+                 uint64_t getIntegerVarCount() const;
+                 uint64_t getLabelCount() const;
+
             private:
                 StateValuations currentStateValuations;
                 uint64_t booleanVarCount;
                 uint64_t integerVarCount;
                 uint64_t rationalVarCount;
+                uint64_t labelCount;
             };
         }
     }

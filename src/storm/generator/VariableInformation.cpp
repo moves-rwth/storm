@@ -29,6 +29,10 @@ namespace storm {
         LocationVariableInformation::LocationVariableInformation(storm::expressions::Variable const& variable, uint64_t highestValue, uint_fast64_t bitOffset, uint_fast64_t bitWidth, bool observable) : variable(variable), highestValue(highestValue), bitOffset(bitOffset), bitWidth(bitWidth), observable(observable) {
             // Intentionally left empty.
         }
+
+        ObservationLabelInformation::ObservationLabelInformation(const std::string &name) : name(name) {
+            // Intentionally left empty.
+        }
         
         VariableInformation::VariableInformation(storm::prism::Program const& program, bool outOfBoundsState) : totalBitOffset(0) {
             if (outOfBoundsState) {
@@ -63,6 +67,9 @@ namespace storm {
                     integerVariables.emplace_back(integerVariable.getExpressionVariable(), lowerBound, upperBound, totalBitOffset, bitwidth, false, integerVariable.isObservable());
                     totalBitOffset += bitwidth;
                 }
+            }
+            for (auto const& oblab : program.getObservationLabels()) {
+                observationLabels.emplace_back(oblab.getName());
             }
             
             sortVariables();

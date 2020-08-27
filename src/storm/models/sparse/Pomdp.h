@@ -78,6 +78,12 @@ namespace storm {
 
                 std::vector<uint64_t> getStatesWithObservation(uint32_t observation) const;
 
+                bool hasObservationValuations() const;
+
+                storm::storage::sparse::StateValuations const& getObservationValuations() const;
+
+                boost::optional<storm::storage::sparse::StateValuations> const& getOptionalObservationValuations() const;
+
                 bool isCanonic() const;
 
                 void setIsCanonic(bool newValue = true);
@@ -94,10 +100,12 @@ namespace storm {
 
                 // TODO: consider a bitvector based presentation (depending on our needs).
                 std::vector<uint32_t> observations;
-
                 uint64_t nrObservations;
-
                 bool canonicFlag = false;
+
+                boost::optional<storm::storage::sparse::StateValuations> observationValuations;
+
+
 
                 void computeNrObservations();
             };

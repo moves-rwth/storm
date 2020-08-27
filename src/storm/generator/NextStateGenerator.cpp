@@ -61,6 +61,25 @@ namespace storm {
             }
             return result;
         }
+
+        template<typename ValueType, typename StateType>
+        storm::storage::sparse::StateValuationsBuilder NextStateGenerator<ValueType, StateType>::initializeObservationValuationsBuilder() const {
+            storm::storage::sparse::StateValuationsBuilder result;
+            for (auto const& v : variableInformation.booleanVariables) {
+                if(v.observable) {
+                    result.addVariable(v.variable);
+                }
+            }
+            for (auto const& v : variableInformation.integerVariables) {
+                if(v.observable) {
+                    result.addVariable(v.variable);
+                }
+            }
+            for (auto const& l : variableInformation.observationLabels) {
+                result.addObservationLabel(l.name);
+            }
+            return result;
+        }
         
         template<typename ValueType, typename StateType>
         void NextStateGenerator<ValueType, StateType>::load(CompressedState const& state) {
@@ -93,7 +112,42 @@ namespace storm {
             extractVariableValues(*this->state, variableInformation, integerValues, booleanValues, integerValues);
             valuationsBuilder.addState(currentStateIndex, std::move(booleanValues), std::move(integerValues));
         }
-        
+
+        template<typename ValueType, typename StateType>
+        storm::storage::sparse::StateValuations NextStateGenerator<ValueType, StateType>::makeObservationValuation() const {
+            storm::storage::sparse::StateValuationsBuilder valuationsBuilder = initializeObservationValuationsBuilder();
+            for (auto const& observationEntry : observabilityMap) {
+                std::vector<bool> booleanValues;
+                booleanValues.reserve(
+                        variableInformation.booleanVariables.size()); // TODO: use number of observable boolean variables
+                std::vector<int64_t> integerValues;
+                integerValues.reserve(variableInformation.locationVariables.size() +
+                                      variableInformation.integerVariables.size()); // TODO: use number of observable integer variables
+                std::vector<int64_t> observationLabelValues;
+                observationLabelValues.reserve(variableInformation.observationLabels.size());
+                expressions::SimpleValuation val = unpackStateIntoValuation(observationEntry.first, variableInformation, *expressionManager);
+                for (auto const& v : variableInformation.booleanVariables) {
+                    if (v.observable) {
+                        booleanValues.push_back(val.getBooleanValue(v.variable));
+                    }
+                }
+                for (auto const& v : variableInformation.integerVariables) {
+                    if (v.observable) {
+                        integerValues.push_back(val.getIntegerValue(v.variable));
+                    }
+                }
+                for(uint64_t labelStart = variableInformation.getTotalBitOffset(true); labelStart < observationEntry.first.size(); labelStart += 64) {
+                    observationLabelValues.push_back(observationEntry.first.getAsInt(labelStart, 64));
+                }
+                valuationsBuilder.addState(observationEntry.second, std::move(booleanValues), std::move(integerValues), {}, std::move(observationLabelValues));
+            }
+            return valuationsBuilder.build(observabilityMap.size());
+
+        }
+
+
+
+
         template<typename ValueType, typename StateType>
         storm::models::sparse::StateLabeling NextStateGenerator<ValueType, StateType>::label(storm::storage::sparse::StateStorage<StateType> const& stateStorage, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices, std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions) {
             
@@ -213,7 +267,8 @@ namespace storm {
             if (this->mask.size() == 0) {
                 this->mask = computeObservabilityMask(variableInformation);
             }
-            return unpackStateToObservabilityClass(state, evaluateObservationLabels(state), observabilityMap, mask);
+            uint32_t classId = unpackStateToObservabilityClass(state, evaluateObservationLabels(state), observabilityMap, mask);
+            return classId;
         }
 
         template<typename ValueType, typename StateType>
