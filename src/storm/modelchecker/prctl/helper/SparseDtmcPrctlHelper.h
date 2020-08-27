@@ -16,9 +16,19 @@
 #include "storm/solver/SolveGoal.h"
 
 namespace storm {
-    
+    // fwd
     class Environment;
-    
+
+    namespace automata {
+        class DeterministicAutomaton;
+    }
+
+    namespace models {
+        namespace sparse {
+            template <typename ValueType, typename RewardModelType> class Dtmc;
+        }
+    }
+
     namespace modelchecker {
         class CheckResult;
         
@@ -37,7 +47,9 @@ namespace storm {
                 static std::vector<ValueType> computeAllUntilProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates);
 
                 static std::vector<ValueType> computeGloballyProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& psiStates, bool qualitative);
-                
+
+                static std::vector<ValueType> computeDAProductProbabilities(Environment const& env, typename storm::models::sparse::Dtmc<ValueType,RewardModelType> const& dtmc, storm::solver::SolveGoal<ValueType>&& goal, storm::automata::DeterministicAutomaton const& da, std::map<std::string, storm::storage::BitVector>& apSatSets, bool qualitative);
+
                 static std::vector<ValueType> computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound);
                 
                 static std::vector<ValueType> computeInstantaneousRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepCount);
