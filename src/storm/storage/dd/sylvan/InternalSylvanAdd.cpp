@@ -328,8 +328,8 @@ namespace storm {
         }
 
         template<>
-        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::mod(InternalAdd<DdType::Sylvan, storm::RationalNumber> const&) const {
-            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Operation (mod) not supported by rational numbers.");
+        InternalAdd<DdType::Sylvan, storm::RationalNumber> InternalAdd<DdType::Sylvan, storm::RationalNumber>::mod(InternalAdd<DdType::Sylvan, storm::RationalNumber> const& other) const {
+            return InternalAdd<DdType::Sylvan, storm::RationalNumber>(ddManager, this->sylvanMtbdd.ModRN(other.sylvanMtbdd));
         }
 
 #ifdef STORM_HAVE_CARL

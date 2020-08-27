@@ -53,6 +53,7 @@ Mtbdd DivideRN(const Mtbdd &other) const;
 Mtbdd FloorRN() const;
 Mtbdd CeilRN() const;
 Mtbdd PowRN(const Mtbdd& other) const;
+Mtbdd ModRN(const Mtbdd& other) const;
 Mtbdd MinimumRN() const;
 Mtbdd MaximumRN() const;
 
