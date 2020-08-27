@@ -560,7 +560,7 @@ namespace storm {
                     }
                 }
                 optDelta = lpSolver->getObjectiveValue();
-                STORM_LOG_ASSERT(optDelta == lpSolver->getContinuousValue(lpSolver->getManager().getVariable("D_" + std::to_string(targetBelief))), "Objective values is not equal to the Delta for the target state");
+                STORM_LOG_ASSERT(cc.isEqual(optDelta, lpSolver->getContinuousValue(lpSolver->getManager().getVariable("D_" + std::to_string(targetBelief)))), "Objective values is not equal to the Delta for the target state");
             }
             return BeliefCulling{lpSolver->isOptimal(), beliefId, targetBelief, optDelta};
         }
