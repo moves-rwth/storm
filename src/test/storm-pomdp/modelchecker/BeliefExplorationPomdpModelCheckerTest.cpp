@@ -122,6 +122,23 @@ namespace {
         static PreprocessingType const preprocessingType = PreprocessingType::All;
         static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) {options.refine = true; options.refinePrecision = precision();}
     };
+
+    class PreprocessedCullingDoubleVIEnvironment {
+    public:
+        typedef double ValueType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().minMax().setMethod(storm::solver::MinMaxMethod::ValueIteration);
+            env.solver().minMax().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-6));
+            return env;
+        }
+        static bool const isExactModelChecking = false;
+        static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.12); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
+        static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) {
+            options.cullingThresholdInit = storm::utility::convertNumber<ValueType>(0.1);
+        }
+        static PreprocessingType const preprocessingType = PreprocessingType::All;
+    };
     
     class DefaultDoubleOVIEnvironment {
     public:
@@ -243,7 +260,8 @@ namespace {
             PreprocessedRefineDoubleVIEnvironment,
             DefaultDoubleOVIEnvironment,
             DefaultRationalPIEnvironment,
-            PreprocessedDefaultRationalPIEnvironment
+            PreprocessedDefaultRationalPIEnvironment,
+            PreprocessedCullingDoubleVIEnvironment
     > TestingTypes;
     
     TYPED_TEST_SUITE(BeliefExplorationTest, TestingTypes,);
