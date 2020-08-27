@@ -36,6 +36,8 @@ namespace storm {
                 // Controls which observations are refined.
                 ValueType obsThresholdInit = storm::utility::convertNumber<ValueType>(0.1);
                 ValueType obsThresholdIncrementFactor = storm::utility::convertNumber<ValueType>(0.1);
+                // Controls the delta value up to which culling will be applied.
+                ValueType cullingThresholdInit = storm::utility::zero<ValueType>();
                 
                 ValueType numericPrecision = storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(1e-9); /// Used to decide whether two beliefs are equal
                 bool dynamicTriangulation = true; // Sets whether the triangulation is done in a dynamic way (yielding more precise triangulations)

@@ -77,6 +77,7 @@ namespace storm {
                     ValueType gapThreshold;
                     ValueType observationThreshold;
                     uint64_t sizeThreshold;
+                    ValueType cullingThreshold;
                     ValueType optimalChoiceValueEpsilon;
                 };
                 
@@ -91,8 +92,6 @@ namespace storm {
                  * Returns true if a fixpoint for the refinement has been detected (i.e. if further refinement steps would not change the mdp)
                  */
                 bool buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation);
-
-                bool buildUnderApproximationWithCulling(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation);
 
                 BeliefValueType rateObservation(typename ExplorerType::SuccessorObservationInformation const& info, BeliefValueType const& observationResolution, BeliefValueType const& maxResolution);
                 

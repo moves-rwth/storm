@@ -45,6 +45,9 @@ namespace storm {
                 /// Controls how large the gap between known lower- and upper bounds at a beliefstate needs to be in order to explore
                 double getGapThresholdInit() const;
                 double getGapThresholdFactor() const;
+
+                /// Controls how large the delta is allowed to be for culling
+                double getCullingThresholdInit() const;
                 
                 /// Controls whether "almost optimal" choices will be considered optimal
                 double getOptimalChoiceValueThresholdInit() const;
