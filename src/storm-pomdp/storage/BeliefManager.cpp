@@ -2,7 +2,6 @@
 
 #include "storm/adapters/RationalNumberAdapter.h"
 #include "storm/utility/macros.h"
-#include "storm/utility/constants.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/ExpressionManager.h"
@@ -488,7 +487,7 @@ namespace storm {
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
         typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefCulling
-        BeliefManager<PomdpType, BeliefValueType, StateType>::cullBelief(BeliefId const &beliefId){
+        BeliefManager<PomdpType, BeliefValueType, StateType>::cullBelief(BeliefId const &beliefId, ValueType threshold){
             uint32_t obs = getBeliefObservation(beliefId);
             STORM_LOG_ASSERT(obs < beliefToIdMap.size(), "Belief has unknown observation.");
             if(!lpSolver){
@@ -510,13 +509,13 @@ namespace storm {
                         auto decisionVar = lpSolver->addBinaryVariable("a_" + std::to_string(candidate.second));
                         decisionVariables.push_back(storm::expressions::Expression(decisionVar));
                         // Add variables for the DELTA values, their overall sum is to be minimized
-                        auto bigDelta = lpSolver->addBoundedContinuousVariable("D_" + std::to_string(candidate.second), storm::utility::zero<ValueType>(), storm::utility::one<ValueType>(),
+                        auto bigDelta = lpSolver->addBoundedContinuousVariable("D_" + std::to_string(candidate.second), storm::utility::zero<ValueType>(), threshold,
                                                                                storm::utility::one<ValueType>());
                         std::vector<storm::expressions::Expression> deltas;
                         i = 0;
                         for (auto const &state : getBelief(beliefId)) {
                             auto localDelta = lpSolver->addBoundedContinuousVariable("d_" + std::to_string(i) + "_" + std::to_string(candidate.second), storm::utility::zero<ValueType>(),
-                                                                                     storm::utility::one<ValueType>());
+                                                                                     threshold);
                             deltas.push_back(storm::expressions::Expression(localDelta));
                             lpSolver->update();
                             // Add the constraint to describe the transformation between the state values in the beliefs

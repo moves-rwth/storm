@@ -749,7 +749,7 @@ namespace storm {
             bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation) {
                 bool useBeliefCulling = heuristicParameters.cullingThreshold > storm::utility::zero<ValueType>();
                 STORM_LOG_ASSERT(!computeRewards || !useBeliefCulling, "Reward Computation with Belief Culling is not implemented yet!");
-                STORM_LOG_INFO_COND(!useBeliefCulling, "Use Belief Culling for Underapproximation");
+                STORM_LOG_INFO_COND(!useBeliefCulling, "Use Belief Culling with threshold " << storm::utility::to_string(heuristicParameters.cullingThreshold));
                 statistics.underApproximationBuildTime.start();
                 bool fixPoint = true;
                 if (heuristicParameters.sizeThreshold != std::numeric_limits<uint64_t>::max()) {
@@ -808,7 +808,7 @@ namespace storm {
                         }
                         if(cullBelief){
                             // Belief is to be culled, find the best candidate
-                            auto cullingResult = beliefManager->cullBelief(currId);
+                            auto cullingResult = beliefManager->cullBelief(currId, heuristicParameters.cullingThreshold);
                             if(cullingResult.isCullable){
                                 bool addedSucc = underApproximation->addTransitionToBelief(0, cullingResult.targetBelief, storm::utility::one<ValueType>() - cullingResult.delta, false);
                                 underApproximation->addTransitionsToExtraStates(0, storm::utility::zero<ValueType>(), cullingResult.delta);

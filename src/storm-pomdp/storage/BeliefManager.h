@@ -9,6 +9,7 @@
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/utility/solver.h"
 #include "storm/solver/LpSolver.h"
+#include "storm/utility/constants.h"
 
 namespace storm {
     namespace storage {
@@ -78,7 +79,7 @@ namespace storm {
 
             std::vector<std::pair<BeliefId, ValueType>> expand(BeliefId const &beliefId, uint64_t actionIndex);
 
-            BeliefCulling cullBelief(BeliefId const &beliefId);
+            BeliefCulling cullBelief(BeliefId const &beliefId, ValueType threshold = storm::utility::one<ValueType>());
 
         private:
 
