@@ -75,15 +75,27 @@ namespace storm {
 
             void computeRewardAtCurrentState(uint64 const &localActionIndex, ValueType extraReward = storm::utility::zero<ValueType>());
 
+            /*!
+             * Adds the provided reward value to the given action of the current state
+             *
+             * @param localActionIndex
+             * @param rewardValue
+             */
+            void addRewardToCurrentState(uint64 const &localActionIndex, ValueType rewardValue);
+
             void setCurrentStateIsTarget();
 
             void setCurrentStateIsTruncated();
+
+            void setCurrentStateIsCulled();
 
             void setCurrentChoiceIsDelayed(uint64_t const &localActionIndex);
 
             bool currentStateHasOldBehavior() const;
 
             bool getCurrentStateWasTruncated() const;
+
+            bool getCurrentStateWasCulled() const;
 
             /*!
              * Retrieves whether the current state can be reached under an optimal scheduler
@@ -167,7 +179,9 @@ namespace storm {
              * @param relative if set, we consider the relative difference to detect ancillaryChoices
              */
             void computeOptimalChoicesAndReachableMdpStates(ValueType const &ancillaryChoicesEpsilon, bool relativeDifference);
-            
+
+            std::vector<BeliefId> getBeliefsInMdp();
+
         private:
             MdpStateType noState() const;
 
@@ -207,6 +221,7 @@ namespace storm {
             boost::optional<MdpStateType> extraBottomState;
             storm::storage::BitVector targetStates;
             storm::storage::BitVector truncatedStates;
+            storm::storage::BitVector culledStates;
             MdpStateType initialMdpState;
             storm::storage::BitVector delayedExplorationChoices;
 

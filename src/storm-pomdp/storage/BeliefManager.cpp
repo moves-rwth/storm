@@ -487,9 +487,14 @@ namespace storm {
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
         typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefCulling
-        BeliefManager<PomdpType, BeliefValueType, StateType>::cullBelief(BeliefId const &beliefId, ValueType threshold){
+        BeliefManager<PomdpType, BeliefValueType, StateType>::cullBelief(BeliefId const &beliefId, ValueType threshold, boost::optional<std::vector<BeliefId>> const &targets){
+            //TODO compare performance if a blacklist is used instead of target list (whitelist)
             uint32_t obs = getBeliefObservation(beliefId);
             STORM_LOG_ASSERT(obs < beliefToIdMap.size(), "Belief has unknown observation.");
+            if(beliefToIdMap[obs].size() < 2){
+                STORM_LOG_DEBUG("Belief " << beliefId << " cannot be culled - only one belief with observation " << obs);
+                return BeliefCulling{false, beliefId, noId(), storm::utility::zero<BeliefValueType>()};
+            }
             if(!lpSolver){
                 auto lpSolverFactory = storm::utility::solver::LpSolverFactory<ValueType>();
                 lpSolver = lpSolverFactory.create("POMDP LP Solver");
@@ -500,11 +505,22 @@ namespace storm {
             uint64_t i = 0;
             // Iterate over all possible candidates TODO optimize this
             std::vector<storm::expressions::Expression> decisionVariables;
+            std::vector<BeliefId> consideredCandidates;
+            STORM_LOG_DEBUG("Cull Belief with ID " << beliefId << " (" << toString(beliefId) << ")");
             for(auto const &candidate : beliefToIdMap[obs]) {
                 if (candidate.second != beliefId) {
                     if (candidate.first.size() > getBelief(beliefId).size()) {
                         STORM_LOG_DEBUG("Belief with ID " << candidate.second << " has larger support and is not suitable");
                     } else {
+                        // if a target list is set and the candidate is not on it, skip
+                        if(targets){
+                            if(std::find(targets.get().begin(), targets.get().end(), candidate.second) == targets.get().end()){
+                                //STORM_LOG_DEBUG("Belief with ID " << candidate.second << " not on target list!!!");
+                                continue;
+                            }
+                        }
+                        STORM_LOG_DEBUG("Add constraints for Belief with ID " << candidate.second << " " << toString(candidate.second));
+                        consideredCandidates.push_back(candidate.second);
                         // Add variables a_j, D_j
                         auto decisionVar = lpSolver->addBinaryVariable("a_" + std::to_string(candidate.second));
                         decisionVariables.push_back(storm::expressions::Expression(decisionVar));
@@ -544,6 +560,10 @@ namespace storm {
                 }
             }
             // Only one target belief should be chosen
+            if(decisionVariables.empty()){
+                STORM_LOG_DEBUG("Belief " << beliefId << " cannot be culled - no candidate with valid support");
+                return BeliefCulling{false, beliefId, noId(), storm::utility::zero<BeliefValueType>()};
+            }
             lpSolver->addConstraint("choice", storm::expressions::sum(decisionVariables) == lpSolver->getConstant(storm::utility::one<ValueType>()));
 
             lpSolver->optimize();
@@ -551,12 +571,10 @@ namespace storm {
             BeliefId targetBelief = noId();
             auto optDelta = storm::utility::zero<BeliefValueType>();
             if(lpSolver->isOptimal()){
-                for(auto const &candidate : beliefToIdMap[obs]) {
-                    if (candidate.first.size() <= getBelief(beliefId).size() && candidate.second != beliefId) {
-                        if(lpSolver->getBinaryValue(lpSolver->getManager().getVariable("a_" + std::to_string(candidate.second)))){
-                            targetBelief = candidate.second;
-                            break;
-                        }
+                for(auto const &candidate : consideredCandidates) {
+                    if(lpSolver->getBinaryValue(lpSolver->getManager().getVariable("a_" + std::to_string(candidate)))){
+                        targetBelief = candidate;
+                        break;
                     }
                 }
                 optDelta = lpSolver->getObjectiveValue();

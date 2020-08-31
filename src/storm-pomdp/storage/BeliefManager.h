@@ -79,7 +79,7 @@ namespace storm {
 
             std::vector<std::pair<BeliefId, ValueType>> expand(BeliefId const &beliefId, uint64_t actionIndex);
 
-            BeliefCulling cullBelief(BeliefId const &beliefId, ValueType threshold = storm::utility::one<ValueType>());
+            BeliefCulling cullBelief(BeliefId const &beliefId, ValueType threshold = storm::utility::one<ValueType>(), boost::optional<std::vector<BeliefId>> const &targets = boost::none);
 
         private:
 

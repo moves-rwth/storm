@@ -802,16 +802,28 @@ namespace storm {
                             } else if (underApproximation->getCurrentNumberOfMdpStates() >= heuristicParameters.sizeThreshold) {
                                 cullBelief = useBeliefCulling;
                                 stopExploration = !useBeliefCulling;
-                                underApproximation->setCurrentStateIsTruncated();
                             }
                         }
                         if(cullBelief){
                             // Belief is to be culled, find the best candidate
-                            auto cullingResult = beliefManager->cullBelief(currId, heuristicParameters.cullingThreshold);
+                            auto cullingResult = beliefManager->cullBelief(currId, heuristicParameters.cullingThreshold, underApproximation->getBeliefsInMdp());
                             if(cullingResult.isCullable){
-                                bool addedSucc = underApproximation->addTransitionToBelief(0, cullingResult.targetBelief, storm::utility::one<ValueType>() - cullingResult.delta, false);
+                                underApproximation->setCurrentStateIsCulled();
+                                bool addedSucc = underApproximation->addTransitionToBelief(0, cullingResult.targetBelief, storm::utility::one<ValueType>() - cullingResult.delta, true);
                                 if(computeRewards){
+                                    //Determine a sound reward bound
+                                    auto bestRewardBound = storm::utility::infinity<ValueType>();
+                                    for (uint64 action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
+                                        auto currRewardBound = storm::utility::zero<ValueType>();
+                                        auto successors = beliefManager->expand(currId, action);
+                                        for (auto const &successor : successors) {
+                                            currRewardBound += successor.second * (min ? underApproximation->computeUpperValueBoundAtBelief(successor.first)
+                                                                                            : underApproximation->computeLowerValueBoundAtBelief(successor.first));
+                                        }
+                                        bestRewardBound = min ? storm::utility::min(bestRewardBound, currRewardBound) : storm::utility::max(bestRewardBound, currRewardBound);
+                                    }
                                     underApproximation->addTransitionsToExtraStates(0, cullingResult.delta);
+                                    underApproximation->addRewardToCurrentState(0, bestRewardBound);
                                 } else {
                                     underApproximation->addTransitionsToExtraStates(0, storm::utility::zero<ValueType>(), cullingResult.delta);
                                 }
@@ -819,6 +831,9 @@ namespace storm {
                             } else {
                                 stopExploration = true;
                             }
+                        }
+                        if(stopExploration){
+                            underApproximation->setCurrentStateIsTruncated();
                         }
                         if(!cullBelief || stopExploration) {
                             for (uint64 action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {

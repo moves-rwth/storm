@@ -55,6 +55,7 @@ namespace storm {
             mdpActionRewards.clear();
             targetStates.clear();
             truncatedStates.clear();
+            culledStates.clear();
             delayedExplorationChoices.clear();
             optimalChoices = boost::none;
             optimalChoicesReachableMdpStates = boost::none;
@@ -110,6 +111,7 @@ namespace storm {
             }
             targetStates = storm::storage::BitVector(getCurrentNumberOfMdpStates(), false);
             truncatedStates = storm::storage::BitVector(getCurrentNumberOfMdpStates(), false);
+            culledStates = storm::storage::BitVector(getCurrentNumberOfMdpStates(), false);
             delayedExplorationChoices.clear();
             mdpStatesToExplore.clear();
 
@@ -209,6 +211,16 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::addRewardToCurrentState(uint64 const &localActionIndex, ValueType rewardValue) {
+            STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
+            if (getCurrentNumberOfMdpChoices() > mdpActionRewards.size()) {
+                mdpActionRewards.resize(getCurrentNumberOfMdpChoices(), storm::utility::zero<ValueType>());
+            }
+            uint64_t row = getStartOfCurrentRowGroup() + localActionIndex;
+            mdpActionRewards[row] = rewardValue;
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
         void BeliefMdpExplorer<PomdpType, BeliefValueType>::setCurrentStateIsTarget() {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
             targetStates.grow(getCurrentNumberOfMdpStates(), false);
@@ -220,6 +232,14 @@ namespace storm {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
             truncatedStates.grow(getCurrentNumberOfMdpStates(), false);
             truncatedStates.set(getCurrentMdpState(), true);
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::setCurrentStateIsCulled() {
+            STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
+            setCurrentStateIsTruncated();
+            culledStates.grow(getCurrentNumberOfMdpStates(), false);
+            culledStates.set(getCurrentMdpState(), true);
         }
 
         template<typename PomdpType, typename BeliefValueType>
@@ -243,6 +263,15 @@ namespace storm {
             STORM_LOG_ASSERT(currentStateHasOldBehavior(), "Method 'actionAtCurrentStateWasOptimal' called but current state has no old behavior");
             STORM_LOG_ASSERT(exploredMdp, "No 'old' mdp available");
             return exploredMdp->getStateLabeling().getStateHasLabel("truncated", getCurrentMdpState());
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        bool BeliefMdpExplorer<PomdpType, BeliefValueType>::getCurrentStateWasCulled() const {
+            STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
+            STORM_LOG_ASSERT(getCurrentMdpState() != noState(), "Method 'actionAtCurrentStateWasOptimal' called but there is no current state.");
+            STORM_LOG_ASSERT(currentStateHasOldBehavior(), "Method 'actionAtCurrentStateWasOptimal' called but current state has no old behavior");
+            STORM_LOG_ASSERT(exploredMdp, "No 'old' mdp available");
+            return exploredMdp->getStateLabeling().getStateHasLabel("culled", getCurrentMdpState());
         }
 
         template<typename PomdpType, typename BeliefValueType>
@@ -330,6 +359,7 @@ namespace storm {
             // Resize state- and choice based vectors to the correct size
             targetStates.resize(getCurrentNumberOfMdpStates(), false);
             truncatedStates.resize(getCurrentNumberOfMdpStates(), false);
+            culledStates.resize(getCurrentNumberOfMdpStates(), false);
             if (!mdpActionRewards.empty()) {
                 mdpActionRewards.resize(getCurrentNumberOfMdpChoices(), storm::utility::zero<ValueType>());
             }
@@ -374,6 +404,8 @@ namespace storm {
             mdpLabeling.addLabel("target", std::move(targetStates));
             truncatedStates.resize(getCurrentNumberOfMdpStates(), false);
             mdpLabeling.addLabel("truncated", std::move(truncatedStates));
+            culledStates.resize(getCurrentNumberOfMdpStates(), false);
+            mdpLabeling.addLabel("culled", std::move(culledStates));
 
             // Create a standard reward model (if rewards are available)
             std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> mdpRewardModels;
@@ -397,8 +429,7 @@ namespace storm {
             exploredMdp = std::make_shared<storm::models::sparse::Mdp<ValueType>>(std::move(modelComponents));
             status = Status::ModelFinished;
             STORM_LOG_DEBUG(
-                    "Explored Mdp with " << exploredMdp->getNumberOfStates() << " states (" << truncatedStates.getNumberOfSetBits() << " of which were flagged as truncated).");
-
+                    "Explored Mdp with " << exploredMdp->getNumberOfStates() << " states (" << culledStates.getNumberOfSetBits() << " of which were culled and " << truncatedStates.getNumberOfSetBits() - culledStates.getNumberOfSetBits()  << " of which were flagged as truncated).");
         }
 
         template<typename PomdpType, typename BeliefValueType>
@@ -494,6 +525,7 @@ namespace storm {
             }
             targetStates = targetStates % relevantMdpStates;
             truncatedStates = truncatedStates % relevantMdpStates;
+            culledStates = culledStates % relevantMdpStates;
             initialMdpState = toRelevantStateIndexMap[initialMdpState];
 
             storm::utility::vector::filterVectorInPlace(lowerValueBounds, relevantMdpStates);
@@ -644,7 +676,7 @@ namespace storm {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
             STORM_LOG_ASSERT(currentStateHasOldBehavior(), "Method call is invalid since the current state has no old behavior");
             uint64_t mdpChoice = getStartOfCurrentRowGroup() + localActionIndex;
-            for (auto const &entry : exploredMdp->getTransitionMatrix().getRow(mdpChoice)) {
+            for(auto const &entry : exploredMdp->getTransitionMatrix().getRow(mdpChoice)) {
                 auto const &beliefId = getBeliefId(entry.getColumn());
                 if (observationSet.get(beliefManager->getBeliefObservation(beliefId))) {
                     return true;
@@ -803,6 +835,11 @@ namespace storm {
                 mdpStatesToExplore.push_back(result);
                 return result;
             }
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        std::vector<typename  BeliefMdpExplorer<PomdpType, BeliefValueType>::BeliefId>  BeliefMdpExplorer<PomdpType, BeliefValueType>::getBeliefsInMdp(){
+            return mdpStateToBeliefIdMap;
         }
 
         template
