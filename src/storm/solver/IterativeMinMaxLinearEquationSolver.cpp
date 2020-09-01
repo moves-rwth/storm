@@ -360,6 +360,15 @@ namespace storm {
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsOptimisticValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
 
+            if (!storm::utility::vector::hasNonZeroEntry(b)) {
+                // If all entries are zero, OVI might run in an endless loop. However, the result is easy in this case.
+                x.assign(x.size(), storm::utility::zero<ValueType>());
+                if (this->isTrackSchedulerSet()) {
+                    this->schedulerChoices = std::vector<uint_fast64_t>(x.size(), 0);
+                }
+                return true;
+            }
+            
             if (!this->multiplierA) {
                 this->multiplierA = storm::solver::MultiplierFactory<ValueType>().create(env, *this->A);
             }
