@@ -223,11 +223,14 @@ namespace storm {
                                     // From now on, we keep updating both bounds
                                     intervalIterationNeeded = true;
                                 }
-                            } else if (newUpperBoundAlwaysHigherEqual && newUpperBoundAlwaysLowerEqual) {
+                            // The following case below covers that bouth vectors (old and new) are equal.
+                            // Theoretically, this means that the precise fixpoint has been reached. However, numerical instabilities can be tricky and this detection might be incorrect (see the haddad-monmege model).
+                            // We therefore disable it. It is very unlikely that we guessed the right fixpoint anyway.
+                            //} else if (newUpperBoundAlwaysHigherEqual && newUpperBoundAlwaysLowerEqual) {
                                 // In this case, the guessed upper bound is the precise fixpoint
-                                status = SolverStatus::Converged;
-                                std::swap(lowerX, auxVector);
-                                break;
+                            //    status = SolverStatus::Converged;
+                            //    std::swap(lowerX, auxVector);
+                            //    break;
                             }
                             // At this point, the old upper bounds (auxVector) are not needed anymore.
 

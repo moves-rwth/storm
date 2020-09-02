@@ -22,6 +22,15 @@ namespace storm {
         }
 
         template<typename ValueType, typename RewardModelType>
+        bool DiscreteTimeSparseModelSimulator<ValueType,RewardModelType>::randomStep() {
+            // TODO random_uint is slow
+            if (model.getTransitionMatrix().getRowGroupSize(currentState) == 0) {
+                return false;
+            }
+            return step(generator.random_uint(0, model.getTransitionMatrix().getRowGroupSize(currentState) - 1));
+        }
+
+        template<typename ValueType, typename RewardModelType>
         bool DiscreteTimeSparseModelSimulator<ValueType,RewardModelType>::step(uint64_t action) {
             // TODO lots of optimization potential.
             //  E.g., do not sample random numbers if there is only a single transition

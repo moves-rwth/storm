@@ -637,6 +637,12 @@ namespace storm {
         template<typename ValueType>
         bool NativeLinearEquationSolver<ValueType>::solveEquationsOptimisticValueIteration(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
 
+            if (!storm::utility::vector::hasNonZeroEntry(b)) {
+                // If all entries are zero, OVI might run in an endless loop. However, the result is easy in this case.
+                x.assign(x.size(), storm::utility::zero<ValueType>());
+                return true;
+            }
+            
             if (!this->multiplier) {
                 this->multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, *this->A);
             }

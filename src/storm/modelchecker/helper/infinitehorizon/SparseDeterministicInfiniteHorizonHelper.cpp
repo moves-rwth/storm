@@ -405,6 +405,8 @@ namespace storm {
                     solver->setBounds(*lowerUpperBounds.first, *lowerUpperBounds.second);
                     // Check solver requirements
                     auto requirements = solver->getRequirements(env);
+                    requirements.clearUpperBounds();
+                    requirements.clearLowerBounds();
                     STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UnmetRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
                     sspValues.assign(sspMatrixVector.first.getRowCount(), (*lowerUpperBounds.first + *lowerUpperBounds.second) / storm::utility::convertNumber<ValueType,uint64_t>(2));
                     solver->solveEquations(env, sspValues, sspMatrixVector.second);

@@ -13,7 +13,7 @@ namespace storm {
             
             BinaryPomdpTransformer();
             
-            std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> transform(storm::models::sparse::Pomdp<ValueType> const& pomdp, bool transformSimple) const;
+            std::shared_ptr<storm::models::sparse::Pomdp<ValueType>> transform(storm::models::sparse::Pomdp<ValueType> const& pomdp, bool transformSimple, bool keepStateValuations = false) const;
 
         private:
     
@@ -27,7 +27,7 @@ namespace storm {
             TransformationData transformTransitions(storm::models::sparse::Pomdp<ValueType> const& pomdp, bool transformSimple) const;
             storm::models::sparse::StateLabeling transformStateLabeling(storm::models::sparse::Pomdp<ValueType> const& pomdp, TransformationData const& data) const;
             storm::models::sparse::StandardRewardModel<ValueType> transformRewardModel(storm::models::sparse::Pomdp<ValueType> const& pomdp, storm::models::sparse::StandardRewardModel<ValueType> const& rewardModel, TransformationData const& data) const;
-            
+            storm::models::sparse::ChoiceLabeling transformChoiceLabeling(storm::models::sparse::Pomdp<ValueType> const& pomdp, TransformationData const& data) const;
         };
     }
 }
