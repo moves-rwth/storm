@@ -1,5 +1,6 @@
 
 #include "storm-pomdp/generator/NondeterministicBeliefTracker.h"
+#include "storm/utility/ConstantsComparator.h"
 
 namespace storm {
     namespace generator {
@@ -87,7 +88,24 @@ namespace storm {
 
         template<typename ValueType>
         bool operator==(SparseBeliefState<ValueType> const& lhs, SparseBeliefState<ValueType> const& rhs) {
-            return lhs.hash() == rhs.hash() && lhs.belief == rhs.belief;
+            if (lhs.hash() != rhs.hash()) {
+                return false;
+            }
+            if (lhs.belief.size() != rhs.belief.size()) {
+                return false;
+            }
+            storm::utility::ConstantsComparator<ValueType> cmp(0.00001, true);
+            auto lhsIt = lhs.belief.begin();
+            auto rhsIt = rhs.belief.begin();
+            while(lhsIt != lhs.belief.end()) {
+                if (lhsIt->first != rhsIt->first || !cmp.isEqual(lhsIt->second, rhsIt->second)) {
+                    return false;
+                }
+                ++lhsIt;
+                ++rhsIt;
+            }
+            return true;
+            //return std::equal(lhs.belief.begin(), lhs.belief.end(), rhs.belief.begin());
         }
 
         template<typename ValueType>
@@ -115,7 +133,7 @@ namespace storm {
             for(auto& entry : newBelief) {
                 assert(!storm::utility::isZero(sum));
                 entry.second /= sum;
-                boost::hash_combine(newHash, std::hash<ValueType>()(entry.second));
+                //boost::hash_combine(newHash, std::hash<ValueType>()(entry.second));
                 boost::hash_combine(newHash, entry.first);
                 risk += entry.second * manager->getRisk(entry.first);
             }
