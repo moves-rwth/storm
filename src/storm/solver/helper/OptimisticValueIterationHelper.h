@@ -167,7 +167,7 @@ namespace storm {
                             bool newUpperBoundAlwaysLowerEqual = true;
                             if (noTerminationGuarantee) {
                                 bool cancelOuterScan = false;
-                                for (uint64_t i = 0; i < upperX->size() & !cancelOuterScan; ++i) {
+                                for (uint64_t i = 0; i < upperX->size() && !cancelOuterScan; ++i) {
                                     if ((*upperX)[i] < (*auxVector)[i]) {
                                         newUpperBoundAlwaysHigherEqual = false;
                                         for (++i; i < upperX->size(); ++i) {
