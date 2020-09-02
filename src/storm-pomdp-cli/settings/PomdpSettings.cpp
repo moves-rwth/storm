@@ -30,6 +30,7 @@
 #include "storm/settings/modules/MultiObjectiveSettings.h"
 #include "storm/settings/modules/HintSettings.h"
 #include "storm/settings/modules/OviSolverSettings.h"
+#include "storm/settings/modules/GurobiSettings.h"
 
 #include "storm-pomdp-cli/settings/modules/POMDPSettings.h"
 #include "storm-pomdp-cli/settings/modules/QualitativePOMDPAnalysisSettings.h"
@@ -62,6 +63,7 @@ namespace storm {
             storm::settings::addModule<storm::settings::modules::GameSolverSettings>();
             storm::settings::addModule<storm::settings::modules::BisimulationSettings>();
             storm::settings::addModule<storm::settings::modules::GlpkSettings>();
+            storm::settings::addModule<storm::settings::modules::GurobiSettings>();
             storm::settings::addModule<storm::settings::modules::ExplorationSettings>();
             storm::settings::addModule<storm::settings::modules::ResourceSettings>();
             storm::settings::addModule<storm::settings::modules::JitBuilderSettings>();
