@@ -10,9 +10,9 @@ namespace storm {
     }
     
     namespace utility {
-        class Portfolio {
+        class AutomaticSettings {
         public:
-            Portfolio();
+            AutomaticSettings();
             
             /*!
              * Predicts "good" settings for the provided model checking query
