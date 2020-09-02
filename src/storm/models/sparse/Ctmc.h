@@ -64,6 +64,12 @@ namespace storm {
 
                 virtual void reduceToStateBasedRewards() override;
                 
+                /*!
+                 * @return the probabilistic transition matrix P
+                 * @note getTransitionMatrix() retrieves the exit rate matrix R, where R(s,s') = r(s) * P(s,s')
+                 */
+                storm::storage::SparseMatrix<ValueType> computeProbabilityMatrix() const;
+                
             private:
                 /*!
                  * Computes the exit rate vector based on the given rate matrix.

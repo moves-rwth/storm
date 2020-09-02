@@ -9,22 +9,26 @@ Version 1.6.x
 -------------
 
 ## Version 1.6.1 (??)
-- Prism program simplification improved
-- `storm-pomdp`: Fix for --transformsimple and --transformbinary when used with until formulae
+- Prism program simplification improved.
+- Revamped implementation of long-run-average algorithms, including scheduler export for LRA properties on Markov automata.
+- Support for step-bounded properties of the form ... [F[x,y] ... ] for DTMCs and MDPs (sparse engine). 
+- `storm-dft`: Fix for relevant events when using symmetry reduction.
+- `storm-pomdp`: Fix for --transformsimple and --transformbinary when used with until formulae.
+- `storm-pomdp`: POMDPs can be parametric as well.
 
 ## Version 1.6.0 (2020/06)
 - Changed default Dd library from `cudd` to `sylvan`. The Dd library can be changed back to `cudd` using the command line switch `--ddlib`.
 - Scheduler export: Properly handle models with end components. Added export in `.json` format.
-- CMake: Search for Gurobi prefers new versions
-- CMake: We no longer ship xerces-c. If xerces-c is not found on the system, storm-gspn will not be able to parse xml-based GSPN formats 
+- CMake: Search for Gurobi prefers new versions.
+- CMake: We no longer ship xerces-c. If xerces-c is not found on the system, storm-gspn will not be able to parse xml-based GSPN formats.
 - CMake: Added option `STORM_LOAD_QVBS` to automatically download the quantitative verification benchmark set.
 - Eigen library: The source code of Eigen is no longer included but downloaded from an external repository instead. Incremented Eigen version to 3.3.7 which fixes a compilation issue with recent XCode versions.
-- Tests: Enabled tests for permissive schedulers
-- `storm-counterexamples`: fix when computing multiple counterexamples in debug mode
+- Tests: Enabled tests for permissive schedulers.
+- `storm-counterexamples`: fix when computing multiple counterexamples in debug mode.
 - `storm-dft`: Renamed setting `--show-dft-stats` to `dft-statistics` and added approximation information to statistics.
 - `storm-pomdp`: Implemented approximation algorithms that explore (a discritization of) the belief MDP, allowing to compute safe lower- and upper bounds for a given property.
-- `storm-pomdp`: Implemented almost-sure reachability computations: graph-based, one-shot SAT-based, and iterative SAT-based
-- `storm-pomdp': Various changes such that transformation to pMCs is now again supported (and improved)
+- `storm-pomdp`: Implemented almost-sure reachability computations: graph-based, one-shot SAT-based, and iterative SAT-based.
+- `storm-pomdp': Various changes such that transformation to pMCs is now again supported (and improved).
 - Fixed several compiler warnings.
 
 

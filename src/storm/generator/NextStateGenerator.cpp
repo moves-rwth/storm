@@ -78,6 +78,11 @@ namespace storm {
             }
             return evaluator->asBool(expression);
         }
+
+        template<typename ValueType, typename StateType>
+        VariableInformation const& NextStateGenerator<ValueType, StateType>::getVariableInformation() const {
+            return variableInformation;
+        }
         
         template<typename ValueType, typename StateType>
         void NextStateGenerator<ValueType, StateType>::addStateValuation(storm::storage::sparse::state_type const& currentStateIndex, storm::storage::sparse::StateValuationsBuilder& valuationsBuilder) const {

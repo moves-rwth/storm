@@ -2,6 +2,8 @@
 
 #include "storm/modelchecker/prctl/helper/HybridDtmcPrctlHelper.h"
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
+#include "storm/modelchecker/helper/infinitehorizon/HybridInfiniteHorizonHelper.h"
+#include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
 
 #include "storm/storage/dd/Odd.h"
 #include "storm/storage/dd/DdManager.h"
@@ -71,7 +73,7 @@ namespace storm {
         template<typename ModelType>
         std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<ModelType>::computeBoundedUntilProbabilities(Environment const& env, CheckTask<storm::logic::BoundedUntilFormula, ValueType> const& checkTask) {
             storm::logic::BoundedUntilFormula const& pathFormula = checkTask.getFormula();
-            STORM_LOG_THROW(!pathFormula.hasLowerBound() && pathFormula.hasUpperBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have single upper time bound.");
+            STORM_LOG_THROW(!pathFormula.hasLowerBound() && pathFormula.hasUpperBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have (a single) upper time bound, and no lower bound.");
             STORM_LOG_THROW(pathFormula.hasIntegerUpperBound(), storm::exceptions::InvalidPropertyException, "Formula needs to have discrete upper time bound.");
             std::unique_ptr<CheckResult> leftResultPointer = this->check(env, pathFormula.getLeftSubformula());
             std::unique_ptr<CheckResult> rightResultPointer = this->check(env, pathFormula.getRightSubformula());
@@ -113,20 +115,24 @@ namespace storm {
             return storm::modelchecker::helper::HybridDtmcPrctlHelper<DdType, ValueType>::computeReachabilityTimes(env, this->getModel(), this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector(), checkTask.isQualitativeSet());
         }
 
-
         template<typename ModelType>
         std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<ModelType>::computeLongRunAverageProbabilities(Environment const& env, CheckTask<storm::logic::StateFormula, ValueType> const& checkTask) {
             storm::logic::StateFormula const& stateFormula = checkTask.getFormula();
             std::unique_ptr<CheckResult> subResultPointer = this->check(env, stateFormula);
             SymbolicQualitativeCheckResult<DdType> const& subResult = subResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             
-            return storm::modelchecker::helper::HybridDtmcPrctlHelper<DdType, ValueType>::computeLongRunAverageProbabilities(env, this->getModel(), this->getModel().getTransitionMatrix(), subResult.getTruthValuesVector());
+            storm::modelchecker::helper::HybridInfiniteHorizonHelper<ValueType, DdType, false> helper(this->getModel(), this->getModel().getTransitionMatrix());
+            storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, this->getModel());
+            return helper.computeLongRunAverageProbabilities(env, subResult.getTruthValuesVector());
         }
         
         template<typename ModelType>
         std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<ModelType>::computeLongRunAverageRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
             auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
-            return storm::modelchecker::helper::HybridDtmcPrctlHelper<DdType, ValueType>::computeLongRunAverageRewards(env, this->getModel(), this->getModel().getTransitionMatrix(), rewardModel.get());
+
+            storm::modelchecker::helper::HybridInfiniteHorizonHelper<ValueType, DdType, false> helper(this->getModel(), this->getModel().getTransitionMatrix());
+            storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, this->getModel());
+            return helper.computeLongRunAverageRewards(env, rewardModel.get());
         }
         
         template class HybridDtmcPrctlModelChecker<storm::models::symbolic::Dtmc<storm::dd::DdType::CUDD, double>>;

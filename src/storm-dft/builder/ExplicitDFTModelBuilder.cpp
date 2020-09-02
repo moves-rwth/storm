@@ -5,7 +5,6 @@
 #include <storm/exceptions/IllegalArgumentException.h>
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/UnexpectedException.h"
-#include "storm/logic/AtomicLabelFormula.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/utility/bitoperations.h"
@@ -34,19 +33,18 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        ExplicitDFTModelBuilder<ValueType, StateType>::ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries, std::set<size_t> const& relevantEvents, bool allowDCForRelevantEvents) :
+        ExplicitDFTModelBuilder<ValueType, StateType>::ExplicitDFTModelBuilder(storm::storage::DFT<ValueType> const& dft, storm::storage::DFTIndependentSymmetries const& symmetries) :
                 dft(dft),
                 stateGenerationInfo(std::make_shared<storm::storage::DFTStateGenerationInfo>(dft.buildStateGenerationInfo(symmetries))),
-                relevantEvents(relevantEvents),
                 generator(dft, *stateGenerationInfo),
                 matrixBuilder(!generator.isDeterministicModel()),
                 stateStorage(dft.stateBitVectorSize()),
                 explorationQueue(1, 0, 0.9, false)
         {
             // Set relevant events
-            this->dft.setRelevantEvents(this->relevantEvents, allowDCForRelevantEvents);
             STORM_LOG_DEBUG("Relevant events: " << this->dft.getRelevantEventsString());
-            if (this->relevantEvents.empty()) {
+            if (dft.getRelevantEvents().size() <= 1) {
+                STORM_LOG_ASSERT(dft.getRelevantEvents()[0] == dft.getTopLevelIndex(), "TLE is not relevant");
                 // Only interested in top level event -> introduce unique failed state
                 this->uniqueFailedState = true;
                 STORM_LOG_DEBUG("Using unique failed state with id 0.");
@@ -531,6 +529,9 @@ namespace storm {
             if (this->uniqueFailedState) {
                 // Unique failed state has label 0
                 modelComponents.stateLabeling.addLabelToState("failed", 0);
+                std::shared_ptr<storage::DFTElement<ValueType> const> element = dft.getElement(dft.getTopLevelIndex());
+                STORM_LOG_ASSERT(element->isRelevant(), "TLE should be relevant if unique failed state is used.");
+                modelComponents.stateLabeling.addLabelToState(element->name() + "_failed", 0);
             }
             for (auto const& stateIdPair : stateStorage.stateToId) {
                 storm::storage::BitVector state = stateIdPair.first;

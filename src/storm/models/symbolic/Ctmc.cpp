@@ -94,6 +94,10 @@ namespace storm {
                 }
             }
             
+            template<storm::dd::DdType Type, typename ValueType>
+            storm::dd::Add<Type, ValueType> Ctmc<Type, ValueType>::computeProbabilityMatrix() const {
+                return this->getTransitionMatrix() / this->getExitRateVector();
+            }
             
             template<storm::dd::DdType Type, typename ValueType>
             template<typename NewValueType>

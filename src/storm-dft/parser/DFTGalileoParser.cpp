@@ -148,7 +148,7 @@ namespace storm {
                             ValueType probability = valueParser.parseValue(type.substr(5));
                             success = builder.addDepElement(name, childNames, probability);
                         } else if (type.find("=") != std::string::npos) {
-                            success = parseBasicElement(name, line, lineNo, builder, valueParser);
+                            success = parseBasicElement(tokens[0], line, lineNo, builder, valueParser);
                         } else if (type.find("insp") != std::string::npos) {
                             // Inspection as defined by DFTCalc
                             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Inspections (defined in line " << lineNo << ") are not supported.");

@@ -799,6 +799,11 @@ namespace storm {
             bool sharedSpareMode = false;
             std::map<size_t, size_t> bijection;
 
+            if (getElement(index1)->isRelevant() || getElement(index2)->isRelevant()) {
+                // Relevant events need to be uniquely identified and cannot be symmetric.
+                return {};
+            }
+
             if (isBasicElement(index1)) {
                 if (!isBasicElement(index2)) {
                     return {};
@@ -1021,6 +1026,11 @@ namespace storm {
         }
 
         template<typename ValueType>
+        bool DFT<ValueType>::existsName(std::string const& name) const {
+            return std::find_if(mElements.begin(), mElements.end(), [&name](DFTElementPointer const& e) { return e->name() == name; }) != mElements.end();
+        }
+
+        template<typename ValueType>
         size_t DFT<ValueType>::getIndex(std::string const& name) const {
             auto iter = std::find_if(mElements.begin(), mElements.end(), [&name](DFTElementPointer const& e) { return e->name() == name; });
             STORM_LOG_THROW(iter != mElements.end(), storm::exceptions::InvalidArgumentException, "Event name '" << name << "' not known.");
@@ -1028,14 +1038,15 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void DFT<ValueType>::setRelevantEvents(std::set<size_t> const& relevantEvents, bool allowDCForRelevantEvents) const {
+        void DFT<ValueType>::setRelevantEvents(storm::utility::RelevantEvents const& relevantEvents) const {
             mRelevantEvents.clear();
+            STORM_LOG_THROW(relevantEvents.checkRelevantNames(*this), storm::exceptions::InvalidArgumentException, "One of the relevant elements does not exist.");
             // Top level element is first element
             mRelevantEvents.push_back(this->getTopLevelIndex());
-            for (auto const& elem : mElements) {
-                if (relevantEvents.find(elem->id()) != relevantEvents.end() || elem->id() == this->getTopLevelIndex()) {
+            for (auto& elem : mElements) {
+                if (relevantEvents.isRelevant(elem->name()) || elem->id() == this->getTopLevelIndex()) {
                     elem->setRelevance(true);
-                    elem->setAllowDC(allowDCForRelevantEvents);
+                    elem->setAllowDC(relevantEvents.isAllowDC());
                     if (elem->id() != this->getTopLevelIndex()) {
                         // Top level element was already added
                         mRelevantEvents.push_back(elem->id());

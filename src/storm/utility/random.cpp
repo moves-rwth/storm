@@ -19,6 +19,10 @@ namespace storm {
             return distribution(engine);
         }
 
+        uint64_t RandomProbabilityGenerator<double>::random_uint(uint64_t min, uint64_t max) {
+            return std::uniform_int_distribution<uint64_t>(min, max)(engine);
+        }
+
 
     }
 }

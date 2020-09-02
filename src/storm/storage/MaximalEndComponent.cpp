@@ -36,6 +36,10 @@ namespace storm {
             stateToChoicesMapping.emplace(state, std::move(choices));
         }
         
+        std::size_t MaximalEndComponent::size() const {
+            return stateToChoicesMapping.size();
+        }
+        
         MaximalEndComponent::set_type const& MaximalEndComponent::getChoicesForState(uint_fast64_t state) const {
             auto stateChoicePair = stateToChoicesMapping.find(state);
             

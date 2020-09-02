@@ -247,6 +247,14 @@ namespace storm {
                 }
                 return StateValuations(variableToIndexMap, std::move(selectedValuations));
             }
+
+            StateValuations StateValuations::blowup(const std::vector<uint64_t> &mapNewToOld) const {
+                std::vector<StateValuation> newValuations;
+                for( auto const& oldState : mapNewToOld) {
+                    newValuations.push_back(valuations[oldState]);
+                }
+                return StateValuations(variableToIndexMap, std::move(newValuations));
+            }
             
             StateValuationsBuilder::StateValuationsBuilder() : booleanVarCount(0), integerVarCount(0), rationalVarCount(0) {
                 // Intentionally left empty.
