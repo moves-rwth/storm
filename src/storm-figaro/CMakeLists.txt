@@ -9,7 +9,11 @@ file(GLOB_RECURSE STORM_FIGARO_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-figaro/*/
 
 
 # Create storm-figaro.
+<<<<<<< HEAD
 add_library(storm-figaro SHARED ${STORM_FIGARO_SOURCES} ${STORM_FIGARO_HEADERS} model/FigaroModelTemplate.h)
+=======
+add_library(storm-figaro SHARED ${STORM_FIGARO_SOURCES} ${STORM_FIGARO_HEADERS})
+>>>>>>> 2dddc29ea061c2a0b33493dccd8ece2b3a1211bf
 
 # Remove define symbol for shared libstorm.
 set_target_properties(storm-figaro PROPERTIES DEFINE_SYMBOL "")
