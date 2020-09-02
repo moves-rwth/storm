@@ -138,7 +138,7 @@ namespace storm {
                 else if (figaromodel.float_variables_names.find(integerVariable.getName()) != figaromodel.float_variables_names.end())
                     {
                     uint_fast64_t bitwidth = 64;
-                        //                    std::cout<<bitwidth<<"Bitwidth\n";
+//                                            std::cout<<bitwidth<<"Bitwidth\n";
                     integerVariables.emplace_back(integerVariable, 0, 18446744073709551615, totalBitOffset, bitwidth, true, true);
                     totalBitOffset += bitwidth;
                     continue;

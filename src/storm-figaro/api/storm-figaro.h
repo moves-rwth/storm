@@ -3,11 +3,9 @@
 
 #include <iostream>
 #include <string>
-#include "storm-figaro/model/FigaroModel.h"
 #include "storm/models/symbolic/MarkovAutomaton.h"
 #include "storm/builder/ExplicitModelBuilder.h"
-//#include "storm-cli-utilities/cli.h"
-//#include "storm-cli-utilities/model-handling.h"
+
 
 #include "storm-figaro/generator/FigaroNextStateGenerator.h"
 
@@ -81,7 +79,7 @@
 //#include "storm-cli-utilities/model-handling.h"
 
 #include "storm-figaro/generator/FigaroNextStateGenerator.h"
-
+#include "storm-figaro/modelchecker/FigaroModelChecker.h"
 #include <random>
 #include "storm/storage/SymbolicModelDescription.h"
 
@@ -147,6 +145,15 @@ namespace storm {
 
             std::shared_ptr<storm::figaro::FigaroProgram> loadFigaroProgram();
 
+            std::vector<std::string> parseXmlProperties(std::string filepath, std::vector<std::string> properties);
+
+            std::vector<std::shared_ptr<storm::logic::Formula const>> buildProperties(std::vector<std::string> properties);
+
+            std::vector<storm::expressions::Variable> getFigaroIntegerVariables(storm::figaro::FigaroProgram & figaroprogram);
+            std::vector<storm::expressions::Variable> getFigaroBooleanVariables(storm::figaro::FigaroProgram & figaroprogram);
+            std::shared_ptr<storm::expressions::ExpressionManager> getFigaroExpresseionManager(storm::figaro::FigaroProgram & figaroprogram);
+
+
 
             template<typename ValueType>
             std::shared_ptr<storm::models::sparse::Model<ValueType>>
@@ -189,14 +196,26 @@ namespace storm {
 
 
             template<typename ValueType>
-            std::shared_ptr<storm::models::sparse::Model<ValueType>>
-            checkfigaro(storm::figaro::FigaroProgram & model, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
+            //std::shared_ptr<storm::models::sparse::Model<ValueType>>
+            typename storm::figaro::modelchecker::FigaroModelChecker<ValueType>::figaro_results
+            analyzeFigaro(storm::figaro::FigaroProgram & origfigaro, std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
                         double approximationError = 0.0, storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH,
                         bool  printOutput = false )
             {
+                storm::figaro::modelchecker::FigaroModelChecker<ValueType> modelChecker(printOutput);
+                typename storm::figaro::modelchecker::FigaroModelChecker<ValueType>::figaro_results results = modelChecker.check(origfigaro, properties, approximationError, approximationHeuristic);
+                if (printOutput) {
+                    modelChecker.printTimings();
+                    modelChecker.printResults(results);
+                }
+                return results;
 
-                std::shared_ptr<storm::models::sparse::Model<ValueType>> sparsemodel = buildSparseModel<ValueType>(model);
-        std::shared_ptr<storm::models::sparse::Model<ValueType>> sparsemodelcopy = sparsemodel;
+
+
+//
+//
+//                std::shared_ptr<storm::models::sparse::Model<ValueType>> sparsemodel = storm::figaro::api::buildSparseModel<ValueType>(model);
+//        std::shared_ptr<storm::models::sparse::Model<ValueType>> sparsemodelcopy = sparsemodel;
             //change MA to CTMC
 //        sparsemodel->printModelInformationToStream(std::cout);
 ////          std::cout << sparsemodel->getTransitionMatrix() << std::endl;
@@ -228,7 +247,7 @@ namespace storm {
 //        auto quantRes = result->template asExplicitQuantitativeCheckResult<double>();
 //        std::cout << quantRes[(*sparsemodel->getInitialStates().begin())] << std::endl;
 //        result->writeToStream(std::cout);
-        return sparsemodelcopy;
+//        return sparsemodelcopy;
         }
                     }//namespace api
         }//namespace figaro

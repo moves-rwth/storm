@@ -9,7 +9,7 @@ file(GLOB_RECURSE STORM_FIGARO_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-figaro/*/
 
 
 # Create storm-figaro.
-add_library(storm-figaro SHARED ${STORM_FIGARO_SOURCES} ${STORM_FIGARO_HEADERS} model/FigaroModelTemplate.cpp model/FigaroModelTemplate.h)
+add_library(storm-figaro SHARED ${STORM_FIGARO_SOURCES} ${STORM_FIGARO_HEADERS} model/FigaroModelTemplate.h)
 
 # Remove define symbol for shared libstorm.
 set_target_properties(storm-figaro PROPERTIES DEFINE_SYMBOL "")
@@ -17,7 +17,7 @@ set_target_properties(storm-figaro PROPERTIES DEFINE_SYMBOL "")
 list(APPEND STORM_TARGETS storm-figaro)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 
-target_link_libraries(storm-figaro PUBLIC storm ${STORM_FIGARO_LINK_LIBRARIES})
+target_link_libraries(storm-figaro PUBLIC storm storm-parsers ${STORM_FIGARO_LINK_LIBRARIES})
 
 # Install storm headers to include directory.
 foreach(HEADER ${STORM_FIGARO_HEADERS})

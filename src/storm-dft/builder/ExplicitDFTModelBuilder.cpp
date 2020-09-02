@@ -948,6 +948,7 @@ namespace storm {
         }
 
 
+
         // Explicitly instantiate the class.
         template class ExplicitDFTModelBuilder<double>;
 

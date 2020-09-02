@@ -1,4 +1,4 @@
-
+#pragma once
     // to avoid multiple inclusions of header file
 #ifndef STORM_GENERATOR_FIGARONEXTSTATEGENERATOR_H_
 #define STORM_GENERATOR_FIGARONEXTSTATEGENERATOR_H_
