@@ -402,11 +402,12 @@ namespace storm {
 
             this->startMeasureProgress();
             
-            
-            auto statusIters = storm::solver::helper::solveEquationsOptimisticValueIteration(env, lowerX, upperX, auxVector,
+            storm::solver::helper::OptimisticValueIterationHelper<ValueType> helper(*this->A);
+            auto statusIters = helper.solveEquationsOptimisticValueIteration(env, lowerX, upperX, auxVector, b,
                     [&] (std::vector<ValueType>*& y, std::vector<ValueType>*& yPrime, ValueType const& precision, bool const& relative, uint64_t const& i, uint64_t const& maxI) {
                         this->showProgressIterative(i);
-                        return performValueIteration(env, dir, y, yPrime, b, precision, relative, guarantee, i, maxI, multiplicationStyle);
+                        auto result = performValueIteration(env, dir, y, yPrime, b, precision, relative, guarantee, i, maxI, multiplicationStyle);
+                        return std::make_pair(result.iterations, result.status);
                     },
                     [&] (std::vector<ValueType>* y, std::vector<ValueType>* yPrime, uint64_t const& i) {
                         this->showProgressIterative(i);
@@ -423,6 +424,7 @@ namespace storm {
                     env.solver().minMax().getRelativeTerminationCriterion(),
                     storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()),
                     env.solver().minMax().getMaximalNumberOfIterations(),
+                    dir,
                     relevantValues);
             auto two = storm::utility::convertNumber<ValueType>(2.0);
             storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(*lowerX, *upperX, x, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
