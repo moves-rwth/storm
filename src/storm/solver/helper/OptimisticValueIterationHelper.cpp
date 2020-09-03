@@ -305,7 +305,7 @@ namespace storm {
     
                 while (status == SolverStatus::InProgress && overallIterations < maxOverallIterations) {
                     // Perform value iteration until convergence
-                    lastValueIterationIterations = dir ? iterationHelper.repeatedIterate(dir.get(), *lowerX, b, precision, relative) : iterationHelper.repeatedIterate(*lowerX, b, precision, relative);
+                    lastValueIterationIterations = dir ? iterationHelper.repeatedIterate(dir.get(), *lowerX, b, iterationPrecision, relative) : iterationHelper.repeatedIterate(*lowerX, b, iterationPrecision, relative);
                     overallIterations += lastValueIterationIterations;
 
                     bool intervalIterationNeeded = false;
