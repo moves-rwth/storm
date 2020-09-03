@@ -6,10 +6,11 @@ namespace storm {
         class ObservationTraceUnfolder {
 
         public:
-            ObservationTraceUnfolder(storm::models::sparse::Pomdp<ValueType> const& model);
+            ObservationTraceUnfolder(storm::models::sparse::Pomdp<ValueType> const& model, std::shared_ptr<storm::expressions::ExpressionManager>& exprManager);
             std::shared_ptr<storm::models::sparse::Mdp<ValueType>> transform(std::vector<uint32_t> const& observations, std::vector<ValueType> const& risk);
         private:
             storm::models::sparse::Pomdp<ValueType> const& model;
+            std::shared_ptr<storm::expressions::ExpressionManager>& exprManager;
             std::vector<storm::storage::BitVector> statesPerObservation;
 
         };
