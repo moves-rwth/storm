@@ -55,11 +55,13 @@ namespace storm {
                     auto newCheckTask = *this->currentCheckTask;
                     newCheckTask.setQualitative(true);
                     newCheckTask.setOnlyInitialStatesRelevant(false);
+                    newCheckTask.setProduceSchedulers(false);
                     qualitativeResult = modelChecker.check(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
                 } else {
                     auto newCheckTask = this->currentCheckTask->substituteFormula(this->currentCheckTask->getFormula().asOperatorFormula().getSubformula());
                     newCheckTask.setQualitative(true);
                     newCheckTask.setOnlyInitialStatesRelevant(false);
+                    newCheckTask.setProduceSchedulers(false);
                     qualitativeResult = modelChecker.computeProbabilities(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
                 }
                 std::cout << storm::utility::vector::toString(qualitativeResult) << std::endl;
@@ -108,11 +110,13 @@ namespace storm {
                     auto newCheckTask = *this->currentCheckTask;
                     newCheckTask.setQualitative(true);
                     newCheckTask.setOnlyInitialStatesRelevant(false);
+                    newCheckTask.setProduceSchedulers(false);
                     qualitativeResult = modelChecker.check(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
                 } else {
                     auto newCheckTask = this->currentCheckTask->substituteFormula(this->currentCheckTask->getFormula().asOperatorFormula().getSubformula());
                     newCheckTask.setQualitative(true);
                     newCheckTask.setOnlyInitialStatesRelevant(false);
+                    newCheckTask.setProduceSchedulers(false);
                     qualitativeResult = modelChecker.computeRewards(env, this->currentCheckTask->getFormula().asRewardOperatorFormula().getMeasureType(), newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
                 }
                 storm::storage::BitVector maybeStates = storm::utility::vector::filter<ConstantType>(qualitativeResult,
