@@ -184,6 +184,8 @@ namespace storm {
 
                 // USEMON WHILE LOOP
                 while (useMonotonicity && fractionOfUndiscoveredArea > thresholdAsCoefficient && !unprocessedRegions.empty()) {
+                    assert (unprocessedRegions.size() == localMonotonicityResults.size());
+                    assert (unprocessedRegions.size() == orders.size());
                     assert(unprocessedRegions.size() == refinementDepths.size());
                     currentDepth = refinementDepths.front();
                     STORM_LOG_INFO("Analyzing region #" << numOfAnalyzedRegions << " (Refinement depth " << currentDepth << "; " << storm::utility::convertNumber<double>(fractionOfUndiscoveredArea) * 100 << "% still unknown)");
