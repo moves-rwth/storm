@@ -19,10 +19,7 @@ namespace storm {
             ProgramLocationIdentifier getTargetId() const {
                 return target;
             }
-            ProgramEdgeIdentifier getEdgeId() const {
-                return edgeId;
-            }
-
+            
             storm::expressions::Expression const& getCondition() const {
                 return condition;
             }

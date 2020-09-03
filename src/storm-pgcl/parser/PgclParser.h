@@ -140,7 +140,6 @@ namespace storm {
 
             // Constructors for the single program parts. They just wrap the statement constructors and throw exceptions in case something unexpected was parsed.
             storm::pgcl::PgclProgram createProgram(std::string const& programName, boost::optional<std::vector<storm::expressions::Variable> > parameters, std::vector<std::shared_ptr<storm::pgcl::VariableDeclaration>> const& variableDeclarations, std::vector<std::shared_ptr<storm::pgcl::Statement> > const& statements);
-            bool isValidIdentifier(std::string const& identifier);
             storm::expressions::Variable declareDoubleVariable(std::string const& variableName);
             std::shared_ptr<storm::pgcl::AssignmentStatement> createAssignmentStatement(std::string const& variableName, boost::variant<storm::expressions::Expression, storm::pgcl::UniformExpression> const& assignedExpression);
             std::shared_ptr<storm::pgcl::VariableDeclaration> createIntegerDeclarationStatement(std::string const& variableName, storm::expressions::Expression const& assignedExpression);

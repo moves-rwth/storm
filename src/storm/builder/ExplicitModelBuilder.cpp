@@ -48,11 +48,13 @@ namespace storm {
         template <typename ValueType, typename RewardModelType, typename StateType>
         ExplicitModelBuilder<ValueType, RewardModelType, StateType>::Options::Options() : explorationOrder(storm::settings::getModule<storm::settings::modules::BuildSettings>().getExplorationOrder()) {
             // Intentionally left empty.
+            std::cout<<"\n OPtions called\n";
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>
         ExplicitModelBuilder<ValueType, RewardModelType, StateType>::ExplicitModelBuilder(std::shared_ptr<storm::generator::NextStateGenerator<ValueType, StateType>> const& generator, Options const& options) : generator(generator), options(options), stateStorage(generator->getStateSize()) {
             // Intentionally left empty.
+            std::cout<<"\nExplict Model Builder constructor called\n\n";
         }
         
         template <typename ValueType, typename RewardModelType, typename StateType>

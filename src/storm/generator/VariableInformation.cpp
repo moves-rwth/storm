@@ -12,6 +12,7 @@
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/WrongFormatException.h"
+#include "storm-figaro/model/FigaroModel.h"
 
 #include <cmath>
 
@@ -106,7 +107,55 @@ namespace storm {
                         
             sortVariables();
         }
-        
+        VariableInformation::VariableInformation(storm::figaro::FigaroProgram & figaromodel,
+                                                 std::vector<storm::expressions::Variable> boolean_variables,
+                                                 std::vector<storm::expressions::Variable> integer_variables,
+                                                 bool outOfBoundsState):
+            //donot really know what out of bound bits actually mean but added here because it might be required at some later stage
+        totalBitOffset(0) {
+            if (outOfBoundsState) {
+                outOfBoundsBit = 0;
+                ++totalBitOffset;
+            } else {
+                outOfBoundsBit = boost::none;
+            }
+            
+            for (auto const& booleanVariable : boolean_variables) {
+                    //isobservable is set to true
+                booleanVariables.emplace_back(booleanVariable, totalBitOffset, true, true);
+                ++totalBitOffset;
+            }
+
+            for (auto const& integerVariable : integer_variables) {
+                int_fast64_t lowerBound = 0;
+                int_fast64_t upperBound = 0;
+                
+                if (figaromodel.enum_variables_names.find(integerVariable.getName()) != figaromodel.enum_variables_names.end())
+                    {
+                    lowerBound = 0;
+                    upperBound = 10;
+                    }
+                else if (figaromodel.float_variables_names.find(integerVariable.getName()) != figaromodel.float_variables_names.end())
+                    {
+                    uint_fast64_t bitwidth = 64;
+//                                            std::cout<<bitwidth<<"Bitwidth\n";
+                    integerVariables.emplace_back(integerVariable, 0, 18446744073709551615, totalBitOffset, bitwidth, true, true);
+                    totalBitOffset += bitwidth;
+                    continue;
+                    }
+                else{
+                    lowerBound = -1024;
+                    upperBound = 1024;
+                }
+                STORM_LOG_THROW(lowerBound <= upperBound, storm::exceptions::WrongFormatException, "Lower bound must not be above upper bound");
+                uint_fast64_t bitwidth = static_cast<uint_fast64_t>(std::ceil(std::log2(upperBound - lowerBound + 1)));
+                    //                std::cout<<bitwidth<<"Bitwidth\n";
+                integerVariables.emplace_back(integerVariable, lowerBound, upperBound, totalBitOffset, bitwidth, true, true);
+                totalBitOffset += bitwidth;
+            }
+            std::cout<<"I add variable information";
+            sortVariables(); // we do not sort at this momment because correspondence to our manually construted bit vector is required.
+        }
         void VariableInformation::registerArrayVariableReplacements(storm::jani::ArrayEliminatorData const& arrayEliminatorData) {
             arrayVariableToElementInformations.clear();
             // Find for each replaced array variable the corresponding references in this variable information
