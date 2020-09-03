@@ -11,10 +11,12 @@ namespace storm {
             uint64_t getActionsForObservation(uint32_t observation) const;
             ValueType getRisk(uint64_t) const;
             void setRiskPerState(std::vector<ValueType> const& risk);
+            uint64_t getFreshId();
         private:
             storm::models::sparse::Pomdp<ValueType> const& pomdp;
             std::vector<ValueType> riskPerState;
             std::vector<uint64_t> numberActionsPerObservation;
+            uint64_t beliefIdCounter = 0;
         };
 
         template<typename ValueType>
@@ -26,6 +28,7 @@ namespace storm {
         public:
             SparseBeliefState(std::shared_ptr<BeliefStateManager<ValueType>> const& manager, uint64_t state);
             SparseBeliefState update(uint64_t action, uint32_t  observation) const;
+            void update(uint32_t newObservation, std::unordered_set<SparseBeliefState>& previousBeliefs) const;
             std::size_t hash() const noexcept;
             ValueType get(uint64_t state) const;
             ValueType getRisk() const;
@@ -34,12 +37,15 @@ namespace storm {
 
             friend bool operator==<>(SparseBeliefState<ValueType> const& lhs, SparseBeliefState<ValueType> const& rhs);
         private:
-            SparseBeliefState(std::shared_ptr<BeliefStateManager<ValueType>> const& manager, std::map<uint64_t, ValueType> const& belief, std::size_t newHash,  ValueType const& risk);
+            void updateHelper(std::vector<std::map<uint64_t, ValueType>> const& partialBeliefs, std::vector<ValueType> const& sums, typename std::map<uint64_t, ValueType>::const_iterator nextStateIt, uint32_t newObservation, std::unordered_set<SparseBeliefState<ValueType>>& previousBeliefs) const;
+            SparseBeliefState(std::shared_ptr<BeliefStateManager<ValueType>> const& manager, std::map<uint64_t, ValueType> const& belief, std::size_t newHash,  ValueType const& risk, uint64_t prevId);
             std::shared_ptr<BeliefStateManager<ValueType>> manager;
 
             std::map<uint64_t, ValueType> belief; // map is ordered for unique hashing.
             std::size_t prestoredhash = 0;
             ValueType risk;
+            uint64_t id;
+            uint64_t prevId;
 
         };
 

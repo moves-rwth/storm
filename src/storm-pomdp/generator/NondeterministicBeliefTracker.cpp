@@ -36,19 +36,27 @@ namespace storm {
         }
 
         template<typename ValueType>
+        uint64_t BeliefStateManager<ValueType>::getFreshId() {
+            beliefIdCounter++;
+            std::cout << "provide " << beliefIdCounter;
+            return beliefIdCounter;
+        }
+
+        template<typename ValueType>
         SparseBeliefState<ValueType>::SparseBeliefState(std::shared_ptr<BeliefStateManager<ValueType>> const& manager, uint64_t state)
-        : manager(manager), belief()
+        : manager(manager), belief(), id(0), prevId(0)
         {
+            id = manager->getFreshId();
             belief[state] = storm::utility::one<ValueType>();
             risk = manager->getRisk(state);
         }
 
         template<typename ValueType>
         SparseBeliefState<ValueType>::SparseBeliefState(std::shared_ptr<BeliefStateManager<ValueType>> const& manager, std::map<uint64_t, ValueType> const& belief,
-                                                        std::size_t hash, ValueType const& risk)
-        : manager(manager), belief(belief), prestoredhash(hash), risk(risk)
+                                                        std::size_t hash, ValueType const& risk, uint64_t prevId)
+        : manager(manager), belief(belief), prestoredhash(hash), risk(risk), id(0), prevId(prevId)
         {
-            // Intentionally left empty
+            id = manager->getFreshId();
         }
 
         template<typename ValueType>
@@ -74,6 +82,7 @@ namespace storm {
         template<typename ValueType>
         std::string SparseBeliefState<ValueType>::toString() const {
             std::stringstream sstr;
+            sstr << "id: " << id << "; ";
             bool first = true;
             for (auto const& beliefentry : belief) {
                 if (!first) {
@@ -83,6 +92,7 @@ namespace storm {
                 }
                 sstr << beliefentry.first << " : " << beliefentry.second;
             }
+            sstr << " (from " << prevId << ")";
             return sstr.str();
         }
 
@@ -137,7 +147,67 @@ namespace storm {
                 boost::hash_combine(newHash, entry.first);
                 risk += entry.second * manager->getRisk(entry.first);
             }
-            return SparseBeliefState<ValueType>(manager, newBelief, newHash, risk);
+            return SparseBeliefState<ValueType>(manager, newBelief, newHash, risk, id);
+        }
+
+        template<typename ValueType>
+        void SparseBeliefState<ValueType>::update(uint32_t newObservation, std::unordered_set<SparseBeliefState<ValueType>>& previousBeliefs) const {
+            updateHelper({{}}, {storm::utility::zero<ValueType>()}, belief.begin(), newObservation, previousBeliefs);
+        }
+
+        template<typename ValueType>
+        void SparseBeliefState<ValueType>::updateHelper(std::vector<std::map<uint64_t, ValueType>> const& partialBeliefs, std::vector<ValueType> const& sums, typename std::map<uint64_t, ValueType>::const_iterator nextStateIt, uint32_t newObservation, std::unordered_set<SparseBeliefState<ValueType>>& previousBeliefs) const {
+            if(nextStateIt == belief.end()) {
+                for (uint64_t i = 0; i < partialBeliefs.size(); ++i) {
+                    auto const& partialBelief = partialBeliefs[i];
+                    auto const& sum = sums[i];
+                    if (storm::utility::isZero(sum)) {
+                        continue;
+                    }
+                    std::size_t newHash = 0;
+                    ValueType risk = storm::utility::zero<ValueType>();
+                    std::map<uint64_t, ValueType> finalBelief;
+                    for (auto &entry : partialBelief) {
+                        assert(!storm::utility::isZero(sum));
+                        finalBelief[entry.first] = entry.second / sum;
+                        //boost::hash_combine(newHash, std::hash<ValueType>()(entry.second));
+                        boost::hash_combine(newHash, entry.first);
+                        risk += entry.second / sum * manager->getRisk(entry.first);
+                    }
+                    previousBeliefs.insert(SparseBeliefState<ValueType>(manager, finalBelief, newHash, risk, id));
+                }
+            } else {
+                uint64_t state = nextStateIt->first;
+                auto newNextStateIt = nextStateIt;
+                newNextStateIt++;
+                std::vector<std::map<uint64_t, ValueType>> newPartialBeliefs;
+                std::vector<ValueType> newSums;
+                for (uint64_t i = 0; i < partialBeliefs.size(); ++i) {
+
+                    for (auto row = manager->getPomdp().getNondeterministicChoiceIndices()[state];
+                         row < manager->getPomdp().getNondeterministicChoiceIndices()[state + 1]; ++row) {
+                        std::map<uint64_t, ValueType> newPartialBelief = partialBeliefs[i];
+                        ValueType newSum = sums[i];
+                        for (auto const &transition : manager->getPomdp().getTransitionMatrix().getRow(row)) {
+                            if (newObservation != manager->getPomdp().getObservation(transition.getColumn())) {
+                                continue;
+                            }
+
+                            if (newPartialBelief.count(transition.getColumn()) == 0) {
+                                newPartialBelief[transition.getColumn()] = transition.getValue() * nextStateIt->second;
+                            } else {
+                                newPartialBelief[transition.getColumn()] += transition.getValue() * nextStateIt->second;
+                            }
+                            newSum += transition.getValue() * nextStateIt->second;
+
+                        }
+                        newPartialBeliefs.push_back(newPartialBelief);
+                        newSums.push_back(newSum);
+                    }
+                }
+                updateHelper(newPartialBeliefs, newSums, newNextStateIt, newObservation, previousBeliefs);
+
+            }
         }
 
 
@@ -164,14 +234,11 @@ namespace storm {
         bool NondeterministicBeliefTracker<ValueType, BeliefState>::track(uint64_t newObservation) {
             STORM_LOG_THROW(!beliefs.empty(), storm::exceptions::InvalidOperationException, "Cannot track without a belief (need to reset).");
             std::unordered_set<BeliefState> newBeliefs;
-            for (uint64_t action = 0; action < manager->getActionsForObservation(lastObservation); ++action) {
-                for (auto const& belief : beliefs) {
-                    auto newBelief = belief.update(action, newObservation);
-                    if (newBelief.isValid()) {
-                        newBeliefs.insert(newBelief);
-                    }
-                }
+            //for (uint64_t action = 0; action < manager->getActionsForObservation(lastObservation); ++action) {
+            for (auto const& belief : beliefs) {
+                belief.update(newObservation, newBeliefs);
             }
+            //}
             beliefs = newBeliefs;
             lastObservation = newObservation;
             return !beliefs.empty();
