@@ -207,6 +207,14 @@ namespace storm {
             bool isQualitativeSet() const {
                 return qualitative;
             }
+
+            /*!
+             * sets whether the computation only needs to be performed qualitatively, because the values will only
+             * be compared to 0/1.
+             */
+            void setQualitative(bool value) {
+                qualitative = value;
+            }
             
             /*!
              * Sets whether to produce schedulers (if supported).
