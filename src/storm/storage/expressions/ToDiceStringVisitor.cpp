@@ -48,7 +48,7 @@ namespace storm {
                 case BinaryBooleanFunctionExpression::OperatorType::Xor:
                     stream << "(";
                     expression.getFirstOperand()->accept(*this, data);
-                    stream << " xor ";
+                    stream << " ^ ";
                     expression.getSecondOperand()->accept(*this, data);
                     stream << ")";
                     break;
