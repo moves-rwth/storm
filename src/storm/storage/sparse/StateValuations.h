@@ -129,6 +129,8 @@ namespace storm {
                  */
                 StateValuations selectStates(std::vector<storm::storage::sparse::state_type> const& selectedStates) const;
 
+                StateValuations blowup(std::vector<uint64_t> const& mapNewToOld) const;
+
                 virtual std::size_t hash() const;
                 
             private:

@@ -445,7 +445,7 @@ set(STORM_VERSION_APPENDIX "${CMAKE_MATCH_5}") # might be empty
 if (STORM_GIT_VERSION_STRING MATCHES "NOTFOUND")
 	set(STORM_VERSION_SOURCE "VersionSource::Static")
 	set(STORM_VERSION_COMMITS_AHEAD 0)
-	set(STORM_VERSION_DIRTY DirtyState:Unknown)
+	set(STORM_VERSION_DIRTY DirtyState::Unknown)
 	include(version.cmake)
 	message(WARNING "Storm - Git version information not available, statically assuming version ${STORM_VERSION_MAJOR}.${STORM_VERSION_MINOR}.${STORM_VERSION_PATCH}.")
 else()

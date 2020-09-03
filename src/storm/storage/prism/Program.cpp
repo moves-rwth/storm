@@ -508,7 +508,15 @@ namespace storm {
         std::map<std::string, uint_fast64_t> const& Program::getActionNameToIndexMapping() const {
             return actionToIndexMap;
         }
-        
+
+        uint64_t Program::getNumberOfUnlabeledCommands() const {
+            uint64_t result = 0;
+            for (auto const& m : modules) {
+                result += m.getNumberOfUnlabeledCommands();
+            }
+            return result;
+        }
+
         bool Program::hasInitialConstruct() const {
             return static_cast<bool>(initialConstruct);
         }

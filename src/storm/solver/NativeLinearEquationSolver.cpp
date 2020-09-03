@@ -637,6 +637,12 @@ namespace storm {
         template<typename ValueType>
         bool NativeLinearEquationSolver<ValueType>::solveEquationsOptimisticValueIteration(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
 
+            if (!storm::utility::vector::hasNonZeroEntry(b)) {
+                // If all entries are zero, OVI might run in an endless loop. However, the result is easy in this case.
+                x.assign(x.size(), storm::utility::zero<ValueType>());
+                return true;
+            }
+            
             if (!this->multiplier) {
                 this->multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, *this->A);
             }
@@ -669,11 +675,12 @@ namespace storm {
             std::vector<ValueType>* auxVector = this->cachedRowVector2.get();
 
             this->startMeasureProgress();
-            
-            auto statusIters = storm::solver::helper::solveEquationsOptimisticValueIteration(env, lowerX, upperX, auxVector,
+            storm::solver::helper::OptimisticValueIterationHelper<ValueType> helper(*this->A);
+            auto statusIters = helper.solveEquationsOptimisticValueIteration(env, lowerX, upperX, auxVector, b,
                     [&] (std::vector<ValueType>*& y, std::vector<ValueType>*& yPrime, ValueType const& precision, bool const& relative, uint64_t const& i, uint64_t const& maxI) {
                         this->showProgressIterative(i);
-                        return performPowerIteration(env, y, yPrime, b, precision, relative, guarantee, i, maxI, multiplicationStyle);
+                        auto result = performPowerIteration(env, y, yPrime, b, precision, relative, guarantee, i, maxI, multiplicationStyle);
+                        return std::make_pair(result.iterations, result.status);
                     },
                     [&] (std::vector<ValueType>* y, std::vector<ValueType>* yPrime, uint64_t const& i) {
                         this->showProgressIterative(i);
@@ -690,6 +697,7 @@ namespace storm {
                     env.solver().native().getRelativeTerminationCriterion(),
                     storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()),
                     env.solver().native().getMaximalNumberOfIterations(),
+                    boost::none, // No optimization dir
                     relevantValues);
             auto two = storm::utility::convertNumber<ValueType>(2.0);
             storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(*lowerX, *upperX, x, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });

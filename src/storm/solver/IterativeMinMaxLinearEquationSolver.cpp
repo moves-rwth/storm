@@ -360,6 +360,15 @@ namespace storm {
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsOptimisticValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
 
+            if (!storm::utility::vector::hasNonZeroEntry(b)) {
+                // If all entries are zero, OVI might run in an endless loop. However, the result is easy in this case.
+                x.assign(x.size(), storm::utility::zero<ValueType>());
+                if (this->isTrackSchedulerSet()) {
+                    this->schedulerChoices = std::vector<uint_fast64_t>(x.size(), 0);
+                }
+                return true;
+            }
+            
             if (!this->multiplierA) {
                 this->multiplierA = storm::solver::MultiplierFactory<ValueType>().create(env, *this->A);
             }
@@ -393,11 +402,12 @@ namespace storm {
 
             this->startMeasureProgress();
             
-            
-            auto statusIters = storm::solver::helper::solveEquationsOptimisticValueIteration(env, lowerX, upperX, auxVector,
+            storm::solver::helper::OptimisticValueIterationHelper<ValueType> helper(*this->A);
+            auto statusIters = helper.solveEquationsOptimisticValueIteration(env, lowerX, upperX, auxVector, b,
                     [&] (std::vector<ValueType>*& y, std::vector<ValueType>*& yPrime, ValueType const& precision, bool const& relative, uint64_t const& i, uint64_t const& maxI) {
                         this->showProgressIterative(i);
-                        return performValueIteration(env, dir, y, yPrime, b, precision, relative, guarantee, i, maxI, multiplicationStyle);
+                        auto result = performValueIteration(env, dir, y, yPrime, b, precision, relative, guarantee, i, maxI, multiplicationStyle);
+                        return std::make_pair(result.iterations, result.status);
                     },
                     [&] (std::vector<ValueType>* y, std::vector<ValueType>* yPrime, uint64_t const& i) {
                         this->showProgressIterative(i);
@@ -414,6 +424,7 @@ namespace storm {
                     env.solver().minMax().getRelativeTerminationCriterion(),
                     storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()),
                     env.solver().minMax().getMaximalNumberOfIterations(),
+                    dir,
                     relevantValues);
             auto two = storm::utility::convertNumber<ValueType>(2.0);
             storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(*lowerX, *upperX, x, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });

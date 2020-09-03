@@ -1,4 +1,4 @@
-#include "storm/utility/Portfolio.h"
+#include "storm/utility/AutomaticSettings.h"
 
 #include <sstream>
 
@@ -90,14 +90,14 @@ namespace storm {
             };
         }
         
-        Portfolio::Portfolio() : engine(storm::utility::Engine::Unknown), useBisimulation(false), useExact(false) {
+        AutomaticSettings::AutomaticSettings() : engine(storm::utility::Engine::Unknown), useBisimulation(false), useExact(false) {
             // Intentionally left empty
         }
         
-        void Portfolio::predict(storm::jani::Model const& model, storm::jani::Property const& property) {
+        void AutomaticSettings::predict(storm::jani::Model const& model, storm::jani::Property const& property) {
             typedef pfinternal::PropertyType PropertyType;
             auto f = pfinternal::Features(model, property);
-            STORM_LOG_INFO("Portfolio engine using features " << f.toString() << ".");
+            STORM_LOG_INFO("Automatic engine using features " << f.toString() << ".");
             
             if (f.numVariables <= 12) {
                 if (f.avgDomainSize <= 323.25) {
@@ -218,54 +218,54 @@ namespace storm {
             }
         }
         
-        void Portfolio::predict(storm::jani::Model const& model, storm::jani::Property const& property, uint64_t) {
+        void AutomaticSettings::predict(storm::jani::Model const& model, storm::jani::Property const& property, uint64_t) {
             //typedef pfinternal::PropertyType PropertyType;
             //auto f = pfinternal::Features(model, property);
             //f.stateEstimate = stateEstimate;
-            //STORM_LOG_INFO("Portfolio engine using features " << f.toString() << ".");
+            //STORM_LOG_INFO("Automatic engine using features " << f.toString() << ".");
             
             // Right now, we do not make use of the state estimate, so we just ask the 'default' decision tree.
             predict(model, property);
         }
 
-        storm::utility::Engine Portfolio::getEngine() const {
+        storm::utility::Engine AutomaticSettings::getEngine() const {
             STORM_LOG_THROW(engine != storm::utility::Engine::Unknown, storm::exceptions::InvalidOperationException, "Tried to get the engine but apparently no prediction was done before.");
             return engine;
         }
         
-        bool Portfolio::enableBisimulation() const {
+        bool AutomaticSettings::enableBisimulation() const {
             return useBisimulation;
         }
         
-        bool Portfolio::enableExact() const {
+        bool AutomaticSettings::enableExact() const {
             return useExact;
         }
         
-        void Portfolio::sparse() {
+        void AutomaticSettings::sparse() {
             engine = storm::utility::Engine::Sparse;
             useBisimulation = false;
             useExact = false;
         }
         
-        void Portfolio::hybrid() {
+        void AutomaticSettings::hybrid() {
             engine = storm::utility::Engine::Hybrid;
             useBisimulation = false;
             useExact = false;
         }
         
-        void Portfolio::dd() {
+        void AutomaticSettings::dd() {
             engine = storm::utility::Engine::Dd;
             useBisimulation = false;
             useExact = false;
         }
         
-        void Portfolio::exact() {
+        void AutomaticSettings::exact() {
             engine = storm::utility::Engine::Sparse;
             useBisimulation = false;
             useExact = true;
         }
         
-        void Portfolio::ddbisim() {
+        void AutomaticSettings::ddbisim() {
             engine = storm::utility::Engine::DdSparse;
             useBisimulation = true;
             useExact = false;

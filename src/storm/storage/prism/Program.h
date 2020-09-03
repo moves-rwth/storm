@@ -462,7 +462,12 @@ namespace storm {
              * @return the index of the module and the (local) index of the found command
              */
             std::pair<uint_fast64_t, uint_fast64_t> getModuleCommandIndexByGlobalCommandIndex(uint_fast64_t globalCommandIndex) const;
-            
+
+            /*
+             * Get total number of unlabeled commands
+             */
+            uint64_t getNumberOfUnlabeledCommands() const;
+
             /*!
              * Retrieves whether the program has reward models.
              *
