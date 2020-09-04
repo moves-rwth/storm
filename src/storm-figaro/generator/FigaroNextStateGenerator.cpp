@@ -42,11 +42,11 @@ namespace storm{
             figaromodel.init();
             figaromodel.runInteractions();
             retreiveFigaroModelState(initialState);
-            std::cout<<"\nInitial State\n state tuple::";
-            figaromodel.printstatetuple();
-            figaromodel.printState();
-            for (int i=0; i<initialState.size(); i++)
-                std::cout<<initialState[i];
+//            std::cout<<"\nInitial State\n state tuple::";
+//            figaromodel.printState();
+//            figaromodel.printState();
+//            for (int i=0; i<initialState.size(); i++)
+//                std::cout<<initialState[i];
 //            exit(6);
             
 
@@ -68,8 +68,8 @@ namespace storm{
                     // Since almost all subsequent operations are based on the evaluator, we load the state into it now. We use figaro program as evaluator
 
                 unpackStateIntoFigaroModel(state);
-                std::cout<<"First Loaded State";
-                figaromodel.printstatetuple();
+//                std::cout<<"First Loaded State";
+//                figaromodel.printState();
                 this->state = &state;
 
 
@@ -126,16 +126,16 @@ namespace storm{
                     
                 for (auto i = 0; i<menue.size(); ++i){
                     totalExitrate += std::get<1>(menue[i]);
-                    figaromodel.printstatetuple();
+//                    figaromodel.printState();
                     unpackStateIntoFigaroModel(*this->state);
                     figaromodel.runInteractions();
 //                    std::cout<<"\nafter unpackingg\n";
-                    figaromodel.printstatetuple();
+//                    figaromodel.printState();
                     figaromodel.fireOccurrence(std::get<0>(menue[i]));
                     figaromodel.runInteractions();
-                    std::cout<< "herere";
+//                    std::cout<< "herere";
                     retreiveFigaroModelState(tempstate);
-                    std::cout<< "herere3";
+//                    std::cout<< "herere3";
                     menuestates.push_back(tempstate);
                 }
                 printmenue(menuestates, menue, *this->state);
@@ -408,18 +408,18 @@ namespace storm{
                     compstate.set(booleanVariable.bitOffset, figaromodel.boolFailureState.at(
                             figaromodel.mFigarofailureelementindex[booleanVariable.variable.getName()]));
                 } else {
-                std::cout << "\nI come here" << booleanVariable.variable.getName();
+//                std::cout << "\nI come here" << booleanVariable.variable.getName();
                 compstate.set(booleanVariable.bitOffset, figaromodel.boolState.at(
                         figaromodel.mFigaroboolelementindex[booleanVariable.variable.getName()]));
             }
                 }
                 for (auto const& IntegerVariable: this->variableInformation.integerVariables) {
-                    std::cout<<"\nI come here"<<IntegerVariable.variable.getName();
+//                    std::cout<<"\nI come here"<<IntegerVariable.variable.getName();
                     if (figaromodel.enum_variables_names.find(IntegerVariable.variable.getName()) != figaromodel.enum_variables_names.end())
                         {
                          compstate.setFromInt(IntegerVariable.bitOffset, IntegerVariable.bitWidth, figaromodel.enumState.at(figaromodel.mFigaroenumelementindex[IntegerVariable.variable.getName()]) - IntegerVariable.lowerBound);
                         
-                         std::cout<<IntegerVariable.variable.getName()<<" : "<<figaromodel.enumState.at(figaromodel.mFigaroenumelementindex[IntegerVariable.variable.getName()])<<"            offset:                "<<IntegerVariable.bitOffset<<"      bitwidth:       "<<IntegerVariable.bitWidth<<"  Lower bound "<<IntegerVariable.lowerBound<< std::endl;
+//                         std::cout<<IntegerVariable.variable.getName()<<" : "<<figaromodel.enumState.at(figaromodel.mFigaroenumelementindex[IntegerVariable.variable.getName()])<<"            offset:                "<<IntegerVariable.bitOffset<<"      bitwidth:       "<<IntegerVariable.bitWidth<<"  Lower bound "<<IntegerVariable.lowerBound<< std::endl;
                         }
                     else if (figaromodel.float_variables_names.find(IntegerVariable.variable.getName()) != figaromodel.float_variables_names.end())
                         { 
@@ -478,7 +478,7 @@ namespace storm{
                 if (figaromodel.enum_variables_names.find(integerVariable.variable.getName()) != figaromodel.enum_variables_names.end())
                     {
                 figaromodel.enumState[figaromodel.mFigaroenumelementindex[integerVariable.variable.getName()]] = (compstate.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth) + integerVariable.lowerBound);
-                    std::cout<<integerVariable.variable.getName()<<" : "<<(compstate.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth))<<"         offset:      "<<integerVariable.bitOffset<<"          bitwidth         "<<integerVariable.bitWidth<<"  Lower bound "<<integerVariable.lowerBound<<std::endl;
+//                    std::cout<<integerVariable.variable.getName()<<" : "<<(compstate.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth))<<"         offset:      "<<integerVariable.bitOffset<<"          bitwidth         "<<integerVariable.bitWidth<<"  Lower bound "<<integerVariable.lowerBound<<std::endl;
 //
                      }
                 else if (figaromodel.float_variables_names.find(integerVariable.variable.getName()) != figaromodel.float_variables_names.end())
@@ -501,9 +501,9 @@ namespace storm{
 //                        {
 //                        temp.set(count, compstate.get(integerVariable.bitOffset + count));
 //                        }
-                    std::cout<< integerVariable.bitWidth;
-                    std::cout<<sizeof(temp);
-                    std::cout<<integerVariable.variable.getName();
+//                    std::cout<< integerVariable.bitWidth;
+//                    std::cout<<sizeof(temp);
+//                    std::cout<<integerVariable.variable.getName();
                     std::memcpy(
                                 &figaromodel.floatState[figaromodel.mFigarofloatelementindex[integerVariable.variable.getName()]],  &temp, sizeof(double));
                     
@@ -515,7 +515,7 @@ namespace storm{
             }
 
             
-            figaromodel.printState();
+//            figaromodel.printState();
             }
 
             template<typename ValueType, typename StateType>

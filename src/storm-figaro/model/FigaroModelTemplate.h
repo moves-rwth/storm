@@ -91,20 +91,13 @@ namespace storm {
             std::vector<int> backupEnumState;
 
             virtual void init() = 0;
-            virtual void saveCurrentState() = 0;
             virtual void printState() = 0;
             virtual void fireOccurrence(int numFire) = 0;
             virtual std::vector<std::tuple<int, double, std::string, int>> showFireableOccurrences() = 0;
-            virtual void runOnceInteractionStep_default_step() = 0;
-            virtual int compareStates() = 0;
-            virtual void doReinitialisations() = 0;
             virtual void runInteractions() = 0;
-            virtual void printstatetuple() = 0;
             virtual void fireinsttransitiongroup(std::string) = 0;
-            virtual int_fast64_t stateSize() const = 0;
             virtual bool figaromodelhasinstransitions() = 0;
+            virtual ~FigaroProgram() = default;
         };
     }
 }
-
-

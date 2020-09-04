@@ -1,0 +1,762 @@
+STEPS_ORDER
+	__ARBRE__;
+	default_step;
+	initialization;
+	propagate_effect_S;
+	propagate_effect_required;
+	propagate_leaves;
+	tops;
+GROUP_NAMES
+	V3_simu_group;
+
+OBJECT OPTIONS IS_A GLOBAL_TYPE;
+	CONSTANT
+	  trimming
+		DOMAIN BOOLEAN
+		= TRUE;
+	  trimming_option
+		DOMAIN 'according_to_article' 'maximum'
+		= 'maximum';
+	  repairable_system
+		DOMAIN BOOLEAN
+		= FALSE;
+
+OBJECT AND_1 IS_A and_gate;
+	INTERFACE
+	  sons
+		= F_3 F_4;
+	  fathers
+		= Major_risk;
+	  triggers
+		= AND_1_1;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	INTERACTION
+	  xx3
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF NOT required OF Major_risk
+		THEN required OF AND_1 <-- FALSE;
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF (relevant_evt OF Major_risk AND (NOT S OF Major_risk)) OR (
+		  relevant_evt OF AND_1_1 AND (NOT S OF AND_1_1))
+		THEN relevant_evt OF AND_1 <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF AND_1 <-- S OF AND_1;
+	  xx28
+		GROUP V3_simu_group
+		STEP propagate_effect_S
+		IF S OF F_3 AND S OF F_4
+		THEN S OF AND_1 <-- TRUE;
+
+OBJECT AND_1_1 IS_A and_gate;
+	INTERFACE
+	  sons
+		= F_3_1 I_1;
+	  fathers
+		= Major_risk;
+	  triggered_by
+		= AND_1;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	INTERACTION
+	  xx3
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF (NOT required OF Major_risk) OR (NOT S OF AND_1)
+		THEN required OF AND_1_1 <-- FALSE;
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF relevant_evt OF Major_risk AND (NOT S OF Major_risk)
+		THEN relevant_evt OF AND_1_1 <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF AND_1_1 <-- S OF AND_1_1;
+	  xx28
+		GROUP V3_simu_group
+		STEP propagate_effect_S
+		IF S OF F_3_1 AND S OF I_1
+		THEN S OF AND_1_1 <-- TRUE;
+
+OBJECT F_1 IS_A f_leaf;
+	INTERFACE
+	  fathers
+		= Major_risk;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  mu
+		DOMAIN REAL
+		= 0.1;
+	  lambda
+		DOMAIN REAL
+		= 0.0001;
+	  failF_FROZEN
+		DOMAIN BOOLEAN
+		= FALSE;
+	(*FAILURE*)
+	ATTRIBUTE
+	  failF
+		LABEL "failure in operation %OBJECT"
+		DOMAIN BOOLEAN
+		= FALSE;
+	INTERACTION
+	  xx3
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF NOT required OF Major_risk
+		THEN required OF F_1 <-- FALSE;
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF relevant_evt OF Major_risk AND (NOT S OF Major_risk)
+		THEN relevant_evt OF F_1 <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF F_1 <-- S OF F_1;
+	  xx6
+		GROUP V3_simu_group
+		STEP initialization
+		IF failF OF F_1 = TRUE
+		THEN S OF F_1 <-- TRUE;
+	OCCURRENCE
+	  xx10
+		GROUP V3_simu_group
+		IF (failF OF F_1 = FALSE) AND (required OF F_1 AND relevant_evt
+		  OF F_1)
+		MAY_OCCUR
+		  FAULT failF
+		  LABEL "failure in operation %OBJECT"
+		  DIST EXP (0.0001)
+		  INDUCING failF OF F_1 <-- TRUE;
+
+OBJECT F_2 IS_A f_leaf;
+	INTERFACE
+	  fathers
+		= Major_risk;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  mu
+		DOMAIN REAL
+		= 0.1;
+	  lambda
+		DOMAIN REAL
+		= 0.0001;
+	  failF_FROZEN
+		DOMAIN BOOLEAN
+		= FALSE;
+	(*FAILURE*)
+	ATTRIBUTE
+	  failF
+		LABEL "failure in operation %OBJECT"
+		DOMAIN BOOLEAN
+		= FALSE;
+	INTERACTION
+	  xx3
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF NOT required OF Major_risk
+		THEN required OF F_2 <-- FALSE;
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF relevant_evt OF Major_risk AND (NOT S OF Major_risk)
+		THEN relevant_evt OF F_2 <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF F_2 <-- S OF F_2;
+	  xx6
+		GROUP V3_simu_group
+		STEP initialization
+		IF failF OF F_2 = TRUE
+		THEN S OF F_2 <-- TRUE;
+	OCCURRENCE
+	  xx10
+		GROUP V3_simu_group
+		IF (failF OF F_2 = FALSE) AND (required OF F_2 AND relevant_evt
+		  OF F_2)
+		MAY_OCCUR
+		  FAULT failF
+		  LABEL "failure in operation %OBJECT"
+		  DIST EXP (0.0001)
+		  INDUCING failF OF F_2 <-- TRUE;
+
+OBJECT F_3 IS_A f_leaf;
+	INTERFACE
+	  fathers
+		= AND_1;
+	  triggers
+		= F_4;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  mu
+		DOMAIN REAL
+		= 0.1;
+	  lambda
+		DOMAIN REAL
+		= 0.0001;
+	  failF_FROZEN
+		DOMAIN BOOLEAN
+		= FALSE;
+	(*FAILURE*)
+	ATTRIBUTE
+	  failF
+		LABEL "failure in operation %OBJECT"
+		DOMAIN BOOLEAN
+		= FALSE;
+	INTERACTION
+	  xx3
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF NOT required OF AND_1
+		THEN required OF F_3 <-- FALSE;
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF (relevant_evt OF AND_1 AND (NOT S OF AND_1)) OR (
+		  relevant_evt OF F_4 AND (NOT S OF F_4))
+		THEN relevant_evt OF F_3 <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF F_3 <-- S OF F_3;
+	  xx6
+		GROUP V3_simu_group
+		STEP initialization
+		IF failF OF F_3 = TRUE
+		THEN S OF F_3 <-- TRUE;
+	OCCURRENCE
+	  xx10
+		GROUP V3_simu_group
+		IF (failF OF F_3 = FALSE) AND (required OF F_3 AND relevant_evt
+		  OF F_3)
+		MAY_OCCUR
+		  FAULT failF
+		  LABEL "failure in operation %OBJECT"
+		  DIST EXP (0.0001)
+		  INDUCING failF OF F_3 <-- TRUE;
+
+OBJECT F_3_1 IS_A f_leaf;
+	INTERFACE
+	  fathers
+		= AND_1_1;
+	  triggers
+		= I_1;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  mu
+		DOMAIN REAL
+		= 0.1;
+	  lambda
+		DOMAIN REAL
+		= 0.0001;
+	  failF_FROZEN
+		DOMAIN BOOLEAN
+		= FALSE;
+	(*FAILURE*)
+	ATTRIBUTE
+	  failF
+		LABEL "failure in operation %OBJECT"
+		DOMAIN BOOLEAN
+		= FALSE;
+	INTERACTION
+	  xx3
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF NOT required OF AND_1_1
+		THEN required OF F_3_1 <-- FALSE;
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF (relevant_evt OF AND_1_1 AND (NOT S OF AND_1_1)) OR (
+		  relevant_evt OF I_1 AND (NOT S OF I_1))
+		THEN relevant_evt OF F_3_1 <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF F_3_1 <-- S OF F_3_1;
+	  xx6
+		GROUP V3_simu_group
+		STEP initialization
+		IF failF OF F_3_1 = TRUE
+		THEN S OF F_3_1 <-- TRUE;
+	OCCURRENCE
+	  xx10
+		GROUP V3_simu_group
+		IF (failF OF F_3_1 = FALSE) AND (required OF F_3_1 AND
+		  relevant_evt OF F_3_1)
+		MAY_OCCUR
+		  FAULT failF
+		  LABEL "failure in operation %OBJECT"
+		  DIST EXP (0.0001)
+		  INDUCING failF OF F_3_1 <-- TRUE;
+
+OBJECT F_4 IS_A f_leaf;
+	INTERFACE
+	  fathers
+		= AND_1;
+	  triggered_by
+		= F_3;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  mu
+		DOMAIN REAL
+		= 0.1;
+	  lambda
+		DOMAIN REAL
+		= 0.0001;
+	  failF_FROZEN
+		DOMAIN BOOLEAN
+		= FALSE;
+	(*FAILURE*)
+	ATTRIBUTE
+	  failF
+		LABEL "failure in operation %OBJECT"
+		DOMAIN BOOLEAN
+		= FALSE;
+	INTERACTION
+	  xx3
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF (NOT required OF AND_1) OR (NOT S OF F_3)
+		THEN required OF F_4 <-- FALSE;
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF relevant_evt OF AND_1 AND (NOT S OF AND_1)
+		THEN relevant_evt OF F_4 <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF F_4 <-- S OF F_4;
+	  xx6
+		GROUP V3_simu_group
+		STEP initialization
+		IF failF OF F_4 = TRUE
+		THEN S OF F_4 <-- TRUE;
+	OCCURRENCE
+	  xx10
+		GROUP V3_simu_group
+		IF (failF OF F_4 = FALSE) AND (required OF F_4 AND relevant_evt
+		  OF F_4)
+		MAY_OCCUR
+		  FAULT failF
+		  LABEL "failure in operation %OBJECT"
+		  DIST EXP (0.0001)
+		  INDUCING failF OF F_4 <-- TRUE;
+
+OBJECT I_1 IS_A i_leaf;
+	INTERFACE
+	  fathers
+		= AND_1_1;
+	  triggered_by
+		= F_3_1;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  mu
+		DOMAIN REAL
+		= 0.1;
+	  when_to_check
+		DOMAIN 'not_req_to_req' 'req_to_not_req'
+		= 'not_req_to_req';
+	  gamma
+		DOMAIN REAL
+		= 0.0001;
+	  failI_FROZEN
+		DOMAIN BOOLEAN
+		= FALSE;
+	(*FAILURE*)
+	ATTRIBUTE
+	  failI
+		LABEL "instantaneous failure %OBJECT"
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  to_be_fired
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  already_standby
+		DOMAIN BOOLEAN
+		= FALSE;
+	  already_required
+		DOMAIN BOOLEAN
+		= FALSE;
+	INTERACTION
+	  xx3
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF (NOT required OF AND_1_1) OR (NOT S OF F_3_1)
+		THEN required OF I_1 <-- FALSE;
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF relevant_evt OF AND_1_1 AND (NOT S OF AND_1_1)
+		THEN relevant_evt OF I_1 <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF I_1 <-- S OF I_1;
+	  xx6
+		GROUP V3_simu_group
+		STEP initialization
+		IF failI OF I_1 = TRUE
+		THEN S OF I_1 <-- TRUE;
+	  xx20
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		IF (NOT required OF I_1) AND ((NOT already_standby OF I_1) AND (
+		  NOT already_required OF I_1))
+		THEN already_standby OF I_1 <-- TRUE;
+	  xx22
+		GROUP V3_simu_group
+		STEP tops
+		IF required OF I_1 AND already_standby OF I_1
+		THEN to_be_fired OF I_1 <-- TRUE;
+	OCCURRENCE
+	  xx23
+		GROUP V3_simu_group
+		IF (failI OF I_1 = FALSE) AND (to_be_fired OF I_1 AND
+		  relevant_evt OF I_1)
+		MAY_OCCUR
+		  FAULT failI
+		  LABEL "instantaneous failure %OBJECT"
+		  DIST INS (0.0001)
+		  INDUCING failI OF I_1 <-- TRUE,
+			already_standby OF I_1 <-- FALSE,
+			already_required OF I_1 <-- FALSE
+		OR_ELSE
+		  TRANSITION good
+		  DIST INS (0.9999)
+		  INDUCING already_standby OF I_1 <-- FALSE,
+			already_required OF I_1 <-- FALSE;
+
+OBJECT Major_risk IS_A or_gate;
+	INTERFACE
+	  sons
+		= AND_1 AND_1_1 F_1 F_2;
+	  fathers
+		= UE_1;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	INTERACTION
+	  xx3
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF NOT required OF UE_1
+		THEN required OF Major_risk <-- FALSE;
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF relevant_evt OF UE_1 AND (NOT S OF UE_1)
+		THEN relevant_evt OF Major_risk <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF Major_risk <-- S OF Major_risk;
+	  xx29
+		GROUP V3_simu_group
+		STEP propagate_effect_S
+		IF ((S OF AND_1 OR S OF AND_1_1) OR S OF F_1) OR S OF F_2
+		THEN S OF Major_risk <-- TRUE;
+
+OBJECT UE_1 IS_A undes_event;
+	INTERFACE
+	  sons
+		= Major_risk;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'always_true';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= TRUE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  to_be_taken_into_account
+		DOMAIN BOOLEAN
+		= TRUE;
+	INTERACTION
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		THEN relevant_evt OF UE_1 <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF UE_1 <-- S OF UE_1;
+	  xx34
+		GROUP V3_simu_group
+		STEP propagate_effect_S
+		IF S OF Major_risk
+		THEN S OF UE_1 <-- TRUE;
+
+OBJECT logic_1 IS_A logic_link;
+
+OBJECT logic_2 IS_A logic_link;
+
+OBJECT logic_3 IS_A logic_link;
+
+OBJECT logic_4 IS_A logic_link;
+
+OBJECT logic_5 IS_A logic_link;
+
+OBJECT logic_5_1 IS_A logic_link;
+
+OBJECT logic_6 IS_A logic_link;
+
+OBJECT logic_6_1 IS_A logic_link;
+
+OBJECT logic_7 IS_A logic_link;
+
+OBJECT t_1 IS_A trigger_link;
+	INTERFACE
+	  target
+		= F_4;
+	CONSTANT
+	  trigger_kind
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+
+OBJECT t_1_1 IS_A trigger_link;
+	INTERFACE
+	  target
+		= I_1;
+	CONSTANT
+	  trigger_kind
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+
+OBJECT t_2 IS_A trigger_link;
+	INTERFACE
+	  target
+		= AND_1_1;
+	CONSTANT
+	  trigger_kind
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+
+OBJECT __ARBRE__EIRM IS_A FIGARO;
+	CONSTANT
+	  Profil1
+		DOMAIN BOOLEAN
+		= FALSE;
+	  No_trim
+		DOMAIN BOOLEAN
+		= FALSE;
+	  No_repair
+		DOMAIN BOOLEAN
+		= TRUE;
+	  Default
+		DOMAIN BOOLEAN
+		= TRUE;
+	  Trim_article
+		DOMAIN BOOLEAN
+		= FALSE;
+

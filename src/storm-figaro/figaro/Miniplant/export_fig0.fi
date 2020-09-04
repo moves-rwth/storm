@@ -1,0 +1,625 @@
+STEPS_ORDER
+	__ARBRE__;
+	default_step;
+	compute_max_rank;
+	rep_management;
+GROUP_NAMES
+	Simu_group;
+
+OBJECT Backup_1 IS_A backup_block;
+	INTERFACE
+	  rep
+		= rep_1;
+	  secured
+		= Block_4;
+	ATTRIBUTE
+	  capacity
+		DOMAIN REAL
+		REINITIALISATION  100;
+	  null_production
+		LABEL "%OBJECT produces nothing"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  nominal_capacity
+		DOMAIN REAL
+		=  70;
+	  lambda
+		DOMAIN REAL
+		= 0.0001;
+	  mu
+		DOMAIN REAL
+		= 0.1;
+	ATTRIBUTE
+	  state
+		DOMAIN 'working' 'standby' 'under_repair' 'waiting_for_rep' 'required'
+		= 'standby';
+	  rank
+		DOMAIN INTEGER
+		= 0;
+	  dequeue
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	(*FAILURE*)
+	ATTRIBUTE
+	  fail
+		LABEL "%OBJECT failure"
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  gamma
+		DOMAIN REAL
+		= 0.01;
+	INTERACTION
+	  rule1
+		GROUP Simu_group
+		STEP default_step
+		IF state OF Backup_1 = 'working'
+		THEN capacity OF Backup_1 <-- nominal_capacity OF Backup_1
+		ELSE capacity OF Backup_1 <--  0;
+	  rule1bis
+		GROUP Simu_group
+		STEP default_step
+		IF NOT (fail OF Backup_1 = FALSE)
+		THEN null_production OF Backup_1 <-- TRUE;
+	  rule2
+		GROUP Simu_group
+		STEP default_step
+		IF dequeue OF Backup_1 AND (rank OF Backup_1 > 0)
+		THEN dequeue OF Backup_1 <-- FALSE,
+		  rank OF Backup_1 <-- (rank OF Backup_1 - 1);
+	  rule3
+		GROUP Simu_group
+		STEP rep_management
+		IF ((state OF Backup_1 = 'waiting_for_rep') AND ((rank OF
+		  Backup_1 = 1) OR (1 = 0))) AND free OF rep_1
+		THEN state OF Backup_1 <-- 'under_repair',
+		  free OF rep_1 <-- FALSE;
+	  stop
+		GROUP Simu_group
+		STEP default_step
+		IF ((state OF Backup_1 = 'working') OR (state OF Backup_1 =
+		  'required')) AND (fail OF Block_4 = FALSE)
+		THEN state OF Backup_1 <-- 'standby';
+	  startup
+		GROUP Simu_group
+		STEP default_step
+		IF (state OF Backup_1 = 'standby') AND (fail OF Block_4 = TRUE)
+		THEN state OF Backup_1 <-- 'required';
+	OCCURRENCE
+	  fail_in_op
+		GROUP Simu_group
+		IF (fail OF Backup_1 = FALSE) AND (state OF Backup_1 =
+		  'working')
+		MAY_OCCUR
+		  FAULT fail
+		  DIST EXP (lambda OF Backup_1)
+		  INDUCING fail OF Backup_1 <-- TRUE,
+			state OF Backup_1 <-- 'waiting_for_rep',
+			rank OF Backup_1 <-- (max_rank OF rep_1 + 1);
+	  xx1
+		GROUP Simu_group
+		IF (fail OF Backup_1 = TRUE) AND (state OF Backup_1 =
+		  'under_repair')
+		MAY_OCCUR
+		  REPAIR rep
+		  DIST EXP (mu OF Backup_1)
+		  INDUCING fail OF Backup_1 <-- FALSE,
+			state OF Backup_1 <-- 'working',
+			free OF rep_1 <-- TRUE,
+			dequeue OF rep_1 <-- TRUE;
+	  xx2
+		GROUP Simu_group
+		IF (fail OF Backup_1 = FALSE) AND (state OF Backup_1 =
+		  'required')
+		MAY_OCCUR
+		  FAULT fail
+		  DIST INS (gamma OF Backup_1)
+		  INDUCING fail OF Backup_1 <-- TRUE,
+			state OF Backup_1 <-- 'waiting_for_rep',
+			rank OF Backup_1 <-- (max_rank OF rep_1 + 1)
+		OR_ELSE
+		  TRANSITION startup
+		  DIST INS (1 - gamma OF Backup_1)
+		  INDUCING state OF Backup_1 <-- 'working';
+
+OBJECT Block_1 IS_A block;
+	INTERFACE
+	  rep
+		= rep_1;
+	ATTRIBUTE
+	  capacity
+		DOMAIN REAL
+		REINITIALISATION  100;
+	  null_production
+		LABEL "%OBJECT produces nothing"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  nominal_capacity
+		DOMAIN REAL
+		=  30;
+	  lambda
+		DOMAIN REAL
+		= 0.0001;
+	  mu
+		DOMAIN REAL
+		= 0.1;
+	ATTRIBUTE
+	  state
+		DOMAIN 'working' 'standby' 'under_repair' 'waiting_for_rep' 'required'
+		= 'working';
+	  rank
+		DOMAIN INTEGER
+		= 0;
+	  dequeue
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	(*FAILURE*)
+	ATTRIBUTE
+	  fail
+		LABEL "%OBJECT failure"
+		DOMAIN BOOLEAN
+		= FALSE;
+	INTERACTION
+	  rule1
+		GROUP Simu_group
+		STEP default_step
+		IF fail OF Block_1 = FALSE
+		THEN capacity OF Block_1 <-- nominal_capacity OF Block_1
+		ELSE capacity OF Block_1 <--  0;
+	  rule1bis
+		GROUP Simu_group
+		STEP default_step
+		IF NOT (fail OF Block_1 = FALSE)
+		THEN null_production OF Block_1 <-- TRUE;
+	  rule2
+		GROUP Simu_group
+		STEP default_step
+		IF dequeue OF Block_1 AND (rank OF Block_1 > 0)
+		THEN dequeue OF Block_1 <-- FALSE,
+		  rank OF Block_1 <-- (rank OF Block_1 - 1);
+	  rule3
+		GROUP Simu_group
+		STEP rep_management
+		IF ((state OF Block_1 = 'waiting_for_rep') AND ((rank OF
+		  Block_1 = 1) OR (1 = 0))) AND free OF rep_1
+		THEN state OF Block_1 <-- 'under_repair',
+		  free OF rep_1 <-- FALSE;
+	OCCURRENCE
+	  fail_in_op
+		GROUP Simu_group
+		IF (fail OF Block_1 = FALSE) AND (state OF Block_1 = 'working')
+		MAY_OCCUR
+		  FAULT fail
+		  DIST EXP (lambda OF Block_1)
+		  INDUCING fail OF Block_1 <-- TRUE,
+			state OF Block_1 <-- 'waiting_for_rep',
+			rank OF Block_1 <-- (max_rank OF rep_1 + 1);
+	  xx1
+		GROUP Simu_group
+		IF (fail OF Block_1 = TRUE) AND (state OF Block_1 =
+		  'under_repair')
+		MAY_OCCUR
+		  REPAIR rep
+		  DIST EXP (mu OF Block_1)
+		  INDUCING fail OF Block_1 <-- FALSE,
+			state OF Block_1 <-- 'working',
+			free OF rep_1 <-- TRUE,
+			dequeue OF rep_1 <-- TRUE;
+
+OBJECT Block_2 IS_A block;
+	INTERFACE
+	  rep
+		= rep_1;
+	ATTRIBUTE
+	  capacity
+		DOMAIN REAL
+		REINITIALISATION  100;
+	  null_production
+		LABEL "%OBJECT produces nothing"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  nominal_capacity
+		DOMAIN REAL
+		=  70;
+	  lambda
+		DOMAIN REAL
+		= 0.0001;
+	  mu
+		DOMAIN REAL
+		= 0.1;
+	ATTRIBUTE
+	  state
+		DOMAIN 'working' 'standby' 'under_repair' 'waiting_for_rep' 'required'
+		= 'working';
+	  rank
+		DOMAIN INTEGER
+		= 0;
+	  dequeue
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	(*FAILURE*)
+	ATTRIBUTE
+	  fail
+		LABEL "%OBJECT failure"
+		DOMAIN BOOLEAN
+		= FALSE;
+	INTERACTION
+	  rule1
+		GROUP Simu_group
+		STEP default_step
+		IF fail OF Block_2 = FALSE
+		THEN capacity OF Block_2 <-- nominal_capacity OF Block_2
+		ELSE capacity OF Block_2 <--  0;
+	  rule1bis
+		GROUP Simu_group
+		STEP default_step
+		IF NOT (fail OF Block_2 = FALSE)
+		THEN null_production OF Block_2 <-- TRUE;
+	  rule2
+		GROUP Simu_group
+		STEP default_step
+		IF dequeue OF Block_2 AND (rank OF Block_2 > 0)
+		THEN dequeue OF Block_2 <-- FALSE,
+		  rank OF Block_2 <-- (rank OF Block_2 - 1);
+	  rule3
+		GROUP Simu_group
+		STEP rep_management
+		IF ((state OF Block_2 = 'waiting_for_rep') AND ((rank OF
+		  Block_2 = 1) OR (1 = 0))) AND free OF rep_1
+		THEN state OF Block_2 <-- 'under_repair',
+		  free OF rep_1 <-- FALSE;
+	OCCURRENCE
+	  fail_in_op
+		GROUP Simu_group
+		IF (fail OF Block_2 = FALSE) AND (state OF Block_2 = 'working')
+		MAY_OCCUR
+		  FAULT fail
+		  DIST EXP (lambda OF Block_2)
+		  INDUCING fail OF Block_2 <-- TRUE,
+			state OF Block_2 <-- 'waiting_for_rep',
+			rank OF Block_2 <-- (max_rank OF rep_1 + 1);
+	  xx1
+		GROUP Simu_group
+		IF (fail OF Block_2 = TRUE) AND (state OF Block_2 =
+		  'under_repair')
+		MAY_OCCUR
+		  REPAIR rep
+		  DIST EXP (mu OF Block_2)
+		  INDUCING fail OF Block_2 <-- FALSE,
+			state OF Block_2 <-- 'working',
+			free OF rep_1 <-- TRUE,
+			dequeue OF rep_1 <-- TRUE;
+
+OBJECT Block_3 IS_A block;
+	INTERFACE
+	  rep
+		= rep_1;
+	ATTRIBUTE
+	  capacity
+		DOMAIN REAL
+		REINITIALISATION  100;
+	  null_production
+		LABEL "%OBJECT produces nothing"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  nominal_capacity
+		DOMAIN REAL
+		=  30;
+	  lambda
+		DOMAIN REAL
+		= 0.0001;
+	  mu
+		DOMAIN REAL
+		= 0.1;
+	ATTRIBUTE
+	  state
+		DOMAIN 'working' 'standby' 'under_repair' 'waiting_for_rep' 'required'
+		= 'working';
+	  rank
+		DOMAIN INTEGER
+		= 0;
+	  dequeue
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	(*FAILURE*)
+	ATTRIBUTE
+	  fail
+		LABEL "%OBJECT failure"
+		DOMAIN BOOLEAN
+		= FALSE;
+	INTERACTION
+	  rule1
+		GROUP Simu_group
+		STEP default_step
+		IF fail OF Block_3 = FALSE
+		THEN capacity OF Block_3 <-- nominal_capacity OF Block_3
+		ELSE capacity OF Block_3 <--  0;
+	  rule1bis
+		GROUP Simu_group
+		STEP default_step
+		IF NOT (fail OF Block_3 = FALSE)
+		THEN null_production OF Block_3 <-- TRUE;
+	  rule2
+		GROUP Simu_group
+		STEP default_step
+		IF dequeue OF Block_3 AND (rank OF Block_3 > 0)
+		THEN dequeue OF Block_3 <-- FALSE,
+		  rank OF Block_3 <-- (rank OF Block_3 - 1);
+	  rule3
+		GROUP Simu_group
+		STEP rep_management
+		IF ((state OF Block_3 = 'waiting_for_rep') AND ((rank OF
+		  Block_3 = 1) OR (1 = 0))) AND free OF rep_1
+		THEN state OF Block_3 <-- 'under_repair',
+		  free OF rep_1 <-- FALSE;
+	OCCURRENCE
+	  fail_in_op
+		GROUP Simu_group
+		IF (fail OF Block_3 = FALSE) AND (state OF Block_3 = 'working')
+		MAY_OCCUR
+		  FAULT fail
+		  DIST EXP (lambda OF Block_3)
+		  INDUCING fail OF Block_3 <-- TRUE,
+			state OF Block_3 <-- 'waiting_for_rep',
+			rank OF Block_3 <-- (max_rank OF rep_1 + 1);
+	  xx1
+		GROUP Simu_group
+		IF (fail OF Block_3 = TRUE) AND (state OF Block_3 =
+		  'under_repair')
+		MAY_OCCUR
+		  REPAIR rep
+		  DIST EXP (mu OF Block_3)
+		  INDUCING fail OF Block_3 <-- FALSE,
+			state OF Block_3 <-- 'working',
+			free OF rep_1 <-- TRUE,
+			dequeue OF rep_1 <-- TRUE;
+
+OBJECT Block_4 IS_A block;
+	INTERFACE
+	  rep
+		= rep_1;
+	ATTRIBUTE
+	  capacity
+		DOMAIN REAL
+		REINITIALISATION  100;
+	  null_production
+		LABEL "%OBJECT produces nothing"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  nominal_capacity
+		DOMAIN REAL
+		=  70;
+	  lambda
+		DOMAIN REAL
+		= 0.0001;
+	  mu
+		DOMAIN REAL
+		= 0.1;
+	ATTRIBUTE
+	  state
+		DOMAIN 'working' 'standby' 'under_repair' 'waiting_for_rep' 'required'
+		= 'working';
+	  rank
+		DOMAIN INTEGER
+		= 0;
+	  dequeue
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	(*FAILURE*)
+	ATTRIBUTE
+	  fail
+		LABEL "%OBJECT failure"
+		DOMAIN BOOLEAN
+		= FALSE;
+	INTERACTION
+	  rule1
+		GROUP Simu_group
+		STEP default_step
+		IF fail OF Block_4 = FALSE
+		THEN capacity OF Block_4 <-- nominal_capacity OF Block_4
+		ELSE capacity OF Block_4 <--  0;
+	  rule1bis
+		GROUP Simu_group
+		STEP default_step
+		IF NOT (fail OF Block_4 = FALSE)
+		THEN null_production OF Block_4 <-- TRUE;
+	  rule2
+		GROUP Simu_group
+		STEP default_step
+		IF dequeue OF Block_4 AND (rank OF Block_4 > 0)
+		THEN dequeue OF Block_4 <-- FALSE,
+		  rank OF Block_4 <-- (rank OF Block_4 - 1);
+	  rule3
+		GROUP Simu_group
+		STEP rep_management
+		IF ((state OF Block_4 = 'waiting_for_rep') AND ((rank OF
+		  Block_4 = 1) OR (1 = 0))) AND free OF rep_1
+		THEN state OF Block_4 <-- 'under_repair',
+		  free OF rep_1 <-- FALSE;
+	OCCURRENCE
+	  fail_in_op
+		GROUP Simu_group
+		IF (fail OF Block_4 = FALSE) AND (state OF Block_4 = 'working')
+		MAY_OCCUR
+		  FAULT fail
+		  DIST EXP (lambda OF Block_4)
+		  INDUCING fail OF Block_4 <-- TRUE,
+			state OF Block_4 <-- 'waiting_for_rep',
+			rank OF Block_4 <-- (max_rank OF rep_1 + 1);
+	  xx1
+		GROUP Simu_group
+		IF (fail OF Block_4 = TRUE) AND (state OF Block_4 =
+		  'under_repair')
+		MAY_OCCUR
+		  REPAIR rep
+		  DIST EXP (mu OF Block_4)
+		  INDUCING fail OF Block_4 <-- FALSE,
+			state OF Block_4 <-- 'working',
+			free OF rep_1 <-- TRUE,
+			dequeue OF rep_1 <-- TRUE;
+
+OBJECT SS1 IS_A additive_subsys;
+	INTERFACE
+	  element
+		= Block_1 Block_2;
+	ATTRIBUTE
+	  capacity
+		DOMAIN REAL
+		REINITIALISATION  100;
+	  null_production
+		LABEL "%OBJECT produces nothing"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  functioning_threshold
+		DOMAIN REAL
+		=  0;
+	ATTRIBUTE
+	  potential_capacity
+		DOMAIN REAL
+		REINITIALISATION  100;
+	INTERACTION
+	  rule1
+		GROUP Simu_group
+		STEP default_step
+		THEN potential_capacity OF SS1 <-- MIN(capacity OF Block_1 +
+		  capacity OF Block_2,  100);
+	  rule2
+		GROUP Simu_group
+		STEP default_step
+		IF potential_capacity OF SS1 < functioning_threshold OF SS1
+		THEN capacity OF SS1 <--  0
+		ELSE capacity OF SS1 <-- potential_capacity OF SS1;
+	  rule3
+		GROUP Simu_group
+		STEP default_step
+		IF null_production OF Block_1 AND null_production OF Block_2
+		THEN null_production OF SS1 <-- TRUE;
+
+OBJECT SS2 IS_A additive_subsys;
+	INTERFACE
+	  element
+		= Backup_1 Block_3 Block_4;
+	ATTRIBUTE
+	  capacity
+		DOMAIN REAL
+		REINITIALISATION  100;
+	  null_production
+		LABEL "%OBJECT produces nothing"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  functioning_threshold
+		DOMAIN REAL
+		=  0;
+	ATTRIBUTE
+	  potential_capacity
+		DOMAIN REAL
+		REINITIALISATION  100;
+	INTERACTION
+	  rule1
+		GROUP Simu_group
+		STEP default_step
+		THEN potential_capacity OF SS2 <-- MIN((capacity OF Backup_1 +
+		  capacity OF Block_3) + capacity OF Block_4,  100);
+	  rule2
+		GROUP Simu_group
+		STEP default_step
+		IF potential_capacity OF SS2 < functioning_threshold OF SS2
+		THEN capacity OF SS2 <--  0
+		ELSE capacity OF SS2 <-- potential_capacity OF SS2;
+	  rule3
+		GROUP Simu_group
+		STEP default_step
+		IF (null_production OF Backup_1 AND null_production OF Block_3)
+		  AND null_production OF Block_4
+		THEN null_production OF SS2 <-- TRUE;
+
+OBJECT l_1 IS_A link;
+
+OBJECT l_1_1 IS_A link;
+
+OBJECT l_2 IS_A link;
+
+OBJECT l_2_1 IS_A link;
+
+OBJECT l_3 IS_A link;
+
+OBJECT l_3_1 IS_A link;
+
+OBJECT l_4 IS_A link;
+
+OBJECT ls_1 IS_A backup_link;
+
+OBJECT min_1 IS_A min_subsys;
+	INTERFACE
+	  element
+		= SS1 SS2;
+	ATTRIBUTE
+	  capacity
+		DOMAIN REAL
+		REINITIALISATION  100;
+	  null_production
+		LABEL "%OBJECT produces nothing"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	INTERACTION
+	  rule1_xx5
+		GROUP Simu_group
+		STEP default_step
+		IF capacity OF SS1 < capacity OF min_1
+		THEN capacity OF min_1 <-- capacity OF SS1;
+	  rule1_xx6
+		GROUP Simu_group
+		STEP default_step
+		IF capacity OF SS2 < capacity OF min_1
+		THEN capacity OF min_1 <-- capacity OF SS2;
+	  rule2
+		GROUP Simu_group
+		STEP default_step
+		IF null_production OF SS1 OR null_production OF SS2
+		THEN null_production OF min_1 <-- TRUE;
+
+OBJECT rep_1 IS_A repairman;
+	INTERFACE
+	  monitored_cpt
+		= Block_1 Block_3 Block_2 Block_4 Backup_1;
+	ATTRIBUTE
+	  max_rank
+		DOMAIN INTEGER
+		REINITIALISATION 0;
+	  free
+		DOMAIN BOOLEAN
+		= TRUE;
+	  dequeue
+		DOMAIN BOOLEAN
+		= FALSE;
+	INTERACTION
+	  xx3
+		GROUP Simu_group
+		STEP default_step
+		IF dequeue OF rep_1
+		THEN dequeue OF rep_1 <-- FALSE,
+		  dequeue OF Block_1 <-- TRUE,
+		  dequeue OF Block_3 <-- TRUE,
+		  dequeue OF Block_2 <-- TRUE,
+		  dequeue OF Block_4 <-- TRUE,
+		  dequeue OF Backup_1 <-- TRUE;
+	  xx4
+		GROUP Simu_group
+		STEP compute_max_rank
+		THEN max_rank OF rep_1 <-- MAX(max_rank OF rep_1, MAX(rank OF
+		  Block_1, rank OF Block_3, rank OF Block_2, rank OF Block_4,
+		  rank OF Backup_1));
+
+OBJECT __ARBRE__EIRM IS_A FIGARO;
+	CONSTANT
+	  Profil1
+		DOMAIN BOOLEAN
+		= TRUE;
+

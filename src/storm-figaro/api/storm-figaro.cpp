@@ -3,6 +3,7 @@
 #include <string>
 #include "storm-figaro/model/FigaroModel.h"
 #include "storm-figaro/model/FigaroModel2.h"
+#include "storm-figaro/model/FigaroModel3.h"
 //#include "storm-figaro/model/FigaroModelTemplate.h"
 #include "storm-figaro/api/storm-figaro.h"
 #include <random>
@@ -18,7 +19,7 @@ namespace storm {
 
 
             std::shared_ptr<storm::figaro::FigaroProgram> loadFigaroProgram(){
-                std::shared_ptr<storm::figaro::FigaroProgram> figaromodel=  std::make_shared<storm::figaro::FigaroProgram1> (storm::figaro::FigaroProgram1());
+                std::shared_ptr<storm::figaro::FigaroProgram> figaromodel=  std::make_shared<storm::figaro::FigaroProgram3> (storm::figaro::FigaroProgram3());
                 return figaromodel;
             }
 //pare properties form teh xml file

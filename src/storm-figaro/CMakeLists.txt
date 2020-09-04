@@ -6,8 +6,10 @@ register_source_groups_from_filestructure("${ALL_FILES}" storm-figaro)
 
 file(GLOB_RECURSE STORM_FIGARO_SOURCES ${PROJECT_SOURCE_DIR}/src/storm-figaro/*/*.cpp)
 file(GLOB_RECURSE STORM_FIGARO_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-figaro/*/*.h)
-
-
+file(GLOB_RECURSE STORM_FIGARO_SOURCES ${PROJECT_SOURCE_DIR}/src/storm-figaro/figaro/*/*.cpp)
+file(GLOB_RECURSE STORM_FIGARO_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-figaro/figaro/*/*.h)
+file(GLOB_RECURSE STORM_FIGARO_SOURCES ${PROJECT_SOURCE_DIR}/src/storm-figaro/figaro/*/*/*.cpp)
+file(GLOB_RECURSE STORM_FIGARO_HEADERS ${PROJECT_SOURCE_DIR}/src/storm-figaro/figaro/*/*/*.h)
 # Create storm-figaro.
 add_library(storm-figaro SHARED ${STORM_FIGARO_SOURCES} ${STORM_FIGARO_HEADERS})
 

@@ -1,0 +1,9 @@
+<?xml version= "1.0" encoding="UTF-8"?>
+<ANALYSIS xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="analysis.xsd">
+ <FIGARO0 PATH="export_fig0.fi"/>
+ <RESULTS PATH="results.txt"/>
+ <PARAMETERS MAX_RULES_RUNS="200" MAX_INST_TRANSITIONS="30" OPTIMIZE_RULES_ORDER="YES"/>
+ <UNRELIABILITY  NAME="Unreliability of two subsystems">
+  <TARGET NAME="Top" CONDITION="null_production(min_1)" TYPE="VANISHING TANGIBLE ABSORBING"/>
+ </UNRELIABILITY>
+</ANALYSIS>

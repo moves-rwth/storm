@@ -1,0 +1,1212 @@
+STEPS_ORDER
+	__ARBRE__;
+	default_step;
+	initialization;
+	propagate_effect_S;
+	propagate_effect_required;
+	propagate_leaves;
+	tops;
+GROUP_NAMES
+	V3_simu_group;
+
+OBJECT OPTIONS IS_A GLOBAL_TYPE;
+	CONSTANT
+	  trimming
+		DOMAIN BOOLEAN
+		= TRUE;
+	  trimming_option
+		DOMAIN 'according_to_article' 'maximum'
+		= 'according_to_article';
+	  repairable_system
+		DOMAIN BOOLEAN
+		= TRUE;
+
+OBJECT UE_1 IS_A undes_event;
+	INTERFACE
+	  sons
+		= collision_avoided;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'always_true';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= TRUE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  to_be_taken_into_account
+		DOMAIN BOOLEAN
+		= TRUE;
+	INTERACTION
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		THEN relevant_evt OF UE_1 <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF UE_1 <-- S OF UE_1;
+	  xx34
+		GROUP V3_simu_group
+		STEP propagate_effect_S
+		IF S OF collision_avoided
+		THEN S OF UE_1 <-- TRUE;
+
+OBJECT collision_avoided IS_A and_gate;
+	INTERFACE
+	  sons
+		= course_changed detection;
+	  fathers
+		= UE_1;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	INTERACTION
+	  xx3
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF NOT required OF UE_1
+		THEN required OF collision_avoided <-- FALSE;
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF relevant_evt OF UE_1 AND (NOT S OF UE_1)
+		THEN relevant_evt OF collision_avoided <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF collision_avoided <-- S OF collision_avoided;
+	  xx28
+		GROUP V3_simu_group
+		STEP propagate_effect_S
+		IF S OF course_changed AND S OF detection
+		THEN S OF collision_avoided <-- TRUE;
+
+OBJECT course_changed IS_A f_leaf;
+	INTERFACE
+	  fathers
+		= collision_avoided;
+	  triggered_by
+		= detection;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  mu
+		DOMAIN REAL
+		= 0.1;
+	  lambda
+		DOMAIN REAL
+		= 0.0001;
+	  failF_FROZEN
+		DOMAIN BOOLEAN
+		= FALSE;
+	(*FAILURE*)
+	ATTRIBUTE
+	  failF
+		LABEL "failure in operation %OBJECT"
+		DOMAIN BOOLEAN
+		= FALSE;
+	INTERACTION
+	  xx3
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF (NOT required OF collision_avoided) OR (NOT S OF detection)
+		THEN required OF course_changed <-- FALSE;
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF relevant_evt OF collision_avoided AND (NOT S OF
+		  collision_avoided)
+		THEN relevant_evt OF course_changed <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF course_changed <-- S OF course_changed;
+	  xx6
+		GROUP V3_simu_group
+		STEP initialization
+		IF failF OF course_changed = TRUE
+		THEN S OF course_changed <-- TRUE;
+	OCCURRENCE
+	  xx10
+		GROUP V3_simu_group
+		IF (failF OF course_changed = FALSE) AND (required OF
+		  course_changed AND relevant_evt OF course_changed)
+		MAY_OCCUR
+		  FAULT failF
+		  LABEL "failure in operation %OBJECT"
+		  DIST EXP (0.0001)
+		  INDUCING failF OF course_changed <-- TRUE;
+	  xx11
+		GROUP V3_simu_group
+		IF failF OF course_changed = TRUE
+		MAY_OCCUR
+		  REPAIR rep
+		  DIST EXP (0.1)
+		  INDUCING failF OF course_changed <-- FALSE;
+
+OBJECT detection IS_A or_gate;
+	INTERFACE
+	  sons
+		= detection_by_platform detection_by_ship;
+	  fathers
+		= collision_avoided;
+	  triggers
+		= course_changed;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	INTERACTION
+	  xx3
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF NOT required OF collision_avoided
+		THEN required OF detection <-- FALSE;
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF (relevant_evt OF collision_avoided AND (NOT S OF
+		  collision_avoided)) OR (NOT S OF course_changed)
+		THEN relevant_evt OF detection <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF detection <-- S OF detection;
+	  xx29
+		GROUP V3_simu_group
+		STEP propagate_effect_S
+		IF S OF detection_by_platform OR S OF detection_by_ship
+		THEN S OF detection <-- TRUE;
+
+OBJECT detection_by_platform IS_A and_gate;
+	INTERFACE
+	  sons
+		= detection_by_platform_1 warning;
+	  fathers
+		= detection;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	INTERACTION
+	  xx3
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF NOT required OF detection
+		THEN required OF detection_by_platform <-- FALSE;
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF relevant_evt OF detection AND (NOT S OF detection)
+		THEN relevant_evt OF detection_by_platform <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF detection_by_platform <-- S OF
+		  detection_by_platform;
+	  xx28
+		GROUP V3_simu_group
+		STEP propagate_effect_S
+		IF S OF detection_by_platform_1 AND S OF warning
+		THEN S OF detection_by_platform <-- TRUE;
+
+OBJECT detection_by_platform_1 IS_A or_gate;
+	INTERFACE
+	  sons
+		= radar_1 visual_1;
+	  fathers
+		= detection_by_platform;
+	  triggers
+		= warning;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	INTERACTION
+	  xx3
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF NOT required OF detection_by_platform
+		THEN required OF detection_by_platform_1 <-- FALSE;
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF (relevant_evt OF detection_by_platform AND (NOT S OF
+		  detection_by_platform)) OR (NOT S OF warning)
+		THEN relevant_evt OF detection_by_platform_1 <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF detection_by_platform_1 <-- S OF
+		  detection_by_platform_1;
+	  xx29
+		GROUP V3_simu_group
+		STEP propagate_effect_S
+		IF S OF radar_1 OR S OF visual_1
+		THEN S OF detection_by_platform_1 <-- TRUE;
+
+OBJECT detection_by_ship IS_A or_gate;
+	INTERFACE
+	  sons
+		= radar visual;
+	  fathers
+		= detection;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	INTERACTION
+	  xx3
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF NOT required OF detection
+		THEN required OF detection_by_ship <-- FALSE;
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF relevant_evt OF detection AND (NOT S OF detection)
+		THEN relevant_evt OF detection_by_ship <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF detection_by_ship <-- S OF detection_by_ship;
+	  xx29
+		GROUP V3_simu_group
+		STEP propagate_effect_S
+		IF S OF radar OR S OF visual
+		THEN S OF detection_by_ship <-- TRUE;
+
+OBJECT logic_1 IS_A logic_link;
+
+OBJECT logic_2 IS_A logic_link;
+
+OBJECT logic_3 IS_A logic_link;
+
+OBJECT logic_4 IS_A logic_link;
+
+OBJECT logic_5 IS_A logic_link;
+
+OBJECT logic_5_1 IS_A logic_link;
+
+OBJECT logic_6 IS_A logic_link;
+
+OBJECT logic_6_1 IS_A logic_link;
+
+OBJECT logic_7 IS_A logic_link;
+
+OBJECT logic_8 IS_A logic_link;
+
+OBJECT logic_9 IS_A logic_link;
+
+OBJECT radar IS_A f_leaf;
+	INTERFACE
+	  fathers
+		= detection_by_ship;
+	  triggered_by
+		= radar_only;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  mu
+		DOMAIN REAL
+		= 0.1;
+	  lambda
+		DOMAIN REAL
+		= 0.0001;
+	  failF_FROZEN
+		DOMAIN BOOLEAN
+		= FALSE;
+	(*FAILURE*)
+	ATTRIBUTE
+	  failF
+		LABEL "failure in operation %OBJECT"
+		DOMAIN BOOLEAN
+		= FALSE;
+	INTERACTION
+	  xx3
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF (NOT required OF detection_by_ship) OR (NOT S OF radar_only)
+		THEN required OF radar <-- FALSE;
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF relevant_evt OF detection_by_ship AND (NOT S OF
+		  detection_by_ship)
+		THEN relevant_evt OF radar <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF radar <-- S OF radar;
+	  xx6
+		GROUP V3_simu_group
+		STEP initialization
+		IF failF OF radar = TRUE
+		THEN S OF radar <-- TRUE;
+	OCCURRENCE
+	  xx10
+		GROUP V3_simu_group
+		IF (failF OF radar = FALSE) AND (required OF radar AND
+		  relevant_evt OF radar)
+		MAY_OCCUR
+		  FAULT failF
+		  LABEL "failure in operation %OBJECT"
+		  DIST EXP (0.0001)
+		  INDUCING failF OF radar <-- TRUE;
+	  xx11
+		GROUP V3_simu_group
+		IF failF OF radar = TRUE
+		MAY_OCCUR
+		  REPAIR rep
+		  DIST EXP (0.1)
+		  INDUCING failF OF radar <-- FALSE;
+
+OBJECT radar_1 IS_A f_leaf;
+	INTERFACE
+	  fathers
+		= detection_by_platform_1;
+	  triggered_by
+		= radar_only;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  mu
+		DOMAIN REAL
+		= 0.1;
+	  lambda
+		DOMAIN REAL
+		= 0.0001;
+	  failF_FROZEN
+		DOMAIN BOOLEAN
+		= FALSE;
+	(*FAILURE*)
+	ATTRIBUTE
+	  failF
+		LABEL "failure in operation %OBJECT"
+		DOMAIN BOOLEAN
+		= FALSE;
+	INTERACTION
+	  xx3
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF (NOT required OF detection_by_platform_1) OR (NOT S OF
+		  radar_only)
+		THEN required OF radar_1 <-- FALSE;
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF relevant_evt OF detection_by_platform_1 AND (NOT S OF
+		  detection_by_platform_1)
+		THEN relevant_evt OF radar_1 <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF radar_1 <-- S OF radar_1;
+	  xx6
+		GROUP V3_simu_group
+		STEP initialization
+		IF failF OF radar_1 = TRUE
+		THEN S OF radar_1 <-- TRUE;
+	OCCURRENCE
+	  xx10
+		GROUP V3_simu_group
+		IF (failF OF radar_1 = FALSE) AND (required OF radar_1 AND
+		  relevant_evt OF radar_1)
+		MAY_OCCUR
+		  FAULT failF
+		  LABEL "failure in operation %OBJECT"
+		  DIST EXP (0.0001)
+		  INDUCING failF OF radar_1 <-- TRUE;
+	  xx11
+		GROUP V3_simu_group
+		IF failF OF radar_1 = TRUE
+		MAY_OCCUR
+		  REPAIR rep
+		  DIST EXP (0.1)
+		  INDUCING failF OF radar_1 <-- FALSE;
+
+OBJECT radar_and_visual IS_A phase_leaf;
+	INTERFACE
+	  triggered_by
+		= radar_only;
+	  triggers
+		= too_late visual visual_1;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  Dist_kind
+		DOMAIN 'exponential' 'constant_time'
+		= 'exponential';
+	  duration
+		DOMAIN REAL
+		= 10;
+	(*FAILURE*)
+	ATTRIBUTE
+	  in_progress
+		LABEL "Phase %OBJECT in progress"
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  already_required
+		DOMAIN BOOLEAN
+		= FALSE;
+	  start_phase
+		DOMAIN BOOLEAN
+		= FALSE;
+	INTERACTION
+	  xx3
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF NOT S OF radar_only
+		THEN required OF radar_and_visual <-- FALSE;
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF ((NOT S OF too_late) OR (NOT S OF visual)) OR (NOT S OF
+		  visual_1)
+		THEN relevant_evt OF radar_and_visual <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF radar_and_visual <-- S OF radar_and_visual;
+	  xx44
+		GROUP V3_simu_group
+		STEP initialization
+		THEN S OF radar_and_visual <-- in_progress OF radar_and_visual;
+	  xx45
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		IF ((NOT in_progress OF radar_and_visual) AND (NOT required OF
+		  radar_and_visual)) AND already_required OF radar_and_visual
+		THEN start_phase OF radar_and_visual <-- TRUE;
+	  xx46
+		GROUP V3_simu_group
+		STEP tops
+		THEN already_required OF radar_and_visual <-- required OF
+		  radar_and_visual;
+	OCCURRENCE
+	  xx43_a
+		GROUP V3_simu_group
+		IF in_progress OF radar_and_visual
+		MAY_OCCUR
+		  TRANSITION end
+		  LABEL "End of phase %OBJECT"
+		  DIST EXP (0.1)
+		  INDUCING in_progress OF radar_and_visual <-- FALSE;
+	  xx47
+		GROUP V3_simu_group
+		IF start_phase OF radar_and_visual
+		MAY_OCCUR
+		  TRANSITION start
+		  LABEL "start of phase %OBJECT"
+		  DIST INS (1)
+		  INDUCING in_progress OF radar_and_visual <-- TRUE,
+			start_phase OF radar_and_visual <-- FALSE;
+
+OBJECT radar_only IS_A phase_leaf;
+	INTERFACE
+	  triggers
+		= radar radar_1 radar_and_visual;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  Dist_kind
+		DOMAIN 'exponential' 'constant_time'
+		= 'exponential';
+	  duration
+		DOMAIN REAL
+		= 10;
+	(*FAILURE*)
+	ATTRIBUTE
+	  in_progress
+		LABEL "Phase %OBJECT in progress"
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  already_required
+		DOMAIN BOOLEAN
+		= FALSE;
+	  start_phase
+		DOMAIN BOOLEAN
+		= FALSE;
+	INTERACTION
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF ((NOT S OF radar) OR (NOT S OF radar_1)) OR (NOT S OF
+		  radar_and_visual)
+		THEN relevant_evt OF radar_only <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF radar_only <-- S OF radar_only;
+	  xx44
+		GROUP V3_simu_group
+		STEP initialization
+		THEN S OF radar_only <-- in_progress OF radar_only;
+	  xx45
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		IF ((NOT in_progress OF radar_only) AND (NOT required OF
+		  radar_only)) AND already_required OF radar_only
+		THEN start_phase OF radar_only <-- TRUE;
+	  xx46
+		GROUP V3_simu_group
+		STEP tops
+		THEN already_required OF radar_only <-- required OF radar_only;
+	OCCURRENCE
+	  xx43_a
+		GROUP V3_simu_group
+		IF in_progress OF radar_only
+		MAY_OCCUR
+		  TRANSITION end
+		  LABEL "End of phase %OBJECT"
+		  DIST EXP (0.1)
+		  INDUCING in_progress OF radar_only <-- FALSE;
+	  xx47
+		GROUP V3_simu_group
+		IF start_phase OF radar_only
+		MAY_OCCUR
+		  TRANSITION start
+		  LABEL "start of phase %OBJECT"
+		  DIST INS (1)
+		  INDUCING in_progress OF radar_only <-- TRUE,
+			start_phase OF radar_only <-- FALSE;
+
+OBJECT t_2 IS_A trigger_link;
+	INTERFACE
+	  target
+		= radar;
+	CONSTANT
+	  trigger_kind
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+
+OBJECT t_3 IS_A trigger_link;
+	INTERFACE
+	  target
+		= radar_1;
+	CONSTANT
+	  trigger_kind
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+
+OBJECT t_4 IS_A trigger_link;
+	INTERFACE
+	  target
+		= course_changed;
+	CONSTANT
+	  trigger_kind
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+
+OBJECT t_5 IS_A trigger_link;
+	INTERFACE
+	  target
+		= radar_and_visual;
+	CONSTANT
+	  trigger_kind
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+
+OBJECT t_6 IS_A trigger_link;
+	INTERFACE
+	  target
+		= visual;
+	CONSTANT
+	  trigger_kind
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+
+OBJECT t_7 IS_A trigger_link;
+	INTERFACE
+	  target
+		= visual_1;
+	CONSTANT
+	  trigger_kind
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+
+OBJECT t_8 IS_A trigger_link;
+	INTERFACE
+	  target
+		= warning;
+	CONSTANT
+	  trigger_kind
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+
+OBJECT t_9 IS_A trigger_link;
+	INTERFACE
+	  target
+		= too_late;
+	CONSTANT
+	  trigger_kind
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+
+OBJECT too_late IS_A phase_leaf;
+	INTERFACE
+	  triggered_by
+		= radar_and_visual;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  Dist_kind
+		DOMAIN 'exponential' 'constant_time'
+		= 'exponential';
+	  duration
+		DOMAIN REAL
+		= 10;
+	(*FAILURE*)
+	ATTRIBUTE
+	  in_progress
+		LABEL "Phase %OBJECT in progress"
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  already_required
+		DOMAIN BOOLEAN
+		= FALSE;
+	  start_phase
+		DOMAIN BOOLEAN
+		= FALSE;
+	INTERACTION
+	  xx3
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF NOT S OF radar_and_visual
+		THEN required OF too_late <-- FALSE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF too_late <-- S OF too_late;
+	  xx44
+		GROUP V3_simu_group
+		STEP initialization
+		THEN S OF too_late <-- in_progress OF too_late;
+	  xx45
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		IF ((NOT in_progress OF too_late) AND (NOT required OF too_late)
+		  ) AND already_required OF too_late
+		THEN start_phase OF too_late <-- TRUE;
+	  xx46
+		GROUP V3_simu_group
+		STEP tops
+		THEN already_required OF too_late <-- required OF too_late;
+	OCCURRENCE
+	  xx43_a
+		GROUP V3_simu_group
+		IF in_progress OF too_late
+		MAY_OCCUR
+		  TRANSITION end
+		  LABEL "End of phase %OBJECT"
+		  DIST EXP (0.1)
+		  INDUCING in_progress OF too_late <-- FALSE;
+	  xx47
+		GROUP V3_simu_group
+		IF start_phase OF too_late
+		MAY_OCCUR
+		  TRANSITION start
+		  LABEL "start of phase %OBJECT"
+		  DIST INS (1)
+		  INDUCING in_progress OF too_late <-- TRUE,
+			start_phase OF too_late <-- FALSE;
+
+OBJECT visual IS_A f_leaf;
+	INTERFACE
+	  fathers
+		= detection_by_ship;
+	  triggered_by
+		= radar_and_visual;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  mu
+		DOMAIN REAL
+		= 0.1;
+	  lambda
+		DOMAIN REAL
+		= 0.0001;
+	  failF_FROZEN
+		DOMAIN BOOLEAN
+		= FALSE;
+	(*FAILURE*)
+	ATTRIBUTE
+	  failF
+		LABEL "failure in operation %OBJECT"
+		DOMAIN BOOLEAN
+		= FALSE;
+	INTERACTION
+	  xx3
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF (NOT required OF detection_by_ship) OR (NOT S OF
+		  radar_and_visual)
+		THEN required OF visual <-- FALSE;
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF relevant_evt OF detection_by_ship AND (NOT S OF
+		  detection_by_ship)
+		THEN relevant_evt OF visual <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF visual <-- S OF visual;
+	  xx6
+		GROUP V3_simu_group
+		STEP initialization
+		IF failF OF visual = TRUE
+		THEN S OF visual <-- TRUE;
+	OCCURRENCE
+	  xx10
+		GROUP V3_simu_group
+		IF (failF OF visual = FALSE) AND (required OF visual AND
+		  relevant_evt OF visual)
+		MAY_OCCUR
+		  FAULT failF
+		  LABEL "failure in operation %OBJECT"
+		  DIST EXP (0.0001)
+		  INDUCING failF OF visual <-- TRUE;
+	  xx11
+		GROUP V3_simu_group
+		IF failF OF visual = TRUE
+		MAY_OCCUR
+		  REPAIR rep
+		  DIST EXP (0.1)
+		  INDUCING failF OF visual <-- FALSE;
+
+OBJECT visual_1 IS_A f_leaf;
+	INTERFACE
+	  fathers
+		= detection_by_platform_1;
+	  triggered_by
+		= radar_and_visual;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  mu
+		DOMAIN REAL
+		= 0.1;
+	  lambda
+		DOMAIN REAL
+		= 0.0001;
+	  failF_FROZEN
+		DOMAIN BOOLEAN
+		= FALSE;
+	(*FAILURE*)
+	ATTRIBUTE
+	  failF
+		LABEL "failure in operation %OBJECT"
+		DOMAIN BOOLEAN
+		= FALSE;
+	INTERACTION
+	  xx3
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF (NOT required OF detection_by_platform_1) OR (NOT S OF
+		  radar_and_visual)
+		THEN required OF visual_1 <-- FALSE;
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF relevant_evt OF detection_by_platform_1 AND (NOT S OF
+		  detection_by_platform_1)
+		THEN relevant_evt OF visual_1 <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF visual_1 <-- S OF visual_1;
+	  xx6
+		GROUP V3_simu_group
+		STEP initialization
+		IF failF OF visual_1 = TRUE
+		THEN S OF visual_1 <-- TRUE;
+	OCCURRENCE
+	  xx10
+		GROUP V3_simu_group
+		IF (failF OF visual_1 = FALSE) AND (required OF visual_1 AND
+		  relevant_evt OF visual_1)
+		MAY_OCCUR
+		  FAULT failF
+		  LABEL "failure in operation %OBJECT"
+		  DIST EXP (0.0001)
+		  INDUCING failF OF visual_1 <-- TRUE;
+	  xx11
+		GROUP V3_simu_group
+		IF failF OF visual_1 = TRUE
+		MAY_OCCUR
+		  REPAIR rep
+		  DIST EXP (0.1)
+		  INDUCING failF OF visual_1 <-- FALSE;
+
+OBJECT warning IS_A f_leaf;
+	INTERFACE
+	  fathers
+		= detection_by_platform;
+	  triggered_by
+		= detection_by_platform_1;
+	ATTRIBUTE
+	  required
+		DOMAIN BOOLEAN
+		REINITIALISATION TRUE;
+	  already_S
+		DOMAIN BOOLEAN
+		= FALSE;
+	CONSTANT
+	  calculate_required
+		DOMAIN 'fn_fathers_and_trig' 'fn_fathers_opp_trig' 'always_true' 'always_false' 'equal_to_S_trig' 'opposite_to_S_trig'
+		= 'fn_fathers_and_trig';
+	  force_relevant_events
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  S
+		LABEL "%OBJECT"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  relevant_evt
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  mu
+		DOMAIN REAL
+		= 0.1;
+	  lambda
+		DOMAIN REAL
+		= 0.0001;
+	  failF_FROZEN
+		DOMAIN BOOLEAN
+		= FALSE;
+	(*FAILURE*)
+	ATTRIBUTE
+	  failF
+		LABEL "failure in operation %OBJECT"
+		DOMAIN BOOLEAN
+		= FALSE;
+	INTERACTION
+	  xx3
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF (NOT required OF detection_by_platform) OR (NOT S OF
+		  detection_by_platform_1)
+		THEN required OF warning <-- FALSE;
+	  xx4
+		GROUP V3_simu_group
+		STEP propagate_effect_required
+		IF relevant_evt OF detection_by_platform AND (NOT S OF
+		  detection_by_platform)
+		THEN relevant_evt OF warning <-- TRUE;
+	  xx5
+		GROUP V3_simu_group
+		STEP propagate_leaves
+		THEN already_S OF warning <-- S OF warning;
+	  xx6
+		GROUP V3_simu_group
+		STEP initialization
+		IF failF OF warning = TRUE
+		THEN S OF warning <-- TRUE;
+	OCCURRENCE
+	  xx10
+		GROUP V3_simu_group
+		IF (failF OF warning = FALSE) AND (required OF warning AND
+		  relevant_evt OF warning)
+		MAY_OCCUR
+		  FAULT failF
+		  LABEL "failure in operation %OBJECT"
+		  DIST EXP (0.0001)
+		  INDUCING failF OF warning <-- TRUE;
+	  xx11
+		GROUP V3_simu_group
+		IF failF OF warning = TRUE
+		MAY_OCCUR
+		  REPAIR rep
+		  DIST EXP (0.1)
+		  INDUCING failF OF warning <-- FALSE;
+
+OBJECT __ARBRE__EIRM IS_A FIGARO;
+	CONSTANT
+	  Profil1
+		DOMAIN BOOLEAN
+		= FALSE;
+	  no_trim
+		DOMAIN BOOLEAN
+		= FALSE;
+	  Default
+		DOMAIN BOOLEAN
+		= TRUE;
+	  Trim_article
+		DOMAIN BOOLEAN
+		= TRUE;
+	  no_repair
+		DOMAIN BOOLEAN
+		= FALSE;
+

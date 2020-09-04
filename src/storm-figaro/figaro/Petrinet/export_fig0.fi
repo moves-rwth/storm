@@ -1,0 +1,521 @@
+STEPS_ORDER
+	default_step;
+	__ARBRE__;
+OBJECT Arrival IS_A exp_transition;
+	INTERFACE
+	  output
+		= av_4;
+	  inhibitor
+		= ia_4;
+	CONSTANT
+	  lambda
+		DOMAIN REAL
+		= 0.2;
+	ATTRIBUTE
+	  calculated_lambda
+		DOMAIN REAL
+		= 0;
+	INTERACTION
+	  xx3
+		STEP default_step
+		IF NOT FALSE
+		THEN calculated_lambda OF Arrival <-- 0.2;
+	OCCURRENCE
+	  xx2
+		IF mark OF First_waiting_area < 3
+		MAY_OCCUR
+		  TRANSITION firing
+		  DIST EXP (calculated_lambda OF Arrival)
+		  INDUCING mark OF First_waiting_area <-- (mark OF
+			First_waiting_area + 1);
+
+OBJECT Cashdesk IS_A place;
+	ATTRIBUTE
+	  mark
+		DOMAIN INTEGER
+		= 0;
+
+OBJECT First_waiting_area IS_A place;
+	ATTRIBUTE
+	  mark
+		DOMAIN INTEGER
+		= 0;
+
+OBJECT Pump_1 IS_A place;
+	ATTRIBUTE
+	  mark
+		DOMAIN INTEGER
+		= 0;
+
+OBJECT Pump_2 IS_A place;
+	ATTRIBUTE
+	  mark
+		DOMAIN INTEGER
+		= 0;
+
+OBJECT Pump_3 IS_A place;
+	ATTRIBUTE
+	  mark
+		DOMAIN INTEGER
+		= 0;
+
+OBJECT Second_waiting_area IS_A place;
+	ATTRIBUTE
+	  mark
+		DOMAIN INTEGER
+		= 0;
+
+OBJECT ai_6 IS_A inhibitor_arc;
+	INTERFACE
+	  origin
+		= Second_waiting_area;
+	  target
+		= tank_is_full_3;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 3;
+
+OBJECT ai_6_C1 IS_A inhibitor_arc;
+	INTERFACE
+	  origin
+		= Second_waiting_area;
+	  target
+		= tank_is_full_2;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 3;
+
+OBJECT ai_6_C2 IS_A inhibitor_arc;
+	INTERFACE
+	  origin
+		= Second_waiting_area;
+	  target
+		= tank_is_full_1;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 3;
+
+OBJECT am_1 IS_A input_arc;
+	INTERFACE
+	  origin
+		= First_waiting_area;
+	  target
+		= ti_3;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT am_2 IS_A input_arc;
+	INTERFACE
+	  origin
+		= First_waiting_area;
+	  target
+		= ti_1;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT am_3 IS_A input_arc;
+	INTERFACE
+	  origin
+		= First_waiting_area;
+	  target
+		= ti_2;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT am_4 IS_A input_arc;
+	INTERFACE
+	  origin
+		= Pump_3;
+	  target
+		= tank_is_full_3;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT am_5 IS_A input_arc;
+	INTERFACE
+	  origin
+		= Pump_1;
+	  target
+		= tank_is_full_1;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT am_6 IS_A input_arc;
+	INTERFACE
+	  origin
+		= Pump_2;
+	  target
+		= tank_is_full_2;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT am_7 IS_A input_arc;
+	INTERFACE
+	  origin
+		= Second_waiting_area;
+	  target
+		= ti_4;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT am_8 IS_A input_arc;
+	INTERFACE
+	  origin
+		= Cashdesk;
+	  target
+		= end_of_payment;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT av_1 IS_A output_arc;
+	INTERFACE
+	  origin
+		= ti_3;
+	  target
+		= Pump_3;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT av_2 IS_A output_arc;
+	INTERFACE
+	  origin
+		= ti_1;
+	  target
+		= Pump_1;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT av_3 IS_A output_arc;
+	INTERFACE
+	  origin
+		= ti_2;
+	  target
+		= Pump_2;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT av_4 IS_A output_arc;
+	INTERFACE
+	  origin
+		= Arrival;
+	  target
+		= First_waiting_area;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT av_5 IS_A output_arc;
+	INTERFACE
+	  origin
+		= ti_4;
+	  target
+		= Cashdesk;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT av_6 IS_A output_arc;
+	INTERFACE
+	  origin
+		= tank_is_full_3;
+	  target
+		= Second_waiting_area;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT av_7 IS_A output_arc;
+	INTERFACE
+	  origin
+		= tank_is_full_1;
+	  target
+		= Second_waiting_area;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT av_8 IS_A output_arc;
+	INTERFACE
+	  origin
+		= tank_is_full_2;
+	  target
+		= Second_waiting_area;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT end_of_payment IS_A exp_transition;
+	INTERFACE
+	  input
+		= am_8;
+	  pl
+		= Cashdesk;
+	CONSTANT
+	  lambda
+		DOMAIN REAL
+		= 0.1;
+	ATTRIBUTE
+	  calculated_lambda
+		DOMAIN REAL
+		= 0;
+	INTERACTION
+	  xx3
+		STEP default_step
+		THEN calculated_lambda OF end_of_payment <-- ( mark OF Cashdesk
+		  * 0.1);
+	OCCURRENCE
+	  xx2
+		IF mark OF Cashdesk >= 1
+		MAY_OCCUR
+		  TRANSITION firing
+		  DIST EXP (calculated_lambda OF end_of_payment)
+		  INDUCING mark OF Cashdesk <-- (mark OF Cashdesk - 1);
+
+OBJECT ia_1 IS_A inhibitor_arc;
+	INTERFACE
+	  origin
+		= Pump_3;
+	  target
+		= ti_3;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT ia_1_1 IS_A inhibitor_arc;
+	INTERFACE
+	  origin
+		= Pump_1;
+	  target
+		= ti_1;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT ia_1_2 IS_A inhibitor_arc;
+	INTERFACE
+	  origin
+		= Pump_2;
+	  target
+		= ti_2;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT ia_4 IS_A inhibitor_arc;
+	INTERFACE
+	  origin
+		= First_waiting_area;
+	  target
+		= Arrival;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 3;
+
+OBJECT ia_5 IS_A inhibitor_arc;
+	INTERFACE
+	  origin
+		= Cashdesk;
+	  target
+		= ti_4;
+	CONSTANT
+	  weight
+		DOMAIN INTEGER
+		= 2;
+
+OBJECT tank_is_full_1 IS_A exp_transition;
+	INTERFACE
+	  input
+		= am_5;
+	  output
+		= av_7;
+	  inhibitor
+		= ai_6_C2;
+	CONSTANT
+	  lambda
+		DOMAIN REAL
+		= 0.1;
+	ATTRIBUTE
+	  calculated_lambda
+		DOMAIN REAL
+		= 0;
+	INTERACTION
+	  xx3
+		STEP default_step
+		IF NOT FALSE
+		THEN calculated_lambda OF tank_is_full_1 <-- 0.1;
+	OCCURRENCE
+	  xx2
+		IF (mark OF Pump_1 >= 1) AND (mark OF Second_waiting_area < 3)
+		MAY_OCCUR
+		  TRANSITION firing
+		  DIST EXP (calculated_lambda OF tank_is_full_1)
+		  INDUCING mark OF Second_waiting_area <-- (mark OF
+			Second_waiting_area + 1),
+			mark OF Pump_1 <-- (mark OF Pump_1 - 1);
+
+OBJECT tank_is_full_2 IS_A exp_transition;
+	INTERFACE
+	  input
+		= am_6;
+	  output
+		= av_8;
+	  inhibitor
+		= ai_6_C1;
+	CONSTANT
+	  lambda
+		DOMAIN REAL
+		= 0.1;
+	ATTRIBUTE
+	  calculated_lambda
+		DOMAIN REAL
+		= 0;
+	INTERACTION
+	  xx3
+		STEP default_step
+		IF NOT FALSE
+		THEN calculated_lambda OF tank_is_full_2 <-- 0.1;
+	OCCURRENCE
+	  xx2
+		IF (mark OF Pump_2 >= 1) AND (mark OF Second_waiting_area < 3)
+		MAY_OCCUR
+		  TRANSITION firing
+		  DIST EXP (calculated_lambda OF tank_is_full_2)
+		  INDUCING mark OF Second_waiting_area <-- (mark OF
+			Second_waiting_area + 1),
+			mark OF Pump_2 <-- (mark OF Pump_2 - 1);
+
+OBJECT tank_is_full_3 IS_A exp_transition;
+	INTERFACE
+	  input
+		= am_4;
+	  output
+		= av_6;
+	  inhibitor
+		= ai_6;
+	CONSTANT
+	  lambda
+		DOMAIN REAL
+		= 0.1;
+	ATTRIBUTE
+	  calculated_lambda
+		DOMAIN REAL
+		= 0;
+	INTERACTION
+	  xx3
+		STEP default_step
+		IF NOT FALSE
+		THEN calculated_lambda OF tank_is_full_3 <-- 0.1;
+	OCCURRENCE
+	  xx2
+		IF (mark OF Pump_3 >= 1) AND (mark OF Second_waiting_area < 3)
+		MAY_OCCUR
+		  TRANSITION firing
+		  DIST EXP (calculated_lambda OF tank_is_full_3)
+		  INDUCING mark OF Second_waiting_area <-- (mark OF
+			Second_waiting_area + 1),
+			mark OF Pump_3 <-- (mark OF Pump_3 - 1);
+
+OBJECT ti_1 IS_A instantaneous_transition;
+	INTERFACE
+	  input
+		= am_2;
+	  output
+		= av_2;
+	  inhibitor
+		= ia_1_1;
+	INTERACTION
+	  xx5
+		STEP default_step
+		IF (mark OF First_waiting_area >= 1) AND (mark OF Pump_1 < 1)
+		THEN mark OF Pump_1 <-- (mark OF Pump_1 + 1),
+		  mark OF First_waiting_area <-- (mark OF First_waiting_area -
+		  1);
+
+OBJECT ti_2 IS_A instantaneous_transition;
+	INTERFACE
+	  input
+		= am_3;
+	  output
+		= av_3;
+	  inhibitor
+		= ia_1_2;
+	INTERACTION
+	  xx5
+		STEP default_step
+		IF (mark OF First_waiting_area >= 1) AND (mark OF Pump_2 < 1)
+		THEN mark OF Pump_2 <-- (mark OF Pump_2 + 1),
+		  mark OF First_waiting_area <-- (mark OF First_waiting_area -
+		  1);
+
+OBJECT ti_3 IS_A instantaneous_transition;
+	INTERFACE
+	  input
+		= am_1;
+	  output
+		= av_1;
+	  inhibitor
+		= ia_1;
+	INTERACTION
+	  xx5
+		STEP default_step
+		IF (mark OF First_waiting_area >= 1) AND (mark OF Pump_3 < 1)
+		THEN mark OF Pump_3 <-- (mark OF Pump_3 + 1),
+		  mark OF First_waiting_area <-- (mark OF First_waiting_area -
+		  1);
+
+OBJECT ti_4 IS_A instantaneous_transition;
+	INTERFACE
+	  input
+		= am_7;
+	  output
+		= av_5;
+	  inhibitor
+		= ia_5;
+	INTERACTION
+	  xx5
+		STEP default_step
+		IF (mark OF Second_waiting_area >= 1) AND (mark OF Cashdesk < 2)
+		THEN mark OF Cashdesk <-- (mark OF Cashdesk + 1),
+		  mark OF Second_waiting_area <-- (mark OF Second_waiting_area
+		  - 1);
+
+OBJECT __ARBRE__EIRM IS_A FIGARO;
+	CONSTANT
+	  Profil1
+		DOMAIN BOOLEAN
+		= TRUE;
+

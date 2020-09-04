@@ -1,0 +1,1108 @@
+STEPS_ORDER
+	default_step;
+	__ARBRE__;
+GROUP_NAMES
+	simulation;
+
+OBJECT b1 IS_A standard_block;
+	INTERFACE
+	  upstream
+		= n_2;
+	  rep_teams
+		= rep_1;
+	ATTRIBUTE
+	  not_linked
+		LABEL "%OBJECT not linked to the diagram start"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  gamma
+		DOMAIN REAL
+		= 0.001;
+	  lambda
+		DOMAIN REAL
+		= 1e-06;
+	  mu
+		DOMAIN REAL
+		= 0.002;
+	(*FAILURE*)
+	ATTRIBUTE
+	  fail_in_operation
+		DOMAIN BOOLEAN
+		= FALSE;
+	  fail_to_start
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  function_ok
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  function_known
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  state
+		DOMAIN 'standby' 'start_demand' 'in_operation' 'waiting_for_repair' 'under_repair'
+		= 'in_operation';
+	INTERACTION
+	  When_function_is_ok
+		STEP default_step
+		IF ((state OF b1 = 'in_operation') OR (state OF b1 =
+		  'start_demand')) AND ((fail_to_start OF b1 = FALSE) AND (
+		  fail_in_operation OF b1 = FALSE))
+		THEN function_ok OF b1 <-- TRUE,
+		  function_known OF b1 <-- TRUE
+		ELSE function_ok OF b1 <-- FALSE,
+		  function_known OF b1 <-- TRUE;
+	  repair_management
+		STEP default_step
+		IF (state OF b1 = 'waiting_for_repair') AND (nb_avail_repairmen
+		  OF rep_1 > 0)
+		THEN state OF b1 <-- 'under_repair',
+		  nb_avail_repairmen OF rep_1 <-- (nb_avail_repairmen OF rep_1
+		  - 1);
+	  propagation
+		STEP default_step
+		IF not_linked OF n_2 OR (NOT function_ok OF b1)
+		THEN not_linked OF b1 <-- TRUE
+		ELSE not_linked OF b1 <-- FALSE;
+	OCCURRENCE
+	  occ_fail_to_start
+		GROUP simulation
+		IF (fail_to_start OF b1 = FALSE) AND (state OF b1 =
+		  'start_demand')
+		MAY_OCCUR
+		  FAULT fail_to_start
+		  LABEL "%OBJECT failed to start"
+		  DIST INS (0.001)
+		  INDUCING fail_to_start OF b1 <-- TRUE,
+			state OF b1 <-- 'waiting_for_repair'
+		OR_ELSE
+		  TRANSITION start
+		  DIST INS (0.999)
+		  INDUCING state OF b1 <-- 'in_operation';
+	  occ_fail_in_operation
+		GROUP simulation
+		IF (fail_in_operation OF b1 = FALSE) AND (state OF b1 =
+		  'in_operation')
+		MAY_OCCUR
+		  FAULT fail_in_operation
+		  LABEL "%OBJECT failed in operation"
+		  DIST EXP (1e-06)
+		  INDUCING fail_in_operation OF b1 <-- TRUE,
+			state OF b1 <-- 'waiting_for_repair';
+	  occ_repair
+		IF ((fail_in_operation OF b1 = TRUE) OR (fail_to_start OF b1 =
+		  TRUE)) AND (state OF b1 = 'under_repair')
+		MAY_OCCUR
+		  REPAIR repair
+		  DIST EXP (0.002)
+		  INDUCING fail_in_operation OF b1 <-- FALSE,
+			fail_to_start OF b1 <-- FALSE,
+			state OF b1 <-- 'in_operation',
+			nb_avail_repairmen OF rep_1 <-- (nb_avail_repairmen OF
+			rep_1 + 1);
+
+OBJECT b2 IS_A standard_block;
+	INTERFACE
+	  upstream
+		= n_2;
+	  rep_teams
+		= rep_2;
+	ATTRIBUTE
+	  not_linked
+		LABEL "%OBJECT not linked to the diagram start"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  gamma
+		DOMAIN REAL
+		= 0.001;
+	  lambda
+		DOMAIN REAL
+		= 2e-06;
+	  mu
+		DOMAIN REAL
+		= 0.005;
+	(*FAILURE*)
+	ATTRIBUTE
+	  fail_in_operation
+		DOMAIN BOOLEAN
+		= FALSE;
+	  fail_to_start
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  function_ok
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  function_known
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  state
+		DOMAIN 'standby' 'start_demand' 'in_operation' 'waiting_for_repair' 'under_repair'
+		= 'in_operation';
+	INTERACTION
+	  When_function_is_ok
+		STEP default_step
+		IF ((state OF b2 = 'in_operation') OR (state OF b2 =
+		  'start_demand')) AND ((fail_to_start OF b2 = FALSE) AND (
+		  fail_in_operation OF b2 = FALSE))
+		THEN function_ok OF b2 <-- TRUE,
+		  function_known OF b2 <-- TRUE
+		ELSE function_ok OF b2 <-- FALSE,
+		  function_known OF b2 <-- TRUE;
+	  repair_management
+		STEP default_step
+		IF (state OF b2 = 'waiting_for_repair') AND (nb_avail_repairmen
+		  OF rep_2 > 0)
+		THEN state OF b2 <-- 'under_repair',
+		  nb_avail_repairmen OF rep_2 <-- (nb_avail_repairmen OF rep_2
+		  - 1);
+	  propagation
+		STEP default_step
+		IF not_linked OF n_2 OR (NOT function_ok OF b2)
+		THEN not_linked OF b2 <-- TRUE
+		ELSE not_linked OF b2 <-- FALSE;
+	OCCURRENCE
+	  occ_fail_to_start
+		GROUP simulation
+		IF (fail_to_start OF b2 = FALSE) AND (state OF b2 =
+		  'start_demand')
+		MAY_OCCUR
+		  FAULT fail_to_start
+		  LABEL "%OBJECT failed to start"
+		  DIST INS (0.001)
+		  INDUCING fail_to_start OF b2 <-- TRUE,
+			state OF b2 <-- 'waiting_for_repair'
+		OR_ELSE
+		  TRANSITION start
+		  DIST INS (0.999)
+		  INDUCING state OF b2 <-- 'in_operation';
+	  occ_fail_in_operation
+		GROUP simulation
+		IF (fail_in_operation OF b2 = FALSE) AND (state OF b2 =
+		  'in_operation')
+		MAY_OCCUR
+		  FAULT fail_in_operation
+		  LABEL "%OBJECT failed in operation"
+		  DIST EXP (2e-06)
+		  INDUCING fail_in_operation OF b2 <-- TRUE,
+			state OF b2 <-- 'waiting_for_repair';
+	  occ_repair
+		IF ((fail_in_operation OF b2 = TRUE) OR (fail_to_start OF b2 =
+		  TRUE)) AND (state OF b2 = 'under_repair')
+		MAY_OCCUR
+		  REPAIR repair
+		  DIST EXP (0.005)
+		  INDUCING fail_in_operation OF b2 <-- FALSE,
+			fail_to_start OF b2 <-- FALSE,
+			state OF b2 <-- 'in_operation',
+			nb_avail_repairmen OF rep_2 <-- (nb_avail_repairmen OF
+			rep_2 + 1);
+
+OBJECT b3 IS_A standard_block;
+	INTERFACE
+	  upstream
+		= ds_1;
+	  rep_teams
+		= rep3_4;
+	ATTRIBUTE
+	  not_linked
+		LABEL "%OBJECT not linked to the diagram start"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  gamma
+		DOMAIN REAL
+		= 0.001;
+	  lambda
+		DOMAIN REAL
+		= 5e-05;
+	  mu
+		DOMAIN REAL
+		= 0.01;
+	(*FAILURE*)
+	ATTRIBUTE
+	  fail_in_operation
+		DOMAIN BOOLEAN
+		= FALSE;
+	  fail_to_start
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  function_ok
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  function_known
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  state
+		DOMAIN 'standby' 'start_demand' 'in_operation' 'waiting_for_repair' 'under_repair'
+		= 'in_operation';
+	INTERACTION
+	  When_function_is_ok
+		STEP default_step
+		IF ((state OF b3 = 'in_operation') OR (state OF b3 =
+		  'start_demand')) AND ((fail_to_start OF b3 = FALSE) AND (
+		  fail_in_operation OF b3 = FALSE))
+		THEN function_ok OF b3 <-- TRUE,
+		  function_known OF b3 <-- TRUE
+		ELSE function_ok OF b3 <-- FALSE,
+		  function_known OF b3 <-- TRUE;
+	  repair_management
+		STEP default_step
+		IF (state OF b3 = 'waiting_for_repair') AND (nb_avail_repairmen
+		  OF rep3_4 > 0)
+		THEN state OF b3 <-- 'under_repair',
+		  nb_avail_repairmen OF rep3_4 <-- (nb_avail_repairmen OF
+		  rep3_4 - 1);
+	  propagation
+		STEP default_step
+		IF not_linked OF ds_1 OR (NOT function_ok OF b3)
+		THEN not_linked OF b3 <-- TRUE
+		ELSE not_linked OF b3 <-- FALSE;
+	OCCURRENCE
+	  occ_fail_to_start
+		GROUP simulation
+		IF (fail_to_start OF b3 = FALSE) AND (state OF b3 =
+		  'start_demand')
+		MAY_OCCUR
+		  FAULT fail_to_start
+		  LABEL "%OBJECT failed to start"
+		  DIST INS (0.001)
+		  INDUCING fail_to_start OF b3 <-- TRUE,
+			state OF b3 <-- 'waiting_for_repair'
+		OR_ELSE
+		  TRANSITION start
+		  DIST INS (0.999)
+		  INDUCING state OF b3 <-- 'in_operation';
+	  occ_fail_in_operation
+		GROUP simulation
+		IF (fail_in_operation OF b3 = FALSE) AND (state OF b3 =
+		  'in_operation')
+		MAY_OCCUR
+		  FAULT fail_in_operation
+		  LABEL "%OBJECT failed in operation"
+		  DIST EXP (5e-05)
+		  INDUCING fail_in_operation OF b3 <-- TRUE,
+			state OF b3 <-- 'waiting_for_repair';
+	  occ_repair
+		IF ((fail_in_operation OF b3 = TRUE) OR (fail_to_start OF b3 =
+		  TRUE)) AND (state OF b3 = 'under_repair')
+		MAY_OCCUR
+		  REPAIR repair
+		  DIST EXP (0.01)
+		  INDUCING fail_in_operation OF b3 <-- FALSE,
+			fail_to_start OF b3 <-- FALSE,
+			state OF b3 <-- 'in_operation',
+			nb_avail_repairmen OF rep3_4 <-- (nb_avail_repairmen OF
+			rep3_4 + 1);
+
+OBJECT b4 IS_A standard_block;
+	INTERFACE
+	  upstream
+		= n_1;
+	  rep_teams
+		= rep3_4;
+	ATTRIBUTE
+	  not_linked
+		LABEL "%OBJECT not linked to the diagram start"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  gamma
+		DOMAIN REAL
+		= 0.001;
+	  lambda
+		DOMAIN REAL
+		= 1e-05;
+	  mu
+		DOMAIN REAL
+		= 0.02;
+	(*FAILURE*)
+	ATTRIBUTE
+	  fail_in_operation
+		DOMAIN BOOLEAN
+		= FALSE;
+	  fail_to_start
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  function_ok
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  function_known
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  state
+		DOMAIN 'standby' 'start_demand' 'in_operation' 'waiting_for_repair' 'under_repair'
+		= 'in_operation';
+	INTERACTION
+	  When_function_is_ok
+		STEP default_step
+		IF ((state OF b4 = 'in_operation') OR (state OF b4 =
+		  'start_demand')) AND ((fail_to_start OF b4 = FALSE) AND (
+		  fail_in_operation OF b4 = FALSE))
+		THEN function_ok OF b4 <-- TRUE,
+		  function_known OF b4 <-- TRUE
+		ELSE function_ok OF b4 <-- FALSE,
+		  function_known OF b4 <-- TRUE;
+	  repair_management
+		STEP default_step
+		IF (state OF b4 = 'waiting_for_repair') AND (nb_avail_repairmen
+		  OF rep3_4 > 0)
+		THEN state OF b4 <-- 'under_repair',
+		  nb_avail_repairmen OF rep3_4 <-- (nb_avail_repairmen OF
+		  rep3_4 - 1);
+	  propagation
+		STEP default_step
+		IF not_linked OF n_1 OR (NOT function_ok OF b4)
+		THEN not_linked OF b4 <-- TRUE
+		ELSE not_linked OF b4 <-- FALSE;
+	OCCURRENCE
+	  occ_fail_to_start
+		GROUP simulation
+		IF (fail_to_start OF b4 = FALSE) AND (state OF b4 =
+		  'start_demand')
+		MAY_OCCUR
+		  FAULT fail_to_start
+		  LABEL "%OBJECT failed to start"
+		  DIST INS (0.001)
+		  INDUCING fail_to_start OF b4 <-- TRUE,
+			state OF b4 <-- 'waiting_for_repair'
+		OR_ELSE
+		  TRANSITION start
+		  DIST INS (0.999)
+		  INDUCING state OF b4 <-- 'in_operation';
+	  occ_fail_in_operation
+		GROUP simulation
+		IF (fail_in_operation OF b4 = FALSE) AND (state OF b4 =
+		  'in_operation')
+		MAY_OCCUR
+		  FAULT fail_in_operation
+		  LABEL "%OBJECT failed in operation"
+		  DIST EXP (1e-05)
+		  INDUCING fail_in_operation OF b4 <-- TRUE,
+			state OF b4 <-- 'waiting_for_repair';
+	  occ_repair
+		IF ((fail_in_operation OF b4 = TRUE) OR (fail_to_start OF b4 =
+		  TRUE)) AND (state OF b4 = 'under_repair')
+		MAY_OCCUR
+		  REPAIR repair
+		  DIST EXP (0.02)
+		  INDUCING fail_in_operation OF b4 <-- FALSE,
+			fail_to_start OF b4 <-- FALSE,
+			state OF b4 <-- 'in_operation',
+			nb_avail_repairmen OF rep3_4 <-- (nb_avail_repairmen OF
+			rep3_4 + 1);
+
+OBJECT b5 IS_A standard_block;
+	INTERFACE
+	  upstream
+		= ds_1;
+	  rep_teams
+		= rep_5;
+	ATTRIBUTE
+	  not_linked
+		LABEL "%OBJECT not linked to the diagram start"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  gamma
+		DOMAIN REAL
+		= 0.001;
+	  lambda
+		DOMAIN REAL
+		= 0.002;
+	  mu
+		DOMAIN REAL
+		= 1;
+	(*FAILURE*)
+	ATTRIBUTE
+	  fail_in_operation
+		DOMAIN BOOLEAN
+		= FALSE;
+	  fail_to_start
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  function_ok
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  function_known
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  state
+		DOMAIN 'standby' 'start_demand' 'in_operation' 'waiting_for_repair' 'under_repair'
+		= 'in_operation';
+	INTERACTION
+	  When_function_is_ok
+		STEP default_step
+		IF ((state OF b5 = 'in_operation') OR (state OF b5 =
+		  'start_demand')) AND ((fail_to_start OF b5 = FALSE) AND (
+		  fail_in_operation OF b5 = FALSE))
+		THEN function_ok OF b5 <-- TRUE,
+		  function_known OF b5 <-- TRUE
+		ELSE function_ok OF b5 <-- FALSE,
+		  function_known OF b5 <-- TRUE;
+	  repair_management
+		STEP default_step
+		IF (state OF b5 = 'waiting_for_repair') AND (nb_avail_repairmen
+		  OF rep_5 > 0)
+		THEN state OF b5 <-- 'under_repair',
+		  nb_avail_repairmen OF rep_5 <-- (nb_avail_repairmen OF rep_5
+		  - 1);
+	  propagation
+		STEP default_step
+		IF not_linked OF ds_1 OR (NOT function_ok OF b5)
+		THEN not_linked OF b5 <-- TRUE
+		ELSE not_linked OF b5 <-- FALSE;
+	OCCURRENCE
+	  occ_fail_to_start
+		GROUP simulation
+		IF (fail_to_start OF b5 = FALSE) AND (state OF b5 =
+		  'start_demand')
+		MAY_OCCUR
+		  FAULT fail_to_start
+		  LABEL "%OBJECT failed to start"
+		  DIST INS (0.001)
+		  INDUCING fail_to_start OF b5 <-- TRUE,
+			state OF b5 <-- 'waiting_for_repair'
+		OR_ELSE
+		  TRANSITION start
+		  DIST INS (0.999)
+		  INDUCING state OF b5 <-- 'in_operation';
+	  occ_fail_in_operation
+		GROUP simulation
+		IF (fail_in_operation OF b5 = FALSE) AND (state OF b5 =
+		  'in_operation')
+		MAY_OCCUR
+		  FAULT fail_in_operation
+		  LABEL "%OBJECT failed in operation"
+		  DIST EXP (0.002)
+		  INDUCING fail_in_operation OF b5 <-- TRUE,
+			state OF b5 <-- 'waiting_for_repair';
+	  occ_repair
+		IF ((fail_in_operation OF b5 = TRUE) OR (fail_to_start OF b5 =
+		  TRUE)) AND (state OF b5 = 'under_repair')
+		MAY_OCCUR
+		  REPAIR repair
+		  DIST EXP (1)
+		  INDUCING fail_in_operation OF b5 <-- FALSE,
+			fail_to_start OF b5 <-- FALSE,
+			state OF b5 <-- 'in_operation',
+			nb_avail_repairmen OF rep_5 <-- (nb_avail_repairmen OF
+			rep_5 + 1);
+
+OBJECT de_1 IS_A diagram_end;
+	INTERFACE
+	  upstream
+		= gate_2_4;
+	ATTRIBUTE
+	  not_linked
+		LABEL "%OBJECT not linked to the diagram start"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	INTERACTION
+	  propagation
+		STEP default_step
+		IF not_linked OF gate_2_4
+		THEN not_linked OF de_1 <-- TRUE
+		ELSE not_linked OF de_1 <-- FALSE;
+
+OBJECT ds_1 IS_A diagram_start;
+	ATTRIBUTE
+	  not_linked
+		LABEL "%OBJECT not linked to the diagram start"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	INTERACTION
+	  init
+		STEP default_step
+		THEN not_linked OF ds_1 <-- FALSE;
+
+OBJECT gate_2_4 IS_A k_out_of_n;
+	INTERFACE
+	  upstream
+		= b1 b2 sb1 sb2;
+	ATTRIBUTE
+	  not_linked
+		LABEL "%OBJECT not linked to the diagram start"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  min_nb_for_success
+		DOMAIN INTEGER
+		= 2;
+	  min_nb_for_failure
+		DOMAIN INTEGER
+		= 3;
+	INTERACTION
+	  propagation
+		STEP default_step
+		IF (AT_LEAST 3 WITHIN (not_linked OF b1, not_linked OF b2,
+		  not_linked OF sb1, not_linked OF sb2))
+		THEN not_linked OF gate_2_4 <-- TRUE
+		ELSE not_linked OF gate_2_4 <-- FALSE;
+
+OBJECT l_1 IS_A link;
+
+OBJECT l_10 IS_A link;
+
+OBJECT l_11 IS_A link;
+
+OBJECT l_12 IS_A link;
+
+OBJECT l_13 IS_A link;
+
+OBJECT l_14 IS_A link;
+
+OBJECT l_15 IS_A link;
+
+OBJECT l_16 IS_A link;
+
+OBJECT l_17 IS_A link;
+
+OBJECT l_18 IS_A link;
+
+OBJECT l_19 IS_A link;
+
+OBJECT l_2 IS_A link;
+
+OBJECT l_20 IS_A link;
+
+OBJECT l_3 IS_A link;
+
+OBJECT l_4 IS_A link;
+
+OBJECT l_5 IS_A link;
+
+OBJECT l_6 IS_A link;
+
+OBJECT l_8 IS_A link;
+
+OBJECT l_9 IS_A link;
+
+OBJECT ls_1 IS_A in_replace_of;
+
+OBJECT ls_2 IS_A in_replace_of;
+
+OBJECT ls_3 IS_A in_replace_of;
+
+OBJECT ls_4 IS_A in_replace_of;
+
+OBJECT n_1 IS_A node;
+	INTERFACE
+	  upstream
+		= b3 sb3;
+	ATTRIBUTE
+	  not_linked
+		LABEL "%OBJECT not linked to the diagram start"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	INTERACTION
+	  propagation
+		STEP default_step
+		IF not_linked OF b3 AND not_linked OF sb3
+		THEN not_linked OF n_1 <-- TRUE
+		ELSE not_linked OF n_1 <-- FALSE;
+
+OBJECT n_2 IS_A node;
+	INTERFACE
+	  upstream
+		= b4 b5 sb4;
+	ATTRIBUTE
+	  not_linked
+		LABEL "%OBJECT not linked to the diagram start"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	INTERACTION
+	  propagation
+		STEP default_step
+		IF (not_linked OF b4 AND not_linked OF b5) AND not_linked OF
+		  sb4
+		THEN not_linked OF n_2 <-- TRUE
+		ELSE not_linked OF n_2 <-- FALSE;
+
+OBJECT rep3_4 IS_A repair_team;
+	ATTRIBUTE
+	  nb_avail_repairmen
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT rep_1 IS_A repair_team;
+	ATTRIBUTE
+	  nb_avail_repairmen
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT rep_2 IS_A repair_team;
+	ATTRIBUTE
+	  nb_avail_repairmen
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT rep_5 IS_A repair_team;
+	ATTRIBUTE
+	  nb_avail_repairmen
+		DOMAIN INTEGER
+		= 1;
+
+OBJECT sb1 IS_A standby_block;
+	INTERFACE
+	  upstream
+		= n_2;
+	  rep_teams
+		= rep_1;
+	  blocks_to_replace
+		= b1;
+	ATTRIBUTE
+	  not_linked
+		LABEL "%OBJECT not linked to the diagram start"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  gamma
+		DOMAIN REAL
+		= 0.01;
+	  lambda
+		DOMAIN REAL
+		= 0.0001;
+	  mu
+		DOMAIN REAL
+		= 0.02;
+	(*FAILURE*)
+	ATTRIBUTE
+	  fail_in_operation
+		DOMAIN BOOLEAN
+		= FALSE;
+	  fail_to_start
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  function_ok
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  function_known
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  state
+		DOMAIN 'standby' 'start_demand' 'in_operation' 'waiting_for_repair' 'under_repair'
+		= 'standby';
+	INTERACTION
+	  When_function_is_ok
+		STEP default_step
+		IF ((state OF sb1 = 'in_operation') OR (state OF sb1 =
+		  'start_demand')) AND ((fail_to_start OF sb1 = FALSE) AND (
+		  fail_in_operation OF sb1 = FALSE))
+		THEN function_ok OF sb1 <-- TRUE,
+		  function_known OF sb1 <-- TRUE
+		ELSE function_ok OF sb1 <-- FALSE,
+		  function_known OF sb1 <-- TRUE;
+	  repair_management
+		STEP default_step
+		IF (state OF sb1 = 'waiting_for_repair') AND (
+		  nb_avail_repairmen OF rep_1 > 0)
+		THEN state OF sb1 <-- 'under_repair',
+		  nb_avail_repairmen OF rep_1 <-- (nb_avail_repairmen OF rep_1
+		  - 1);
+	  propagation
+		STEP default_step
+		IF not_linked OF n_2 OR (NOT function_ok OF sb1)
+		THEN not_linked OF sb1 <-- TRUE
+		ELSE not_linked OF sb1 <-- FALSE;
+	  starting_conditions
+		GROUP simulation
+		STEP default_step
+		IF (state OF sb1 = 'standby') AND ((NOT function_ok OF b1) AND
+		  function_known OF b1)
+		THEN state OF sb1 <-- 'start_demand';
+	  stopping_conditions
+		GROUP simulation
+		STEP default_step
+		IF ((state OF sb1 = 'in_operation') OR (state OF sb1 =
+		  'start_demand')) AND (function_ok OF b1 AND function_known
+		  OF b1)
+		THEN state OF sb1 <-- 'standby';
+	OCCURRENCE
+	  occ_fail_to_start
+		GROUP simulation
+		IF (fail_to_start OF sb1 = FALSE) AND (state OF sb1 =
+		  'start_demand')
+		MAY_OCCUR
+		  FAULT fail_to_start
+		  LABEL "%OBJECT failed to start"
+		  DIST INS (0.01)
+		  INDUCING fail_to_start OF sb1 <-- TRUE,
+			state OF sb1 <-- 'waiting_for_repair'
+		OR_ELSE
+		  TRANSITION start
+		  DIST INS (0.99)
+		  INDUCING state OF sb1 <-- 'in_operation';
+	  occ_fail_in_operation
+		GROUP simulation
+		IF (fail_in_operation OF sb1 = FALSE) AND (state OF sb1 =
+		  'in_operation')
+		MAY_OCCUR
+		  FAULT fail_in_operation
+		  LABEL "%OBJECT failed in operation"
+		  DIST EXP (0.0001)
+		  INDUCING fail_in_operation OF sb1 <-- TRUE,
+			state OF sb1 <-- 'waiting_for_repair';
+	  occ_repair
+		IF ((fail_in_operation OF sb1 = TRUE) OR (fail_to_start OF sb1
+		  = TRUE)) AND (state OF sb1 = 'under_repair')
+		MAY_OCCUR
+		  REPAIR repair
+		  DIST EXP (0.02)
+		  INDUCING fail_in_operation OF sb1 <-- FALSE,
+			fail_to_start OF sb1 <-- FALSE,
+			state OF sb1 <-- 'in_operation',
+			nb_avail_repairmen OF rep_1 <-- (nb_avail_repairmen OF
+			rep_1 + 1);
+
+OBJECT sb2 IS_A standby_block;
+	INTERFACE
+	  upstream
+		= n_2;
+	  rep_teams
+		= rep_2;
+	  blocks_to_replace
+		= b2;
+	ATTRIBUTE
+	  not_linked
+		LABEL "%OBJECT not linked to the diagram start"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  gamma
+		DOMAIN REAL
+		= 0.01;
+	  lambda
+		DOMAIN REAL
+		= 0.0001;
+	  mu
+		DOMAIN REAL
+		= 0.02;
+	(*FAILURE*)
+	ATTRIBUTE
+	  fail_in_operation
+		DOMAIN BOOLEAN
+		= FALSE;
+	  fail_to_start
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  function_ok
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  function_known
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  state
+		DOMAIN 'standby' 'start_demand' 'in_operation' 'waiting_for_repair' 'under_repair'
+		= 'standby';
+	INTERACTION
+	  When_function_is_ok
+		STEP default_step
+		IF ((state OF sb2 = 'in_operation') OR (state OF sb2 =
+		  'start_demand')) AND ((fail_to_start OF sb2 = FALSE) AND (
+		  fail_in_operation OF sb2 = FALSE))
+		THEN function_ok OF sb2 <-- TRUE,
+		  function_known OF sb2 <-- TRUE
+		ELSE function_ok OF sb2 <-- FALSE,
+		  function_known OF sb2 <-- TRUE;
+	  repair_management
+		STEP default_step
+		IF (state OF sb2 = 'waiting_for_repair') AND (
+		  nb_avail_repairmen OF rep_2 > 0)
+		THEN state OF sb2 <-- 'under_repair',
+		  nb_avail_repairmen OF rep_2 <-- (nb_avail_repairmen OF rep_2
+		  - 1);
+	  propagation
+		STEP default_step
+		IF not_linked OF n_2 OR (NOT function_ok OF sb2)
+		THEN not_linked OF sb2 <-- TRUE
+		ELSE not_linked OF sb2 <-- FALSE;
+	  starting_conditions
+		GROUP simulation
+		STEP default_step
+		IF (state OF sb2 = 'standby') AND ((NOT function_ok OF b2) AND
+		  function_known OF b2)
+		THEN state OF sb2 <-- 'start_demand';
+	  stopping_conditions
+		GROUP simulation
+		STEP default_step
+		IF ((state OF sb2 = 'in_operation') OR (state OF sb2 =
+		  'start_demand')) AND (function_ok OF b2 AND function_known
+		  OF b2)
+		THEN state OF sb2 <-- 'standby';
+	OCCURRENCE
+	  occ_fail_to_start
+		GROUP simulation
+		IF (fail_to_start OF sb2 = FALSE) AND (state OF sb2 =
+		  'start_demand')
+		MAY_OCCUR
+		  FAULT fail_to_start
+		  LABEL "%OBJECT failed to start"
+		  DIST INS (0.01)
+		  INDUCING fail_to_start OF sb2 <-- TRUE,
+			state OF sb2 <-- 'waiting_for_repair'
+		OR_ELSE
+		  TRANSITION start
+		  DIST INS (0.99)
+		  INDUCING state OF sb2 <-- 'in_operation';
+	  occ_fail_in_operation
+		GROUP simulation
+		IF (fail_in_operation OF sb2 = FALSE) AND (state OF sb2 =
+		  'in_operation')
+		MAY_OCCUR
+		  FAULT fail_in_operation
+		  LABEL "%OBJECT failed in operation"
+		  DIST EXP (0.0001)
+		  INDUCING fail_in_operation OF sb2 <-- TRUE,
+			state OF sb2 <-- 'waiting_for_repair';
+	  occ_repair
+		IF ((fail_in_operation OF sb2 = TRUE) OR (fail_to_start OF sb2
+		  = TRUE)) AND (state OF sb2 = 'under_repair')
+		MAY_OCCUR
+		  REPAIR repair
+		  DIST EXP (0.02)
+		  INDUCING fail_in_operation OF sb2 <-- FALSE,
+			fail_to_start OF sb2 <-- FALSE,
+			state OF sb2 <-- 'in_operation',
+			nb_avail_repairmen OF rep_2 <-- (nb_avail_repairmen OF
+			rep_2 + 1);
+
+OBJECT sb3 IS_A standby_block;
+	INTERFACE
+	  upstream
+		= ds_1;
+	  rep_teams
+		= rep3_4;
+	  blocks_to_replace
+		= b3;
+	ATTRIBUTE
+	  not_linked
+		LABEL "%OBJECT not linked to the diagram start"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  gamma
+		DOMAIN REAL
+		= 0.02;
+	  lambda
+		DOMAIN REAL
+		= 0.001;
+	  mu
+		DOMAIN REAL
+		= 0.02;
+	(*FAILURE*)
+	ATTRIBUTE
+	  fail_in_operation
+		DOMAIN BOOLEAN
+		= FALSE;
+	  fail_to_start
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  function_ok
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  function_known
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  state
+		DOMAIN 'standby' 'start_demand' 'in_operation' 'waiting_for_repair' 'under_repair'
+		= 'standby';
+	INTERACTION
+	  When_function_is_ok
+		STEP default_step
+		IF ((state OF sb3 = 'in_operation') OR (state OF sb3 =
+		  'start_demand')) AND ((fail_to_start OF sb3 = FALSE) AND (
+		  fail_in_operation OF sb3 = FALSE))
+		THEN function_ok OF sb3 <-- TRUE,
+		  function_known OF sb3 <-- TRUE
+		ELSE function_ok OF sb3 <-- FALSE,
+		  function_known OF sb3 <-- TRUE;
+	  repair_management
+		STEP default_step
+		IF (state OF sb3 = 'waiting_for_repair') AND (
+		  nb_avail_repairmen OF rep3_4 > 0)
+		THEN state OF sb3 <-- 'under_repair',
+		  nb_avail_repairmen OF rep3_4 <-- (nb_avail_repairmen OF
+		  rep3_4 - 1);
+	  propagation
+		STEP default_step
+		IF not_linked OF ds_1 OR (NOT function_ok OF sb3)
+		THEN not_linked OF sb3 <-- TRUE
+		ELSE not_linked OF sb3 <-- FALSE;
+	  starting_conditions
+		GROUP simulation
+		STEP default_step
+		IF (state OF sb3 = 'standby') AND ((NOT function_ok OF b3) AND
+		  function_known OF b3)
+		THEN state OF sb3 <-- 'start_demand';
+	  stopping_conditions
+		GROUP simulation
+		STEP default_step
+		IF ((state OF sb3 = 'in_operation') OR (state OF sb3 =
+		  'start_demand')) AND (function_ok OF b3 AND function_known
+		  OF b3)
+		THEN state OF sb3 <-- 'standby';
+	OCCURRENCE
+	  occ_fail_to_start
+		GROUP simulation
+		IF (fail_to_start OF sb3 = FALSE) AND (state OF sb3 =
+		  'start_demand')
+		MAY_OCCUR
+		  FAULT fail_to_start
+		  LABEL "%OBJECT failed to start"
+		  DIST INS (0.02)
+		  INDUCING fail_to_start OF sb3 <-- TRUE,
+			state OF sb3 <-- 'waiting_for_repair'
+		OR_ELSE
+		  TRANSITION start
+		  DIST INS (0.98)
+		  INDUCING state OF sb3 <-- 'in_operation';
+	  occ_fail_in_operation
+		GROUP simulation
+		IF (fail_in_operation OF sb3 = FALSE) AND (state OF sb3 =
+		  'in_operation')
+		MAY_OCCUR
+		  FAULT fail_in_operation
+		  LABEL "%OBJECT failed in operation"
+		  DIST EXP (0.001)
+		  INDUCING fail_in_operation OF sb3 <-- TRUE,
+			state OF sb3 <-- 'waiting_for_repair';
+	  occ_repair
+		IF ((fail_in_operation OF sb3 = TRUE) OR (fail_to_start OF sb3
+		  = TRUE)) AND (state OF sb3 = 'under_repair')
+		MAY_OCCUR
+		  REPAIR repair
+		  DIST EXP (0.02)
+		  INDUCING fail_in_operation OF sb3 <-- FALSE,
+			fail_to_start OF sb3 <-- FALSE,
+			state OF sb3 <-- 'in_operation',
+			nb_avail_repairmen OF rep3_4 <-- (nb_avail_repairmen OF
+			rep3_4 + 1);
+
+OBJECT sb4 IS_A standby_block;
+	INTERFACE
+	  upstream
+		= n_1;
+	  rep_teams
+		= rep3_4;
+	  blocks_to_replace
+		= b4;
+	ATTRIBUTE
+	  not_linked
+		LABEL "%OBJECT not linked to the diagram start"
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	CONSTANT
+	  gamma
+		DOMAIN REAL
+		= 0.02;
+	  lambda
+		DOMAIN REAL
+		= 0.001;
+	  mu
+		DOMAIN REAL
+		= 0.02;
+	(*FAILURE*)
+	ATTRIBUTE
+	  fail_in_operation
+		DOMAIN BOOLEAN
+		= FALSE;
+	  fail_to_start
+		DOMAIN BOOLEAN
+		= FALSE;
+	ATTRIBUTE
+	  function_ok
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  function_known
+		DOMAIN BOOLEAN
+		REINITIALISATION FALSE;
+	  state
+		DOMAIN 'standby' 'start_demand' 'in_operation' 'waiting_for_repair' 'under_repair'
+		= 'standby';
+	INTERACTION
+	  When_function_is_ok
+		STEP default_step
+		IF ((state OF sb4 = 'in_operation') OR (state OF sb4 =
+		  'start_demand')) AND ((fail_to_start OF sb4 = FALSE) AND (
+		  fail_in_operation OF sb4 = FALSE))
+		THEN function_ok OF sb4 <-- TRUE,
+		  function_known OF sb4 <-- TRUE
+		ELSE function_ok OF sb4 <-- FALSE,
+		  function_known OF sb4 <-- TRUE;
+	  repair_management
+		STEP default_step
+		IF (state OF sb4 = 'waiting_for_repair') AND (
+		  nb_avail_repairmen OF rep3_4 > 0)
+		THEN state OF sb4 <-- 'under_repair',
+		  nb_avail_repairmen OF rep3_4 <-- (nb_avail_repairmen OF
+		  rep3_4 - 1);
+	  propagation
+		STEP default_step
+		IF not_linked OF n_1 OR (NOT function_ok OF sb4)
+		THEN not_linked OF sb4 <-- TRUE
+		ELSE not_linked OF sb4 <-- FALSE;
+	  starting_conditions
+		GROUP simulation
+		STEP default_step
+		IF (state OF sb4 = 'standby') AND ((NOT function_ok OF b4) AND
+		  function_known OF b4)
+		THEN state OF sb4 <-- 'start_demand';
+	  stopping_conditions
+		GROUP simulation
+		STEP default_step
+		IF ((state OF sb4 = 'in_operation') OR (state OF sb4 =
+		  'start_demand')) AND (function_ok OF b4 AND function_known
+		  OF b4)
+		THEN state OF sb4 <-- 'standby';
+	OCCURRENCE
+	  occ_fail_to_start
+		GROUP simulation
+		IF (fail_to_start OF sb4 = FALSE) AND (state OF sb4 =
+		  'start_demand')
+		MAY_OCCUR
+		  FAULT fail_to_start
+		  LABEL "%OBJECT failed to start"
+		  DIST INS (0.02)
+		  INDUCING fail_to_start OF sb4 <-- TRUE,
+			state OF sb4 <-- 'waiting_for_repair'
+		OR_ELSE
+		  TRANSITION start
+		  DIST INS (0.98)
+		  INDUCING state OF sb4 <-- 'in_operation';
+	  occ_fail_in_operation
+		GROUP simulation
+		IF (fail_in_operation OF sb4 = FALSE) AND (state OF sb4 =
+		  'in_operation')
+		MAY_OCCUR
+		  FAULT fail_in_operation
+		  LABEL "%OBJECT failed in operation"
+		  DIST EXP (0.001)
+		  INDUCING fail_in_operation OF sb4 <-- TRUE,
+			state OF sb4 <-- 'waiting_for_repair';
+	  occ_repair
+		IF ((fail_in_operation OF sb4 = TRUE) OR (fail_to_start OF sb4
+		  = TRUE)) AND (state OF sb4 = 'under_repair')
+		MAY_OCCUR
+		  REPAIR repair
+		  DIST EXP (0.02)
+		  INDUCING fail_in_operation OF sb4 <-- FALSE,
+			fail_to_start OF sb4 <-- FALSE,
+			state OF sb4 <-- 'in_operation',
+			nb_avail_repairmen OF rep3_4 <-- (nb_avail_repairmen OF
+			rep3_4 + 1);
+
+OBJECT __ARBRE__EIRM IS_A FIGARO;
+	CONSTANT
+	  Profil1
+		DOMAIN BOOLEAN
+		= TRUE;
+
