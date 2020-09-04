@@ -43,6 +43,7 @@ namespace {
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
             env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
             env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
+            env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8)); // Need to increase precision because eq sys yields incorrect results
             env.solver().lra().setDetLraMethod(storm::solver::LraMethod::GainBiasEquations);
             env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8)); // Need to increase precision because eq sys yields incorrect results
             return env;
@@ -61,6 +62,7 @@ namespace {
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
             env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
             env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
+            env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8)); // Need to increase precision because eq sys yields incorrect results
             env.solver().lra().setDetLraMethod(storm::solver::LraMethod::GainBiasEquations);
             env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8)); // Need to increase precision because eq sys yields incorrect results
             return env;
@@ -78,6 +80,8 @@ namespace {
             storm::Environment env;
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
             env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
+            env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
+            env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8)); // Need to increase precision because eq sys yields incorrect results
             env.solver().lra().setDetLraMethod(storm::solver::LraMethod::GainBiasEquations);
             env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8)); // Need to increase precision because eq sys yields incorrect results
             return env;
@@ -95,6 +99,8 @@ namespace {
             storm::Environment env;
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
             env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
+            env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
+            env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8)); // Need to increase precision because eq sys yields incorrect results
             env.solver().lra().setDetLraMethod(storm::solver::LraMethod::GainBiasEquations);
             env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8)); // Need to increase precision because eq sys yields incorrect results
             return env;
@@ -164,6 +170,7 @@ namespace {
             env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
             env.solver().gmmxx().setMethod(storm::solver::GmmxxLinearEquationSolverMethod::Gmres);
             env.solver().gmmxx().setPreconditioner(storm::solver::GmmxxLinearEquationSolverPreconditioner::Ilu);
+            env.solver().gmmxx().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8)); // Need to increase precision because eq sys yields incorrect results
             env.solver().lra().setDetLraMethod(storm::solver::LraMethod::LraDistributionEquations);
             env.solver().lra().setPrecision(storm::utility::convertNumber<storm::RationalNumber>(1e-8)); // Need to increase precision because eq sys yields incorrect results
             return env;
@@ -198,6 +205,20 @@ namespace {
         static storm::Environment createEnvironment() {
             storm::Environment env;
             env.solver().lra().setDetLraMethod(storm::solver::LraMethod::ValueIteration);
+            return env;
+        }
+    };
+    
+    class SoundEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // unused for sparse models
+        static const CtmcEngine engine = CtmcEngine::PrismSparse;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::sparse::Ctmc<ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().setForceSoundness(true);
             return env;
         }
     };
@@ -310,7 +331,8 @@ namespace {
             GBSparseNativeSorEnvironment,
             DistrSparseGmmxxGmresIluEnvironment,
             DistrSparseEigenDoubleLUEnvironment,
-            ValueIterationSparseEnvironment
+            ValueIterationSparseEnvironment,
+            SoundEnvironment
         > TestingTypes;
     
     TYPED_TEST_SUITE(LraCtmcCslModelCheckerTest, TestingTypes,);

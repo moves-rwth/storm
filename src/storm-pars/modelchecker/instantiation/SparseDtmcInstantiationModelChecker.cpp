@@ -42,8 +42,31 @@ namespace storm {
                 this->currentCheckTask->setHint(std::make_shared<ExplicitModelCheckerHint<ConstantType>>());
             }
             ExplicitModelCheckerHint<ConstantType>& hint = this->currentCheckTask->getHint().template asExplicitModelCheckerHint<ConstantType>();
-            std::unique_ptr<CheckResult> result;
             
+            if (this->getInstantiationsAreGraphPreserving() && !hint.hasMaybeStates()) {
+                // Perform purely qualitative analysis once
+                std::vector<ConstantType> qualitativeResult;
+                if (this->currentCheckTask->getFormula().asOperatorFormula().hasQuantitativeResult()) {
+                    auto newCheckTask = *this->currentCheckTask;
+                    newCheckTask.setQualitative(true);
+                    newCheckTask.setOnlyInitialStatesRelevant(false);
+                    qualitativeResult = modelChecker.check(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                } else {
+                    auto newCheckTask = this->currentCheckTask->substituteFormula(this->currentCheckTask->getFormula().asOperatorFormula().getSubformula());
+                    newCheckTask.setQualitative(true);
+                    newCheckTask.setOnlyInitialStatesRelevant(false);
+                    qualitativeResult = modelChecker.computeProbabilities(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                }
+                std::cout << storm::utility::vector::toString(qualitativeResult) << std::endl;
+                storm::storage::BitVector maybeStates = storm::utility::vector::filter<ConstantType>(qualitativeResult,
+                                [] (ConstantType const& value) -> bool { return !(storm::utility::isZero<ConstantType>(value) || storm::utility::isOne<ConstantType>(value)); });
+                std::cout <<maybeStates << std::endl;
+                hint.setMaybeStates(std::move(maybeStates));
+                hint.setResultHint(std::move(qualitativeResult));
+                hint.setComputeOnlyMaybeStates(true);
+            }
+            
+            std::unique_ptr<CheckResult> result;
             // Check the formula and store the result as a hint for the next call.
             // For qualitative properties, we still want a quantitative result hint. Hence we perform the check on the subformula
             if (this->currentCheckTask->getFormula().asOperatorFormula().hasQuantitativeResult()) {
@@ -56,15 +79,6 @@ namespace storm {
                 hint.setResultHint(std::move(quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector()));
             }
             
-            if (this->getInstantiationsAreGraphPreserving() && !hint.hasMaybeStates()) {
-                // Extract the maybe states from the current result.
-                assert(hint.hasResultHint());
-                storm::storage::BitVector maybeStates = ~storm::utility::vector::filter<ConstantType>(hint.getResultHint(),
-                                [] (ConstantType const& value) -> bool { return storm::utility::isZero<ConstantType>(value) || storm::utility::isOne<ConstantType>(value); });
-                hint.setMaybeStates(std::move(maybeStates));
-                hint.setComputeOnlyMaybeStates(true);
-            }
-            
             return result;
         }
         
@@ -75,6 +89,28 @@ namespace storm {
                 this->currentCheckTask->setHint(std::make_shared<ExplicitModelCheckerHint<ConstantType>>());
             }
             ExplicitModelCheckerHint<ConstantType>& hint = this->currentCheckTask->getHint().template asExplicitModelCheckerHint<ConstantType>();
+            
+            if (this->getInstantiationsAreGraphPreserving() && !hint.hasMaybeStates()) {
+                // Perform purely qualitative analysis once
+                std::vector<ConstantType> qualitativeResult;
+                if (this->currentCheckTask->getFormula().asOperatorFormula().hasQuantitativeResult()) {
+                    auto newCheckTask = *this->currentCheckTask;
+                    newCheckTask.setQualitative(true);
+                    newCheckTask.setOnlyInitialStatesRelevant(false);
+                    qualitativeResult = modelChecker.check(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                } else {
+                    auto newCheckTask = this->currentCheckTask->substituteFormula(this->currentCheckTask->getFormula().asOperatorFormula().getSubformula());
+                    newCheckTask.setQualitative(true);
+                    newCheckTask.setOnlyInitialStatesRelevant(false);
+                    qualitativeResult = modelChecker.computeRewards(env, this->currentCheckTask->getFormula().asRewardOperatorFormula().getMeasureType(), newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                }
+                storm::storage::BitVector maybeStates = storm::utility::vector::filter<ConstantType>(qualitativeResult,
+                                [] (ConstantType const& value) -> bool { return !(storm::utility::isZero<ConstantType>(value) || storm::utility::isInfinity<ConstantType>(value)); });
+                hint.setMaybeStates(std::move(maybeStates));
+                hint.setResultHint(std::move(qualitativeResult));
+                hint.setComputeOnlyMaybeStates(true);
+            }
+            
             std::unique_ptr<CheckResult> result;
             
             // Check the formula and store the result as a hint for the next call.
@@ -87,18 +123,6 @@ namespace storm {
                 std::unique_ptr<CheckResult> quantitativeResult = modelChecker.computeRewards(env, this->currentCheckTask->getFormula().asRewardOperatorFormula().getMeasureType(), newCheckTask);
                 result = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().compareAgainstBound(this->currentCheckTask->getFormula().asOperatorFormula().getComparisonType(), this->currentCheckTask->getFormula().asOperatorFormula().template getThresholdAs<ConstantType>());
                 this->currentCheckTask->getHint().template asExplicitModelCheckerHint<ConstantType>().setResultHint(std::move(quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector()));
-            }
-            
-            if (this->getInstantiationsAreGraphPreserving() && !hint.hasMaybeStates()) {
-                // Extract the maybe states from the current result.
-                assert(hint.hasResultHint());
-                storm::storage::BitVector maybeStates = ~storm::utility::vector::filterInfinity(hint.getResultHint());
-                // We need to exclude the target states from the maybe states.
-                // Note that we can not consider the states with reward zero since a valuation might set a reward to zero
-                std::unique_ptr<CheckResult> subFormulaResult = modelChecker.check(env, this->currentCheckTask->getFormula().asOperatorFormula().getSubformula().asEventuallyFormula().getSubformula());
-                maybeStates = maybeStates & ~(subFormulaResult->asExplicitQualitativeCheckResult().getTruthValuesVector());
-                hint.setMaybeStates(std::move(maybeStates));
-                hint.setComputeOnlyMaybeStates(true);
             }
             
             return result;

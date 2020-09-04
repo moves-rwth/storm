@@ -76,8 +76,8 @@ namespace storm {
 
             NextStateGeneratorOptions const& getOptions() const;
 
+            VariableInformation const& getVariableInformation() const;
 
-            
             virtual std::shared_ptr<storm::storage::sparse::ChoiceOrigins> generateChoiceOrigins(std::vector<boost::any>& dataForChoiceOrigins) const;
 
             /*!

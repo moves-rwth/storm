@@ -52,6 +52,7 @@ namespace storm {
              * Retrieves the relevant values (if there are any).
              */
             storm::storage::BitVector const& getRelevantValues() const;
+            boost::optional<storm::storage::BitVector> const& getOptionalRelevantValues() const;
             
             /*!
              * Sets the relevant values.

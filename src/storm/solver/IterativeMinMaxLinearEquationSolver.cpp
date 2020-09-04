@@ -2,7 +2,6 @@
 #include <limits>
 
 #include "storm/solver/IterativeMinMaxLinearEquationSolver.h"
-#include "storm/solver/helper/OptimisticValueIterationHelper.h"
 
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
 #include "storm/environment/solver/OviSolverEnvironment.h"
@@ -360,57 +359,37 @@ namespace storm {
         template<typename ValueType>
         bool IterativeMinMaxLinearEquationSolver<ValueType>::solveEquationsOptimisticValueIteration(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
 
-            if (!this->multiplierA) {
-                this->multiplierA = storm::solver::MultiplierFactory<ValueType>().create(env, *this->A);
+            if (!storm::utility::vector::hasNonZeroEntry(b)) {
+                // If all entries are zero, OVI might run in an endless loop. However, the result is easy in this case.
+                x.assign(x.size(), storm::utility::zero<ValueType>());
+                if (this->isTrackSchedulerSet()) {
+                    this->schedulerChoices = std::vector<uint_fast64_t>(x.size(), 0);
+                }
+                return true;
             }
-
+            
             if (!auxiliaryRowGroupVector) {
                 auxiliaryRowGroupVector = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
             }
-            if (!auxiliaryRowGroupVector2) {
-                auxiliaryRowGroupVector2 = std::make_unique<std::vector<ValueType>>(this->A->getRowGroupCount());
+            if (!optimisticValueIterationHelper) {
+                optimisticValueIterationHelper = std::make_unique<storm::solver::helper::OptimisticValueIterationHelper<ValueType>>(*this->A);
             }
 
-            // By default, we can not provide any guarantee
-            SolverGuarantee guarantee = SolverGuarantee::None;
-            // Get handle to multiplier.
-            storm::solver::Multiplier<ValueType> const &multiplier = *this->multiplierA;
-            // Allow aliased multiplications.
-            storm::solver::MultiplicationStyle multiplicationStyle = env.solver().minMax().getMultiplicationStyle();
-            bool useGaussSeidelMultiplication = multiplicationStyle == storm::solver::MultiplicationStyle::GaussSeidel;
-
-            boost::optional<storm::storage::BitVector> relevantValues;
-            if (this->hasRelevantValues()) {
-                relevantValues = this->getRelevantValues();
-            }
+            storm::solver::helper::OptimisticValueIterationHelper<ValueType> helper(*this->A);
             
             // x has to start with a lower bound.
             this->createLowerBoundsVector(x);
 
             std::vector<ValueType>* lowerX = &x;
             std::vector<ValueType>* upperX = auxiliaryRowGroupVector.get();
-            std::vector<ValueType>* auxVector = auxiliaryRowGroupVector2.get();
 
-            this->startMeasureProgress();
             
-            
-            auto statusIters = storm::solver::helper::solveEquationsOptimisticValueIteration(env, lowerX, upperX, auxVector,
-                    [&] (std::vector<ValueType>*& y, std::vector<ValueType>*& yPrime, ValueType const& precision, bool const& relative, uint64_t const& i, uint64_t const& maxI) {
-                        this->showProgressIterative(i);
-                        return performValueIteration(env, dir, y, yPrime, b, precision, relative, guarantee, i, maxI, multiplicationStyle);
-                    },
-                    [&] (std::vector<ValueType>* y, std::vector<ValueType>* yPrime, uint64_t const& i) {
-                        this->showProgressIterative(i);
-                        if (useGaussSeidelMultiplication) {
-                            // Copy over the current vectors so we can modify them in-place.
-                            // This is necessary as we want to compare the new values with the current ones.
-                            *yPrime = *y;
-                            multiplier.multiplyAndReduceGaussSeidel(env, dir, *y, &b);
-                        } else {
-                            multiplier.multiplyAndReduce(env, dir, *y, &b, *yPrime);
-                            std::swap(y, yPrime);
-                        }
-                    }, relevantValues);
+            auto statusIters = helper.solveEquations(env, lowerX, upperX, b,
+                                                     env.solver().minMax().getRelativeTerminationCriterion(),
+                                                     storm::utility::convertNumber<ValueType>(env.solver().minMax().getPrecision()),
+                                                     env.solver().minMax().getMaximalNumberOfIterations(),
+                                                     dir,
+                                                     this->getOptionalRelevantValues());
             auto two = storm::utility::convertNumber<ValueType>(2.0);
             storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(*lowerX, *upperX, x, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
 
@@ -419,8 +398,7 @@ namespace storm {
             // If requested, we store the scheduler for retrieval.
             if (this->isTrackSchedulerSet()) {
                 this->schedulerChoices = std::vector<uint_fast64_t>(this->A->getRowGroupCount());
-                this->multiplierA->multiplyAndReduce(env, dir, x, &b, *auxiliaryRowGroupVector.get(), &this->schedulerChoices.get());
-                this->multiplierA->multiplyAndReduce(env, dir, x, &b, *auxiliaryRowGroupVector.get(), &this->schedulerChoices.get());
+                this->A->multiplyAndReduce(dir, this->A->getRowGroupIndices(), x, &b, *auxiliaryRowGroupVector.get(), &this->schedulerChoices.get());
             }
 
             if (!this->isCachingEnabled()) {
@@ -1094,6 +1072,7 @@ namespace storm {
             auxiliaryRowGroupVector.reset();
             auxiliaryRowGroupVector2.reset();
             soundValueIterationHelper.reset();
+            optimisticValueIterationHelper.reset();
             StandardMinMaxLinearEquationSolver<ValueType>::clearCache();
         }
         

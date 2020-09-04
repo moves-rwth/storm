@@ -18,8 +18,8 @@ namespace {
         storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
 
         // Set relevant events (none)
-        std::set<size_t> relevantEvents;
-        dft->setRelevantEvents(relevantEvents, false);
+        storm::utility::RelevantEvents relevantEvents({}, false);
+        dft->setRelevantEvents(relevantEvents);
         // Build model
         storm::builder::ExplicitDFTModelBuilder<double> builder(*dft, symmetries);
         builder.buildModel(0, 0.0);
@@ -28,7 +28,8 @@ namespace {
         EXPECT_EQ(13ul, model->getNumberOfTransitions());
 
         // Set relevant events (all)
-        dft->setRelevantEvents(dft->getAllIds(), false);
+        relevantEvents = storm::utility::RelevantEvents({"all"}, false);
+        dft->setRelevantEvents(relevantEvents);
         // Build model
         storm::builder::ExplicitDFTModelBuilder<double> builder2(*dft, symmetries);
         builder2.buildModel(0, 0.0);
@@ -37,9 +38,8 @@ namespace {
         EXPECT_EQ(2305ul, model->getNumberOfTransitions());
 
         // Set relevant events (H)
-        relevantEvents.clear();
-        relevantEvents.insert(dft->getIndex("H"));
-        dft->setRelevantEvents(relevantEvents, false);
+        relevantEvents = storm::utility::RelevantEvents({"H"}, false);
+        dft->setRelevantEvents(relevantEvents);
         // Build model
         storm::builder::ExplicitDFTModelBuilder<double> builder3(*dft, symmetries);
         builder3.buildModel(0, 0.0);
@@ -49,10 +49,8 @@ namespace {
 
 
         // Set relevant events (H, I)
-        relevantEvents.clear();
-        relevantEvents.insert(dft->getIndex("H"));
-        relevantEvents.insert(dft->getIndex("I"));
-        dft->setRelevantEvents(relevantEvents, false);
+        relevantEvents = storm::utility::RelevantEvents({"H", "I"}, false);
+        dft->setRelevantEvents(relevantEvents);
         // Build model
         storm::builder::ExplicitDFTModelBuilder<double> builder4(*dft, symmetries);
         builder4.buildModel(0, 0.0);
@@ -61,8 +59,8 @@ namespace {
         EXPECT_EQ(33ul, model->getNumberOfTransitions());
 
         // Set relevant events (none)
-        relevantEvents.clear();
-        dft->setRelevantEvents(relevantEvents, true);
+        relevantEvents = storm::utility::RelevantEvents({}, true);
+        dft->setRelevantEvents(relevantEvents);
         // Build model
         storm::builder::ExplicitDFTModelBuilder<double> builder5(*dft, symmetries);
         builder5.buildModel(0, 0.0);
@@ -71,7 +69,8 @@ namespace {
         EXPECT_EQ(13ul, model->getNumberOfTransitions());
 
         // Set relevant events (all)
-        dft->setRelevantEvents(dft->getAllIds(), true);
+        relevantEvents = storm::utility::RelevantEvents({"all"}, true);
+        dft->setRelevantEvents(relevantEvents);
         // Build model
         storm::builder::ExplicitDFTModelBuilder<double> builder6(*dft, symmetries);
         builder6.buildModel(0, 0.0);
@@ -81,10 +80,8 @@ namespace {
 
 
         // Set relevant events (H, I)
-        relevantEvents.clear();
-        relevantEvents.insert(dft->getIndex("H"));
-        relevantEvents.insert(dft->getIndex("I"));
-        dft->setRelevantEvents(relevantEvents, true);
+        relevantEvents = storm::utility::RelevantEvents({"H", "I"}, true);
+        dft->setRelevantEvents(relevantEvents);
         // Build model
         storm::builder::ExplicitDFTModelBuilder<double> builder7(*dft, symmetries);
         builder7.buildModel(0, 0.0);

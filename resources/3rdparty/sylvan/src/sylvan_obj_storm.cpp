@@ -316,6 +316,12 @@ Mtbdd::PowRN(const Mtbdd& other) const {
 }
 
 Mtbdd
+Mtbdd::ModRN(const Mtbdd& other) const {
+    LACE_ME;
+    return sylvan_storm_rational_number_mod(mtbdd, other.mtbdd);
+}
+
+Mtbdd
 Mtbdd::MinimumRN() const {
     LACE_ME;
     return sylvan_storm_rational_number_minimum(mtbdd);

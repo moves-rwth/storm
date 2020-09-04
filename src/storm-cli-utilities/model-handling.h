@@ -10,7 +10,7 @@
 #include "storm/utility/macros.h"
 #include "storm/utility/NumberTraits.h"
 #include "storm/utility/Engine.h"
-#include "storm/utility/Portfolio.h"
+#include "storm/utility/AutomaticSettings.h"
 
 #include "storm/utility/initialize.h"
 #include "storm/utility/Stopwatch.h"
@@ -178,30 +178,30 @@ namespace storm {
             bool isCompatible;
         };
         
-        void getModelProcessingInformationPortfolio(SymbolicInput const& input, ModelProcessingInformation& mpi) {
+        void getModelProcessingInformationAutomatic(SymbolicInput const& input, ModelProcessingInformation& mpi) {
             auto hints = storm::settings::getModule<storm::settings::modules::HintSettings>();
             
-            STORM_LOG_THROW(input.model.is_initialized(), storm::exceptions::InvalidArgumentException, "Portfolio engine requires a JANI input model.");
-            STORM_LOG_THROW(input.model->isJaniModel(), storm::exceptions::InvalidArgumentException, "Portfolio engine requires a JANI input model.");
+            STORM_LOG_THROW(input.model.is_initialized(), storm::exceptions::InvalidArgumentException, "Automatic engine requires a JANI input model.");
+            STORM_LOG_THROW(input.model->isJaniModel(), storm::exceptions::InvalidArgumentException, "Automatic engine requires a JANI input model.");
             std::vector<storm::jani::Property> const& properties = input.preprocessedProperties.is_initialized() ? input.preprocessedProperties.get() : input.properties;
-            STORM_LOG_THROW(!properties.empty(), storm::exceptions::InvalidArgumentException, "Portfolio engine requires a property.");
-            STORM_LOG_WARN_COND(properties.size() == 1, "Portfolio engine does not support decisions based on multiple properties. Only the first property will be considered.");
+            STORM_LOG_THROW(!properties.empty(), storm::exceptions::InvalidArgumentException, "Automatic engine requires a property.");
+            STORM_LOG_WARN_COND(properties.size() == 1, "Automatic engine does not support decisions based on multiple properties. Only the first property will be considered.");
             
-            storm::utility::Portfolio pf;
+            storm::utility::AutomaticSettings as;
             if (hints.isNumberStatesSet()) {
-                pf.predict(input.model->asJaniModel(), properties.front(), hints.getNumberStates());
+                as.predict(input.model->asJaniModel(), properties.front(), hints.getNumberStates());
             } else {
-                pf.predict(input.model->asJaniModel(), properties.front());
+                as.predict(input.model->asJaniModel(), properties.front());
             }
             
-            mpi.engine = pf.getEngine();
-            if (pf.enableBisimulation()) {
+            mpi.engine = as.getEngine();
+            if (as.enableBisimulation()) {
                 mpi.applyBisimulation = true;
             }
-            if (pf.enableExact() && mpi.verificationValueType == ModelProcessingInformation::ValueType::FinitePrecision) {
+            if (as.enableExact() && mpi.verificationValueType == ModelProcessingInformation::ValueType::FinitePrecision) {
                 mpi.verificationValueType = ModelProcessingInformation::ValueType::Exact;
             }
-            STORM_PRINT_AND_LOG( "Portfolio engine picked the following settings: " << std::endl
+            STORM_PRINT_AND_LOG( "Automatic engine picked the following settings: " << std::endl
                 << "\tengine=" << mpi.engine
                 << std::boolalpha
                 << "\t bisimulation=" << mpi.applyBisimulation
@@ -237,12 +237,12 @@ namespace storm {
             }
             auto originalVerificationValueType = mpi.verificationValueType;
             
-            // Since the remaining settings could depend on the ones above, we need apply the portfolio engine now.
-            bool usePortfolio = input.model.is_initialized() && mpi.engine == storm::utility::Engine::Portfolio;
-            if (usePortfolio) {
+            // Since the remaining settings could depend on the ones above, we need apply the automatic engine now.
+            bool useAutomatic = input.model.is_initialized() && mpi.engine == storm::utility::Engine::Automatic;
+            if (useAutomatic) {
                 if (input.model->isJaniModel()) {
                     // This can potentially overwrite the settings above, but will not overwrite settings that were explicitly set by the user (e.g. we will not disable bisimulation or disable exact arithmetic)
-                    getModelProcessingInformationPortfolio(input, mpi);
+                    getModelProcessingInformationAutomatic(input, mpi);
                 } else {
                     // Transform Prism to jani first
                     STORM_LOG_ASSERT(input.model->isPrismProgram(), "Unexpected type of input.");
@@ -255,7 +255,7 @@ namespace storm {
                         janiInput.preprocessedProperties = std::move(modelAndProperties.second);
                     }
                     // This can potentially overwrite the settings above, but will not overwrite settings that were explicitly set by the user (e.g. we will not disable bisimulation or disable exact arithmetic)
-                    getModelProcessingInformationPortfolio(janiInput, mpi);
+                    getModelProcessingInformationAutomatic(janiInput, mpi);
                     if (transformedJaniInput) {
                         // We cache the transformation result.
                         *transformedJaniInput = std::move(janiInput);
@@ -279,9 +279,9 @@ namespace storm {
                 };
                 mpi.isCompatible = checkCompatibleSettings();
                 if (!mpi.isCompatible) {
-                    if (usePortfolio) {
+                    if (useAutomatic) {
                         bool useExact = mpi.verificationValueType != ModelProcessingInformation::ValueType::FinitePrecision;
-                        STORM_LOG_WARN("The settings picked by the portfolio engine (engine=" << mpi.engine << ", bisim=" << mpi.applyBisimulation << ", exact=" << useExact << ") are incompatible with this model. Falling back to default settings.");
+                        STORM_LOG_WARN("The settings picked by the automatic engine (engine=" << mpi.engine << ", bisim=" << mpi.applyBisimulation << ", exact=" << useExact << ") are incompatible with this model. Falling back to default settings.");
                         mpi.engine = storm::utility::Engine::Sparse;
                         mpi.applyBisimulation = false;
                         mpi.verificationValueType = originalVerificationValueType;
@@ -300,8 +300,8 @@ namespace storm {
                 auto builderType = storm::utility::getBuilderType(mpi.engine);
                 bool transformToJaniForJit = builderType == storm::builder::BuilderType::Jit;
                 STORM_LOG_WARN_COND(mpi.transformToJani || !transformToJaniForJit, "The JIT-based model builder is only available for JANI models, automatically converting the PRISM input model.");
-                bool transformToJaniForDdMA = (builderType == storm::builder::BuilderType::Dd) && (input.model->getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA);
-                STORM_LOG_WARN_COND(mpi.transformToJani || !transformToJaniForDdMA, "Dd-based model builder for Markov Automata is only available for JANI models, automatically converting the PRISM input model.");
+                bool transformToJaniForDdMA = (builderType == storm::builder::BuilderType::Dd) && (input.model->getModelType() == storm::storage::SymbolicModelDescription::ModelType::MA) && (!input.model->isJaniModel());
+                STORM_LOG_WARN_COND(mpi.transformToJani || !transformToJaniForDdMA, "Dd-based model builder for Markov Automata is only available for JANI models, automatically converting the input model.");
                 mpi.transformToJani |= (transformToJaniForJit || transformToJaniForDdMA);
             }
 
@@ -361,7 +361,6 @@ namespace storm {
             auto transformedJani = std::make_shared<SymbolicInput>();
             ModelProcessingInformation mpi = getModelProcessingInformation(output, transformedJani);
 
-            auto builderType = storm::utility::getBuilderType(mpi.engine);
             
             // Check whether conversion for PRISM to JANI is requested or necessary.
             if (output.model && output.model.get().isPrismProgram()) {
@@ -383,7 +382,7 @@ namespace storm {
             }
             
             if (output.model && output.model.get().isJaniModel()) {
-                storm::jani::ModelFeatures supportedFeatures = storm::api::getSupportedJaniFeatures(builderType);
+                storm::jani::ModelFeatures supportedFeatures = storm::api::getSupportedJaniFeatures(storm::utility::getBuilderType(mpi.engine));
                 storm::api::simplifyJaniModel(output.model.get().asJaniModel(), output.properties, supportedFeatures);
             }
 

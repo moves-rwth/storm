@@ -1166,14 +1166,14 @@ namespace storm {
         }
         
         template <storm::dd::DdType Type, typename ValueType>
-        void checkRewards(storm::dd::Add<Type, ValueType> const& rewards) {
-            STORM_LOG_WARN_COND(rewards.getMin() >= 0, "The reward model assigns negative rewards to some states.");
-            STORM_LOG_WARN_COND(!rewards.isZero(), "The reward model does not assign any non-zero rewards.");
+        void checkRewards(storm::dd::Add<Type, ValueType> const& rewards, std::string const& rewardType) {
+            STORM_LOG_WARN_COND(rewards.getMin() >= 0, "The reward model assigns negative " << rewardType << " to some states.");
+            STORM_LOG_WARN_COND(!rewards.isZero(), "The reward model declares " << rewardType << " but does not assign any non-zero values.");
         }
         
         template <storm::dd::DdType Type>
-        void checkRewards(storm::dd::Add<Type, storm::RationalFunction> const& rewards) {
-            STORM_LOG_WARN_COND(!rewards.isZero(), "The reward model does not assign any non-zero rewards.");
+        void checkRewards(storm::dd::Add<Type, storm::RationalFunction> const& rewards, std::string const& rewardType) {
+            STORM_LOG_WARN_COND(!rewards.isZero(), "The reward model declares " << rewardType << " but does not assign any non-zero values.");
         }
         
         template <storm::dd::DdType Type, typename ValueType>
@@ -1191,12 +1191,11 @@ namespace storm {
                     // Restrict the rewards to those states that satisfy the condition.
                     rewards = reachableStatesAdd * states * rewards;
                     
-                    // Perform some sanity checks.
-                    checkRewards(rewards);
-                    
                     // Add the rewards to the global state reward vector.
                     stateRewards.get() += rewards;
                 }
+                // Perform some sanity checks.
+                checkRewards(stateRewards.get(), "state rewards");
             }
             
             // Next, build the state-action reward vector.
@@ -1228,9 +1227,6 @@ namespace storm {
                         stateActionRewardDd *= actionDd.transitionsDd.sumAbstract(generationInfo.columnMetaVariables);
                     }
                     
-                    // Perform some sanity checks.
-                    checkRewards(stateActionRewardDd);
-                    
                     // Add the rewards to the global transition reward matrix.
                     stateActionRewards.get() += stateActionRewardDd;
                 }
@@ -1243,6 +1239,9 @@ namespace storm {
                     
                     stateActionRewards.get() /= stateActionDd.get();
                 }
+                
+                // Perform some sanity checks.
+                checkRewards(stateActionRewards.get(), "action rewards");
             }
             
             // Then build the transition reward matrix.
@@ -1279,12 +1278,12 @@ namespace storm {
                         transitionRewardDd = transitions.notZero().template toAdd<ValueType>() * transitionRewardDd;
                     }
                     
-                    // Perform some sanity checks.
-                    checkRewards(transitionRewardDd);
-                    
                     // Add the rewards to the global transition reward matrix.
                     transitionRewards.get() += transitionRewardDd;
                 }
+            
+                // Perform some sanity checks.
+                checkRewards(transitionRewards.get(), "transition rewards");
                 
                 // Scale transition rewards for DTMCs.
                 if (generationInfo.program.getModelType() == storm::prism::Program::ModelType::DTMC) {
