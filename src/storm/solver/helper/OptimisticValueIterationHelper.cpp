@@ -15,48 +15,6 @@ namespace storm {
             namespace oviinternal {
     
                 template<typename ValueType>
-                ValueType computeMaxAbsDiff(std::vector<ValueType> const& allOldValues, std::vector<ValueType> const& allNewValues, storm::storage::BitVector const& relevantValues) {
-                    ValueType result = storm::utility::zero<ValueType>();
-                    for (auto value : relevantValues) {
-                        result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allNewValues[value] - allOldValues[value]));
-                    }
-                    return result;
-                }
-        
-                template<typename ValueType>
-                ValueType computeMaxAbsDiff(std::vector<ValueType> const& allOldValues, std::vector<ValueType> const& allNewValues) {
-                    ValueType result = storm::utility::zero<ValueType>();
-                    for (uint64_t i = 0; i < allOldValues.size(); ++i) {
-                        result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allNewValues[i] - allOldValues[i]));
-                    }
-                    return result;
-                }
-            
-                template<typename ValueType>
-                ValueType computeMaxRelDiff(std::vector<ValueType> const& allOldValues, std::vector<ValueType> const& allNewValues, storm::storage::BitVector const& relevantValues) {
-                    ValueType result = storm::utility::zero<ValueType>();
-                    for (auto i : relevantValues) {
-                        STORM_LOG_ASSERT(!storm::utility::isZero(allNewValues[i]) || storm::utility::isZero(allOldValues[i]), "Unexpected entry in iteration vector.");
-                        if (!storm::utility::isZero(allNewValues[i])) {
-                            result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allNewValues[i] - allOldValues[i]) / allNewValues[i]);
-                        }
-                    }
-                    return result;
-                }
-                
-                template<typename ValueType>
-                ValueType computeMaxRelDiff(std::vector<ValueType> const& allOldValues, std::vector<ValueType> const& allNewValues) {
-                    ValueType result = storm::utility::zero<ValueType>();
-                    for (uint64_t i = 0; i < allOldValues.size(); ++i) {
-                        STORM_LOG_WARN_COND(!storm::utility::isZero(allNewValues[i]) || storm::utility::isZero(allOldValues[i]), "Unexpected entry in iteration vector.");
-                        if (!storm::utility::isZero(allNewValues[i])) {
-                            result = storm::utility::max<ValueType>(result, storm::utility::abs<ValueType>(allNewValues[i] - allOldValues[i]) / allNewValues[i]);
-                        }
-                    }
-                    return result;
-                }
-    
-                template<typename ValueType>
                 ValueType updateIterationPrecision(storm::Environment const& env, ValueType const& diff) {
                     auto factor = storm::utility::convertNumber<ValueType>(env.solver().ovi().getPrecisionUpdateFactor());
                     return factor * diff;
