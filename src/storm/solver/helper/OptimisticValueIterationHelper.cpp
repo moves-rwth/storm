@@ -50,7 +50,6 @@ namespace storm {
                     }
                 }
                 
-                
                 template <typename ValueType>
                 ValueType IterationHelper<ValueType>::singleIterationWithDiff(std::vector<ValueType>& x, std::vector<ValueType> const& b, bool computeRelativeDiff) {
                     return singleIterationWithDiffInternal<false, storm::solver::OptimizationDirection::Minimize>(x, b, computeRelativeDiff);
@@ -232,7 +231,7 @@ namespace storm {
             template<typename ValueType>
             OptimisticValueIterationHelper<ValueType>::OptimisticValueIterationHelper(storm::storage::SparseMatrix<ValueType> const& matrix) : iterationHelper(matrix) {
                     // Intentionally left empty.
-                }
+            }
                 
             template<typename ValueType>
                 std::pair<SolverStatus, uint64_t> OptimisticValueIterationHelper<ValueType>::solveEquations(Environment const& env, std::vector<ValueType>* lowerX, std::vector<ValueType>* upperX, std::vector<ValueType> const& b, bool relative, ValueType precision, uint64_t maxOverallIterations, boost::optional<storm::solver::OptimizationDirection> dir, boost::optional<storm::storage::BitVector> const& relevantValues) {
