@@ -57,7 +57,6 @@ namespace storm {
                     newCheckTask.setOnlyInitialStatesRelevant(false);
                     qualitativeResult = modelChecker.computeProbabilities(env, newCheckTask)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
                 }
-                std::cout << storm::utility::vector::toString(qualitativeResult) << std::endl;
                 storm::storage::BitVector maybeStates = storm::utility::vector::filter<ConstantType>(qualitativeResult,
                                 [] (ConstantType const& value) -> bool { return !(storm::utility::isZero<ConstantType>(value) || storm::utility::isOne<ConstantType>(value)); });
                 hint.setMaybeStates(std::move(maybeStates));
