@@ -169,36 +169,36 @@
             bool REINITIALISATION_OF_function_known_OF_sb4 ;
             
 		/* ---------- DECLARATION OF CONSTANTS ------------ */
-			double const lambda_OF_b2 = 2e-06;
 			int const min_nb_for_failure_OF_gate_2_4 = 3;
+			double const lambda_OF_b5 = 0.002;
+			double const gamma_OF_sb2 = 0.01;
+			double const lambda_OF_b2 = 2e-06;
+			double const lambda_OF_b1 = 1e-06;
+			double const lambda_OF_sb3 = 0.001;
+			double const mu_OF_sb3 = 0.02;
+			double const lambda_OF_sb4 = 0.001;
+			bool const Profil1_OF___ARBRE__EIRM = true;
 			double const gamma_OF_b1 = 0.001;
-			double const mu_OF_b5 = 1;
-			double const mu_OF_sb2 = 0.02;
-			double const gamma_OF_sb1 = 0.01;
 			double const gamma_OF_sb3 = 0.02;
+			double const gamma_OF_sb1 = 0.01;
+			double const gamma_OF_b2 = 0.001;
+			double const mu_OF_b4 = 0.02;
+			double const mu_OF_sb4 = 0.02;
+			double const gamma_OF_sb4 = 0.02;
+			double const lambda_OF_b4 = 1e-05;
+			double const mu_OF_b5 = 1;
+			double const gamma_OF_b3 = 0.001;
+			double const mu_OF_sb2 = 0.02;
+			int const min_nb_for_success_OF_gate_2_4 = 2;
+			double const mu_OF_b2 = 0.005;
 			double const mu_OF_b3 = 0.01;
 			double const lambda_OF_sb2 = 0.0001;
-			double const lambda_OF_b1 = 1e-06;
-			double const gamma_OF_b2 = 0.001;
-			double const lambda_OF_sb4 = 0.001;
-			double const mu_OF_sb4 = 0.02;
-			double const lambda_OF_b3 = 5e-05;
-			double const lambda_OF_sb3 = 0.001;
-			double const gamma_OF_sb2 = 0.01;
-			double const gamma_OF_b4 = 0.001;
-			bool const Profil1_OF___ARBRE__EIRM = true;
-			double const gamma_OF_sb4 = 0.02;
 			double const mu_OF_b1 = 0.002;
+			double const lambda_OF_b3 = 5e-05;
 			double const mu_OF_sb1 = 0.02;
-			double const gamma_OF_b5 = 0.001;
-			double const lambda_OF_b4 = 1e-05;
-			double const gamma_OF_b3 = 0.001;
-			int const min_nb_for_success_OF_gate_2_4 = 2;
+			double const gamma_OF_b4 = 0.001;
 			double const lambda_OF_sb1 = 0.0001;
-			double const mu_OF_b2 = 0.005;
-			double const lambda_OF_b5 = 0.002;
-			double const mu_OF_b4 = 0.02;
-			double const mu_OF_sb3 = 0.02;
+			double const gamma_OF_b5 = 0.001;
 		
             /* ---------- DECLARATION OF OCCURRENCE RULES FIRING FLAGS ------------ */
             bool FIRE_occ_fail_to_start_OF_b1_INS_0;

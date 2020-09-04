@@ -730,7 +730,7 @@ storm::figaro::FigaroProgram_figaro_Telecom::runInteractions() {
          
         // ------------------- Handling of FailureState element --------------------------------
     
-	boolFailureState[exp0] = ( not_connected_OF_Target );
+	boolFailureState[exp0] = (  !boolState[connected_OF_Target] );
         cout << endl;
     }void storm::figaro::FigaroProgram_figaro_Telecom::printstatetuple(){
 

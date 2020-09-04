@@ -145,24 +145,24 @@
             bool REINITIALISATION_OF_max_rank_OF_rep_1 ;
             
 		/* ---------- DECLARATION OF CONSTANTS ------------ */
-			double const nominal_capacity_OF_Block_1 = 30;
+			double const nominal_capacity_OF_Block_4 = 70;
+			double const mu_OF_Block_4 = 0.1;
 			double const lambda_OF_Block_2 = 0.0001;
+			double const mu_OF_Block_1 = 0.1;
+			double const mu_OF_Backup_1 = 0.1;
+			double const nominal_capacity_OF_Backup_1 = 70;
+			double const gamma_OF_Backup_1 = 0.01;
+			double const nominal_capacity_OF_Block_2 = 70;
+			double const nominal_capacity_OF_Block_3 = 30;
+			double const mu_OF_Block_2 = 0.1;
+			bool const Profil1_OF___ARBRE__EIRM = true;
+			double const functioning_threshold_OF_SS2 = 0;
+			double const lambda_OF_Block_3 = 0.0001;
+			double const nominal_capacity_OF_Block_1 = 30;
+			double const functioning_threshold_OF_SS1 = 0;
 			double const lambda_OF_Block_4 = 0.0001;
 			double const lambda_OF_Block_1 = 0.0001;
 			double const lambda_OF_Backup_1 = 0.0001;
-			double const mu_OF_Block_2 = 0.1;
-			double const nominal_capacity_OF_Block_3 = 30;
-			double const mu_OF_Block_4 = 0.1;
-			double const mu_OF_Block_1 = 0.1;
-			double const mu_OF_Backup_1 = 0.1;
-			bool const Profil1_OF___ARBRE__EIRM = true;
-			double const functioning_threshold_OF_SS1 = 0;
-			double const nominal_capacity_OF_Block_2 = 70;
-			double const functioning_threshold_OF_SS2 = 0;
-			double const gamma_OF_Backup_1 = 0.01;
-			double const nominal_capacity_OF_Block_4 = 70;
-			double const lambda_OF_Block_3 = 0.0001;
-			double const nominal_capacity_OF_Backup_1 = 70;
 			double const mu_OF_Block_3 = 0.1;
 		
             /* ---------- DECLARATION OF OCCURRENCE RULES FIRING FLAGS ------------ */

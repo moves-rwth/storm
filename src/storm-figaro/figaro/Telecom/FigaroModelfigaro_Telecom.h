@@ -90,36 +90,36 @@
             bool REINITIALISATION_OF_connected_OF_Target ;
             
 		/* ---------- DECLARATION OF CONSTANTS ------------ */
+			std::string const function_OF_Node_2 = "intermediate";
+			double const link_lambda_OF_bidir_2 = 1e-05;
+			double const mu_OF_Node_6 = 0.1;
 			double const mu_OF_Node_1 = 0.1;
+			double const lambda_OF_Source = 1e-05;
 			double const lambda_OF_Target = 1e-05;
-			double const link_mu_OF_bidir_7 = 1;
-			double const link_mu_OF_bidir_12 = 1;
 			double const lambda_OF_Node_8 = 1e-05;
-			double const mu_OF_Node_2 = 0.1;
+			double const lambda_OF_Node_2 = 1e-05;
+			bool const Profil1_OF___ARBRE__EIRM = true;
+			double const link_mu_OF_ud_1 = 1;
+			double const link_mu_OF_bidir_3 = 1;
 			std::string const function_OF_Node_6 = "intermediate";
 			std::string const function_OF_Source = "source";
-			double const link_lambda_OF_bidir_7 = 1e-05;
-			double const link_lambda_OF_bidir_12 = 1e-05;
-			double const lambda_OF_Source = 1e-05;
-			std::string const function_OF_Target = "target";
-			std::string const function_OF_Node_1 = "intermediate";
-			double const lambda_OF_Node_6 = 1e-05;
-			double const link_mu_OF_bidir_2 = 1;
-			std::string const function_OF_Node_2 = "intermediate";
-			double const lambda_OF_Node_1 = 1e-05;
-			double const link_mu_OF_ud_1 = 1;
-			double const link_mu_OF_ud_3 = 1;
-			double const link_lambda_OF_bidir_2 = 1e-05;
-			double const link_mu_OF_bidir_3 = 1;
+			double const link_mu_OF_bidir_12 = 1;
 			double const mu_OF_Target = 0.1;
-			bool const Profil1_OF___ARBRE__EIRM = true;
-			double const mu_OF_Node_8 = 0.1;
-			double const lambda_OF_Node_2 = 1e-05;
 			double const link_lambda_OF_ud_1 = 1e-05;
-			double const link_lambda_OF_ud_3 = 1e-05;
-			double const link_lambda_OF_bidir_3 = 1e-05;
-			double const mu_OF_Node_6 = 0.1;
+			std::string const function_OF_Node_1 = "intermediate";
 			double const mu_OF_Source = 0.1;
+			double const link_mu_OF_bidir_7 = 1;
+			double const link_lambda_OF_bidir_3 = 1e-05;
+			double const mu_OF_Node_8 = 0.1;
+			double const link_lambda_OF_bidir_12 = 1e-05;
+			double const link_lambda_OF_bidir_7 = 1e-05;
+			double const mu_OF_Node_2 = 0.1;
+			double const lambda_OF_Node_6 = 1e-05;
+			double const lambda_OF_Node_1 = 1e-05;
+			double const link_mu_OF_ud_3 = 1;
+			std::string const function_OF_Target = "target";
+			double const link_lambda_OF_ud_3 = 1e-05;
+			double const link_mu_OF_bidir_2 = 1;
 			std::string const function_OF_Node_8 = "intermediate";
 		
             /* ---------- DECLARATION OF OCCURRENCE RULES FIRING FLAGS ------------ */

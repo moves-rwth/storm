@@ -1,5 +1,5 @@
 #include "FigaroModelChecker.h"
-
+#include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/builder/ParallelCompositionBuilder.h"
@@ -169,10 +169,18 @@ namespace storm{
 //                    builder.buildModel(0, 0.0);
 //                    std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
                     //if (eliminateChains && model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
+
                     if (model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
-                        auto ma = std::static_pointer_cast<storm::models::sparse::MarkovAutomaton<ValueType>>(model);
-                        model = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(
-                                ma, storm::transformer::EliminationLabelBehavior::MergeLabels);
+                        auto ma = std::static_pointer_cast<storm::models::sparse::MarkovAutomaton<ValueType>>(
+                                model);
+                        if (ma->hasOnlyTrivialNondeterminism()) {
+                            // Markov automaton can be converted into CTMC
+                                model = ma->convertToCtmc();
+                        }
+                        else {
+                            model = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(
+                                    ma, storm::transformer::EliminationLabelBehavior::MergeLabels);
+                        }
                     }
                             model->printModelInformationToStream(std::cout);
                             storm::api::exportSparseModelAsDot(model,"hello.dot");
