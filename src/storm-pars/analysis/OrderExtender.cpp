@@ -239,9 +239,6 @@ namespace storm {
 
                 if (stateSucc1 == numberOfStates) {
                     assert (stateSucc2 == numberOfStates);
-            std::shared_ptr<logic::Formula const> formula;
-
-            storage::ParameterRegion<ValueType> region;
                     currentState = order->getNextSortedState();
                 } else {
                     auto assumptions = assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, region);
@@ -294,14 +291,17 @@ namespace storm {
                     // the successors are at the same level
                     order->addToNode(currentState, order->getNode(succ1));
                 }
-                if (compareResult == Order::UNKNOWN) {
+                if (compareResult == Order::UNKNOWN && order->existsNextSortedState()) {
                     return std::pair<uint_fast64_t, uint_fast64_t>(succ1, succ2);
+                } else if (compareResult == Order::UNKNOWN) {
+                    // As it is the initial state we don't care where it ends.
+                    order->add(currentState);
                 }
             } else {
                 assert (successors.size() >= 2);
 
                 auto temp = order->sortStatesUnorderedPair(&successors);
-                if (temp.first.first != numberOfStates) {
+                if (temp.first.first != numberOfStates && (order->existsNextSortedState())) {
                     return temp.first;
                 }
 

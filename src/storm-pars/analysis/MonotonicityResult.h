@@ -107,7 +107,6 @@ namespace storm {
             bool done;
             bool somewhereMonotonicity;
             bool allMonotonicity;
-
         };
 
     }

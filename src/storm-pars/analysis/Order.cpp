@@ -671,5 +671,9 @@ namespace storm {
             return label;
         }
 
-     }
+        bool Order::existsNextSortedState() {
+            return !statesToHandle.empty() || !statesSorted.empty();
+        }
+
+    }
 }

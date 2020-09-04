@@ -198,58 +198,57 @@ namespace storm {
 
         template<typename ParametricType, typename ConstantType>
         void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::Order> reachabilityOrder, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename ParameterLifter<ParametricType, ConstantType>::VariableType>> localMonotonicityResult) {
-            if (usePartialScheduler) {
-                bool useMinimize = dirForParameters == storm::solver::OptimizationDirection::Minimize;
+            assert(usePartialScheduler);
+            bool useMinimize = dirForParameters == storm::solver::OptimizationDirection::Minimize;
 
-                if ((useMinimize && localMonotonicityResult->getIndexMinimize() == -1) ||
-                    (!useMinimize && localMonotonicityResult->getIndexMaximize() == -1)) {
-                    auto selectedRows = std::make_shared<storm::storage::BitVector>(std::move(
-                            getPartialSchedulerMonotonicity(region, reachabilityOrder, localMonotonicityResult,
-                                                            useMinimize)));
-                    auto selectedColumns = storm::storage::BitVector(matrix.getColumnCount(), true);
-                    auto selectedMatrix = std::make_shared<storm::storage::SparseMatrix<ConstantType>>(
-                            std::move(matrix.getSubmatrix(false, *selectedRows, selectedColumns)));
-                    lastMatrix = *selectedMatrix;
-                    lastSelectedRows = *selectedRows;
-                    // TODO @Jip: change this s.t. specifyiterator thing works for matrix and rows, and lastMatrix setting can be done later
-                    auto selectedMatrixAssignment = std::make_shared<std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType &>>>(
-                            specifyIteratorsPartialScheduler());
-                    lastMatrixAssignment = *selectedMatrixAssignment;
-                    auto res = std::make_tuple(selectedMatrix, selectedMatrixAssignment, selectedRows);
-                    if (useMinimize) {
-                        monResResultsMinimize.push_back(res);
-                        localMonotonicityResult->setIndexMinimize(monResResultsMinimize.size() - 1);
-                    } else {
-                        monResResultsMaximize.push_back(res);
-                        localMonotonicityResult->setIndexMaximize(monResResultsMaximize.size() - 1);
-                    }
-                } else if (!localMonotonicityResult->isDone()) {
-                    auto selectedRows = std::make_shared<storm::storage::BitVector>(std::move(
-                            getPartialSchedulerMonotonicity(region, reachabilityOrder, localMonotonicityResult,
-                                                            useMinimize)));
-                    auto selectedColumns = storm::storage::BitVector(matrix.getColumnCount(), true);
-                    auto selectedMatrix = std::make_shared<storm::storage::SparseMatrix<ConstantType>>(
-                            std::move(matrix.getSubmatrix(false, *selectedRows, selectedColumns)));
-                    lastMatrix = *selectedMatrix;
-                    lastSelectedRows = *selectedRows;
-                    auto selectedMatrixAssignment = std::make_shared<std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType &>>>(
-                            specifyIteratorsPartialScheduler());
-                    lastMatrixAssignment = *selectedMatrixAssignment;
-                    auto res = std::make_tuple(selectedMatrix, selectedMatrixAssignment, selectedRows);
-
-                    if (useMinimize) {
-                        monResResultsMinimize[localMonotonicityResult->getIndexMinimize()] = res;
-                    } else {
-                        monResResultsMaximize[localMonotonicityResult->getIndexMaximize()] = res;
-                    }
+            if ((useMinimize && localMonotonicityResult->getIndexMinimize() == -1) ||
+                (!useMinimize && localMonotonicityResult->getIndexMaximize() == -1)) {
+                auto selectedRows = std::make_shared<storm::storage::BitVector>(std::move(
+                        getPartialSchedulerMonotonicity(region, reachabilityOrder, localMonotonicityResult,
+                                                        useMinimize)));
+                auto selectedColumns = storm::storage::BitVector(matrix.getColumnCount(), true);
+                auto selectedMatrix = std::make_shared<storm::storage::SparseMatrix<ConstantType>>(
+                        std::move(matrix.getSubmatrix(false, *selectedRows, selectedColumns)));
+                lastMatrix = *selectedMatrix;
+                lastSelectedRows = *selectedRows;
+                // TODO @Jip: change this s.t. specifyiterator thing works for matrix and rows, and lastMatrix setting can be done later
+                auto selectedMatrixAssignment = std::make_shared<std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType &>>>(
+                        specifyIteratorsPartialScheduler());
+                lastMatrixAssignment = *selectedMatrixAssignment;
+                auto res = std::make_tuple(selectedMatrix, selectedMatrixAssignment, selectedRows);
+                if (useMinimize) {
+                    monResResultsMinimize.push_back(res);
+                    localMonotonicityResult->setIndexMinimize(monResResultsMinimize.size() - 1);
                 } else {
-                    auto res = useMinimize ? monResResultsMinimize[localMonotonicityResult->getIndexMinimize()]
-                                           : monResResultsMaximize[localMonotonicityResult->getIndexMaximize()];
-                    lastMatrix = *(std::get<0>(res));
-                    lastMatrixAssignment = *(std::get<1>(res));
-                    lastSelectedRows = *(std::get<2>(res));
-
+                    monResResultsMaximize.push_back(res);
+                    localMonotonicityResult->setIndexMaximize(monResResultsMaximize.size() - 1);
                 }
+            } else if (!localMonotonicityResult->isDone()) {
+                auto selectedRows = std::make_shared<storm::storage::BitVector>(std::move(
+                        getPartialSchedulerMonotonicity(region, reachabilityOrder, localMonotonicityResult,
+                                                        useMinimize)));
+                auto selectedColumns = storm::storage::BitVector(matrix.getColumnCount(), true);
+                auto selectedMatrix = std::make_shared<storm::storage::SparseMatrix<ConstantType>>(
+                        std::move(matrix.getSubmatrix(false, *selectedRows, selectedColumns)));
+                lastMatrix = *selectedMatrix;
+                lastSelectedRows = *selectedRows;
+                auto selectedMatrixAssignment = std::make_shared<std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType &>>>(
+                        specifyIteratorsPartialScheduler());
+                lastMatrixAssignment = *selectedMatrixAssignment;
+                auto res = std::make_tuple(selectedMatrix, selectedMatrixAssignment, selectedRows);
+
+                if (useMinimize) {
+                    monResResultsMinimize[localMonotonicityResult->getIndexMinimize()] = res;
+                } else {
+                    monResResultsMaximize[localMonotonicityResult->getIndexMaximize()] = res;
+                }
+            } else {
+                auto res = useMinimize ? monResResultsMinimize[localMonotonicityResult->getIndexMinimize()]
+                                       : monResResultsMaximize[localMonotonicityResult->getIndexMaximize()];
+                lastMatrix = *(std::get<0>(res));
+                lastMatrixAssignment = *(std::get<1>(res));
+                lastSelectedRows = *(std::get<2>(res));
+
             }
             specifyRegion(region, dirForParameters);
         }

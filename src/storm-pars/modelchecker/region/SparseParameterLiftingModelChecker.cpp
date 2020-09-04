@@ -318,6 +318,7 @@ namespace storm {
 
             auto monotonicityChecker = new storm::analysis::MonotonicityChecker<typename SparseModelType::ValueType>(parametricModel->getTransitionMatrix());
             auto variables = storm::models::sparse::getProbabilityParameters(*parametricModel);
+            // TODO: only for specific vars?
 
             while (state != order->getNumberOfStates()) {
                 if (order->isBottomState(state) || order->isTopState(state)) {

@@ -13,12 +13,19 @@ namespace storm {
         typename MonotonicityChecker<ValueType>::Monotonicity MonotonicityChecker<ValueType>::checkLocalMonotonicity(std::shared_ptr<Order> order, uint_fast64_t state, VariableType var, storage::ParameterRegion<ValueType> region) {
             // Create + fill Vector containing the Monotonicity of the transitions to the succs
             auto row = matrix.getRow(state);
+            // Ignore if all entries are constant
+            bool ignore = true;
+
             std::vector<uint_fast64_t> succs;
             std::vector<Monotonicity> succsMonUnsorted;
             for (auto entry : row) {
                 auto succState = entry.getColumn();
                 succsMonUnsorted.push_back(checkTransitionMonRes(entry.getValue(), var, region));
                 succs.push_back(succState);
+                ignore &= entry.getValue().isConstant();
+            }
+            if (ignore) {
+                return Monotonicity::Constant;
             }
             auto succsSorted = order->sortStates(&succs);
 

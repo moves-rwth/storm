@@ -285,6 +285,13 @@ namespace storm {
                     uint_fast64_t getNextSortedState();
 
                     /*!
+                     * Returns if there exists a next state to handle, (if the statesToHandle list is empty, it checks the sorted states list).
+                     *
+                     * @return The next state to be handled.
+                     */
+                    bool existsNextSortedState();
+
+                    /*!
                      * If the order is fully built, this can be set to true.
                      */
                     void setDoneBuilding(bool done = true);
