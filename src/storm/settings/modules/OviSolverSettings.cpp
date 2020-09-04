@@ -14,7 +14,6 @@ namespace storm {
             const std::string OviSolverSettings::moduleName = "ovi";
             const std::string OviSolverSettings::precisionUpdateFactorOptionName = "precision-update-factor";
             const std::string OviSolverSettings::maxVerificationIterationFactorOptionName = "max-verification-iter-factor";
-            const std::string OviSolverSettings::useRelevantValuesForPrecisionUpdateOptionName = "use-relevant-values";
             const std::string OviSolverSettings::upperBoundGuessingFactorOptionName = "upper-bound-factor";
             const std::string OviSolverSettings::upperBoundOnlyIterationsOptionName = "check-upper-only-iter";
             const std::string OviSolverSettings::useNoTerminationGuaranteeMinimumMethodOptionName = "no-termination-guarantee";
