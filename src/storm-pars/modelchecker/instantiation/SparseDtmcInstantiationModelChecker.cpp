@@ -60,7 +60,6 @@ namespace storm {
                 std::cout << storm::utility::vector::toString(qualitativeResult) << std::endl;
                 storm::storage::BitVector maybeStates = storm::utility::vector::filter<ConstantType>(qualitativeResult,
                                 [] (ConstantType const& value) -> bool { return !(storm::utility::isZero<ConstantType>(value) || storm::utility::isOne<ConstantType>(value)); });
-                std::cout <<maybeStates << std::endl;
                 hint.setMaybeStates(std::move(maybeStates));
                 hint.setResultHint(std::move(qualitativeResult));
                 hint.setComputeOnlyMaybeStates(true);
