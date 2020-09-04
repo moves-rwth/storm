@@ -363,7 +363,7 @@ namespace storm {
 
                         // Check whether we tried this guess for too long
                         ValueType scaledIterationCount = storm::utility::convertNumber<ValueType>(currentVerificationIterations) * storm::utility::convertNumber<ValueType>(env.solver().ovi().getMaxVerificationIterationFactor());
-                        if (!intervalIterationNeeded && scaledIterationCount >= storm::utility::convertNumber<ValueType>(lastValueIterationIterations)) {
+                        if (!intervalIterationNeeded && scaledIterationCount * iterationPrecision >= storm::utility::one<ValueType>()) {
                             cancelGuess = true;
                             // In this case we will make one more iteration on the lower bound (mainly to obtain a new iterationPrecision)
                         }
