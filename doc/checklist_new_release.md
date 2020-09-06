@@ -34,10 +34,17 @@ Note that in most cases a simultaneous release of [carl](https://github.com/smtr
 6. [Add new release](https://github.com/moves-rwth/storm/releases/new) in GitHub.
 
 7. Update `stable` branch:
+
    ```console
    git checkout stable
-   git merge master
+   git rebase master
    git push origin stable
+   ```
+   Note: Rebasing might fail if `stable` is ahead of `master` (e.g. because of merge commits). In this case we can do:
+    ```console
+   git checkout stable
+   git reset --hard master
+   git push --force origin stable
    ```
 
 8. Update [Homebrew formula](https://github.com/moves-rwth/homebrew-storm).
