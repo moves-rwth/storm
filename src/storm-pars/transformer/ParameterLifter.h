@@ -178,17 +178,14 @@ namespace storm {
 
             storm::analysis::MonotonicityChecker<ParametricType>* monotonicityChecker; // MonotonicityChecker object, on the original pMatrix
 
-            // 1) matrix, 2) matrixassignment 3)selectedRows
-            std::vector<std::tuple<std::shared_ptr<storm::storage::SparseMatrix<ConstantType>>, std::shared_ptr<std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>>>, std::shared_ptr<storm::storage::BitVector>>>  monResResultsMinimize;
-            std::vector<std::tuple<std::shared_ptr<storm::storage::SparseMatrix<ConstantType>>, std::shared_ptr<std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>>>, std::shared_ptr<storm::storage::BitVector>>>  monResResultsMaximize;
-//            std::vector<std::pair<std::shared_ptr<storm::storage::SparseMatrix<ConstantType>>, std::shared_ptr<storm::storage::BitVector>>> monResResultsMinimize;
-//            std::vector<std::pair<std::shared_ptr<storm::storage::SparseMatrix<ConstantType>>, std::shared_ptr<storm::storage::BitVector>>> monResResultsMaximize;
+            // Vector of following tuple: 1) matrix, 2) matrixassignment 3)selectedRows
+            std::vector<std::tuple<storm::storage::SparseMatrix<ConstantType>, std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>>, storm::storage::BitVector>>  monResResultsMinimize;
+            std::vector<std::tuple<storm::storage::SparseMatrix<ConstantType>, std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>>, storm::storage::BitVector>>  monResResultsMaximize;
 
             storm::storage::SparseMatrix<ConstantType> lastMatrix;
             std::vector<ConstantType> lastVector;
             storm::storage::BitVector lastSelectedRows;
             std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>> lastMatrixAssignment; // Connection of matrix entries with placeholders
-
 
             std::vector<std::pair<uint_fast64_t, uint_fast64_t>> numberOfPlaceHolders;
             std::vector<int> constantStates;
