@@ -199,10 +199,13 @@ namespace storm {
         void ParameterLifter<ParametricType, ConstantType>::specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::Order> reachabilityOrder, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename ParameterLifter<ParametricType, ConstantType>::VariableType>> localMonotonicityResult) {
             assert(usePartialScheduler);
             bool useMinimize = dirForParameters == storm::solver::OptimizationDirection::Minimize;
-            if (!localMonotonicityResult->isDone()) {
+            // TODO: change in boost_optional instead of -1
+            if (!localMonotonicityResult->isDone() || (useMinimize && localMonotonicityResult->getIndexMinimize() == -1) || (!useMinimize && localMonotonicityResult->getIndexMaximize() == -1)) {
                 auto selectedRows = std::move(getPartialSchedulerMonotonicity(region, reachabilityOrder, localMonotonicityResult, useMinimize));
                 auto selectedColumns = storm::storage::BitVector(matrix.getColumnCount(), true);
-                auto res = std::make_tuple(std::move(matrix.getSubmatrix(false, selectedRows, selectedColumns)), specifyIteratorsPartialScheduler(), selectedRows);
+                auto selectedMatrix = matrix.getSubmatrix(false, selectedRows, selectedColumns);
+                auto res = std::make_tuple(std::move(selectedMatrix), boost::none, std::move(selectedRows));
+
                 if (useMinimize && localMonotonicityResult->getIndexMinimize() == -1) {
                     monResResultsMinimize.push_back(std::move(res));
                     localMonotonicityResult->setIndexMinimize(monResResultsMinimize.size() - 1);
@@ -211,17 +214,21 @@ namespace storm {
                     localMonotonicityResult->setIndexMaximize(monResResultsMaximize.size() - 1);
                 } else {
                     if (useMinimize) {
-                        monResResultsMinimize[localMonotonicityResult->getIndexMinimize()] = res;
+                        monResResultsMinimize[localMonotonicityResult->getIndexMinimize()] = std::move(res);
                     } else {
-                        monResResultsMaximize[localMonotonicityResult->getIndexMaximize()] = res;
+                        monResResultsMaximize[localMonotonicityResult->getIndexMaximize()] = std::move(res);
                     }
                 }
-            } else {
-                auto res = useMinimize ? monResResultsMinimize[localMonotonicityResult->getIndexMinimize()] : monResResultsMaximize[localMonotonicityResult->getIndexMaximize()];
-                lastMatrix = std::get<0>(res);
-                lastMatrixAssignment = std::get<1>(res);
-                lastSelectedRows = std::get<2>(res);
             }
+            auto res = useMinimize ? monResResultsMinimize[localMonotonicityResult->getIndexMinimize()] : monResResultsMaximize[localMonotonicityResult->getIndexMaximize()];
+            lastMatrix = std::get<0>(res);
+            lastSelectedRows = std::get<2>(res);
+
+            if (!std::get<1>(res)) {
+                std::get<1>(res) = specifyIteratorsPartialScheduler();
+            }
+            lastMatrixAssignment = std::get<1>(res).get();
+
             specifyRegion(region, dirForParameters);
         }
 

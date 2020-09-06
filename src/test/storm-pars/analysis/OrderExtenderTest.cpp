@@ -249,7 +249,7 @@ TEST(OrderExtenderTest, simple1_on_matrix) {
     EXPECT_EQ(order->getNumberOfAddedStates(), model->getNumberOfStates());
     EXPECT_TRUE(order->getDoneBuilding());
 
-    // Check on all states
+    // Check on all states, as this one automatically handles assumptions (if there is one valid) all are ABOVE
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,0));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,1));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,2));

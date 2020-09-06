@@ -179,8 +179,8 @@ namespace storm {
             storm::analysis::MonotonicityChecker<ParametricType>* monotonicityChecker; // MonotonicityChecker object, on the original pMatrix
 
             // Vector of following tuple: 1) matrix, 2) matrixassignment 3)selectedRows
-            std::vector<std::tuple<storm::storage::SparseMatrix<ConstantType>, std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>>, storm::storage::BitVector>>  monResResultsMinimize;
-            std::vector<std::tuple<storm::storage::SparseMatrix<ConstantType>, std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>>, storm::storage::BitVector>>  monResResultsMaximize;
+            std::vector<std::tuple<storm::storage::SparseMatrix<ConstantType>, boost::optional<std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>>>, storm::storage::BitVector>>  monResResultsMinimize;
+            std::vector<std::tuple<storm::storage::SparseMatrix<ConstantType>, boost::optional<std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>>>, storm::storage::BitVector>>  monResResultsMaximize;
 
             storm::storage::SparseMatrix<ConstantType> lastMatrix;
             std::vector<ConstantType> lastVector;

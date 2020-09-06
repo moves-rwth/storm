@@ -291,36 +291,40 @@ namespace storm {
                     // the successors are at the same level
                     order->addToNode(currentState, order->getNode(succ1));
                 }
-                if (compareResult == Order::UNKNOWN && order->existsNextSortedState()) {
+                if (compareResult == Order::UNKNOWN) {
                     return std::pair<uint_fast64_t, uint_fast64_t>(succ1, succ2);
-                } else if (compareResult == Order::UNKNOWN) {
-                    // As it is the initial state we don't care where it ends.
-                    order->add(currentState);
                 }
             } else {
                 assert (successors.size() >= 2);
 
                 auto temp = order->sortStatesUnorderedPair(&successors);
-                if (temp.first.first != numberOfStates && (order->existsNextSortedState())) {
+                if (temp.first.first != numberOfStates) {
                     return temp.first;
                 }
 
                 auto sortedSuccs = temp.second;
-                for (auto i = 0; i < sortedSuccs.size(); i++) {
-                    auto next = sortedSuccs[i];
-                    if (i == 0) {
-                        // next is the highest one in the order
-                        order->addBelow(currentState, order->getNode(next));
-                    } else if (i == sortedSuccs.size() - 1) {
-                        // next is the lowest one in the order
-                        order->addRelationNodes(order->getNode(currentState), order->getNode(next));
-                    } else {
-                        auto res = assumptionMaker->createAndCheckAssumptions(currentState, next, order, region);
+                if (order->existsNextSortedState()) {
+                    // First check if all successors can be handled
+                    std::set<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions;
+                    for (auto i = 1; i < sortedSuccs.size() - 1; i++) {
+                        auto res = assumptionMaker->createAndCheckAssumptions(currentState, sortedSuccs[i], order, region);
                         if (res.size() == 1 && res.begin()->second == VALID) {
-                            handleAssumption(order, res.begin()->first);
+                            assumptions.insert(res.begin()->first);
+                        } else {
+                            return std::pair<uint_fast64_t, uint_fast64_t>(currentState, sortedSuccs[i]);
                         }
                     }
+                    order->addBelow(currentState, order->getNode(sortedSuccs[0]));
+                    order->addRelationNodes(order->getNode(currentState), order->getNode(sortedSuccs[sortedSuccs.size() - 1]));
+                    for (auto const &assumption: assumptions) {
+                        handleAssumption(order, assumption);
+                    }
+                } else {
+                    // We don't really care that we cannot place the current state at the correctplace in the order as it is the initial state.
+                    order->addBelow(currentState, order->getNode(sortedSuccs[0]));
+                    order->addRelationNodes(order->getNode(currentState), order->getNode(sortedSuccs[sortedSuccs.size() - 1]));
                 }
+
                 assert (order->contains(currentState)
                         && order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE
                         && order->compare(order->getNode(currentState), order->getTop()) == Order::BELOW);

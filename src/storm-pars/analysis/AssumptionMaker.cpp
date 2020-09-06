@@ -60,10 +60,7 @@ namespace storm {
         template <typename ValueType, typename ConstantType>
         std::pair<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> AssumptionMaker<ValueType, ConstantType>::createAndCheckAssumption(expressions::Variable var1, expressions::Variable var2, expressions::BinaryRelationExpression::RelationType relationType, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) const {
             auto assumption = std::make_shared<expressions::BinaryRelationExpression>(expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(), var2.getExpression().getBaseExpressionPointer(), var1.getExpression().getBaseExpressionPointer(), relationType));
-            AssumptionStatus validationResult;
-
-            validationResult = assumptionChecker.validateAssumption(assumption, order, region);
-
+            AssumptionStatus validationResult = assumptionChecker.validateAssumption(assumption, order, region);
             return std::pair<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus>(assumption, validationResult);
         }
 

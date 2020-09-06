@@ -152,6 +152,7 @@ namespace storm {
         }
 
         void Order::addRelation(uint_fast64_t above, uint_fast64_t below) {
+            assert (getNode(above) != nullptr && getNode(below) != nullptr);
             addRelationNodes(getNode(above), getNode(below));
         }
 

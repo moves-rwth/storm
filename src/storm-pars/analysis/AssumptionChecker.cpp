@@ -173,11 +173,19 @@ namespace storm {
             // Also start creating expression for order of states
             expressions::Expression exprOrderSucc = manager->boolean(true);
             std::set<expressions::Variable> stateVariables;
+            std::set<expressions::Variable> topVariables;
+            std::set<expressions::Variable> bottomVariables;
             for (auto itr1 = row1.begin(); orderKnown && itr1 != row1.end(); ++itr1) {
                 addVar2 |= std::to_string(itr1->getColumn()) == var2;
                 auto varname1 = "s" + std::to_string(itr1->getColumn());
                 if (!manager->hasVariable(varname1)) {
-                    stateVariables.insert(manager->declareRationalVariable(varname1));
+                    if (order->isTopState(itr1->getColumn())) {
+                        topVariables.insert(manager->declareRationalVariable(varname1));
+                    } else if (order->isBottomState(itr1->getColumn())) {
+                        bottomVariables.insert(manager->declareRationalVariable(varname1));
+                    } else {
+                        stateVariables.insert(manager->declareRationalVariable(varname1));
+                    }
                 }
 
                 for (auto itr2 = row2.begin(); orderKnown && itr2 != row2.end(); ++itr2) {
@@ -185,7 +193,13 @@ namespace storm {
                     if (itr1->getColumn() != itr2->getColumn()) {
                         auto varname2 = "s" + std::to_string(itr2->getColumn());
                         if (!manager->hasVariable(varname2)) {
-                            stateVariables.insert(manager->declareRationalVariable(varname2));
+                            if (order->isTopState(itr2->getColumn())) {
+                                topVariables.insert(manager->declareRationalVariable(varname2));
+                            } else if (order->isBottomState(itr2->getColumn())) {
+                                bottomVariables.insert(manager->declareRationalVariable(varname2));
+                            } else {
+                                stateVariables.insert(manager->declareRationalVariable(varname2));
+                            }
                         }
                         auto comp = order->compare(itr1->getColumn(), itr2->getColumn());
                         if (comp == Order::NodeComparison::ABOVE) {
@@ -195,8 +209,7 @@ namespace storm {
                             exprOrderSucc = exprOrderSucc && !(manager->getVariable(varname1) >=
                                                               manager->getVariable(varname2));
                         } else if (comp == Order::NodeComparison::SAME) {
-                            exprOrderSucc = exprOrderSucc &&
-                                            (manager->getVariable(varname1) = manager->getVariable(varname2));
+                            exprOrderSucc = exprOrderSucc && (manager->getVariable(varname1) = manager->getVariable(varname2));
                         } else {
                             orderKnown = false;
                         }
@@ -240,6 +253,10 @@ namespace storm {
                     if (find(stateVariables.begin(), stateVariables.end(), var) != stateVariables.end()) {
                         // the var is a state
                         exprBounds = exprBounds && manager->rational(0) <= var && var <= manager->rational(1);
+                    } else if (find(topVariables.begin(), topVariables.end(), var) != topVariables.end()) {
+                        exprBounds = exprBounds && var == manager->rational(1);
+                    } else if (find(bottomVariables.begin(), bottomVariables.end(), var) != bottomVariables.end()) {
+                        exprBounds = exprBounds && var == manager->rational(0);
                     } else {
                         // the var is a parameter
                         auto lb = utility::convertNumber<RationalNumber>(region.getLowerBoundary(var.getName()));
@@ -258,7 +275,6 @@ namespace storm {
                     // If there is no thing satisfying the negation we are safe.
                     result = AssumptionStatus::VALID;
                 } else if (smtRes == solver::SmtSolver::CheckResult::Sat) {
-                    assert (smtRes == solver::SmtSolver::CheckResult::Sat);
                     result = AssumptionStatus::INVALID;
                 } else {
                     result = AssumptionStatus::UNKNOWN;

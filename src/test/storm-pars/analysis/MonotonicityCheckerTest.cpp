@@ -194,6 +194,8 @@ TEST(MonotonicityCheckerTest, Casestudy2) {
     auto orderExtender = storm::analysis::OrderExtender<storm::RationalFunction, double>(&topStates, &bottomStates, matrix);
     // Order
     auto order = orderExtender.extendOrder(nullptr, region);
+    order->add(1);
+    order->add(2);
     order->addRelation(1,3);
     order->addRelation(3,2);
 
