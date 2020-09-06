@@ -67,6 +67,9 @@ namespace storm {
                 result = getInstantiationChecker().check(env, region.getCenterPoint())->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()] ? RegionResult::CenterSat : RegionResult::CenterViolated;
             }
 
+            bool existsSat = (hypothesis == RegionResultHypothesis::AllSat || result == RegionResult::ExistsSat || result == RegionResult::CenterSat);
+            bool existsViolated = (hypothesis == RegionResultHypothesis::AllViolated || result == RegionResult::ExistsViolated || result == RegionResult::CenterViolated);
+
             if (localMonotonicityResult != nullptr && localMonotonicityResult->isDone()) {
                 // Try to check it with a global monotonicity result
                 auto monRes = localMonotonicityResult->getGlobalMonotonicityResult();
@@ -100,22 +103,24 @@ namespace storm {
                         }
                     }
 
-                    if ((hypothesis == RegionResultHypothesis::AllSat || result == RegionResult::ExistsSat || result == RegionResult::CenterSat) && getInstantiationCheckerSAT().check(env, valuationToCheckSat)->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
+                    if (existsSat && getInstantiationCheckerSAT().check(env, valuationToCheckSat)->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
                         STORM_LOG_INFO("Region " << region << " is AllSat, discovered with instantiation checker and help of monotonicity" << std::endl);
                         RegionModelChecker<typename SparseModelType::ValueType>::numberOfRegionsKnownThroughMonotonicity++;
                         return RegionResult::AllSat;
                     }
 
-                    if ((hypothesis == RegionResultHypothesis::AllViolated || result == RegionResult::ExistsViolated || result == RegionResult::CenterViolated) && !getInstantiationCheckerVIO().check(env, valuationToCheckViolated)->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
+                    if (existsViolated && !getInstantiationCheckerVIO().check(env, valuationToCheckViolated)->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
                         STORM_LOG_INFO("Region " << region << " is AllViolated, discovered with instantiation checker and help of monotonicity" << std::endl);
                         RegionModelChecker<typename SparseModelType::ValueType>::numberOfRegionsKnownThroughMonotonicity++;
                         return RegionResult::AllViolated;
                     }
+
+                    return RegionResult::ExistsBoth;
                 }
             }
 
             // try to prove AllSat or AllViolated, depending on the hypothesis or the current result
-            if (hypothesis == RegionResultHypothesis::AllSat || result == RegionResult::ExistsSat || result == RegionResult::CenterSat) {
+            if (existsSat) {
                 // show AllSat:
                 storm::solver::OptimizationDirection parameterOptimizationDirection = isLowerBound(this->currentCheckTask->getBound().comparisonType) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
                 if (this->check(env, region, parameterOptimizationDirection, reachabilityOrder, localMonotonicityResult)->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
@@ -123,7 +128,7 @@ namespace storm {
                 } else if (sampleVerticesOfRegion) {
                     result = sampleVertices(env, region, result);
                 }
-            } else if (hypothesis == RegionResultHypothesis::AllViolated || result == RegionResult::ExistsViolated || result == RegionResult::CenterViolated) {
+            } else if (existsViolated) {
                 // show AllViolated:
                 storm::solver::OptimizationDirection parameterOptimizationDirection = isLowerBound(this->currentCheckTask->getBound().comparisonType) ? storm::solver::OptimizationDirection::Maximize : storm::solver::OptimizationDirection::Minimize;
                 if (!this->check(env, region, parameterOptimizationDirection, reachabilityOrder, localMonotonicityResult)->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
@@ -310,30 +315,6 @@ namespace storm {
         template <typename SparseModelType, typename ConstantType>
         void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(Environment const& env, CheckTask<logic::CumulativeRewardFormula, ConstantType> const& checkTask) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Parameter lifting is not supported for the given property.");
-        }
-
-        template <typename SparseModelType, typename ConstantType>
-        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::initializeLocalMonotonicityResults(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult){
-            auto state = order->getNextAddedState(-1);
-
-            auto monotonicityChecker = new storm::analysis::MonotonicityChecker<typename SparseModelType::ValueType>(parametricModel->getTransitionMatrix());
-            auto variables = storm::models::sparse::getProbabilityParameters(*parametricModel);
-            // TODO: only for specific vars?
-
-            while (state != order->getNumberOfStates()) {
-                if (order->isBottomState(state) || order->isTopState(state)) {
-                    localMonotonicityResult->setConstant(state);
-                } else {
-                    for (auto var : variables) {
-                        auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
-                        if (monotonicity == storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>::Monotonicity::Unknown || monotonicity == storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>::Monotonicity::Not) {
-                            monotonicity = monotonicityChecker->checkLocalMonotonicity(order, state, var, region);
-                            localMonotonicityResult->setMonotonicity(state, var, monotonicity);
-                        }
-                    }
-                }
-                state = order->getNextAddedState(state);
-            }
         }
 
         template class SparseParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;

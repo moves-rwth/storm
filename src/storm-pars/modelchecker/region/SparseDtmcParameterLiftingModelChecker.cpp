@@ -51,6 +51,7 @@ namespace storm {
         template <typename SparseModelType, typename ConstantType>
         void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool generateRegionSplitEstimates, bool allowModelSimplification) {
             auto dtmc = parametricModel->template as<SparseModelType>();
+            monotonicityChecker = std::make_unique<storm::analysis::MonotonicityChecker<typename SparseModelType::ValueType>>(dtmc->getTransitionMatrix());
             specify_internal(env, dtmc, checkTask, generateRegionSplitEstimates, !allowModelSimplification);
         }
 
@@ -227,7 +228,6 @@ namespace storm {
             std::vector<typename SparseModelType::ValueType> b = rewardModel.getTotalRewardVector(this->parametricModel->getTransitionMatrix());
             
             parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates);
-            
             
             // We only know a lower bound for the result
             lowerResultBound = storm::utility::zero<ConstantType>();
@@ -506,6 +506,28 @@ namespace storm {
             parameterLifter->setUseMonotonicityNow(monotonicity);
             maxSchedChoices = boost::none;
             minSchedChoices = boost::none;
+        }
+
+
+        template <typename SparseModelType, typename ConstantType>
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::initializeLocalMonotonicityResults(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult){
+            auto state = order->getNextAddedState(-1);
+            auto const variablesAtState = parameterLifter->getOccurringVariablesAtState();
+            while (state != order->getNumberOfStates()) {
+                auto variables = variablesAtState[state];
+                if (variables.size() == 0 || order->isBottomState(state) || order->isTopState(state)) {
+                    localMonotonicityResult->setConstant(state);
+                } else {
+                    for (auto const& var : variables) {
+                        auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
+                        if (monotonicity == storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>::Monotonicity::Unknown || monotonicity == storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>::Monotonicity::Not) {
+                            monotonicity = monotonicityChecker->checkLocalMonotonicity(order, state, var, region);
+                            localMonotonicityResult->setMonotonicity(state, var, monotonicity);
+                        }
+                    }
+                }
+                state = order->getNextAddedState(state);
+            }
         }
 
         template class SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;

@@ -211,7 +211,7 @@ namespace storm {
                         std::move(matrix.getSubmatrix(false, *selectedRows, selectedColumns)));
                 lastMatrix = *selectedMatrix;
                 lastSelectedRows = *selectedRows;
-                // TODO @Jip: change this s.t. specifyiterator thing works for matrix and rows, and lastMatrix setting can be done later
+                // TODO @Jip: save this as well?
                 auto selectedMatrixAssignment = std::make_shared<std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType &>>>(
                         specifyIteratorsPartialScheduler());
                 lastMatrixAssignment = *selectedMatrixAssignment;
@@ -232,6 +232,7 @@ namespace storm {
                         std::move(matrix.getSubmatrix(false, *selectedRows, selectedColumns)));
                 lastMatrix = *selectedMatrix;
                 lastSelectedRows = *selectedRows;
+                // TODO: save this as well?
                 auto selectedMatrixAssignment = std::make_shared<std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType &>>>(
                         specifyIteratorsPartialScheduler());
                 lastMatrixAssignment = *selectedMatrixAssignment;
@@ -397,6 +398,11 @@ namespace storm {
                 }
             }
             return result;
+        }
+
+        template<typename ParametricType, typename ConstantType>
+        const std::vector<std::set<typename ParameterLifter<ParametricType, ConstantType>::VariableType>> & ParameterLifter<ParametricType, ConstantType>::getOccurringVariablesAtState() const {
+            return occurringVariablesAtState;
         }
 
         template<typename ParametricType, typename ConstantType>

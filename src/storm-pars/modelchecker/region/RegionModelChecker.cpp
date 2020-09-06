@@ -143,21 +143,18 @@ namespace storm {
                 // FIFO queues for the order and local monotonicity results
                 std::queue<std::shared_ptr<storm::analysis::Order>> orders;
                 std::queue<std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>> localMonotonicityResults;
+                std::shared_ptr<storm::analysis::Order> order;
+                std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult;
                 if (useMonotonicity && fractionOfUndiscoveredArea > thresholdAsCoefficient && !unprocessedRegions.empty()) {
-                    // TODO CONSTRUCTION ZONE START
                     orders.emplace(extendOrder(nullptr, region));
-                    if (orders.front() != nullptr) {
-                        auto monRes = std::shared_ptr< storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(orders.front()->getNumberOfStates()));
-                        initializeLocalMonotonicityResults(region, orders.front(), monRes);
-                        localMonotonicityResults.emplace(monRes);
-
-                    } else {
-                        assert (false);
-                    }
+                    assert (orders.front() != nullptr);
+                    auto monRes = std::shared_ptr< storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(orders.front()->getNumberOfStates()));
+                    initializeLocalMonotonicityResults(region, orders.front(), monRes);
+                    localMonotonicityResults.emplace(monRes);
                     setUseMonotonicityNow();
 
-                    auto order = orders.front();
-                    auto localMonotonicityResult = localMonotonicityResults.front();
+                    order = orders.front();
+                    localMonotonicityResult = localMonotonicityResults.front();
 
                     if (!order->getDoneBuilding()) {
                         // we need to use copies for both order and local mon res
@@ -178,28 +175,31 @@ namespace storm {
                             localMonotonicityResults.emplace(localMonotonicityResult);
                         }
                     }
-
-                    // TODO CONSTRUCTION ZONE END
                 }
+                bool useSameOrder = useMonotonicity && order->getDoneBuilding();
+                bool useSameLocalMonotonicityResult = useSameOrder && localMonotonicityResult->isDone();
 
                 // USEMON WHILE LOOP
                 while (useMonotonicity && fractionOfUndiscoveredArea > thresholdAsCoefficient && !unprocessedRegions.empty()) {
-                    assert (unprocessedRegions.size() == localMonotonicityResults.size());
-                    assert (unprocessedRegions.size() == orders.size());
+                    assert ((useSameLocalMonotonicityResult && localMonotonicityResults.size() == 1)|| unprocessedRegions.size() == localMonotonicityResults.size());
+                    assert ((useSameOrder && orders.size() == 1) || unprocessedRegions.size() == orders.size());
                     assert(unprocessedRegions.size() == refinementDepths.size());
                     currentDepth = refinementDepths.front();
                     STORM_LOG_INFO("Analyzing region #" << numOfAnalyzedRegions << " (Refinement depth " << currentDepth << "; " << storm::utility::convertNumber<double>(fractionOfUndiscoveredArea) * 100 << "% still unknown)");
                     auto& currentRegion = unprocessedRegions.front().first;
                     auto& res = unprocessedRegions.front().second;
-                    std::shared_ptr<storm::analysis::Order> order;
-                    std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult;
 
                     assert(!orders.empty());
-                    order = orders.front();
-                    localMonotonicityResult = localMonotonicityResults.front();
-                    if (!order->getDoneBuilding()) {
-                        extendOrder(order, currentRegion);
+                    if (!useSameOrder) {
+                        order = orders.front();
+                        if (!order->getDoneBuilding()) {
+                            extendOrder(order, currentRegion);
+                        }
                     }
+                    if (!useSameLocalMonotonicityResult) {
+                        localMonotonicityResult = localMonotonicityResults.front();
+                    }
+
                     res = analyzeRegion(env, currentRegion, hypothesis, res, false, order, localMonotonicityResult);
 
                     switch (res) {
@@ -247,46 +247,59 @@ namespace storm {
                                     ++numberOfRegionsKnownThroughMonotonicity;
                                 }
 
-
                                 bool first = true;
                                 for (auto& newRegion : newRegions) {
-                                    if (first) {
-                                        orders.emplace(order);
-                                        localMonotonicityResults.emplace(localMonotonicityResult);
-                                        first = false;
-                                    } else {
-                                        if (!order->getDoneBuilding()) {
-                                            // we need to use copies for both order and local mon res
-                                            orders.emplace(order->copy());
-                                            localMonotonicityResults.emplace(localMonotonicityResult->copy());
-                                        } else if (!localMonotonicityResult->isDone()) {
-                                            // the order will not change anymore
-                                            orders.emplace(order);
-                                            localMonotonicityResults.emplace(localMonotonicityResult->copy());
-                                        } else {
-                                            // both will not change anymore
+                                    if (!useSameOrder) {
+                                        if (first) {
                                             orders.emplace(order);
                                             localMonotonicityResults.emplace(localMonotonicityResult);
+                                            first = false;
+                                        } else {
+                                            if (!order->getDoneBuilding()) {
+                                                // we need to use copies for both order and local mon res
+                                                orders.emplace(order->copy());
+                                                localMonotonicityResults.emplace(localMonotonicityResult->copy());
+                                            } else if (!localMonotonicityResult->isDone()) {
+                                                // the order will not change anymore
+                                                orders.emplace(order);
+                                                localMonotonicityResults.emplace(localMonotonicityResult->copy());
+                                            } else {
+                                                // both will not change anymore
+                                                orders.emplace(order);
+                                                localMonotonicityResults.emplace(localMonotonicityResult);
+                                            }
                                         }
-
+                                    } else if (!useSameLocalMonotonicityResult) {
+                                        if (first) {
+                                            localMonotonicityResults.emplace(localMonotonicityResult);
+                                            first = false;
+                                        } else {
+                                            if (!localMonotonicityResult->isDone()) {
+                                                localMonotonicityResults.emplace(localMonotonicityResult->copy());
+                                            } else {
+                                                localMonotonicityResults.emplace(localMonotonicityResult);
+                                            }
+                                        }
                                     }
-
                                     unprocessedRegions.emplace(std::move(newRegion), initResForNewRegions);
                                     refinementDepths.push(currentDepth + 1);
                                 }
-
                             } else {
                                 // If the region is not further refined, it is still added to the result
                                 result.push_back(std::move(unprocessedRegions.front()));
                             }
-
                             break;
                     }
+
                     ++numOfAnalyzedRegions;
                     unprocessedRegions.pop();
                     refinementDepths.pop();
-                    orders.pop();
-                    localMonotonicityResults.pop();
+                    if (!useSameOrder) {
+                        orders.pop();
+                    }
+                    if (!useSameLocalMonotonicityResult) {
+                        localMonotonicityResults.pop();
+                    }
 
                     if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
                         while (displayedProgress < storm::utility::one<CoefficientType>() - fractionOfUndiscoveredArea) {

@@ -68,6 +68,9 @@ namespace storm {
             
             // Returns the resulting vector. Should only be called AFTER specifying a region
             std::vector<ConstantType> const& getVector() const;
+
+
+            std::vector<std::set<VariableType>> const& getOccurringVariablesAtState() const;
             
             /*
              * During initialization, the actual regions are not known. Hence, we consider abstract valuations,
