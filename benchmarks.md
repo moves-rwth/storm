@@ -6,7 +6,7 @@ layout: default
 
 On this page, you can find (extended) benchmark results accompanying paper submissions.
 
-### The Probabilistic Model Checker Storm (2019)[^1]
+### The Probabilistic Model Checker Storm (2020)[^1]
 
 #### Setup
 The benchmarks were run on 4 cores of an Intel Xeon Platinum 8160 Processor with 12GB of memory available. The timeout was 1800 seconds.
@@ -15,8 +15,8 @@ The benchmarks were run on 4 cores of an Intel Xeon Platinum 8160 Processor with
 All benchmarks from [QComp 2019](http://qcomp.org/competition/2019/index.html) were considered, except for 4 PTA Benchmarks that were not compatible with Storm.
 
 #### Results
-<a target="_blank" href="https://moves-rwth.github.io/storm-benchmark-logs/docs/2019-12/table.html" class="btn btn-primary btn-md active" role="button">Show interactive result table</a>
-<a target="_blank" href="https://doi.org/10.5281/zenodo.3571210" class="btn btn-primary btn-md active" role="button">Download raw data and replication package</a>
+<a target="_blank" href="https://moves-rwth.github.io/storm-benchmark-logs/docs/2020-09/table.html" class="btn btn-primary btn-md active" role="button">Show interactive result table</a>
+<a target="_blank" href="https://doi.org/10.5281/zenodo.4017717" class="btn btn-primary btn-md active" role="button">Download raw data and replication package</a>
 
 
 ### QComp 2019[^2]
