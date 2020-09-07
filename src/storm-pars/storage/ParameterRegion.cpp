@@ -1,7 +1,10 @@
 #include "storm-pars/storage/ParameterRegion.h"
 
+#include <limits>
+
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/OutOfRangeException.h"
 #include "storm/utility/constants.h"
 
 namespace storm {
@@ -88,6 +91,7 @@ namespace storm {
         template<typename ParametricType>
         std::vector<typename ParameterRegion<ParametricType>::Valuation> ParameterRegion<ParametricType>::getVerticesOfRegion(std::set<VariableType> const& consideredVariables) const {
             std::size_t const numOfVariables = consideredVariables.size();
+            STORM_LOG_THROW(numOfVariables <= std::numeric_limits<std::size_t>::digits, storm::exceptions::OutOfRangeException, "Number of variables " << numOfVariables << " is too high.");
             std::size_t const numOfVertices = std::pow(2, numOfVariables);
             std::vector<Valuation> resultingVector(numOfVertices);
             
