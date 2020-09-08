@@ -484,20 +484,22 @@ namespace storm {
                 while (!order->getDoneBuilding() && order->existsNextSortedState()) {
                     // TODO: move this to order extender?
                     auto state = order->getNextSortedState();
-                    if ((std::get<1>(res) == state || std::get<2>(res) == state) && parameterLifter->getOccurringVariablesAtState()[state].size() == 0) {
+                    if ((std::get<1>(res) == state || std::get<2>(res) == state) || parameterLifter->getOccurringVariablesAtState()[state].size() == 0) {
+                        // First || checks if all successors could be order, second part checks if all transitions have constant probability
                         assert (std::get<0>(res) == order);
                         order->add(state);
                         if (!order->existsNextSortedState()) {
-                            // This was the last state, it has only constant probabilities so we are done.
+                            // This was the last state, either it has only constant probabilities so we are done, or all successors could be sorted.
                             order->setDoneBuilding();
                         } else {
                             // We continue as there are more states left
-                            orderExtender->extendOrder(order, region);
+                            res = orderExtender->extendOrder(order, region);
                         }
                     } else {
                         order->addStateToHandle(state);
                         break;
                     }
+                    order = std::get<0>(res);
                 }
             } else {
                 STORM_LOG_WARN("Extending order for RegionModelChecker not implemented");
