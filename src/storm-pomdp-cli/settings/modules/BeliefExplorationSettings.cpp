@@ -29,6 +29,7 @@ namespace storm {
             const std::string cullingThresholdOption = "culling-threshold";
             const std::string numericPrecisionOption = "numeric-precision";
             const std::string triangulationModeOption = "triangulationmode";
+            const std::string explHeuristicOption = "expl-heuristic";
 
             BeliefExplorationSettings::BeliefExplorationSettings() : ModuleSettings(moduleName) {
                 
@@ -53,6 +54,8 @@ namespace storm {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, triangulationModeOption, false,"Sets how to triangulate beliefs when discretizing.").setIsAdvanced().addArgument(
                         storm::settings::ArgumentBuilder::createStringArgument("value","the triangulation mode").setDefaultValueString("dynamic").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"dynamic", "static"})).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, explHeuristicOption, false,"Sets how to sort the states into the exploration queue.").setIsAdvanced().addArgument(
+                        storm::settings::ArgumentBuilder::createStringArgument("value","the exploration heuristic").setDefaultValueString("bfs").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"bfs", "lowerBound", "upperBound", "gap"})).build()).build());
             }
 
             bool BeliefExplorationSettings::isRefineSet() const {
@@ -139,6 +142,22 @@ namespace storm {
             bool BeliefExplorationSettings::isStaticTriangulationModeSet() const {
                 return this->getOption(triangulationModeOption).getArgumentByName("value").getValueAsString() == "static";
             }
+
+            storm::builder::ExplorationHeuristic BeliefExplorationSettings::getExplorationHeuristic() const {
+                if(this->getOption(explHeuristicOption).getArgumentByName("value").getValueAsString() == "bfs") {
+                    return storm::builder::ExplorationHeuristic::BreadthFirst;
+                }
+                if(this->getOption(explHeuristicOption).getArgumentByName("value").getValueAsString() == "lowerBound") {
+                    return storm::builder::ExplorationHeuristic::LowerBoundPrio;
+                }
+                if(this->getOption(explHeuristicOption).getArgumentByName("value").getValueAsString() == "upperBound") {
+                    return storm::builder::ExplorationHeuristic::UpperBoundPrio;
+                }
+                if(this->getOption(explHeuristicOption).getArgumentByName("value").getValueAsString() == "gap") {
+                    return storm::builder::ExplorationHeuristic::GapPrio;
+                }
+                return storm::builder::ExplorationHeuristic::BreadthFirst;
+            }
             
             template<typename ValueType>
             void BeliefExplorationSettings::setValuesInOptionsStruct(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) const {
@@ -177,6 +196,8 @@ namespace storm {
                     }
                 }
                 options.dynamicTriangulation = isDynamicTriangulationModeSet();
+
+                options.explorationHeuristic = getExplorationHeuristic();
             }
             
             template void BeliefExplorationSettings::setValuesInOptionsStruct<double>(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<double>& options) const;

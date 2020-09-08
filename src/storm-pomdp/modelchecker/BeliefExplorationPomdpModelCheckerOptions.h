@@ -3,6 +3,7 @@
 #include <boost/optional.hpp>
 #include "storm/utility/constants.h"
 #include "storm/utility/NumberTraits.h"
+#include "storm-pomdp/builder/BeliefMdpExplorer.h"
 
 namespace storm {
     namespace pomdp {
@@ -41,6 +42,8 @@ namespace storm {
                 
                 ValueType numericPrecision = storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(1e-9); /// Used to decide whether two beliefs are equal
                 bool dynamicTriangulation = true; // Sets whether the triangulation is done in a dynamic way (yielding more precise triangulations)
+
+                storm::builder::ExplorationHeuristic explorationHeuristic = storm::builder::ExplorationHeuristic::BreadthFirst;
             };
         }
     }

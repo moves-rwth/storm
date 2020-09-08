@@ -243,7 +243,7 @@ namespace storm {
                     if (rewardModelName) {
                         manager->setRewardModel(rewardModelName);
                     }
-                    auto approx = std::make_shared<ExplorerType>(manager, pomdpValueBounds);
+                    auto approx = std::make_shared<ExplorerType>(manager, pomdpValueBounds, options.explorationHeuristic);
                     HeuristicParameters heuristicParameters;
                     heuristicParameters.gapThreshold = options.gapThresholdInit;
                     heuristicParameters.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
@@ -287,7 +287,7 @@ namespace storm {
                     if (rewardModelName) {
                         overApproxBeliefManager->setRewardModel(rewardModelName);
                     }
-                    overApproximation = std::make_shared<ExplorerType>(overApproxBeliefManager, pomdpValueBounds);
+                    overApproximation = std::make_shared<ExplorerType>(overApproxBeliefManager, pomdpValueBounds, storm::builder::ExplorationHeuristic::BreadthFirst);
                     overApproxHeuristicPar.gapThreshold = options.gapThresholdInit;
                     overApproxHeuristicPar.observationThreshold = options.obsThresholdInit;
                     overApproxHeuristicPar.sizeThreshold = options.sizeThresholdInit == 0 ? std::numeric_limits<uint64_t>::max() : options.sizeThresholdInit;
@@ -312,7 +312,8 @@ namespace storm {
                     if (rewardModelName) {
                         underApproxBeliefManager->setRewardModel(rewardModelName);
                     }
-                    underApproximation = std::make_shared<ExplorerType>(underApproxBeliefManager, pomdpValueBounds);
+                    //TODO different exploration heuristics in over-approximation?
+                    underApproximation = std::make_shared<ExplorerType>(underApproxBeliefManager, pomdpValueBounds, options.explorationHeuristic);
                     underApproxHeuristicPar.gapThreshold = options.gapThresholdInit;
                     underApproxHeuristicPar.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
                     underApproxHeuristicPar.sizeThreshold = options.sizeThresholdInit;

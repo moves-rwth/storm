@@ -28,7 +28,12 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
-        BeliefMdpExplorer<PomdpType, BeliefValueType>::BeliefMdpExplorer(std::shared_ptr<BeliefManagerType> beliefManager,storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const &pomdpValueBounds) : beliefManager(beliefManager), pomdpValueBounds(pomdpValueBounds), status(Status::Uninitialized) {
+        BeliefMdpExplorer<PomdpType, BeliefValueType>::BeliefMdpExplorer(std::shared_ptr<BeliefManagerType> beliefManager,
+                                                                         storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const &pomdpValueBounds,
+                                                                         ExplorationHeuristic explorationHeuristic) : beliefManager(beliefManager),
+                                                                                                                      pomdpValueBounds(pomdpValueBounds),
+                                                                                                                      explHeuristic(explorationHeuristic),
+                                                                                                                      status(Status::Uninitialized) {
             // Intentionally left empty
         }
 
@@ -42,11 +47,14 @@ namespace storm {
         BeliefMdpExplorer<PomdpType, BeliefValueType>::startNewExploration(boost::optional<ValueType> extraTargetStateValue, boost::optional<ValueType> extraBottomStateValue) {
             status = Status::Exploring;
             // Reset data from potential previous explorations
+            prio = storm::utility::zero<ValueType>();
+            nextId = 0;
             mdpStateToBeliefIdMap.clear();
             beliefIdToMdpStateMap.clear();
             exploredBeliefIds.clear();
             exploredBeliefIds.grow(beliefManager->getNumberOfBeliefIds(), false);
-            mdpStatesToExplore.clear();
+            mdpStatesToExplore = std::priority_queue<std::pair<ValueType, uint64_t>, std::deque<std::pair<ValueType, uint64_t>>, std::less<>>();
+            stateRemapping.clear();
             lowerValueBounds.clear();
             upperValueBounds.clear();
             values.clear();
@@ -71,6 +79,7 @@ namespace storm {
 
                 internalAddTransition(getStartOfCurrentRowGroup(), extraBottomState.get(), storm::utility::one<ValueType>());
                 internalAddRowGroupIndex();
+                ++nextId;
             } else {
                 extraBottomState = boost::none;
             }
@@ -85,6 +94,7 @@ namespace storm {
 
                 targetStates.grow(getCurrentNumberOfMdpStates(), false);
                 targetStates.set(extraTargetState.get(), true);
+                ++nextId;
             } else {
                 extraTargetState = boost::none;
             }
@@ -99,6 +109,8 @@ namespace storm {
             STORM_LOG_ASSERT(status == Status::ModelChecked || status == Status::ModelFinished, "Method call is invalid in current status.");
             status = Status::Exploring;
             // We will not erase old states during the exploration phase, so most state-based data (like mappings between MDP and Belief states) remain valid.
+            prio = storm::utility::zero<ValueType>();
+            stateRemapping.clear();
             exploredBeliefIds.clear();
             exploredBeliefIds.grow(beliefManager->getNumberOfBeliefIds(), false);
             exploredMdpTransitions.clear();
@@ -113,7 +125,7 @@ namespace storm {
             truncatedStates = storm::storage::BitVector(getCurrentNumberOfMdpStates(), false);
             culledStates = storm::storage::BitVector(getCurrentNumberOfMdpStates(), false);
             delayedExplorationChoices.clear();
-            mdpStatesToExplore.clear();
+            mdpStatesToExplore = std::priority_queue<std::pair<ValueType, uint64_t>, std::deque<std::pair<ValueType, uint64_t>>, std::less<>>();
 
             // The extra states are not changed
             if (extraBottomState) {
@@ -146,9 +158,21 @@ namespace storm {
             }
 
             // Pop from the queue.
-            currentMdpState = mdpStatesToExplore.front();
-            mdpStatesToExplore.pop_front();
+            currentMdpState = mdpStatesToExplore.top().second;
+            auto currprio = mdpStatesToExplore.top().first;
+            mdpStatesToExplore.pop();
+            if (currentMdpState != nextId && !currentStateHasOldBehavior()) {
+                stateRemapping[currentMdpState] = nextId;
+                STORM_LOG_DEBUG(
+                        "Explore state " << currentMdpState << " [Bel " << getCurrentBeliefId() << " " << beliefManager->toString(getCurrentBeliefId()) << "] as state with ID " << nextId << " (Prio: " << storm::utility::to_string(currprio) << ")");
+            } else {
+                STORM_LOG_DEBUG(
+                        "Explore state " << currentMdpState << " [Bel " << getCurrentBeliefId() << " " << beliefManager->toString(getCurrentBeliefId()) << "]" << " (Prio: " << storm::utility::to_string(currprio) << ")");
+            }
 
+            if(!currentStateHasOldBehavior()) {
+                ++nextId;
+            }
 
             return mdpStateToBeliefIdMap[currentMdpState];
         }
@@ -338,7 +362,26 @@ namespace storm {
                     if (!exploredBeliefIds.get(beliefId)) {
                         // This belief needs exploration
                         exploredBeliefIds.set(beliefId, true);
-                        mdpStatesToExplore.push_back(transition.getColumn());
+                        // TODO set priority correctly
+                        ValueType currentPrio;
+                        switch (explHeuristic) {
+                            case ExplorationHeuristic::BreadthFirst :
+                                currentPrio = prio;
+                                prio = prio - storm::utility::one<ValueType>();
+                                break;
+                            case ExplorationHeuristic::LowerBoundPrio :
+                                currentPrio = getLowerValueBoundAtCurrentState();
+                                break;
+                            case ExplorationHeuristic::UpperBoundPrio :
+                                currentPrio = getUpperValueBoundAtCurrentState();
+                                break;
+                            case ExplorationHeuristic::GapPrio        :
+                                currentPrio = getUpperValueBoundAtCurrentState() - getLowerValueBoundAtCurrentState();
+                                break;
+                            default :
+                                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Other heuristics not implemented yet");
+                        }
+                        mdpStatesToExplore.push(std::make_pair(currentPrio, transition.getColumn()));
                     }
                 }
             }
@@ -377,6 +420,20 @@ namespace storm {
             optimalChoices = boost::none;
             optimalChoicesReachableMdpStates = boost::none;
 
+            // Apply state remapping to the Belief-State maps
+            if (!stateRemapping.empty()) {
+                std::vector<BeliefId> remappedStateToBeliefIdMap(mdpStateToBeliefIdMap);
+                for (auto const &entry : stateRemapping) {
+                    remappedStateToBeliefIdMap[entry.second] = mdpStateToBeliefIdMap[entry.first];
+                }
+                mdpStateToBeliefIdMap = remappedStateToBeliefIdMap;
+                for (auto const &beliefMdpState : beliefIdToMdpStateMap) {
+                    if (stateRemapping.find(beliefMdpState.second) != stateRemapping.end()) {
+                        beliefIdToMdpStateMap[beliefMdpState.first] = stateRemapping[beliefMdpState.second];
+                    }
+                }
+            }
+
             // Create the tranistion matrix
             uint64_t entryCount = 0;
             for (auto const &row : exploredMdpTransitions) {
@@ -390,7 +447,11 @@ namespace storm {
                 builder.newRowGroup(rowIndex);
                 for (; rowIndex < groupEnd; ++rowIndex) {
                     for (auto const &entry : exploredMdpTransitions[rowIndex]) {
-                        builder.addNextValue(rowIndex, entry.first, entry.second);
+                        if (stateRemapping.find(entry.first) == stateRemapping.end()) {
+                            builder.addNextValue(rowIndex, entry.first, entry.second);
+                        } else {
+                            builder.addNextValue(rowIndex, stateRemapping[entry.first], entry.second);
+                        }
                     }
                 }
             }
@@ -429,7 +490,8 @@ namespace storm {
             exploredMdp = std::make_shared<storm::models::sparse::Mdp<ValueType>>(std::move(modelComponents));
             status = Status::ModelFinished;
             STORM_LOG_DEBUG(
-                    "Explored Mdp with " << exploredMdp->getNumberOfStates() << " states (" << culledStates.getNumberOfSetBits() << " of which were culled and " << truncatedStates.getNumberOfSetBits() - culledStates.getNumberOfSetBits()  << " of which were flagged as truncated).");
+                    "Explored Mdp with " << exploredMdp->getNumberOfStates() << " states (" << culledStates.getNumberOfSetBits() << " of which were culled and "
+                                         << truncatedStates.getNumberOfSetBits() - culledStates.getNumberOfSetBits() << " of which were flagged as truncated).");
         }
 
         template<typename PomdpType, typename BeliefValueType>
@@ -469,6 +531,8 @@ namespace storm {
                 // All states are relevant so nothing to do
                 return;
             }
+
+            nextId -= (relevantMdpStates.size() - relevantMdpStates.getNumberOfSetBits());
 
             // Translate various components to the "new" MDP state set
             storm::utility::vector::filterVectorInPlace(mdpStateToBeliefIdMap, relevantMdpStates);
@@ -766,13 +830,17 @@ namespace storm {
         template<typename PomdpType, typename BeliefValueType>
         typename BeliefMdpExplorer<PomdpType, BeliefValueType>::MdpStateType BeliefMdpExplorer<PomdpType, BeliefValueType>::getCurrentMdpState() const {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
-            return currentMdpState;
+            if (stateRemapping.find(currentMdpState) != stateRemapping.end()) {
+                return stateRemapping.at(currentMdpState);
+            } else {
+                return currentMdpState;
+            }
         }
 
         template<typename PomdpType, typename BeliefValueType>
         typename BeliefMdpExplorer<PomdpType, BeliefValueType>::MdpStateType BeliefMdpExplorer<PomdpType, BeliefValueType>::getCurrentBeliefId() const {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
-            return getBeliefId(getCurrentMdpState());
+            return getBeliefId(currentMdpState);
         }
 
         template<typename PomdpType, typename BeliefValueType>
@@ -822,7 +890,26 @@ namespace storm {
                 if (exploredMdp) {
                     auto findRes = beliefIdToMdpStateMap.find(beliefId);
                     if (findRes != beliefIdToMdpStateMap.end()) {
-                        mdpStatesToExplore.push_back(findRes->second);
+                        //TODO set priority
+                        ValueType currentPrio;
+                        switch (explHeuristic) {
+                            case ExplorationHeuristic::BreadthFirst :
+                                currentPrio = prio;
+                                prio = prio - storm::utility::one<ValueType>();
+                                break;
+                            case ExplorationHeuristic::LowerBoundPrio :
+                                currentPrio = getLowerValueBoundAtCurrentState();
+                                break;
+                            case ExplorationHeuristic::UpperBoundPrio :
+                                currentPrio = getUpperValueBoundAtCurrentState();
+                                break;
+                            case ExplorationHeuristic::GapPrio        :
+                                currentPrio = getUpperValueBoundAtCurrentState() - getLowerValueBoundAtCurrentState();
+                                break;
+                            default :
+                                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Other heuristics not implemented yet");
+                        }
+                        mdpStatesToExplore.push(std::make_pair(currentPrio, findRes->second));
                         return findRes->second;
                     }
                 }
@@ -832,13 +919,32 @@ namespace storm {
                 mdpStateToBeliefIdMap.push_back(beliefId);
                 beliefIdToMdpStateMap[beliefId] = result;
                 insertValueHints(computeLowerValueBoundAtBelief(beliefId), computeUpperValueBoundAtBelief(beliefId));
-                mdpStatesToExplore.push_back(result);
+                //TODO set priority
+                ValueType currentPrio;
+                switch (explHeuristic) {
+                    case ExplorationHeuristic::BreadthFirst :
+                        currentPrio = prio;
+                        prio = prio - storm::utility::one<ValueType>();
+                        break;
+                    case ExplorationHeuristic::LowerBoundPrio :
+                        currentPrio = getLowerValueBoundAtCurrentState();
+                        break;
+                    case ExplorationHeuristic::UpperBoundPrio :
+                        currentPrio = getUpperValueBoundAtCurrentState();
+                        break;
+                    case ExplorationHeuristic::GapPrio        :
+                        currentPrio = getUpperValueBoundAtCurrentState() - getLowerValueBoundAtCurrentState();
+                        break;
+                    default :
+                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Other heuristics not implemented yet");
+                }
+                mdpStatesToExplore.push(std::make_pair(currentPrio, result));
                 return result;
             }
         }
 
         template<typename PomdpType, typename BeliefValueType>
-        std::vector<typename  BeliefMdpExplorer<PomdpType, BeliefValueType>::BeliefId>  BeliefMdpExplorer<PomdpType, BeliefValueType>::getBeliefsInMdp(){
+        std::vector<typename BeliefMdpExplorer<PomdpType, BeliefValueType>::BeliefId> BeliefMdpExplorer<PomdpType, BeliefValueType>::getBeliefsInMdp() {
             return mdpStateToBeliefIdMap;
         }
 

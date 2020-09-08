@@ -4,6 +4,7 @@
 #include <vector>
 #include <deque>
 #include <map>
+#include <queue>
 #include <boost/optional.hpp>
 
 
@@ -14,6 +15,13 @@
 namespace storm {
     
     namespace builder {
+        enum class ExplorationHeuristic {
+            BreadthFirst,
+            LowerBoundPrio,
+            UpperBoundPrio,
+            GapPrio
+        };
+
         template<typename PomdpType, typename BeliefValueType = typename PomdpType::ValueType>
         class BeliefMdpExplorer {
         public:
@@ -38,7 +46,7 @@ namespace storm {
                 ModelChecked
             };
 
-            BeliefMdpExplorer(std::shared_ptr<BeliefManagerType> beliefManager, storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const &pomdpValueBounds);
+            BeliefMdpExplorer(std::shared_ptr<BeliefManagerType> beliefManager, storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const &pomdpValueBounds, ExplorationHeuristic explorationHeuristic = ExplorationHeuristic::BreadthFirst);
 
             BeliefMdpExplorer(BeliefMdpExplorer &&other) = default;
 
@@ -210,11 +218,14 @@ namespace storm {
             storm::storage::BitVector exploredBeliefIds;
             
             // Exploration information
-            std::deque<uint64_t> mdpStatesToExplore;
+            std::priority_queue<std::pair<ValueType, uint64_t>, std::deque<std::pair<ValueType, uint64_t>>, std::less<>> mdpStatesToExplore;
             std::vector<std::map<MdpStateType, ValueType>> exploredMdpTransitions;
             std::vector<MdpStateType> exploredChoiceIndices;
             std::vector<ValueType> mdpActionRewards;
             uint64_t currentMdpState;
+            std::map<MdpStateType, MdpStateType> stateRemapping;
+            uint64_t nextId;
+            ValueType prio;
             
             // Special states and choices during exploration
             boost::optional<MdpStateType> extraTargetState;
@@ -237,6 +248,7 @@ namespace storm {
             boost::optional<storm::storage::BitVector> optimalChoicesReachableMdpStates;
             
             // The current status of this explorer
+            ExplorationHeuristic explHeuristic;
             Status status;
         };
     }

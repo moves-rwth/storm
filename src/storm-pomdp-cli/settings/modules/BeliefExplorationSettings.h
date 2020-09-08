@@ -2,6 +2,7 @@
 
 #include "storm-config.h"
 #include "storm/settings/modules/ModuleSettings.h"
+#include "storm-pomdp/builder/BeliefMdpExplorer.h"
 
 namespace storm {
     namespace pomdp {
@@ -63,6 +64,8 @@ namespace storm {
                 
                 bool isDynamicTriangulationModeSet() const;
                 bool isStaticTriangulationModeSet() const;
+
+                storm::builder::ExplorationHeuristic getExplorationHeuristic() const;
     
                 template<typename ValueType>
                 void setValuesInOptionsStruct(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) const;
