@@ -57,10 +57,13 @@ namespace storm {
 
             }
 
-//            template<typename ValueType, typename StateType>
-//            void ExplicitFigaroModelBuilder<ValueType, StateType>::buildModel(size_t iteration, double approximationThreshold, storm::builder::ApproximationHeuristic approximationHeuristic) {
-//                STORM_LOG_TRACE("Generating DFT state space");
-//                usedHeuristic = approximationHeuristic;
+            template<typename ValueType, typename StateType>
+            void ExplicitFigaroModelBuilder<ValueType, StateType>::buildModel(size_t iteration, double approximationThreshold, storm::builder::ApproximationHeuristic approximationHeuristic) {
+                STORM_LOG_TRACE("Generating DFT state space");
+                usedHeuristic = approximationHeuristic;
+                std::cout<<"hello world";
+                exit(8);
+            }
 //
 //                if (approximationThreshold > 0 && !this->uniqueFailedState && false) {
 //                    // Approximation requires unique failed states

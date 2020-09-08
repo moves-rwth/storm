@@ -1,3 +1,5 @@
+//#define NOAPPROXIMATION
+
 #include "FigaroModelChecker.h"
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm/settings/modules/IOSettings.h"
@@ -19,39 +21,111 @@
 
 
 namespace storm{
-    namespace figaro{
-        namespace modelchecker{
+    namespace figaro {
+        namespace modelchecker {
 
             template<typename ValueType>
-            typename FigaroModelChecker<ValueType>::figaro_results FigaroModelChecker<ValueType>::check(storm::figaro::FigaroProgram & origFigaro, typename FigaroModelChecker<ValueType>::property_vector const& properties,
-                                                                                               double approximationError, storm::builder::ApproximationHeuristic approximationHeuristic,
-                                                                                               bool eliminateChains) {
+            typename FigaroModelChecker<ValueType>::figaro_results
+            FigaroModelChecker<ValueType>::check(storm::figaro::FigaroProgram &origFigaro,
+                                                 typename FigaroModelChecker<ValueType>::property_vector const &properties,
+                                                 double approximationError,
+                                                 storm::builder::ApproximationHeuristic approximationHeuristic,
+                                                 bool eliminateChains) {
                 totalTimer.start();
                 typename FigaroModelChecker<ValueType>::figaro_results results;
 
                 // Checking Figaro Program
 
-                    results = checkFigaro(origFigaro, properties, approximationError, approximationHeuristic, eliminateChains);
+                results = checkFigaro(origFigaro, properties, approximationError, approximationHeuristic,
+                                      eliminateChains);
                 totalTimer.stop();
                 return results;
             }
 
             template<typename ValueType>
             typename FigaroModelChecker<ValueType>::figaro_results
-            FigaroModelChecker<ValueType>::checkFigaro(storm::figaro::FigaroProgram & origFigaro, typename FigaroModelChecker<ValueType>::property_vector const& properties,
-                                                 double approximationError, storm::builder::ApproximationHeuristic approximationHeuristic, bool eliminateChains) {
+            FigaroModelChecker<ValueType>::checkFigaro(storm::figaro::FigaroProgram &origFigaro,
+                                                       typename FigaroModelChecker<ValueType>::property_vector const &properties,
+                                                       double approximationError,
+                                                       storm::builder::ApproximationHeuristic approximationHeuristic,
+                                                       bool eliminateChains) {
                 typename FigaroModelChecker<ValueType>::figaro_results results; //@shahid: remove this line later
                 explorationTimer.start();
                 auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
                 auto figaroIOSettings = storm::settings::getModule<storm::settings::modules::FIGAROIOSettings>();
 
+#ifdef NOAPPROXIMATION
+                STORM_LOG_DEBUG("Building Model...");
+                //************************************* @TODO: Move this part into explict model builder later
+                storm::figaro::builder::ExplicitFigaroModelBuilder<ValueType> builder(origFigaro);
+                std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.buildModelNoApproximation();
+                model->printModelInformationToStream(std::cout);
 
 
+                if (model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                    auto ma = std::static_pointer_cast<storm::models::sparse::MarkovAutomaton<ValueType>>(
+                            model);
+                    if (ma->hasOnlyTrivialNondeterminism()) {
+                        model = ma->convertToCtmc();
+                    } else {
+                        model = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(
+                                ma, storm::transformer::EliminationLabelBehavior::MergeLabels);
+                    }
+                }
+                model->printModelInformationToStream(std::cout);
+                std::ofstream stream;
+                // Check the model
+                STORM_LOG_DEBUG("Model checking...");
+                modelCheckingTimer.start();
+                std::vector<ValueType> results_new;
+                for (auto property : properties) {
 
+                    STORM_PRINT_AND_LOG("Model checking property " << *property << " ..." << std::endl);
+                    stream << "Model checking property " << *property << " ..." << std::endl;
+                    std::unique_ptr<storm::modelchecker::CheckResult> result(
+                            storm::api::verifyWithSparseEngine<ValueType>(model,
+                                                                          storm::api::createTask<ValueType>(property,
+                                                                                                            true)));
+
+                    if (result) {
+                        result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
+                        ValueType resultValue = result->asExplicitQuantitativeCheckResult<ValueType>().getValueMap().begin()->second;
+                        results_new.push_back(resultValue);
+                        STORM_PRINT_AND_LOG("Result (initial states): " << resultValue << std::endl);
+                        stream << "Result (initial states): " << resultValue << std::endl;
+                    } else {
+                        STORM_LOG_WARN(
+                                "The property '" << *property << "' could not be checked with the current settings.");
+                        results_new.push_back(storm::utility::one<ValueType>());
+                        stream << "The property '" << *property << "' could not be checked with the current settings.";
+                    }
+                }
+                explorationTimer.stop();
+                if (printInfo) {
+                    model->printModelInformationToStream(std::cout);
+                }
+                    // Export the model if required
+                    // TODO move this outside of the model checker?
+                    if (ioSettings.isExportExplicitSet()) {
+                        std::vector<std::string> parameterNames;
+                        // TODO fill parameter names
+                        storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), parameterNames, !ioSettings.isExplicitExportPlaceholdersDisabled());
+                    }
+                    if (ioSettings.isExportDotSet()) {
+                        storm::api::exportSparseModelAsDot(model, ioSettings.getExportDotFilename(), ioSettings.getExportDotMaxWidth());
+                    }
+                // Model checking
+                std::vector<ValueType> resultsValue = checkModel(model, properties);
+                for (ValueType result : resultsValue) {
+                    results.push_back(result);
+                }
+                return results;
+            }
+#else
 
 // start approximation from here Comment it for the momment and
 //@TODO: come back to this part for abstractions.
-                if (false){
+                if (false) {
 //                    (approximationError > 0.0) {
 //                        // Comparator for checking the error of the approximation
 //                        storm::utility::ConstantsComparator<ValueType> comparator;
@@ -155,78 +229,75 @@ namespace storm{
 //                        return results;
 //                    }
                 } else {
-//                    // Build a single Markov Automaton/Markov Chain
+//                    // Build a single Markov Automaton/ Markov Chain
                     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
                     STORM_LOG_DEBUG("Building Model...");
-                    //*************************************
                     //************************************* @TODO: Move this part into explict model builder later
-
-
                     storm::figaro::builder::ExplicitFigaroModelBuilder<ValueType> builder(origFigaro);
-                    std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.buildModelNoApproximation();
-                    model->printModelInformationToStream(std::cout);
-                    //*************************************
-//                    builder.buildModel(0, 0.0);
-//                    std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
-                    //if (eliminateChains && model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                    builder.buildModel(0, 0.0);
+                    std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
+                    if (eliminateChains && model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
 
-                    if (model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
-                        auto ma = std::static_pointer_cast<storm::models::sparse::MarkovAutomaton<ValueType>>(
-                                model);
-                        if (ma->hasOnlyTrivialNondeterminism()) {
-                            // Markov automaton can be converted into CTMC
+                        if (model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                            auto ma = std::static_pointer_cast<storm::models::sparse::MarkovAutomaton<ValueType>>(
+                                    model);
+                            if (ma->hasOnlyTrivialNondeterminism()) {
+                                // Markov automaton can be converted into CTMC
                                 model = ma->convertToCtmc();
+                            } else {
+                                model = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(
+                                        ma, storm::transformer::EliminationLabelBehavior::MergeLabels);
+                            }
                         }
-                        else {
-                            model = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(
-                                    ma, storm::transformer::EliminationLabelBehavior::MergeLabels);
-                        }
-                    }
-                            model->printModelInformationToStream(std::cout);
-                            storm::api::exportSparseModelAsDot(model,"hello.dot");
-        storm::api::exportSparseModelAsDrn(model,"hello.drn");
-    std::ofstream stream;
+                        model->printModelInformationToStream(std::cout);
+//                            storm::api::exportSparseModelAsDot(model,"hello.dot");
+//        storm::api::exportSparseModelAsDrn(model,"hello.drn");
+                        std::ofstream stream;
 
 
-    // Check the model
-    STORM_LOG_DEBUG("Model checking...");
+                        // Check the model
+                        STORM_LOG_DEBUG("Model checking...");
 //    modelCheckingTimer.start();
-    std::vector<ValueType> results_new;
+                        std::vector<ValueType> results_new;
                         for (auto property : properties) {
 
-        STORM_PRINT_AND_LOG("Model checking property " << *property << " ..." << std::endl);
-        stream << "Model checking property " << *property << " ..." << std::endl;
-        std::unique_ptr<storm::modelchecker::CheckResult> result(
-                storm::api::verifyWithSparseEngine<ValueType>(model,
-                                                              storm::api::createTask<ValueType>(property,
-                                                                                                true)));
+                            STORM_PRINT_AND_LOG("Model checking property " << *property << " ..." << std::endl);
+                            stream << "Model checking property " << *property << " ..." << std::endl;
+                            std::unique_ptr<storm::modelchecker::CheckResult> result(
+                                    storm::api::verifyWithSparseEngine<ValueType>(model,
+                                                                                  storm::api::createTask<ValueType>(
+                                                                                          property,
+                                                                                          true)));
 
-        if (result) {
-            result->filter(storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
-            ValueType resultValue = result->asExplicitQuantitativeCheckResult<ValueType>().getValueMap().begin()->second;
-            results_new.push_back(resultValue);
-            STORM_PRINT_AND_LOG("Result (initial states): " << resultValue << std::endl);
-            stream << "Result (initial states): " << resultValue << std::endl;
-        } else {
-            STORM_LOG_WARN(
-                    "The property '" << *property << "' could not be checked with the current settings.");
-            results_new.push_back(storm::utility::one<ValueType>());
-            stream << "The property '" << *property << "' could not be checked with the current settings.";
-        }
+                            if (result) {
+                                result->filter(
+                                        storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
+                                ValueType resultValue = result->asExplicitQuantitativeCheckResult<ValueType>().getValueMap().begin()->second;
+                                results_new.push_back(resultValue);
+                                STORM_PRINT_AND_LOG("Result (initial states): " << resultValue << std::endl);
+                                stream << "Result (initial states): " << resultValue << std::endl;
+                            } else {
+                                STORM_LOG_WARN(
+                                        "The property '" << *property
+                                                         << "' could not be checked with the current settings.");
+                                results_new.push_back(storm::utility::one<ValueType>());
+                                stream << "The property '" << *property
+                                       << "' could not be checked with the current settings.";
+                            }
 
 //
 //                        model = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(
 //                model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(),
 //                storm::transformer::EliminationLabelBehavior::MergeLabels);
 
-                    }
-                    explorationTimer.stop();
+                        }
+                        explorationTimer.stop();
 
-                    // Print model information
+                        // Print model information
 
-                    if (true){//(printInfo) {
-                        model->printModelInformationToStream(std::cout);
-                    }
+                        if (true) {//(printInfo) {
+                            model->printModelInformationToStream(std::cout);
+                        }
 
 //                    // Export the model if required
 //                    // TODO move this outside of the model checker?
@@ -239,16 +310,18 @@ namespace storm{
 //                        storm::api::exportSparseModelAsDot(model, ioSettings.getExportDotFilename(), ioSettings.getExportDotMaxWidth());
 //                    }
 //
-                    // Model checking
-                    std::vector<ValueType> resultsValue = checkModel(model, properties);
-                    figaro_results results;
-                    for (ValueType result : resultsValue) {
-                        results.push_back(result);
+                        // Model checking
+                        std::vector<ValueType> resultsValue = checkModel(model, properties);
+                        figaro_results results;
+                        for (ValueType result : resultsValue) {
+                            results.push_back(result);
+                        }
+                        return results;
                     }
-                    return results;
                 }
             }
 
+#endif
             template<typename ValueType>
             std::vector<ValueType>
             FigaroModelChecker<ValueType>::checkModel(std::shared_ptr<storm::models::sparse::Model<ValueType>> &model,
