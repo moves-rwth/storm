@@ -480,6 +480,7 @@ namespace storm {
         std::shared_ptr<storm::analysis::Order>  SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::extendOrder(std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<typename SparseModelType::ValueType> region) {
             if (useOrderExtender) {
                 auto res = orderExtender->extendOrder(order, region);
+                order = std::get<0>(res);
                 while (!order->getDoneBuilding() && order->existsNextSortedState()) {
                     // TODO: move this to order extender?
                     auto state = order->getNextSortedState();
@@ -498,11 +499,10 @@ namespace storm {
                         break;
                     }
                 }
-            return order;
             } else {
                 STORM_LOG_WARN("Extending order for RegionModelChecker not implemented");
-                return order;
             }
+            return order;
         }
 
         template<typename SparseModelType, typename ConstantType>
