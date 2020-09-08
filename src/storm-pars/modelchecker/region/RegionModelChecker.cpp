@@ -146,6 +146,8 @@ namespace storm {
                 std::shared_ptr<storm::analysis::Order> order;
                 std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult;
                 if (useMonotonicity && fractionOfUndiscoveredArea > thresholdAsCoefficient && !unprocessedRegions.empty()) {
+                    storm::utility::Stopwatch monWatch(true);
+
                     orders.emplace(extendOrder(nullptr, region));
                     assert (orders.front() != nullptr);
                     auto monRes = std::shared_ptr< storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(orders.front()->getNumberOfStates()));
@@ -175,6 +177,8 @@ namespace storm {
                             localMonotonicityResults.emplace(localMonotonicityResult);
                         }
                     }
+                    monWatch.stop();
+                    STORM_PRINT(std::endl << "Time for orderBuilding and monRes initialization: " << monWatch << "." << std::endl << std::endl);
                 }
                 bool useSameOrder = useMonotonicity && order->getDoneBuilding();
                 bool useSameLocalMonotonicityResult = useSameOrder && localMonotonicityResult->isDone();
