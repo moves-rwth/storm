@@ -3044,30 +3044,39 @@ mtbdd_leaf_to_str(MTBDD leaf, char *buf, size_t buflen)
  */
 
 static void
-mtbdd_fprintdot_rec(FILE *out, MTBDD mtbdd)
+mtbdd_fprintdot_rec(FILE *out, MTBDD mtbdd, int *mtbdd_true_marked, int *mtbdd_false_marked)
 {
-    mtbddnode_t n = MTBDD_GETNODE(mtbdd); // also works for mtbdd_false
-    if (mtbddnode_getmark(n)) return;
-    mtbddnode_setmark(n, 1);
-
-    if (mtbdd == mtbdd_true || mtbdd == mtbdd_false) {
-        fprintf(out, "0 [shape=box, style=filled, label=\"F\"];\n");
-    } else if (mtbddnode_isleaf(n)) {
-        fprintf(out, "%" PRIu64 " [shape=box, style=filled, label=\"", MTBDD_STRIPMARK(mtbdd));
-        mtbdd_fprint_leaf(out, mtbdd);
-        fprintf(out, "\"];\n");
+    if (mtbdd == mtbdd_true) {
+        if (*mtbdd_true_marked) return;
+        *mtbdd_true_marked = 1;
+        fprintf(out, "%" PRIu64 " [shape=box, style=filled, label=\"T\"];\n", mtbdd);
+    } else if (mtbdd == mtbdd_false) {
+        if (*mtbdd_false_marked) return;
+        *mtbdd_false_marked = 1;
+        fprintf(out, "%" PRIu64 " [shape=box, style=filled, label=\"F\"];\n", mtbdd);
     } else {
-        fprintf(out, "%" PRIu64 " [label=\"%" PRIu32 "\"];\n",
-                MTBDD_STRIPMARK(mtbdd), mtbddnode_getvariable(n));
-
-        mtbdd_fprintdot_rec(out, mtbddnode_getlow(n));
-        mtbdd_fprintdot_rec(out, mtbddnode_gethigh(n));
-
-        fprintf(out, "%" PRIu64 " -> %" PRIu64 " [style=dashed];\n",
-                MTBDD_STRIPMARK(mtbdd), mtbddnode_getlow(n));
-        fprintf(out, "%" PRIu64 " -> %" PRIu64 " [style=solid dir=both arrowtail=%s];\n",
-                MTBDD_STRIPMARK(mtbdd), MTBDD_STRIPMARK(mtbddnode_gethigh(n)),
-                mtbddnode_getcomp(n) ? "dot" : "none");
+        mtbddnode_t n = MTBDD_GETNODE(mtbdd); // also works for mtbdd_false
+        if (mtbddnode_getmark(n)) return;
+        mtbddnode_setmark(n, 1);
+        if (mtbddnode_isleaf(n)) {
+            fprintf(out, "%" PRIu64 " [shape=box, style=filled, label=\"", MTBDD_STRIPMARK(mtbdd));
+            mtbdd_fprint_leaf(out, mtbdd);
+            fprintf(out, "\"];\n");
+        } else {
+            fprintf(out, "%" PRIu64 " [label=\"%" PRIu32 "\"];\n",
+                    MTBDD_STRIPMARK(mtbdd), mtbddnode_getvariable(n));
+    
+            mtbdd_fprintdot_rec(out, mtbddnode_getlow(n), mtbdd_true_marked, mtbdd_false_marked);
+            mtbdd_fprintdot_rec(out, mtbddnode_gethigh(n), mtbdd_true_marked, mtbdd_false_marked);
+    
+            fprintf(out, "%" PRIu64 " -> %" PRIu64 " [style=dashed];\n",
+                    MTBDD_STRIPMARK(mtbdd),
+                    (mtbddnode_getlow(n) == mtbdd_true || mtbddnode_getlow(n) == mtbdd_false) ? mtbddnode_getlow(n) : MTBDD_STRIPMARK(mtbddnode_getlow(n)));
+            fprintf(out, "%" PRIu64 " -> %" PRIu64 " [style=solid dir=both arrowtail=%s];\n",
+                    MTBDD_STRIPMARK(mtbdd),
+                    (mtbddnode_gethigh(n) == mtbdd_true || mtbddnode_gethigh(n) == mtbdd_false) ? mtbddnode_gethigh(n) : MTBDD_STRIPMARK(mtbddnode_gethigh(n)),
+                    mtbddnode_getcomp(n) ? "dot" : "none");
+        }
     }
 }
 
@@ -3082,7 +3091,9 @@ mtbdd_fprintdot(FILE *out, MTBDD mtbdd)
     fprintf(out, "root -> %" PRIu64 " [style=solid dir=both arrowtail=%s];\n",
             MTBDD_STRIPMARK(mtbdd), MTBDD_HASMARK(mtbdd) ? "dot" : "none");
 
-    mtbdd_fprintdot_rec(out, mtbdd);
+    int mtbdd_true_marked = 0;
+    int mtbdd_false_marked = 0;
+    mtbdd_fprintdot_rec(out, mtbdd, &mtbdd_true_marked, &mtbdd_false_marked);
     mtbdd_unmark_rec(mtbdd);
 
     fprintf(out, "}\n");
