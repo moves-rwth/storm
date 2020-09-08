@@ -209,7 +209,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region) {
+        std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region) {
             // TODO @Jip: dit niet zo doen maar meegeven via functie?
             this->region = region;
             if (order == nullptr) {
@@ -247,15 +247,14 @@ namespace storm {
                     } else {
                         // Put currentState in the list of states we should handle as we couldn't add it yet.
                         order->addStateToHandle(currentState);
-                        break;
+                        return std::make_tuple(order, stateSucc1, stateSucc2);
                     }
                 }
             }
 
-            if (currentState == numberOfStates) {
-                order->setDoneBuilding();
-            }
-            return order;
+            assert (currentState == numberOfStates);
+            order->setDoneBuilding();
+            return std::make_tuple(order, numberOfStates, numberOfStates);
         }
 
         template <typename ValueType, typename ConstantType>

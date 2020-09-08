@@ -65,11 +65,13 @@ namespace storm {
             /*!
              * Extends the order for the given region.
              *
-             * @param order The order.
+             * @param order pointer to the order.
              * @param region The region on which the order needs to be extended.
-             * @return A pointer to the extended order.
+             * @return Two states of which the current place in the order
+             *         is unknown but needed. When the states have as number the number of states, no states are
+             *         unplaced or needed.
              */
-            std::shared_ptr<Order> extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region);
+            std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region);
 
         private:
             std::shared_ptr<Order> getBottomTopOrder();
