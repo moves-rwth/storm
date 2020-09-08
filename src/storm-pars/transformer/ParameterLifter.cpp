@@ -51,6 +51,10 @@ namespace storm {
                             constant = false;
                         }
                         ++pMatrixEntryCount;
+                    } else {
+                        if (!storm::utility::isConstant(entry.getValue())) {
+                            storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
+                        }
                     }
                 }
                 if (constant) {

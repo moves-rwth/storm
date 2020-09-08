@@ -104,13 +104,13 @@ namespace storm {
                     }
 
                     if (existsSat && getInstantiationCheckerSAT().check(env, valuationToCheckSat)->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
-                        STORM_LOG_INFO("Region " << region << " is AllSat, discovered with instantiation checker and help of monotonicity" << std::endl);
+                        STORM_LOG_INFO("Region " << region << " is AllSat, discovered with instantiation checker on " << valuationToCheckSat << " and help of monotonicity" << std::endl);
                         RegionModelChecker<typename SparseModelType::ValueType>::numberOfRegionsKnownThroughMonotonicity++;
                         return RegionResult::AllSat;
                     }
 
                     if (existsViolated && !getInstantiationCheckerVIO().check(env, valuationToCheckViolated)->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
-                        STORM_LOG_INFO("Region " << region << " is AllViolated, discovered with instantiation checker and help of monotonicity" << std::endl);
+                        STORM_LOG_INFO("Region " << region << " is AllViolated, discovered with instantiation checker on " << valuationToCheckViolated << " and help of monotonicity" << std::endl);
                         RegionModelChecker<typename SparseModelType::ValueType>::numberOfRegionsKnownThroughMonotonicity++;
                         return RegionResult::AllViolated;
                     }
