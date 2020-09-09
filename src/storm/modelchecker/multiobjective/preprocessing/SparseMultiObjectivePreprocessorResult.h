@@ -48,10 +48,22 @@ namespace storm {
                         return true;
                     }
                     
+                    bool containsLongRunAverageRewardFormulas() const {
+                        for (auto const& obj : objectives) {
+                            if (obj.formula->isRewardOperatorFormula() && obj.formula->getSubformula().isLongRunAverageRewardFormula()) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+                    
                     bool containsOnlyTrivialObjectives() const {
-                        // Trivial objectives are either total reward formulas or single-dimensional step or time bounded cumulative reward formulas
+                        // Trivial objectives are either total reward formulas, LRA reward formulas or single-dimensional step or time bounded cumulative reward formulas
                         for (auto const& obj : objectives) {
                             if (obj.formula->isRewardOperatorFormula() && obj.formula->getSubformula().isTotalRewardFormula()) {
+                                continue;
+                            }
+                            if (obj.formula->isRewardOperatorFormula() && obj.formula->getSubformula().isLongRunAverageRewardFormula()) {
                                 continue;
                             }
                             if (obj.formula->isRewardOperatorFormula() && obj.formula->getSubformula().isCumulativeRewardFormula()) {
