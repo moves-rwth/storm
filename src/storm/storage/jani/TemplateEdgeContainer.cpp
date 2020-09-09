@@ -8,5 +8,13 @@ namespace storm {
                 this->insert(std::make_shared<TemplateEdge>(*te));
             }
         }
+        
+        TemplateEdgeContainer& TemplateEdgeContainer::operator=(const TemplateEdgeContainer& other) {
+            this->clear();
+            for (auto const& te : other) {
+                this->insert(std::make_shared<TemplateEdge>(*te));
+            }
+            return *this;
+        }
     }
 }
