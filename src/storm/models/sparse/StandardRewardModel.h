@@ -34,7 +34,7 @@ namespace storm {
                  * @param optionalStateActionRewardVector The reward values associated with state-action pairs.
                  * @param optionalTransitionRewardMatrix The reward values associated with the transitions of the model.
                  */
-                StandardRewardModel(boost::optional<std::vector<ValueType>>&& optionalStateRewardVector = boost::none,
+                StandardRewardModel(boost::optional<std::vector<ValueType>>&& optionalStateRewardVector,
                                     boost::optional<std::vector<ValueType>>&& optionalStateActionRewardVector = boost::none,
                                     boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix = boost::none);
                 
