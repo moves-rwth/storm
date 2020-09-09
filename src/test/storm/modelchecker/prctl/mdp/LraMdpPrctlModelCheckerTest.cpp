@@ -53,6 +53,18 @@ namespace {
         }
     };
     
+    class SparseSoundEnvironment {
+    public:
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::sparse::Mdp<ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().setForceSoundness(true);
+            return env;
+        }
+    };
+    
     class SparseRationalLinearProgrammingEnvironment {
     public:
         static const bool isExact = true;
@@ -100,7 +112,8 @@ namespace {
   
     typedef ::testing::Types<
             SparseValueTypeValueIterationEnvironment,
-            SparseValueTypeLinearProgrammingEnvironment
+            SparseValueTypeLinearProgrammingEnvironment,
+            SparseSoundEnvironment
 #ifdef STORM_HAVE_Z3_OPTIMIZE
             , SparseRationalLinearProgrammingEnvironment
 #endif

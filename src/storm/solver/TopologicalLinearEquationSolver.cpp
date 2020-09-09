@@ -4,6 +4,8 @@
 
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
+#include "storm/utility/Stopwatch.h"
+#include "storm/utility/ProgressMeasurement.h"
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidEnvironmentException.h"
 #include "storm/exceptions/UnexpectedException.h"
@@ -61,7 +63,10 @@ namespace storm {
             
             if (!this->sortedSccDecomposition || (needAdaptPrecision && !this->longestSccChainSize)) {
                 STORM_LOG_TRACE("Creating SCC decomposition.");
+                storm::utility::Stopwatch sccSw(true);
                 createSortedSccDecomposition(needAdaptPrecision);
+                sccSw.stop();
+                STORM_LOG_INFO("SCC decomposition computed in " << sccSw << ". Found " << this->sortedSccDecomposition->size() << " SCC(s) containing a total of " << x.size() << " states. Average SCC size is " << static_cast<double>(this->getMatrixRowCount()) / static_cast<double>(this->sortedSccDecomposition->size()) << ".");
             }
             
             // We do not need to adapt the precision if all SCCs are trivial (i.e., the system is acyclic)
@@ -69,7 +74,6 @@ namespace storm {
             
             storm::Environment sccSolverEnvironment = getEnvironmentForUnderlyingSolver(env, needAdaptPrecision);
             
-            STORM_LOG_INFO("Found " << this->sortedSccDecomposition->size() << " SCC(s). Average size is " << static_cast<double>(this->getMatrixRowCount()) / static_cast<double>(this->sortedSccDecomposition->size()) << ".");
             if (this->longestSccChainSize) {
                 STORM_LOG_INFO("Longest SCC chain size is " << this->longestSccChainSize.get() << ".");
             }
@@ -79,8 +83,12 @@ namespace storm {
             if (this->sortedSccDecomposition->size() == 1) {
                 returnValue = solveFullyConnectedEquationSystem(sccSolverEnvironment, x, b);
             } else {
+                // Solve each SCC individually
                 storm::storage::BitVector sccAsBitVector(x.size(), false);
                 uint64_t sccIndex = 0;
+                storm::utility::ProgressMeasurement progress("states");
+                progress.setMaxCount(x.size());
+                progress.startNewMeasurement(0);
                 for (auto const& scc : *this->sortedSccDecomposition) {
                     if (scc.size() == 1) {
                         returnValue = solveTrivialScc(*scc.begin(), x, b) && returnValue;
@@ -92,6 +100,7 @@ namespace storm {
                         returnValue = solveScc(sccSolverEnvironment, sccAsBitVector, x, b) && returnValue;
                     }
                     ++sccIndex;
+                    progress.updateProgress(sccIndex);
                     if (storm::utility::resources::isTerminate()) {
                         STORM_LOG_WARN("Topological solver aborted after analyzing " << sccIndex << "/" << this->sortedSccDecomposition->size() << " SCCs.");
                         break;
@@ -177,8 +186,6 @@ namespace storm {
             if (asEquationSystem) {
                 sccA.convertToEquationSystem();
             }
-//            std::cout << "Solving SCC " << scc << std::endl;
-//            std::cout << "Matrix is " << sccA << std::endl;
             this->sccSolver->setMatrix(std::move(sccA));
             
             // x Vector

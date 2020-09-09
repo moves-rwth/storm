@@ -51,8 +51,8 @@ namespace storm {
                     return "expl";
                 case Engine::AbstractionRefinement:
                     return "abs";
-                case Engine::Portfolio:
-                    return "portfolio";
+                case Engine::Automatic:
+                    return "automatic";
                 case Engine::Unknown:
                     return "UNKNOWN";
                 default:
@@ -71,6 +71,10 @@ namespace storm {
                 if (engineStr == toString(e)) {
                     return e;
                 }
+            }
+            if (engineStr == "portfolio") {
+                STORM_LOG_WARN("The engine name \"portfolio\" is deprecated. The name of this engine has been changed to \"" << toString(Engine::Automatic) << "\".");
+                return Engine::Automatic;
             }
             STORM_LOG_ERROR("The engine '" << engineStr << "' was not found.");
             return Engine::Unknown;

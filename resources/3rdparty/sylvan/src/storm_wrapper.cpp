@@ -227,8 +227,11 @@ storm_rational_number_ptr storm_rational_number_mod(storm_rational_number_ptr a,
     
     storm::RationalNumber const& srn_a = *(storm::RationalNumber const*)a;
     storm::RationalNumber const& srn_b = *(storm::RationalNumber const*)b;
-    
-    throw storm::exceptions::InvalidOperationException() << "Modulo not supported for rational numbers.";
+    if (carl::isInteger(srn_a) && carl::isInteger(srn_b)) {
+        storm::RationalNumber* result_srn = new storm::RationalNumber(carl::mod(carl::getNum(srn_a), carl::getNum(srn_b)));
+        return (storm_rational_number_ptr)result_srn;
+    }
+    throw storm::exceptions::InvalidOperationException() << "Modulo not supported for rational, non-integer numbers.";
 }
 
 storm_rational_number_ptr storm_rational_number_min(storm_rational_number_ptr a, storm_rational_number_ptr b) {

@@ -37,6 +37,8 @@ namespace storm {
                 for (auto e : storm::utility::getEngines()) {
                     engines.push_back(storm::utility::toString(e));
                 }
+                engines.push_back("portfolio"); // for backwards compatibility
+                
                 this->addOption(storm::settings::OptionBuilder(moduleName, engineOptionName, false, "Sets which engine is used for model building and model checking.").setShortName(engineOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the engine to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(engines)).setDefaultValueString("sparse").build()).build());
                 

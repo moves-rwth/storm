@@ -209,6 +209,20 @@ namespace {
         }
     };
     
+    class SoundEnvironment {
+    public:
+        static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // unused for sparse models
+        static const CtmcEngine engine = CtmcEngine::PrismSparse;
+        static const bool isExact = false;
+        typedef double ValueType;
+        typedef storm::models::sparse::Ctmc<ValueType> ModelType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().setForceSoundness(true);
+            return env;
+        }
+    };
+    
     template<typename TestType>
     class LraCtmcCslModelCheckerTest : public ::testing::Test {
     public:
@@ -317,7 +331,8 @@ namespace {
             GBSparseNativeSorEnvironment,
             DistrSparseGmmxxGmresIluEnvironment,
             DistrSparseEigenDoubleLUEnvironment,
-            ValueIterationSparseEnvironment
+            ValueIterationSparseEnvironment,
+            SoundEnvironment
         > TestingTypes;
     
     TYPED_TEST_SUITE(LraCtmcCslModelCheckerTest, TestingTypes,);

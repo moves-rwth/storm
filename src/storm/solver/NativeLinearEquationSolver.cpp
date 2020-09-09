@@ -637,60 +637,32 @@ namespace storm {
         template<typename ValueType>
         bool NativeLinearEquationSolver<ValueType>::solveEquationsOptimisticValueIteration(Environment const& env, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
 
-            if (!this->multiplier) {
-                this->multiplier = storm::solver::MultiplierFactory<ValueType>().create(env, *this->A);
+            if (!storm::utility::vector::hasNonZeroEntry(b)) {
+                // If all entries are zero, OVI might run in an endless loop. However, the result is easy in this case.
+                x.assign(x.size(), storm::utility::zero<ValueType>());
+                return true;
             }
-
+            
             if (!this->cachedRowVector) {
                 this->cachedRowVector = std::make_unique<std::vector<ValueType>>(this->A->getRowCount());
             }
-            if (!this->cachedRowVector2) {
-                this->cachedRowVector2 = std::make_unique<std::vector<ValueType>>(this->A->getRowCount());
+            if (!optimisticValueIterationHelper) {
+                optimisticValueIterationHelper = std::make_unique<storm::solver::helper::OptimisticValueIterationHelper<ValueType>>(*this->A);
             }
 
-            // By default, we can not provide any guarantee
-            SolverGuarantee guarantee = SolverGuarantee::None;
-            // Get handle to multiplier.
-            storm::solver::Multiplier<ValueType> const &multiplier = *this->multiplier;
-            // Allow aliased multiplications.
-            storm::solver::MultiplicationStyle multiplicationStyle = env.solver().native().getPowerMethodMultiplicationStyle();
-            bool useGaussSeidelMultiplication = multiplicationStyle == storm::solver::MultiplicationStyle::GaussSeidel;
-
-            boost::optional<storm::storage::BitVector> relevantValues;
-            if (this->hasRelevantValues()) {
-                relevantValues = this->getRelevantValues();
-            }
-            
             // x has to start with a lower bound.
             this->createLowerBoundsVector(x);
 
             std::vector<ValueType>* lowerX = &x;
             std::vector<ValueType>* upperX = this->cachedRowVector.get();
-            std::vector<ValueType>* auxVector = this->cachedRowVector2.get();
 
-            this->startMeasureProgress();
-            
-            auto statusIters = storm::solver::helper::solveEquationsOptimisticValueIteration(env, lowerX, upperX, auxVector,
-                    [&] (std::vector<ValueType>*& y, std::vector<ValueType>*& yPrime, ValueType const& precision, bool const& relative, uint64_t const& i, uint64_t const& maxI) {
-                        this->showProgressIterative(i);
-                        return performPowerIteration(env, y, yPrime, b, precision, relative, guarantee, i, maxI, multiplicationStyle);
-                    },
-                    [&] (std::vector<ValueType>* y, std::vector<ValueType>* yPrime, uint64_t const& i) {
-                        this->showProgressIterative(i);
-                        if (useGaussSeidelMultiplication) {
-                            // Copy over the current vectors so we can modify them in-place.
-                            // This is necessary as we want to compare the new values with the current ones.
-                            *yPrime = *y;
-                            multiplier.multiplyGaussSeidel(env, *y, &b);
-                        } else {
-                            multiplier.multiply(env, *y, &b, *yPrime);
-                            std::swap(y, yPrime);
-                        }
-                    },
-                    env.solver().native().getRelativeTerminationCriterion(),
-                    storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()),
-                    env.solver().native().getMaximalNumberOfIterations(),
-                    relevantValues);
+            storm::solver::helper::OptimisticValueIterationHelper<ValueType> helper(*this->A);
+            auto statusIters = helper.solveEquations(env, lowerX, upperX, b,
+                                                     env.solver().native().getRelativeTerminationCriterion(),
+                                                     storm::utility::convertNumber<ValueType>(env.solver().native().getPrecision()),
+                                                     env.solver().native().getMaximalNumberOfIterations(),
+                                                     boost::none, // No optimization dir
+                                                     this->getOptionalRelevantValues());
             auto two = storm::utility::convertNumber<ValueType>(2.0);
             storm::utility::vector::applyPointwise<ValueType, ValueType, ValueType>(*lowerX, *upperX, x, [&two] (ValueType const& a, ValueType const& b) -> ValueType { return (a + b) / two; });
             this->logIterations(statusIters.first == SolverStatus::Converged, statusIters.first == SolverStatus::TerminatedEarly, statusIters.second);
@@ -1058,6 +1030,7 @@ namespace storm {
             walkerChaeData.reset();
             multiplier.reset();
             soundValueIterationHelper.reset();
+            optimisticValueIterationHelper.reset();
             LinearEquationSolver<ValueType>::clearCache();
         }
         

@@ -67,9 +67,13 @@ namespace storm {
                     e.setTemplateEdge(map[e.getTemplateEdge()]);
                 }
             }
-
-
-
+        }
+        
+        EdgeContainer& EdgeContainer::operator=(EdgeContainer const& other) {
+            EdgeContainer otherCpy(other);
+            this->templates = std::move(otherCpy.templates);
+            this->edges = std::move(otherCpy.edges);
+            return *this;
         }
 
         void EdgeContainer::finalize(Model const& containingModel) {
