@@ -30,12 +30,48 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
+        bool BeliefManager<PomdpType, BeliefValueType, StateType>::Belief_equal_to::operator()(const BeliefManager::BeliefType &lhBelief,
+                                                                                               const BeliefManager::BeliefType &rhBelief) const {
+            return lhBelief == rhBelief;
+        }
+
+        template<>
+        bool BeliefManager<storm::models::sparse::Pomdp<double>, storm::models::sparse::Pomdp<double>::ValueType, uint64_t>::Belief_equal_to::operator()(const BeliefManager::BeliefType &lhBelief,
+                                                                                               const BeliefManager::BeliefType &rhBelief) const {
+            storm::utility::ConstantsComparator<double> comparator(std::numeric_limits<double>::epsilon(), false);
+            // Assumes that beliefs are ordered
+            auto lhIt = lhBelief.begin();
+            auto rhIt = rhBelief.begin();
+            while(lhIt != lhBelief.end() || rhIt != rhBelief.end()){
+                // Iterate over the entries simultaneously, beliefs not equal if they contain either different states or different values for the same state
+                if((*lhIt).first != (*rhIt).first || !comparator.isEqual((*lhIt).second, (*rhIt).second)){
+                    return false;
+                }
+                ++lhIt;
+                ++rhIt;
+            }
+            return lhIt == lhBelief.end() && rhIt == rhBelief.end();
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
         std::size_t BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefHash::operator()(const BeliefType &belief) const {
             std::size_t seed = 0;
             // Assumes that beliefs are ordered
             for (auto const &entry : belief) {
                 boost::hash_combine(seed, entry.first);
                 boost::hash_combine(seed, entry.second);
+            }
+            return seed;
+        }
+
+        template<>
+        std::size_t BeliefManager<storm::models::sparse::Pomdp<double>, storm::models::sparse::Pomdp<double>::ValueType, uint64_t>::BeliefHash::operator()(const BeliefType &belief) const {
+            std::size_t seed = 0;
+            // Assumes that beliefs are ordered
+            for (auto const &entry : belief) {
+                boost::hash_combine(seed, entry.first);
+                //TODO possible to set rounding parameter differently?
+                boost::hash_combine(seed, round(entry.second * 1e9) / 1e9);
             }
             return seed;
         }

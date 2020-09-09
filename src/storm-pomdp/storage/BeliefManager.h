@@ -87,6 +87,10 @@ namespace storm {
                 std::size_t operator()(const BeliefType &belief) const;
             };
 
+            struct Belief_equal_to {
+                bool operator()(const BeliefType &lhBelief, const BeliefType &rhBelief) const;
+            };
+
             struct FreudenthalDiff {
                 FreudenthalDiff(StateType const &dimension, BeliefValueType &&diff);
 
@@ -126,7 +130,7 @@ namespace storm {
             std::vector<ValueType> pomdpActionRewardVector;
             
             std::vector<BeliefType> beliefs;
-            std::vector<std::unordered_map<BeliefType, BeliefId, BeliefHash>> beliefToIdMap;
+            std::vector<std::unordered_map<BeliefType, BeliefId, BeliefHash, Belief_equal_to>> beliefToIdMap;
             BeliefId initialBeliefId;
             
             storm::utility::ConstantsComparator<ValueType> cc;
