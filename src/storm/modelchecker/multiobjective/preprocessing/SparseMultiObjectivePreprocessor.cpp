@@ -584,7 +584,6 @@ namespace storm {
                     for (uint64_t i = 0; i < formula.getDimension(); ++i) {
                         auto oldTbr = formula.getTimeBoundReference(i);
                         if (oldTbr.isRewardBound()) {
-                            onlyRewardBounds = false;
                             if (oldTbr.hasRewardAccumulation()) {
                                 auto filteredBoundRewards = storm::utility::createFilteredRewardModel(data.model->getRewardModel(oldTbr.getRewardName()), oldTbr.getRewardAccumulation(), data.model->isDiscreteTimeModel());
                                 if (filteredBoundRewards.isDifferentFromUnfilteredModel()) {
@@ -599,6 +598,7 @@ namespace storm {
                                 newTimeBoundReferences.push_back(oldTbr);
                             }
                         } else {
+                            onlyRewardBounds = false;
                             newTimeBoundReferences.push_back(oldTbr);
                         }
                     }
