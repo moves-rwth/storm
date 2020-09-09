@@ -169,6 +169,12 @@ namespace storm {
                                 auto rewardModel = storm::utility::createFilteredRewardModel(baseRewardModel, model->isDiscreteTimeModel(), pathFormula.asTotalRewardFormula());
                                 storm::storage::BitVector statesWithoutReward = rewardModel.get().getStatesWithZeroReward(model->getTransitionMatrix());
                                 absorbingStatesForSubformula = storm::utility::graph::performProb0A(backwardTransitions, statesWithoutReward, ~statesWithoutReward);
+                            } else if (pathFormula.isLongRunAverageRewardFormula()) {
+                                auto rewardModel = storm::utility::createFilteredRewardModel(baseRewardModel, model->isDiscreteTimeModel(), pathFormula.asLongRunAverageRewardFormula());
+                                storm::storage::BitVector statesWithoutReward = rewardModel.get().getStatesWithZeroReward(model->getTransitionMatrix());
+                                // Compute Sat(Forall F (Forall G "statesWithoutReward"))
+                                auto forallGloballyStatesWithoutReward = storm::utility::graph::performProb0A(backwardTransitions, statesWithoutReward, ~statesWithoutReward);
+                                absorbingStatesForSubformula = storm::utility::graph::performProb1A(model->getTransitionMatrix(), model->getNondeterministicChoiceIndices(), backwardTransitions, storm::storage::BitVector(model->getNumberOfStates(), true), forallGloballyStatesWithoutReward);
                             } else {
                                 STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The subformula of " << pathFormula << " is not supported.");
                             }
@@ -179,6 +185,11 @@ namespace storm {
                             } else {
                                 STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The subformula of " << pathFormula << " is not supported.");
                             }
+                        } else if (opFormula->isLongRunAverageRewardFormula()) {
+                            auto lraStates = mc.check(pathFormula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                            // Compute Sat(Forall F (Forall G not "lraStates"))
+                            auto forallGloballyNotLraStates = storm::utility::graph::performProb0A(backwardTransitions, ~lraStates, lraStates);
+                            absorbingStatesForSubformula = storm::utility::graph::performProb1A(model->getTransitionMatrix(), model->getNondeterministicChoiceIndices(), backwardTransitions, storm::storage::BitVector(model->getNumberOfStates(), true), forallGloballyNotLraStates);
                         } else {
                             STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Could not preprocess the subformula " << *opFormula << " of " << originalFormula << " because it is not supported");
                         }
@@ -288,6 +299,8 @@ namespace storm {
                         preprocessRewardOperatorFormula(formula.asRewardOperatorFormula(), opInfo, data);
                     } else if (formula.isTimeOperatorFormula()){
                         preprocessTimeOperatorFormula(formula.asTimeOperatorFormula(), opInfo, data);
+                    } else if (formula.isLongRunAverageOperatorFormula()) {
+                        preprocessLongRunAverageOperatorFormula(formula.asLongRunAverageOperatorFormula(), opInfo, data);
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Could not preprocess the objective " << formula << " because it is not supported");
                     }
@@ -336,6 +349,8 @@ namespace storm {
                         preprocessCumulativeRewardFormula(formula.getSubformula().asCumulativeRewardFormula(), opInfo, data, rewardModelName);
                     } else if (formula.getSubformula().isTotalRewardFormula()) {
                         preprocessTotalRewardFormula(opInfo, data, rewardModelName);
+                    } else if (formula.getSubformula().isLongRunAverageRewardFormula()) {
+                        preprocessLongRunAverageRewardFormula(opInfo, data, rewardModelName);
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The subformula of " << formula << " is not supported.");
                     }
@@ -353,6 +368,28 @@ namespace storm {
                     } else {
                         STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The subformula of " << formula << " is not supported.");
                     }
+                }
+    
+                template<typename SparseModelType>
+                void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessLongRunAverageOperatorFormula(storm::logic::LongRunAverageOperatorFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data) {
+                    
+                    data.objectives.back()->lowerResultBound = storm::utility::zero<ValueType>();
+                    data.objectives.back()->upperResultBound = storm::utility::one<ValueType>();
+                    
+                    // Convert to a long run average reward formula
+                    // Create and add the new formula
+                    std::string rewardModelName = data.rewardModelNamePrefix + std::to_string(data.objectives.size());
+                    auto lraRewardFormula = std::make_shared<storm::logic::LongRunAverageRewardFormula>();
+                    data.objectives.back()->formula = std::make_shared<storm::logic::RewardOperatorFormula>(lraRewardFormula, rewardModelName, opInfo);
+                    
+                    // Create and add the new reward model that only gives one reward for goal states
+                    storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> mc(*data.model);
+                    storm::storage::BitVector subFormulaResult = mc.check(formula.getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector();
+                    std::vector<typename SparseModelType::ValueType> lraRewards(data.model->getNumberOfStates(), storm::utility::zero<typename SparseModelType::ValueType>());
+                    storm::utility::vector::setVectorValues(lraRewards, subFormulaResult, storm::utility::one<typename SparseModelType::ValueType>());
+                    data.model->addRewardModel(rewardModelName, typename SparseModelType::RewardModelType(std::move(lraRewards)));
+                    
+                    
                 }
                 
                 template<typename SparseModelType>
@@ -546,6 +583,13 @@ namespace storm {
                     auto totalRewardFormula = std::make_shared<storm::logic::TotalRewardFormula>();
                     data.objectives.back()->formula = std::make_shared<storm::logic::RewardOperatorFormula>(totalRewardFormula, *optionalRewardModelName, opInfo);
                     data.finiteRewardCheckObjectives.set(data.objectives.size() - 1, true);
+                }
+                
+                template<typename SparseModelType>
+                void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessLongRunAverageRewardFormula(storm::logic::OperatorInformation const& opInfo, PreprocessorData& data, boost::optional<std::string> const& optionalRewardModelName) {
+                    
+                    auto longRunAverageRewardFormula = std::make_shared<storm::logic::LongRunAverageRewardFormula>();
+                    data.objectives.back()->formula = std::make_shared<storm::logic::RewardOperatorFormula>(longRunAverageRewardFormula, *optionalRewardModelName, opInfo);
                 }
                 
                 template<typename SparseModelType>
