@@ -3,7 +3,7 @@
 
 namespace storm {
     namespace jani {
-        TemplateEdgeContainer::TemplateEdgeContainer(TemplateEdgeContainer const &other) {
+        TemplateEdgeContainer::TemplateEdgeContainer(TemplateEdgeContainer const &other) : std::unordered_set<std::shared_ptr<TemplateEdge>>() {
             for (auto const& te : other) {
                 this->insert(std::make_shared<TemplateEdge>(*te));
             }
