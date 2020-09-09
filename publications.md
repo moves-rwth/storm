@@ -1,6 +1,6 @@
 ---
 title: Publications
-navigation_weight: 4
+navigation_weight: 5
 layout: default
 ---
 

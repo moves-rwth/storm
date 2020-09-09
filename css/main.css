@@ -55,3 +55,7 @@ body {
   margin: 0 auto;
   display: block;
 }
+
+.embed-video {
+  max-width: 1024px;
+}
