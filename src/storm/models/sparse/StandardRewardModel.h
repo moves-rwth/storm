@@ -38,11 +38,11 @@ namespace storm {
                                     boost::optional<std::vector<ValueType>>&& optionalStateActionRewardVector = boost::none,
                                     boost::optional<storm::storage::SparseMatrix<ValueType>>&& optionalTransitionRewardMatrix = boost::none);
                 
-                StandardRewardModel(StandardRewardModel<ValueType> const& dtmc) = default;
-                StandardRewardModel& operator=(StandardRewardModel<ValueType> const& dtmc) = default;
+                StandardRewardModel(StandardRewardModel<ValueType> const& other) = default;
+                StandardRewardModel& operator=(StandardRewardModel<ValueType> const& other) = default;
                 
-                StandardRewardModel(StandardRewardModel<ValueType>&& dtmc) = default;
-                StandardRewardModel& operator=(StandardRewardModel<ValueType>&& dtmc) = default;
+                StandardRewardModel(StandardRewardModel<ValueType>&& other) = default;
+                StandardRewardModel& operator=(StandardRewardModel<ValueType>&& other) = default;
 
                 /*!
                  * Retrieves whether the reward model has state rewards.
