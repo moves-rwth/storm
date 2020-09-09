@@ -91,6 +91,7 @@ namespace storm {
 
             EdgeContainer() = default;
             EdgeContainer(EdgeContainer const& other);
+            EdgeContainer& operator=(EdgeContainer const& other);
 
             void clearConcreteEdges();
             std::vector<Edge> const& getConcreteEdges() const;
