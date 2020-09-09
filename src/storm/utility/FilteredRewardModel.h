@@ -35,6 +35,11 @@ namespace storm {
                     rewardModel = &baseRewardModel;
                 }
             }
+            
+            bool isDifferentFromUnfilteredModel() const {
+                STORM_LOG_ASSERT(rewardModel, "tried to check if the filtered reward model is different. Was it extracted before?");
+                return localRewardModel.get() != nullptr;
+            }
 
             RewardModelType const& get() const {
                 STORM_LOG_ASSERT(rewardModel, "tried to get a reward model but none is available. Was it extracted before?");
@@ -49,7 +54,8 @@ namespace storm {
                 STORM_LOG_ASSERT(rewardModel, "tried to extract a reward model but none is available. Was it extracted already before?");
                 RewardModelType result;
                 if (localRewardModel) {
-                    result = std::move(localRewardModel.get());
+                    result = std::move(*localRewardModel);
+                    localRewardModel.reset();
                 } else {
                     result = *rewardModel; // Creates a copy
                 }
@@ -63,16 +69,20 @@ namespace storm {
                 RewardModelType const* rewardModel;
         };
         
+        template <typename RewardModelType>
+        FilteredRewardModel<RewardModelType> createFilteredRewardModel(RewardModelType const& baseRewardModel, storm::logic::RewardAccumulation const& acc, bool isDiscreteTimeModel) {
+            STORM_LOG_THROW(isDiscreteTimeModel || !acc.isExitSet() || !baseRewardModel.hasStateRewards(), storm::exceptions::NotSupportedException, "Exit rewards for continuous time models are not supported.");
+            // Check which of the available reward types are allowed.
+            bool hasStateRewards = isDiscreteTimeModel ? acc.isExitSet() : acc.isTimeSet();
+            bool hasStateActionRewards = acc.isStepsSet();
+            bool hasTransitionRewards = acc.isStepsSet();
+            return FilteredRewardModel<RewardModelType>(baseRewardModel, hasStateRewards, hasStateActionRewards, hasTransitionRewards);
+        }
+        
         template <typename RewardModelType, typename FormulaType>
         FilteredRewardModel<RewardModelType> createFilteredRewardModel(RewardModelType const& baseRewardModel, bool isDiscreteTimeModel, FormulaType const& formula) {
             if (formula.hasRewardAccumulation()) {
-                auto const& acc = formula.getRewardAccumulation();
-                STORM_LOG_THROW(isDiscreteTimeModel || !acc.isExitSet() || !baseRewardModel.hasStateRewards(), storm::exceptions::NotSupportedException, "Exit rewards for continuous time models are not supported.");
-                // Check which of the available reward types are allowed.
-                bool hasStateRewards = isDiscreteTimeModel ? acc.isExitSet() : acc.isTimeSet();
-                bool hasStateActionRewards = acc.isStepsSet();
-                bool hasTransitionRewards = acc.isStepsSet();
-                return FilteredRewardModel<RewardModelType>(baseRewardModel, hasStateRewards, hasStateActionRewards, hasTransitionRewards);
+                return createFilteredRewardModel(baseRewardModel, formula.getRewardAccumulation(), isDiscreteTimeModel);
             } else {
                 return FilteredRewardModel<RewardModelType>(baseRewardModel, true, true, true);
             }
