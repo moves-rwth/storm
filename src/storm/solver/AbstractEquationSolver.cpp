@@ -67,6 +67,11 @@ namespace storm {
         }
         
         template<typename ValueType>
+        boost::optional<storm::storage::BitVector> const& AbstractEquationSolver<ValueType>::getOptionalRelevantValues() const {
+            return relevantValues;
+        }
+        
+        template<typename ValueType>
         void AbstractEquationSolver<ValueType>::setRelevantValues(storm::storage::BitVector&& relevantValues) {
             this->relevantValues = std::move(relevantValues);
         }

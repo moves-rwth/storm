@@ -17,6 +17,8 @@
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/vector.h"
+#include "storm/utility/Stopwatch.h"
+#include "storm/utility/ProgressMeasurement.h"
 
 #include "storm/environment/solver/LongRunAverageSolverEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
@@ -133,13 +135,21 @@ namespace storm {
                 createDecomposition();
                 
                 // Compute the long-run average for all components in isolation.
+                // Set up some logging
+                std::string const componentString = (Nondeterministic ? std::string("Maximal end") : std::string("Bottom strongly connected")) + (_longRunComponentDecomposition->size() == 1 ? std::string(" component") : std::string(" components"));
+                storm::utility::ProgressMeasurement progress(componentString);
+                progress.setMaxCount( _longRunComponentDecomposition->size());
+                progress.startNewMeasurement(0);
+                STORM_LOG_INFO("Computing long run average values for " << _longRunComponentDecomposition->size() << " " << componentString << " individually...");
                 std::vector<ValueType> componentLraValues;
                 componentLraValues.reserve(_longRunComponentDecomposition->size());
                 for (auto const& c : *_longRunComponentDecomposition) {
                     componentLraValues.push_back(computeLraForComponent(underlyingSolverEnvironment, stateRewardsGetter, actionRewardsGetter, c));
+                    progress.updateProgress(componentLraValues.size());
                 }
                 
                 // Solve the resulting SSP where end components are collapsed into single auxiliary states
+                STORM_LOG_INFO("Solving stochastic shortest path problem.");
                 return buildAndSolveSsp(underlyingSolverEnvironment, componentLraValues);
             }
             
