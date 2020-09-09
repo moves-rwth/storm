@@ -52,9 +52,12 @@ namespace storm {
                     storm::storage::BitVector zeroRewardChoices(preprocessorResult.preprocessedModel->getNumberOfChoices(), true);
                     for (auto const& obj : preprocessorResult.objectives) {
                         if (obj.formula->isRewardOperatorFormula()) {
-                            STORM_LOG_WARN_COND(obj.formula->getSubformula().isTotalRewardFormula() || obj.formula->getSubformula().isCumulativeRewardFormula(), "Analyzing reachability reward formulas is not supported properly.");
-                            auto const& rewModel = preprocessorResult.preprocessedModel->getRewardModel(obj.formula->asRewardOperatorFormula().getRewardModelName());
-                            zeroRewardChoices &= rewModel.getChoicesWithZeroReward(transitions);
+                            if (obj.formula->getSubformula().isTotalRewardFormula() || obj.formula->getSubformula().isCumulativeRewardFormula()) {
+                                auto const& rewModel = preprocessorResult.preprocessedModel->getRewardModel(obj.formula->asRewardOperatorFormula().getRewardModelName());
+                                zeroRewardChoices &= rewModel.getChoicesWithZeroReward(transitions);
+                            } else {
+                                STORM_LOG_WARN_COND(obj.formula->getSubformula().isLongRunAverageRewardFormula(), "Analyzing subformula " << obj.formula->getSubformula() << " is not supported properly.");
+                            }
                         }
                     }
                     
