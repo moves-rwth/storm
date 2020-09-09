@@ -37,8 +37,27 @@ namespace storm {
             }
 
             RewardModelType const& get() const {
+                STORM_LOG_ASSERT(rewardModel, "tried to get a reward model but none is available. Was it extracted before?");
                 return *rewardModel;
             }
+            
+            /*!
+             * Extracts the reward model. After calling this, this object should not be queried anymore
+             * @return
+             */
+            RewardModelType extract() {
+                STORM_LOG_ASSERT(rewardModel, "tried to extract a reward model but none is available. Was it extracted already before?");
+                RewardModelType result;
+                if (localRewardModel) {
+                    result = std::move(localRewardModel.get());
+                } else {
+                    result = *rewardModel; // Creates a copy
+                }
+                rewardModel = nullptr;
+                return result;
+            }
+            
+            
         private:
                 std::unique_ptr<RewardModelType> localRewardModel;
                 RewardModelType const* rewardModel;
