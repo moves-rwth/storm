@@ -89,6 +89,7 @@ namespace storm {
                 progress.startNewMeasurement(0);
                 for (auto const& scc : *this->sortedSccDecomposition) {
                     if (scc.size() == 1) {
+                        STORM_LOG_TRACE("SCC " << sccIndex << " trivial");
                         returnValue = solveTrivialScc(*scc.begin(), dir, x, b) && returnValue;
                     } else {
                         STORM_LOG_TRACE("Solving SCC of size " << scc.size() << ".");
@@ -105,6 +106,7 @@ namespace storm {
                     ++sccIndex;
                     progress.updateProgress(sccIndex);
                     if (storm::utility::resources::isTerminate()) {
+                        //TODO the SCC index is wrong here
                         STORM_LOG_WARN("Topological solver aborted after analyzing " << sccIndex << "/" << this->sortedSccDecomposition->size() << " SCCs.");
                         break;
                     }
@@ -187,6 +189,58 @@ namespace storm {
             }
             STORM_LOG_THROW(!firstRow, storm::exceptions::UnexpectedException, "Empty row group in MinMax equation system.");
             //std::cout << "Solved trivial scc " << sccState << " with result " << globalX[sccState] << std::endl;
+            return true;
+        }
+
+        template<>
+        bool TopologicalMinMaxLinearEquationSolver<double>::solveTrivialScc(uint64_t const& sccState, OptimizationDirection dir, std::vector<double>& globalX, std::vector<double> const& globalB) const {
+            double& xi = globalX[sccState];
+            bool firstRow = true;
+            uint64_t bestRow;
+            for (uint64_t row = this->A->getRowGroupIndices()[sccState]; row < this->A->getRowGroupIndices()[sccState + 1]; ++row) {
+                double rowValue = globalB[row];
+                bool hasDiagonalEntry = false;
+                double denominator;
+                for (auto const& entry : this->A->getRow(row)) {
+                    if (entry.getColumn() == sccState) {
+                        hasDiagonalEntry = true;
+                        denominator = storm::utility::one<double>() - entry.getValue();
+                    } else {
+                        rowValue += entry.getValue() * globalX[entry.getColumn()];
+                    }
+                }
+                if (hasDiagonalEntry) {
+                    if (storm::utility::isAlmostZero(denominator)) {
+                        // In this case we have a selfloop on this state. This can never an optimal choice:
+                        // When minimizing, we are looking for the largest fixpoint (which will never be attained by this action)
+                        // When maximizing, this choice reflects probability zero (non-optimal) or reward infinity (should already be handled during preprocessing).
+                        continue;
+                    } else {
+                        rowValue /= denominator;
+                    }
+                }
+                if (firstRow) {
+                    xi = rowValue;
+                    bestRow = row;
+                    firstRow = false;
+                } else {
+                    if (minimize(dir)) {
+                        if (rowValue < xi) {
+                            xi = rowValue;
+                            bestRow = row;
+                        }
+                    } else {
+                        if (rowValue > xi) {
+                            xi = rowValue;
+                            bestRow = row;
+                        }
+                    }
+                }
+            }
+            if (this->isTrackSchedulerSet()) {
+                this->schedulerChoices.get()[sccState] = bestRow - this->A->getRowGroupIndices()[sccState];
+            }
+            STORM_LOG_THROW(!firstRow, storm::exceptions::UnexpectedException, "Empty row group in MinMax equation system.");
             return true;
         }
         
@@ -308,7 +362,6 @@ namespace storm {
             
             // Set solution
             storm::utility::vector::setVectorValues(globalX, sccRowGroups, sccX);
-            
             return res;
         }
         
