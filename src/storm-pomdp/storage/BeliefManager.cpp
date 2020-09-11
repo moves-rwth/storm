@@ -30,13 +30,21 @@ namespace storm {
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
         bool BeliefManager<PomdpType, BeliefValueType, StateType>::Belief_equal_to::operator()(const BeliefType &lhBelief, const BeliefType &rhBelief) const {
-            storm::utility::ConstantsComparator<BeliefValueType> comparator(storm::utility::convertNumber<BeliefValueType>(1e-9), false);
+            return lhBelief == rhBelief;
+        }
+
+        template<>
+        bool BeliefManager<storm::models::sparse::Pomdp<double>, double, uint64_t>::Belief_equal_to::operator()(const BeliefType &lhBelief, const BeliefType &rhBelief) const {
+            // If the sizes are different, we don't have to look inside the belief
+            if(lhBelief.size() != rhBelief.size()){
+                return false;
+            }
             // Assumes that beliefs are ordered
             auto lhIt = lhBelief.begin();
             auto rhIt = rhBelief.begin();
             while(lhIt != lhBelief.end() || rhIt != rhBelief.end()){
                 // Iterate over the entries simultaneously, beliefs not equal if they contain either different states or different values for the same state
-                if((*lhIt).first != (*rhIt).first || !comparator.isEqual((*lhIt).second, (*rhIt).second)){
+                if((*lhIt).first != (*rhIt).first || std::fabs((*lhIt).second - (*rhIt).second) > std::numeric_limits<double>::epsilon()){
                     return false;
                 }
                 ++lhIt;
@@ -51,7 +59,18 @@ namespace storm {
             // Assumes that beliefs are ordered
             for (auto const &entry : belief) {
                 boost::hash_combine(seed, entry.first);
-                boost::hash_combine(seed, round(storm::utility::convertNumber<double>(entry.second) * 1e9)/1e9);
+                boost::hash_combine(seed, entry.second);
+            }
+            return seed;
+        }
+
+        template<>
+        std::size_t BeliefManager<storm::models::sparse::Pomdp<double>, double, uint64_t>::BeliefHash::operator()(const BeliefType &belief) const {
+            std::size_t seed = 0;
+            // Assumes that beliefs are ordered
+            for (auto const &entry : belief) {
+                boost::hash_combine(seed, entry.first);
+                boost::hash_combine(seed, round(storm::utility::convertNumber<double>(entry.second) * 1e15));
             }
             return seed;
         }
@@ -521,6 +540,7 @@ namespace storm {
             auto insertioRes = beliefToIdMap[obs].emplace(belief, beliefs.size());
             if (insertioRes.second) {
                 // There actually was an insertion, so add the new belief
+                STORM_LOG_TRACE("Add Belief " << beliefs.size() << " " << toString(belief));
                 beliefs.push_back(belief);
             }
             // Return the id
