@@ -157,6 +157,7 @@ namespace storm {
                     }
                 }
                 if (hasDiagonalEntry) {
+                    STORM_LOG_WARN_COND_DEBUG(storm::NumberTraits<ValueType>::IsExact || !storm::utility::isAlmostZero(denominator) || storm::utility::isZero(denominator), "State " << sccState << " has a selfloop with probability '1-(" << denominator << ")'. This could be an indication for numerical issues.");
                     if (storm::utility::isZero(denominator)) {
                         // In this case we have a selfloop on this state. This can never an optimal choice:
                         // When minimizing, we are looking for the largest fixpoint (which will never be attained by this action)
