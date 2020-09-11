@@ -30,21 +30,22 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
-        bool BeliefManager<PomdpType, BeliefValueType, StateType>::Belief_equal_to::operator()(const BeliefManager::BeliefType &lhBelief,
-                                                                                               const BeliefManager::BeliefType &rhBelief) const {
+        bool BeliefManager<PomdpType, BeliefValueType, StateType>::Belief_equal_to::operator()(const BeliefType &lhBelief, const BeliefType &rhBelief) const {
             return lhBelief == rhBelief;
         }
 
         template<>
-        bool BeliefManager<storm::models::sparse::Pomdp<double>, storm::models::sparse::Pomdp<double>::ValueType, uint64_t>::Belief_equal_to::operator()(const BeliefManager::BeliefType &lhBelief,
-                                                                                               const BeliefManager::BeliefType &rhBelief) const {
-            storm::utility::ConstantsComparator<double> comparator(std::numeric_limits<double>::epsilon(), false);
+        bool BeliefManager<storm::models::sparse::Pomdp<double>, double, uint64_t>::Belief_equal_to::operator()(const BeliefType &lhBelief, const BeliefType &rhBelief) const {
+            // If the sizes are different, we don't have to look inside the belief
+            if(lhBelief.size() != rhBelief.size()){
+                return false;
+            }
             // Assumes that beliefs are ordered
             auto lhIt = lhBelief.begin();
             auto rhIt = rhBelief.begin();
             while(lhIt != lhBelief.end() || rhIt != rhBelief.end()){
                 // Iterate over the entries simultaneously, beliefs not equal if they contain either different states or different values for the same state
-                if((*lhIt).first != (*rhIt).first || !comparator.isEqual((*lhIt).second, (*rhIt).second)){
+                if(lhIt->first != rhIt->first || std::fabs(lhIt->second - rhIt->second) > std::numeric_limits<double>::epsilon()){
                     return false;
                 }
                 ++lhIt;
@@ -65,13 +66,12 @@ namespace storm {
         }
 
         template<>
-        std::size_t BeliefManager<storm::models::sparse::Pomdp<double>, storm::models::sparse::Pomdp<double>::ValueType, uint64_t>::BeliefHash::operator()(const BeliefType &belief) const {
+        std::size_t BeliefManager<storm::models::sparse::Pomdp<double>, double, uint64_t>::BeliefHash::operator()(const BeliefType &belief) const {
             std::size_t seed = 0;
             // Assumes that beliefs are ordered
             for (auto const &entry : belief) {
                 boost::hash_combine(seed, entry.first);
-                //TODO possible to set rounding parameter differently?
-                boost::hash_combine(seed, round(entry.second * 1e9) / 1e9);
+                boost::hash_combine(seed, round(storm::utility::convertNumber<double>(entry.second) * 1e15));
             }
             return seed;
         }
@@ -179,6 +179,15 @@ namespace storm {
             auto insertionRes = distr.emplace(state, value);
             if (!insertionRes.second) {
                 insertionRes.first->second += value;
+            }
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        template<typename DistributionType>
+        void BeliefManager<PomdpType, BeliefValueType, StateType>::adjustDistribution(DistributionType &distr) {
+            if(distr.size() == 1 && cc.isEqual(distr.begin()->second, storm::utility::one<ValueType>())){
+                // If the distribution consists of only one entry and its value is sufficiently close to 1, make it exactly 1 to avoid numerical problems
+                distr.begin()->second = storm::utility::one<ValueType>();
             }
         }
 
@@ -490,6 +499,7 @@ namespace storm {
                     }
                 }
             }
+            adjustDistribution(successorObs);
 
             // Now for each successor observation we find and potentially triangulate the successor belief
             for (auto const &successor : successorObs) {
@@ -503,6 +513,7 @@ namespace storm {
                         }
                     }
                 }
+                adjustDistribution(successorBelief);
                 STORM_LOG_ASSERT(assertBelief(successorBelief), "Invalid successor belief.");
 
                 // Insert the destination. We know that destinations have to be disjoined since they have different observations
@@ -639,6 +650,7 @@ namespace storm {
             auto insertioRes = beliefToIdMap[obs].emplace(belief, beliefs.size());
             if (insertioRes.second) {
                 // There actually was an insertion, so add the new belief
+                STORM_LOG_TRACE("Add Belief " << beliefs.size() << " " << toString(belief));
                 beliefs.push_back(belief);
             }
             // Return the id

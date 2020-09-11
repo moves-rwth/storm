@@ -89,6 +89,7 @@ namespace storm {
                 progress.startNewMeasurement(0);
                 for (auto const& scc : *this->sortedSccDecomposition) {
                     if (scc.size() == 1) {
+                        STORM_LOG_TRACE("SCC " << sccIndex << " trivial");
                         returnValue = solveTrivialScc(*scc.begin(), dir, x, b) && returnValue;
                     } else {
                         STORM_LOG_TRACE("Solving SCC of size " << scc.size() << ".");
@@ -105,6 +106,7 @@ namespace storm {
                     ++sccIndex;
                     progress.updateProgress(sccIndex);
                     if (storm::utility::resources::isTerminate()) {
+                        //TODO the SCC index is wrong here
                         STORM_LOG_WARN("Topological solver aborted after analyzing " << sccIndex << "/" << this->sortedSccDecomposition->size() << " SCCs.");
                         break;
                     }
@@ -155,6 +157,7 @@ namespace storm {
                     }
                 }
                 if (hasDiagonalEntry) {
+                    STORM_LOG_WARN_COND_DEBUG(storm::NumberTraits<ValueType>::IsExact || !storm::utility::isAlmostZero(denominator) || storm::utility::isZero(denominator), "State " << sccState << " has a selfloop with probability '1-(" << denominator << ")'. This could be an indication for numerical issues.");
                     if (storm::utility::isZero(denominator)) {
                         // In this case we have a selfloop on this state. This can never an optimal choice:
                         // When minimizing, we are looking for the largest fixpoint (which will never be attained by this action)
@@ -308,7 +311,6 @@ namespace storm {
             
             // Set solution
             storm::utility::vector::setVectorValues(globalX, sccRowGroups, sccX);
-            
             return res;
         }
         
