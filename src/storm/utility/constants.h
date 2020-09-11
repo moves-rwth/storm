@@ -88,9 +88,11 @@ namespace storm {
         template<typename ValueType>
         bool isNan(ValueType const& a);
 
-        bool isAlmostZero(double const& a);
+        template<typename ValueType>
+        bool isAlmostZero(ValueType const& a);
 
-        bool isAlmostOne(double const& a);
+        template<typename ValueType>
+        bool isAlmostOne(ValueType const& a);
         
         template<typename ValueType>
         bool isConstant(ValueType const& a);
