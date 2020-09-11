@@ -44,7 +44,7 @@ namespace storm {
             auto rhIt = rhBelief.begin();
             while(lhIt != lhBelief.end() || rhIt != rhBelief.end()){
                 // Iterate over the entries simultaneously, beliefs not equal if they contain either different states or different values for the same state
-                if((*lhIt).first != (*rhIt).first || std::fabs((*lhIt).second - (*rhIt).second) > std::numeric_limits<double>::epsilon()){
+                if(lhIt->first != rhIt->first || std::fabs(lhIt->second - rhIt->second) > std::numeric_limits<double>::epsilon()){
                     return false;
                 }
                 ++lhIt;
@@ -178,6 +178,15 @@ namespace storm {
             auto insertionRes = distr.emplace(state, value);
             if (!insertionRes.second) {
                 insertionRes.first->second += value;
+            }
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        template<typename DistributionType>
+        void BeliefManager<PomdpType, BeliefValueType, StateType>::adjustDistribution(DistributionType &distr) {
+            if(distr.size() == 1 && cc.isEqual(distr.begin()->second, storm::utility::one<ValueType>())){
+                // If the distribution consists of only one entry and its value is sufficiently close to 1, make it exactly 1 to avoid numerical problems
+                distr.begin()->second = storm::utility::one<ValueType>();
             }
         }
 
@@ -489,6 +498,7 @@ namespace storm {
                     }
                 }
             }
+            adjustDistribution(successorObs);
 
             // Now for each successor observation we find and potentially triangulate the successor belief
             for (auto const &successor : successorObs) {
@@ -502,6 +512,7 @@ namespace storm {
                         }
                     }
                 }
+                adjustDistribution(successorBelief);
                 STORM_LOG_ASSERT(assertBelief(successorBelief), "Invalid successor belief.");
 
                 // Insert the destination. We know that destinations have to be disjoined since they have different observations

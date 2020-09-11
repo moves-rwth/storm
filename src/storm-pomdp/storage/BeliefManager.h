@@ -71,6 +71,9 @@ namespace storm {
 
         private:
 
+            template<typename DistributionType>
+            void adjustDistribution(DistributionType &distr);
+
             struct BeliefHash {
                 std::size_t operator()(const BeliefType &belief) const;
             };
