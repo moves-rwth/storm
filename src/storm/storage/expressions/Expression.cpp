@@ -438,6 +438,33 @@ namespace storm {
             return ite(first < 0, floor(first), ceil(first));
         }
 
+        Expression atLeastOneOf(std::vector<Expression> const& expressions) {
+            STORM_LOG_THROW(expressions.size() > 0, storm::exceptions::InvalidArgumentException, "AtLeastOneOf requires arguments");
+            std::vector<std::shared_ptr<BaseExpression const>> baseexpressions;
+            for(auto const& expr : expressions) {
+                baseexpressions.push_back(expr.getBaseExpressionPointer());
+            }
+            return Expression(std::shared_ptr<BaseExpression>(new PredicateExpression(expressions.front().getManager(), expressions.front().getManager().getBooleanType(), baseexpressions, PredicateExpression::PredicateType::AtLeastOneOf)));
+        }
+
+        Expression atMostOneOf(std::vector<Expression> const& expressions) {
+            STORM_LOG_THROW(expressions.size() > 0, storm::exceptions::InvalidArgumentException, "AtMostOneOf requires arguments");
+            std::vector<std::shared_ptr<BaseExpression const>> baseexpressions;
+            for(auto const& expr : expressions) {
+                baseexpressions.push_back(expr.getBaseExpressionPointer());
+            }
+            return Expression(std::shared_ptr<BaseExpression>(new PredicateExpression(expressions.front().getManager(), expressions.front().getManager().getBooleanType(), baseexpressions, PredicateExpression::PredicateType::AtMostOneOf)));
+        }
+
+        Expression exactlyOneOf(std::vector<Expression> const& expressions) {
+            STORM_LOG_THROW(expressions.size() > 0, storm::exceptions::InvalidArgumentException, "ExactlyOneOf requires arguments");
+            std::vector<std::shared_ptr<BaseExpression const>> baseexpressions;
+            for(auto const& expr : expressions) {
+                baseexpressions.push_back(expr.getBaseExpressionPointer());
+            }
+            return Expression(std::shared_ptr<BaseExpression>(new PredicateExpression(expressions.front().getManager(), expressions.front().getManager().getBooleanType(), baseexpressions, PredicateExpression::PredicateType::ExactlyOneOf)));
+        }
+
         Expression disjunction(std::vector<storm::expressions::Expression> const& expressions) {
             return applyAssociative(expressions, [] (Expression const& e1, Expression const& e2) { return e1 || e2; });
         }

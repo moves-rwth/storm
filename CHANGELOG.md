@@ -4,6 +4,12 @@ Changelog
 This changelog lists only the most important changes. Smaller (bug)fixes as well as non-mature features are not part of the changelog.
 The releases of major and minor versions contain an overview of changes since the last major/minor update.
 
+Branch Changes
+--------------
+
+- n-ary predicates like atMostOneOf, ExactlyOneOf added
+- export to Dice expressions added
+
 
 Version 1.6.x
 -------------
