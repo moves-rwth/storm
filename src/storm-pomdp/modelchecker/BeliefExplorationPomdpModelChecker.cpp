@@ -813,7 +813,7 @@ namespace storm {
                                 bool addedSucc = underApproximation->addTransitionToBelief(0, cullingResult.targetBelief, storm::utility::one<ValueType>() - cullingResult.delta, true);
                                 if(computeRewards){
                                     //Determine a sound reward bound
-                                    auto bestRewardBound = storm::utility::infinity<ValueType>();
+                                    /*auto bestRewardBound = storm::utility::infinity<ValueType>();
                                     for (uint64 action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                                         auto currRewardBound = storm::utility::zero<ValueType>();
                                         auto successors = beliefManager->expand(currId, action);
@@ -822,9 +822,9 @@ namespace storm {
                                                                                             : underApproximation->computeLowerValueBoundAtBelief(successor.first));
                                         }
                                         bestRewardBound = min ? storm::utility::min(bestRewardBound, currRewardBound) : storm::utility::max(bestRewardBound, currRewardBound);
-                                    }
+                                    }*/
                                     underApproximation->addTransitionsToExtraStates(0, cullingResult.delta);
-                                    underApproximation->addRewardToCurrentState(0, bestRewardBound);
+                                    underApproximation->addRewardToCurrentState(0, storm::utility::zero<ValueType>());
                                 } else {
                                     underApproximation->addTransitionsToExtraStates(0, storm::utility::zero<ValueType>(), cullingResult.delta);
                                 }
