@@ -200,7 +200,7 @@ namespace storm {
                 STORM_LOG_TRACE("State remapping: " << matrixBuilder.stateRemapping);
                 STORM_LOG_TRACE("Markovian states: " << modelComponents.markovianStates);
                 STORM_LOG_DEBUG("Model has " << stateSize << " states");
-                STORM_LOG_DEBUG("Model is " << (generator.isDeterministicModel() ? "deterministic" : "non-deterministic"));
+                //STORM_LOG_DEBUG("Model is " << (generator.isDeterministicModel() ? "deterministic" : "non-deterministic"));
 
                 // Build transition matrix
                 modelComponents.transitionMatrix = matrixBuilder.builder.build(stateSize, stateSize);
@@ -354,7 +354,7 @@ namespace storm {
                         setMarkovian(true);
                         // Add transition to target state with temporary value 0
                         // TODO: what to do when there is no unique target state?
-                        STORM_LOG_ASSERT(this->uniqueFailedState, "Approximation only works with unique failed state");
+                        //STORM_LOG_ASSERT(this->uniqueFailedState, "Approximation only works with unique failed state");
                         matrixBuilder.addTransition(0, storm::utility::zero<ValueType>());
                         // Remember skipped state
                         skippedStates[matrixBuilder.getCurrentRowGroup() - 1] = std::make_pair(currentState,
@@ -868,7 +868,7 @@ namespace storm {
                 if (stateStorage.stateToId.contains(state->status())) {
                     // State already exists
                     stateId = stateStorage.stateToId.getValue(state->status());
-                    STORM_LOG_TRACE("State " << dft.getStateString(state) << " with id " << stateId << " already exists");
+                    STORM_LOG_TRACE("State with id " << stateId << " already exists");
 
                 } else {
                     // State does not exist yet
@@ -881,7 +881,7 @@ namespace storm {
                     statesNotExplored[stateId] = std::make_pair(state, nullHeuristic);
                     // Reserve one slot for the new state in the remapping
                     matrixBuilder.stateRemapping.push_back(0);
-                    STORM_LOG_TRACE("New " << (state->isPseudoState() ? "pseudo" : "concrete") << " state: " << dft.getStateString(state));
+                    //STORM_LOG_TRACE("New " << (state->isPseudoState() ? "pseudo" : "concrete") << " state with id " << stateId);
                 }
                 return stateId;
             }
