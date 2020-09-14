@@ -84,6 +84,16 @@ namespace storm {
                 }
             }
 
+            template<typename T>
+            void setNonzeroIndices(std::vector<T> const& vec, storm::storage::BitVector& bv) {
+                STORM_LOG_ASSERT(bv.size() == vec.size(), "Bitvector size should match vector size");
+                for (uint64_t i = 0; i < vec.size(); ++i) {
+                    if(!storm::utility::isZero(vec[i])) {
+                        bv.set(i, true);
+                    }
+                }
+            }
+
             /*!
              * Iota function as a helper for efficient creating a range in a vector.
              * See also http://stackoverflow.com/questions/11965732/set-stdvectorint-to-a-range
