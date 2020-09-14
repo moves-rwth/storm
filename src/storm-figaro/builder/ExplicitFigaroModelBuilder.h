@@ -4,6 +4,7 @@
 #include <stack>
 #include <unordered_set>
 #include <limits>
+#include <storm-figaro/storage/FigaroState.h>
 #include "storm-figaro/api/storm-figaro.h"
 
 #include "storm/models/sparse/StateLabeling.h"
@@ -13,11 +14,13 @@
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/sparse/StateStorage.h"
 
-#include "storm-dft/builder/DftExplorationHeuristic.h"
+
 #include "storm-figaro/generator/FigaroNextStateGenerator.h"
 #include "storm-figaro/model/FigaroModelTemplate.h"
 
-#include "storm-dft/storage/dft/SymmetricUnits.h" ///We donot need the symmetries
+#include "storm/generator/CompressedState.h"
+
+#include "storm-dft/builder/DftExplorationHeuristic.h"
 #include "storm-dft/storage/BucketPriorityQueue.h"
 
 namespace storm{
@@ -29,7 +32,13 @@ namespace storm{
 
             template<typename ValueType, typename StateType = uint32_t>
             class ExplicitFigaroModelBuilder {
+                using FigaroStatePointer = std::shared_ptr<storm::figaro::storage::FigaroState<ValueType>>;
                 using ExplorationHeuristic = storm::builder::DFTExplorationHeuristic<ValueType>;
+//                typedef storm::storage::BitVector CompressedState;
+                using ExplorationHeuristicPointer = std::shared_ptr<ExplorationHeuristic>;
+
+
+
                 // A structure holding the individual components of a model.
                 struct ModelComponents {
                     // Constructor
@@ -43,6 +52,7 @@ namespace storm{
 
                     // The Markovian states.
                     storm::storage::BitVector markovianStates;
+
 
                     // The exit rates.
                     std::vector<ValueType> exitRates;
@@ -221,7 +231,7 @@ namespace storm{
                  *
                  * @return Id of state.
                  */
-//                StateType getOrAddStateIndex(DFTStatePointer const& state);
+                StateType getOrAddStateIndex(FigaroStatePointer const& state);
 
                 /*!
                  * Set markovian flag for the current state.
@@ -245,7 +255,7 @@ namespace storm{
                  *
                  * @return Lower bound approximation.
                  */
-//                ValueType getLowerBound(DFTStatePointer const& state) const;
+                ValueType getLowerBound(FigaroStatePointer const& state) const;
 
                 /*!
                  * Get upper bound approximation for state.
@@ -254,7 +264,7 @@ namespace storm{
                  *
                  * @return Upper bound approximation.
                  */
-//                ValueType getUpperBound(DFTStatePointer const& state) const;
+                ValueType getUpperBound(FigaroStatePointer const& state) const;
 
                 /*!
                  * Compute the MTTF of an AND gate via a closed formula.
@@ -326,19 +336,19 @@ namespace storm{
                 MatrixBuilder matrixBuilder;
 
                 // Internal information about the states that were explored.
-//                storm::storage::sparse::StateStorage<StateType> stateStorage;
+                storm::storage::sparse::StateStorage<StateType> stateStorage;
 
                 // A priority queue of states that still need to be explored.
-//                storm::storage::BucketPriorityQueue<ExplorationHeuristic> explorationQueue;
+                storm::storage::BucketPriorityQueue<ExplorationHeuristic> explorationQueue;
 
                 // A mapping of not yet explored states from the id to the tuple (state object, heuristic values).
-//                std::map<StateType, std::pair<DFTStatePointer, ExplorationHeuristicPointer>> statesNotExplored;
+                std::map<StateType, std::pair<FigaroStatePointer, ExplorationHeuristicPointer>> statesNotExplored;
 
                 // Holds all skipped states which were not yet expanded. More concretely it is a mapping from matrix indices
                 // to the corresponding skipped states.
                 // Notice that we need an ordered map here to easily iterate in increasing order over state ids.
                 // TODO remove again
-//                std::map<StateType, std::pair<DFTStatePointer, ExplorationHeuristicPointer>> skippedStates;
+                std::map<StateType, std::pair<FigaroStatePointer, ExplorationHeuristicPointer>> skippedStates;
 
                 // List of independent subtrees and the BEs contained in them.
                 std::vector<std::vector<size_t>> subtreeBEs;

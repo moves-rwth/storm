@@ -33,8 +33,10 @@ namespace storm {
             const std::string FIGAROIOSettings::approximationErrorOptionShortName = "approx";
             const std::string FIGAROIOSettings::approximationHeuristicOptionName = "approximationheuristic";
             const std::string FIGAROIOSettings::maxDepthOptionName = "maxdepth";
-            
-            
+            const std::string FIGAROIOSettings::figaroStatisticsOptionName = "figaro-statistics";
+            const std::string FIGAROIOSettings::figaroStatisticsOptionShortName = "figarostats";
+
+
             FIGAROIOSettings::FIGAROIOSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, figaroFileOptionName, false, "Parses the figaro program.").setShortName(figaroFileOptionShortame).addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").addValidatorString(ArgumentValidatorFactory::createExistingFileValidator()).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, xmlFileOptionName, false, "Parse the XML file").setShortName(xmlFileOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "path to file").addValidatorString(ArgumentValidatorFactory::createWritableFileValidator()).build()).build());
@@ -56,6 +58,7 @@ namespace storm {
                                                                                                                          {"depth", "probability", "bounddifference"})).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, maxDepthOptionName, false, "Maximal depth for state space exploration.").addArgument(
                                                                                                                                                                 storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("depth", "The maximal depth.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, figaroStatisticsOptionName, false, "Sets whether to display Figaro statistics if available.").setShortName(figaroStatisticsOptionShortName).build());
             }
             
             bool FIGAROIOSettings::isfigaroFileSet() const {
@@ -65,7 +68,7 @@ namespace storm {
             std::string FIGAROIOSettings::getfigaroFilename() const {
                 return this->getOption(figaroFileOptionName).getArgumentByName("filename").getValueAsString();
             }
-//
+
             bool FIGAROIOSettings::isxmlFileSet() const {
                 return this->getOption(xmlFileOptionName).getHasOptionBeenSet();
             }
@@ -73,7 +76,7 @@ namespace storm {
             std::string FIGAROIOSettings::getxmlFilename() const {
                 return this->getOption(xmlFileOptionName).getArgumentByName("filename").getValueAsString();
             }
-                //
+
             bool FIGAROIOSettings::isrslttxtFileSet() const {
                 return this->getOption(outputtextFileOptionName).getHasOptionBeenSet();
             }
@@ -85,12 +88,12 @@ namespace storm {
             bool FIGAROIOSettings::isToDotSet() const {
                 return this->getOption(figaroToDotOptionName).getHasOptionBeenSet();
             }
-//
+
             std::string FIGAROIOSettings::getFigaroDotOutputFilename() const {
                 return this->getOption(figaroToDotOptionName).getArgumentByName("filename").getValueAsString();
             }
-//
-//
+
+
             bool FIGAROIOSettings::isFigaroToExplicitSet() const {
                 return this->getOption(figaroToExplicitOptionShortName).getHasOptionBeenSet();
             }
@@ -99,11 +102,11 @@ namespace storm {
                 return this->getOption(figaroToExplicitOptionName).getArgumentByName("filename").getValueAsString();
             }
 
-//
+
             bool FIGAROIOSettings::isPropertyInputSet() const {
                 return this->getOption(propertyOptionName).getHasOptionBeenSet();
             }
-//
+
             std::string FIGAROIOSettings::getPropertyInput() const {
                 return this->getOption(propertyOptionName).getArgumentByName("property or filename").getValueAsString();
             }
@@ -138,7 +141,9 @@ namespace storm {
                 }
                 STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentValueException, "Illegal value '" << heuristicAsString << "' set as heuristic for approximation.");
             }
-            
+            bool FIGAROIOSettings::isShowFigaroStatisticsSet() const {
+                return this->getOption(figaroStatisticsOptionName).getHasOptionBeenSet();
+            }
             bool FIGAROIOSettings::isMaxDepthSet() const {
                 return this->getOption(maxDepthOptionName).getHasOptionBeenSet();
             }

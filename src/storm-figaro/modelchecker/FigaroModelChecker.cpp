@@ -121,114 +121,116 @@ namespace storm{
                 }
                 return results;
             }
-#else
+#endif
+#ifndef NOAPPROXIMATION
 
-// start approximation from here Comment it for the momment and
+// start approximation from here Comment it for the moment and
 //@TODO: come back to this part for abstractions.
-                if (false) {
-//                    (approximationError > 0.0) {
-//                        // Comparator for checking the error of the approximation
-//                        storm::utility::ConstantsComparator<ValueType> comparator;
-//                        // Build approximate Markov Automata for lower and upper bound
-//                        approximation_result approxResult = std::make_pair(storm::utility::zero<ValueType>(),
-//                                                                           storm::utility::zero<ValueType>());
-//                        std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
-//                        std::vector<ValueType> newResult;
-//                        storm::builder::ExplicitDFTModelBuilder<ValueType> builder(dft, symmetries);
-//
-//                        // TODO: compute approximation for all properties simultaneously?
-//                        std::shared_ptr<const storm::logic::Formula> property = properties[0];
-//                        if (properties.size() > 1) {
-//                            STORM_LOG_WARN("Computing approximation only for first property: " << *property);
-//                        }
-//
-//                        bool probabilityFormula = property->isProbabilityOperatorFormula();
-//                        STORM_LOG_ASSERT((property->isTimeOperatorFormula() && !probabilityFormula) ||
-//                        (!property->isTimeOperatorFormula() && probabilityFormula),
-//                        "Probability formula not initialized correctly");
-//                        size_t iteration = 0;
-//                        do {
-//                            // Iteratively build finer models
-//                            if (iteration > 0) {
-//                                explorationTimer.start();
-//                            }
-//                            STORM_LOG_DEBUG("Building model...");
-//                            // TODO refine model using existing model and MC results
-//                            builder.buildModel(iteration, approximationError, approximationHeuristic);
-//                            explorationTimer.stop();
-//                            buildingTimer.start();
-//
-//                            // TODO: possible to do bisimulation on approximated model and not on concrete one?
-//
-//                            // Build model for lower bound
-//                            STORM_LOG_DEBUG("Getting model for lower bound...");
-//                            model = builder.getModelApproximation(true, !probabilityFormula);
-//                            // We only output the info from the lower bound as the info for the upper bound is the same
-//                            if (printInfo && dftIOSettings.isShowDftStatisticsSet()) {
-//                                std::cout << "Model in iteration " << (iteration + 1) << ":" << std::endl;
-//                                model->printModelInformationToStream(std::cout);
-//                            }
-//                            buildingTimer.stop();
-//
-//                            if (ioSettings.isExportExplicitSet()) {
-//                                std::vector<std::string> parameterNames;
-//                                // TODO fill parameter names
-//                                storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), parameterNames, !ioSettings.isExplicitExportPlaceholdersDisabled());
-//                            }
-//
-//                            // Check lower bounds
-//                            newResult = checkModel(model, {property});
-//                            STORM_LOG_ASSERT(newResult.size() == 1, "Wrong size for result vector.");
-//                            STORM_LOG_ASSERT(iteration == 0 || !comparator.isLess(newResult[0], approxResult.first),
-//                                             "New under-approximation " << newResult[0] << " is smaller than old result "
-//                                             << approxResult.first);
-//                            approxResult.first = newResult[0];
-//
-//                            // Build model for upper bound
-//                            STORM_LOG_DEBUG("Getting model for upper bound...");
-//                            buildingTimer.start();
-//                            model = builder.getModelApproximation(false, !probabilityFormula);
-//                            buildingTimer.stop();
-//                            // Check upper bound
-//                            newResult = checkModel(model, {property});
-//                            STORM_LOG_ASSERT(newResult.size() == 1, "Wrong size for result vector.");
-//                            STORM_LOG_ASSERT(iteration == 0 || !comparator.isLess(approxResult.second, newResult[0]),
-//                                             "New over-approximation " << newResult[0] << " is greater than old result "
-//                                             << approxResult.second);
-//                            approxResult.second = newResult[0];
-//
-//                            STORM_LOG_ASSERT(comparator.isLess(approxResult.first, approxResult.second) ||
-//                            comparator.isEqual(approxResult.first, approxResult.second),
-//                            "Under-approximation " << approxResult.first
-//                            << " is greater than over-approximation "
-//                            << approxResult.second);
-//                            totalTimer.stop();
-//                            if (printInfo && dftIOSettings.isShowDftStatisticsSet()) {
-//                                std::cout << "Result after iteration " << (iteration + 1) << ": (" << std::setprecision(10) << approxResult.first << ", " << approxResult.second << ")" << std::endl;
-//                                printTimings();
-//                                std::cout << std::endl;
-//                            } else {
-//                                STORM_LOG_DEBUG("Result after iteration " << (iteration + 1) << ": (" << std::setprecision(10) << approxResult.first << ", " << approxResult.second << ")");
-//                            }
-//
-//                            totalTimer.start();
-//                            STORM_LOG_THROW(!storm::utility::isInfinity<ValueType>(approxResult.first) &&
-//                            !storm::utility::isInfinity<ValueType>(approxResult.second),
-//                            storm::exceptions::NotSupportedException,
-//                            "Approximation does not work if result might be infinity.");
-//                            ++iteration;
-//                        } while (!isApproximationSufficient(approxResult.first, approxResult.second, approximationError,
-//                                                            probabilityFormula));
-//
-//                        //STORM_LOG_INFO("Finished approximation after " << iteration << " iteration" << (iteration > 1 ? "s." : "."));
-//                        if (printInfo) {
-//                            model->printModelInformationToStream(std::cout);
-//                        }
-//                        dft_results results;
-//                        results.push_back(approxResult);
-//                        return results;
-//                    }
-                } else {
+                if(approximationError > 0.0) {
+                        // Comparator for checking the error of the approximation
+                        storm::utility::ConstantsComparator<ValueType> comparator;
+                        // Build approximate Markov Automata for lower and upper bound
+                        approximation_result approxResult = std::make_pair(storm::utility::zero<ValueType>(),
+                                                                           storm::utility::zero<ValueType>());
+                        std::shared_ptr<storm::models::sparse::Model<ValueType>> model;
+                        std::vector<ValueType> newResult;
+                    storm::figaro::builder::ExplicitFigaroModelBuilder<ValueType> builder(origFigaro);
+                        // TODO: compute approximation for all properties simultaneously?
+                        std::shared_ptr<const storm::logic::Formula> property = properties[0];
+                        if (properties.size() > 1) {
+                            STORM_LOG_WARN("Computing approximation only for first property: " << *property);
+                        }
+
+
+                            bool probabilityFormula = property->isProbabilityOperatorFormula();
+                        STORM_LOG_ASSERT((property->isTimeOperatorFormula() && !probabilityFormula) ||
+                        (!property->isTimeOperatorFormula() && probabilityFormula),
+                        "Probability formula not initialized correctly");
+                        size_t iteration = 0;
+                        do {
+                            // Iteratively build finer models
+                            if (iteration > 0) {
+                                explorationTimer.start();
+                            }
+                            STORM_LOG_DEBUG("Building model...");
+                            // TODO refine model using existing model and MC results
+                            builder.buildModel(iteration, approximationError, approximationHeuristic);
+                            explorationTimer.stop();
+                            buildingTimer.start();
+                            // TODO: possible to do bisimulation on approximated model and not on concrete one?
+
+                            // Build model for lower bound
+                            STORM_LOG_DEBUG("Getting model for lower bound...");
+                            model = builder.getModelApproximation(true, !probabilityFormula);
+
+                            // We only output the info from the lower bound as the info for the upper bound is the same
+                            if (printInfo && figaroIOSettings.isShowFigaroStatisticsSet()) {
+                                std::cout << "Model in iteration " << (iteration + 1) << ":" << std::endl;
+                                model->printModelInformationToStream(std::cout);
+                            }
+                            buildingTimer.stop();
+                            storm::api::exportSparseModelAsDot(model,"hello_" + std::to_string(iteration) + ".dot");
+
+                            if (ioSettings.isExportExplicitSet()) {
+                                std::vector<std::string> parameterNames;
+                                // TODO fill parameter names
+                                storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), parameterNames, !ioSettings.isExplicitExportPlaceholdersDisabled());
+                            }
+
+                            // Check lower bounds
+                            newResult = checkModel(model, {property});
+                            STORM_LOG_ASSERT(newResult.size() == 1, "Wrong size for result vector.");
+                            STORM_LOG_ASSERT(iteration == 0 || !comparator.isLess(newResult[0], approxResult.first),
+                                             "New under-approximation " << newResult[0] << " is smaller than old result "
+                                             << approxResult.first);
+                            approxResult.first = newResult[0];
+
+                            // Build model for upper bound
+                            STORM_LOG_DEBUG("Getting model for upper bound...");
+                            buildingTimer.start();
+                            model = builder.getModelApproximation(false, !probabilityFormula);
+                            buildingTimer.stop();
+                            // Check upper bound
+                            newResult = checkModel(model, {property});
+                            STORM_LOG_ASSERT(newResult.size() == 1, "Wrong size for result vector.");
+                            STORM_LOG_ASSERT(iteration == 0 || !comparator.isLess(approxResult.second, newResult[0]),
+                                             "New over-approximation " << newResult[0] << " is greater than old result "
+                                             << approxResult.second);
+                            approxResult.second = newResult[0];
+
+                            STORM_LOG_ASSERT(comparator.isLess(approxResult.first, approxResult.second) ||
+                            comparator.isEqual(approxResult.first, approxResult.second),
+                            "Under-approximation " << approxResult.first
+                            << " is greater than over-approximation "
+                            << approxResult.second);
+                            totalTimer.stop();
+                            if (printInfo && figaroIOSettings.isShowFigaroStatisticsSet()) {
+                                std::cout << "Result after iteration " << (iteration + 1) << ": (" << std::setprecision(10) << approxResult.first << ", " << approxResult.second << ")" << std::endl;
+                                printTimings();
+                                std::cout << std::endl;
+                            } else {
+                                STORM_LOG_DEBUG("Result after iteration " << (iteration + 1) << ": (" << std::setprecision(10) << approxResult.first << ", " << approxResult.second << ")");
+                            }
+
+                            totalTimer.start();
+                            STORM_LOG_THROW(!storm::utility::isInfinity<ValueType>(approxResult.first) &&
+                            !storm::utility::isInfinity<ValueType>(approxResult.second),
+                            storm::exceptions::NotSupportedException,
+                            "Approximation does not work if result might be infinity.");
+                            ++iteration;
+                        } while (!isApproximationSufficient(approxResult.first, approxResult.second, approximationError,
+                                                            probabilityFormula));
+
+                        STORM_LOG_INFO("Finished approximation after " << iteration << " iteration" << (iteration > 1 ? "s." : "."));
+                        if (printInfo) {
+                            model->printModelInformationToStream(std::cout);
+                        }
+                    storm::api::exportSparseModelAsDot(model,"hello.dot");
+                    figaro_results results;
+                        results.push_back(approxResult);
+                        return results;
+                    }
+                 else {
 //                    // Build a single Markov Automaton/ Markov Chain
                     auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
                     STORM_LOG_DEBUG("Building Model...");
@@ -236,8 +238,9 @@ namespace storm{
                     storm::figaro::builder::ExplicitFigaroModelBuilder<ValueType> builder(origFigaro);
                     builder.buildModel(0, 0.0);
                     std::shared_ptr<storm::models::sparse::Model<ValueType>> model = builder.getModel();
-                    if (eliminateChains && model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
-
+                    explorationTimer.stop();
+                    model->printModelInformationToStream(std::cout);
+                    std::cout << "\nModel Transformation\n";
                         if (model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
                             auto ma = std::static_pointer_cast<storm::models::sparse::MarkovAutomaton<ValueType>>(
                                     model);
@@ -249,11 +252,11 @@ namespace storm{
                                         ma, storm::transformer::EliminationLabelBehavior::MergeLabels);
                             }
                         }
+                        std::cout << "\nprinting information\n";
                         model->printModelInformationToStream(std::cout);
 //                            storm::api::exportSparseModelAsDot(model,"hello.dot");
 //        storm::api::exportSparseModelAsDrn(model,"hello.drn");
                         std::ofstream stream;
-
 
                         // Check the model
                         STORM_LOG_DEBUG("Model checking...");
@@ -268,7 +271,6 @@ namespace storm{
                                                                                   storm::api::createTask<ValueType>(
                                                                                           property,
                                                                                           true)));
-
                             if (result) {
                                 result->filter(
                                         storm::modelchecker::ExplicitQualitativeCheckResult(model->getInitialStates()));
@@ -284,32 +286,21 @@ namespace storm{
                                 stream << "The property '" << *property
                                        << "' could not be checked with the current settings.";
                             }
-
-//
-//                        model = storm::transformer::NonMarkovianChainTransformer<ValueType>::eliminateNonmarkovianStates(
-//                model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>(),
-//                storm::transformer::EliminationLabelBehavior::MergeLabels);
-
                         }
-                        explorationTimer.stop();
-
                         // Print model information
-
-                        if (true) {//(printInfo) {
+                        if (printInfo) {
                             model->printModelInformationToStream(std::cout);
                         }
-
 //                    // Export the model if required
 //                    // TODO move this outside of the model checker?
-//                    if (ioSettings.isExportExplicitSet()) {
-//                        std::vector<std::string> parameterNames;
-//                        // TODO fill parameter names
-//                        storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), parameterNames, !ioSettings.isExplicitExportPlaceholdersDisabled());
-//                    }
-//                    if (ioSettings.isExportDotSet()) {
-//                        storm::api::exportSparseModelAsDot(model, ioSettings.getExportDotFilename(), ioSettings.getExportDotMaxWidth());
-//                    }
-//
+                    if (ioSettings.isExportExplicitSet()) {
+                        std::vector<std::string> parameterNames;
+                        // TODO fill parameter names
+                        storm::api::exportSparseModelAsDrn(model, ioSettings.getExportExplicitFilename(), parameterNames, !ioSettings.isExplicitExportPlaceholdersDisabled());
+                    }
+                    if (ioSettings.isExportDotSet()) {
+                        storm::api::exportSparseModelAsDot(model, ioSettings.getExportDotFilename(), ioSettings.getExportDotMaxWidth());
+                    }
                         // Model checking
                         std::vector<ValueType> resultsValue = checkModel(model, properties);
                         figaro_results results;
@@ -319,7 +310,6 @@ namespace storm{
                         return results;
                     }
                 }
-            }
 
 #endif
             template<typename ValueType>

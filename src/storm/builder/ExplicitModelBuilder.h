@@ -110,7 +110,7 @@ namespace storm {
              * @return
              */
             ExplicitStateLookup<StateType> exportExplicitStateLookup() const;
-        private:
+
             /*!
              * Retrieves the state id of the given state. If the state has not been encountered yet, it will be added to
              * the lists of all states with a new id. If the state was already known, the object that is pointed to by
@@ -121,7 +121,7 @@ namespace storm {
              * @return A pair indicating whether the state was already discovered before and the state id of the state.
              */
             StateType getOrAddStateIndex(CompressedState const& state);
-    
+        private:
             /*!
              * Builds the transition matrix and the transition reward matrix based for the given program.
              *

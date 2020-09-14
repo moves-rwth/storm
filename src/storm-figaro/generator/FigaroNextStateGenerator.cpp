@@ -97,7 +97,6 @@ namespace storm{
                         result.addChoice(std::move(choice));
                         result.setExpanded();
                     return result;
-                    
                     }
                 std::vector<storm::generator::CompressedState> menuestates;
                  double totalExitrate = 0;
@@ -642,7 +641,6 @@ namespace storm{
                             }
                         }
                     }
-                
 //                std::cout<<"\n    "<<menue_size<<"   "<<empty_string<<"       "<< prob<<"\n";
                 ins_menue.push_back(make_pair(empty_string,prob));
 //                std::cout<<"\n--->"<<empty_string;
@@ -652,13 +650,150 @@ namespace storm{
             
             return ins_menue;
             }
-            
+            template<typename ValueType, typename StateType>
+            std::vector<StateType> FigaroNextStateGenerator<ValueType, StateType>::getInitialStatesApproximation(StateToIdCallbackapproximation const& stateToIdCallback) {
+                std::vector<StateType> initialStateIndices;
+                storm::generator::CompressedState initialState(this->variableInformation.getTotalBitOffset(true));
+                figaromodel.init();
+                figaromodel.runInteractions();
+                retreiveFigaroModelState(initialState);
 
-            
-            
+                FigaroStatePointer  initialStateApproximation = std::make_shared<storm::figaro::storage::FigaroState<ValueType>>(initialState, 0);
+                StateType id = stateToIdCallback(initialStateApproximation);
+                initialStateApproximation->setId(id);
+                initialStateIndices.push_back(id);
+                return initialStateIndices;
+            }
+
+            template<typename ValueType, typename StateType>
+            storm::generator::StateBehavior<ValueType, StateType>
+            FigaroNextStateGenerator<ValueType,StateType>::expandApproximation(StateToIdCallbackapproximation const& stateToIdCallback){
+                // Prepare the result, in case we return early.
+                storm::generator::StateBehavior<ValueType, StateType> result;
+                result.setExpanded(true);
+                //Todo: Add state reward functionality later.
+                //Todo: return early in case of terminanl expression.
+                //we have unique choice (0) for each state and it is always Markovian
+                bool markovian = false;
+                std::vector<std::tuple<int, double,std::string,int>> menue = figaromodel.showFireableOccurrences();
+                if (menue.size() == 0)
+                {
+                    storm::generator::Choice<ValueType, StateType> choice(0, true);
+                    // Add self loop
+                    /***************************
+
+                     * **************************************/
+                    FigaroStatePointer  figState = std::make_shared<storm::figaro::storage::FigaroState<ValueType>>(*this->state, 0);
+                    choice.addProbability(stateToIdCallback(figState), storm::utility::one<ValueType>());
+                    STORM_LOG_TRACE("Added self loop for " << *this->state);
+                    // No further exploration required
+                    result.addChoice(std::move(choice));
+                    result.setExpanded();
+                    return result;
+                }
+                std::vector<storm::generator::CompressedState> menuestates;
+                double totalExitrate = 0;
+                if (std::get<2>(menue[0]) == "EXP")
+                {
+                    markovian = true; //markovian choice
+                }
+                else if (std::get<2>(menue[0]) == "INS")
+                {
+                    markovian = false; //probablistic choice
+                }
+                else
+                {
+                    std::cout<<"The choice is intelligible\n";
+                    exit(2); // add storm exception here to indicate that the choice is intelligible
+                }
+
+                storm::generator::Choice<ValueType> choice(0,markovian);
+
+                if (std::get<2>(menue[0]) == "EXP")
+                {
+
+                    storm::generator::CompressedState tempstate(this->variableInformation.getTotalBitOffset(true));
+
+
+
+                    for (auto i = 0; i<menue.size(); ++i){
+                        totalExitrate += std::get<1>(menue[i]);
+//                    figaromodel.printState();
+                        unpackStateIntoFigaroModel(*this->state);
+                        figaromodel.runInteractions();
+//                    std::cout<<"\nafter unpackingg\n";
+//                    figaromodel.printState();
+                        figaromodel.fireOccurrence(std::get<0>(menue[i]));
+                        figaromodel.runInteractions();
+//                    std::cout<< "herere";
+                        retreiveFigaroModelState(tempstate);
+//                    std::cout<< "herere3";
+                        menuestates.push_back(tempstate);
+                    }
+                    printmenue(menuestates, menue, *this->state);
+                    for (auto i = 0; i<menue.size(); ++i){
+                        FigaroStatePointer figState = std::make_shared<storm::figaro::storage::FigaroState<ValueType>>(menuestates[i], 0);
+                        choice.addProbability(stateToIdCallback(figState), std::get<1>(menue[i]));
+
+                    }
+                }
+                else if (std::get<2>(menue[0]) == "INS")
+                {
+
+                    storm::generator::CompressedState tempstate(this->variableInformation.getTotalBitOffset(true));
+
+
+                    std::vector<std::pair<std::string, double>> inst_menue = create_inst_menue(menue);
+                    for (auto i = 0; i<inst_menue.size(); ++i){
+                        totalExitrate += inst_menue[i].second;
+                        unpackStateIntoFigaroModel(*this->state);
+//                        figaromodel.runInteractions();
+                        figaromodel.fireinsttransitiongroup(inst_menue[i].first);
+                        figaromodel.runInteractions();
+                        retreiveFigaroModelState(tempstate);
+                        menuestates.push_back(tempstate);
+                    }
+                    printinstmenue(menuestates, inst_menue, *this->state);
+
+                    for (auto i = 0; i<inst_menue.size(); ++i){
+                        FigaroStatePointer figState = std::make_shared<storm::figaro::storage::FigaroState<ValueType>>(menuestates[i], 0);
+                        choice.addProbability(stateToIdCallback(figState), inst_menue[i].second);
+
+
+                    }
+                }
+                else
+                {
+                    std::cout<<"The choice is intelligible\n";
+                    exit(2); // add storm exception here to indicate that the choice is intelligible
+                }
+
+
+
+
+                //can also merge in previous loop
+
+
+
+
+//                insert explored states to state index
+
+                //Get all choices for the state
+                std::vector<storm::generator::Choice<ValueType>> allChoices;
+                allChoices.push_back(choice);
+//                std::cout<<"\nNow I am in expand function\n";
+                // to do: I have single choice during refactoring remove this approach and directly add choice to results.
+//                for (auto& choice : allChoices) {
+//                    result.addChoice(std::move(choice));
+//                }
+                result.addChoice(std::move(choice));
+                return result;
+            }
+
+
+
             template<typename ValueType, typename StateType>
             storm::generator::CompressedState FigaroNextStateGenerator<ValueType,StateType>::maskstate(storm::generator::CompressedState &figarostate)
-
             {storm::generator::CompressedState result(this->variableInformation.getTotalBitOffset(true));
 
                 for (int i =0; i<figarostate.size(); i++){

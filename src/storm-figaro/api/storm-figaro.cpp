@@ -16,10 +16,10 @@
 namespace storm {
     namespace figaro {
         namespace api{
-
+//            storm::figaro::
 
             std::shared_ptr<storm::figaro::FigaroProgram> loadFigaroProgram(){
-                std::shared_ptr<storm::figaro::FigaroProgram> figaromodel=  std::make_shared<storm::figaro::FigaroProgram3> (storm::figaro::FigaroProgram3());
+                std::shared_ptr<storm::figaro::FigaroProgram> figaromodel=  std::make_shared<storm::figaro::FigaroProgram1> (storm::figaro::FigaroProgram1());
                 return figaromodel;
             }
 //pare properties form teh xml file
@@ -28,7 +28,7 @@ namespace storm {
                 storm::utility::openFile(filepath, contents);
                 //    ParseXML file and interpret properties
                 storm::utility::closeFile(contents);
-                //I set only two prperties here
+                //I set only two properties here
 
                 //TODO use the following xml support
                 //#ifdef STORM_HAVE_XERCES
@@ -36,11 +36,12 @@ namespace storm {
                 //#include <xercesc/util/XMLString.hpp>
 
                 int missiontime = 100;
-                properties.push_back("Pmax=?  [F<="+ std::to_string(missiontime) + " \"failed\"]");
+//                properties.push_back("Pmax=?  [F<="+ std::to_string(missiontime) + " \"failed\"]");
+                properties.push_back("Pmax=?  [F [" + std::to_string(missiontime)+"," + std::to_string(missiontime) + "] \"failed\"]");
+//                std::stringstream stream;
+//                stream << "Pmax=? [F [" << missiontime<<"," << missiontime<< "] \"failed\"]";
+//                properties.push_back(stream.str());
 
-                std::stringstream stream;
-                stream << "Pmax=? [F [" << missiontime<<"," << missiontime<< "] \"failed\"]";
-                properties.push_back(stream.str());
                 return properties;
             }
 

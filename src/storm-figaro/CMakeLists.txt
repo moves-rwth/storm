@@ -16,7 +16,7 @@ set_target_properties(storm-figaro PROPERTIES DEFINE_SYMBOL "")
 list(APPEND STORM_TARGETS storm-figaro)
 set(STORM_TARGETS ${STORM_TARGETS} PARENT_SCOPE)
 
-target_link_libraries(storm-figaro PUBLIC storm storm-parsers ${STORM_FIGARO_LINK_LIBRARIES})
+target_link_libraries(storm-figaro PUBLIC storm storm-parsers storm-dft ${STORM_FIGARO_LINK_LIBRARIES})
 
 # Install storm headers to include directory.
 foreach(HEADER ${STORM_FIGARO_HEADERS})

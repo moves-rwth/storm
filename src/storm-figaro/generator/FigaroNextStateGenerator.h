@@ -4,9 +4,11 @@
 #define STORM_GENERATOR_FIGARONEXTSTATEGENERATOR_H_
 
 #include "storm/generator/NextStateGenerator.h"
+#include "storm/builder/ExplicitModelBuilder.h"
 #include "storm/storage/BoostTypes.h"
 #include "storm-figaro/model/FigaroModel.h"
 #include <set>
+#include <storm-figaro/storage/FigaroState.h>
 //#include <iostream>
 //#include <array>
 //#include <sstream>
@@ -24,10 +26,12 @@ namespace storm {
         namespace generator{
             
             template<typename ValueType, typename StateType>
-            class FigaroNextStateGenerator: public storm::generator::NextStateGenerator<ValueType, StateType>
+        class FigaroNextStateGenerator: public storm::generator::NextStateGenerator<ValueType, StateType> //, storm::figaro::builder::ExplicitFigaroModelBuilder<ValueType, StateType>
             {
             public:
             typedef typename storm::generator::NextStateGenerator<ValueType, StateType>::StateToIdCallback StateToIdCallback;
+            using FigaroStatePointer = std::shared_ptr<storm::figaro::storage::FigaroState<ValueType>>;
+            typedef std::function<StateType  (FigaroStatePointer const&)> StateToIdCallbackapproximation;
 //            Without expression Manger
             FigaroNextStateGenerator(storm::figaro::FigaroProgram & model, storm::generator::NextStateGeneratorOptions const& options = storm::generator::NextStateGeneratorOptions());
 
@@ -44,7 +48,8 @@ namespace storm {
             virtual void load(storm::generator::CompressedState const& state) override;
             virtual storm::generator::StateBehavior<ValueType, StateType> expand(StateToIdCallback const& stateToIdCallback) override;
             void retreiveFigaroModelState(storm::generator::CompressedState &state);
-            
+            std::vector<StateType> getInitialStatesApproximation(StateToIdCallbackapproximation const& stateToIdCallback);
+            storm::generator::StateBehavior<ValueType, StateType> expandApproximation(StateToIdCallbackapproximation const& stateToIdCallback);
 
             void printhello();
             storm::generator::CompressedState maskstate(storm::generator::CompressedState &figarostate);

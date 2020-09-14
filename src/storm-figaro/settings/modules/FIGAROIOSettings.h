@@ -120,7 +120,12 @@ namespace storm {
                  * @return The maximal exploration depth.
                  */
                 uint_fast64_t getMaxDepth() const;
-                //
+                /*!
+                * Retrieves whether statistics about the DFT analysis should be displayed.
+                *
+                * @return True if the statistics option was set.
+                */
+                bool isShowFigaroStatisticsSet() const;
                 bool check() const override;
                 void finalize() override;
                 
@@ -143,6 +148,8 @@ namespace storm {
                 static const std::string approximationErrorOptionShortName;
                 static const std::string approximationHeuristicOptionName;
                 static const std::string maxDepthOptionName;
+                static const std::string figaroStatisticsOptionName;
+                static const std::string figaroStatisticsOptionShortName;
             };
         }
     }
