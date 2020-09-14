@@ -580,15 +580,21 @@ namespace storm {
                     // TODO: make nicer
                     storm::storage::SparseMatrix<ValueType> matrix = modelComponents.transitionMatrix;
                     storm::models::sparse::StateLabeling labeling = modelComponents.stateLabeling;
-                    if (lowerBound) {
-                        // Set self loop for lower bound
-                        for (auto it = skippedStates.begin(); it != skippedStates.end(); ++it) {
-                            auto matrixEntry = matrix.getRow(it->first, 0).begin();
-                            STORM_LOG_ASSERT(matrixEntry->getColumn() == 0, "Transition has wrong target state.");
+                    // Set self loop
+                    for (auto it = skippedStates.begin(); it != skippedStates.end(); ++it) {
+                        auto matrixEntry = matrix.getRow(it->first, 0).begin();
+                        STORM_LOG_ASSERT(matrixEntry->getColumn() == 0, "Transition has wrong target state.");
 //                            STORM_LOG_ASSERT(!it->second.first->isPseudoState(), "State is still pseudo state.");
-                            matrixEntry->setValue(storm::utility::one<ValueType>());
-                            matrixEntry->setColumn(it->first);
+                        matrixEntry->setValue(storm::utility::one<ValueType>());
+                        matrixEntry->setColumn(it->first);
+                    }
+                    if (lowerBound) {
+                        // Make skipped states not failed states for lower bound
+                        storm::storage::BitVector failedStates = modelComponents.stateLabeling.getStates("failed");
+                        for (auto it = skippedStates.begin(); it != skippedStates.end(); ++it) {
+                            failedStates.set(it->first, false);
                         }
+                        labeling.setStates("failed", failedStates);
                     } else {
                         // Make skipped states failed states for upper bound
                         storm::storage::BitVector failedStates = modelComponents.stateLabeling.getStates("failed");
