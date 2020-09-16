@@ -35,7 +35,7 @@ namespace storm {
 
             virtual std::shared_ptr<storm::analysis::Order> extendOrder(std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<typename SparseModelType::ValueType> region) override;
 
-            virtual void initializeLocalMonotonicityResults(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) override;
+            virtual void extendLocalMonotonicityResult(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) override;
 
         protected:
                 
@@ -78,6 +78,7 @@ namespace storm {
             // Used for monotonicity
             storm::analysis::OrderExtender<typename SparseModelType::ValueType, ConstantType>* orderExtender;
             bool useOrderExtender;
+
             std::unique_ptr<storm::analysis::MonotonicityChecker<typename SparseModelType::ValueType>> monotonicityChecker;
         };
     }

@@ -108,6 +108,7 @@ namespace storm {
             return resultingVector;
         }
 
+
         template<typename ParametricType>
         typename ParameterRegion<ParametricType>::Valuation ParameterRegion<ParametricType>::getSomePoint() const {
             return this->getLowerBoundaries();
@@ -155,6 +156,55 @@ namespace storm {
                     subUpper.insert(typename Valuation::value_type(variable, std::max(vertexEntry->second, splittingPointEntry->second)));
                 }
                 ParameterRegion<ParametricType> subRegion(std::move(subLower), std::move(subUpper));
+                if(!storm::utility::isZero(subRegion.area())){
+                    regionVector.push_back(std::move(subRegion));
+                }
+            }
+        }
+
+        template<typename ParametricType>
+        void ParameterRegion<ParametricType>::split(
+                const ParameterRegion<ParametricType>::Valuation &splittingPoint, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector,
+                storm::analysis::MonotonicityResult<ParameterRegion<ParametricType>::VariableType> monRes, bool onlyMonotoneVars) const {
+            if (!monRes.existsMonotonicity()) {
+                return split(splittingPoint, regionVector);
+            }
+            //Check if splittingPoint is valid.
+            STORM_LOG_THROW(splittingPoint.size() == this->variables.size(), storm::exceptions::InvalidArgumentException, "Tried to split a region w.r.t. a point, but the point considers a different number of variables.");
+            for(auto const& variable : this->variables){
+                auto splittingPointEntry=splittingPoint.find(variable);
+                STORM_LOG_THROW(splittingPointEntry != splittingPoint.end(), storm::exceptions::InvalidArgumentException, "Tried to split a region but a variable of this region is not defined by the splitting point.");
+                STORM_LOG_THROW(this->getLowerBoundary(variable) <=splittingPointEntry->second, storm::exceptions::InvalidArgumentException, "Tried to split a region but the splitting point is not contained in the region.");
+                STORM_LOG_THROW(this->getUpperBoundary(variable) >=splittingPointEntry->second, storm::exceptions::InvalidArgumentException, "Tried to split a region but the splitting point is not contained in the region.");
+            }
+
+            //Now compute the subregions.
+            std::pair<std::set<VariableType>, std::set<VariableType>> monNonMonVariables = monRes.splitVariables(this->getVariables());
+            std::vector<Valuation> vertices;
+            if (onlyMonotoneVars) {
+                vertices = getVerticesOfRegion(monNonMonVariables.first);
+            } else {
+                vertices = getVerticesOfRegion(monNonMonVariables.second);
+            }
+
+            for(auto const& vertex : vertices){
+                //The resulting subregion is the smallest region containing vertex and splittingPoint.
+                Valuation subLower, subUpper;
+
+                for(auto variableBound : this->lowerBoundaries){
+                    VariableType variable = variableBound.first;
+                    auto vertexEntry=vertex.find(variable);
+                    if (vertexEntry != vertex.end()) {
+                        auto splittingPointEntry = splittingPoint.find(variable);
+                        subLower.insert(typename Valuation::value_type(variable, std::min(vertexEntry->second, splittingPointEntry->second)));
+                        subUpper.insert(typename Valuation::value_type(variable, std::max(vertexEntry->second, splittingPointEntry->second)));
+                    } else {
+                        subLower.insert(typename Valuation::value_type(variable, getLowerBoundary(variable)));
+                        subUpper.insert(typename Valuation::value_type(variable, getUpperBoundary(variable)));
+                    }
+                }
+                ParameterRegion<ParametricType> subRegion(std::move(subLower), std::move(subUpper));
+
                 if(!storm::utility::isZero(subRegion.area())){
                     regionVector.push_back(std::move(subRegion));
                 }

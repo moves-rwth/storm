@@ -2,6 +2,8 @@
 
 #include <ostream>
 #include <map>
+#include <set>
+
 #include <memory>
 
 namespace storm {
@@ -58,6 +60,8 @@ namespace storm {
              */
             std::map<VariableType, Monotonicity> getMonotonicityResult() const;
 
+
+            std::pair<std::set<VariableType>, std::set<VariableType>> splitVariables(std::set<VariableType> const& consideredVariables) const;
             /*!
              * Constructs a string output of all variables and their corresponding Monotonicity
              *

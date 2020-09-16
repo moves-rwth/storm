@@ -151,7 +151,7 @@ namespace storm {
                     orders.emplace(extendOrder(nullptr, region));
                     assert (orders.front() != nullptr);
                     auto monRes = std::shared_ptr< storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(orders.front()->getNumberOfStates()));
-                    initializeLocalMonotonicityResults(region, orders.front(), monRes);
+                    extendLocalMonotonicityResult(region, orders.front(), monRes);
                     localMonotonicityResults.emplace(monRes);
                     order = orders.front();
                     localMonotonicityResult = localMonotonicityResults.front();
@@ -227,7 +227,10 @@ namespace storm {
                                                                      RegionResult::Unknown);
 
                                 std::vector<storm::storage::ParameterRegion<ParametricType>> newKnownRegions;
-                                this->splitAtCenter(env, currentRegion, newRegions, newKnownRegions, *(localMonotonicityResult->getGlobalMonotonicityResult()), res);
+                                // Only split in non-monotone vars
+                                currentRegion.split(currentRegion.getCenterPoint(), newRegions, *(localMonotonicityResult->getGlobalMonotonicityResult()), true);
+
+//                                this->splitAtCenter(env, currentRegion, newRegions, newKnownRegions, *(localMonotonicityResult->getGlobalMonotonicityResult()), res);
                                 initResForNewRegions = (res == RegionResult::CenterSat) ? RegionResult::ExistsSat :
                                                        ((res == RegionResult::CenterViolated) ? RegionResult::ExistsViolated :
                                                         RegionResult::Unknown);
@@ -339,7 +342,7 @@ namespace storm {
 
 
         template <typename ParametricType>
-        void RegionModelChecker<ParametricType>::initializeLocalMonotonicityResults(storm::storage::ParameterRegion<ParametricType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult){
+        void RegionModelChecker<ParametricType>::extendLocalMonotonicityResult(storm::storage::ParameterRegion<ParametricType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult){
             STORM_LOG_WARN("Initializing local Monotonicity Results not implemented for RegionModelChecker.");
         }
 
@@ -384,11 +387,6 @@ namespace storm {
             this->useMonotonicity = monotonicity;
         }
 
-        template <typename ParametricType>
-        void RegionModelChecker<ParametricType>::splitAtCenter(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, std::vector<storm::storage::ParameterRegion<ParametricType>>& regionVector, std::vector<storm::storage::ParameterRegion<ParametricType>>& knownRegionVector, storm::analysis::MonotonicityResult<VariableType> const& monRes, storm::modelchecker::RegionResult& regionRes) {
-            region.split(region.getCenterPoint(), regionVector);
-        }
-    
 #ifdef STORM_HAVE_CARL
             template class RegionModelChecker<storm::RationalFunction>;
 #endif
