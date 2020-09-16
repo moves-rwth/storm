@@ -59,15 +59,15 @@ namespace storm {
 
                 for (auto const& unfoldedToOldEntry : unfoldedToOld) {
                     transitionMatrixBuilder.newRowGroup(newRowGroupStart);
-                    std::cout << "\tconsider new state " << unfoldedToOldEntry.first << std::endl;
+                    //std::cout << "\tconsider new state " << unfoldedToOldEntry.first << std::endl;
                     assert(step == 0 || newRowCount == transitionMatrixBuilder.getLastRow() + 1);
                     svbuilder.addState(unfoldedToOldEntry.first, {}, {static_cast<int64_t>(unfoldedToOldEntry.second)});
                     uint64_t oldRowIndexStart = model.getNondeterministicChoiceIndices()[unfoldedToOldEntry.second];
                     uint64_t oldRowIndexEnd = model.getNondeterministicChoiceIndices()[unfoldedToOldEntry.second+1];
 
                     for (uint64_t oldRowIndex = oldRowIndexStart; oldRowIndex != oldRowIndexEnd; oldRowIndex++) {
-                        std::cout << "\t\tconsider old action " << oldRowIndex << std::endl;
-                        std::cout << "\t\tconsider new row nr " << newRowCount << std::endl;
+                        //std::cout << "\t\tconsider old action " << oldRowIndex << std::endl;
+                        //std::cout << "\t\tconsider new row nr " << newRowCount << std::endl;
 
                         ValueType resetProb = storm::utility::zero<ValueType>();
                         // We first find the reset probability
@@ -76,14 +76,14 @@ namespace storm {
                                 resetProb += oldRowEntry.getValue();
                             }
                         }
-                        std::cout << "\t\t\t add reset" << std::endl;
+                        //std::cout << "\t\t\t add reset" << std::endl;
 
                         // Add the resets
                         if (resetProb != storm::utility::zero<ValueType>()) {
                             transitionMatrixBuilder.addNextValue(newRowCount, 0, resetProb);
                         }
 
-                        std::cout << "\t\t\t add other transitions..." << std::endl;
+                        //std::cout << "\t\t\t add other transitions..." << std::endl;
 
                         // Now, we build the outgoing transitions.
                         for (auto const &oldRowEntry : model.getTransitionMatrix().getRow(oldRowIndex)) {
@@ -101,7 +101,7 @@ namespace storm {
                             } else {
                                 column = entryIt->second;
                             }
-                            std::cout << "\t\t\t\t transition to " << column << std::endl;
+                            //std::cout << "\t\t\t\t transition to " << column << std::endl;
                             transitionMatrixBuilder.addNextValue(newRowCount, column,
                                                                    oldRowEntry.getValue());
                         }
@@ -145,7 +145,6 @@ namespace storm {
 
             storm::storage::sparse::ModelComponents<ValueType> components;
             components.transitionMatrix = transitionMatrixBuilder.build();
-            std::cout << components.transitionMatrix << std::endl;
 
             STORM_LOG_ASSERT(components.transitionMatrix.getRowGroupCount() == targetState + 1, "Expect row group count (" << components.transitionMatrix.getRowGroupCount() << ") one more as target state index " << targetState << ")");
 

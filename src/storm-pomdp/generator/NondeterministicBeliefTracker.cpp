@@ -2,6 +2,7 @@
 #include "storm-pomdp/generator/NondeterministicBeliefTracker.h"
 #include "storm/utility/ConstantsComparator.h"
 #include "storm/storage/geometry/nativepolytopeconversion/QuickHull.h"
+#include "storm/storage/geometry/ReduceVertexCloud.h"
 #include "storm/utility/vector.h"
 
 namespace storm {
@@ -197,6 +198,12 @@ namespace storm {
         uint64_t SparseBeliefState<ValueType>::getSupportSize() const {
             return manager->getNumberOfStates();
         }
+
+        template<typename ValueType>
+        std::map<uint64_t, ValueType> const& SparseBeliefState<ValueType>::getBeliefMap() const {
+            return belief;
+        }
+
 
         template<typename ValueType>
         void SparseBeliefState<ValueType>::setSupport(storm::storage::BitVector& support) const {
@@ -486,45 +493,33 @@ namespace storm {
         }
 
 //
-//        template<typename ValueType, typename BeliefState>
-//        void NondeterministicBeliefTracker<ValueType, BeliefState>::reduce() {
-//            std::cout << "reduce" << std::endl;
-//            storm::storage::BitVector support(beliefs.begin()->getSupportSize());
-//            std::cout << "supp generated" << std::endl;
-//            for(auto const& belief : beliefs) {
-//                belief.setSupport(support);
-//            }
-//            std::cout << "Support:" << support << std::endl;
-//
-//            if (beliefs.size() <= support.getNumberOfSetBits()) {
-//                return;
-//            }
-//
-//            std::vector<typename storm::storage::geometry::QuickHull<ValueType>::EigenVector> points;
-//            for(auto const& bel : beliefs) {
-//                std::cout << bel.toEigenVector(support) << std::endl;
-//                points.push_back(bel.toEigenVector(support));
-//            }
-//
-//            storm::storage::geometry::QuickHull<ValueType> qh;
-//            std::cout << "Run QH (dim=" << points[0].size() << ")" << std::endl;
-//            qh.generateHalfspacesFromPoints(points, true);
-//            std::cout << "End QH" << std::endl;
-//            auto filteredPoints = qh.getRelevantVertices();
-//            //if (filteredPoints.size() < points.size()) {
-//            //    for(auto const& fp : filteredPoints) {
-//            //        beliefs.emplace(manager,filteredPoints);
-//            //    }
-//            //}
-//        }
+        template<typename ValueType, typename BeliefState>
+        uint64_t NondeterministicBeliefTracker<ValueType, BeliefState>::reduce() {
+            std::shared_ptr<storm::utility::solver::SmtSolverFactory> solverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
+            storm::storage::geometry::ReduceVertexCloud<ValueType> rvc(solverFactory);
+            std::vector<std::map<uint64_t, ValueType>> points;
+            std::vector<typename std::unordered_set<BeliefState>::iterator> iterators;
+            for (auto it = beliefs.begin(); it != beliefs.end(); ++it) {
+                // TODO get rid of the getBeliefMap function.
+                points.push_back(it->getBeliefMap());
+                iterators.push_back(it);
+            }
+            storm::storage::BitVector eliminate = ~rvc.eliminate(points, pomdp.getNumberOfStates());
+
+            auto selectedIterators = storm::utility::vector::filterVector(iterators, eliminate);
+            for (auto iter : selectedIterators) {
+                beliefs.erase(iter);
+            }
+            return eliminate.getNumberOfSetBits();
+        }
 
 
         template class SparseBeliefState<double>;
         template bool operator==(SparseBeliefState<double> const&, SparseBeliefState<double> const&);
         template class NondeterministicBeliefTracker<double, SparseBeliefState<double>>;
-        template class ObservationDenseBeliefState<double>;
-        template bool operator==(ObservationDenseBeliefState<double> const&, ObservationDenseBeliefState<double> const&);
-        template class NondeterministicBeliefTracker<double, ObservationDenseBeliefState<double>>;
+        //template class ObservationDenseBeliefState<double>;
+        //template bool operator==(ObservationDenseBeliefState<double> const&, ObservationDenseBeliefState<double> const&);
+        //template class NondeterministicBeliefTracker<double, ObservationDenseBeliefState<double>>;
 
 
     }

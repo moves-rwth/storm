@@ -46,6 +46,7 @@ namespace storm {
             Eigen::Matrix<ValueType, Eigen::Dynamic, 1> toEigenVector(storm::storage::BitVector const& support) const;
             uint64_t getSupportSize() const;
             void setSupport(storm::storage::BitVector&) const;
+            std::map<uint64_t, ValueType> const& getBeliefMap() const;
 
             friend bool operator==<>(SparseBeliefState<ValueType> const& lhs, SparseBeliefState<ValueType> const& rhs);
         private:
@@ -102,7 +103,7 @@ namespace storm {
             uint32_t getCurrentObservation() const;
             ValueType getCurrentRisk(bool max=true);
             void setRisk(std::vector<ValueType> const& risk);
-            //void reduce();
+            uint64_t reduce();
 
         private:
 
