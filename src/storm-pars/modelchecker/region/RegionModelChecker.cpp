@@ -153,8 +153,6 @@ namespace storm {
                     auto monRes = std::shared_ptr< storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(orders.front()->getNumberOfStates()));
                     initializeLocalMonotonicityResults(region, orders.front(), monRes);
                     localMonotonicityResults.emplace(monRes);
-                    setUseMonotonicityNow();
-
                     order = orders.front();
                     localMonotonicityResult = localMonotonicityResults.front();
 
@@ -384,11 +382,6 @@ namespace storm {
         template <typename ParametricType>
         void RegionModelChecker<ParametricType>::setUseMonotonicityInFuture(bool monotonicity) {
             this->useMonotonicity = monotonicity;
-        }
-
-        template <typename ParametricType>
-        void RegionModelChecker<ParametricType>::setUseMonotonicityNow(bool monotonicity) {
-            STORM_LOG_WARN("Setting usage of local monotonicity result not implemented");
         }
 
         template <typename ParametricType>

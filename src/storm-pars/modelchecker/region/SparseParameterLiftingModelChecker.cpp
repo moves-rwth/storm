@@ -70,12 +70,14 @@ namespace storm {
             bool existsSat = (hypothesis == RegionResultHypothesis::AllSat || result == RegionResult::ExistsSat || result == RegionResult::CenterSat);
             bool existsViolated = (hypothesis == RegionResultHypothesis::AllViolated || result == RegionResult::ExistsViolated || result == RegionResult::CenterViolated);
 
+            // Here we check on global monotonicity
             if (localMonotonicityResult != nullptr && localMonotonicityResult->isDone()) {
                 // Try to check it with a global monotonicity result
                 auto monRes = localMonotonicityResult->getGlobalMonotonicityResult();
                 bool lowerBound = isLowerBound(this->currentCheckTask->getBound().comparisonType);
 
                 if (monRes->isDone() && monRes->isAllMonotonicity()) {
+                    // Build valuations
                     auto monMap = monRes->getMonotonicityResult();
                     Valuation valuationToCheckSat;
                     Valuation valuationToCheckViolated;
@@ -103,6 +105,7 @@ namespace storm {
                         }
                     }
 
+                    // Check for result
                     if (existsSat && getInstantiationCheckerSAT().check(env, valuationToCheckSat)->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
                         STORM_LOG_INFO("Region " << region << " is AllSat, discovered with instantiation checker on " << valuationToCheckSat << " and help of monotonicity" << std::endl);
                         RegionModelChecker<typename SparseModelType::ValueType>::numberOfRegionsKnownThroughMonotonicity++;
@@ -119,7 +122,7 @@ namespace storm {
                 }
             }
 
-            // try to prove AllSat or AllViolated, depending on the hypothesis or the current result
+            // Try to prove AllSat or AllViolated, depending on the hypothesis or the current result
             if (existsSat) {
                 // show AllSat:
                 storm::solver::OptimizationDirection parameterOptimizationDirection = isLowerBound(this->currentCheckTask->getBound().comparisonType) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;

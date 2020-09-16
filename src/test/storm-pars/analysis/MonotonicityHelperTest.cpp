@@ -142,7 +142,7 @@ TEST(MonotonicityHelperTest, Brp_with_bisimulation_no_samples) {
     auto order = result.begin()->first;
     auto monotonicityResult = result.begin()->second.first;
     EXPECT_TRUE(monotonicityResult->isDone());
-    EXPECT_TRUE(monotonicityResult->isSomewhereMonotonicity());
+    EXPECT_TRUE(monotonicityResult->existsMonotonicity());
     EXPECT_TRUE(monotonicityResult->isAllMonotonicity());
     auto assumptions = result.begin()->second.second;
     EXPECT_EQ(0, assumptions.size());
@@ -193,7 +193,7 @@ TEST(MonotonicityHelperTest, Brp_with_bisimulation_samples) {
     auto order = result.begin()->first;
     auto monotonicityResult = result.begin()->second.first;
     EXPECT_TRUE(monotonicityResult->isDone());
-    EXPECT_TRUE(monotonicityResult->isSomewhereMonotonicity());
+    EXPECT_TRUE(monotonicityResult->existsMonotonicity());
     EXPECT_TRUE(monotonicityResult->isAllMonotonicity());
     auto assumptions = result.begin()->second.second;
     EXPECT_EQ(0, assumptions.size());
@@ -243,7 +243,7 @@ TEST(MonotonicityHelperTest, zeroconf) {
     auto order = result.begin()->first;
     auto monotonicityResult = result.begin()->second.first;
     EXPECT_TRUE(monotonicityResult->isDone());
-    EXPECT_TRUE(monotonicityResult->isSomewhereMonotonicity());
+    EXPECT_TRUE(monotonicityResult->existsMonotonicity());
     EXPECT_TRUE(monotonicityResult->isAllMonotonicity());
     auto assumptions = result.begin()->second.second;
     EXPECT_EQ(0, assumptions.size());
@@ -287,7 +287,7 @@ TEST(MonotonicityHelperTest, Simple1) {
     auto order = result.begin()->first;
     auto monotonicityResult = result.begin()->second.first;
     EXPECT_FALSE(monotonicityResult->isDone());
-    EXPECT_FALSE(monotonicityResult->isSomewhereMonotonicity());
+    EXPECT_FALSE(monotonicityResult->existsMonotonicity());
     EXPECT_FALSE(monotonicityResult->isAllMonotonicity());
     auto assumptions = result.begin()->second.second;
     EXPECT_EQ(0, assumptions.size());
@@ -328,7 +328,7 @@ TEST(MonotonicityHelperTest, Casestudy1) {
     auto order = result.begin()->first;
     auto monotonicityResult = result.begin()->second.first;
     EXPECT_TRUE(monotonicityResult->isDone());
-    EXPECT_TRUE(monotonicityResult->isSomewhereMonotonicity());
+    EXPECT_TRUE(monotonicityResult->existsMonotonicity());
     EXPECT_TRUE(monotonicityResult->isAllMonotonicity());
     auto assumptions = result.begin()->second.second;
     EXPECT_EQ(0, assumptions.size());
@@ -372,7 +372,7 @@ TEST(MonotonicityHelperTest, CaseStudy2) {
     auto order = result.begin()->first;
     auto monotonicityResult = result.begin()->second.first;
     EXPECT_FALSE(monotonicityResult->isDone());
-    EXPECT_TRUE(monotonicityResult->isSomewhereMonotonicity());
+    EXPECT_TRUE(monotonicityResult->existsMonotonicity());
     EXPECT_TRUE(monotonicityResult->isAllMonotonicity());
     auto assumptions = result.begin()->second.second;
     EXPECT_EQ(0, assumptions.size());
@@ -414,7 +414,7 @@ TEST(MonotonicityHelperTest, Casestudy3_not_monotone) {
 
     auto monotonicityResult = result.begin()->second.first;
     EXPECT_TRUE(monotonicityResult->isDone());
-    EXPECT_FALSE(monotonicityResult->isSomewhereMonotonicity());
+    EXPECT_FALSE(monotonicityResult->existsMonotonicity());
     EXPECT_FALSE(monotonicityResult->isAllMonotonicity());
     auto assumptions = result.begin()->second.second;
     EXPECT_EQ(0, assumptions.size());
@@ -455,7 +455,7 @@ TEST(MonotonicityHelperTest, Casestudy3_monotone) {
 
     auto monotonicityResult = result.begin()->second.first;
     EXPECT_TRUE(monotonicityResult->isDone());
-    EXPECT_TRUE(monotonicityResult->isSomewhereMonotonicity());
+    EXPECT_TRUE(monotonicityResult->existsMonotonicity());
     EXPECT_TRUE(monotonicityResult->isAllMonotonicity());
     auto assumptions = result.begin()->second.second;
     EXPECT_EQ(0, assumptions.size());

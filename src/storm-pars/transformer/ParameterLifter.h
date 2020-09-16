@@ -69,9 +69,12 @@ namespace storm {
             // Returns the resulting vector. Should only be called AFTER specifying a region
             std::vector<ConstantType> const& getVector() const;
 
-
             std::vector<std::set<VariableType>> const& getOccurringVariablesAtState() const;
-            
+
+            uint_fast64_t getRowGroupIndex(uint_fast64_t originalState) const;
+            uint_fast64_t getRowGroupSize(uint_fast64_t originalState) const;
+            uint_fast64_t getRowGroupCount() const;
+
             /*
              * During initialization, the actual regions are not known. Hence, we consider abstract valuations,
              * where it is only known whether a parameter will be set to either the lower/upper bound of the region or whether this is unspecified
@@ -105,11 +108,6 @@ namespace storm {
             // Returns for each row the abstract valuation for this row
             // Note: the returned vector might be empty if row label generaion was disabled initially
             std::vector<AbstractValuation> const& getRowLabels() const;
-
-            void setConstantEntries(std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
-
-            void setUseMonotonicityNow(bool useMonotonicity = true);
-
             
         private:
             /*
@@ -166,31 +164,8 @@ namespace storm {
             std::vector<ConstantType> vector; //The resulting vector
             std::vector<std::pair<typename std::vector<ConstantType>::iterator, ConstantType&>> vectorAssignment; // Connection of vector entries with placeholders
 
-            // For partial scheduler
-            bool usePartialScheduler = false;
-            bool useMonotonicityInFuture = false;
-            std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>> specifyIteratorsPartialScheduler ();
-
-            // Used for monotonicity
+            // Used for monotonicity in sparsedtmcparameterlifter
             std::vector<std::set<VariableType>> occurringVariablesAtState;
-
-            storm::storage::BitVector getPartialSchedulerMonotonicity (storm::storage::ParameterRegion<ParametricType> const& region, std::shared_ptr<storm::analysis::Order> reachabilityOrder, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult, bool useMinimize);
-
-            storm::analysis::MonotonicityChecker<ParametricType>* monotonicityChecker; // MonotonicityChecker object, on the original pMatrix
-
-            // Vector of following tuple: 1) matrix, 2) matrixassignment 3)selectedRows
-            std::vector<std::tuple<storm::storage::SparseMatrix<ConstantType>, boost::optional<std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>>>, storm::storage::BitVector>>  monResResultsMinimize;
-            std::vector<std::tuple<storm::storage::SparseMatrix<ConstantType>, boost::optional<std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>>>, storm::storage::BitVector>>  monResResultsMaximize;
-
-            storm::storage::SparseMatrix<ConstantType> lastMatrix;
-            std::vector<ConstantType> lastVector;
-            storm::storage::BitVector lastSelectedRows;
-            std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>> lastMatrixAssignment; // Connection of matrix entries with placeholders
-
-            std::vector<std::pair<uint_fast64_t, uint_fast64_t>> numberOfPlaceHolders;
-            std::vector<int> constantStates;
-            storm::storage::BitVector nonConstMatrixEntries;
-            storm::storage::BitVector nonConstVectorEntries;
         };
 
     }

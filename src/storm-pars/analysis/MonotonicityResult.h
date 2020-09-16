@@ -73,7 +73,7 @@ namespace storm {
             /*!
              * Checks if there is any variable that is monotone
              */
-            bool isSomewhereMonotonicity();
+            bool existsMonotonicity();
 
             /*!
              * Returns if all Variables are monotone

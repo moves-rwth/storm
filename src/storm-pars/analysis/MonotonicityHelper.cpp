@@ -160,7 +160,7 @@ namespace storm {
                             }
 
                             auto criticalTuple = extender->extendOrder(orderCopy, monResCopy, assumption.first);
-                            if (monResCopy->isSomewhereMonotonicity()) {
+                            if (monResCopy->existsMonotonicity()) {
                                 extendOrderWithAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptionsCopy, monResCopy);
                             }
                         } else {
@@ -171,7 +171,7 @@ namespace storm {
                             }
 
                             auto criticalTuple = extender->extendOrder(order, monRes, assumption.first);
-                            if (monRes->isSomewhereMonotonicity()) {
+                            if (monRes->existsMonotonicity()) {
                                 extendOrderWithAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptions, monRes);
                             }
                         }

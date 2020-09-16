@@ -268,15 +268,13 @@ namespace storm {
         
         template <typename SparseModelType, typename ConstantType>
         std::unique_ptr<CheckResult> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::Order> reachabilityOrder, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) {
+            typedef typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType VariableType;
+            typedef typename storm::analysis::MonotonicityResult<VariableType>::Monotonicity Monotonicity;
+
             if (maybeStates.empty()) {
                 return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(resultsForNonMaybeStates);
             }
-
-            if (reachabilityOrder == nullptr) {
-                parameterLifter->specifyRegion(region, dirForParameters);
-            } else {
-                parameterLifter->specifyRegion(region, dirForParameters, reachabilityOrder, localMonotonicityResult);
-            }
+            parameterLifter->specifyRegion(region, dirForParameters);
 
             if (stepBound) {
                 assert(*stepBound > 0);
@@ -309,6 +307,57 @@ namespace storm {
                     }
                 }
                 solver->setTrackScheduler(true);
+
+                if (localMonotonicityResult != nullptr) {
+                    bool useMinimize = storm::solver::minimize(dirForParameters);
+                    if (useMinimize && !minSchedChoices) {
+                        minSchedChoices = std::vector<uint_fast64_t>(parameterLifter->getRowGroupCount(), 0);
+                    }
+                    if (!useMinimize && !maxSchedChoices) {
+                        maxSchedChoices = std::vector<uint_fast64_t>(parameterLifter->getRowGroupCount(), 0);
+                    }
+
+                    for (auto state = 0; state < parameterLifter->getRowGroupCount(); ++state) {
+                        if (reachabilityOrder->isBottomState(state) || reachabilityOrder->isTopState(state)) {
+                            // Do nothing
+                        } else {
+                            auto variables = parameterLifter->getOccurringVariablesAtState()[state];
+                            // point at which we start with rows for this state
+                            auto rowGroupIndex = parameterLifter->getRowGroupIndex(state);
+                            // number of rows (= #transitions) for this state
+                            auto numberOfRows = parameterLifter->getRowGroupSize(state);
+                            // variable at pos. index, changes lower/upperbound at 2^index
+                            // within a rowgroup we interprete vertexId as a bit sequence
+                            // the consideredVariables.size() least significant bits of vertex will always represent the next vertex
+                            // (00...0 = lower boundaries for all variables, 11...1 = upper boundaries for all variables)
+                            auto index = 0;
+
+                            assert (std::pow(2, variables.size()) == numberOfRows);
+
+                            STORM_LOG_THROW(variables.size() <= 1, storm::exceptions::NotImplementedException, "Using localMonRes not yet implemented for states with 2 or more variables, please run without --use-monotonicity");
+                            for (auto var : variables) {
+                                auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
+
+                                bool ignoreUpperBound = monotonicity == Monotonicity::Constant || (useMinimize && monotonicity == Monotonicity::Incr) || (!useMinimize && monotonicity == Monotonicity::Decr);
+                                bool ignoreLowerBound = !ignoreUpperBound && ((useMinimize && monotonicity == Monotonicity::Decr) || (!useMinimize && monotonicity == Monotonicity::Incr));
+                                if (ignoreLowerBound) {
+                                    if (useMinimize) {
+                                        minSchedChoices.get()[state] = 1;
+                                    } else {
+                                        maxSchedChoices.get()[state] = 1;
+                                    }
+                                } else if (ignoreUpperBound) {
+                                    if (useMinimize) {
+                                        minSchedChoices.get()[state] = 0;
+                                    } else {
+                                        maxSchedChoices.get()[state] = 0;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 if (storm::solver::minimize(dirForParameters) && minSchedChoices)
                     solver->setInitialScheduler(std::move(minSchedChoices.get()));
                 if (storm::solver::maximize(dirForParameters) && maxSchedChoices)
@@ -505,28 +554,6 @@ namespace storm {
                 STORM_LOG_WARN("Extending order for RegionModelChecker not implemented");
             }
             return order;
-        }
-
-        template<typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::setConstantEntries(std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) {
-            parameterLifter->setConstantEntries(localMonotonicityResult);
-        }
-
-        template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::splitAtCenter(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>>& regionVector, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>>& knownRegionVector, storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> const& monRes, storm::modelchecker::RegionResult& regionRes) {
-            auto optimizationDirection = isLowerBound(this->currentCheckTask->getBound().comparisonType) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
-            if (monRes.isDone() && monRes.isAllMonotonicity()) {
-                regionRes = getInstantiationChecker().check(env, region.getCenterPoint())->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()] ? RegionResult::CenterSat : RegionResult::CenterViolated;
-                region.split(region.getCenterPoint(), regionVector, knownRegionVector, monRes, regionRes, optimizationDirection);
-            } else {
-                region.split(region.getCenterPoint(), regionVector);
-            }
-        }
-        template<typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::setUseMonotonicityNow(bool monotonicity) {
-            parameterLifter->setUseMonotonicityNow(monotonicity);
-            maxSchedChoices = boost::none;
-            minSchedChoices = boost::none;
         }
 
 

@@ -34,8 +34,6 @@ namespace storm {
             virtual std::map<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType, double> getRegionSplitEstimate() const override;
 
             virtual std::shared_ptr<storm::analysis::Order> extendOrder(std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<typename SparseModelType::ValueType> region) override;
-            virtual void setConstantEntries(std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) override;
-            virtual void setUseMonotonicityNow(bool monotonicity = true) override;
 
             virtual void initializeLocalMonotonicityResults(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) override;
 
@@ -80,7 +78,6 @@ namespace storm {
             // Used for monotonicity
             storm::analysis::OrderExtender<typename SparseModelType::ValueType, ConstantType>* orderExtender;
             bool useOrderExtender;
-            virtual void splitAtCenter(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>>& regionVector, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>>& knownRegionVector, storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> const& monRes, storm::modelchecker::RegionResult& regionRes) override;
             std::unique_ptr<storm::analysis::MonotonicityChecker<typename SparseModelType::ValueType>> monotonicityChecker;
         };
     }
