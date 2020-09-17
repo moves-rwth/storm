@@ -580,13 +580,12 @@ namespace storm {
 
         template <typename SparseModelType, typename ConstantType>
         void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::splitSmart(
-                const storm::storage::ParameterRegion<typename SparseModelType::ValueType> &region,
+                storm::storage::ParameterRegion<typename SparseModelType::ValueType> &region,
                 std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> &regionVector,
-                storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> & monRes) const {
+                storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> & monRes) const{
             ConstantType currentValue = SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::lastValue;
             ConstantType difference = abs(thresholdTask - currentValue);
-            ConstantType thresholdDifference = 0.01;
-            // TODO: what if monotone var area is already small
+            ConstantType thresholdDifference = 0.5;
             if (difference < thresholdDifference) {
                 region.split(region.getCenterPoint(), regionVector, monRes, true, storm::utility::convertNumber<double>(difference));
             } else {

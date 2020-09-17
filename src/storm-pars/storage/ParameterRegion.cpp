@@ -165,7 +165,7 @@ namespace storm {
         template<typename ParametricType>
         void ParameterRegion<ParametricType>::split(
                 const ParameterRegion<ParametricType>::Valuation &splittingPoint, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector,
-                storm::analysis::MonotonicityResult<ParameterRegion<ParametricType>::VariableType> & monRes, bool onlyMonotoneVars, double splitThreshold) const {
+                storm::analysis::MonotonicityResult<ParameterRegion<ParametricType>::VariableType> & monRes, bool onlyMonotoneVars, double splitThreshold) {
             if (!monRes.existsMonotonicity()) {
                 return split(splittingPoint, regionVector);
             }
@@ -181,38 +181,43 @@ namespace storm {
             //Now compute the subregions.
             std::pair<std::set<VariableType>, std::set<VariableType>> monNonMonVariables = monRes.splitVariables(this->getVariables());
             std::vector<Valuation> vertices;
-            bool allToSmall = true;
-            if (onlyMonotoneVars) {
-                for (auto & variable: monNonMonVariables.first) {
-                    CoefficientType diff = getUpperBoundary(variable) - getLowerBoundary(variable);
-                    if (diff > storm::utility::convertNumber<CoefficientType>(splitThreshold)) {
-                        allToSmall = false;
-                        break;
-                    }
+            bool allToSmallMon = true;
+            bool allToSmallNonMon = true;
+            for (auto & variable: monNonMonVariables.first) {
+                CoefficientType diff = getUpperBoundary(variable) - getLowerBoundary(variable);
+                if (diff > storm::utility::convertNumber<CoefficientType>(splitThreshold)) {
+                    allToSmallMon = false;
+                    break;
                 }
-            } else {
-                for (auto & variable: monNonMonVariables.second) {
-                    CoefficientType diff = getUpperBoundary(variable) - getLowerBoundary(variable);
-                    if (diff > storm::utility::convertNumber<CoefficientType>(splitThreshold)) {
-                        allToSmall = false;
-                        break;
-                    }
+            }
+            for (auto & variable: monNonMonVariables.second) {
+                CoefficientType diff = getUpperBoundary(variable) - getLowerBoundary(variable);
+                if (diff > storm::utility::convertNumber<CoefficientType>(splitThreshold)) {
+                    allToSmallNonMon = false;
+                    break;
                 }
             }
 
-            if ((onlyMonotoneVars && !allToSmall) || (!onlyMonotoneVars && allToSmall)) {
+            if ((onlyMonotoneVars && !allToSmallMon) || (!onlyMonotoneVars && allToSmallNonMon && !allToSmallMon)) {
                 vertices = getVerticesOfRegion(monNonMonVariables.first);
-            } else {
+            } else if ((!onlyMonotoneVars && !allToSmallNonMon) || (onlyMonotoneVars && !allToSmallNonMon && allToSmallMon)) {
                 vertices = getVerticesOfRegion(monNonMonVariables.second);
+            } else {
+                if (lastSplitMonotone) {
+                    vertices = getVerticesOfRegion(monNonMonVariables.second);
+                } else {
+                    vertices = getVerticesOfRegion(monNonMonVariables.first);
+                }
+                lastSplitMonotone = !lastSplitMonotone;
             }
 
             STORM_LOG_INFO("Splitting region " << this->toString() << " in " << vertices.size() << " regions (original implementation would have splitted in 2^" << this->getVariables().size() << ")." << std::endl);
-            if (allToSmall) {
+            if ((allToSmallMon && !allToSmallNonMon) || (allToSmallNonMon && !allToSmallMon)) {
                 auto textLookingAt = onlyMonotoneVars ? "non-monotone" : "monotone";
                 auto textOriginal = onlyMonotoneVars ? "monotone" : "non-monotone";
                 STORM_LOG_INFO("Looking at " << textLookingAt << " instead of " << textOriginal);
             }
-            for(auto const& vertex : vertices){
+            for (auto const& vertex : vertices) {
                 //The resulting subregion is the smallest region containing vertex and splittingPoint.
                 Valuation subLower, subUpper;
                 for (auto variableBound : this->lowerBoundaries) {
@@ -227,7 +232,6 @@ namespace storm {
                         } else {
                             subLower.insert(typename Valuation::value_type(variable, std::min(vertexEntry->second, splittingPointEntry->second)));
                             subUpper.insert(typename Valuation::value_type(variable, std::max(vertexEntry->second, splittingPointEntry->second)));
-                            allToSmall = false;
                         }
                     } else {
                         subLower.insert(typename Valuation::value_type(variable, getLowerBoundary(variable)));
@@ -237,116 +241,8 @@ namespace storm {
 
                 ParameterRegion<ParametricType> subRegion(std::move(subLower), std::move(subUpper));
 
-                if(!storm::utility::isZero(subRegion.area())){
+                if (!storm::utility::isZero(subRegion.area())) {
                     regionVector.push_back(std::move(subRegion));
-                }
-            }
-        }
-
-        template<typename ParametricType>
-        void ParameterRegion<ParametricType>::split(
-                const ParameterRegion<ParametricType>::Valuation &splittingPoint, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector,
-                std::vector<storm::storage::ParameterRegion<ParametricType>> &knownRegionVector, storm::analysis::MonotonicityResult<ParameterRegion<ParametricType>::VariableType> monRes,
-                storm::modelchecker::RegionResult regionRes, storm::solver::OptimizationDirection parameterOptimizationDirection) const {
-
-            //Check if splittingPoint is valid.
-            STORM_LOG_THROW(splittingPoint.size() == this->variables.size(), storm::exceptions::InvalidArgumentException, "Tried to split a region w.r.t. a point, but the point considers a different number of variables.");
-            for(auto const& variable : this->variables){
-                auto splittingPointEntry=splittingPoint.find(variable);
-                STORM_LOG_THROW(splittingPointEntry != splittingPoint.end(), storm::exceptions::InvalidArgumentException, "Tried to split a region but a variable of this region is not defined by the splitting point.");
-                STORM_LOG_THROW(this->getLowerBoundary(variable) <=splittingPointEntry->second, storm::exceptions::InvalidArgumentException, "Tried to split a region but the splitting point is not contained in the region.");
-                STORM_LOG_THROW(this->getUpperBoundary(variable) >=splittingPointEntry->second, storm::exceptions::InvalidArgumentException, "Tried to split a region but the splitting point is not contained in the region.");
-            }
-
-            //Now compute the subregions.
-            std::vector<Valuation> vertices(this->getVerticesOfRegion(this->variables));
-            auto monMap = monRes.getMonotonicityResult();
-
-            if (regionRes == modelchecker::RegionResult::CenterSat && monRes.isDone() && monRes.isAllMonotonicity()) {
-                for(auto const& vertex : vertices){
-                    bool knownByMonotonicity = true;
-                    //The resulting subregion is the smallest region containing vertex and splittingPoint.
-                    Valuation subLower, subUpper;
-                    for(auto variableBound : this->lowerBoundaries){
-                        VariableType variable = variableBound.first;
-                        auto vertexEntry=vertex.find(variable);
-                        auto splittingPointEntry=splittingPoint.find(variable);
-                        auto newLower = std::min(vertexEntry->second, splittingPointEntry->second);
-                        auto newUpper = std::max(vertexEntry->second, splittingPointEntry->second);
-                        subLower.insert(typename Valuation::value_type(variable, newLower));
-                        subUpper.insert(typename Valuation::value_type(variable, newUpper));
-                        auto monVar = monMap[variable];
-                        if (knownByMonotonicity) {
-                            knownByMonotonicity = (parameterOptimizationDirection == storm::solver::OptimizationDirection::Maximize
-                                                   && ((newLower == splittingPointEntry->second && monVar == analysis::MonotonicityResult<VariableType>::Monotonicity::Decr)
-                                                       || (newUpper == splittingPointEntry->second && monVar == analysis::MonotonicityResult<VariableType>::Monotonicity::Incr)))
-                                                  || (parameterOptimizationDirection == storm::solver::OptimizationDirection::Minimize
-                                                      && ((newLower == splittingPointEntry->second && monVar == analysis::MonotonicityResult<VariableType>::Monotonicity::Incr)
-                                                          || (newUpper == splittingPointEntry->second && monVar == analysis::MonotonicityResult<VariableType>::Monotonicity::Decr)))
-                                                  || monVar == analysis::MonotonicityResult<VariableType>::Monotonicity::Constant;
-                        }
-                    }
-                    ParameterRegion<ParametricType> subRegion(std::move(subLower), std::move(subUpper));
-                    if(!storm::utility::isZero(subRegion.area())){
-                        if (knownByMonotonicity) {
-                            knownRegionVector.push_back(std::move(subRegion));
-                        } else {
-                            regionVector.push_back(std::move(subRegion));
-                        }
-                    }
-                }
-            } else if (regionRes == modelchecker::RegionResult::CenterViolated && monRes.isDone() && monRes.isAllMonotonicity()) {
-                for(auto const& vertex : vertices){
-                    bool knownByMonotonicity = true;
-                    //The resulting subregion is the smallest region containing vertex and splittingPoint.
-                    Valuation subLower, subUpper;
-                    for(auto variableBound : this->lowerBoundaries){
-                        VariableType variable = variableBound.first;
-                        auto vertexEntry=vertex.find(variable);
-                        auto splittingPointEntry=splittingPoint.find(variable);
-
-                        auto newLower = std::min(vertexEntry->second, splittingPointEntry->second);
-                        auto newUpper = std::max(vertexEntry->second, splittingPointEntry->second);
-                        subLower.insert(typename Valuation::value_type(variable, newLower));
-                        subUpper.insert(typename Valuation::value_type(variable, newUpper));
-                        if (knownByMonotonicity) {
-
-                            auto monVar = monMap[variable];
-                            knownByMonotonicity = (parameterOptimizationDirection == storm::solver::OptimizationDirection::Minimize
-                                                   && ((newLower == splittingPointEntry->second && monVar == analysis::MonotonicityResult<VariableType>::Monotonicity::Decr)
-                                                       || (newUpper == splittingPointEntry->second && monVar == analysis::MonotonicityResult<VariableType>::Monotonicity::Incr)))
-                                                  || (parameterOptimizationDirection == storm::solver::OptimizationDirection::Maximize
-                                                      && ((newLower == splittingPointEntry->second && monVar == analysis::MonotonicityResult<VariableType>::Monotonicity::Incr)
-                                                          || (newUpper == splittingPointEntry->second && monVar == analysis::MonotonicityResult<VariableType>::Monotonicity::Decr)))
-                                                  || monVar == analysis::MonotonicityResult<VariableType>::Monotonicity::Constant;
-                        }
-                    }
-                    ParameterRegion<ParametricType> subRegion(std::move(subLower), std::move(subUpper));
-                    if(!storm::utility::isZero(subRegion.area())){
-                        if (knownByMonotonicity) {
-                            knownRegionVector.push_back(std::move(subRegion));
-                        } else {
-                            regionVector.push_back(std::move(subRegion));
-                        }
-                    }
-                }
-            } else {
-                for (auto const &vertex : vertices) {
-                    //The resulting subregion is the smallest region containing vertex and splittingPoint.
-                    Valuation subLower, subUpper;
-                    for (auto variableBound : this->lowerBoundaries) {
-                        VariableType variable = variableBound.first;
-                        auto vertexEntry = vertex.find(variable);
-                        auto splittingPointEntry = splittingPoint.find(variable);
-                        subLower.insert(typename Valuation::value_type(variable, std::min(vertexEntry->second,
-                                                                                          splittingPointEntry->second)));
-                        subUpper.insert(typename Valuation::value_type(variable, std::max(vertexEntry->second,
-                                                                                          splittingPointEntry->second)));
-                    }
-                    ParameterRegion<ParametricType> subRegion(std::move(subLower), std::move(subUpper));
-                    if(!storm::utility::isZero(subRegion.area())){
-                        regionVector.push_back(std::move(subRegion));
-                    }
                 }
             }
         }
