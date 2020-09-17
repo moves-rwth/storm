@@ -42,7 +42,7 @@ namespace storm {
              *
              * If the given set of variables is empty, the returned vector will contain an empty map
              */
-            std::vector<Valuation> getVerticesOfRegion(std::set<VariableType> const& consideredVariables) const;
+            std::vector<Valuation> getVerticesOfRegion(std::set<VariableType> const& consideredVariables, int const startingpoint = -1) const;
 
             /*!
              * Returns some point that lies within this region
@@ -73,6 +73,10 @@ namespace storm {
 
             bool isSubRegion(ParameterRegion<ParametricType> region);
 
+            void setNextVariableRangMon(int val);
+            void setNextVariableRangNonMon(int val);
+            void setLastSplitMonotone(bool lastSplitMonotone);
+
         private:
 
             void init();
@@ -82,6 +86,10 @@ namespace storm {
             Valuation lowerBoundaries;
             Valuation upperBoundaries;
             std::set<VariableType> variables;
+
+            int nextVariableRangeMon;
+            int nextVariableRangeNonMon;
+            int variableSizeThreshold = 4;
         };
 
         template<typename ParametricType>

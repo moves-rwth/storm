@@ -230,6 +230,7 @@ namespace storm {
                                 // Only split in (non)monotone vars
 
                                 splitSmart(currentRegion, newRegions, *(localMonotonicityResult->getGlobalMonotonicityResult()));
+                                assert (newRegions.size() != 0);
 
 //                                this->splitAtCenter(env, currentRegion, newRegions, newKnownRegions, *(localMonotonicityResult->getGlobalMonotonicityResult()), res);
                                 initResForNewRegions = (res == RegionResult::CenterSat) ? RegionResult::ExistsSat :

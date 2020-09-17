@@ -86,8 +86,8 @@ namespace storm {
         }
 
         template<typename ParametricType>
-        std::vector<typename ParameterRegion<ParametricType>::Valuation> ParameterRegion<ParametricType>::getVerticesOfRegion(std::set<VariableType> const& consideredVariables) const {
-            std::size_t const numOfVariables = consideredVariables.size();
+        std::vector<typename ParameterRegion<ParametricType>::Valuation> ParameterRegion<ParametricType>::getVerticesOfRegion(std::set<VariableType> const& consideredVariables, int const startingpoint) const {
+            std::size_t const numOfVariables = consideredVariables.size() > variableSizeThreshold ? variableSizeThreshold : consideredVariables.size();
             std::size_t const numOfVertices = std::pow(2, numOfVariables);
             std::vector<Valuation> resultingVector(numOfVertices);
             
@@ -96,13 +96,40 @@ namespace storm {
                 //the consideredVariables.size() least significant bits of vertex will always represent the next vertex
                 //(00...0 = lower boundaries for all variables, 11...1 = upper boundaries for all variables)
                 uint_fast64_t variableIndex = 0;
-                for (auto const& variable : consideredVariables) {
-                    if ((vertexId >> variableIndex) % 2 == 0) {
-                        resultingVector[vertexId].insert(std::pair<VariableType, CoefficientType>(variable, getLowerBoundary(variable)));
-                    } else {
-                        resultingVector[vertexId].insert(std::pair<VariableType, CoefficientType>(variable, getUpperBoundary(variable)));
+
+                if (startingpoint == -1) {
+                    for (auto const &variable : consideredVariables) {
+                        if ((vertexId >> variableIndex) % 2 == 0) {
+                            resultingVector[vertexId].insert(
+                                    std::pair<VariableType, CoefficientType>(variable, getLowerBoundary(variable)));
+                        } else {
+                            resultingVector[vertexId].insert(
+                                    std::pair<VariableType, CoefficientType>(variable, getUpperBoundary(variable)));
+                        }
+                        ++variableIndex;
                     }
-                    ++variableIndex;
+                } else {
+                    typename std::set<VariableType>::iterator itr = consideredVariables.begin();
+
+                    for (auto i = 0; i < startingpoint; ++i) {
+                        itr++;
+                    }
+                    for (auto i = 0; i < variableSizeThreshold; ++i) {
+                        auto const &variable = *itr;
+
+                        if ((vertexId >> variableIndex) % 2 == 0) {
+                            resultingVector[vertexId].insert(
+                                    std::pair<VariableType, CoefficientType>(variable, getLowerBoundary(variable)));
+                        } else {
+                            resultingVector[vertexId].insert(
+                                    std::pair<VariableType, CoefficientType>(variable, getUpperBoundary(variable)));
+                        }
+                        ++variableIndex;
+                        ++itr;
+                        if (itr == consideredVariables.end()) {
+                            itr = consideredVariables.begin();
+                        }
+                    }
                 }
             }
             return resultingVector;
@@ -199,22 +226,45 @@ namespace storm {
             }
 
             if ((onlyMonotoneVars && !allToSmallMon) || (!onlyMonotoneVars && allToSmallNonMon && !allToSmallMon)) {
-                vertices = getVerticesOfRegion(monNonMonVariables.first);
-            } else if ((!onlyMonotoneVars && !allToSmallNonMon) || (onlyMonotoneVars && !allToSmallNonMon && allToSmallMon)) {
-                vertices = getVerticesOfRegion(monNonMonVariables.second);
-            } else {
-                if (lastSplitMonotone) {
-                    vertices = getVerticesOfRegion(monNonMonVariables.second);
+                if (monNonMonVariables.first.size() > variableSizeThreshold) {
+                    vertices = getVerticesOfRegion(monNonMonVariables.first, nextVariableRangeMon);
+                    nextVariableRangeMon = (nextVariableRangeMon + variableSizeThreshold) % monNonMonVariables.first.size();
                 } else {
                     vertices = getVerticesOfRegion(monNonMonVariables.first);
+                }
+            } else if ((!onlyMonotoneVars && !allToSmallNonMon) || (onlyMonotoneVars && !allToSmallNonMon && allToSmallMon)) {
+                if (monNonMonVariables.second.size() > variableSizeThreshold) {
+                    vertices = getVerticesOfRegion(monNonMonVariables.second, nextVariableRangeNonMon);
+                    nextVariableRangeNonMon = (nextVariableRangeNonMon + variableSizeThreshold) % monNonMonVariables.first.size();
+
+                } else {
+                    vertices = getVerticesOfRegion(monNonMonVariables.second);
+                }
+            } else {
+                if (lastSplitMonotone) {
+                    if (monNonMonVariables.second.size() > variableSizeThreshold) {
+                        vertices = getVerticesOfRegion(monNonMonVariables.second, nextVariableRangeNonMon);
+                        nextVariableRangeNonMon = (nextVariableRangeNonMon + variableSizeThreshold) % monNonMonVariables.first.size();
+                    } else {
+                        vertices = getVerticesOfRegion(monNonMonVariables.second);
+                    }
+                } else {
+                    if (monNonMonVariables.first.size() > variableSizeThreshold) {
+                        vertices = getVerticesOfRegion(monNonMonVariables.first, nextVariableRangeMon);
+                        nextVariableRangeMon = (nextVariableRangeMon + variableSizeThreshold) % monNonMonVariables.first.size();
+                    } else {
+                        vertices = getVerticesOfRegion(monNonMonVariables.first);
+                    }
                 }
                 lastSplitMonotone = !lastSplitMonotone;
             }
 
+            auto textLookingAt = onlyMonotoneVars ? "non-monotone" : "monotone";
+            auto textOriginal = onlyMonotoneVars ? "monotone" : "non-monotone";
             STORM_LOG_INFO("Splitting region " << this->toString() << " in " << vertices.size() << " regions (original implementation would have splitted in 2^" << this->getVariables().size() << ")." << std::endl);
+            STORM_LOG_INFO("Using only " << textLookingAt << " variables capped at " << variableSizeThreshold << "variables per split");
             if ((allToSmallMon && !allToSmallNonMon) || (allToSmallNonMon && !allToSmallMon)) {
-                auto textLookingAt = onlyMonotoneVars ? "non-monotone" : "monotone";
-                auto textOriginal = onlyMonotoneVars ? "monotone" : "non-monotone";
+
                 STORM_LOG_INFO("Looking at " << textLookingAt << " instead of " << textOriginal);
             }
             for (auto const& vertex : vertices) {
@@ -240,11 +290,27 @@ namespace storm {
                 }
 
                 ParameterRegion<ParametricType> subRegion(std::move(subLower), std::move(subUpper));
+                subRegion.setNextVariableRangMon(nextVariableRangeMon);
+                subRegion.setNextVariableRangNonMon(nextVariableRangeNonMon);
+                subRegion.setLastSplitMonotone(lastSplitMonotone);
 
                 if (!storm::utility::isZero(subRegion.area())) {
                     regionVector.push_back(std::move(subRegion));
                 }
             }
+        }
+
+        template<typename ParametricType>
+        void ParameterRegion<ParametricType>::setNextVariableRangMon(int val) {
+            nextVariableRangeMon = val;
+        }
+        template<typename ParametricType>
+        void ParameterRegion<ParametricType>::setNextVariableRangNonMon(int val) {
+            nextVariableRangeNonMon = val;
+        }
+        template<typename ParametricType>
+        void ParameterRegion<ParametricType>::setLastSplitMonotone(bool lastSplitMonotone) {
+            this->lastSplitMonotone = lastSplitMonotone;
         }
 
         template<typename ParametricType>
