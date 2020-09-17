@@ -126,7 +126,8 @@ namespace storm {
             if (existsSat) {
                 // show AllSat:
                 storm::solver::OptimizationDirection parameterOptimizationDirection = isLowerBound(this->currentCheckTask->getBound().comparisonType) ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize;
-                if (this->check(env, region, parameterOptimizationDirection, reachabilityOrder, localMonotonicityResult)->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
+                auto checkResult = this->check(env, region, parameterOptimizationDirection, reachabilityOrder, localMonotonicityResult);
+                if (checkResult->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
                     result = RegionResult::AllSat;
                 } else if (sampleVerticesOfRegion) {
                     result = sampleVertices(env, region, result);
@@ -134,7 +135,8 @@ namespace storm {
             } else if (existsViolated) {
                 // show AllViolated:
                 storm::solver::OptimizationDirection parameterOptimizationDirection = isLowerBound(this->currentCheckTask->getBound().comparisonType) ? storm::solver::OptimizationDirection::Maximize : storm::solver::OptimizationDirection::Minimize;
-                if (!this->check(env, region, parameterOptimizationDirection, reachabilityOrder, localMonotonicityResult)->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
+                auto checkResult = this->check(env, region, parameterOptimizationDirection, reachabilityOrder, localMonotonicityResult);
+                if (!checkResult->asExplicitQualitativeCheckResult()[*this->parametricModel->getInitialStates().begin()]) {
                     result = RegionResult::AllViolated;
                 } else if (sampleVerticesOfRegion) {
                     result = sampleVertices(env, region, result);
@@ -184,6 +186,7 @@ namespace storm {
         template <typename SparseModelType, typename ConstantType>
         std::unique_ptr<CheckResult> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::check(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::Order> reachabilityOrder, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) {
             auto quantitativeResult = computeQuantitativeValues(env, region, dirForParameters, reachabilityOrder, localMonotonicityResult);
+            lastValue = quantitativeResult->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
             if(currentCheckTask->getFormula().hasQuantitativeResult()) {
                 return quantitativeResult;
             } else {

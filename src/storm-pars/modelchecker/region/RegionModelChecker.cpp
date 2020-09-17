@@ -227,30 +227,31 @@ namespace storm {
                                                                      RegionResult::Unknown);
 
                                 std::vector<storm::storage::ParameterRegion<ParametricType>> newKnownRegions;
-                                // Only split in non-monotone vars
-                                currentRegion.split(currentRegion.getCenterPoint(), newRegions, *(localMonotonicityResult->getGlobalMonotonicityResult()), true);
+                                // Only split in (non)monotone vars
+
+                                splitSmart(currentRegion, newRegions, *(localMonotonicityResult->getGlobalMonotonicityResult()));
 
 //                                this->splitAtCenter(env, currentRegion, newRegions, newKnownRegions, *(localMonotonicityResult->getGlobalMonotonicityResult()), res);
                                 initResForNewRegions = (res == RegionResult::CenterSat) ? RegionResult::ExistsSat :
                                                        ((res == RegionResult::CenterViolated) ? RegionResult::ExistsViolated :
                                                         RegionResult::Unknown);
-                                for (auto& newKnownRegion : newKnownRegions) {
-                                    if (res == RegionResult::CenterSat) {
-                                        result.push_back(std::move(std::make_pair(newKnownRegion, RegionResult::AllSat)));
-                                        STORM_LOG_INFO("Region " << newKnownRegion << " is AllSat, discovered with help of monotonicity");
-                                        fractionOfAllSatArea += newKnownRegion.area() / areaOfParameterSpace;
-                                    }  else {
-                                        assert (res == RegionResult::CenterViolated);
-                                        result.push_back(std::move(std::make_pair(newKnownRegion, RegionResult::AllViolated)));
-                                        STORM_LOG_INFO("Region " << newKnownRegion << " is AllViolated, discovered with help of monotonicity");
-                                        fractionOfAllViolatedArea += newKnownRegion.area() / areaOfParameterSpace;
-                                    }
-
-                                    // Only add one to analyzed regions, don't pop
-                                    fractionOfUndiscoveredArea -= newKnownRegion.area() / areaOfParameterSpace;
-                                    ++numOfAnalyzedRegions;
-                                    ++numberOfRegionsKnownThroughMonotonicity;
-                                }
+//                                for (auto& newKnownRegion : newKnownRegions) {
+//                                    if (res == RegionResult::CenterSat) {
+//                                        result.push_back(std::move(std::make_pair(newKnownRegion, RegionResult::AllSat)));
+//                                        STORM_LOG_INFO("Region " << newKnownRegion << " is AllSat, discovered with help of monotonicity");
+//                                        fractionOfAllSatArea += newKnownRegion.area() / areaOfParameterSpace;
+//                                    }  else {
+//                                        assert (res == RegionResult::CenterViolated);
+//                                        result.push_back(std::move(std::make_pair(newKnownRegion, RegionResult::AllViolated)));
+//                                        STORM_LOG_INFO("Region " << newKnownRegion << " is AllViolated, discovered with help of monotonicity");
+//                                        fractionOfAllViolatedArea += newKnownRegion.area() / areaOfParameterSpace;
+//                                    }
+//
+//                                    // Only add one to analyzed regions, don't pop
+//                                    fractionOfUndiscoveredArea -= newKnownRegion.area() / areaOfParameterSpace;
+//                                    ++numOfAnalyzedRegions;
+//                                    ++numberOfRegionsKnownThroughMonotonicity;
+//                                }
 
                                 bool first = true;
                                 for (auto& newRegion : newRegions) {
@@ -385,6 +386,12 @@ namespace storm {
         template <typename ParametricType>
         void RegionModelChecker<ParametricType>::setUseMonotonicityInFuture(bool monotonicity) {
             this->useMonotonicity = monotonicity;
+        }
+
+        template <typename ParametricType>
+        void RegionModelChecker<ParametricType>::splitSmart(storm::storage::ParameterRegion<ParametricType> const& currentRegion, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector, storm::analysis::MonotonicityResult<VariableType> & monRes) const {
+            STORM_LOG_WARN("Smart splitting for this model checkernot implemented");
+            currentRegion.split(currentRegion.getCenterPoint(), regionVector);
         }
 
 #ifdef STORM_HAVE_CARL
