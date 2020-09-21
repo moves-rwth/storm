@@ -80,7 +80,7 @@ namespace storm {
              */
             virtual std::map<VariableType, double> getRegionSplitEstimate() const;
 
-            virtual std::shared_ptr<storm::analysis::Order> extendOrder(std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ParametricType> region);
+            virtual std::shared_ptr<storm::analysis::Order> extendOrder(Environment const& env, std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ParametricType> region);
 
             virtual void setConstantEntries(std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
 

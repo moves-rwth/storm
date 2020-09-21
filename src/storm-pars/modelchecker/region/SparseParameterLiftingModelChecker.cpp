@@ -325,8 +325,6 @@ namespace storm {
             return std::make_pair(storm::utility::convertNumber<typename SparseModelType::ValueType>(value.get()), valuation);
         }
 
-
-
         
         template <typename SparseModelType, typename ConstantType>
         SparseModelType const& SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getConsideredParametricModel() const {

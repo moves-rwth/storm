@@ -172,7 +172,6 @@ namespace storm {
             storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(*this->parametricModel);
             STORM_LOG_THROW(propositionalChecker.canHandle(checkTask.getFormula().getSubformula()), storm::exceptions::NotSupportedException, "Parameter lifting with non-propositional subformulas is not supported");
             storm::storage::BitVector targetStates = std::move(propositionalChecker.check(checkTask.getFormula().getSubformula())->asExplicitQualitativeCheckResult().getTruthValuesVector());
-            
             // get the maybeStates
             storm::storage::BitVector infinityStates = storm::utility::graph::performProb1(this->parametricModel->getBackwardTransitions(), storm::storage::BitVector(this->parametricModel->getNumberOfStates(), true), targetStates);
             infinityStates.complement();
@@ -529,8 +528,13 @@ namespace storm {
         }
 
         template<typename SparseModelType, typename ConstantType>
-        std::shared_ptr<storm::analysis::Order>  SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::extendOrder(std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<typename SparseModelType::ValueType> region) {
+        std::shared_ptr<storm::analysis::Order>  SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::extendOrder(Environment const& env, std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<typename SparseModelType::ValueType> region) {
+            typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::CoefficientType CoefficientType;
+
             if (useOrderExtender) {
+                auto minValues = computeQuantitativeValues(env, region, storm::solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                auto maxValues = computeQuantitativeValues(env, region, storm::solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                orderExtender->setMinMaxValues(minValues, maxValues);
                 auto res = orderExtender->extendOrder(order, region);
                 order = std::get<0>(res);
                 while (!order->getDoneBuilding() && order->existsNextSortedState()) {

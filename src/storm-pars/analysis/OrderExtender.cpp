@@ -241,13 +241,17 @@ namespace storm {
                     assert (stateSucc2 == numberOfStates);
                     currentState = order->getNextSortedState();
                 } else {
-                    auto assumptions = assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, region);
-                    if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
-                        handleAssumption(order, assumptions.begin()->first);
-                    } else {
-                        // Put currentState in the list of states we should handle as we couldn't add it yet.
-                        order->addStateToHandle(currentState);
-                        return std::make_tuple(order, stateSucc1, stateSucc2);
+                    auto minMaxAdding = this->addStatesBasedOnMinMax(order, stateSucc1, stateSucc2);
+                    if (minMaxAdding == Order::UNKNOWN) {
+                        auto assumptions = assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order,
+                                                                                      region);
+                        if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
+                            handleAssumption(order, assumptions.begin()->first);
+                        } else {
+                            // Put currentState in the list of states we should handle as we couldn't add it yet.
+                            order->addStateToHandle(currentState);
+                            return std::make_tuple(order, stateSucc1, stateSucc2);
+                        }
                     }
                 }
             }
@@ -296,6 +300,7 @@ namespace storm {
             } else {
                 assert (successors.size() >= 2);
 
+                // temp.first = pair of unordered states, if this is numberOfStates all successor states could be sorted, so temp.second is fully sorted and contains all successors.
                 auto temp = order->sortStatesUnorderedPair(&successors);
                 if (temp.first.first != numberOfStates) {
                     return temp.first;
@@ -423,6 +428,13 @@ namespace storm {
                 maxValues = maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
                 usePLA = true;
             }
+        }
+
+        template <typename ValueType, typename ConstantType>
+        void OrderExtender<ValueType, ConstantType>::setMinMaxValues(std::vector<ConstantType>& minValues, std::vector<ConstantType>& maxValues) {
+            usePLA = true;
+            this->minValues = minValues;//minCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+            this->maxValues = maxValues;//maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
         }
 
         template <typename ValueType, typename ConstantType>

@@ -148,7 +148,7 @@ namespace storm {
                 if (useMonotonicity && fractionOfUndiscoveredArea > thresholdAsCoefficient && !unprocessedRegions.empty()) {
                     storm::utility::Stopwatch monWatch(true);
 
-                    orders.emplace(extendOrder(nullptr, region));
+                    orders.emplace(extendOrder(env, nullptr, region));
                     assert (orders.front() != nullptr);
                     auto monRes = std::shared_ptr< storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(orders.front()->getNumberOfStates()));
                     extendLocalMonotonicityResult(region, orders.front(), monRes);
@@ -195,7 +195,7 @@ namespace storm {
                     if (!useSameOrder) {
                         order = orders.front();
                         if (!order->getDoneBuilding()) {
-                            extendOrder(order, currentRegion);
+                            extendOrder(env, order, currentRegion);
                         }
                     }
                     if (!useSameLocalMonotonicityResult) {
@@ -228,32 +228,12 @@ namespace storm {
 
                                 std::vector<storm::storage::ParameterRegion<ParametricType>> newKnownRegions;
                                 // Only split in (non)monotone vars
-
                                 splitSmart(currentRegion, newRegions, *(localMonotonicityResult->getGlobalMonotonicityResult()));
                                 assert (newRegions.size() != 0);
 
-//                                this->splitAtCenter(env, currentRegion, newRegions, newKnownRegions, *(localMonotonicityResult->getGlobalMonotonicityResult()), res);
                                 initResForNewRegions = (res == RegionResult::CenterSat) ? RegionResult::ExistsSat :
                                                        ((res == RegionResult::CenterViolated) ? RegionResult::ExistsViolated :
                                                         RegionResult::Unknown);
-//                                for (auto& newKnownRegion : newKnownRegions) {
-//                                    if (res == RegionResult::CenterSat) {
-//                                        result.push_back(std::move(std::make_pair(newKnownRegion, RegionResult::AllSat)));
-//                                        STORM_LOG_INFO("Region " << newKnownRegion << " is AllSat, discovered with help of monotonicity");
-//                                        fractionOfAllSatArea += newKnownRegion.area() / areaOfParameterSpace;
-//                                    }  else {
-//                                        assert (res == RegionResult::CenterViolated);
-//                                        result.push_back(std::move(std::make_pair(newKnownRegion, RegionResult::AllViolated)));
-//                                        STORM_LOG_INFO("Region " << newKnownRegion << " is AllViolated, discovered with help of monotonicity");
-//                                        fractionOfAllViolatedArea += newKnownRegion.area() / areaOfParameterSpace;
-//                                    }
-//
-//                                    // Only add one to analyzed regions, don't pop
-//                                    fractionOfUndiscoveredArea -= newKnownRegion.area() / areaOfParameterSpace;
-//                                    ++numOfAnalyzedRegions;
-//                                    ++numberOfRegionsKnownThroughMonotonicity;
-//                                }
-
                                 bool first = true;
                                 for (auto& newRegion : newRegions) {
                                     if (!useSameOrder) {
@@ -367,7 +347,7 @@ namespace storm {
         }
 
         template <typename ParametricType>
-        std::shared_ptr<storm::analysis::Order> RegionModelChecker<ParametricType>::extendOrder(std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ParametricType> region) {
+        std::shared_ptr<storm::analysis::Order> RegionModelChecker<ParametricType>::extendOrder(Environment const& env, std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ParametricType> region) {
             STORM_LOG_WARN("Extending order for RegionModelChecker not implemented");
             // Does nothing
             return order;

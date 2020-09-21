@@ -73,6 +73,9 @@ namespace storm {
              */
             std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region);
 
+            void setMinMaxValues(std::vector<ConstantType> &minValues, std::vector<ConstantType> &maxValues);
+
+
         private:
             std::shared_ptr<Order> getBottomTopOrder();
 
