@@ -53,7 +53,9 @@ namespace storm {
             auto dtmc = parametricModel->template as<SparseModelType>();
             monotonicityChecker = std::make_unique<storm::analysis::MonotonicityChecker<typename SparseModelType::ValueType>>(dtmc->getTransitionMatrix());
             specify_internal(env, dtmc, checkTask, generateRegionSplitEstimates, !allowModelSimplification);
-            thresholdTask = storm::utility::convertNumber<ConstantType>(checkTask.getBoundThreshold());
+            if (checkTask.isBoundSet()) {
+                thresholdTask = storm::utility::convertNumber<ConstantType>(checkTask.getBoundThreshold());
+            }
         }
 
         template <typename SparseModelType, typename ConstantType>
@@ -583,13 +585,19 @@ namespace storm {
                 storm::storage::ParameterRegion<typename SparseModelType::ValueType> &region,
                 std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> &regionVector,
                 storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> & monRes) const{
-            ConstantType currentValue = SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::lastValue;
-            ConstantType difference = abs(thresholdTask - currentValue);
-            ConstantType thresholdDifference = 0.5;
-            if (difference < thresholdDifference) {
-                region.split(region.getCenterPoint(), regionVector, monRes, true, storm::utility::convertNumber<double>(difference));
+            if (thresholdTask) {
+                ConstantType currentValue = SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::lastValue;
+                ConstantType difference = abs(thresholdTask.get() - currentValue);
+                ConstantType thresholdDifference = 0.5;
+                if (difference < thresholdDifference) {
+                    region.split(region.getCenterPoint(), regionVector, monRes, true,
+                                 storm::utility::convertNumber<double>(difference));
+                } else {
+                    region.split(region.getCenterPoint(), regionVector, monRes, false,
+                                 storm::utility::convertNumber<double>(difference));
+                }
             } else {
-                region.split(region.getCenterPoint(), regionVector, monRes, false, storm::utility::convertNumber<double>(difference));
+                region.split(region.getCenterPoint(), regionVector, monRes, false, 1);
             }
         }
 

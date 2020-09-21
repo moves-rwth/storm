@@ -424,7 +424,7 @@ namespace storm {
         }
 
         template <typename ValueType>
-        void computeRegionExtremumWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions) {
+        void computeRegionExtremumWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, bool const& useMonotonicity = false) {
             STORM_LOG_ASSERT(!regions.empty(), "Can not analyze an empty set of regions.");
             auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
             auto engine = regionSettings.getRegionCheckEngine();
@@ -432,9 +432,19 @@ namespace storm {
             ValueType precision = storm::utility::convertNumber<ValueType>(regionSettings.getExtremumValuePrecision());
             for (auto const& property : input.properties) {
                 for (auto const& region : regions) {
-                    STORM_PRINT_AND_LOG("Computing extremal value for property " << property.getName() << ": " << *property.getRawFormula() << " within region " << region << "..." << std::endl);
+                    if (useMonotonicity) {
+                        STORM_PRINT_AND_LOG("Computing extremal value for property " << property.getName() << ": "
+                                                                                     << *property.getRawFormula()
+                                                                                     << " within region " << region
+                                                                                     << " and using monotonicity ..." << std::endl);
+                    } else {
+                        STORM_PRINT_AND_LOG("Computing extremal value for property " << property.getName() << ": "
+                                                                                     << *property.getRawFormula()
+                                                                                     << " within region " << region
+                                                                                     << "..." << std::endl);
+                    }
                     storm::utility::Stopwatch watch(true);
-                    auto valueValuation = storm::api::computeExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(property.getRawFormula(), true), region, engine, direction, precision);
+                    auto valueValuation = storm::api::computeExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(property.getRawFormula(), true), region, engine, direction, precision, useMonotonicity);
                     watch.stop();
                     std::stringstream valuationStr;
                     bool first = true;
@@ -517,7 +527,7 @@ namespace storm {
             } else {
                 auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
                 if (regionSettings.isExtremumSet()) {
-                    storm::pars::computeRegionExtremumWithSparseEngine(model, input, regions);
+                    storm::pars::computeRegionExtremumWithSparseEngine(model, input, regions, useMonotonicity);
                 } else {
                     storm::pars::verifyRegionsWithSparseEngine(model, input, regions, useMonotonicity, monThresh);
                 }

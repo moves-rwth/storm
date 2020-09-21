@@ -22,9 +22,10 @@ namespace storm {
         template <typename SparseModelType, typename ConstantType>
         class SparseParameterLiftingModelChecker : public RegionModelChecker<typename SparseModelType::ValueType> {
         public:
+            typedef typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType VariableType;
             SparseParameterLiftingModelChecker();
             virtual ~SparseParameterLiftingModelChecker() = default;
-            
+
 
             /*!
              * Analyzes the given region by means of parameter lifting.

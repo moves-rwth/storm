@@ -60,7 +60,7 @@ namespace storm {
             std::vector<ConstantType> resultsForNonMaybeStates;
             boost::optional<uint_fast64_t> stepBound;
 
-            ConstantType thresholdTask;
+            boost::optional<ConstantType> thresholdTask;
             
             std::unique_ptr<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>> instantiationChecker;
             std::unique_ptr<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>> instantiationCheckerSAT;
