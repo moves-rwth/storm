@@ -238,6 +238,7 @@ namespace storm {
                         doneBuilding = true;
                         return BELOW;
                     }
+                    doneBuilding = true;
                 }
             }
             return UNKNOWN;

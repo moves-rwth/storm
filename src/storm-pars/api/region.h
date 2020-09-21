@@ -140,7 +140,6 @@ namespace storm {
             }
 
             checker->specify(env, consideredModel, task, generateSplitEstimates, allowModelSimplification);
-            
             return checker;
         }
         
@@ -208,7 +207,8 @@ namespace storm {
         template <typename ValueType>
         std::pair<ValueType, typename storm::storage::ParameterRegion<ValueType>::Valuation> computeExtremalValue(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, storm::solver::OptimizationDirection const& dir, boost::optional<ValueType> const& precision, bool const useMonotonicity) {
             Environment env;
-            auto regionChecker = initializeRegionModelChecker(env, model, task, engine, useMonotonicity);
+            bool allowModelSimplification = !useMonotonicity;
+            auto regionChecker = initializeRegionModelChecker(env, model, task, engine, allowModelSimplification, useMonotonicity);
             return regionChecker->computeExtremalValue(env, region, dir, precision.is_initialized() ? precision.get() : storm::utility::zero<ValueType>());
         }
         

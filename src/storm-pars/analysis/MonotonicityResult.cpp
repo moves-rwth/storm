@@ -73,7 +73,7 @@ namespace storm {
                     monotoneVariables.insert(var);
                 }
             }
-            return std::make_pair(std::move(nonMonotoneVariables), std::move(monotoneVariables));
+            return std::make_pair(std::move(monotoneVariables), std::move(nonMonotoneVariables));
         }
 
         template <typename VariableType>

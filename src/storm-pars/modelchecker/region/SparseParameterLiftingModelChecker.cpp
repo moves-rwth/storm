@@ -262,6 +262,7 @@ namespace storm {
             auto coveredArea = storm::utility::zero<ConstantType>();
             while (!regionQueue.empty()) {
                 auto currRegion = regionQueue.top().region;
+                STORM_LOG_INFO("Currently looking at region: " << currRegion << std::endl);
                 std::shared_ptr<storm::analysis::Order> order = regionQueue.top().order;
                 std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult = regionQueue.top().localMonRes;
                 if (this->isUseMonotonicitySet() && !order->getDoneBuilding()) {
@@ -307,7 +308,7 @@ namespace storm {
                 regionQueue.pop();
                 bool first = true;
                 for (auto const& r : newRegions) {
-                    if (this->isUseMonotonicitySet() || first) {
+                    if (!this->isUseMonotonicitySet() || first) {
                         regionQueue.emplace(r, order, localMonotonicityResult, currBound);
                         first = false;
                     } else if (!order->getDoneBuilding()) {

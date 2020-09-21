@@ -574,9 +574,13 @@ namespace storm {
                 } else {
                     for (auto const& var : variables) {
                         auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
-                        if (monotonicity == storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>::Monotonicity::Unknown || monotonicity == storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>::Monotonicity::Not) {
+                        if (monotonicity == storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Unknown || monotonicity == storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Not) {
                             monotonicity = monotonicityChecker->checkLocalMonotonicity(order, state, var, region);
-                            localMonotonicityResult->setMonotonicity(state, var, monotonicity);
+                            if (monotonicity == storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Unknown ||  monotonicity == storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Not) {
+                                // Skip for now?
+                            } else {
+                                localMonotonicityResult->setMonotonicity(state, var, monotonicity);
+                            }
                         }
                     }
                 }

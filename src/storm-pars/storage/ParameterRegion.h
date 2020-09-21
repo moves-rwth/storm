@@ -89,7 +89,7 @@ namespace storm {
 
             int nextVariableRangeMon;
             int nextVariableRangeNonMon;
-            int variableSizeThreshold = 4;
+            int variableSizeThreshold = 20;
         };
 
         template<typename ParametricType>

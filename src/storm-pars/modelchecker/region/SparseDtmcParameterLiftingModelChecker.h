@@ -18,6 +18,7 @@ namespace storm {
         template <typename SparseModelType, typename ConstantType>
         class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingModelChecker<SparseModelType, ConstantType> {
         public:
+            typedef typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType VariableType;
             SparseDtmcParameterLiftingModelChecker();
             SparseDtmcParameterLiftingModelChecker(std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>>&& solverFactory);
             virtual ~SparseDtmcParameterLiftingModelChecker() = default;
