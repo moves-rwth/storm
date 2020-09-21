@@ -231,11 +231,18 @@ namespace storm {
         
         template <typename SparseModelType, typename ConstantType>
         std::pair<typename SparseModelType::ValueType, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dir, typename SparseModelType::ValueType const& precision) {
+            typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::CoefficientType CoefficientType;
+
             STORM_LOG_THROW(this->parametricModel->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException, "Getting extremal values at the initial state requires a model with a single initial state.");
             boost::optional<ConstantType> value;
             typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation valuation;
 
-            for (auto const& v : region.getVerticesOfRegion(region.getVariables())) {
+            for (auto & v : region.getVerticesOfRegion(region.getVariables(), 0)) {
+                for (auto const& var : region.getVariables()) {
+                    if (v.find(var) == v.end()) {
+                        v.insert(std::move(std::pair<VariableType, CoefficientType>(var, region.getUpperBoundary(var))));
+                    }
+                }
                 auto currValue = getInstantiationChecker().check(env, v)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
                 if (!value.is_initialized() || (storm::solver::minimize(dir) ? currValue < value.get() : currValue > value.get())) {
                     value = currValue;

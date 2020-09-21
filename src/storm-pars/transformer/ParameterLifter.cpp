@@ -106,6 +106,13 @@ namespace storm {
                 }
                 if (useMonotonicityInFuture) {
                     // Save the occuringVariables of a state, needed if we want to use monotonicity
+                    for (auto& var : occurringVariables) {
+                        if (occuringStatesAtVariable.find(var) == occuringStatesAtVariable.end()) {
+                            occuringStatesAtVariable.insert({var, std::set<uint_fast64_t>()});
+                        } else {
+                            occuringStatesAtVariable[var].insert(rowIndex);
+                        }
+                    }
                     occurringVariablesAtState[rowIndex] = std::move(occurringVariables);
                 }
             }
@@ -214,6 +221,11 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         const std::vector<std::set<typename ParameterLifter<ParametricType, ConstantType>::VariableType>> & ParameterLifter<ParametricType, ConstantType>::getOccurringVariablesAtState() const {
             return occurringVariablesAtState;
+        }
+
+        template<typename ParametricType, typename ConstantType>
+        std::map<typename ParameterLifter<ParametricType, ConstantType>::VariableType, std::set<uint_fast64_t>> ParameterLifter<ParametricType, ConstantType>::getOccuringStatesAtVariable() const {
+            return occuringStatesAtVariable;
         }
 
         template<typename ParametricType, typename ConstantType>

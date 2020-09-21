@@ -71,6 +71,8 @@ namespace storm {
 
             std::vector<std::set<VariableType>> const& getOccurringVariablesAtState() const;
 
+            std::map<VariableType, std::set<uint_fast64_t>> getOccuringStatesAtVariable() const;
+
             uint_fast64_t getRowGroupIndex(uint_fast64_t originalState) const;
             uint_fast64_t getRowGroupSize(uint_fast64_t originalState) const;
             uint_fast64_t getRowGroupCount() const;
@@ -166,6 +168,7 @@ namespace storm {
 
             // Used for monotonicity in sparsedtmcparameterlifter
             std::vector<std::set<VariableType>> occurringVariablesAtState;
+            std::map<VariableType, std::set<uint_fast64_t>> occuringStatesAtVariable;
         };
 
     }

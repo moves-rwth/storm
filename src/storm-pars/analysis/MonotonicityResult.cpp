@@ -66,11 +66,15 @@ namespace storm {
             std::set<VariableType> nonMonotoneVariables;
             std::set<VariableType> monotoneVariables;
             for (auto var : consideredVariables) {
-                auto res = getMonotonicity(var);
-                if (res == Monotonicity::Not || res== Monotonicity::Unknown) {
-                    nonMonotoneVariables.insert(var);
+                if (isDoneForVar(var)) {
+                    auto res = getMonotonicity(var);
+                    if (res == Monotonicity::Not || res == Monotonicity::Unknown) {
+                        nonMonotoneVariables.insert(var);
+                    } else {
+                        monotoneVariables.insert(var);
+                    }
                 } else {
-                    monotoneVariables.insert(var);
+                    nonMonotoneVariables.insert(var);
                 }
             }
             return std::make_pair(std::move(monotoneVariables), std::move(nonMonotoneVariables));
@@ -112,8 +116,18 @@ namespace storm {
         }
 
         template <typename VariableType>
+        void MonotonicityResult<VariableType>::setDoneForVar(VariableType variable) {
+            doneVariables.insert(variable);
+        }
+
+        template <typename VariableType>
         bool MonotonicityResult<VariableType>::isDone() const {
             return done;
+        }
+
+        template <typename VariableType>
+        bool MonotonicityResult<VariableType>::isDoneForVar(VariableType var) const {
+            return doneVariables.find(var) != doneVariables.end();
         }
 
         template <typename VariableType>

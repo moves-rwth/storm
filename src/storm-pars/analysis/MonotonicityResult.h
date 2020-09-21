@@ -5,6 +5,7 @@
 #include <set>
 
 #include <memory>
+#include <storm/storage/BitVector.h>
 
 namespace storm {
     namespace analysis {
@@ -74,6 +75,8 @@ namespace storm {
              */
             bool isDone() const;
 
+            bool isDoneForVar(VariableType) const;
+
             /*!
              * Checks if there is any variable that is monotone
              */
@@ -99,6 +102,8 @@ namespace storm {
              */
             void setAllMonotonicity(bool done = true);
 
+            void setDoneForVar(VariableType);
+
             /*!
              * Constructs a new MonotonicityResult object that is a copy of the current one
              *
@@ -108,6 +113,7 @@ namespace storm {
 
         private:
             std::map<VariableType, Monotonicity> monotonicityResult;
+            std::set<VariableType> doneVariables;
             bool done;
             bool somewhereMonotonicity;
             bool allMonotonicity;

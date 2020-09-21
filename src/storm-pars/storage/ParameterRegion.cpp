@@ -87,7 +87,7 @@ namespace storm {
 
         template<typename ParametricType>
         std::vector<typename ParameterRegion<ParametricType>::Valuation> ParameterRegion<ParametricType>::getVerticesOfRegion(std::set<VariableType> const& consideredVariables, int const startingpoint) const {
-            std::size_t const numOfVariables = (startingpoint != -1 && consideredVariables.size()) > variableSizeThreshold ? variableSizeThreshold : consideredVariables.size();
+            std::size_t const numOfVariables = startingpoint != -1 && consideredVariables.size() > variableSizeThreshold ? variableSizeThreshold : consideredVariables.size();
             std::size_t const numOfVertices = std::pow(2, numOfVariables);
             std::vector<Valuation> resultingVector(numOfVertices);
             
@@ -97,8 +97,10 @@ namespace storm {
                 //(00...0 = lower boundaries for all variables, 11...1 = upper boundaries for all variables)
                 uint_fast64_t variableIndex = 0;
 
+
+                // Normal implementation
                 if (startingpoint == -1) {
-                    for (auto const &variable : consideredVariables) {
+                    for (auto variable : consideredVariables) {
                         if ((vertexId >> variableIndex) % 2 == 0) {
                             resultingVector[vertexId].insert(
                                     std::pair<VariableType, CoefficientType>(variable, getLowerBoundary(variable)));
@@ -110,7 +112,6 @@ namespace storm {
                     }
                 } else {
                     typename std::set<VariableType>::iterator itr = consideredVariables.begin();
-
                     for (auto i = 0; i < startingpoint; ++i) {
                         itr++;
                     }
@@ -190,9 +191,10 @@ namespace storm {
         }
 
         template<typename ParametricType>
-        void ParameterRegion<ParametricType>::split(
-                const ParameterRegion<ParametricType>::Valuation &splittingPoint, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector,
-                storm::analysis::MonotonicityResult<ParameterRegion<ParametricType>::VariableType> & monRes, bool onlyMonotoneVars, double splitThreshold) {
+        void ParameterRegion<ParametricType>::split(const ParameterRegion<ParametricType>::Valuation &splittingPoint,
+                std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector,
+                storm::analysis::MonotonicityResult<ParameterRegion<ParametricType>::VariableType> & monRes,
+                bool onlyMonotoneVars, double splitThreshold) {
             if (!monRes.existsMonotonicity()) {
                 return split(splittingPoint, regionVector);
             }
@@ -228,46 +230,22 @@ namespace storm {
                     }
                 }
 
-                // Heuristic for splitting when a threshold is given
+                // Heuristic for splitting when a splitThreshold is given
                 if ((onlyMonotoneVars && !allToSmallMon) || (!onlyMonotoneVars && allToSmallNonMon && !allToSmallMon)) {
-                    if (monNonMonVariables.first.size() > variableSizeThreshold) {
                         vertices = getVerticesOfRegion(monNonMonVariables.first, nextVariableRangeMon);
-                        nextVariableRangeMon =
-                                monNonMonVariables.first.size() > variableSizeThreshold ?
-                                (nextVariableRangeMon + variableSizeThreshold) % monNonMonVariables.first.size() : 0;
-                    } else {
-                        vertices = getVerticesOfRegion(monNonMonVariables.first);
-                    }
+                        nextVariableRangeMon = (nextVariableRangeMon + variableSizeThreshold) % monNonMonVariables.first.size();
                 } else if ((!onlyMonotoneVars && !allToSmallNonMon) ||
                            (onlyMonotoneVars && !allToSmallNonMon && allToSmallMon)) {
-                    if (monNonMonVariables.second.size() > variableSizeThreshold) {
                         vertices = getVerticesOfRegion(monNonMonVariables.second, nextVariableRangeNonMon);
-                        nextVariableRangeNonMon =
-                                monNonMonVariables.second.size() > variableSizeThreshold ?
-                                (nextVariableRangeNonMon + variableSizeThreshold) % monNonMonVariables.second.size() : 0;
-
-                    } else {
-                        vertices = getVerticesOfRegion(monNonMonVariables.second);
-                    }
+                        nextVariableRangeNonMon = (nextVariableRangeNonMon + variableSizeThreshold) % monNonMonVariables.second.size();
                 } else {
                     if (lastSplitMonotone) {
-                        if (monNonMonVariables.second.size() > variableSizeThreshold) {
                             vertices = getVerticesOfRegion(monNonMonVariables.second, nextVariableRangeNonMon);
-                            nextVariableRangeNonMon =
-                                    monNonMonVariables.second.size() > variableSizeThreshold ?
-                                    (nextVariableRangeNonMon + variableSizeThreshold) % monNonMonVariables.second.size() : 0;
-                        } else {
-                            vertices = getVerticesOfRegion(monNonMonVariables.second);
-                        }
+                            nextVariableRangeNonMon = (nextVariableRangeNonMon + variableSizeThreshold) % monNonMonVariables.second.size();
+
                     } else {
-                        if (monNonMonVariables.first.size() > variableSizeThreshold) {
                             vertices = getVerticesOfRegion(monNonMonVariables.first, nextVariableRangeMon);
-                            nextVariableRangeMon =
-                                    monNonMonVariables.first.size() > variableSizeThreshold ?
-                                    (nextVariableRangeMon + variableSizeThreshold) % monNonMonVariables.first.size() : 0;
-                        } else {
-                            vertices = getVerticesOfRegion(monNonMonVariables.first);
-                        }
+                            nextVariableRangeMon = (nextVariableRangeMon + variableSizeThreshold) % monNonMonVariables.first.size();
                     }
                     lastSplitMonotone = !lastSplitMonotone;
                 }
@@ -281,14 +259,10 @@ namespace storm {
                 }
             } else if (onlyMonotoneVars) {
                 vertices = getVerticesOfRegion(monNonMonVariables.first, nextVariableRangeMon);
-                nextVariableRangeMon =
-                        monNonMonVariables.first.size() > variableSizeThreshold ?
-                        (nextVariableRangeMon + variableSizeThreshold) % monNonMonVariables.first.size() : 0;
-
+                nextVariableRangeMon = (nextVariableRangeMon + variableSizeThreshold) % monNonMonVariables.first.size();
             } else {
                 vertices = getVerticesOfRegion(monNonMonVariables.second, nextVariableRangeNonMon);
-                nextVariableRangeNonMon = monNonMonVariables.second.size() > variableSizeThreshold ?
-                        (nextVariableRangeNonMon + variableSizeThreshold) % monNonMonVariables.second.size() : 0;
+                nextVariableRangeNonMon = (nextVariableRangeNonMon + variableSizeThreshold) % monNonMonVariables.second.size();
             }
 
             auto textOriginal = (!switchOutput && onlyMonotoneVars) || (switchOutput && !onlyMonotoneVars) ? "monotone" : "non-monotone";

@@ -586,6 +586,21 @@ namespace storm {
                 }
                 state = order->getNextAddedState(state);
             }
+            auto const statesAtVariable = parameterLifter->getOccuringStatesAtVariable();
+            for (auto const & entry : statesAtVariable) {
+                auto states = entry.second;
+                auto var = entry.first;
+                bool done = true;
+                for (auto const& state : states) {
+                    done &= order->contains(state) && localMonotonicityResult->getMonotonicity(state, var) != storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Unknown;
+                    if (!done) {
+                        break;
+                    }
+                }
+                if (done) {
+                    localMonotonicityResult->getGlobalMonotonicityResult()->setDoneForVar(var);
+                }
+            }
         }
 
         template <typename SparseModelType, typename ConstantType>

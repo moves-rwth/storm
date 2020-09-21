@@ -77,6 +77,8 @@ namespace storm {
             void setNextVariableRangNonMon(int val);
             void setLastSplitMonotone(bool lastSplitMonotone);
 
+            // TODO: splitting hint based on states which could not be ordered
+
         private:
 
             void init();
@@ -89,7 +91,7 @@ namespace storm {
 
             int nextVariableRangeMon;
             int nextVariableRangeNonMon;
-            int variableSizeThreshold = 20;
+            int variableSizeThreshold = 4;
         };
 
         template<typename ParametricType>
