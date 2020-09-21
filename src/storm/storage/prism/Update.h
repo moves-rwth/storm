@@ -92,6 +92,8 @@ namespace storm {
              * @return The resulting update.
              */
             Update removeIdentityAssignments() const;
+
+            Update substituteNonStandardPredicates() const;
             
             /*!
              * Simplifies the update in various ways (also removes identity assignments)

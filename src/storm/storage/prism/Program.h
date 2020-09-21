@@ -628,6 +628,11 @@ namespace storm {
              * @return The resulting program that only contains expressions over variables of the program (and maybe constants).
              */
             Program substituteFormulas() const;
+
+            /*!
+             * Substitutes all nonstandard predicates in expressions of the program by their defining expressions
+             */
+             Program substituteNonStandardPredicates() const;
             
             /*!
              * Substitutes all constants and/or formulas appearing in the expressions of the program by their defining expressions. For

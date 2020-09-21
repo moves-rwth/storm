@@ -885,7 +885,51 @@ namespace storm {
         Program Program::substituteFormulas() const {
             return substituteConstantsFormulas(false, true);
         }
-        
+
+        Program Program::substituteNonStandardPredicates() const {
+            // TODO support in constants,  initial construct, and rewards
+
+            std::vector<Formula> newFormulas;
+            newFormulas.reserve(this->getNumberOfFormulas());
+            for (auto const& oldFormula : this->getFormulas()) {
+                newFormulas.emplace_back(oldFormula.substituteNonStandardPredicates());
+            }
+
+            std::vector<BooleanVariable> newBooleanVariables;
+            newBooleanVariables.reserve(this->getNumberOfGlobalBooleanVariables());
+            for (auto const& booleanVariable : this->getGlobalBooleanVariables()) {
+                newBooleanVariables.emplace_back(booleanVariable.substituteNonStandardPredicates());
+            }
+
+            std::vector<IntegerVariable> newIntegerVariables;
+            newBooleanVariables.reserve(this->getNumberOfGlobalIntegerVariables());
+            for (auto const& integerVariable : this->getGlobalIntegerVariables()) {
+                newIntegerVariables.emplace_back(integerVariable.substituteNonStandardPredicates());
+            }
+
+            std::vector<Module> newModules;
+            newModules.reserve(this->getNumberOfModules());
+            for (auto const& module : this->getModules()) {
+                newModules.emplace_back(module.substituteNonStandardPredicates());
+            }
+
+
+            std::vector<Label> newLabels;
+            newLabels.reserve(this->getNumberOfLabels());
+            for (auto const& label : this->getLabels()) {
+                newLabels.emplace_back(label.substituteNonStandardPredicates());
+            }
+
+            std::vector<ObservationLabel> newObservationLabels;
+            newObservationLabels.reserve(this->getNumberOfObservationLabels());
+            for (auto const& label : this->getObservationLabels()) {
+                newObservationLabels.emplace_back(label.substituteNonStandardPredicates());
+            }
+
+            return Program(this->manager, this->getModelType(), this->getConstants(), newBooleanVariables, newIntegerVariables, newFormulas, newModules, this->getActionNameToIndexMapping(), this->getRewardModels(), newLabels, newObservationLabels, initialConstruct, this->getOptionalSystemCompositionConstruct(), prismCompatibility);
+
+        }
+
         Program Program::substituteConstantsFormulas(bool substituteConstants, bool substituteFormulas) const {
             // Formulas need to be substituted first. otherwise, constants appearing in formula expressions can not be handled properly
             if (substituteConstants && substituteFormulas) {

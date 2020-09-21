@@ -235,6 +235,28 @@ namespace storm {
             
             return Module(this->getName(), newBooleanVariables, newIntegerVariables, this->getClockVariables(), this->getInvariant(), newCommands, this->getFilename(), this->getLineNumber());
         }
+
+        Module Module::substituteNonStandardPredicates() const {
+            std::vector<BooleanVariable> newBooleanVariables;
+            newBooleanVariables.reserve(this->getNumberOfBooleanVariables());
+            for (auto const& booleanVariable : this->getBooleanVariables()) {
+                newBooleanVariables.emplace_back(booleanVariable.substituteNonStandardPredicates());
+            }
+
+            std::vector<IntegerVariable> newIntegerVariables;
+            newBooleanVariables.reserve(this->getNumberOfIntegerVariables());
+            for (auto const& integerVariable : this->getIntegerVariables()) {
+                newIntegerVariables.emplace_back(integerVariable.substituteNonStandardPredicates());
+            }
+
+            std::vector<Command> newCommands;
+            newCommands.reserve(this->getNumberOfCommands());
+            for (auto const& command : this->getCommands()) {
+                newCommands.emplace_back(command.substituteNonStandardPredicates());
+            }
+
+            return Module(this->getName(), newBooleanVariables, newIntegerVariables, this->getClockVariables(), this->getInvariant(), newCommands, this->getFilename(), this->getLineNumber());
+        }
         
         bool Module::containsVariablesOnlyInUpdateProbabilities(std::set<storm::expressions::Variable> const& undefinedConstantVariables) const {
             for (auto const& booleanVariable : this->getBooleanVariables()) {

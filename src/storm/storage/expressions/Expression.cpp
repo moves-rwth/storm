@@ -13,6 +13,7 @@
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/macros.h"
+#include "storm/storage/expressions/SimplificationVisitor.h"
 
 namespace storm {
     namespace expressions {
@@ -52,6 +53,10 @@ namespace storm {
 		Expression Expression::substitute(std::unordered_map<Variable, Expression> const& identifierToExpressionMap) const {
 			return SubstitutionVisitor<std::unordered_map<Variable, Expression>>(identifierToExpressionMap).substitute(*this);
 		}
+
+		Expression Expression::substituteNonStandardPredicates() const {
+            return SimplificationVisitor().substitute(*this);
+        }
 
         bool Expression::evaluateAsBool(Valuation const* valuation) const {
             return this->getBaseExpression().evaluateAsBool(valuation);

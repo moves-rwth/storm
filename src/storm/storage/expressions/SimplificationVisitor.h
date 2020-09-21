@@ -1,19 +1,26 @@
 #pragma once
-
-#include <sstream>
+#include <stack>
 
 #include "storm/storage/expressions/Expression.h"
-#include "storm/storage/expressions/Expressions.h"
 #include "storm/storage/expressions/ExpressionVisitor.h"
 
 namespace storm {
     namespace expressions {
-        class ToDiceStringVisitor : public ExpressionVisitor {
+        class SimplificationVisitor : public ExpressionVisitor {
         public:
-            ToDiceStringVisitor(uint64 nrBits);
+            /*!
+             * Creates a new simplification visitor that replaces predicates by other (simpler?) predicates.
+             *
+             *  Configuration:
+             *  Currently, the visitor only replaces nonstandard predicates
+             *
+             */
+            SimplificationVisitor();
 
-            std::string toString(Expression const& expression);
-            std::string toString(BaseExpression const* expression);
+            /*!
+             * Simplifies based on the configuration.
+             */
+            Expression substitute(Expression const& expression);
 
             virtual boost::any visit(IfThenElseExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(BinaryBooleanFunctionExpression const& expression, boost::any const& data) override;
@@ -22,16 +29,13 @@ namespace storm {
             virtual boost::any visit(VariableExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(UnaryBooleanFunctionExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(UnaryNumericalFunctionExpression const& expression, boost::any const& data) override;
-            virtual boost::any visit(PredicateExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(BooleanLiteralExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(IntegerLiteralExpression const& expression, boost::any const& data) override;
             virtual boost::any visit(RationalLiteralExpression const& expression, boost::any const& data) override;
+            virtual boost::any visit(PredicateExpression const& expression, boost::any const& data) override;
 
-
-        private:
-            std::stringstream stream;
-            uint64_t nrBits;
+        protected:
+            //
         };
     }
 }
-

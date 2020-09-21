@@ -101,6 +101,11 @@ namespace storm {
             Expression substitute(std::map<Variable, Expression> const& variableToExpressionMap) const;
 
             /*!
+             * Eliminate nonstandard predicates from the expression.
+             * @return
+             */
+            Expression substituteNonStandardPredicates() const;
+            /*!
             * Substitutes all occurrences of the variables according to the given map. Note that this substitution is
             * done simultaneously, i.e., variables appearing in the expressions that were "plugged in" are not
             * substituted.

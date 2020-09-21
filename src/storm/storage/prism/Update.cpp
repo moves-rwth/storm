@@ -75,7 +75,19 @@ namespace storm {
             // FIXME: The expression could be simplified, but 1/K (where K is an int) is then resolved to 0, which is incorrect (for probabilities).
             return Update(this->getGlobalIndex(), newLikelihoodExpression, newAssignments, this->getFilename(), this->getLineNumber());
         }
-        
+
+        Update Update::substituteNonStandardPredicates() const {
+            std::vector<Assignment> newAssignments;
+            newAssignments.reserve(this->getNumberOfAssignments());
+            for (auto const& assignment : this->getAssignments()) {
+                newAssignments.emplace_back(assignment.substituteNonStandardPredicates());
+            }
+            auto newLikelihoodExpression = this->getLikelihoodExpression().substituteNonStandardPredicates();
+            STORM_LOG_THROW(likelihoodExpression.containsVariables() || likelihoodExpression.evaluateAsRational() >= 0, storm::exceptions::IllegalArgumentException, "Substitution yielding negative probabilities in '" << this->getLikelihoodExpression() << "' are not allowed.");
+            return Update(this->getGlobalIndex(), newLikelihoodExpression, newAssignments, this->getFilename(), this->getLineNumber());
+        }
+
+
         Update Update::removeIdentityAssignments() const {
             std::vector<Assignment> newAssignments;
             newAssignments.reserve(getNumberOfAssignments());

@@ -250,7 +250,9 @@ namespace storm {
              * @return The resulting module.
              */
             Module substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
-            
+
+            Module substituteNonStandardPredicates() const;
+
             /*!
              * Checks whether the given variables only appear in the update probabilities of the module and nowhere else.
              *

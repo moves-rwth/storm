@@ -241,6 +241,38 @@ namespace storm {
             return boost::any();
         }
 
+        boost::any ToDiceStringVisitor::visit(PredicateExpression const& expression, boost::any const& data) {
+            auto pdt = expression.getPredicateType();
+            STORM_LOG_ASSERT(pdt == PredicateExpression::PredicateType::ExactlyOneOf || pdt == PredicateExpression::PredicateType::AtLeastOneOf || pdt == PredicateExpression::PredicateType::AtMostOneOf, "Only some predicate types are supported.");
+            stream << "(";
+            if (expression.getPredicateType() == PredicateExpression::PredicateType::ExactlyOneOf || expression.getPredicateType() == PredicateExpression::PredicateType::AtMostOneOf) {
+                stream << "(true ";
+                for (uint64_t operandi = 0; operandi < expression.getArity(); ++operandi) {
+                    for (uint64_t operandj = operandi + 1; operandj < expression.getArity(); ++operandj) {
+                        stream << "&& !(";
+                        expression.getOperand(operandi)->accept(*this, data);
+                        stream << " && ";
+                        expression.getOperand(operandj)->accept(*this, data);
+                        stream << ")";
+                    }
+                }
+                stream << ")";
+            }
+            if (expression.getPredicateType() == PredicateExpression::PredicateType::ExactlyOneOf) {
+                stream << " && ";
+            }
+            if (expression.getPredicateType() == PredicateExpression::PredicateType::ExactlyOneOf || expression.getPredicateType() == PredicateExpression::PredicateType::AtLeastOneOf) {
+                stream << "( false";
+                for (uint64_t operandj = 0; operandj < expression.getArity(); ++operandj) {
+                    stream << "|| ";
+                    expression.getOperand(operandj)->accept(*this, data);
+                }
+                stream << ")";
+            }
+            stream << ")";
+            return boost::any();
+        }
+
         boost::any ToDiceStringVisitor::visit(BooleanLiteralExpression const& expression, boost::any const&) {
             stream << (expression.getValue() ? " true " : " false ");
             return boost::any();
