@@ -8,6 +8,7 @@
 #include "storm/solver/Multiplier.h"
 #include "storm/solver/StandardMinMaxLinearEquationSolver.h"
 #include "storm/solver/helper/SoundValueIterationHelper.h"
+#include "storm/solver/helper/OptimisticValueIterationHelper.h"
 
 #include "storm/solver/SolverStatus.h"
 
@@ -85,6 +86,7 @@ namespace storm {
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector; // A.rowGroupCount() entries
             mutable std::unique_ptr<std::vector<ValueType>> auxiliaryRowGroupVector2; // A.rowGroupCount() entries
             mutable std::unique_ptr<storm::solver::helper::SoundValueIterationHelper<ValueType>> soundValueIterationHelper;
+            mutable std::unique_ptr<storm::solver::helper::OptimisticValueIterationHelper<ValueType>> optimisticValueIterationHelper;
             
         };
         

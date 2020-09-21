@@ -47,7 +47,7 @@ namespace storm {
                     if (predecessorNode != rhs.predecessorNode) {
                         return predecessorNode < rhs.predecessorNode;
                     }
-                    return predecessorK < predecessorK;
+                    return predecessorK < rhs.predecessorK;
                 }
 
                 bool operator==(const Path<T>& rhs) const {
