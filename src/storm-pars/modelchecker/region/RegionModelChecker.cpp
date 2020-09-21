@@ -200,6 +200,9 @@ namespace storm {
                     }
                     if (!useSameLocalMonotonicityResult) {
                         localMonotonicityResult = localMonotonicityResults.front();
+                        if (!localMonotonicityResult->isDone()) {
+                            extendLocalMonotonicityResult(currentRegion, order, localMonotonicityResult);
+                        }
                     }
 
                     res = analyzeRegion(env, currentRegion, hypothesis, res, false, order, localMonotonicityResult);
