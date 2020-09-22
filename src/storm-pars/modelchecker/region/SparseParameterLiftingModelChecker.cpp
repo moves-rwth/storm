@@ -272,9 +272,7 @@ namespace storm {
                 STORM_LOG_INFO("Currently looking at region: " << currRegion);
                 std::shared_ptr<storm::analysis::Order> order = regionQueue.top().order;
                 std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult = regionQueue.top().localMonRes;
-                if (this->isUseMonotonicitySet() && !order->getDoneBuilding()) {
-                    this->extendOrder(env, order, currRegion);
-                }
+
                 if (this->isUseMonotonicitySet() && !localMonotonicityResult->isDone()) {
                     this->extendLocalMonotonicityResult(currRegion, order, localMonotonicityResult);
                 }
@@ -319,15 +317,21 @@ namespace storm {
                     coveredArea += storm::utility::convertNumber<ConstantType>(currRegion.area());
                 }
                 regionQueue.pop();
-                bool first = true;
-                for (auto const& r : newRegions) {
-                    if (!this->isUseMonotonicitySet() || first) {
+                for (auto itr = newRegions.begin(); itr != newRegions.end(); ) {
+                    auto const &r =*itr;
+                    ++itr;
+                    if (!this->isUseMonotonicitySet() || itr == newRegions.end()) {
+                        if (this->isUseMonotonicitySet() && !order->getDoneBuilding()) {
+                            this->extendOrder(env, order, r);
+                        }
                         regionQueue.emplace(r, order, localMonotonicityResult, currBound);
-                        first = false;
                     } else if (!order->getDoneBuilding()) {
                         auto copyOrder = order->copy();
                         if (orderExtender) {
                             orderExtender->setUnknownStates(order, copyOrder);
+                        }
+                        if (this->isUseMonotonicitySet() && !order->getDoneBuilding()) {
+                            this->extendOrder(env, copyOrder, r);
                         }
                         regionQueue.emplace(r, copyOrder, localMonotonicityResult->copy(), currBound);
                     } else if (!localMonotonicityResult->isDone()) {
@@ -335,6 +339,10 @@ namespace storm {
                     } else {
                         regionQueue.emplace(r, order, localMonotonicityResult, currBound);
                     }
+                }
+
+                if (this->isUseMonotonicitySet() && !order->getDoneBuilding()) {
+                    this->extendOrder(env, order, currRegion);
                 }
                 STORM_LOG_INFO("Current value : " << value.get() << ", current bound: " << regionQueue.top().bound << ".");
                 STORM_LOG_INFO("Covered " << (coveredArea * storm::utility::convertNumber<ConstantType>(100.0) / totalArea) << "% of the region." << std::endl);
