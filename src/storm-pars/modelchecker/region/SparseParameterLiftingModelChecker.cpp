@@ -252,8 +252,8 @@ namespace storm {
             }
             
             auto cmp = storm::solver::minimize(dir) ?
-                    [](RegionBound<SparseModelType, ConstantType> const& lhs, RegionBound<SparseModelType, ConstantType> const& rhs) { return lhs.bound > rhs.bound || (lhs.bound == rhs.bound && lhs.order->getNumberOfAddedStates() > rhs.order->getNumberOfAddedStates()); } :
-                    [](RegionBound<SparseModelType, ConstantType> const& lhs, RegionBound<SparseModelType, ConstantType> const& rhs) { return lhs.bound < rhs.bound || (lhs.bound == rhs.bound && lhs.order->getNumberOfAddedStates() < rhs.order->getNumberOfAddedStates()); };
+                    [](RegionBound<SparseModelType, ConstantType> const& lhs, RegionBound<SparseModelType, ConstantType> const& rhs) { return lhs.bound > rhs.bound ; } :
+                    [](RegionBound<SparseModelType, ConstantType> const& lhs, RegionBound<SparseModelType, ConstantType> const& rhs) { return lhs.bound < rhs.bound ; };
             std::priority_queue<RegionBound<SparseModelType, ConstantType>, std::vector<RegionBound<SparseModelType, ConstantType>>, decltype(cmp)> regionQueue(cmp);
             if (this->isUseMonotonicitySet()) {
                 auto o = this->extendOrder(env, nullptr, region);
