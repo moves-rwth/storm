@@ -252,8 +252,8 @@ namespace storm {
             }
             
             auto cmp = storm::solver::minimize(dir) ?
-                    [](RegionBound<SparseModelType, ConstantType> const& lhs, RegionBound<SparseModelType, ConstantType> const& rhs) { return lhs.bound > rhs.bound; } :
-                    [](RegionBound<SparseModelType, ConstantType> const& lhs, RegionBound<SparseModelType, ConstantType> const& rhs) { return lhs.bound < rhs.bound; };
+                    [](RegionBound<SparseModelType, ConstantType> const& lhs, RegionBound<SparseModelType, ConstantType> const& rhs) { return lhs.bound > rhs.bound || (lhs.bound == rhs.bound && lhs.order->getNumberOfAddedStates() > rhs.order->getNumberOfAddedStates()); } :
+                    [](RegionBound<SparseModelType, ConstantType> const& lhs, RegionBound<SparseModelType, ConstantType> const& rhs) { return lhs.bound < rhs.bound || (lhs.bound == rhs.bound && lhs.order->getNumberOfAddedStates() < rhs.order->getNumberOfAddedStates()); };
             std::priority_queue<RegionBound<SparseModelType, ConstantType>, std::vector<RegionBound<SparseModelType, ConstantType>>, decltype(cmp)> regionQueue(cmp);
             if (this->isUseMonotonicitySet()) {
                 auto o = this->extendOrder(env, nullptr, region);
@@ -269,7 +269,7 @@ namespace storm {
             auto coveredArea = storm::utility::zero<ConstantType>();
             while (!regionQueue.empty()) {
                 auto currRegion = regionQueue.top().region;
-                STORM_LOG_INFO("Currently looking at region: " << currRegion << std::endl);
+                STORM_LOG_INFO("Currently looking at region: " << currRegion);
                 std::shared_ptr<storm::analysis::Order> order = regionQueue.top().order;
                 std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult = regionQueue.top().localMonRes;
                 if (this->isUseMonotonicitySet() && !order->getDoneBuilding()) {
@@ -292,8 +292,11 @@ namespace storm {
                 if (storm::solver::minimize(dir)) {
                     if (currBound < value.get() - storm::utility::convertNumber<ConstantType>(precision)) {
                         if (this->isUseMonotonicitySet()) {
-                            this->splitSmart(currRegion, newRegions,
-                                             *(localMonotonicityResult->getGlobalMonotonicityResult()));
+                            this->splitSmart(currRegion, newRegions, order);
+                            if (newRegions.size() == 0) {
+                                this->splitSmart(currRegion, newRegions,
+                                                 *(localMonotonicityResult->getGlobalMonotonicityResult()));
+                            }
                         } else {
                             currRegion.split(currRegion.getCenterPoint(), newRegions);
                         }
@@ -301,8 +304,11 @@ namespace storm {
                 } else {
                     if (currBound > value.get() + storm::utility::convertNumber<ConstantType>(precision)) {
                         if (this->isUseMonotonicitySet()) {
-                            this->splitSmart(currRegion, newRegions,
-                                             *(localMonotonicityResult->getGlobalMonotonicityResult()));
+                            this->splitSmart(currRegion, newRegions, order);
+                            if (newRegions.size() == 0) {
+                                this->splitSmart(currRegion, newRegions,
+                                                 *(localMonotonicityResult->getGlobalMonotonicityResult()));
+                            }
                         } else {
                             currRegion.split(currRegion.getCenterPoint(), newRegions);
                         }
@@ -319,15 +325,19 @@ namespace storm {
                         regionQueue.emplace(r, order, localMonotonicityResult, currBound);
                         first = false;
                     } else if (!order->getDoneBuilding()) {
-                        regionQueue.emplace(r, order->copy(), localMonotonicityResult->copy(), currBound);
+                        auto copyOrder = order->copy();
+                        if (orderExtender) {
+                            orderExtender->setUnknownStates(order, copyOrder);
+                        }
+                        regionQueue.emplace(r, copyOrder, localMonotonicityResult->copy(), currBound);
                     } else if (!localMonotonicityResult->isDone()) {
-                        regionQueue.emplace(r, order->copy(), localMonotonicityResult->copy(), currBound);
+                        regionQueue.emplace(r, order, localMonotonicityResult->copy(), currBound);
                     } else {
                         regionQueue.emplace(r, order, localMonotonicityResult, currBound);
                     }
                 }
                 STORM_LOG_INFO("Current value : " << value.get() << ", current bound: " << regionQueue.top().bound << ".");
-                STORM_LOG_INFO("Covered " << (coveredArea * storm::utility::convertNumber<ConstantType>(100.0) / totalArea) << "% of the region.");
+                STORM_LOG_INFO("Covered " << (coveredArea * storm::utility::convertNumber<ConstantType>(100.0) / totalArea) << "% of the region." << std::endl);
             }
             
             return std::make_pair(storm::utility::convertNumber<typename SparseModelType::ValueType>(value.get()), valuation);

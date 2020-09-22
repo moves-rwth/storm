@@ -535,6 +535,48 @@ namespace storm {
             }
         }
 
+        template<typename ValueType, typename ConstantType>
+        void
+        OrderExtender<ValueType, ConstantType>::setUnknownStates(std::shared_ptr<Order> order, uint_fast64_t state1,
+                                                                 uint_fast64_t state2) {
+            assert (state1 != numberOfStates && state2 != numberOfStates);
+            if (unknownStatesMap.find(order) == unknownStatesMap.end()) {
+                unknownStatesMap.insert({order, {state1, state2}});
+            } else if (lastUnknownStatesMap.find(order) == lastUnknownStatesMap.end()) {
+                lastUnknownStatesMap.insert({order, {state1, state2}});
+                unknownStatesMap[order] = {state1, state2};
+            } else {
+                if (unknownStatesMap[order].first == numberOfStates && ((lastUnknownStatesMap[order].first == state1 && lastUnknownStatesMap[order].second == state2) ||
+                        (lastUnknownStatesMap[order].first == state2 && lastUnknownStatesMap[order].second == state1))) {
+                    unknownStatesMap[order] = {numberOfStates, numberOfStates};
+                } else if ((unknownStatesMap[order].first == state1 && unknownStatesMap[order].second == state2) ||
+                           (unknownStatesMap[order].first == state2 && unknownStatesMap[order].second == state1)) {
+                    unknownStatesMap[order] = {numberOfStates, numberOfStates};
+                } else {
+                    lastUnknownStatesMap[order] = unknownStatesMap[order];
+                    unknownStatesMap[order] = {state1, state2};
+                }
+            }
+        }
+
+        template<typename ValueType, typename ConstantType>
+        std::pair<uint_fast64_t, uint_fast64_t>
+        OrderExtender<ValueType, ConstantType>::getUnknownStates(std::shared_ptr<Order> order) {
+            if (unknownStatesMap.find(order) != unknownStatesMap.end()) {
+                return unknownStatesMap[order];
+            }
+            return std::pair<uint_fast64_t, uint_fast64_t>(numberOfStates, numberOfStates);
+        }
+
+        template<typename ValueType, typename ConstantType>
+        void OrderExtender<ValueType, ConstantType>::setUnknownStates(std::shared_ptr<Order> orderOriginal,
+                                                                      std::shared_ptr<Order> orderCopy) {
+            assert (unknownStatesMap.find(orderCopy) == unknownStatesMap.end());
+            assert (lastUnknownStatesMap.find(orderCopy) == lastUnknownStatesMap.end());
+            unknownStatesMap.insert({orderCopy,{unknownStatesMap[orderOriginal].first, unknownStatesMap[orderOriginal].second}});
+            lastUnknownStatesMap.insert({orderCopy,{lastUnknownStatesMap[orderOriginal].first, lastUnknownStatesMap[orderOriginal].second}});
+        }
+
         template class OrderExtender<RationalFunction, double>;
         template class OrderExtender<RationalFunction, RationalNumber>;
     }

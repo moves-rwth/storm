@@ -123,9 +123,8 @@ namespace storm {
             solverFactory->setRequirementsChecked(true);
 
             // For monotonicity checking
-            useOrderExtender = true;
             std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->parametricModel->getBackwardTransitions(), phiStates, psiStates);
-            this->orderExtender = new storm::analysis::OrderExtender<typename SparseModelType::ValueType,ConstantType>(&statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
+            this->orderExtender = storm::analysis::OrderExtender<typename SparseModelType::ValueType,ConstantType>(&statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
         }
 
         template <typename SparseModelType, typename ConstantType>
@@ -161,13 +160,11 @@ namespace storm {
             STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
             solverFactory->setRequirementsChecked(true);
 
-            useOrderExtender = true;
-            this->orderExtender = new storm::analysis::OrderExtender<typename SparseModelType::ValueType,ConstantType>(&statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
+            this->orderExtender =  storm::analysis::OrderExtender<typename SparseModelType::ValueType,ConstantType>(&statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
         }
 
         template <typename SparseModelType, typename ConstantType>
         void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyReachabilityRewardFormula(Environment const& env, CheckTask<storm::logic::EventuallyFormula, ConstantType> const& checkTask) {
-            useOrderExtender = false;
             // get the results for the subformula
             storm::modelchecker::SparsePropositionalModelChecker<SparseModelType> propositionalChecker(*this->parametricModel);
             STORM_LOG_THROW(propositionalChecker.canHandle(checkTask.getFormula().getSubformula()), storm::exceptions::NotSupportedException, "Parameter lifting with non-propositional subformulas is not supported");
@@ -211,7 +208,6 @@ namespace storm {
 
         template <typename SparseModelType, typename ConstantType>
         void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specifyCumulativeRewardFormula(Environment const& env, CheckTask<storm::logic::CumulativeRewardFormula, ConstantType> const& checkTask) {
-            useOrderExtender = false;
             // Obtain the stepBound
             stepBound = checkTask.getFormula().getBound().evaluateAsInt();
             if (checkTask.getFormula().isBoundStrict()) {
@@ -531,11 +527,11 @@ namespace storm {
         std::shared_ptr<storm::analysis::Order>  SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::extendOrder(Environment const& env, std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<typename SparseModelType::ValueType> region) {
             typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::CoefficientType CoefficientType;
 
-            if (useOrderExtender) {
+            if (this->orderExtender) {
                 auto minValues = computeQuantitativeValues(env, region, storm::solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
                 auto maxValues = computeQuantitativeValues(env, region, storm::solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-                orderExtender->setMinMaxValues(minValues, maxValues);
-                auto res = orderExtender->extendOrder(order, region);
+                this->orderExtender.get().setMinMaxValues(minValues, maxValues);
+                auto res = this->orderExtender.get().extendOrder(order, region);
                 order = std::get<0>(res);
                 while (!order->getDoneBuilding() && order->existsNextSortedState()) {
                     // TODO: move this to order extender?
@@ -549,10 +545,11 @@ namespace storm {
                             order->setDoneBuilding();
                         } else {
                             // We continue as there are more states left
-                            res = orderExtender->extendOrder(order, region);
+                            res = this->orderExtender.get().extendOrder(order, region);
                         }
                     } else {
                         order->addStateToHandle(state);
+                        this->orderExtender.get().setUnknownStates(order, std::get<1>(res), std::get<2>(res));
                         break;
                     }
                     order = std::get<0>(res);
@@ -604,7 +601,7 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::splitSmart(
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::splitSmart (
                 storm::storage::ParameterRegion<typename SparseModelType::ValueType> &region,
                 std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> &regionVector,
                 storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> & monRes) const{
@@ -621,6 +618,24 @@ namespace storm {
                 }
             } else {
                 region.split(region.getCenterPoint(), regionVector, monRes, false, 1);
+            }
+        }
+
+        template<typename SparseModelType, typename ConstantType>
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::splitSmart (
+                storm::storage::ParameterRegion<typename SparseModelType::ValueType> &region,
+                std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> &regionVector,
+                std::shared_ptr<storm::analysis::Order> order) {
+            if (this->orderExtender) {
+                auto states = this->orderExtender.get().getUnknownStates((order));
+                if (states.first != states.second) {
+                    auto variablesAtStates = parameterLifter->getOccurringVariablesAtState();
+                    std::set<VariableType> variables = variablesAtStates[states.first];
+                    for (auto var : variablesAtStates[states.second]) {
+                        variables.insert(var);
+                    }
+                    region.split(region.getCenterPoint(), regionVector, variables);
+                }
             }
         }
 

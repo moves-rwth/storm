@@ -99,6 +99,8 @@ namespace storm {
 
             virtual void splitSmart(storm::storage::ParameterRegion<ParametricType> & region, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector, storm::analysis::MonotonicityResult<VariableType> & monRes) const;
 
+            virtual void splitSmart(storm::storage::ParameterRegion<ParametricType> & region, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector, std::shared_ptr<storm::analysis::Order> order) ;
+
         };
 
     } //namespace modelchecker

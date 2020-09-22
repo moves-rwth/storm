@@ -75,6 +75,11 @@ namespace storm {
 
             void setMinMaxValues(std::vector<ConstantType> &minValues, std::vector<ConstantType> &maxValues);
 
+            void setUnknownStates(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2);
+
+            std::pair<uint_fast64_t, uint_fast64_t> getUnknownStates(std::shared_ptr<Order> order);
+            void setUnknownStates(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
+
 
         private:
             std::shared_ptr<Order> getBottomTopOrder();
@@ -100,6 +105,9 @@ namespace storm {
             std::shared_ptr<models::sparse::Model<ValueType>> model;
 
             std::map<uint_fast64_t, std::vector<uint_fast64_t>> stateMap;
+            std::map<std::shared_ptr<Order>, std::pair<uint_fast64_t, uint_fast64_t>> unknownStatesMap;
+            std::map<std::shared_ptr<Order>, std::pair<uint_fast64_t, uint_fast64_t>> lastUnknownStatesMap;
+
 
             bool usePLA;
 

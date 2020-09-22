@@ -306,6 +306,115 @@ namespace storm {
         }
 
         template<typename ParametricType>
+        void ParameterRegion<ParametricType>::split(const ParameterRegion::Valuation &splittingPoint,
+                                                    std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector,
+                                                    const std::set<VariableType> &consideredVariables) const {
+
+            if (consideredVariables.size() == 2) {
+                // TODO: Clean this up
+                // We first want to tackle the situation in we take lowerbound for var1, upperbound for var2 and vice versa
+                // so first 2 and 3 then 1 and 4
+                Valuation subLower1, subUpper1, subLower2, subUpper2, subLower3, subUpper3, subLower4, subUpper4;
+                auto var1 = *(consideredVariables.begin());
+                auto var2 = *(++(consideredVariables.begin()));
+                STORM_LOG_INFO("Doing smart splitting for variables " << var1 << " and " << var2 << ".");
+
+                subLower1.insert(typename Valuation::value_type(var1, getLowerBoundary(var1)));
+                subLower2.insert(typename Valuation::value_type(var1, splittingPoint.find(var1)->second));
+                subLower3.insert(typename Valuation::value_type(var1, getLowerBoundary(var1)));
+                subLower4.insert(typename Valuation::value_type(var1, splittingPoint.find(var1)->second));
+                subLower1.insert(typename Valuation::value_type(var2, getLowerBoundary(var2)));
+                subLower2.insert(typename Valuation::value_type(var2, getLowerBoundary(var2)));
+                subLower3.insert(typename Valuation::value_type(var2, splittingPoint.find(var2)->second));
+                subLower4.insert(typename Valuation::value_type(var2, splittingPoint.find(var2)->second));
+
+                subUpper1.insert(typename Valuation::value_type(var1, splittingPoint.find(var1)->second));
+                subUpper2.insert(typename Valuation::value_type(var1, getUpperBoundary(var1)));
+                subUpper3.insert(typename Valuation::value_type(var1, splittingPoint.find(var1)->second));
+                subUpper4.insert(typename Valuation::value_type(var1, getUpperBoundary(var1)));
+                subUpper1.insert(typename Valuation::value_type(var2, splittingPoint.find(var2)->second));
+                subUpper2.insert(typename Valuation::value_type(var2, splittingPoint.find(var2)->second));
+                subUpper3.insert(typename Valuation::value_type(var2, getUpperBoundary(var2)));
+                subUpper4.insert(typename Valuation::value_type(var2, getUpperBoundary(var2)));
+
+                for (auto variable : this->variables) {
+                    if (consideredVariables.find(variable) == consideredVariables.end()) {
+                        subLower1.insert(typename Valuation::value_type(variable, getLowerBoundary(variable)));
+                        subUpper1.insert(typename Valuation::value_type(variable, getUpperBoundary(variable)));
+                        subLower2.insert(typename Valuation::value_type(variable, getLowerBoundary(variable)));
+                        subUpper2.insert(typename Valuation::value_type(variable, getUpperBoundary(variable)));
+                        subLower3.insert(typename Valuation::value_type(variable, getLowerBoundary(variable)));
+                        subUpper3.insert(typename Valuation::value_type(variable, getUpperBoundary(variable)));
+                        subLower4.insert(typename Valuation::value_type(variable, getLowerBoundary(variable)));
+                        subUpper4.insert(typename Valuation::value_type(variable, getUpperBoundary(variable)));
+                    }
+
+                }
+                ParameterRegion<ParametricType> subRegion(std::move(subLower2), std::move(subUpper2));
+                subRegion.setNextVariableRangMon(nextVariableRangeMon);
+                subRegion.setNextVariableRangNonMon(nextVariableRangeNonMon);
+                subRegion.setLastSplitMonotone(lastSplitMonotone);
+                if (!storm::utility::isZero(subRegion.area())) {
+                    regionVector.push_back(std::move(subRegion));
+                }
+                subRegion = ParameterRegion<ParametricType>(std::move(subLower3), std::move(subUpper3));
+                subRegion.setNextVariableRangMon(nextVariableRangeMon);
+                subRegion.setNextVariableRangNonMon(nextVariableRangeNonMon);
+                subRegion.setLastSplitMonotone(lastSplitMonotone);
+                if (!storm::utility::isZero(subRegion.area())) {
+                    regionVector.push_back(std::move(subRegion));
+                }
+                subRegion = ParameterRegion<ParametricType>(std::move(subLower1), std::move(subUpper1));
+                subRegion.setNextVariableRangMon(nextVariableRangeMon);
+                subRegion.setNextVariableRangNonMon(nextVariableRangeNonMon);
+                subRegion.setLastSplitMonotone(lastSplitMonotone);
+                if (!storm::utility::isZero(subRegion.area())) {
+                    regionVector.push_back(std::move(subRegion));
+                }
+                subRegion = ParameterRegion<ParametricType>(std::move(subLower4), std::move(subUpper4));
+                subRegion.setNextVariableRangMon(nextVariableRangeMon);
+                subRegion.setNextVariableRangNonMon(nextVariableRangeNonMon);
+                subRegion.setLastSplitMonotone(lastSplitMonotone);
+                if (!storm::utility::isZero(subRegion.area())) {
+                    regionVector.push_back(std::move(subRegion));
+                }
+
+
+
+            } else {
+                auto vertices = getVerticesOfRegion(consideredVariables);
+
+                for (auto const &vertex : vertices) {
+                    //The resulting subregion is the smallest region containing vertex and splittingPoint.
+                    Valuation subLower, subUpper;
+                    for (auto variableBound : this->lowerBoundaries) {
+                        VariableType variable = variableBound.first;
+                        auto vertexEntry = vertex.find(variable);
+                        if (vertexEntry != vertex.end()) {
+                            auto splittingPointEntry = splittingPoint.find(variable);
+                            subLower.insert(typename Valuation::value_type(variable, std::min(vertexEntry->second,
+                                                                                              splittingPointEntry->second)));
+                            subUpper.insert(typename Valuation::value_type(variable, std::max(vertexEntry->second,
+                                                                                              splittingPointEntry->second)));
+                        } else {
+                            subLower.insert(typename Valuation::value_type(variable, getLowerBoundary(variable)));
+                            subUpper.insert(typename Valuation::value_type(variable, getUpperBoundary(variable)));
+                        }
+                    }
+
+                    ParameterRegion<ParametricType> subRegion(std::move(subLower), std::move(subUpper));
+                    subRegion.setNextVariableRangMon(nextVariableRangeMon);
+                    subRegion.setNextVariableRangNonMon(nextVariableRangeNonMon);
+                    subRegion.setLastSplitMonotone(lastSplitMonotone);
+
+                    if (!storm::utility::isZero(subRegion.area())) {
+                        regionVector.push_back(std::move(subRegion));
+                    }
+                }
+            }
+        }
+
+        template<typename ParametricType>
         void ParameterRegion<ParametricType>::setNextVariableRangMon(int val) {
             nextVariableRangeMon = val;
         }
@@ -361,7 +470,7 @@ namespace storm {
             }
             return true;
         }
-        
+
         template <typename ParametricType>
         std::ostream& operator<<(std::ostream& out, ParameterRegion<ParametricType> const& region) {
             out << region.toString();

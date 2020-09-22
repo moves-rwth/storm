@@ -65,6 +65,7 @@ namespace storm {
              * Subregions with area()==0 are not inserted in the vector.
              */
             void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector) const;
+            void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector, std::set<VariableType> const& consideredVariables) const;
 
             void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector, storm::analysis::MonotonicityResult<VariableType> & monRes, bool onlyMonotoneVars, double splitThreshold);
 
@@ -76,8 +77,6 @@ namespace storm {
             void setNextVariableRangMon(int val);
             void setNextVariableRangNonMon(int val);
             void setLastSplitMonotone(bool lastSplitMonotone);
-
-            // TODO: splitting hint based on states which could not be ordered
 
         private:
 

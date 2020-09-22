@@ -374,8 +374,16 @@ namespace storm {
 
         template <typename ParametricType>
         void RegionModelChecker<ParametricType>::splitSmart(storm::storage::ParameterRegion<ParametricType> & currentRegion, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector, storm::analysis::MonotonicityResult<VariableType> & monRes) const {
-            STORM_LOG_WARN("Smart splitting for this model checkernot implemented");
+            STORM_LOG_WARN("Smart splitting for this model checker not implemented");
             currentRegion.split(currentRegion.getCenterPoint(), regionVector);
+        }
+
+        template<typename ParametricType>
+        void RegionModelChecker<ParametricType>::splitSmart(storage::ParameterRegion<ParametricType> &currentRegion, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector,
+                                                            std::shared_ptr<storm::analysis::Order> order) {
+            STORM_LOG_WARN("Smart splitting for this model checker not implemented");
+            currentRegion.split(currentRegion.getCenterPoint(), regionVector);
+
         }
 
 #ifdef STORM_HAVE_CARL
