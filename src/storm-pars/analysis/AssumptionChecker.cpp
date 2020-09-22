@@ -117,9 +117,6 @@ namespace storm {
                             if (state1succ1->getValue() == state2succ1->getValue()) {
                                 result = AssumptionStatus::VALID;
                             }
-                        } else if (order->compare(state1succ1->getColumn(), state1succ2->getColumn() == Order::NodeComparison::ABOVE)){
-                            // The SMT solver cannot solve this either
-                            result = AssumptionStatus::UNKNOWN;
                         } else {
                             result = validateAssumptionSMTSolver(assumption, order, region);
                         }
