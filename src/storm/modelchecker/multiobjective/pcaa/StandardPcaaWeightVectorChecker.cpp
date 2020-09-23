@@ -207,12 +207,83 @@ namespace storm {
                 return result;
             }
             
+            /*!
+             * Computes a scheduler taking the choices from the given set only finitely often
+             * @pre such a scheduler exists
+             */
+            template <typename ValueType>
+            std::vector<uint64_t> computeSchedulerFinitelyOften(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& finitelyOftenChoices) {
+                std::vector<uint64_t> result(transitionMatrix.getRowGroupCount(), 0);
+                auto badStates = transitionMatrix.getRowGroupFilter(finitelyOftenChoices, true);
+                // badStates shall only be reached finitely often
+                
+                auto reachBadWithProbGreater0AStates = storm::utility::graph::performProbGreater0A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, ~badStates, badStates, false, 0, ~finitelyOftenChoices);
+                // States in ~reachBadWithProbGreater0AStates can avoid bad states forever by only taking ~finitelyOftenChoices. We compute a scheduler for these states achieving exactly this
+                auto avoidBadStates = ~reachBadWithProbGreater0AStates;
+                for (auto state : avoidBadStates) {
+                    auto const& groupStart = transitionMatrix.getRowGroupIndices()[state];
+                    auto const& groupEnd = transitionMatrix.getRowGroupIndices()[state + 1];
+                    for (auto choice = finitelyOftenChoices.getNextUnsetIndex(groupStart); choice < groupEnd; choice = finitelyOftenChoices.getNextUnsetIndex(choice + 1)) {
+                        bool allSuccessorsAvoidBadStates = true;
+                        for (auto const& element : transitionMatrix.getRow(choice)) {
+                            if (!avoidBadStates.get(element.getColumn())) {
+                                allSuccessorsAvoidBadStates = false;
+                                break;
+                            }
+                        }
+                        if (allSuccessorsAvoidBadStates) {
+                            result[state] = choice - groupStart;
+                            break;
+                        }
+                    }
+                }
+                
+                // Finally, we need to take care of states that will reach a bad state with prob greater 0 (including the bad states themselves).
+                // due to the precondition, we know that it has to be possible to eventually avoid the bad states for ever.
+                // Perform a backwards search from the avoid states and store choices with prob. 1
+                std::vector<uint64_t> stack;
+                storm::storage::BitVector processedStates(avoidBadStates);
+                stack.insert(stack.end(), processedStates.begin(), processedStates.end());
+                uint64_t currentState = 0;
+                
+                while (!stack.empty()) {
+                    currentState = stack.back();
+                    stack.pop_back();
+                    
+                    for (auto predecessorEntryIt = backwardTransitions.begin(currentState), predecessorEntryIte = backwardTransitions.end(currentState); predecessorEntryIt != predecessorEntryIte; ++predecessorEntryIt) {
+                        if (!processedStates.get(predecessorEntryIt->getColumn())) {
+                            // Find a choice leading to an already processed state (such a choice has to exist since this is a predecessor of the currentState)
+                            auto const& groupStart = transitionMatrix.getRowGroupIndices()[predecessorEntryIt->getColumn()];
+                            auto const& groupEnd = transitionMatrix.getRowGroupIndices()[predecessorEntryIt->getColumn() + 1];
+                            for (uint64_t row = groupStart; row < groupEnd; ++row) {
+                                bool hasSuccessorInProcessedStates = false;
+                                for (auto const& successorOfPredecessor : transitionMatrix.getRow(row)) {
+                                    if (processedStates.get(successorOfPredecessor.getColumn())) {
+                                        hasSuccessorInProcessedStates = true;
+                                        break;
+                                    }
+                                }
+                                if (hasSuccessorInProcessedStates) {
+                                    result[predecessorEntryIt->getColumn()] = row - groupStart;
+                                    processedStates.set(predecessorEntryIt->getColumn(), true);
+                                    stack.push_back(predecessorEntryIt->getColumn());
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                STORM_LOG_ASSERT(processedStates.full(), "Not all states have been processed.");
+                return result;
+            }
+            
             template <class SparseModelType>
             void StandardPcaaWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(Environment const& env, std::vector<ValueType> const& weightedRewardVector, std::vector<ValueType> const& weightVector) {
                 
                 if (this->objectivesWithNoUpperTimeBound.empty() || !storm::utility::vector::hasNonZeroEntry(weightedRewardVector)) {
                     this->weightedResult = std::vector<ValueType>(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
-                    this->optimalChoices = std::vector<uint_fast64_t>(transitionMatrix.getRowGroupCount(), 0);
+                    // Get an arbitrary scheduler that yields finite reward for all objectives
+                    this->optimalChoices = computeSchedulerFinitelyOften(transitionMatrix, transitionMatrix.transpose(true), ~actionsWithoutRewardInUnboundedPhase);
                     return;
                 }
                 
