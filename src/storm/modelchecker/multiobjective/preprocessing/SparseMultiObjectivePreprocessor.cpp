@@ -185,7 +185,7 @@ namespace storm {
                             } else {
                                 STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The subformula of " << pathFormula << " is not supported.");
                             }
-                        } else if (opFormula->isLongRunAverageRewardFormula()) {
+                        } else if (opFormula->isLongRunAverageOperatorFormula()) {
                             auto lraStates = mc.check(pathFormula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
                             // Compute Sat(Forall F (Forall G not "lraStates"))
                             auto forallGloballyNotLraStates = storm::utility::graph::performProb0A(backwardTransitions, ~lraStates, lraStates);
