@@ -30,7 +30,9 @@ namespace storm {
 
             protected:
                 virtual void initializeModelTypeSpecificData(SparseMaModelType const& model) override;
-
+                virtual storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType> createNondetInfiniteHorizonHelper() const override;
+                virtual storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<ValueType> createDetInfiniteHorizonHelper() const override;
+                
             private:
                 
                 /*

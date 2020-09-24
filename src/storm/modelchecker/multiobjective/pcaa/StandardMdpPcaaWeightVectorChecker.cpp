@@ -47,6 +47,16 @@ namespace storm {
             }
             
             template <class SparseMdpModelType>
+            storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<typename SparseMdpModelType::ValueType> StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::createNondetInfiniteHorizonHelper() const {
+                return storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType>(this->transitionMatrix);
+            }
+            
+            template <class SparseMdpModelType>
+            storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<typename SparseMdpModelType::ValueType> StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::createDetInfiniteHorizonHelper() const {
+                return storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<ValueType>(this->transitionMatrix);
+            }
+            
+            template <class SparseMdpModelType>
             void StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::boundedPhase(Environment const& env,std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) {
                 // Allocate some memory so this does not need to happen for each time epoch
                 std::vector<uint_fast64_t> optimalChoicesInCurrentEpoch(this->transitionMatrix.getRowGroupCount());

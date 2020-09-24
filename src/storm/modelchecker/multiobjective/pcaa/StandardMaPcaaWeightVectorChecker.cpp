@@ -63,6 +63,16 @@ namespace storm {
                 }
             }
 
+            template <class SparseMdpModelType>
+            storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<typename SparseMdpModelType::ValueType> StandardMaPcaaWeightVectorChecker<SparseMdpModelType>::createNondetInfiniteHorizonHelper() const {
+                return storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType>(this->transitionMatrix, this->markovianStates, this->exitRates);
+            }
+            
+            template <class SparseMdpModelType>
+            storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<typename SparseMdpModelType::ValueType> StandardMaPcaaWeightVectorChecker<SparseMdpModelType>::createDetInfiniteHorizonHelper() const {
+                // Right now, one would have to pick the nondeterministic helper.
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Deterministic infinite horizon solvers for 'deterministic' Markov automata are not implemented");
+            }
             
             template <class SparseMaModelType>
             void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::boundedPhase(Environment const& env, std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) {

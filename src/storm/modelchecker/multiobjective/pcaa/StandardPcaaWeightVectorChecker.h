@@ -4,7 +4,10 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/Scheduler.h"
+#include "storm/storage/MaximalEndComponentDecomposition.h"
 #include "storm/transformer/EndComponentEliminator.h"
+#include "storm/modelchecker/helper/infinitehorizon/SparseNondeterministicInfiniteHorizonHelper.h"
+#include "storm/modelchecker/helper/infinitehorizon/SparseDeterministicInfiniteHorizonHelper.h"
 #include "storm/modelchecker/multiobjective/Objective.h"
 #include "storm/modelchecker/multiobjective/pcaa/PcaaWeightVectorChecker.h"
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectivePreprocessorResult.h"
@@ -64,7 +67,11 @@ namespace storm {
                 
                 void initialize(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
                 virtual void initializeModelTypeSpecificData(SparseModelType const& model) = 0;
+                virtual storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType> createNondetInfiniteHorizonHelper() const = 0;
+                virtual storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<ValueType> createDetInfiniteHorizonHelper() const = 0;
 
+                void infiniteHorizonWeightedPhase(Environment const& env, std::vector<ValueType> const& weightedActionRewardVector, boost::optional<std::vector<ValueType>> const& weightedStateRewardVector);
+                
                 /*!
                  * Determines the scheduler that optimizes the weighted reward vector of the unbounded objectives
                  *
@@ -148,15 +155,20 @@ namespace storm {
                     storm::storage::SparseMatrix<ValueType> matrix;
                     std::vector<uint_fast64_t> ecqToOriginalChoiceMapping;
                     std::vector<uint_fast64_t> originalToEcqStateMapping;
+                    storm::storage::BitVector ecqStayInEcChoices;
                     storm::storage::BitVector origReward0Choices;
                     storm::storage::BitVector rowsWithSumLessOne;
                     
                     std::vector<ValueType> auxStateValues;
                     std::vector<ValueType> auxChoiceValues;
-                    
                 };
-                
                 boost::optional<EcQuotient> ecQuotient;
+                
+                struct LraMecDecomposition {
+                    storm::storage::MaximalEndComponentDecomposition<ValueType> mecs;
+                    std::vector<ValueType> auxMecValues;
+                };
+                boost::optional<LraMecDecomposition> lraMecDecomposition;
                 
             };
             
