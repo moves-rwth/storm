@@ -17,8 +17,8 @@ namespace storm {
             typedef typename storm::utility::parametric::Valuation<ParametricType> Valuation;
             
             ParameterRegion();
-            ParameterRegion(Valuation const& lowerBoundaries, Valuation const& upperBoundaries);
-            ParameterRegion(Valuation&& lowerBoundaries, Valuation&& upperBoundaries);
+            ParameterRegion(Valuation const& lowerBoundaries, Valuation const& upperBoundaries, boost::optional<int> splittingThreshold= boost::none);
+            ParameterRegion(Valuation&& lowerBoundaries, Valuation&& upperBoundaries, boost::optional<int> splittingThreshold= boost::none);
             ParameterRegion(ParameterRegion<ParametricType> const& other) = default;
             ParameterRegion(ParameterRegion<ParametricType>&& other) = default;
             ParameterRegion<ParametricType>& operator=(ParameterRegion<ParametricType> const& other) = default;
@@ -80,7 +80,7 @@ namespace storm {
 
         private:
 
-            void init();
+            void init(boost::optional<int> splittingThreshold = boost::none);
 
             bool lastSplitMonotone = false;
             
@@ -90,7 +90,7 @@ namespace storm {
 
             int nextVariableRangeMon;
             int nextVariableRangeNonMon;
-            int variableSizeThreshold = 4;
+            boost::optional<int> variableSizeThreshold;
         };
 
         template<typename ParametricType>

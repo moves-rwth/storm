@@ -32,23 +32,23 @@ namespace storm {
     namespace api {
 
         template <typename ValueType>
-        std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables) {
+        std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables, boost::optional<int> splittingThreshold = boost::none) {
             // If the given input string looks like a file (containing a dot and there exists a file with that name),
             // we try to parse it as a file, otherwise we assume it's a region string.
             if (inputString.find(".") != std::string::npos && std::ifstream(inputString).good()) {
-                return storm::parser::ParameterRegionParser<ValueType>().parseMultipleRegionsFromFile(inputString, consideredVariables);
+                return storm::parser::ParameterRegionParser<ValueType>().parseMultipleRegionsFromFile(inputString, consideredVariables, splittingThreshold);
             } else {
-                return storm::parser::ParameterRegionParser<ValueType>().parseMultipleRegions(inputString, consideredVariables);
+                return storm::parser::ParameterRegionParser<ValueType>().parseMultipleRegions(inputString, consideredVariables, splittingThreshold);
             }
         }
 
         template <typename ValueType>
-        storm::storage::ParameterRegion<ValueType> createRegion(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables) {
-            return storm::parser::ParameterRegionParser<ValueType>().createRegion(inputString, consideredVariables);
+        storm::storage::ParameterRegion<ValueType> createRegion(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables, boost::optional<int> splittingThreshold= boost::none) {
+            return storm::parser::ParameterRegionParser<ValueType>().createRegion(inputString, consideredVariables, splittingThreshold);
         }
 
         template <typename ValueType>
-        std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, storm::models::ModelBase const& model) {
+        std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, storm::models::ModelBase const& model, boost::optional<int> splittingThreshold= boost::none) {
             std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> modelParameters;
             if (model.isSparseModel()) {
                 auto const& sparseModel = dynamic_cast<storm::models::sparse::Model<ValueType> const&>(model);
@@ -58,11 +58,11 @@ namespace storm {
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Retrieving model parameters is not supported for the given model type.");
             }
-            return parseRegions<ValueType>(inputString, modelParameters);
+            return parseRegions<ValueType>(inputString, modelParameters, splittingThreshold);
         }
 
         template <typename ValueType>
-        std::vector<storm::storage::ParameterRegion<ValueType>> createRegion(std::string const& inputString, storm::models::ModelBase const& model) {
+        std::vector<storm::storage::ParameterRegion<ValueType>> createRegion(std::string const& inputString, storm::models::ModelBase const& model, boost::optional<int> splittingThreshold= boost::none) {
             std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> modelParameters;
             if (model.isSparseModel()) {
                 auto const& sparseModel = dynamic_cast<storm::models::sparse::Model<ValueType> const&>(model);
@@ -72,23 +72,23 @@ namespace storm {
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Retrieving model parameters is not supported for the given model type.");
             }
-            return std::vector<storm::storage::ParameterRegion<ValueType>>({createRegion<ValueType>(inputString, modelParameters)});
+            return std::vector<storm::storage::ParameterRegion<ValueType>>({createRegion<ValueType>(inputString, modelParameters, splittingThreshold)});
         }
         
         template <typename ValueType>
-        storm::storage::ParameterRegion<ValueType> parseRegion(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables) {
+        storm::storage::ParameterRegion<ValueType> parseRegion(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables, boost::optional<int> splittingThreshold= boost::none) {
             // Handle the "empty region" case
             if (inputString == "" && consideredVariables.empty()) {
                 return storm::storage::ParameterRegion<ValueType>();
             }
             
-            auto res = parseRegions<ValueType>(inputString, consideredVariables);
+            auto res = parseRegions<ValueType>(inputString, consideredVariables, splittingThreshold);
             STORM_LOG_THROW(res.size() == 1, storm::exceptions::InvalidOperationException, "Parsed " << res.size() << " regions but exactly one was expected.");
             return res.front();
         }
         
         template <typename ValueType>
-        storm::storage::ParameterRegion<ValueType> parseRegion(std::string const& inputString, storm::models::ModelBase const& model) {
+        storm::storage::ParameterRegion<ValueType> parseRegion(std::string const& inputString, storm::models::ModelBase const& model, boost::optional<int> splittingThreshold= boost::none) {
             // Handle the "empty region" case
             if (inputString == "" && !model.hasParameters()) {
                 return storm::storage::ParameterRegion<ValueType>();

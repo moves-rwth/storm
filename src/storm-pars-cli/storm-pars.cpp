@@ -81,10 +81,14 @@ namespace storm {
         std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::shared_ptr<storm::models::ModelBase> const& model) {
             std::vector<storm::storage::ParameterRegion<ValueType>> result;
             auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
+            boost::optional<int> splittingThreshold;
+            if (regionSettings.isSplittingThresholdSet()) {
+                splittingThreshold = regionSettings.getSplittingThreshold();
+            }
             if (regionSettings.isRegionSet()) {
-                result = storm::api::parseRegions<ValueType>(regionSettings.getRegionString(), *model);
+                result = storm::api::parseRegions<ValueType>(regionSettings.getRegionString(), *model, splittingThreshold);
             } else if (regionSettings.isRegionBoundSet()) {
-                result = storm::api::createRegion<ValueType>(regionSettings.getRegionBoundString(), *model);
+                result = storm::api::createRegion<ValueType>(regionSettings.getRegionBoundString(), *model, splittingThreshold);
             }
             return result;
         }

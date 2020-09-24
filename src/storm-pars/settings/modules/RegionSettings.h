@@ -86,6 +86,10 @@ namespace storm {
 				 */
 				double getExtremumValuePrecision() const;
 
+                bool isSplittingThresholdSet() const;
+
+                int getSplittingThreshold() const;
+
 				/*!
 				 * Retrieves which type of region check should be performed
 				 */
@@ -112,6 +116,7 @@ namespace storm {
 				const static std::string hypothesisOptionName;
 				const static std::string hypothesisShortOptionName;
 				const static std::string refineOptionName;
+				const static std::string splittingThresholdName;
 				const static std::string extremumOptionName;
 				const static std::string checkEngineOptionName;
 				const static std::string printNoIllustrationOptionName;

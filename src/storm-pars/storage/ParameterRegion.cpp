@@ -13,17 +13,18 @@ namespace storm {
         }
         
         template<typename ParametricType>
-        ParameterRegion<ParametricType>::ParameterRegion(Valuation const& lowerBoundaries, Valuation const& upperBoundaries) : lowerBoundaries(lowerBoundaries), upperBoundaries(upperBoundaries) {
-            init();
+        ParameterRegion<ParametricType>::ParameterRegion(Valuation const& lowerBoundaries, Valuation const& upperBoundaries, boost::optional<int> splittingThreshold) : lowerBoundaries(lowerBoundaries), upperBoundaries(upperBoundaries) {
+            init(splittingThreshold);
         }
 
         template<typename ParametricType>
-        ParameterRegion<ParametricType>::ParameterRegion(Valuation&& lowerBoundaries, Valuation&& upperBoundaries) : lowerBoundaries(lowerBoundaries), upperBoundaries(upperBoundaries) {
-            init();
+        ParameterRegion<ParametricType>::ParameterRegion(Valuation&& lowerBoundaries, Valuation&& upperBoundaries, boost::optional<int> splittingThreshold) : lowerBoundaries(lowerBoundaries), upperBoundaries(upperBoundaries) {
+            init(splittingThreshold);
         }
 
         template<typename ParametricType>
-        void ParameterRegion<ParametricType>::init() {
+        void ParameterRegion<ParametricType>::init(boost::optional<int> splittingThreshold) {
+            this->variableSizeThreshold = splittingThreshold;
             //check whether both mappings map the same variables, check that lower boundary <= upper boundary,  and pre-compute the set of variables
             for (auto const& variableWithLowerBoundary : this->lowerBoundaries) {
                 auto variableWithUpperBoundary = this->upperBoundaries.find(variableWithLowerBoundary.first);
@@ -87,7 +88,8 @@ namespace storm {
 
         template<typename ParametricType>
         std::vector<typename ParameterRegion<ParametricType>::Valuation> ParameterRegion<ParametricType>::getVerticesOfRegion(std::set<VariableType> const& consideredVariables, int const startingpoint) const {
-            std::size_t const numOfVariables = startingpoint != -1 && consideredVariables.size() > variableSizeThreshold ? variableSizeThreshold : consideredVariables.size();
+            std::size_t const numOfVariables = startingpoint != -1 && variableSizeThreshold && consideredVariables.size() > variableSizeThreshold.get() ?
+                    variableSizeThreshold.get() : consideredVariables.size();
             std::size_t const numOfVertices = std::pow(2, numOfVariables);
             std::vector<Valuation> resultingVector(numOfVertices);
             
@@ -183,7 +185,7 @@ namespace storm {
                     subLower.insert(typename Valuation::value_type(variable, std::min(vertexEntry->second, splittingPointEntry->second)));
                     subUpper.insert(typename Valuation::value_type(variable, std::max(vertexEntry->second, splittingPointEntry->second)));
                 }
-                ParameterRegion<ParametricType> subRegion(std::move(subLower), std::move(subUpper));
+                ParameterRegion<ParametricType> subRegion(std::move(subLower), std::move(subUpper), this->variableSizeThreshold);
                 if(!storm::utility::isZero(subRegion.area())){
                     regionVector.push_back(std::move(subRegion));
                 }
@@ -212,7 +214,7 @@ namespace storm {
             std::vector<Valuation> vertices;
 
             bool switchOutput = false;
-            if (splitThreshold < 1) {
+            if (splitThreshold < 1 || !this->variableSizeThreshold) {
                 bool allToSmallMon = true;
                 bool allToSmallNonMon = true;
                 for (auto &variable: monNonMonVariables.first) {
@@ -233,19 +235,19 @@ namespace storm {
                 // Heuristic for splitting when a splitThreshold is given
                 if ((onlyMonotoneVars && !allToSmallMon) || (!onlyMonotoneVars && allToSmallNonMon && !allToSmallMon)) {
                         vertices = getVerticesOfRegion(monNonMonVariables.first, nextVariableRangeMon);
-                        nextVariableRangeMon = (nextVariableRangeMon + variableSizeThreshold) % monNonMonVariables.first.size();
+                        nextVariableRangeMon = (nextVariableRangeMon + variableSizeThreshold.get()) % monNonMonVariables.first.size();
                 } else if ((!onlyMonotoneVars && !allToSmallNonMon) ||
                            (onlyMonotoneVars && !allToSmallNonMon && allToSmallMon)) {
                         vertices = getVerticesOfRegion(monNonMonVariables.second, nextVariableRangeNonMon);
-                        nextVariableRangeNonMon = (nextVariableRangeNonMon + variableSizeThreshold) % monNonMonVariables.second.size();
+                        nextVariableRangeNonMon = (nextVariableRangeNonMon + variableSizeThreshold.get()) % monNonMonVariables.second.size();
                 } else {
                     if (lastSplitMonotone) {
                             vertices = getVerticesOfRegion(monNonMonVariables.second, nextVariableRangeNonMon);
-                            nextVariableRangeNonMon = (nextVariableRangeNonMon + variableSizeThreshold) % monNonMonVariables.second.size();
+                            nextVariableRangeNonMon = (nextVariableRangeNonMon + variableSizeThreshold.get()) % monNonMonVariables.second.size();
 
                     } else {
                             vertices = getVerticesOfRegion(monNonMonVariables.first, nextVariableRangeMon);
-                            nextVariableRangeMon = (nextVariableRangeMon + variableSizeThreshold) % monNonMonVariables.first.size();
+                            nextVariableRangeMon = (nextVariableRangeMon + variableSizeThreshold.get()) % monNonMonVariables.first.size();
                     }
                     lastSplitMonotone = !lastSplitMonotone;
                 }
@@ -259,17 +261,17 @@ namespace storm {
                 }
             } else if (onlyMonotoneVars) {
                 vertices = getVerticesOfRegion(monNonMonVariables.first, nextVariableRangeMon);
-                nextVariableRangeMon = (nextVariableRangeMon + variableSizeThreshold) % monNonMonVariables.first.size();
+                nextVariableRangeMon = (nextVariableRangeMon + variableSizeThreshold.get()) % monNonMonVariables.first.size();
             } else {
                 vertices = getVerticesOfRegion(monNonMonVariables.second, nextVariableRangeNonMon);
-                nextVariableRangeNonMon = (nextVariableRangeNonMon + variableSizeThreshold) % monNonMonVariables.second.size();
+                nextVariableRangeNonMon = (nextVariableRangeNonMon + variableSizeThreshold.get()) % monNonMonVariables.second.size();
             }
 
             auto textOriginal = (!switchOutput && onlyMonotoneVars) || (switchOutput && !onlyMonotoneVars) ? "monotone" : "non-monotone";
             STORM_LOG_INFO("Splitting region " << this->toString() << " in " << vertices.size()
                                                << " regions (original implementation would have splitted in 2^"
                                                << this->getVariables().size() << ").");
-            STORM_LOG_INFO("Using only " << textOriginal << " variables capped at " << variableSizeThreshold
+            STORM_LOG_INFO("Using only " << textOriginal << " variables capped at " << variableSizeThreshold.get()
                                          << " variables per split");
 
             for (auto const& vertex : vertices) {
@@ -294,7 +296,7 @@ namespace storm {
                     }
                 }
 
-                ParameterRegion<ParametricType> subRegion(std::move(subLower), std::move(subUpper));
+                ParameterRegion<ParametricType> subRegion(std::move(subLower), std::move(subUpper), this->variableSizeThreshold);
                 subRegion.setNextVariableRangMon(nextVariableRangeMon);
                 subRegion.setNextVariableRangNonMon(nextVariableRangeNonMon);
                 subRegion.setLastSplitMonotone(lastSplitMonotone);
@@ -350,28 +352,28 @@ namespace storm {
                     }
 
                 }
-                ParameterRegion<ParametricType> subRegion(std::move(subLower2), std::move(subUpper2));
+                ParameterRegion<ParametricType> subRegion(std::move(subLower2), std::move(subUpper2),  this->variableSizeThreshold);
                 subRegion.setNextVariableRangMon(nextVariableRangeMon);
                 subRegion.setNextVariableRangNonMon(nextVariableRangeNonMon);
                 subRegion.setLastSplitMonotone(lastSplitMonotone);
                 if (!storm::utility::isZero(subRegion.area())) {
                     regionVector.push_back(std::move(subRegion));
                 }
-                subRegion = ParameterRegion<ParametricType>(std::move(subLower3), std::move(subUpper3));
+                subRegion = ParameterRegion<ParametricType>(std::move(subLower3), std::move(subUpper3),  this->variableSizeThreshold);
                 subRegion.setNextVariableRangMon(nextVariableRangeMon);
                 subRegion.setNextVariableRangNonMon(nextVariableRangeNonMon);
                 subRegion.setLastSplitMonotone(lastSplitMonotone);
                 if (!storm::utility::isZero(subRegion.area())) {
                     regionVector.push_back(std::move(subRegion));
                 }
-                subRegion = ParameterRegion<ParametricType>(std::move(subLower1), std::move(subUpper1));
+                subRegion = ParameterRegion<ParametricType>(std::move(subLower1), std::move(subUpper1),  this->variableSizeThreshold);
                 subRegion.setNextVariableRangMon(nextVariableRangeMon);
                 subRegion.setNextVariableRangNonMon(nextVariableRangeNonMon);
                 subRegion.setLastSplitMonotone(lastSplitMonotone);
                 if (!storm::utility::isZero(subRegion.area())) {
                     regionVector.push_back(std::move(subRegion));
                 }
-                subRegion = ParameterRegion<ParametricType>(std::move(subLower4), std::move(subUpper4));
+                subRegion = ParameterRegion<ParametricType>(std::move(subLower4), std::move(subUpper4),  this->variableSizeThreshold);
                 subRegion.setNextVariableRangMon(nextVariableRangeMon);
                 subRegion.setNextVariableRangNonMon(nextVariableRangeNonMon);
                 subRegion.setLastSplitMonotone(lastSplitMonotone);
@@ -402,7 +404,7 @@ namespace storm {
                         }
                     }
 
-                    ParameterRegion<ParametricType> subRegion(std::move(subLower), std::move(subUpper));
+                    ParameterRegion<ParametricType> subRegion(std::move(subLower), std::move(subUpper),  this->variableSizeThreshold);
                     subRegion.setNextVariableRangMon(nextVariableRangeMon);
                     subRegion.setNextVariableRangNonMon(nextVariableRangeNonMon);
                     subRegion.setLastSplitMonotone(lastSplitMonotone);
