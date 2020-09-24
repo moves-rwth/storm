@@ -117,11 +117,16 @@ namespace storm {
                 storm::storage::BitVector ecChoicesHint;
                 // The actions that have reward assigned for at least one objective without upper timeBound
                 storm::storage::BitVector actionsWithoutRewardInUnboundedPhase;
-                // The states for which there is a scheduler yielding reward 0 for each objective
-                storm::storage::BitVector reward0EStates;
+                // The states for which there is a scheduler yielding reward 0 for each total reward objective
+                storm::storage::BitVector totalReward0EStates;
                 // stores the state action rewards for each objective.
                 std::vector<std::vector<ValueType>> actionRewards;
+                // stores the state rewards for each objective.
+                // These are only relevant for LRA objectives for MAs (otherwise, they appear within the action rewards). For other objectives/models, the corresponding vector will be empty.
+                std::vector<std::vector<ValueType>> stateRewards;
                 
+                // stores the indices of the objectives for which we need to compute the long run average values
+                storm::storage::BitVector lraObjectives;
                 // stores the indices of the objectives for which there is no upper time bound
                 storm::storage::BitVector objectivesWithNoUpperTimeBound;
                 
@@ -137,7 +142,7 @@ namespace storm {
                 std::vector<ValueType> offsetsToUnderApproximation;
                 std::vector<ValueType> offsetsToOverApproximation;
                 // The scheduler choices that optimize the weighted rewards of undounded objectives.
-                std::vector<uint_fast64_t> optimalChoices;
+                std::vector<uint64_t> optimalChoices;
                 
                 struct EcQuotient {
                     storm::storage::SparseMatrix<ValueType> matrix;

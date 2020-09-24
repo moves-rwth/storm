@@ -35,7 +35,8 @@ namespace storm {
                 exitRates = model.getExitRates();
                 
                 // Set the (discretized) state action rewards.
-                this->actionRewards.resize(this->objectives.size());
+                this->actionRewards.assign(this->objectives.size(), {});
+                this->stateRewards.assign(this->objectives.size(), {});
                 for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                     auto const& formula = *this->objectives[objIndex].formula;
                     STORM_LOG_THROW(formula.isRewardOperatorFormula() && formula.asRewardOperatorFormula().hasRewardModelName(), storm::exceptions::UnexpectedException, "Unexpected type of operator formula: " << formula);
@@ -48,6 +49,11 @@ namespace storm {
                             for (auto markovianState : markovianStates) {
                                 this->actionRewards[objIndex][model.getTransitionMatrix().getRowGroupIndices()[markovianState]] += rewModel.getStateReward(markovianState) / exitRates[markovianState];
                             }
+                        }
+                    } else if (formula.getSubformula().isLongRunAverageRewardFormula()) {
+                        // The LRA methods for MA require keeping track of state- and action rewards separately
+                        if (rewModel.hasStateRewards()) {
+                            this->stateRewards[objIndex] = rewModel.getStateRewardVector();
                         }
                     } else {
                         STORM_LOG_THROW(formula.getSubformula().isCumulativeRewardFormula() && formula.getSubformula().asCumulativeRewardFormula().getTimeBoundReference().isTimeBound(), storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula());

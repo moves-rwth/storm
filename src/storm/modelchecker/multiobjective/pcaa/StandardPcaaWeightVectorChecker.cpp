@@ -40,19 +40,19 @@ namespace storm {
                 auto rewardAnalysis = preprocessing::SparseMultiObjectiveRewardAnalysis<SparseModelType>::analyze(preprocessorResult);
                 STORM_LOG_THROW(rewardAnalysis.rewardFinitenessType != preprocessing::RewardFinitenessType::Infinite, storm::exceptions::NotSupportedException, "There is no Pareto optimal scheduler that yields finite reward for all objectives. This is not supported.");
                 STORM_LOG_THROW(rewardAnalysis.totalRewardLessInfinityEStates, storm::exceptions::UnexpectedException, "The set of states with reward < infinity for some scheduler has not been computed during preprocessing.");
-                STORM_LOG_THROW(preprocessorResult.containsOnlyTrivialObjectives(), storm::exceptions::NotSupportedException, "At least one objective was not reduced to an expected (total or cumulative) reward objective during preprocessing. This is not supported by the considered weight vector checker.");
+                STORM_LOG_THROW(preprocessorResult.containsOnlyTrivialObjectives(), storm::exceptions::NotSupportedException, "At least one objective was not reduced to an expected (long run, total or cumulative) reward objective during preprocessing. This is not supported by the considered weight vector checker.");
                 STORM_LOG_THROW(preprocessorResult.preprocessedModel->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException, "The model has multiple initial states.");
 
                 // Build a subsystem of the preprocessor result model that discards states that yield infinite reward for all schedulers.
                 // We can also merge the states that will have reward zero anyway.
                 storm::storage::BitVector maybeStates = rewardAnalysis.totalRewardLessInfinityEStates.get() & ~rewardAnalysis.reward0AStates;
-                storm::storage::BitVector finiteRewardChoices = preprocessorResult.preprocessedModel->getTransitionMatrix().getRowFilter(rewardAnalysis.totalRewardLessInfinityEStates.get(), rewardAnalysis.totalRewardLessInfinityEStates.get());
+                storm::storage::BitVector finiteTotalRewardChoices = preprocessorResult.preprocessedModel->getTransitionMatrix().getRowFilter(rewardAnalysis.totalRewardLessInfinityEStates.get(), rewardAnalysis.totalRewardLessInfinityEStates.get());
                 std::set<std::string> relevantRewardModels;
                 for (auto const& obj : this->objectives) {
                     obj.formula->gatherReferencedRewardModels(relevantRewardModels);
                 }
                 storm::transformer::GoalStateMerger<SparseModelType> merger(*preprocessorResult.preprocessedModel);
-                auto mergerResult = merger.mergeTargetAndSinkStates(maybeStates, rewardAnalysis.reward0AStates, storm::storage::BitVector(maybeStates.size(), false), std::vector<std::string>(relevantRewardModels.begin(), relevantRewardModels.end()), finiteRewardChoices);
+                auto mergerResult = merger.mergeTargetAndSinkStates(maybeStates, rewardAnalysis.reward0AStates, storm::storage::BitVector(maybeStates.size(), false), std::vector<std::string>(relevantRewardModels.begin(), relevantRewardModels.end()), finiteTotalRewardChoices);
                 
                 // Initialize data specific for the considered model type
                 initializeModelTypeSpecificData(*mergerResult.model);
@@ -60,10 +60,10 @@ namespace storm {
                 // Initilize general data of the model
                 transitionMatrix = std::move(mergerResult.model->getTransitionMatrix());
                 initialState = *mergerResult.model->getInitialStates().begin();
-                reward0EStates = rewardAnalysis.totalReward0EStates % maybeStates;
+                totalReward0EStates = rewardAnalysis.totalReward0EStates % maybeStates;
                 if (mergerResult.targetState) {
                     // There is an additional state in the result
-                    reward0EStates.resize(reward0EStates.size() + 1, true);
+                    totalReward0EStates.resize(totalReward0EStates.size() + 1, true);
                     
                     // The overapproximation for the possible ec choices consists of the states that can reach the target states with prob. 0 and the target state itself.
                     storm::storage::BitVector targetStateAsVector(transitionMatrix.getRowGroupCount(), false);
@@ -75,6 +75,7 @@ namespace storm {
                 }
                 
                 // set data for unbounded objectives
+                lraObjectives = storm::storage::BitVector(this->objectives.size(), false);
                 objectivesWithNoUpperTimeBound = storm::storage::BitVector(this->objectives.size(), false);
                 actionsWithoutRewardInUnboundedPhase = storm::storage::BitVector(transitionMatrix.getRowCount(), true);
                 for (uint_fast64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
@@ -82,6 +83,10 @@ namespace storm {
                     if (formula.getSubformula().isTotalRewardFormula()) {
                         objectivesWithNoUpperTimeBound.set(objIndex, true);
                         actionsWithoutRewardInUnboundedPhase &= storm::utility::vector::filterZero(actionRewards[objIndex]);
+                    }
+                    if (formula.getSubformula().isLongRunAverageRewardFormula()) {
+                        lraObjectives.set(objIndex, true);
+                        objectivesWithNoUpperTimeBound.set(objIndex, true);
                     }
                 }
                 
