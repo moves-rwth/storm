@@ -39,14 +39,14 @@ namespace storm {
             void StandardPcaaWeightVectorChecker<SparseModelType>::initialize(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult) {
                 auto rewardAnalysis = preprocessing::SparseMultiObjectiveRewardAnalysis<SparseModelType>::analyze(preprocessorResult);
                 STORM_LOG_THROW(rewardAnalysis.rewardFinitenessType != preprocessing::RewardFinitenessType::Infinite, storm::exceptions::NotSupportedException, "There is no Pareto optimal scheduler that yields finite reward for all objectives. This is not supported.");
-                STORM_LOG_THROW(rewardAnalysis.rewardLessInfinityEStates, storm::exceptions::UnexpectedException, "The set of states with reward < infinity for some scheduler has not been computed during preprocessing.");
+                STORM_LOG_THROW(rewardAnalysis.totalRewardLessInfinityEStates, storm::exceptions::UnexpectedException, "The set of states with reward < infinity for some scheduler has not been computed during preprocessing.");
                 STORM_LOG_THROW(preprocessorResult.containsOnlyTrivialObjectives(), storm::exceptions::NotSupportedException, "At least one objective was not reduced to an expected (total or cumulative) reward objective during preprocessing. This is not supported by the considered weight vector checker.");
                 STORM_LOG_THROW(preprocessorResult.preprocessedModel->getInitialStates().getNumberOfSetBits() == 1, storm::exceptions::NotSupportedException, "The model has multiple initial states.");
 
                 // Build a subsystem of the preprocessor result model that discards states that yield infinite reward for all schedulers.
                 // We can also merge the states that will have reward zero anyway.
-                storm::storage::BitVector maybeStates = rewardAnalysis.rewardLessInfinityEStates.get() & ~rewardAnalysis.reward0AStates;
-                storm::storage::BitVector finiteRewardChoices = preprocessorResult.preprocessedModel->getTransitionMatrix().getRowFilter(rewardAnalysis.rewardLessInfinityEStates.get(), rewardAnalysis.rewardLessInfinityEStates.get());
+                storm::storage::BitVector maybeStates = rewardAnalysis.totalRewardLessInfinityEStates.get() & ~rewardAnalysis.reward0AStates;
+                storm::storage::BitVector finiteRewardChoices = preprocessorResult.preprocessedModel->getTransitionMatrix().getRowFilter(rewardAnalysis.totalRewardLessInfinityEStates.get(), rewardAnalysis.totalRewardLessInfinityEStates.get());
                 std::set<std::string> relevantRewardModels;
                 for (auto const& obj : this->objectives) {
                     obj.formula->gatherReferencedRewardModels(relevantRewardModels);
@@ -60,7 +60,7 @@ namespace storm {
                 // Initilize general data of the model
                 transitionMatrix = std::move(mergerResult.model->getTransitionMatrix());
                 initialState = *mergerResult.model->getInitialStates().begin();
-                reward0EStates = rewardAnalysis.reward0EStates % maybeStates;
+                reward0EStates = rewardAnalysis.totalReward0EStates % maybeStates;
                 if (mergerResult.targetState) {
                     // There is an additional state in the result
                     reward0EStates.resize(reward0EStates.size() + 1, true);
@@ -237,7 +237,7 @@ namespace storm {
                         }
                     }
                 }
-                
+
                 // Finally, we need to take care of states that will reach a bad state with prob greater 0 (including the bad states themselves).
                 // due to the precondition, we know that it has to be possible to eventually avoid the bad states for ever.
                 // Perform a backwards search from the avoid states and store choices with prob. 1
@@ -279,7 +279,6 @@ namespace storm {
             
             template <class SparseModelType>
             void StandardPcaaWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(Environment const& env, std::vector<ValueType> const& weightedRewardVector, std::vector<ValueType> const& weightVector) {
-                
                 if (this->objectivesWithNoUpperTimeBound.empty() || !storm::utility::vector::hasNonZeroEntry(weightedRewardVector)) {
                     this->weightedResult = std::vector<ValueType>(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
                     // Get an arbitrary scheduler that yields finite reward for all objectives
@@ -566,6 +565,7 @@ namespace storm {
                         originalSolution[state] = reducedSolution[stateInReducedModel];
                         uint_fast64_t chosenRowInReducedModel = reducedMatrix.getRowGroupIndices()[stateInReducedModel] + reducedOptimalChoices[stateInReducedModel];
                         uint_fast64_t chosenRowInOriginalModel = reducedToOriginalChoiceMapping[chosenRowInReducedModel];
+                        
                         // Check if the state is a bottom state, i.e., the chosen row stays inside its EC.
                         bool stateIsBottom = reward0EStates.get(state);
                         for (auto const& entry : transitionMatrix.getRow(chosenRowInOriginalModel)) {
