@@ -83,6 +83,8 @@ namespace storm {
             auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
             if (regionSettings.isRegionSet()) {
                 result = storm::api::parseRegions<ValueType>(regionSettings.getRegionString(), *model);
+            } else if (regionSettings.isRegionBoundSet()) {
+                result = storm::api::createRegion<ValueType>(regionSettings.getRegionBoundString(), *model);
             }
             return result;
         }

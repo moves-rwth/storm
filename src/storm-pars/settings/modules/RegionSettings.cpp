@@ -17,6 +17,7 @@ namespace storm {
             const std::string RegionSettings::moduleName = "region";
             const std::string RegionSettings::regionOptionName = "region";
             const std::string RegionSettings::regionShortOptionName = "reg";
+            const std::string RegionSettings::regionBoundOptionName = "regionbound";
             const std::string RegionSettings::hypothesisOptionName = "hypothesis";
             const std::string RegionSettings::hypothesisShortOptionName = "hyp";
             const std::string RegionSettings::refineOptionName = "refine";
@@ -28,7 +29,10 @@ namespace storm {
             RegionSettings::RegionSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, regionOptionName, false, "Sets the region(s) considered for analysis.").setShortName(regionShortOptionName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("regioninput", "The region(s) given in format a<=x<=b,c<=y<=d seperated by ';'. Can also be a file.").build()).build());
-                
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, regionBoundOptionName, false, "Sets the region bound considered for analysis.").setShortName(regionShortOptionName)
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("regionbound", "The bound for the region result for all variables: 0+bound <= var <=1-bound").build()).build());
+
                 std::vector<std::string> hypotheses = {"unknown", "allsat", "allviolated"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, hypothesisOptionName, false, "Sets a hypothesis for region analysis. If given, the region(s) are only analyzed w.r.t. that hypothesis.").setShortName(hypothesisShortOptionName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("hypothesis", "The hypothesis.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(hypotheses)).setDefaultValueString("unknown").build()).build());
@@ -57,6 +61,14 @@ namespace storm {
             
             std::string RegionSettings::getRegionString() const {
                 return this->getOption(regionOptionName).getArgumentByName("regioninput").getValueAsString();
+            }
+
+            bool RegionSettings::isRegionBoundSet() const {
+                return this->getOption(regionBoundOptionName).getHasOptionBeenSet();
+            }
+
+            std::string RegionSettings::getRegionBoundString() const {
+                return this->getOption(regionBoundOptionName).getArgumentByName("regionbound").getValueAsString();
             }
             
             bool RegionSettings::isHypothesisSet() const {

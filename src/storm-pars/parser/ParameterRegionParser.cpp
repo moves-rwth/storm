@@ -62,6 +62,20 @@ namespace storm {
         }
 
         template<typename ParametricType>
+        storm::storage::ParameterRegion<ParametricType> ParameterRegionParser<ParametricType>::createRegion(std::string const& regionBound, std::set<VariableType> const& consideredVariables) {
+            Valuation lowerBoundaries;
+            Valuation upperBoundaries;
+            std::vector<std::string> parameterBoundaries;
+            CoefficientType bound = storm::utility::convertNumber<CoefficientType>(regionBound);
+            STORM_LOG_THROW(0 < bound && bound < 1, storm::exceptions::WrongFormatException, "Bound must be between 0 and 1, " << bound << " is not.");
+            for (auto const& v : consideredVariables) {
+                lowerBoundaries.emplace(std::make_pair(v, 0+bound));
+                upperBoundaries.emplace(std::make_pair(v, 1-bound));
+            }
+            return storm::storage::ParameterRegion<ParametricType>(std::move(lowerBoundaries), std::move(upperBoundaries));
+        }
+
+        template<typename ParametricType>
         std::vector<storm::storage::ParameterRegion<ParametricType>> ParameterRegionParser<ParametricType>::parseMultipleRegions(std::string const& regionsString, std::set<VariableType> const& consideredVariables) {
             std::vector<storm::storage::ParameterRegion<ParametricType>> result;
             std::vector<std::string> regionsStrVec;

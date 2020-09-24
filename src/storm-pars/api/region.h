@@ -30,7 +30,7 @@
 namespace storm {
     
     namespace api {
-        
+
         template <typename ValueType>
         std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables) {
             // If the given input string looks like a file (containing a dot and there exists a file with that name),
@@ -41,7 +41,12 @@ namespace storm {
                 return storm::parser::ParameterRegionParser<ValueType>().parseMultipleRegions(inputString, consideredVariables);
             }
         }
-        
+
+        template <typename ValueType>
+        storm::storage::ParameterRegion<ValueType> createRegion(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables) {
+            return storm::parser::ParameterRegionParser<ValueType>().createRegion(inputString, consideredVariables);
+        }
+
         template <typename ValueType>
         std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, storm::models::ModelBase const& model) {
             std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> modelParameters;
@@ -54,6 +59,20 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Retrieving model parameters is not supported for the given model type.");
             }
             return parseRegions<ValueType>(inputString, modelParameters);
+        }
+
+        template <typename ValueType>
+        std::vector<storm::storage::ParameterRegion<ValueType>> createRegion(std::string const& inputString, storm::models::ModelBase const& model) {
+            std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> modelParameters;
+            if (model.isSparseModel()) {
+                auto const& sparseModel = dynamic_cast<storm::models::sparse::Model<ValueType> const&>(model);
+                modelParameters = storm::models::sparse::getProbabilityParameters(sparseModel);
+                auto rewParameters = storm::models::sparse::getRewardParameters(sparseModel);
+                modelParameters.insert(rewParameters.begin(), rewParameters.end());
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Retrieving model parameters is not supported for the given model type.");
+            }
+            return std::vector<storm::storage::ParameterRegion<ValueType>>({createRegion<ValueType>(inputString, modelParameters)});
         }
         
         template <typename ValueType>

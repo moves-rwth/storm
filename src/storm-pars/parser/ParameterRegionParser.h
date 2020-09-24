@@ -26,6 +26,7 @@ namespace storm {
              *
              */
             static storm::storage::ParameterRegion<ParametricType> parseRegion(std::string const& regionString, std::set<VariableType> const& consideredVariables);
+            static storm::storage::ParameterRegion<ParametricType> createRegion(std::string const& regionBound, std::set<VariableType> const& consideredVariables);
 
             /*
              * Parse a vector of region from a string of the form "0.3<=p<=0.5,0.4<=q<=0.7;0.1<=p<=0.3,0.2<=q<=0.4".

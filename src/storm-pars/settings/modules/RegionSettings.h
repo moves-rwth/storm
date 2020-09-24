@@ -30,7 +30,16 @@ namespace storm {
 				 * Retrieves the region definition string
 				 */
 				std::string getRegionString() const;
-				
+
+                /*!
+                 * Retrieves whether region bound is declared
+                 */
+                bool isRegionBoundSet() const;
+
+                /*!
+                 * Retrieves the region definition string
+                 */
+                std::string getRegionBoundString() const;
 				/*!
 				 * Retrieves whether region(s) were declared
 				 */
@@ -99,6 +108,7 @@ namespace storm {
             private:
 				const static std::string regionOptionName;
 				const static std::string regionShortOptionName;
+				const static std::string regionBoundOptionName;
 				const static std::string hypothesisOptionName;
 				const static std::string hypothesisShortOptionName;
 				const static std::string refineOptionName;
