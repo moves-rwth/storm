@@ -721,7 +721,7 @@ namespace storm {
                             auto state = *origStates.begin();
                             auto groupStart = transitionMatrix.getRowGroupIndices()[state];
                             originalOptimalChoices[state] = origChoice - groupStart;
-                            STORM_LOG_ASSERT(originalOptimalChoices[state] > 0 && originalOptimalChoices[state] < transitionMatrix.getRowGroupSize(state), "Invalid choice.");
+                            STORM_LOG_ASSERT(originalOptimalChoices[state] >= 0 && originalOptimalChoices[state] < transitionMatrix.getRowGroupSize(state), "Invalid choice: " << originalOptimalChoices[state] << " at a state with " << transitionMatrix.getRowGroupSize(state) << " choices.");
                             originalSolution[state] = ecqSolution[ecqState];
                             unprocessedStates.set(state, false);
                         }
