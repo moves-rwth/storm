@@ -670,7 +670,7 @@ namespace storm {
                     auto const& origStates = ecQuotient->ecqToOriginalStateMapping[ecqState];
                     STORM_LOG_ASSERT(!origStates.empty(), "Unexpected empty set of original states.");
                     bool origStatesNeedSchedulerComputation = false;
-                    if (ecQuotient->ecqStayInEcChoices.get(origChoice) && !ecqStateToOptimalMecMap.empty()) {
+                    if (ecQuotient->ecqStayInEcChoices.get(ecqChoice) && !ecqStateToOptimalMecMap.empty()) {
                         // The current ecqState represents an elimnated EC and we need to stay in this EC and we need to make sure that optimal MEC decisions are performed within this EC.
                         STORM_LOG_ASSERT(ecqStateToOptimalMecMap.count(ecqState) > 0, "No Lra Mec associated to given eliminated EC");
                         auto const& lraMec = lraMecDecomposition->mecs[ecqStateToOptimalMecMap.at(ecqState)];
@@ -720,8 +720,8 @@ namespace storm {
                             // There is just one state so we take the associated choice.
                             auto state = *origStates.begin();
                             auto groupStart = transitionMatrix.getRowGroupIndices()[state];
+                            STORM_LOG_ASSERT(origChoice >= groupStart && origChoice < transitionMatrix.getRowGroupIndices()[state + 1], "Invalid choice: " << originalOptimalChoices[state] << " at a state with " << transitionMatrix.getRowGroupSize(state) << " choices.");
                             originalOptimalChoices[state] = origChoice - groupStart;
-                            STORM_LOG_ASSERT(originalOptimalChoices[state] >= 0 && originalOptimalChoices[state] < transitionMatrix.getRowGroupSize(state), "Invalid choice: " << originalOptimalChoices[state] << " at a state with " << transitionMatrix.getRowGroupSize(state) << " choices.");
                             originalSolution[state] = ecqSolution[ecqState];
                             unprocessedStates.set(state, false);
                         }
