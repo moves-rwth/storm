@@ -179,7 +179,7 @@ namespace storm {
             storm::storage::Scheduler<typename StandardPcaaWeightVectorChecker<SparseModelType>::ValueType> StandardPcaaWeightVectorChecker<SparseModelType>::computeScheduler() const {
                 STORM_LOG_THROW(this->checkHasBeenCalled, storm::exceptions::IllegalFunctionCallException, "Tried to retrieve results but check(..) has not been called before.");
                 for (auto const& obj : this->objectives) {
-                    STORM_LOG_THROW(obj.formula->getSubformula().isTotalRewardFormula(), storm::exceptions::NotImplementedException, "Scheduler retrival is only implemented for objectives without time-bound.");
+                    STORM_LOG_THROW(obj.formula->getSubformula().isTotalRewardFormula() || obj.formula->getSubformula().isLongRunAverageRewardFormula(), storm::exceptions::NotImplementedException, "Scheduler retrival is only implemented for objectives without time-bound.");
                 }
                 
                 storm::storage::Scheduler<ValueType> result(this->optimalChoices.size());
@@ -291,7 +291,7 @@ namespace storm {
             void StandardPcaaWeightVectorChecker<SparseModelType>::infiniteHorizonWeightedPhase(Environment const& env, std::vector<ValueType> const& weightedActionRewardVector, boost::optional<std::vector<ValueType>> const& weightedStateRewardVector) {
                 // Compute the optimal (weighted) lra value for each mec, keeping track of the optimal choices
                 STORM_LOG_ASSERT(lraMecDecomposition, "Mec decomposition for lra computations not initialized.");
-                storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType> helper = createNondetInfiniteHorizonHelper();
+                storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType> helper = createNondetInfiniteHorizonHelper(this->transitionMatrix);
                 helper.provideLongRunComponentDecomposition(lraMecDecomposition->mecs);
                 helper.setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
                 helper.setProduceScheduler(true);
@@ -392,11 +392,14 @@ namespace storm {
                        }
                    }
                 } else {
-                   storm::storage::SparseMatrix<ValueType> deterministicMatrix = transitionMatrix.selectRowsFromRowGroups(this->optimalChoices, true);
+                   storm::storage::SparseMatrix<ValueType> deterministicMatrix = transitionMatrix.selectRowsFromRowGroups(this->optimalChoices, true); // TODO: why diagonal entries?
                    storm::storage::SparseMatrix<ValueType> deterministicBackwardTransitions = deterministicMatrix.transpose();
-                   std::vector<ValueType> deterministicStateRewards(deterministicMatrix.getRowCount());
+                   std::vector<ValueType> deterministicStateRewards(deterministicMatrix.getRowCount()); // allocate here
                    storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
 
+                   auto infiniteHorizonHelper = createDetInfiniteHorizonHelper(deterministicMatrix);
+                   infiniteHorizonHelper.provideBackwardTransitions(deterministicBackwardTransitions);
+                   
                    // We compute an estimate for the results of the individual objectives which is obtained from the weighted result and the result of the objectives computed so far.
                    // Note that weightedResult = Sum_{i=1}^{n} w_i * objectiveResult_i.
                    std::vector<ValueType> weightedSumOfUncheckedObjectives = weightedResult;
@@ -407,58 +410,68 @@ namespace storm {
                        if (objectivesWithNoUpperTimeBound.get(objIndex)) {
                            offsetsToUnderApproximation[objIndex] = storm::utility::zero<ValueType>();
                            offsetsToOverApproximation[objIndex] = storm::utility::zero<ValueType>();
-                           storm::utility::vector::selectVectorValues(deterministicStateRewards, this->optimalChoices, transitionMatrix.getRowGroupIndices(), actionRewards[objIndex]);
-                           storm::storage::BitVector statesWithRewards = ~storm::utility::vector::filterZero(deterministicStateRewards);
-                           // As maybestates we pick the states from which a state with reward is reachable
-                           storm::storage::BitVector maybeStates = storm::utility::graph::performProbGreater0(deterministicBackwardTransitions, storm::storage::BitVector(deterministicMatrix.getRowCount(), true), statesWithRewards);
-
-                           // Compute the estimate for this objective
-                           if (!storm::utility::isZero(weightVector[objIndex])) {
-                               objectiveResults[objIndex] = weightedSumOfUncheckedObjectives;
-                               ValueType scalingFactor = storm::utility::one<ValueType>() / sumOfWeightsOfUncheckedObjectives;
-                               if (storm::solver::minimize(obj.formula->getOptimalityType())) {
-                                   scalingFactor *= -storm::utility::one<ValueType>();
+                           if (lraObjectives.get(objIndex)) {
+                               auto actionValueGetter = [&] (uint64_t const& a) { return actionRewards[objIndex][transitionMatrix.getRowGroupIndices()[a] + this->optimalChoices[a]]; };
+                               typename storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType>::ValueGetter stateValueGetter;
+                               if (stateRewards[objIndex].empty()) {
+                                   stateValueGetter = [] (uint64_t const&) { return storm::utility::zero<ValueType>(); };
+                               } else {
+                                   stateValueGetter = [&] (uint64_t const& s) { return stateRewards[objIndex][s]; };
                                }
-                               storm::utility::vector::scaleVectorInPlace(objectiveResults[objIndex], scalingFactor);
-                               storm::utility::vector::clip(objectiveResults[objIndex], obj.lowerResultBound, obj.upperResultBound);
+                               objectiveResults[objIndex] = infiniteHorizonHelper.computeLongRunAverageValues(env, stateValueGetter, actionValueGetter);
+                           } else { // i.e. a total reward objective
+                               storm::utility::vector::selectVectorValues(deterministicStateRewards, this->optimalChoices, transitionMatrix.getRowGroupIndices(), actionRewards[objIndex]);
+                               storm::storage::BitVector statesWithRewards = ~storm::utility::vector::filterZero(deterministicStateRewards);
+                               // As maybestates we pick the states from which a state with reward is reachable
+                               storm::storage::BitVector maybeStates = storm::utility::graph::performProbGreater0(deterministicBackwardTransitions, storm::storage::BitVector(deterministicMatrix.getRowCount(), true), statesWithRewards);
+    
+                               // Compute the estimate for this objective
+                               if (!storm::utility::isZero(weightVector[objIndex])) {
+                                   objectiveResults[objIndex] = weightedSumOfUncheckedObjectives;
+                                   ValueType scalingFactor = storm::utility::one<ValueType>() / sumOfWeightsOfUncheckedObjectives;
+                                   if (storm::solver::minimize(obj.formula->getOptimalityType())) {
+                                       scalingFactor *= -storm::utility::one<ValueType>();
+                                   }
+                                   storm::utility::vector::scaleVectorInPlace(objectiveResults[objIndex], scalingFactor);
+                                   storm::utility::vector::clip(objectiveResults[objIndex], obj.lowerResultBound, obj.upperResultBound);
+                               }
+                               // Make sure that the objectiveResult is initialized correctly
+                               objectiveResults[objIndex].resize(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+    
+                               if (!maybeStates.empty()) {
+                                   bool needEquationSystem = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+                                   storm::storage::SparseMatrix<ValueType> submatrix = deterministicMatrix.getSubmatrix(
+                                           true, maybeStates, maybeStates, needEquationSystem);
+                                   if (needEquationSystem) {
+                                       // Converting the matrix from the fixpoint notation to the form needed for the equation
+                                       // system. That is, we go from x = A*x + b to (I-A)x = b.
+                                       submatrix.convertToEquationSystem();
+                                   }
+    
+                                   // Prepare solution vector and rhs of the equation system.
+                                   std::vector<ValueType> x = storm::utility::vector::filterVector(objectiveResults[objIndex], maybeStates);
+                                   std::vector<ValueType> b = storm::utility::vector::filterVector(deterministicStateRewards, maybeStates);
+    
+                                   // Now solve the resulting equation system.
+                                   std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, submatrix);
+                                   auto req = solver->getRequirements(env);
+                                   solver->clearBounds();
+                                   storm::storage::BitVector submatrixRowsWithSumLessOne = deterministicMatrix.getRowFilter(maybeStates, maybeStates) % maybeStates;
+                                   submatrixRowsWithSumLessOne.complement();
+                                   this->setBoundsToSolver(*solver, req.lowerBounds(), req.upperBounds(), objIndex, submatrix, submatrixRowsWithSumLessOne, b);
+                                   if (solver->hasLowerBound()) {
+                                       req.clearLowerBounds();
+                                   }
+                                   if (solver->hasUpperBound()) {
+                                       req.clearUpperBounds();
+                                   }
+                                   STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
+                                   solver->solveEquations(env, x, b);
+                                   // Set the result for this objective accordingly
+                                   storm::utility::vector::setVectorValues<ValueType>(objectiveResults[objIndex], maybeStates, x);
+                               }
+                               storm::utility::vector::setVectorValues<ValueType>(objectiveResults[objIndex], ~maybeStates, storm::utility::zero<ValueType>());
                            }
-                           // Make sure that the objectiveResult is initialized correctly
-                           objectiveResults[objIndex].resize(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
-
-                           if (!maybeStates.empty()) {
-                               bool needEquationSystem = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
-                               storm::storage::SparseMatrix<ValueType> submatrix = deterministicMatrix.getSubmatrix(
-                                       true, maybeStates, maybeStates, needEquationSystem);
-                               if (needEquationSystem) {
-                                   // Converting the matrix from the fixpoint notation to the form needed for the equation
-                                   // system. That is, we go from x = A*x + b to (I-A)x = b.
-                                   submatrix.convertToEquationSystem();
-                               }
-
-                               // Prepare solution vector and rhs of the equation system.
-                               std::vector<ValueType> x = storm::utility::vector::filterVector(objectiveResults[objIndex], maybeStates);
-                               std::vector<ValueType> b = storm::utility::vector::filterVector(deterministicStateRewards, maybeStates);
-
-                               // Now solve the resulting equation system.
-                               std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, submatrix);
-                               auto req = solver->getRequirements(env);
-                               solver->clearBounds();
-                               storm::storage::BitVector submatrixRowsWithSumLessOne = deterministicMatrix.getRowFilter(maybeStates, maybeStates) % maybeStates;
-                               submatrixRowsWithSumLessOne.complement();
-                               this->setBoundsToSolver(*solver, req.lowerBounds(), req.upperBounds(), objIndex, submatrix, submatrixRowsWithSumLessOne, b);
-                               if (solver->hasLowerBound()) {
-                                   req.clearLowerBounds();
-                               }
-                               if (solver->hasUpperBound()) {
-                                   req.clearUpperBounds();
-                               }
-                               STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
-                               solver->solveEquations(env, x, b);
-                               // Set the result for this objective accordingly
-                               storm::utility::vector::setVectorValues<ValueType>(objectiveResults[objIndex], maybeStates, x);
-                           }
-                           storm::utility::vector::setVectorValues<ValueType>(objectiveResults[objIndex], ~maybeStates, storm::utility::zero<ValueType>());
-
                            // Update the estimate for the next objectives.
                            if (!storm::utility::isZero(weightVector[objIndex])) {
                                storm::utility::vector::addScaledVector(weightedSumOfUncheckedObjectives, objectiveResults[objIndex], -weightVector[objIndex]);

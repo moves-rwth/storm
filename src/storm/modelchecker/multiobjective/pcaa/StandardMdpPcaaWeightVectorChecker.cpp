@@ -47,13 +47,15 @@ namespace storm {
             }
             
             template <class SparseMdpModelType>
-            storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<typename SparseMdpModelType::ValueType> StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::createNondetInfiniteHorizonHelper() const {
-                return storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType>(this->transitionMatrix);
+            storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<typename SparseMdpModelType::ValueType> StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::createNondetInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitions) const {
+                STORM_LOG_ASSERT(transitions.getRowGroupCount() == this->transitionMatrix.getRowGroupCount(), "Unexpected size of given matrix.");
+                return storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType>(transitions);
             }
             
             template <class SparseMdpModelType>
-            storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<typename SparseMdpModelType::ValueType> StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::createDetInfiniteHorizonHelper() const {
-                return storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<ValueType>(this->transitionMatrix);
+            storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<typename SparseMdpModelType::ValueType> StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::createDetInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitions) const {
+                STORM_LOG_ASSERT(transitions.getRowGroupCount() == this->transitionMatrix.getRowGroupCount(), "Unexpected size of given matrix.");
+                return storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<ValueType>(transitions);
             }
             
             template <class SparseMdpModelType>

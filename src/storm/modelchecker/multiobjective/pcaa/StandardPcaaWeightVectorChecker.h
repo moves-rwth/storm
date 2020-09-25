@@ -28,7 +28,10 @@ namespace storm {
             class StandardPcaaWeightVectorChecker : public PcaaWeightVectorChecker<SparseModelType> {
             public:
                 typedef typename SparseModelType::ValueType ValueType;
-                
+                using DeterministicInfiniteHorizonHelperType = typename std::conditional<std::is_same<SparseModelType, storm::models::sparse::MarkovAutomaton<ValueType>>::value,
+                                                                        storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType>,
+                                                                        storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<ValueType>>::type;
+
                 /*
                  * Creates a weight vextor checker.
                  *
@@ -68,8 +71,8 @@ namespace storm {
                 
                 void initialize(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType> const& preprocessorResult);
                 virtual void initializeModelTypeSpecificData(SparseModelType const& model) = 0;
-                virtual storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType> createNondetInfiniteHorizonHelper() const = 0;
-                virtual storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<ValueType> createDetInfiniteHorizonHelper() const = 0;
+                virtual storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType> createNondetInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitions) const = 0;
+                virtual DeterministicInfiniteHorizonHelperType createDetInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitions) const = 0;
 
                 void infiniteHorizonWeightedPhase(Environment const& env, std::vector<ValueType> const& weightedActionRewardVector, boost::optional<std::vector<ValueType>> const& weightedStateRewardVector);
                 

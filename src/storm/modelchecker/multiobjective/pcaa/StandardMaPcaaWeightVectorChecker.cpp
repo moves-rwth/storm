@@ -64,14 +64,16 @@ namespace storm {
             }
 
             template <class SparseMdpModelType>
-            storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<typename SparseMdpModelType::ValueType> StandardMaPcaaWeightVectorChecker<SparseMdpModelType>::createNondetInfiniteHorizonHelper() const {
-                return storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType>(this->transitionMatrix, this->markovianStates, this->exitRates);
+            storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<typename SparseMdpModelType::ValueType> StandardMaPcaaWeightVectorChecker<SparseMdpModelType>::createNondetInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitions) const {
+                STORM_LOG_ASSERT(transitions.getRowGroupCount() == this->transitionMatrix.getRowGroupCount(), "Unexpected size of given matrix.");
+                return storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType>(transitions, this->markovianStates, this->exitRates);
             }
             
             template <class SparseMdpModelType>
-            storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<typename SparseMdpModelType::ValueType> StandardMaPcaaWeightVectorChecker<SparseMdpModelType>::createDetInfiniteHorizonHelper() const {
-                // Right now, one would have to pick the nondeterministic helper.
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Deterministic infinite horizon solvers for 'deterministic' Markov automata are not implemented");
+            storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<typename SparseMdpModelType::ValueType> StandardMaPcaaWeightVectorChecker<SparseMdpModelType>::createDetInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitions) const {
+                STORM_LOG_ASSERT(transitions.getRowGroupCount() == this->transitionMatrix.getRowGroupCount(), "Unexpected size of given matrix.");
+                // TODO: Right now, there is no dedicated support for "deterministic" Markov automata so we have to pick the nondeterministic one.
+                return storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType>(transitions, this->markovianStates, this->exitRates);
             }
             
             template <class SparseMaModelType>

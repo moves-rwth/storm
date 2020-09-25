@@ -38,8 +38,8 @@ namespace storm {
 
             protected:
                 virtual void initializeModelTypeSpecificData(SparseMdpModelType const& model) override;
-                virtual storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType> createNondetInfiniteHorizonHelper() const override;
-                virtual storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<ValueType> createDetInfiniteHorizonHelper() const override;
+                virtual storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType> createNondetInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitions) const override;
+                virtual storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<ValueType> createDetInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitions) const override;
 
             private:
                 
