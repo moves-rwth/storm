@@ -152,7 +152,7 @@ namespace storm {
                     std::vector<ValueType> const& objRewards = this->actionRewards[objIndex];
                     std::vector<ValueType> subModelObjRewards;
                     subModelObjRewards.reserve(result.getNumberOfChoices());
-                    for (auto const& choice : result.choices) {
+                    for (auto choice : result.choices) {
                         subModelObjRewards.push_back(objRewards[choice]);
                     }
                     result.objectiveRewardVectors.push_back(std::move(subModelObjRewards));
@@ -213,7 +213,7 @@ namespace storm {
                 VT delta = smallestNonZeroBound / smallestStepBound;
                 while(true) {
                     bool deltaValid = true;
-                    for (auto const& objIndex : objectivesWithTimeBound) {
+                    for (auto objIndex : objectivesWithTimeBound) {
                         auto const& timeBound = timeBounds[objIndex];
                         if (timeBound/delta != std::floor(timeBound/delta)) {
                             deltaValid = false;
