@@ -117,7 +117,7 @@ namespace storm {
                     for (auto objIndex : lraObjectives) {
                         ValueType weight = storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType()) ? -weightVector[objIndex] : weightVector[objIndex];
                         storm::utility::vector::addScaledVector(weightedRewardVector, actionRewards[objIndex], weight);
-                        if (!stateRewards[objIndex].empty()) {
+                        if (!stateRewards.empty() && !stateRewards[objIndex].empty()) {
                             weightedStateRewardVector->resize(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
                             storm::utility::vector::addScaledVector(weightedStateRewardVector.get(), stateRewards[objIndex], weight);
                         }
@@ -332,6 +332,11 @@ namespace storm {
                         auto const& mec = lraMecDecomposition->mecs[mecIndex];
                         auto const& mecValue = lraMecDecomposition->auxMecValues[mecIndex];
                         uint64_t ecqState = ecQuotient->originalToEcqStateMapping[mec.begin()->first];
+                        if (ecqState >= ecQuotient->matrix.getRowGroupCount()) {
+                            // The mec was not part of the ecquotient. This means that it must have value 0.
+                            // No further processing is needed.
+                            continue;
+                        }
                         uint64_t ecqChoice = ecQuotient->ecqStayInEcChoices.getNextSetIndex(ecQuotient->matrix.getRowGroupIndices()[ecqState]);
                         STORM_LOG_ASSERT(ecqChoice < ecQuotient->matrix.getRowGroupIndices()[ecqState + 1], "Unable to find choice that represents staying inside the (eliminated) ec.");
                         auto& ecqChoiceValue = ecQuotient->auxChoiceValues[ecqChoice];
@@ -413,7 +418,7 @@ namespace storm {
                            if (lraObjectives.get(objIndex)) {
                                auto actionValueGetter = [&] (uint64_t const& a) { return actionRewards[objIndex][transitionMatrix.getRowGroupIndices()[a] + this->optimalChoices[a]]; };
                                typename storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType>::ValueGetter stateValueGetter;
-                               if (stateRewards[objIndex].empty()) {
+                               if (stateRewards.empty() || stateRewards[objIndex].empty()) {
                                    stateValueGetter = [] (uint64_t const&) { return storm::utility::zero<ValueType>(); };
                                } else {
                                    stateValueGetter = [&] (uint64_t const& s) { return stateRewards[objIndex][s]; };
