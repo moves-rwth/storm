@@ -12,6 +12,7 @@
 #include "storm/modelchecker/multiobjective/pcaa/PcaaWeightVectorChecker.h"
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectivePreprocessorResult.h"
 #include "storm/utility/vector.h"
+#include "storm/storage/BoostTypes.h"
 
 namespace storm {
     namespace modelchecker {
@@ -106,11 +107,9 @@ namespace storm {
                 /*!
                  * Transforms the results of a min-max-solver that considers a reduced model (without end components) to a result for the original (unreduced) model
                  */
-                void transformReducedSolutionToOriginalModel(storm::storage::SparseMatrix<ValueType> const& reducedMatrix,
-                                                             std::vector<ValueType> const& reducedSolution,
-                                                             std::vector<uint_fast64_t> const& reducedOptimalChoices,
-                                                             std::vector<uint_fast64_t> const& reducedToOriginalChoiceMapping,
-                                                             std::vector<uint_fast64_t> const& originalToReducedStateMapping,
+                void transformEcqSolutionToOriginalModel(std::vector<ValueType> const& ecqSolution,
+                                                             std::vector<uint_fast64_t> const& ecqOptimalChoices,
+                                                             std::map<uint64_t, uint64_t> const& ecqStateToOptimalMecMap,
                                                              std::vector<ValueType>& originalSolution,
                                                              std::vector<uint_fast64_t>& originalOptimalChoices) const;
                 
@@ -155,6 +154,7 @@ namespace storm {
                     storm::storage::SparseMatrix<ValueType> matrix;
                     std::vector<uint_fast64_t> ecqToOriginalChoiceMapping;
                     std::vector<uint_fast64_t> originalToEcqStateMapping;
+                    std::vector<storm::storage::FlatSetStateContainer> ecqToOriginalStateMapping;
                     storm::storage::BitVector ecqStayInEcChoices;
                     storm::storage::BitVector origReward0Choices;
                     storm::storage::BitVector rowsWithSumLessOne;
