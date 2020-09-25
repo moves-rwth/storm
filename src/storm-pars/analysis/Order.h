@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 #include <memory>
+#include <boost/optional.hpp>
 
 #include "storm/storage/BitVector.h"
 
@@ -354,6 +355,8 @@ namespace storm {
                     uint_fast64_t numberOfStates;
 
                     uint_fast64_t numberOfAddedStates;
+
+                    boost::optional<std::vector<uint64_t>> mdpScheduler;
                 };
             }
 }

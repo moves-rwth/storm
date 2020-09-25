@@ -1,3 +1,4 @@
+#include "storm-pars/analysis/OrderExtenderDtmc.h"
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
 
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
@@ -124,6 +125,7 @@ namespace storm {
 
             // For monotonicity checking
             std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->parametricModel->getBackwardTransitions(), phiStates, psiStates);
+            // TODO change this to OEDtmc (currently causes an "undefinde reference" error during compilation)
             this->orderExtender = storm::analysis::OrderExtender<typename SparseModelType::ValueType,ConstantType>(&statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
         }
 
@@ -160,6 +162,7 @@ namespace storm {
             STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
             solverFactory->setRequirementsChecked(true);
 
+            // TODO change this to OEDtmc (currently causes an "undefinde reference" error during compilation)
             this->orderExtender =  storm::analysis::OrderExtender<typename SparseModelType::ValueType,ConstantType>(&statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
         }
 
