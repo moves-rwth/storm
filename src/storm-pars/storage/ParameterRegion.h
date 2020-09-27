@@ -67,7 +67,7 @@ namespace storm {
             void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector) const;
             void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector, std::set<VariableType> const& consideredVariables) const;
 
-            void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector, storm::analysis::MonotonicityResult<VariableType> & monRes, bool onlyMonotoneVars, double splitThreshold);
+            void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector, storm::analysis::MonotonicityResult<VariableType> & monRes, bool onlyMonotoneVars, double parameterThreshold);
             Valuation getPoint(storm::solver::OptimizationDirection dir, storm::analysis::MonotonicityResult<VariableType> & monRes);
 
             //returns the region as string in the format 0.3<=p<=0.4,0.2<=q<=0.5;
@@ -89,10 +89,10 @@ namespace storm {
             Valuation upperBoundaries;
             std::set<VariableType> variables;
 
-            int nextVariableRangeMon = 0;
-            int nextVariableRangeNonMon = 0;
-            int nextStartingPoint = -1;
-            boost::optional<int> variableSizeThreshold;
+            int splitIndexMon;
+            int splitIndexNonMon;
+            int splitIndex;
+            boost::optional<int> splitThreshold;
         };
 
         template<typename ParametricType>

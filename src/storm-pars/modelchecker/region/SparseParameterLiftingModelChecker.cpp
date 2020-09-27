@@ -243,10 +243,10 @@ namespace storm {
             auto vertices = this->isUseMonotonicitySet() ? region.getVerticesOfRegion(possibleMonotoneVariables) : region.getVerticesOfRegion(region.getVariables());
 
             for (auto &v : vertices) {
-                if (this->isUseMonotonicitySet()) {
+                if (vertices.size() < std::pow(2, region.getVariables().size())) {
                     for (auto const &var : region.getVariables()) {
                         if (v.find(var) == v.end()) {
-                            v.insert(std::move(std::pair<VariableType, CoefficientType>(var, region.getUpperBoundary(var))));
+                            v.insert({var, region.getUpperBoundary(var)});
                         }
                     }
                 }
