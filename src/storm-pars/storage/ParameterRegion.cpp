@@ -25,6 +25,7 @@ namespace storm {
         template<typename ParametricType>
         void ParameterRegion<ParametricType>::init(boost::optional<int> splittingThreshold) {
             this->variableSizeThreshold = splittingThreshold;
+            nextStartingPoint = 0;
             //check whether both mappings map the same variables, check that lower boundary <= upper boundary,  and pre-compute the set of variables
             for (auto const& variableWithLowerBoundary : this->lowerBoundaries) {
                 auto variableWithUpperBoundary = this->upperBoundaries.find(variableWithLowerBoundary.first);
