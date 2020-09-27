@@ -296,12 +296,14 @@ namespace storm {
                 // Check whether this region needs further investigation (i.e. splitting)
                 auto bounds = getBound(env, currRegion, dir)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
 
-                if (storm::solver::minimize(dir)) {
-                    orderExtender->setMinValues(order, bounds);
-                    orderExtender->setMaxValues(order, getBound(env, currRegion, storm::solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
-                } else {
-                    orderExtender->setMaxValues(order, bounds);
-                    orderExtender->setMaxValues(order, getBound(env, currRegion, storm::solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
+                if (this->isUseMonotonicitySet()) {
+                    if (storm::solver::minimize(dir)) {
+                        orderExtender->setMinValues(order, bounds);
+                        orderExtender->setMaxValues(order, getBound(env, currRegion, storm::solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
+                    } else {
+                        orderExtender->setMaxValues(order, bounds);
+                        orderExtender->setMaxValues(order, getBound(env, currRegion, storm::solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
+                    }
                 }
 
                 auto currBound = bounds[*this->parametricModel->getInitialStates().begin()];
