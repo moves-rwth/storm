@@ -487,6 +487,28 @@ namespace storm {
             return true;
         }
 
+        template<typename ParametricType>
+        typename ParameterRegion<ParametricType>::Valuation ParameterRegion<ParametricType>::getPoint(storm::solver::OptimizationDirection dir, storm::analysis::MonotonicityResult<VariableType> &monRes) {
+            auto val = this->getCenterPoint();
+            for (auto monRes : monRes.getMonotonicityResult()) {
+                if (monRes.second == storm::analysis::MonotonicityResult<VariableType>::Monotonicity::Incr) {
+                    if (storm::solver::minimize(dir)) {
+                        val[monRes.first] = getLowerBoundary(monRes.first);
+                    } else {
+                        val[monRes.first] = getUpperBoundary(monRes.first);
+                    }
+                } else if (monRes.second == storm::analysis::MonotonicityResult<VariableType>::Monotonicity::Decr) {
+                    if (storm::solver::minimize(dir)) {
+                        val[monRes.first] = getUpperBoundary(monRes.first);
+                    } else {
+                        val[monRes.first] = getLowerBoundary(monRes.first);
+                    }
+                }
+            }
+
+            return val;
+        }
+
         template <typename ParametricType>
         std::ostream& operator<<(std::ostream& out, ParameterRegion<ParametricType> const& region) {
             out << region.toString();

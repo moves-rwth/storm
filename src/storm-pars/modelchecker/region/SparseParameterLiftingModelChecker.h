@@ -85,7 +85,7 @@ namespace storm {
             ConstantType lastValue;
         boost::optional<storm::analysis::OrderExtender<typename SparseModelType::ValueType, ConstantType>> orderExtender;
 
-//            void checkForPossibleMonotonicity(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::set<VariableType>& possibleMonotoneIncrParameters);
+            void checkForPossibleMonotonicity(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::set<VariableType>& possibleMonotoneIncrParameters);
 
 
 

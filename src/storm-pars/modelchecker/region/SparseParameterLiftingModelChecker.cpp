@@ -236,8 +236,14 @@ namespace storm {
             boost::optional<ConstantType> value;
             typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation valuation;
 
-            for (auto & v : region.getVerticesOfRegion(region.getVariables())) {
-                for (auto const& var : region.getVariables()) {
+            std::set<VariableType> possibleMonotoneVariables;
+            if (this->isUseMonotonicitySet()) {
+                checkForPossibleMonotonicity(env, region, possibleMonotoneVariables);
+            }
+            auto vertices = this->isUseMonotonicitySet() ? region.getVerticesOfRegion(possibleMonotoneVariables) : region.getVerticesOfRegion(region.getVariables());
+
+            for (auto &v : vertices) {
+                for (auto const &var : region.getVariables()) {
                     if (v.find(var) == v.end()) {
                         v.insert(std::move(std::pair<VariableType, CoefficientType>(var, region.getUpperBoundary(var))));
                     }
@@ -280,8 +286,9 @@ namespace storm {
                 }
 
                 // Check whether this region contains a new 'good' value
-                auto currValue = getInstantiationChecker().check(env, currRegion.getCenterPoint())->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
-                if (storm::solver::minimize(dir) ? currValue < value.get() : currValue > value.get()) {
+                auto point = this->isUseMonotonicitySet() ? currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult())) : currRegion.getCenterPoint();
+                auto currValue = getInstantiationChecker().check(env, point)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
+                if (!value.is_initialized() || storm::solver::minimize(dir) ? currValue < value.get() : currValue > value.get()) {
                     value = currValue;
                     valuation = currRegion.getCenterPoint();
                 }
@@ -303,13 +310,7 @@ namespace storm {
                 if ((storm::solver::minimize(dir) && currBound < value.get() - storm::utility::convertNumber<ConstantType>(precision))
                     || (!storm::solver::minimize(dir) && currBound > value.get() + storm::utility::convertNumber<ConstantType>(precision))) {
                     if (this->isUseMonotonicitySet()) {
-//                        if (localMonotonicityResult->getGlobalMonotonicityResult()->existsMonotonicity()) {
-                            this->splitSmart(currRegion, newRegions,*(localMonotonicityResult->getGlobalMonotonicityResult()));
-//                        } else {
-//                            std::set<VariableType> possibleNotMonotoneParameters;
-//                            checkForPossibleMonotonicity(env, currRegion, possibleNotMonotoneParameters);
-//                            currRegion.split(currRegion.getCenterPoint(), newRegions, possibleNotMonotoneParameters);
-//                        }
+                        this->splitSmart(currRegion, newRegions,*(localMonotonicityResult->getGlobalMonotonicityResult()));
                     } else {
                         currRegion.split(currRegion.getCenterPoint(), newRegions);
                     }
@@ -389,51 +390,51 @@ namespace storm {
             return res;
         }
 
-//        template<typename SparseModelType, typename ConstantType>
-//        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::checkForPossibleMonotonicity(Environment const& env,
-//                                                                                                                 const storage::ParameterRegion<typename SparseModelType::ValueType> &region,
-//                                                                                                                 std::set<VariableType>& possibleMonotoneParameters) {
-//
-//            // For each of the variables create a model in which we only change the value for this specific variable
-//            auto consideredVariables = models::sparse::getProbabilityParameters(this->getConsideredParametricModel());
-//
-//            for (auto var : consideredVariables) {
-//                ConstantType previous = -1;
-//                bool monDecr = true;
-//                bool monIncr = true;
-//
-//                // Check monotonicity in variable (*itr) by instantiating the model
-//                // all other variables fixed on lb, only increasing (*itr)
-//                auto valuation = region.getCenterPoint();
-//                valuation[var] = region.getLowerBoundary(var);
-//                int numberOfSamples = 100;
-//                auto stepSize = (region.getUpperBoundary(var) - region.getLowerBoundary(var)) / numberOfSamples;
-//
-//                while (valuation[var] <= region.getUpperBoundary(var)) {
-//                    // Create valuation
-//
-//                    ConstantType value = getInstantiationChecker().check(env, valuation)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
-//
-//                    // Calculate difference with result for previous valuation
-//                    ConstantType diff = previous - value;
-//                    assert (previous == -1 || diff >= -1 && diff <= 1);
-//
-//                    if (previous != -1) {
-//                        monDecr &= diff > 0; // then previous value is larger than the current value from the initial states
-//                        monIncr &= diff < 0;
-//                    }
-//                    previous = value;
-//                    if (!monDecr && ! monIncr) {
-//                        break;
-//                    }
-//                    valuation[var] += stepSize;
-//
-//                }
-//                if (!monDecr && ! monIncr) {
-//                    possibleMonotoneParameters.insert(var);
-//                }
-//            }
-//        }
+        template<typename SparseModelType, typename ConstantType>
+        void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::checkForPossibleMonotonicity(Environment const& env,
+                                                                                                                 const storage::ParameterRegion<typename SparseModelType::ValueType> &region,
+                                                                                                                 std::set<VariableType>& possibleMonotoneParameters) {
+
+            // For each of the variables create a model in which we only change the value for this specific variable
+            auto consideredVariables = region.getVariables();
+
+            for (auto var : consideredVariables) {
+                ConstantType previous = -1;
+                bool monDecr = true;
+                bool monIncr = true;
+
+                // Check monotonicity in variable (*itr) by instantiating the model
+                // all other variables fixed on lb, only increasing (*itr)
+                auto valuation = region.getCenterPoint();
+                valuation[var] = region.getLowerBoundary(var);
+                int numberOfSamples = 100;
+                auto stepSize = (region.getUpperBoundary(var) - region.getLowerBoundary(var)) / numberOfSamples;
+
+                while (valuation[var] <= region.getUpperBoundary(var)) {
+                    // Create valuation
+
+                    ConstantType value = getInstantiationChecker().check(env, valuation)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
+
+                    // Calculate difference with result for previous valuation
+                    ConstantType diff = previous - value;
+                    assert (previous == -1 || diff >= -1 && diff <= 1);
+
+                    if (previous != -1) {
+                        monDecr &= diff > 0; // then previous value is larger than the current value from the initial states
+                        monIncr &= diff < 0;
+                    }
+                    previous = value;
+                    if (!monDecr && ! monIncr) {
+                        break;
+                    }
+                    valuation[var] += stepSize;
+
+                }
+                if (!monDecr && !monIncr) {
+                    possibleMonotoneParameters.insert(var);
+                }
+            }
+        }
 
 
         template class SparseParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
