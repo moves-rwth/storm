@@ -243,9 +243,11 @@ namespace storm {
             auto vertices = this->isUseMonotonicitySet() ? region.getVerticesOfRegion(possibleMonotoneVariables) : region.getVerticesOfRegion(region.getVariables());
 
             for (auto &v : vertices) {
-                for (auto const &var : region.getVariables()) {
-                    if (v.find(var) == v.end()) {
-                        v.insert(std::move(std::pair<VariableType, CoefficientType>(var, region.getUpperBoundary(var))));
+                if (this->isUseMonotonicitySet()) {
+                    for (auto const &var : region.getVariables()) {
+                        if (v.find(var) == v.end()) {
+                            v.insert(std::move(std::pair<VariableType, CoefficientType>(var, region.getUpperBoundary(var))));
+                        }
                     }
                 }
                 auto currValue = getInstantiationChecker().check(env, v)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
@@ -324,19 +326,26 @@ namespace storm {
                 }
                 regionQueue.pop();
 
-                for (auto itr = newRegions.begin(); itr != newRegions.end(); ) {
-                    auto const &r =*itr;
-                    ++itr;
-                    if (!this->isUseMonotonicitySet() || itr == newRegions.end()) {
-                        regionQueue.emplace(r, order, localMonotonicityResult, currBound);
-                    } else if (!order->getDoneBuilding()) {
-                        regionQueue.emplace(r, copyOrder(order), localMonotonicityResult->copy(), currBound);
-                    } else if (!localMonotonicityResult->isDone()) {
-                        regionQueue.emplace(r, order, localMonotonicityResult->copy(), currBound);
-                    } else {
-                        regionQueue.emplace(r, order, localMonotonicityResult, currBound);
+                if (this->isUseMonotonicitySet()) {
+                    for (auto itr = newRegions.begin(); itr != newRegions.end(); ) {
+                        auto const &r =*itr;
+                        ++itr;
+                        if (!this->isUseMonotonicitySet() || itr == newRegions.end()) {
+                            regionQueue.emplace(r, order, localMonotonicityResult, currBound);
+                        } else if (!order->getDoneBuilding()) {
+                            regionQueue.emplace(r, copyOrder(order), localMonotonicityResult->copy(), currBound);
+                        } else if (!localMonotonicityResult->isDone()) {
+                            regionQueue.emplace(r, order, localMonotonicityResult->copy(), currBound);
+                        } else {
+                            regionQueue.emplace(r, order, localMonotonicityResult, currBound);
+                        }
+                    }
+                } else {
+                    for (auto const& r : newRegions) {
+                        regionQueue.emplace(r, nullptr, nullptr, currBound);
                     }
                 }
+
                 STORM_LOG_INFO("Current value : " << value.get() << ", current bound: " << regionQueue.top().bound << ".");
                 STORM_LOG_INFO("Covered " << (coveredArea * storm::utility::convertNumber<ConstantType>(100.0) / totalArea) << "% of the region." << std::endl);
             }
