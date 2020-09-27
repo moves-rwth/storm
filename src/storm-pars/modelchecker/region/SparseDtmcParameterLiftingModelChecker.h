@@ -83,6 +83,7 @@ namespace storm {
             // Used for monotonicity
 
             std::unique_ptr<storm::analysis::MonotonicityChecker<typename SparseModelType::ValueType>> monotonicityChecker;
+
         };
     }
 }

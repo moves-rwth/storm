@@ -21,6 +21,7 @@ namespace storm {
             const std::string MonotonicitySettings::dotOutputName = "exportDotOutput";
             const std::string MonotonicitySettings::exportMonotonicityName = "exportmonotonicity";
             const std::string MonotonicitySettings::monotonicityThreshold ="mon-threshold";
+            const std::string MonotonicitySettings::monotoneParameters ="mon-parameters";
 
 
 
@@ -34,6 +35,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, dotOutput, false, "Sets whether a dot output of the ROs is needed").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportMonotonicityName, false, "Exports the result of monotonicity checking to the given file.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The output file.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, dotOutputName, false, "Exports the dot output to the given file.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("dotFilename", "The output file.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, monotoneParameters, false, "Sets monotone parameters from file.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("monotoneParametersFilename", "The file where the monotone parameters are set").build()).build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, monotonicityThreshold, false, "Sets whether monotonotonicity should only be used beyond a certain depth threshold").setIsAdvanced()
                                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("mon-threshold", "The depth threshold from which on monotonicity is used for Parameter Lifting").setDefaultValueUnsignedInteger(0).build()).build());
@@ -52,11 +54,19 @@ namespace storm {
                 return this->getOption(dotOutput).getHasOptionBeenSet();
             }
 
+            bool MonotonicitySettings::isMonotoneParametersSet() const {
+                return this->getOption(monotoneParameters).getHasOptionBeenSet();
+            }
+
             std::string MonotonicitySettings::getDotOutputFilename() const {
                 if(this->getOption(dotOutputName).getArgumentByName("dotFilename").getHasBeenSet()){
                     return this->getOption(dotOutputName).getArgumentByName("dotFilename").getValueAsString();
                 }
                 return "dotOutput";
+            }
+
+            std::string MonotonicitySettings::getMonotoneParameterFilename() const {
+                return this->getOption(monotoneParameters).getArgumentByName("monotoneParametersFilename").getValueAsString();
             }
 
             uint_fast64_t MonotonicitySettings::getNumberOfSamples() const {

@@ -32,11 +32,13 @@ namespace storm {
                  * Retrieves whether a dot output of the reachability orders should be given
                  */
                 bool isDotOutputSet() const;
+                bool isMonotoneParametersSet() const;
 
                 /*!
                  * Retrieves the name of the file for a possible dot output
                  */
                 std::string getDotOutputFilename() const;
+                std::string getMonotoneParameterFilename() const;
 
                 /*!
                  * Retrieves the number of samples used for sampling in the monotonicity analysis
@@ -75,6 +77,7 @@ namespace storm {
                 const static std::string dotOutputName;
                 static const std::string exportMonotonicityName;
                 const static std::string monotonicityThreshold;
+                const static std::string monotoneParameters;
 
             };
 

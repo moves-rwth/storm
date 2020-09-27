@@ -88,12 +88,16 @@ namespace storm {
 
             void setUseMonotonicityInFuture(bool monotonicity = true);
 
+            void setMonotoneParameters(std::pair<std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>> monotoneParameters);
+
         private:
             bool useMonotonicity = false;
 
         protected:
 
             uint_fast64_t numberOfRegionsKnownThroughMonotonicity;
+            boost::optional<std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>> monotoneIncrParameters;
+            boost::optional<std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>> monotoneDecrParameters;
 
             virtual void extendLocalMonotonicityResult(storm::storage::ParameterRegion<ParametricType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
 

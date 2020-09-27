@@ -87,8 +87,9 @@ namespace storm {
         }
 
         template<typename ParametricType>
-        std::vector<typename ParameterRegion<ParametricType>::Valuation> ParameterRegion<ParametricType>::getVerticesOfRegion(std::set<VariableType> const& consideredVariables, int const startingpoint) const {
-            std::size_t const numOfVariables = startingpoint != -1 && variableSizeThreshold && consideredVariables.size() > variableSizeThreshold.get() ?
+        std::vector<typename ParameterRegion<ParametricType>::Valuation> ParameterRegion<ParametricType>::getVerticesOfRegion(std::set<VariableType> const& consideredVariables) const {
+            assert ((nextStartingPoint != -1 && variableSizeThreshold) || (nextStartingPoint == -1 && !variableSizeThreshold));
+            std::size_t const numOfVariables = variableSizeThreshold && consideredVariables.size() > variableSizeThreshold.get() ?
                     variableSizeThreshold.get() : consideredVariables.size();
             std::size_t const numOfVertices = std::pow(2, numOfVariables);
             std::vector<Valuation> resultingVector(numOfVertices);
@@ -101,7 +102,7 @@ namespace storm {
 
 
                 // Normal implementation
-                if (startingpoint == -1) {
+                if (!variableSizeThreshold) {
                     for (auto variable : consideredVariables) {
                         if ((vertexId >> variableIndex) % 2 == 0) {
                             resultingVector[vertexId].insert(
@@ -114,7 +115,7 @@ namespace storm {
                     }
                 } else {
                     typename std::set<VariableType>::iterator itr = consideredVariables.begin();
-                    for (auto i = 0; i < startingpoint; ++i) {
+                    for (auto i = 0; i < nextStartingPoint; ++i) {
                         itr++;
                     }
                     for (auto i = 0; i < variableSizeThreshold; ++i) {
@@ -214,42 +215,51 @@ namespace storm {
             std::vector<Valuation> vertices;
 
             bool switchOutput = false;
-            if (splitThreshold < 1 || !this->variableSizeThreshold) {
+            if (this->variableSizeThreshold) {
                 bool allToSmallMon = true;
                 bool allToSmallNonMon = true;
-                for (auto &variable: monNonMonVariables.first) {
-                    CoefficientType diff = getUpperBoundary(variable) - getLowerBoundary(variable);
-                    if (diff > storm::utility::convertNumber<CoefficientType>(splitThreshold)) {
-                        allToSmallMon = false;
-                        break;
+
+
+                if (splitThreshold < 1) {
+                    for (auto &variable: monNonMonVariables.first) {
+                        CoefficientType diff = getUpperBoundary(variable) - getLowerBoundary(variable);
+                        if (diff > storm::utility::convertNumber<CoefficientType>(splitThreshold)) {
+                            allToSmallMon = false;
+                            break;
+                        }
                     }
-                }
-                for (auto &variable: monNonMonVariables.second) {
-                    CoefficientType diff = getUpperBoundary(variable) - getLowerBoundary(variable);
-                    if (diff > storm::utility::convertNumber<CoefficientType>(splitThreshold)) {
-                        allToSmallNonMon = false;
-                        break;
+                    for (auto &variable: monNonMonVariables.second) {
+                        CoefficientType diff = getUpperBoundary(variable) - getLowerBoundary(variable);
+                        if (diff > storm::utility::convertNumber<CoefficientType>(splitThreshold)) {
+                            allToSmallNonMon = false;
+                            break;
+                        }
                     }
+                } else {
+                    allToSmallMon = false;
+                    allToSmallNonMon = false;
                 }
 
                 // Heuristic for splitting when a splitThreshold is given
-                if ((onlyMonotoneVars && !allToSmallMon) || (!onlyMonotoneVars && allToSmallNonMon && !allToSmallMon)) {
-                        vertices = getVerticesOfRegion(monNonMonVariables.first, nextVariableRangeMon);
-                        nextVariableRangeMon = (nextVariableRangeMon + variableSizeThreshold.get()) % monNonMonVariables.first.size();
-                } else if ((!onlyMonotoneVars && !allToSmallNonMon) ||
-                           (onlyMonotoneVars && !allToSmallNonMon && allToSmallMon)) {
-                        vertices = getVerticesOfRegion(monNonMonVariables.second, nextVariableRangeNonMon);
-                        nextVariableRangeNonMon = (nextVariableRangeNonMon + variableSizeThreshold.get()) % monNonMonVariables.second.size();
+                // Split in mon in the following cases:
+                //  - mon set, and variable range still makes sense
+                //  - nonmon set, but variable range for nonmon is too small and variable range for mon still makes sense
+                //  - both ranges for mon and nonmon are too small and last split was in nonmon
+                bool splitMon = (onlyMonotoneVars && !allToSmallMon)
+                                    || (!onlyMonotoneVars && allToSmallNonMon && !allToSmallMon)
+                                    || (allToSmallMon && allToSmallNonMon && !lastSplitMonotone);
+                bool splitNonMon = (!onlyMonotoneVars && !allToSmallNonMon)
+                                   || (!onlyMonotoneVars && !allToSmallNonMon && allToSmallMon)
+                                   || (allToSmallMon && allToSmallNonMon && lastSplitMonotone);
+                assert (splitMon || splitNonMon);
+                nextStartingPoint = splitMon ? nextVariableRangeMon : nextVariableRangeNonMon;
+                lastSplitMonotone = allToSmallNonMon && allToSmallMon ? !lastSplitMonotone : lastSplitMonotone;
+                if (splitMon) {
+                    nextVariableRangeMon =
+                            (nextVariableRangeMon + variableSizeThreshold.get()) % monNonMonVariables.first.size();
                 } else {
-                    if (lastSplitMonotone) {
-                            vertices = getVerticesOfRegion(monNonMonVariables.second, nextVariableRangeNonMon);
-                            nextVariableRangeNonMon = (nextVariableRangeNonMon + variableSizeThreshold.get()) % monNonMonVariables.second.size();
-
-                    } else {
-                            vertices = getVerticesOfRegion(monNonMonVariables.first, nextVariableRangeMon);
-                            nextVariableRangeMon = (nextVariableRangeMon + variableSizeThreshold.get()) % monNonMonVariables.first.size();
-                    }
-                    lastSplitMonotone = !lastSplitMonotone;
+                    nextVariableRangeNonMon =
+                            (nextVariableRangeNonMon + variableSizeThreshold.get()) % monNonMonVariables.second.size();
                 }
 
                 auto textLookingAt = onlyMonotoneVars ? "non-monotone" : "monotone";
@@ -259,20 +269,24 @@ namespace storm {
                     switchOutput = true;
                     STORM_LOG_INFO("Looking at " << textLookingAt << " instead of " << textOriginal);
                 }
-            } else if (onlyMonotoneVars) {
-                vertices = getVerticesOfRegion(monNonMonVariables.first, nextVariableRangeMon);
-                nextVariableRangeMon = (nextVariableRangeMon + variableSizeThreshold.get()) % monNonMonVariables.first.size();
             } else {
-                vertices = getVerticesOfRegion(monNonMonVariables.second, nextVariableRangeNonMon);
-                nextVariableRangeNonMon = (nextVariableRangeNonMon + variableSizeThreshold.get()) % monNonMonVariables.second.size();
+                if (onlyMonotoneVars) {
+                    vertices = getVerticesOfRegion(monNonMonVariables.first);
+                } else {
+                    vertices = getVerticesOfRegion(monNonMonVariables.second);
+                }
             }
 
             auto textOriginal = (!switchOutput && onlyMonotoneVars) || (switchOutput && !onlyMonotoneVars) ? "monotone" : "non-monotone";
             STORM_LOG_INFO("Splitting region " << this->toString() << " in " << vertices.size()
                                                << " regions (original implementation would have splitted in 2^"
                                                << this->getVariables().size() << ").");
-            STORM_LOG_INFO("Using only " << textOriginal << " variables capped at " << variableSizeThreshold.get()
-                                         << " variables per split");
+            if (variableSizeThreshold) {
+                STORM_LOG_INFO("Using only " << textOriginal << " variables capped at " << variableSizeThreshold.get()
+                                             << " variables per split.");
+            } else {
+                STORM_LOG_INFO("Using only " << textOriginal << " variables.");
+            }
 
             for (auto const& vertex : vertices) {
                 //The resulting subregion is the smallest region containing vertex and splittingPoint.

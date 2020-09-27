@@ -386,6 +386,12 @@ namespace storm {
 
         }
 
+        template<typename ParametricType>
+        void RegionModelChecker<ParametricType>::setMonotoneParameters(std::pair<std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>> monotoneParameters) {
+            monotoneIncrParameters = std::move(monotoneParameters.first);
+            monotoneDecrParameters = std::move(monotoneParameters.second);
+        }
+
 #ifdef STORM_HAVE_CARL
             template class RegionModelChecker<storm::RationalFunction>;
 #endif

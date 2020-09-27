@@ -40,7 +40,7 @@ namespace storm {
             cyclic = storm::utility::graph::hasCycle(matrix);
             this->region = region;
             this->formula = formula;
-            usePLA = false;
+//            usePLA = false;
             this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(matrix);
         }
 
@@ -48,7 +48,7 @@ namespace storm {
         OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix) {
             this->matrix = matrix;
             this->model = nullptr;
-            usePLA = false;
+//            usePLA = false;
             std::vector<uint_fast64_t> statesSorted = utility::graph::getTopologicalSort(matrix);
             std::reverse(statesSorted.begin(),statesSorted.end());
             this->numberOfStates = matrix.getColumnCount();
@@ -241,7 +241,7 @@ namespace storm {
                     assert (stateSucc2 == numberOfStates);
                     currentState = order->getNextSortedState();
                 } else {
-                    auto minMaxAdding = this->addStatesBasedOnMinMax(order, stateSucc1, stateSucc2);
+                    auto minMaxAdding = usePLA.find(order) != usePLA.end() && usePLA[order] ? this->addStatesBasedOnMinMax(order, stateSucc1, stateSucc2) : Order::UNKNOWN;
                     if (minMaxAdding == Order::UNKNOWN) {
                         auto assumptions = assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order,
                                                                                       region);
@@ -276,11 +276,13 @@ namespace storm {
                 uint_fast64_t succ2 = successors[1];
 
                 int compareResult = order->compare(succ1, succ2);
-                if (!cyclic && !usePLA && compareResult == Order::UNKNOWN) {
-                    // Only use pla for acyclic models
-                    getMinMaxValues();
-                }
-                if (usePLA && compareResult == Order::UNKNOWN) {
+                bool usePLAForOrder = usePLA.find(order) != usePLA.end() && usePLA[order];
+//                if (!cyclic && !usePLAForOrder && compareResult == Order::UNKNOWN) {
+//                    // Only use pla for acyclic models
+//                    getMinMaxValues();
+//                    usePLAForOrder = true;
+//                }
+                if (usePLAForOrder && compareResult == Order::UNKNOWN) {
                     compareResult = addStatesBasedOnMinMax(order, succ1, succ2);
                 }
                 if (compareResult == Order::ABOVE) {
@@ -376,9 +378,9 @@ namespace storm {
         template <typename ValueType, typename ConstantType>
         Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) const {
             assert (order->compare(state1, state2) == Order::UNKNOWN);
-            assert(minValues.size() > state1 && minValues.size() > state2);
-            assert(maxValues.size() > state1 && maxValues.size() > state2);
-            if (minValues[state1] > maxValues[state2]) {
+            assert (minValues.find(order) != minValues.end());
+            assert (maxValues.find(order) != maxValues.end());
+            if (minValues.at(order)[state1] > maxValues.at(order)[state2]) {
                 // state 1 will always be larger than state2
                 if (!order->contains(state1)) {
                     order->add(state1);
@@ -391,7 +393,7 @@ namespace storm {
                 assert (order->compare(state1, state2) != Order::SAME);
                 order->addRelation(state1, state2);
                 return Order::ABOVE;
-            } else if (minValues[state2] > maxValues[state1]) {
+            } else if (minValues.at(order)[state2] > maxValues.at(order)[state1]) {
                 // state2 will always be larger than state1
                 if (!order->contains(state1)) {
                     order->add(state1);
@@ -411,30 +413,43 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         void OrderExtender<ValueType, ConstantType>::getMinMaxValues() {
-            assert (!usePLA);
-            if (model != nullptr) {
-                // Use parameter lifting modelchecker to get initial min/max values for order creation
-                modelchecker::SparseDtmcParameterLiftingModelChecker<models::sparse::Dtmc<ValueType>, ConstantType> plaModelChecker;
-                std::unique_ptr<modelchecker::CheckResult> checkResult;
-                auto env = Environment();
-                const modelchecker::CheckTask<logic::Formula, ValueType> checkTask = modelchecker::CheckTask<logic::Formula, ValueType>(*formula);
-                STORM_LOG_THROW(plaModelChecker.canHandle(model, checkTask), exceptions::NotSupportedException, "Cannot handle this formula");
-                plaModelChecker.specify(env, model, checkTask, false);
-
-                std::unique_ptr<modelchecker::CheckResult> minCheck = plaModelChecker.check(env, region, solver::OptimizationDirection::Minimize);
-                std::unique_ptr<modelchecker::CheckResult> maxCheck = plaModelChecker.check(env, region, solver::OptimizationDirection::Maximize);
-
-                minValues = minCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-                maxValues = maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-                usePLA = true;
-            }
+//            assert (!usePLA);
+//            if (model != nullptr) {
+//                // Use parameter lifting modelchecker to get initial min/max values for order creation
+//                modelchecker::SparseDtmcParameterLiftingModelChecker<models::sparse::Dtmc<ValueType>, ConstantType> plaModelChecker;
+//                std::unique_ptr<modelchecker::CheckResult> checkResult;
+//                auto env = Environment();
+//                const modelchecker::CheckTask<logic::Formula, ValueType> checkTask = modelchecker::CheckTask<logic::Formula, ValueType>(*formula);
+//                STORM_LOG_THROW(plaModelChecker.canHandle(model, checkTask), exceptions::NotSupportedException, "Cannot handle this formula");
+//                plaModelChecker.specify(env, model, checkTask, false);
+//
+//                std::unique_ptr<modelchecker::CheckResult> minCheck = plaModelChecker.check(env, region, solver::OptimizationDirection::Minimize);
+//                std::unique_ptr<modelchecker::CheckResult> maxCheck = plaModelChecker.check(env, region, solver::OptimizationDirection::Maximize);
+//
+//                minValues = minCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+//                maxValues = maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+//                usePLA = true;
+//            }
         }
 
         template <typename ValueType, typename ConstantType>
-        void OrderExtender<ValueType, ConstantType>::setMinMaxValues(std::vector<ConstantType>& minValues, std::vector<ConstantType>& maxValues) {
-            usePLA = true;
-            this->minValues = minValues;//minCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-            this->maxValues = maxValues;//maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+        void OrderExtender<ValueType, ConstantType>::setMinMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>& minValues, std::vector<ConstantType>& maxValues) {
+            this->minValues[order] = minValues;//minCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+            this->maxValues[order] = maxValues;//maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+            usePLA[order] = true;
+        }
+
+        template <typename ValueType, typename ConstantType>
+        void OrderExtender<ValueType, ConstantType>::setMinValues(std::shared_ptr<Order> order, std::vector<ConstantType>& minValues) {
+            this->minValues[order] = minValues;//minCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+            usePLA[order] = this->maxValues.find(order) != this->maxValues.end();
+        }
+
+        template <typename ValueType, typename ConstantType>
+        void OrderExtender<ValueType, ConstantType>::setMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>& maxValues) {
+            this->maxValues[order] = maxValues;//maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+            usePLA[order] = this->minValues.find(order) != this->minValues.end();
+
         }
 
         template <typename ValueType, typename ConstantType>
@@ -575,6 +590,17 @@ namespace storm {
             assert (lastUnknownStatesMap.find(orderCopy) == lastUnknownStatesMap.end());
             unknownStatesMap.insert({orderCopy,{unknownStatesMap[orderOriginal].first, unknownStatesMap[orderOriginal].second}});
             lastUnknownStatesMap.insert({orderCopy,{lastUnknownStatesMap[orderOriginal].first, lastUnknownStatesMap[orderOriginal].second}});
+        }
+
+        template<typename ValueType, typename ConstantType>
+        void OrderExtender<ValueType, ConstantType>::copyMinMax(std::shared_ptr<Order> orderOriginal,
+                                                                std::shared_ptr<Order> orderCopy) {
+            if (minValues.find(orderOriginal) != minValues.end()) {
+                minValues[orderCopy] = minValues[orderOriginal];
+            }
+            if (maxValues.find(orderOriginal) != maxValues.end()) {
+                maxValues[orderCopy] = maxValues[orderOriginal];
+            }
         }
 
         template class OrderExtender<RationalFunction, double>;

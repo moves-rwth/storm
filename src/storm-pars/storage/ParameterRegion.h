@@ -42,7 +42,7 @@ namespace storm {
              *
              * If the given set of variables is empty, the returned vector will contain an empty map
              */
-            std::vector<Valuation> getVerticesOfRegion(std::set<VariableType> const& consideredVariables, int const startingpoint = -1) const;
+            std::vector<Valuation> getVerticesOfRegion(std::set<VariableType> const& consideredVariables) const;
 
             /*!
              * Returns some point that lies within this region
@@ -88,8 +88,9 @@ namespace storm {
             Valuation upperBoundaries;
             std::set<VariableType> variables;
 
-            int nextVariableRangeMon;
-            int nextVariableRangeNonMon;
+            int nextVariableRangeMon = 0;
+            int nextVariableRangeNonMon = 0;
+            int nextStartingPoint = -1;
             boost::optional<int> variableSizeThreshold;
         };
 

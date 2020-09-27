@@ -266,7 +266,6 @@ namespace storm {
         
         template <typename SparseModelType, typename ConstantType>
         std::unique_ptr<CheckResult> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::Order> reachabilityOrder, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) {
-            typedef typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType VariableType;
             typedef typename storm::analysis::MonotonicityResult<VariableType>::Monotonicity Monotonicity;
 
             if (maybeStates.empty()) {
@@ -528,9 +527,6 @@ namespace storm {
             typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::CoefficientType CoefficientType;
 
             if (this->orderExtender) {
-                auto minValues = computeQuantitativeValues(env, region, storm::solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-                auto maxValues = computeQuantitativeValues(env, region, storm::solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-                this->orderExtender.get().setMinMaxValues(minValues, maxValues);
                 auto res = this->orderExtender.get().extendOrder(order, region);
                 order = std::get<0>(res);
                 while (!order->getDoneBuilding() && order->existsNextSortedState()) {
@@ -561,7 +557,15 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::extendLocalMonotonicityResult(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult){
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::extendLocalMonotonicityResult(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) {
+            if (this->monotoneIncrParameters && !localMonotonicityResult->isFixedParametersSet()) {
+                for (auto & var : this->monotoneIncrParameters.get()) {
+                    localMonotonicityResult->setMonotoneIncreasing(var);
+                }
+                for (auto & var : this->monotoneDecrParameters.get()) {
+                    localMonotonicityResult->setMonotoneDecreasing(var);
+                }
+            }
             auto state = order->getNextAddedState(-1);
             auto const variablesAtState = parameterLifter->getOccurringVariablesAtState();
             while (state != order->getNumberOfStates()) {
@@ -574,7 +578,7 @@ namespace storm {
                         if (monotonicity == storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Unknown || monotonicity == storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Not) {
                             monotonicity = monotonicityChecker->checkLocalMonotonicity(order, state, var, region);
                             if (monotonicity == storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Unknown ||  monotonicity == storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Not) {
-                                // Skip for now?
+                                // TODO: Skip for now?
                             } else {
                                 localMonotonicityResult->setMonotonicity(state, var, monotonicity);
                             }
@@ -596,6 +600,8 @@ namespace storm {
                 }
                 if (done) {
                     localMonotonicityResult->getGlobalMonotonicityResult()->setDoneForVar(var);
+                    // TODO: Hack
+                    order->setDoneBuilding();
                 }
             }
         }
@@ -638,6 +644,7 @@ namespace storm {
                 }
             }
         }
+
 
         template class SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
         template class SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber>;

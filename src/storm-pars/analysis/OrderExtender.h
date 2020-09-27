@@ -73,12 +73,15 @@ namespace storm {
              */
             std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region);
 
-            void setMinMaxValues(std::vector<ConstantType> &minValues, std::vector<ConstantType> &maxValues);
+            void setMinMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType> &minValues, std::vector<ConstantType> &maxValues);
+            void setMinValues(std::shared_ptr<Order> order, std::vector<ConstantType> &minValues);
+            void setMaxValues(std::shared_ptr<Order> order,std::vector<ConstantType> &maxValues);
 
             void setUnknownStates(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2);
 
             std::pair<uint_fast64_t, uint_fast64_t> getUnknownStates(std::shared_ptr<Order> order);
             void setUnknownStates(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
+            void copyMinMax(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
 
 
         private:
@@ -96,9 +99,8 @@ namespace storm {
 
             std::shared_ptr<Order> bottomTopOrder = nullptr;
 
-            std::vector<ConstantType> minValues;
-
-            std::vector<ConstantType> maxValues;
+            std::map<std::shared_ptr<Order>, std::vector<ConstantType>> minValues;
+            std::map<std::shared_ptr<Order>, std::vector<ConstantType>> maxValues;
 
             storage::SparseMatrix<ValueType> matrix;
 
@@ -108,9 +110,7 @@ namespace storm {
             std::map<std::shared_ptr<Order>, std::pair<uint_fast64_t, uint_fast64_t>> unknownStatesMap;
             std::map<std::shared_ptr<Order>, std::pair<uint_fast64_t, uint_fast64_t>> lastUnknownStatesMap;
 
-
-            bool usePLA;
-
+            std::map<std::shared_ptr<Order>, bool> usePLA;
             bool cyclic;
 
             std::shared_ptr<logic::Formula const> formula;

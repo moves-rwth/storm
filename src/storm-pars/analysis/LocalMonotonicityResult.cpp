@@ -14,11 +14,16 @@ namespace storm {
         template <typename VariableType>
         typename LocalMonotonicityResult<VariableType>::Monotonicity LocalMonotonicityResult<VariableType>::getMonotonicity(uint_fast64_t state, VariableType var) const {
             if (stateMonRes[state] == dummyPointer) {
+                assert (globalMonotonicityResult->getMonotonicity(var) == Monotonicity::Constant);
                 return Monotonicity::Constant;
             } else if (stateMonRes[state] != nullptr) {
-                return stateMonRes[state]->getMonotonicity(var);
-            } else{
-                return Monotonicity::Unknown;
+                auto res = stateMonRes[state]->getMonotonicity(var);
+                if (globalMonotonicityResult->isDoneForVar(var) && res == Monotonicity::Unknown) {
+                    return globalMonotonicityResult->getMonotonicity(var);
+                }
+                return res;
+            } else {
+                return globalMonotonicityResult->isDoneForVar(var) ? globalMonotonicityResult->getMonotonicity(var) : Monotonicity::Unknown;
             }
         }
 
@@ -116,6 +121,20 @@ namespace storm {
             this->statesMonotone.set(state);
         }
 
+        template<typename VariableType>
+        void LocalMonotonicityResult<VariableType>::setMonotoneIncreasing(VariableType var) {
+            globalMonotonicityResult->updateMonotonicityResult(var, Monotonicity::Incr);
+            globalMonotonicityResult->setDoneForVar(var);
+            setFixedParameters = true;
+        }
+
+        template<typename VariableType>
+        void LocalMonotonicityResult<VariableType>::setMonotoneDecreasing(VariableType var) {
+            globalMonotonicityResult->updateMonotonicityResult(var, Monotonicity::Decr);
+            globalMonotonicityResult->setDoneForVar(var);
+            setFixedParameters = true;
+        }
+
         template <typename VariableType>
         std::string LocalMonotonicityResult<VariableType>::toString() const {
             std::string result = "Local Monotonicity Result: \n";
@@ -133,6 +152,12 @@ namespace storm {
             }
             return result;
         }
+
+        template<typename VariableType>
+        bool LocalMonotonicityResult<VariableType>::isFixedParametersSet() const {
+            return setFixedParameters;
+        }
+
 
         template class LocalMonotonicityResult<storm::RationalFunctionVariable>;
     }

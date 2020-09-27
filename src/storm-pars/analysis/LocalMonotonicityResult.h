@@ -76,6 +76,13 @@ namespace storm {
              */
             std::string toString() const;
 
+            void setMonotoneIncreasing(VariableType var);
+            void setMonotoneDecreasing(VariableType var);
+
+            bool isFixedParametersSet() const;
+
+
+
 
         private:
             std::vector<std::shared_ptr<MonotonicityResult<VariableType>>> stateMonRes;
@@ -94,6 +101,8 @@ namespace storm {
             int indexMinimize = -1;
             int indexMaximize = -1;
             std::shared_ptr<MonotonicityResult<VariableType>> dummyPointer;
+
+            bool setFixedParameters = false;
 
         };
     }

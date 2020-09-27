@@ -85,10 +85,14 @@ namespace storm {
             ConstantType lastValue;
         boost::optional<storm::analysis::OrderExtender<typename SparseModelType::ValueType, ConstantType>> orderExtender;
 
+//            void checkForPossibleMonotonicity(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::set<VariableType>& possibleMonotoneIncrParameters);
+
+
 
         private:
             // store the current formula. Note that currentCheckTask only stores a reference to the formula.
             std::shared_ptr<storm::logic::Formula const> currentFormula;
+            std::shared_ptr<storm::analysis::Order> copyOrder(std::shared_ptr<storm::analysis::Order> order);
         };
     }
 }

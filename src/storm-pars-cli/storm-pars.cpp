@@ -433,6 +433,7 @@ namespace storm {
         void computeRegionExtremumWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, bool const& useMonotonicity = false) {
             STORM_LOG_ASSERT(!regions.empty(), "Can not analyze an empty set of regions.");
             auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
+            auto monSettings = storm::settings::getModule<storm::settings::modules::MonotonicitySettings>();
             auto engine = regionSettings.getRegionCheckEngine();
             storm::solver::OptimizationDirection direction = regionSettings.getExtremumDirection();
             ValueType precision = storm::utility::convertNumber<ValueType>(regionSettings.getExtremumValuePrecision());
@@ -450,7 +451,11 @@ namespace storm {
                                                                                      << "..." << std::endl);
                     }
                     storm::utility::Stopwatch watch(true);
-                    auto valueValuation = storm::api::computeExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(property.getRawFormula(), true), region, engine, direction, precision, useMonotonicity);
+                    boost::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>> monotoneParameters;
+                    if (monSettings.isMonotoneParametersSet()) {
+                        monotoneParameters = storm::api::parseMonotoneParameters<ValueType>(monSettings.getMonotoneParameterFilename(), model);
+                    }
+                    auto valueValuation = storm::api::computeExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(property.getRawFormula(), true), region, engine, direction, precision, useMonotonicity, monotoneParameters);
                     watch.stop();
                     std::stringstream valuationStr;
                     bool first = true;
