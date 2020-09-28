@@ -235,6 +235,7 @@ TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, simple_lra) {
     formulasAsString += "multi(R{\"first\"}min=? [ C ], R{\"first\"}max=? [ LRA ]);\n"; // pareto
     formulasAsString += "multi(R{\"first\"}min=? [ C ], R{\"second\"}max=? [ LRA ], R{\"third\"}max=? [ C ]);\n"; // pareto
     formulasAsString += "multi(R{\"first\"}min=? [ LRA ], R{\"second\"}max=? [ LRA ], R{\"third\"}min=? [ C ]);\n"; // pareto
+    formulasAsString += "multi(LRAmax=? [ x=1 ], R{\"second\"}max=? [ LRA ]);\n"; // pareto
     
     // programm, model,  formula
     storm::prism::Program program = storm::api::parseProgram(programFile);
@@ -305,6 +306,16 @@ TEST(SparseMdpPcaaMultiObjectiveModelCheckerTest, simple_lra) {
         std::vector<std::vector<std::string>> expectedPoints;
         expectedPoints.emplace_back(std::vector<std::string>({"0","0", "10/8"}));
         expectedPoints.emplace_back(std::vector<std::string>({"0","16", "2"}));
+        double eps = 1e-4;
+        EXPECT_TRUE(expectSubset(result->asExplicitParetoCurveCheckResult<double>().getPoints(), convertPointset<double>(expectedPoints), eps)) << "Non-Pareto point found.";
+        EXPECT_TRUE(expectSubset(convertPointset<double>(expectedPoints), result->asExplicitParetoCurveCheckResult<double>().getPoints(), eps)) << "Pareto point missing.";
+    }
+    {
+        std::unique_ptr<storm::modelchecker::CheckResult> result = storm::modelchecker::multiobjective::performMultiObjectiveModelChecking(env, *mdp, formulas[7]->asMultiObjectiveFormula());
+        ASSERT_TRUE(result->isExplicitParetoCurveCheckResult());
+        std::vector<std::vector<std::string>> expectedPoints;
+        expectedPoints.emplace_back(std::vector<std::string>({"1","0"}));
+        expectedPoints.emplace_back(std::vector<std::string>({"0","16"}));
         double eps = 1e-4;
         EXPECT_TRUE(expectSubset(result->asExplicitParetoCurveCheckResult<double>().getPoints(), convertPointset<double>(expectedPoints), eps)) << "Non-Pareto point found.";
         EXPECT_TRUE(expectSubset(convertPointset<double>(expectedPoints), result->asExplicitParetoCurveCheckResult<double>().getPoints(), eps)) << "Pareto point missing.";
