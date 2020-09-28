@@ -37,8 +37,6 @@ namespace storm {
             virtual std::shared_ptr<storm::analysis::Order> extendOrder(Environment const& env, std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<typename SparseModelType::ValueType> region) override;
 
             virtual void extendLocalMonotonicityResult(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) override;
-            virtual void splitSmart(storm::storage::ParameterRegion<typename SparseModelType::ValueType> & region, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> &regionVector, storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> & monRes) const override;
-            virtual void splitSmart(storm::storage::ParameterRegion<typename SparseModelType::ValueType> & region, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> &regionVector, std::shared_ptr<storm::analysis::Order> order) override;
 
         protected:
                 
@@ -56,6 +54,9 @@ namespace storm {
             void computeRegionSplitEstimates(std::vector<ConstantType> const& quantitativeResult, std::vector<uint_fast64_t> const& schedulerChoices, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
             
             virtual void reset() override;
+
+            virtual void splitSmart(storm::storage::ParameterRegion<typename SparseModelType::ValueType> & region, std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> &regionVector,  std::shared_ptr<storm::analysis::Order> order, storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> & monRes) const override;
+
 
         private:
             storm::storage::BitVector maybeStates;

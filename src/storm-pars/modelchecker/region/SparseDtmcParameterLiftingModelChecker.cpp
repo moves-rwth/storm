@@ -610,41 +610,44 @@ namespace storm {
         void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::splitSmart (
                 storm::storage::ParameterRegion<typename SparseModelType::ValueType> &region,
                 std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> &regionVector,
+                std::shared_ptr<storm::analysis::Order> order,
                 storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> & monRes) const{
-            if (thresholdTask) {
-                ConstantType currentValue = SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::lastValue;
-                ConstantType difference = abs(thresholdTask.get() - currentValue);
-                ConstantType thresholdDifference = 0.5;
-                if (difference < thresholdDifference) {
-                    region.split(region.getCenterPoint(), regionVector, monRes, true,
-                                 storm::utility::convertNumber<double>(difference));
-                } else {
-                    region.split(region.getCenterPoint(), regionVector, monRes, false,
-                                 storm::utility::convertNumber<double>(difference));
-                }
-            } else {
-                region.split(region.getCenterPoint(), regionVector, monRes, false, 1);
-            }
-        }
-
-        template<typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::splitSmart (
-                storm::storage::ParameterRegion<typename SparseModelType::ValueType> &region,
-                std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> &regionVector,
-                std::shared_ptr<storm::analysis::Order> order) {
             if (this->orderExtender) {
                 auto states = this->orderExtender.get().getUnknownStates((order));
                 if (states.first != states.second) {
                     auto variablesAtStates = parameterLifter->getOccurringVariablesAtState();
                     std::set<VariableType> variables = variablesAtStates[states.first];
+                    bool sameVariables = false;
+
                     for (auto var : variablesAtStates[states.second]) {
+                        sameVariables = variables.find(var) != variables.end();
+                        if (sameVariables) {
+                            break;
+                        }
                         variables.insert(var);
                     }
-                    region.split(region.getCenterPoint(), regionVector, variables);
+                    if (!sameVariables) {
+                        region.split(region.getCenterPoint(), regionVector, variables);
+                    }
+                }
+            }
+            if (regionVector.size() == 0) {
+                if (thresholdTask) {
+                    ConstantType currentValue = SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::lastValue;
+                    ConstantType difference = abs(thresholdTask.get() - currentValue);
+                    ConstantType thresholdDifference = 0.5;
+                    if (difference < thresholdDifference) {
+                        region.split(region.getCenterPoint(), regionVector, monRes, true,
+                                     storm::utility::convertNumber<double>(difference));
+                    } else {
+                        region.split(region.getCenterPoint(), regionVector, monRes, false,
+                                     storm::utility::convertNumber<double>(difference));
+                    }
+                } else {
+                    region.split(region.getCenterPoint(), regionVector, monRes, false, 1);
                 }
             }
         }
-
 
         template class SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
         template class SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber>;

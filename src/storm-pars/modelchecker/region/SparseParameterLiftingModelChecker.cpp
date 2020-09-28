@@ -314,7 +314,7 @@ namespace storm {
                 if ((storm::solver::minimize(dir) && currBound < value.get() - storm::utility::convertNumber<ConstantType>(precision))
                     || (!storm::solver::minimize(dir) && currBound > value.get() + storm::utility::convertNumber<ConstantType>(precision))) {
                     if (this->isUseMonotonicitySet()) {
-                        this->splitSmart(currRegion, newRegions,*(localMonotonicityResult->getGlobalMonotonicityResult()));
+                        this->splitSmart(currRegion, newRegions, order, *(localMonotonicityResult->getGlobalMonotonicityResult()));
                     } else {
                         currRegion.split(currRegion.getCenterPoint(), newRegions);
                     }

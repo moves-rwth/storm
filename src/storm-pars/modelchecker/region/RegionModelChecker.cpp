@@ -231,7 +231,7 @@ namespace storm {
 
                                 std::vector<storm::storage::ParameterRegion<ParametricType>> newKnownRegions;
                                 // Only split in (non)monotone vars
-                                splitSmart(currentRegion, newRegions, *(localMonotonicityResult->getGlobalMonotonicityResult()));
+                                splitSmart(currentRegion, newRegions, order, *(localMonotonicityResult->getGlobalMonotonicityResult()));
                                 assert (newRegions.size() != 0);
 
                                 initResForNewRegions = (res == RegionResult::CenterSat) ? RegionResult::ExistsSat :
@@ -373,17 +373,9 @@ namespace storm {
         }
 
         template <typename ParametricType>
-        void RegionModelChecker<ParametricType>::splitSmart(storm::storage::ParameterRegion<ParametricType> & currentRegion, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector, storm::analysis::MonotonicityResult<VariableType> & monRes) const {
+        void RegionModelChecker<ParametricType>::splitSmart(storm::storage::ParameterRegion<ParametricType> & currentRegion, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector, std::shared_ptr<storm::analysis::Order> order, storm::analysis::MonotonicityResult<VariableType> & monRes) const {
             STORM_LOG_WARN("Smart splitting for this model checker not implemented");
             currentRegion.split(currentRegion.getCenterPoint(), regionVector);
-        }
-
-        template<typename ParametricType>
-        void RegionModelChecker<ParametricType>::splitSmart(storage::ParameterRegion<ParametricType> &currentRegion, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector,
-                                                            std::shared_ptr<storm::analysis::Order> order) {
-            STORM_LOG_WARN("Smart splitting for this model checker not implemented");
-            currentRegion.split(currentRegion.getCenterPoint(), regionVector);
-
         }
 
         template<typename ParametricType>

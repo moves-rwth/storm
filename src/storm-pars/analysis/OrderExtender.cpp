@@ -576,9 +576,9 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t>
-        OrderExtender<ValueType, ConstantType>::getUnknownStates(std::shared_ptr<Order> order) {
+        OrderExtender<ValueType, ConstantType>::getUnknownStates(std::shared_ptr<Order> order) const {
             if (unknownStatesMap.find(order) != unknownStatesMap.end()) {
-                return unknownStatesMap[order];
+                return unknownStatesMap.at(order);
             }
             return std::pair<uint_fast64_t, uint_fast64_t>(numberOfStates, numberOfStates);
         }

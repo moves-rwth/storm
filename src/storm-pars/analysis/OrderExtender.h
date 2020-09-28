@@ -79,7 +79,7 @@ namespace storm {
 
             void setUnknownStates(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2);
 
-            std::pair<uint_fast64_t, uint_fast64_t> getUnknownStates(std::shared_ptr<Order> order);
+            std::pair<uint_fast64_t, uint_fast64_t> getUnknownStates(std::shared_ptr<Order> order) const;
             void setUnknownStates(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
             void copyMinMax(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
 
