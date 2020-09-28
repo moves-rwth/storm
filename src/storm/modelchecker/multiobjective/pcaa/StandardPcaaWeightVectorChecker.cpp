@@ -192,10 +192,10 @@ namespace storm {
             }
             
             template <typename ValueType>
-            void computeSchedulerProb1(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& consideredStates,  storm::storage::BitVector& statesToReach, std::vector<uint64_t>& choices) {
+            void computeSchedulerProb1(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& consideredStates, storm::storage::BitVector const& statesToReach, std::vector<uint64_t>& choices, storm::storage::BitVector const* allowedChoices = nullptr) {
                 
                 std::vector<uint64_t> stack;
-                storm::storage::BitVector& processedStates = statesToReach;
+                storm::storage::BitVector processedStates = statesToReach;
                 stack.insert(stack.end(), processedStates.begin(), processedStates.end());
                 uint64_t currentState = 0;
                 
@@ -209,8 +209,8 @@ namespace storm {
                             // Find a choice leading to an already processed state (such a choice has to exist since this is a predecessor of the currentState)
                             auto const& groupStart = transitionMatrix.getRowGroupIndices()[predecessor];
                             auto const& groupEnd = transitionMatrix.getRowGroupIndices()[predecessor + 1];
-                            uint64_t row = groupStart;
-                            for (; row < groupEnd; ++row) {
+                            uint64_t row = allowedChoices ? allowedChoices->getNextSetIndex(groupStart) : groupStart;
+                            for (; row < groupEnd; row = allowedChoices ? allowedChoices->getNextSetIndex(row + 1) : row + 1) {
                                 bool hasSuccessorInProcessedStates = false;
                                 for (auto const& successorOfPredecessor : transitionMatrix.getRow(row)) {
                                     if (processedStates.get(successorOfPredecessor.getColumn())) {
@@ -225,11 +225,35 @@ namespace storm {
                                     break;
                                 }
                             }
-                            STORM_LOG_ASSERT(row < groupEnd, "Unable to find choice at a predecessor of a processed state that leads to a processed state.");
+                            STORM_LOG_ASSERT(allowedChoices || row < groupEnd, "Unable to find choice at a predecessor of a processed state that leads to a processed state.");
                         }
                     }
                 }
                 STORM_LOG_ASSERT(consideredStates.isSubsetOf(processedStates), "Not all states have been processed.");
+            }
+            
+            template <typename ValueType>
+            void computeSchedulerProb0(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& consideredStates, storm::storage::BitVector const& statesToAvoid, storm::storage::BitVector const& allowedChoices, std::vector<uint64_t>& choices) {
+                
+                for (auto state : consideredStates) {
+                    auto const& groupStart = transitionMatrix.getRowGroupIndices()[state];
+                    auto const& groupEnd = transitionMatrix.getRowGroupIndices()[state + 1];
+                    bool choiceFound = false;
+                    for (uint64_t row = allowedChoices.getNextSetIndex(groupStart); row < groupEnd; row = allowedChoices.getNextSetIndex(row + 1)) {
+                        choiceFound = true;
+                        for (auto const& element : transitionMatrix.getRow(row)) {
+                            if (statesToAvoid.get(element.getColumn())) {
+                                choiceFound = false;
+                                break;
+                            }
+                        }
+                        if (choiceFound) {
+                            choices[state] = row - groupStart;
+                            break;
+                        }
+                    }
+                    STORM_LOG_ASSERT(choiceFound, "Unable to find choice for a state.");
+                }
             }
             
             template <typename ValueType>
@@ -249,42 +273,28 @@ namespace storm {
                 return result;
             }
             
+            
+            
             /*!
              * Computes a scheduler taking the choices from the given set only finitely often
+             * @param safeStates it is assumed that reaching such a state is unproblematic. The choice for these states is not set.
              * @pre such a scheduler exists
              */
             template <typename ValueType>
-            std::vector<uint64_t> computeSchedulerFinitelyOften(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& finitelyOftenChoices) {
-                std::vector<uint64_t> result(transitionMatrix.getRowGroupCount(), 0);
-                auto badStates = transitionMatrix.getRowGroupFilter(finitelyOftenChoices, true);
+            void computeSchedulerFinitelyOften(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& finitelyOftenChoices, storm::storage::BitVector safeStates, std::vector<uint64_t>& choices) {
+                auto badStates = transitionMatrix.getRowGroupFilter(finitelyOftenChoices, true) & ~safeStates;
                 // badStates shall only be reached finitely often
                 
-                auto reachBadWithProbGreater0AStates = storm::utility::graph::performProbGreater0A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, ~badStates, badStates, false, 0, ~finitelyOftenChoices);
-                // States in ~reachBadWithProbGreater0AStates can avoid bad states forever by only taking ~finitelyOftenChoices. We compute a scheduler for these states achieving exactly this
-                auto avoidBadStates = ~reachBadWithProbGreater0AStates;
-                for (auto state : avoidBadStates) {
-                    auto const& groupStart = transitionMatrix.getRowGroupIndices()[state];
-                    auto const& groupEnd = transitionMatrix.getRowGroupIndices()[state + 1];
-                    for (auto choice = finitelyOftenChoices.getNextUnsetIndex(groupStart); choice < groupEnd; choice = finitelyOftenChoices.getNextUnsetIndex(choice + 1)) {
-                        bool allSuccessorsAvoidBadStates = true;
-                        for (auto const& element : transitionMatrix.getRow(choice)) {
-                            if (!avoidBadStates.get(element.getColumn())) {
-                                allSuccessorsAvoidBadStates = false;
-                                break;
-                            }
-                        }
-                        if (allSuccessorsAvoidBadStates) {
-                            result[state] = choice - groupStart;
-                            break;
-                        }
-                    }
-                }
-
-                // Finally, we need to take care of states that will reach a bad state with prob greater 0 (including the bad states themselves).
+                auto reachBadWithProbGreater0AStates = storm::utility::graph::performProbGreater0A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardTransitions, ~safeStates, badStates, false, 0, ~finitelyOftenChoices);
+                // States in ~reachBadWithProbGreater0AStates can avoid bad states forever by only taking ~finitelyOftenChoices.
+                // We compute a scheduler for these states achieving exactly this (but we exclude the safe states)
+                auto avoidBadStates = ~reachBadWithProbGreater0AStates & ~safeStates;
+                computeSchedulerProb0(transitionMatrix, backwardTransitions, avoidBadStates, reachBadWithProbGreater0AStates, ~finitelyOftenChoices, choices);
+                
+                // We need to take care of states that will reach a bad state with prob greater 0 (including the bad states themselves).
                 // due to the precondition, we know that it has to be possible to eventually avoid the bad states for ever.
                 // Perform a backwards search from the avoid states and store choices with prob. 1
-                computeSchedulerProb1(transitionMatrix, backwardTransitions, reachBadWithProbGreater0AStates, avoidBadStates, result);
-                return result;
+                computeSchedulerProb1(transitionMatrix, backwardTransitions, reachBadWithProbGreater0AStates, avoidBadStates | safeStates, choices);
             }
             
             template <class SparseModelType>
@@ -312,10 +322,19 @@ namespace storm {
             
             template <class SparseModelType>
             void StandardPcaaWeightVectorChecker<SparseModelType>::unboundedWeightedPhase(Environment const& env, std::vector<ValueType> const& weightedRewardVector, std::vector<ValueType> const& weightVector) {
-                if (this->objectivesWithNoUpperTimeBound.empty() || (this->lraObjectives.empty() && !storm::utility::vector::hasNonZeroEntry(weightedRewardVector))) {
-                    this->weightedResult = std::vector<ValueType>(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+                // Catch the case where all values on the RHS of the MinMax equation system are zero.
+                if (this->objectivesWithNoUpperTimeBound.empty() || ((this->lraObjectives.empty() || !storm::utility::vector::hasNonZeroEntry(lraMecDecomposition->auxMecValues)) && !storm::utility::vector::hasNonZeroEntry(weightedRewardVector))) {
+                    this->weightedResult.assign(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+                    storm::storage::BitVector statesInLraMec(transitionMatrix.getRowGroupCount(), false);
+                    if (this->lraMecDecomposition) {
+                        for (auto const& mec : this->lraMecDecomposition->mecs) {
+                            for (auto const& sc : mec) {
+                                statesInLraMec.set(sc.first, true);
+                            }
+                        }
+                    }
                     // Get an arbitrary scheduler that yields finite reward for all objectives
-                    this->optimalChoices = computeSchedulerFinitelyOften(transitionMatrix, transitionMatrix.transpose(true), ~actionsWithoutRewardInUnboundedPhase);
+                    computeSchedulerFinitelyOften(transitionMatrix, transitionMatrix.transpose(true), ~actionsWithoutRewardInUnboundedPhase, statesInLraMec, this->optimalChoices);
                     return;
                 }
                 
@@ -674,39 +693,80 @@ namespace storm {
                     uint_fast64_t origChoice = ecQuotient->ecqToOriginalChoiceMapping[ecqChoice];
                     auto const& origStates = ecQuotient->ecqToOriginalStateMapping[ecqState];
                     STORM_LOG_ASSERT(!origStates.empty(), "Unexpected empty set of original states.");
-                    bool origStatesNeedSchedulerComputation = false;
-                    if (ecQuotient->ecqStayInEcChoices.get(ecqChoice) && !ecqStateToOptimalMecMap.empty()) {
-                        // The current ecqState represents an elimnated EC and we need to stay in this EC and we need to make sure that optimal MEC decisions are performed within this EC.
-                        STORM_LOG_ASSERT(ecqStateToOptimalMecMap.count(ecqState) > 0, "No Lra Mec associated to given eliminated EC");
-                        auto const& lraMec = lraMecDecomposition->mecs[ecqStateToOptimalMecMap.at(ecqState)];
-                        if (lraMec.size() == origStates.size()) {
-                            // LRA mec and eliminated EC coincide
-                            for (auto const& state : origStates) {
-                                STORM_LOG_ASSERT(lraMec.containsState(state), "Expected state to be contained in the lra mec.");
-                                // Note that the optimal choice for this state has already been set in the infinite horizon phase.
-                                unprocessedStates.set(state, false);
-                                originalSolution[state] = ecqSolution[ecqState];
+                    if (ecQuotient->ecqStayInEcChoices.get(ecqChoice)) {
+                        // We stay in the current state(s) forever (End component)
+                        // We need to set choices in a way that (i) the optimal LRA Mec is reached (if there is any) and (ii) 0 total reward is collected.
+                        if (!ecqStateToOptimalMecMap.empty()) {
+                            // The current ecqState represents an elimnated EC and we need to stay in this EC and we need to make sure that optimal MEC decisions are performed within this EC.
+                            STORM_LOG_ASSERT(ecqStateToOptimalMecMap.count(ecqState) > 0, "No Lra Mec associated to given eliminated EC");
+                            auto const& lraMec = lraMecDecomposition->mecs[ecqStateToOptimalMecMap.at(ecqState)];
+                            if (lraMec.size() == origStates.size()) {
+                                // LRA mec and eliminated EC coincide
+                                for (auto const& state : origStates) {
+                                    STORM_LOG_ASSERT(lraMec.containsState(state), "Expected state to be contained in the lra mec.");
+                                    // Note that the optimal choice for this state has already been set in the infinite horizon phase.
+                                    unprocessedStates.set(state, false);
+                                    originalSolution[state] = ecqSolution[ecqState];
+                                }
+                            } else {
+                                // LRA mec is proper subset of eliminated ec. There are also other states for which we have to set choices leading to the LRA MEC inside.
+                                STORM_LOG_ASSERT(lraMec.size() < origStates.size(), "Lra Mec should be a proper subset of the eliminated ec.");
+                                for (auto const& state : origStates) {
+                                    if (lraMec.containsState(state)) {
+                                        ecStatesToReach.set(state, true);
+                                        // Note that the optimal choice for this state has already been set in the infinite horizon phase.
+                                    } else {
+                                        ecStatesToProcess.set(state, true);
+                                    }
+                                    unprocessedStates.set(state, false);
+                                    originalSolution[state] = ecqSolution[ecqState];
+                                }
+                                computeSchedulerProb1(transitionMatrix, backwardsTransitions, ecStatesToProcess, ecStatesToReach, originalOptimalChoices);
+                                // Clear bitvectors for next ecqState.
+                                ecStatesToProcess.clear();
+                                ecStatesToReach.clear();
                             }
                         } else {
-                            // LRA mec is proper subset of eliminated ec. There are also other states for which we have to set choices leading to the LRA MEC inside.
-                            STORM_LOG_ASSERT(lraMec.size() < origStates.size(), "Lra Mec should be a proper subset of the eliminated ec.");
-                            origStatesNeedSchedulerComputation = true;
+                            // If there is no LRA Mec to reach, we just need to make sure that finite total reward is collected for all objectives
+                            // In this branch our BitVectors have a slightly different meaning, so we create more readable aliases
+                            storm::storage::BitVector& ecStatesToAvoid = ecStatesToReach;
+                            bool needSchedulerComputation = false;
+                            STORM_LOG_ASSERT(storm::utility::isZero(ecqSolution[ecqState]), "Solution for state that stays inside EC must be zero. Got " << ecqSolution[ecqState] << " instead.");
                             for (auto const& state : origStates) {
-                                if (lraMec.containsState(state)) {
-                                    ecStatesToReach.set(state, true);
-                                    // Note that the optimal choice for this state has already been set in the infinite horizon phase.
-                                } else {
-                                    ecStatesToProcess.set(state, true);
-                                }
-                                unprocessedStates.set(state, false);
-                                originalSolution[state] = ecqSolution[ecqState];
+                                originalSolution[state] = storm::utility::zero<ValueType>(); // i.e. ecqSolution[ecqState];
+                                ecStatesToProcess.set(state, true);
                             }
+                            auto validChoices = transitionMatrix.getRowFilter(ecStatesToProcess, ecStatesToProcess);
+                            auto valid0RewardChoices = validChoices & actionsWithoutRewardInUnboundedPhase;
+                            for (auto const& state : origStates) {
+                                auto groupStart = transitionMatrix.getRowGroupIndices()[state];
+                                auto groupEnd = transitionMatrix.getRowGroupIndices()[state + 1];
+                                auto nextValidChoice = valid0RewardChoices.getNextSetIndex(groupStart);
+                                if (nextValidChoice < groupEnd) {
+                                    originalOptimalChoices[state] = nextValidChoice - groupStart;
+                                } else {
+                                    // this state should not be reached infinitely often
+                                    ecStatesToAvoid.set(state, true);
+                                    needSchedulerComputation = true;
+                                }
+                            }
+                            if (needSchedulerComputation) {
+                                // There are ec states which we should not visit infinitely often
+                                auto ecStatesThatCanAvoid = storm::utility::graph::performProbGreater0A(transitionMatrix, transitionMatrix.getRowGroupIndices(), backwardsTransitions, ecStatesToProcess, ecStatesToAvoid, false, 0, valid0RewardChoices);
+                                ecStatesThatCanAvoid.complement();
+                                // Set the choice for all states that can achieve value 0
+                                computeSchedulerProb0(transitionMatrix, backwardsTransitions, ecStatesThatCanAvoid, ecStatesToAvoid, valid0RewardChoices, originalOptimalChoices);
+                                // Set the choice for all remaining states
+                                computeSchedulerProb1(transitionMatrix, backwardsTransitions, ecStatesToProcess & ~ecStatesToAvoid, ecStatesToAvoid, originalOptimalChoices, &validChoices);
+                            }
+                            ecStatesToAvoid.clear();
+                            ecStatesToProcess.clear();
                         }
                     } else {
+                        // We eventually leave the current state(s)
                         // In this case, we can safely take the origChoice at the corresponding state (say 's').
                         // For all other origStates associated with ecqState (if there are any), we make sure that the state 's' is reached almost surely.
                         if (origStates.size() > 1) {
-                            origStatesNeedSchedulerComputation = true;
                             for (auto const& state : origStates) {
                                 // Check if the orig choice originates from this state
                                 auto groupStart = transitionMatrix.getRowGroupIndices()[state];
@@ -721,6 +781,10 @@ namespace storm {
                                 unprocessedStates.set(state, false);
                                 originalSolution[state] = ecqSolution[ecqState];
                             }
+                            computeSchedulerProb1(transitionMatrix, backwardsTransitions, ecStatesToProcess, ecStatesToReach, originalOptimalChoices);
+                            // Clear bitvectors for next ecqState.
+                            ecStatesToProcess.clear();
+                            ecStatesToReach.clear();
                         } else {
                             // There is just one state so we take the associated choice.
                             auto state = *origStates.begin();
@@ -731,19 +795,29 @@ namespace storm {
                             unprocessedStates.set(state, false);
                         }
                     }
-                    if (origStatesNeedSchedulerComputation) {
-                        computeSchedulerProb1(transitionMatrix, backwardsTransitions, ecStatesToProcess, ecStatesToReach, originalOptimalChoices);
-                        // These states have only been altered if the origStatesNeedSchedulerComputation flag has been set to true. Hence, they only need to be cleared in this if-branch.
-                        ecStatesToProcess.clear();
-                        ecStatesToReach.clear();
-                    }
                 }
                 
                 // The states that still not have been processed, there is no associated state of the ec quotient.
                 // This is because the value for these states will be 0 under all (lra optimal-) schedulers.
-                // We thus do not change the choices at these states (to remain LRA optimality) and just set the result to 0
                 storm::utility::vector::setVectorValues(originalSolution, unprocessedStates, storm::utility::zero<ValueType>());
-                
+                // Get a set of states for which we know that no reward (for all objectives) will be collected
+                if (this->lraMecDecomposition) {
+                    // In this case, all unprocessed non-lra mec states should reach an (unprocessed) lra mec
+                    for (auto const& mec : this->lraMecDecomposition->mecs) {
+                        for (auto const& sc : mec) {
+                            if (unprocessedStates.get(sc.first)) {
+                                ecStatesToReach.set(sc.first, true);
+                            }
+                        }
+                    }
+                } else {
+                    ecStatesToReach = unprocessedStates & totalReward0EStates;
+                    // Set a scheduler for the ecStates that we want to reach
+                    computeSchedulerProb0(transitionMatrix, backwardsTransitions, ecStatesToReach, ~unprocessedStates | ~totalReward0EStates, actionsWithoutRewardInUnboundedPhase, originalOptimalChoices);
+                }
+                unprocessedStates &= ~ecStatesToReach;
+                // Set a scheduler for the remaining states
+                computeSchedulerProb1(transitionMatrix, backwardsTransitions, unprocessedStates, ecStatesToReach, originalOptimalChoices);
             }
             
             
