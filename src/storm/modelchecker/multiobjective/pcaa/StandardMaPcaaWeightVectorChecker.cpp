@@ -73,7 +73,9 @@ namespace storm {
             storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<typename SparseMdpModelType::ValueType> StandardMaPcaaWeightVectorChecker<SparseMdpModelType>::createDetInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitions) const {
                 STORM_LOG_ASSERT(transitions.getRowGroupCount() == this->transitionMatrix.getRowGroupCount(), "Unexpected size of given matrix.");
                 // TODO: Right now, there is no dedicated support for "deterministic" Markov automata so we have to pick the nondeterministic one.
-                return storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType>(transitions, this->markovianStates, this->exitRates);
+                auto result = storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType>(transitions, this->markovianStates, this->exitRates);
+                result.setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
+                return result;
             }
             
             template <class SparseMaModelType>

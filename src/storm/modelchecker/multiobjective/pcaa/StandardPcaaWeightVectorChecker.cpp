@@ -118,7 +118,9 @@ namespace storm {
                         ValueType weight = storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType()) ? -weightVector[objIndex] : weightVector[objIndex];
                         storm::utility::vector::addScaledVector(weightedRewardVector, actionRewards[objIndex], weight);
                         if (!stateRewards.empty() && !stateRewards[objIndex].empty()) {
-                            weightedStateRewardVector->resize(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+                            if (!weightedStateRewardVector) {
+                                weightedStateRewardVector = std::vector<ValueType>(transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+                            }
                             storm::utility::vector::addScaledVector(weightedStateRewardVector.get(), stateRewards[objIndex], weight);
                         }
                     }
