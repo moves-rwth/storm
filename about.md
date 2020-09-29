@@ -80,7 +80,7 @@ While Storm tries to make it easy to include new functionality, a developer stil
 ## People
 
 The developers can be reached via
-- <i class="fa fa-envelope" aria-hidden="true"></i> storm-dev ```at``` i2.informatik.rwth-aachen.de
+- <i class="fa fa-envelope" aria-hidden="true"></i> support ```at``` stormchecker.org
 
 If you have general feedback or questions on how to use Storm, please send us a mail.
 
@@ -120,7 +120,7 @@ Responsible for this website is
 ```text
 Software Modeling and Verification Group (MOVES)
 RWTH Aachen University, Aachen, Germany
-E-mail: storm-dev [at] i2 [dot] informatik [dot] rwth-aachen [dot] de
+E-mail: support [at] stormchecker [dot] org
 Phone: +49 241 8021203
 ```
 ## References
