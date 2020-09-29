@@ -93,7 +93,7 @@ namespace storm {
                 // Set data for LRA objectives (if available)
                 if (!lraObjectives.empty()) {
                     lraMecDecomposition = LraMecDecomposition();
-                    lraMecDecomposition->mecs = storm::storage::MaximalEndComponentDecomposition<ValueType>(transitionMatrix, transitionMatrix.transpose(true), totalReward0EStates, actionsWithoutRewardInUnboundedPhase);
+                    lraMecDecomposition->mecs = storm::storage::MaximalEndComponentDecomposition<ValueType>(transitionMatrix, transitionMatrix.transpose(true), storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), actionsWithoutRewardInUnboundedPhase);
                     lraMecDecomposition->auxMecValues.resize(lraMecDecomposition->mecs.size());
                 }
                 
@@ -710,7 +710,7 @@ namespace storm {
                                 }
                             } else {
                                 // LRA mec is proper subset of eliminated ec. There are also other states for which we have to set choices leading to the LRA MEC inside.
-                                STORM_LOG_ASSERT(lraMec.size() < origStates.size(), "Lra Mec should be a proper subset of the eliminated ec.");
+                                STORM_LOG_ASSERT(lraMec.size() < origStates.size(), "Lra Mec (" << lraMec.size() << " states) should be a proper subset of the eliminated ec (" << origStates.size() << " states).");
                                 for (auto const& state : origStates) {
                                     if (lraMec.containsState(state)) {
                                         ecStatesToReach.set(state, true);
