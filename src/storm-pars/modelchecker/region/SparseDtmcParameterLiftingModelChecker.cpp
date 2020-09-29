@@ -265,7 +265,7 @@ namespace storm {
         }
         
         template <typename SparseModelType, typename ConstantType>
-        std::unique_ptr<CheckResult> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::Order> reachabilityOrder, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) {
+        std::unique_ptr<CheckResult> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) {
             typedef typename storm::analysis::MonotonicityResult<VariableType>::Monotonicity Monotonicity;
 
             if (maybeStates.empty()) {
@@ -315,40 +315,31 @@ namespace storm {
                     }
 
                     for (auto state = 0; state < parameterLifter->getRowGroupCount(); ++state) {
-                        if (reachabilityOrder->isBottomState(state) || reachabilityOrder->isTopState(state)) {
-                            // Do nothing
-                        } else {
-                            auto variables = parameterLifter->getOccurringVariablesAtState()[state];
-                            // point at which we start with rows for this state
-                            auto rowGroupIndex = parameterLifter->getRowGroupIndex(state);
-                            // number of rows (= #transitions) for this state
-                            auto numberOfRows = parameterLifter->getRowGroupSize(state);
-                            // variable at pos. index, changes lower/upperbound at 2^index
-                            // within a rowgroup we interprete vertexId as a bit sequence
-                            // the consideredVariables.size() least significant bits of vertex will always represent the next vertex
-                            // (00...0 = lower boundaries for all variables, 11...1 = upper boundaries for all variables)
-                            auto index = 0;
+                        auto variables = parameterLifter->getOccurringVariablesAtState()[state];
+                        // point at which we start with rows for this state
+                        auto rowGroupIndex = parameterLifter->getRowGroupIndex(state);
+                        // number of rows (= #transitions) for this state
+                        auto numberOfRows = parameterLifter->getRowGroupSize(state);
 
-                            assert (std::pow(2, variables.size()) == numberOfRows);
+                        STORM_LOG_THROW(variables.size() <= 1, storm::exceptions::NotImplementedException, "Using localMonRes not yet implemented for states with 2 or more variables, please run without --use-monotonicity");
+                        assert (variables.size() == 0 || numberOfRows == 2);//std::pow(2, variables.size()) == numberOfRows);
 
-                            STORM_LOG_THROW(variables.size() <= 1, storm::exceptions::NotImplementedException, "Using localMonRes not yet implemented for states with 2 or more variables, please run without --use-monotonicity");
-                            for (auto var : variables) {
-                                auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
+                        for (auto var : variables) {
+                            auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
 
-                                bool ignoreUpperBound = monotonicity == Monotonicity::Constant || (useMinimize && monotonicity == Monotonicity::Incr) || (!useMinimize && monotonicity == Monotonicity::Decr);
-                                bool ignoreLowerBound = !ignoreUpperBound && ((useMinimize && monotonicity == Monotonicity::Decr) || (!useMinimize && monotonicity == Monotonicity::Incr));
-                                if (ignoreLowerBound) {
-                                    if (useMinimize) {
-                                        minSchedChoices.get()[state] = 1;
-                                    } else {
-                                        maxSchedChoices.get()[state] = 1;
-                                    }
-                                } else if (ignoreUpperBound) {
-                                    if (useMinimize) {
-                                        minSchedChoices.get()[state] = 0;
-                                    } else {
-                                        maxSchedChoices.get()[state] = 0;
-                                    }
+                            bool ignoreUpperBound = monotonicity == Monotonicity::Constant || (useMinimize && monotonicity == Monotonicity::Incr) || (!useMinimize && monotonicity == Monotonicity::Decr);
+                            bool ignoreLowerBound = !ignoreUpperBound && ((useMinimize && monotonicity == Monotonicity::Decr) || (!useMinimize && monotonicity == Monotonicity::Incr));
+                            if (ignoreLowerBound) {
+                                if (useMinimize) {
+                                    minSchedChoices.get()[state] = 1;
+                                } else {
+                                    maxSchedChoices.get()[state] = 1;
+                                }
+                            } else if (ignoreUpperBound) {
+                                if (useMinimize) {
+                                    minSchedChoices.get()[state] = 0;
+                                } else {
+                                    maxSchedChoices.get()[state] = 0;
                                 }
                             }
                         }
@@ -611,8 +602,9 @@ namespace storm {
                 storm::storage::ParameterRegion<typename SparseModelType::ValueType> &region,
                 std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> &regionVector,
                 std::shared_ptr<storm::analysis::Order> order,
-                storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> & monRes) const{
-            if (this->orderExtender) {
+                storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> & monRes) const {
+            assert (order !=  nullptr);
+            if (!order->getDoneBuilding() && this->orderExtender) {
                 auto states = this->orderExtender.get().getUnknownStates((order));
                 if (states.first != states.second) {
                     auto variablesAtStates = parameterLifter->getOccurringVariablesAtState();
