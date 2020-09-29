@@ -1,7 +1,7 @@
 #pragma once
 
 #include <set>
-
+#include <string>
 
 namespace storm {
     namespace parser {
