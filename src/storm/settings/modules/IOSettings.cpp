@@ -50,6 +50,7 @@ namespace storm {
             const std::string IOSettings::qvbsInputOptionName = "qvbs";
             const std::string IOSettings::qvbsInputOptionShortName = "qvbs";
             const std::string IOSettings::qvbsRootOptionName = "qvbsroot";
+            const std::string IOSettings::propertiesAsMultiOptionName = "propsasmulti";
 
             std::string preventDRNPlaceholderOptionName = "no-drn-placeholders";
             
@@ -103,6 +104,9 @@ namespace storm {
                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("instance-index", "The selected instance of this model.").setDefaultValueUnsignedInteger(0).makeOptional().build())
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "The comma separated list of property names to check. Omit to check all, \"\" to check none.").setDefaultValueString("").makeOptional().build())
                         .build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, propertiesAsMultiOptionName, false, "If set, the selected properties are interpreted as a multi-objective formula.").setIsAdvanced().build());
+                
 #ifdef STORM_HAVE_QVBS
                 std::string qvbsRootDefault = STORM_QVBS_ROOT;
 #else
@@ -319,6 +323,10 @@ namespace storm {
                 STORM_LOG_THROW(this->getOption(qvbsRootOptionName).getHasOptionBeenSet(), storm::exceptions::InvalidSettingsException, "QVBS Root is not specified. Either use the --" + qvbsRootOptionName + " option or specify it within CMAKE.");
 #endif
                 return path.getValueAsString();
+            }
+            
+            bool IOSettings::isPropertiesAsMultiSet() const {
+                return this->getOption(propertiesAsMultiOptionName).getHasOptionBeenSet();
             }
             
 			void IOSettings::finalize() {
