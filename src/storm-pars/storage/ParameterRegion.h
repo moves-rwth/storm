@@ -69,6 +69,7 @@ namespace storm {
 
             void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector, storm::analysis::MonotonicityResult<VariableType> & monRes, bool onlyMonotoneVars, double parameterThreshold);
             Valuation getPoint(storm::solver::OptimizationDirection dir, storm::analysis::MonotonicityResult<VariableType> & monRes);
+            Valuation getPoint(storm::solver::OptimizationDirection dir, std::set<VariableType> const& possibleMonotoneIncrParameters, std::set<VariableType>const & possibleMonotoneDecrParameters) const;
 
             //returns the region as string in the format 0.3<=p<=0.4,0.2<=q<=0.5;
             std::string toString(bool boundariesAsDouble = false) const;

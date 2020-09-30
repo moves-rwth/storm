@@ -501,19 +501,26 @@ namespace storm {
             auto val = this->getCenterPoint();
             for (auto monRes : monRes.getMonotonicityResult()) {
                 if (monRes.second == storm::analysis::MonotonicityResult<VariableType>::Monotonicity::Incr) {
-                    if (storm::solver::minimize(dir)) {
-                        val[monRes.first] = getLowerBoundary(monRes.first);
-                    } else {
-                        val[monRes.first] = getUpperBoundary(monRes.first);
-                    }
+                    val[monRes.first] = storm::solver::minimize(dir) ? getLowerBoundary(monRes.first) : getUpperBoundary(monRes.first);
                 } else if (monRes.second == storm::analysis::MonotonicityResult<VariableType>::Monotonicity::Decr) {
-                    if (storm::solver::minimize(dir)) {
-                        val[monRes.first] = getUpperBoundary(monRes.first);
-                    } else {
-                        val[monRes.first] = getLowerBoundary(monRes.first);
-                    }
+                    val[monRes.first] = storm::solver::maximize(dir) ? getLowerBoundary(monRes.first) : getUpperBoundary(monRes.first);
                 }
             }
+            return val;
+        }
+
+        template<typename ParametricType>
+        typename ParameterRegion<ParametricType>::Valuation ParameterRegion<ParametricType>::getPoint(storm::solver::OptimizationDirection dir,
+                                                                             std::set<VariableType> const &possibleMonotoneIncrParameters,
+                                                                             std::set<VariableType> const &possibleMonotoneDecrParameters) const{
+            auto val = this->getCenterPoint();
+            for (auto var : possibleMonotoneIncrParameters) {
+                val[var] = storm::solver::minimize(dir) ? getLowerBoundary(var) : getUpperBoundary(var);
+            }
+            for (auto var : possibleMonotoneDecrParameters) {
+                val[var] = storm::solver::maximize(dir) ? getLowerBoundary(var) : getUpperBoundary(var);
+            }
+
 
             return val;
         }

@@ -236,25 +236,39 @@ namespace storm {
             boost::optional<ConstantType> value;
             typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation valuation;
 
-            std::set<VariableType> possibleMonotoneVariables;
             if (this->isUseMonotonicitySet()) {
-                checkForPossibleMonotonicity(env, region, possibleMonotoneVariables);
-            }
-            auto vertices = this->isUseMonotonicitySet() ? region.getVerticesOfRegion(possibleMonotoneVariables) : region.getVerticesOfRegion(region.getVariables());
-
-            for (auto &v : vertices) {
-                if (vertices.size() < std::pow(2, region.getVariables().size())) {
-                    for (auto const &var : region.getVariables()) {
-                        if (v.find(var) == v.end()) {
-                            v.insert({var, region.getUpperBoundary(var)});
+                // Only split vertices which are not monotone
+                std::set<VariableType> possibleMonotoneIncrVariables, possibleMonotoneDecrVariables, possibleNotMonotoneVariables;
+                checkForPossibleMonotonicity(env, region, possibleMonotoneIncrVariables, possibleMonotoneDecrVariables, possibleNotMonotoneVariables);
+                if (possibleNotMonotoneVariables.size() == 0) {
+                    valuation = region.getPoint(dir, possibleMonotoneIncrVariables, possibleMonotoneDecrVariables);
+                    value = getInstantiationChecker().check(env, valuation)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
+                    STORM_LOG_INFO("Current value for extremum: " << value.get() << ".");
+                } else {
+                    for (auto &v : region.getVerticesOfRegion(possibleNotMonotoneVariables)) {
+                        auto point = region.getPoint(dir, possibleMonotoneIncrVariables, possibleMonotoneDecrVariables);
+                        for (auto const &var : possibleMonotoneIncrVariables) {
+                            v.insert({var, point[var]});
+                        }
+                        for (auto const &var : possibleMonotoneDecrVariables) {
+                            v.insert({var, point[var]});
+                        }
+                        auto currValue = getInstantiationChecker().check(env, v)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
+                        if (!value.is_initialized() || (storm::solver::minimize(dir) ? currValue < value.get() : currValue > value.get())) {
+                            value = currValue;
+                            valuation = v;
+                            STORM_LOG_INFO("Current value for extremum: " << value.get() << ".");
                         }
                     }
                 }
-                auto currValue = getInstantiationChecker().check(env, v)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
-                if (!value.is_initialized() || (storm::solver::minimize(dir) ? currValue < value.get() : currValue > value.get())) {
-                    value = currValue;
-                    valuation = v;
-                    STORM_LOG_INFO("Current value for extremum: " << value.get() << ".");
+            } else {
+                for (auto &v : region.getVerticesOfRegion(region.getVariables())) {
+                    auto currValue = getInstantiationChecker().check(env, v)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
+                    if (!value.is_initialized() || (storm::solver::minimize(dir) ? currValue < value.get() : currValue > value.get())) {
+                        value = currValue;
+                        valuation = v;
+                        STORM_LOG_INFO("Current value for extremum: " << value.get() << ".");
+                    }
                 }
             }
 
@@ -308,7 +322,6 @@ namespace storm {
 
                 // Check whether this region needs further investigation (i.e. splitting)
                 auto bounds = getBound(env, currRegion, dir, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-
                 auto currBound = bounds[*this->parametricModel->getInitialStates().begin()];
 
                 if ((storm::solver::minimize(dir) && currBound < value.get() - storm::utility::convertNumber<ConstantType>(precision))
@@ -411,8 +424,10 @@ namespace storm {
 
         template<typename SparseModelType, typename ConstantType>
         void SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::checkForPossibleMonotonicity(Environment const& env,
-                                                                                                                 const storage::ParameterRegion<typename SparseModelType::ValueType> &region,
-                                                                                                                 std::set<VariableType>& possibleMonotoneParameters) {
+                                                                                                             const storage::ParameterRegion<typename SparseModelType::ValueType> &region,
+                                                                                                             std::set<VariableType>& possibleMonotoneIncrParameters,
+                                                                                                             std::set<VariableType>& possibleMonotoneDecrParameters,
+                                                                                                             std::set<VariableType>& possibleNotMonotoneParameters) {
 
             // For each of the variables create a model in which we only change the value for this specific variable
             auto consideredVariables = region.getVariables();
@@ -449,12 +464,15 @@ namespace storm {
                     valuation[var] += stepSize;
 
                 }
-                if (!monDecr && !monIncr) {
-                    possibleMonotoneParameters.insert(var);
+                if (monIncr) {
+                    possibleMonotoneIncrParameters.insert(var);
+                } else if (monDecr) {
+                    possibleMonotoneDecrParameters.insert(var);
+                } else {
+                    possibleNotMonotoneParameters.insert(var);
                 }
             }
         }
-
 
         template class SparseParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
         template class SparseParameterLiftingModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>, double>;
