@@ -102,6 +102,42 @@ namespace storm {
                 std::reverse(statesSorted.begin(),statesSorted.end());
                 bottomTopOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, numberOfStates, &statesSorted));
             }
+            auto transpose = matrix.transpose();
+            for (auto const& bottom : bottomTopOrder->getBottom()->states) {
+                auto currentStates = transpose.getRow(bottom);
+                for (auto const &rowEntry : currentStates) {
+                    auto currentState = rowEntry.getColumn();
+                    if (currentState != bottom) {
+                        if (bottomTopOrder->contains(currentState)) {
+                            bottomTopOrder->addAbove(currentState, bottomTopOrder->getBottom());
+                        } else {
+                            bottomTopOrder->add(currentState);
+                        }
+                        if (stateMap[currentState].size() == 2) {
+                            bottomTopOrder->addStateToHandle(currentState);
+                        }
+                    }
+                }
+            }
+
+            for (auto const& bottom : bottomTopOrder->getTop()->states) {
+                auto currentStates = transpose.getRow(bottom);
+                for (auto const &rowEntry : currentStates) {
+                    auto currentState = rowEntry.getColumn();
+                    if (currentState != bottom) {
+                        if (bottomTopOrder->contains(currentState)) {
+                            bottomTopOrder->addBelow(currentState, bottomTopOrder->getTop());
+                        } else {
+                            bottomTopOrder->add(currentState);
+                        }
+                        if (stateMap[currentState].size() == 2) {
+                            bottomTopOrder->addStateToHandle(currentState);
+                        }
+                    }
+                }
+            }
+
+
             return bottomTopOrder;
         }
 
@@ -216,43 +252,49 @@ namespace storm {
                 order = getBottomTopOrder();
             }
             auto currentState = order->getNextSortedState();
-            while ((*order->getAddedStates())[currentState]) {
-                currentState = order->getNextSortedState();
-            }
             if (order->isOnlyBottomTopOrder()) {
                 order->add(currentState);
             }
             while (currentState != numberOfStates ) {
                 auto successors = stateMap[currentState];
-                // If it is cyclic, first do forward reasoning
-                if (cyclic && order->contains(currentState) && successors.size() == 2) {
-                    extendByForwardReasoning(order, currentState, successors);
-                }
-                // Also do normal backward reasoning if the state is not yet in the order
-                auto stateSucc1 = numberOfStates;
-                auto stateSucc2 = numberOfStates;
-                if (!order->contains(currentState)) {
+                if (successors.size() == 1) {
+                    handleOneSuccessor(order, currentState, successors[0]);
+                    currentState = order->getNextSortedState();
+                } else {
+                    // If it is cyclic, first do forward reasoning
+                    auto stateSucc1 = numberOfStates;
+                    auto stateSucc2 = numberOfStates;
+                    if (cyclic && order->contains(currentState)) {
+                        auto res = extendByForwardReasoning(order, currentState, successors);
+                        if (res.first != numberOfStates) {
+                            stateSucc1 = res.first;
+                            stateSucc2 = res.second;
+                        }
+                    }
+                    // Also do normal backward reasoning if the state is not yet in the order
                     auto backwardResult = extendByBackwardReasoning(order, currentState, successors);
                     stateSucc1 = backwardResult.first;
                     stateSucc2 = backwardResult.second;
-                }
 
-                if (stateSucc1 == numberOfStates) {
-                    assert (stateSucc2 == numberOfStates);
-                    currentState = order->getNextSortedState();
-                } else {
-                    auto minMaxAdding = usePLA.find(order) != usePLA.end() && usePLA[order] ? this->addStatesBasedOnMinMax(order, stateSucc1, stateSucc2) : Order::UNKNOWN;
-                    if (minMaxAdding == Order::UNKNOWN) {
-                        auto assumptions = assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order,
-                                                                                      region);
-                        if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
-                            handleAssumption(order, assumptions.begin()->first);
-                        } else {
-                            // Put currentState in the list of states we should handle as we couldn't add it yet.
-                            order->addStateToHandle(currentState);
-                            return std::make_tuple(order, stateSucc1, stateSucc2);
+                    if (stateSucc1 == numberOfStates) {
+                        assert (stateSucc2 == numberOfStates);
+                        currentState = order->getNextSortedState();
+                    } else {
+                        auto minMaxAdding = usePLA.find(order) != usePLA.end() && usePLA[order] ?
+                                this->addStatesBasedOnMinMax(order, stateSucc1, stateSucc2) : Order::UNKNOWN;
+                        if (minMaxAdding == Order::UNKNOWN) {
+                            auto assumptions = assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order,
+                                                                                          region);
+                            if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
+                                handleAssumption(order, assumptions.begin()->first);
+                            } else {
+                                // Put currentState in the list of states we should handle as we couldn't add it yet.
+                                order->addStateToHandle(currentState);
+                                return std::make_tuple(order, stateSucc1, stateSucc2);
+                            }
                         }
                     }
+                    assert (order->sortStates(&successors).size() == successors.size());
                 }
             }
 
@@ -261,118 +303,137 @@ namespace storm {
             return std::make_tuple(order, numberOfStates, numberOfStates);
         }
 
-        template <typename ValueType, typename ConstantType>
-        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors) {
-            if (!cyclic && order->isOnlyBottomTopOrder()) {
-                order->add(currentState);
-                return std::pair<uint_fast64_t, uint_fast64_t>(numberOfStates, numberOfStates);
-            } else if (successors.size() == 1) {
-                assert (order->contains(successors[0]));
-                // As there is only one successor the current state and its successor must be at the same nodes.
-                order->addToNode(currentState, order->getNode(successors[0]));
-            } else if (successors.size() == 2) {
-                // Otherwise, check how the two states compare, and add if the comparison is possible.
-                uint_fast64_t succ1 = successors[0];
-                uint_fast64_t succ2 = successors[1];
-
-                int compareResult = order->compare(succ1, succ2);
-                bool usePLAForOrder = usePLA.find(order) != usePLA.end() && usePLA[order];
-//                if (!cyclic && !usePLAForOrder && compareResult == Order::UNKNOWN) {
-//                    // Only use pla for acyclic models
-//                    getMinMaxValues();
-//                    usePLAForOrder = true;
-//                }
-                if (usePLAForOrder && compareResult == Order::UNKNOWN) {
-                    compareResult = addStatesBasedOnMinMax(order, succ1, succ2);
-                }
-                if (compareResult == Order::ABOVE) {
-                    // successor 1 is closer to top than successor 2
-                    order->addBetween(currentState, succ1, succ2);
-                } else if (compareResult == Order::BELOW) {
-                    // successor 2 is closer to top than successor 1
-                    order->addBetween(currentState, order->getNode(succ2),
-                                      order->getNode(succ1));
-                } else if (compareResult == Order::SAME) {
-                    // the successors are at the same level
-                    order->addToNode(currentState, order->getNode(succ1));
-                }
-                if (compareResult == Order::UNKNOWN) {
-                    return std::pair<uint_fast64_t, uint_fast64_t>(succ1, succ2);
+        template<typename ValueType, typename ConstantType>
+        void OrderExtender<ValueType, ConstantType>::handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor) {
+            if (order->contains(successor)) {
+                if (order->contains(currentState)) {
+                    order->merge(currentState, successor);
+                } else {
+                    order->addToNode(currentState, order->getNode(successor));
                 }
             } else {
-                assert (successors.size() >= 2);
-
-                // temp.first = pair of unordered states, if this is numberOfStates all successor states could be sorted, so temp.second is fully sorted and contains all successors.
-                auto temp = order->sortStatesUnorderedPair(&successors);
-                if (temp.first.first != numberOfStates) {
-                    return temp.first;
-                }
-
-                auto sortedSuccs = temp.second;
-                if (order->existsNextSortedState()) {
-                    // First check if all successors can be handled
-                    std::set<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions;
-                    for (auto i = 1; i < sortedSuccs.size() - 1; i++) {
-                        auto res = assumptionMaker->createAndCheckAssumptions(currentState, sortedSuccs[i], order, region);
-                        if (res.size() == 1 && res.begin()->second == VALID) {
-                            assumptions.insert(res.begin()->first);
-                        } else {
-                            return std::pair<uint_fast64_t, uint_fast64_t>(currentState, sortedSuccs[i]);
-                        }
-                    }
-                    order->addBelow(currentState, order->getNode(sortedSuccs[0]));
-                    order->addRelationNodes(order->getNode(currentState), order->getNode(sortedSuccs[sortedSuccs.size() - 1]));
-                    for (auto const &assumption: assumptions) {
-                        handleAssumption(order, assumption);
-                    }
+                if (order->contains(currentState)) {
+                    order->addToNode(successor, order->getNode(currentState));
                 } else {
-                    // We don't really care that we cannot place the current state at the correctplace in the order as it is the initial state.
-                    order->addBelow(currentState, order->getNode(sortedSuccs[0]));
-                    order->addRelationNodes(order->getNode(currentState), order->getNode(sortedSuccs[sortedSuccs.size() - 1]));
+                    assert (false);
                 }
-
-                assert (order->contains(currentState)
-                        && order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE
-                        && order->compare(order->getNode(currentState), order->getTop()) == Order::BELOW);
             }
-            return std::pair<uint_fast64_t, uint_fast64_t>(numberOfStates, numberOfStates);
+        }
+
+        template <typename ValueType, typename ConstantType>
+        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors) {
+            assert (!order->isOnlyBottomTopOrder());
+            assert (successors.size() > 1);
+
+            // temp.first = pair of unordered states, if this is numberOfStates all successor states could be sorted, so temp.second is fully sorted and contains all successors.
+            auto temp = order->sortStatesUnorderedPair(&successors);
+            if (temp.first.first != numberOfStates) {
+                return temp.first;
+            }
+            auto sortedSuccs = temp.second;
+            if (order->compare(sortedSuccs[0], sortedSuccs[sortedSuccs.size() - 1]) == Order::SAME) {
+                if (!order->contains(currentState)) {
+                    order->addToNode(currentState, order->getNode(sortedSuccs[0]));
+                } else {
+                    order->merge(currentState, sortedSuccs[0]);
+                }
+            } else {
+                if (!order->contains(sortedSuccs[0])) {
+                    assert (order->isBottomState(sortedSuccs[sortedSuccs.size() - 1]));
+                    assert (sortedSuccs.size() == 2);
+                    order->addAbove(sortedSuccs[0], order->getBottom());
+                }
+                if (!order->contains(sortedSuccs[sortedSuccs.size() - 1])) {
+                    assert (order->isTopState(sortedSuccs[0]));
+                    assert (sortedSuccs.size() == 2);
+                    order->addBelow(sortedSuccs[sortedSuccs.size() - 1], order->getTop());
+                }
+                // sortedSuccs[0] is highest
+                if (!order->contains(currentState)) {
+                    order->addBelow(currentState, order->getNode(sortedSuccs[0]));
+                } else {
+                    order->addRelation(sortedSuccs[0], currentState);
+                }
+                order->addRelation(currentState, sortedSuccs[sortedSuccs.size() - 1]);
+
+            }
+            assert (order->contains(currentState)
+                    && order->compare(order->getNode(currentState), order->getBottom()) == Order::ABOVE
+                    && order->compare(order->getNode(currentState), order->getTop()) == Order::BELOW);
+//            }
+            return {numberOfStates, numberOfStates};
         }
 
         template <typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByForwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors) const {
-            // If this is the first state to add, we add it between =) and =(.
-            auto succ1 = successors[0];
-            auto compareSucc1 = order->compare(succ1, currentState);
-            auto succ2 = successors[1];
-            auto compareSucc2 = order->compare(succ2, currentState);
-
-            if (compareSucc1 == Order::UNKNOWN && compareSucc2 == Order::UNKNOWN) {
-                // ordering of succ1 and succ2 and currentState is unknown, as we have a cyclic pMC pla will not help
-                return std::pair<uint_fast64_t, uint_fast8_t>(succ1, succ2);
-            } else if (compareSucc1 == Order::UNKNOWN || compareSucc2 == Order::UNKNOWN) {
-                if (compareSucc2 != Order::UNKNOWN) {
-                    // swap them for easier implementation
-                    std::swap(succ1, succ2);
-                    std::swap(compareSucc1, compareSucc2);
-                }
-                if (compareSucc1 == Order::ABOVE) {
-                    // Succ1 is above currentState, so we should add succ2 below current state
-                    if (order->getNumberOfAddedStates() != numberOfStates) {
-                        order->addBelow(succ2, order->getNode(currentState));
-                    } else {
-                        order->addRelation(currentState, succ2);
-                    }
-                    order->addStateToHandle(succ2);
-                } else if (compareSucc1 == Order::BELOW) {
-                    if (order->getNumberOfAddedStates() != numberOfStates) {
-                        order->addAbove(succ2, order->getNode(currentState));
-                    } else {
-                        order->addRelation(succ2, currentState);
-                    }
-                    order->addStateToHandle(succ2);
+            assert (successors.size() > 1);
+            assert (order->contains(currentState));
+            auto temp = order->sortStatesForForward(successors);
+            if (temp.size() > successors.size()) {
+                return {temp[successors.size()], temp[successors.size() + 1]};
+            }
+            if (temp.size() == successors.size()) {
+                // We need to do backwards reasoning
+                return {numberOfStates, numberOfStates};
+            }
+            assert (temp.size() == successors.size() -1);
+            auto highest = temp[0];
+            uint_fast64_t unsortedState;
+            for (auto & state : successors) {
+                if (std::find(temp.begin(), temp.end(), state) == temp.end()) {
+                    unsortedState = state;
                 }
             }
-            return std::pair<uint_fast64_t, uint_fast8_t>(numberOfStates, numberOfStates);
+            auto compare = order->compare(highest, currentState);
+            if (compare == Order::UNKNOWN) {
+                return {highest, currentState};
+            } else if (compare == Order::ABOVE) {
+                order->addBetween(unsortedState, highest, currentState);
+            } else {
+                assert (compare == Order::BELOW);
+                order->addBetween(unsortedState, currentState, highest);
+            }
+            
+            if (successors.size() == 2) {
+                auto succ1 = successors[0];
+                auto compareSucc1 = order->compare(succ1, currentState);
+                auto succ2 = successors[1];
+                auto compareSucc2 = order->compare(succ2, currentState);
+                if (compareSucc1 == Order::UNKNOWN && compareSucc2 == Order::UNKNOWN) {
+                    // ordering of succ1 and succ2 and currentState is unknown
+                    return std::pair<uint_fast64_t, uint_fast8_t>(succ1, succ2);
+                } else if (compareSucc1 == Order::UNKNOWN || compareSucc2 == Order::UNKNOWN) {
+                    if (compareSucc2 != Order::UNKNOWN) {
+                        // swap them for easier implementation
+                        std::swap(succ1, succ2);
+                        std::swap(compareSucc1, compareSucc2);
+                    }
+                    if (!order->contains(currentState)) {
+                        order->add(currentState);
+                    }
+                    if (compareSucc1 == Order::ABOVE) {
+                        // Succ1 is above currentState, so we should add succ2 below current state
+                        if (!order->contains(succ2)) {
+                            order->addBelow(succ2, order->getNode(currentState));
+                        } else {
+                            order->addRelation(currentState, succ2);
+                        }
+                        order->addStateToHandle(succ2);
+                    } else if (compareSucc1 == Order::BELOW) {
+                        if (!order->contains(succ2)) {
+                            order->addAbove(succ2, order->getNode(currentState));
+                        } else {
+                            order->addRelation(succ2, currentState);
+                        }
+                        order->addStateToHandle(succ2);
+                    } else {
+                        assert (false);
+                    }
+                }
+            } else {
+                assert (false);
+            }
+            return {numberOfStates, numberOfStates};
         }
 
         template <typename ValueType, typename ConstantType>
@@ -580,7 +641,7 @@ namespace storm {
             if (unknownStatesMap.find(order) != unknownStatesMap.end()) {
                 return unknownStatesMap.at(order);
             }
-            return std::pair<uint_fast64_t, uint_fast64_t>(numberOfStates, numberOfStates);
+            return {numberOfStates, numberOfStates};
         }
 
         template<typename ValueType, typename ConstantType>
@@ -602,6 +663,8 @@ namespace storm {
                 maxValues[orderCopy] = maxValues[orderOriginal];
             }
         }
+
+
 
         template class OrderExtender<RationalFunction, double>;
         template class OrderExtender<RationalFunction, RationalNumber>;

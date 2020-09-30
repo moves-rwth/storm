@@ -240,6 +240,10 @@ namespace storm {
                     }
                     doneBuilding = true;
                 }
+            } else if (node1 == top || node2 == bottom) {
+                return ABOVE;
+            } else if (node2 == top || node1 == bottom) {
+                return BELOW;
             }
             return UNKNOWN;
         }
@@ -337,6 +341,94 @@ namespace storm {
             return result;
         }
 
+        std::vector<uint_fast64_t> Order::sortStatesForForward(std::vector<uint_fast64_t> const& states) {
+            uint_fast64_t numberOfStatesToSort = states.size();
+            std::vector<uint_fast64_t> result;
+            // Go over all states
+            bool oneUnknown = false;
+            uint_fast64_t s1, s2;
+            for (auto & state : states) {
+                bool unknown = false;
+                if (result.size() == 0) {
+                    result.push_back(state);
+                } else {
+                    if (!unknown) {
+                        bool added = false;
+                        for (auto itr = result.begin(); itr != result.end(); ++itr) {
+                            auto compareRes = compare(state, (*itr));
+                            if (compareRes == ABOVE || compareRes == SAME) {
+                                // insert at current pointer (while keeping other values)
+                                result.insert(itr, state);
+                                added = true;
+                                break;
+                            } else if (compareRes == UNKNOWN && !oneUnknown) {
+                                // We miss state in the result.
+                                s1 = state;
+                                s2 = *itr;
+                                oneUnknown = true;
+                                break;
+                            } else if (compareRes == UNKNOWN && oneUnknown) {
+                                unknown = true;
+                                break;
+                            }
+                        }
+                        if (unknown) {
+                            break;
+                        }
+                        if (!added) {
+                            result.push_back(state);
+                        }
+                    }
+                }
+            }
+            if (oneUnknown) {
+                result.clear();
+                // Try again, now without s2
+                for (auto & state : states) {
+                    bool unknown = false;
+                    if (result.size() == 0) {
+                        result.push_back(state);
+                    } else {
+                        if (state == s2) {
+                            continue;
+                        }
+                        if (!unknown) {
+                            bool added = false;
+                            for (auto itr = result.begin(); itr != result.end(); ++itr) {
+                                auto compareRes = compare(state, (*itr));
+                                if (compareRes == ABOVE || compareRes == SAME) {
+                                    // insert at current pointer (while keeping other values)
+                                    result.insert(itr, state);
+                                    added = true;
+                                    break;
+                                } else if (compareRes == UNKNOWN) {
+                                    unknown = true;
+                                    break;
+                                }
+                            }
+                            if (!added) {
+                                result.push_back(state);
+                            }
+                            if (unknown) {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if (!oneUnknown || (oneUnknown && result.size() < numberOfStatesToSort - 1)) {
+                while (result.size() < numberOfStatesToSort) {
+                    result.push_back(s1);
+                }
+                result.push_back(s2);
+                result.push_back(s1);
+            }
+
+            assert (result.size() == numberOfStatesToSort + 2 || result.size() == numberOfStatesToSort || result.size() == numberOfStatesToSort - 1);
+            return result;
+        }
+
+
         std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> Order::sortStatesUnorderedPair(const std::vector<uint_fast64_t>* states) {
             assert (states != nullptr);
             uint_fast64_t numberOfStatesToSort = states->size();
@@ -356,7 +448,7 @@ namespace storm {
                             added = true;
                             break;
                         } else if (compareRes == UNKNOWN) {
-                            return std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>>(std::pair<uint_fast64_t, uint_fast64_t>((*itr), state), result);
+                            return {{(*itr), state}, result};
                         }
                     }
                     if (unknown) {
@@ -414,7 +506,7 @@ namespace storm {
         /*** Checking on helpfunctionality for building of order ***/
 
         void Order::addStateToHandle(uint_fast64_t state) {
-            statesToHandle.push_back(state);
+            statesToHandle.insert(statesToHandle.begin(), state);
         }
 
         std::vector<uint_fast64_t> Order::getStatesSorted() const {
@@ -432,17 +524,7 @@ namespace storm {
                 statesToHandle.pop_back();
             } else if (!statesSorted.empty()) {
                 state = statesSorted.back();
-                while (!statesSorted.empty() && (*addedStates)[state]) {
-                    statesSorted.pop_back();
-                    if (!statesSorted.empty()) {
-                        state = statesSorted.back();
-                    }
-                }
-                if (statesSorted.empty()) {
-                    state = numberOfStates;
-                } else {
-                    statesSorted.pop_back();
-                }
+                statesSorted.pop_back();
             }
             return state;
         }
@@ -676,6 +758,7 @@ namespace storm {
         bool Order::existsNextSortedState() {
             return !statesToHandle.empty() || !statesSorted.empty();
         }
+
 
     }
 }
