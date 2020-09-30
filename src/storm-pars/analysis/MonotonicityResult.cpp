@@ -165,7 +165,32 @@ namespace storm {
             copy->setAllMonotonicity(allMonotonicity);
             copy->setSomewhereMonotonicity(somewhereMonotonicity);
             copy->setDone(done);
+            copy->setDoneVariables(doneVariables);
             return copy;
+        }
+
+        template<typename VariableType>
+        void MonotonicityResult<VariableType>::setDoneVariables(std::set<VariableType> doneVariables) {
+            this->doneVariables = doneVariables;
+        }
+
+        template<typename VariableType>
+        void
+        MonotonicityResult<VariableType>::splitBasedOnMonotonicity(const std::set<VariableType> &consideredVariables,
+                                                                   std::set<VariableType> & monotoneIncr,
+                                                                   std::set<VariableType> & monotoneDecr,
+                                                                   std::set<VariableType> & notMonotone) const {
+            for (auto& var : consideredVariables) {
+                auto mon = getMonotonicity(var);
+                if (mon == Monotonicity::Unknown || mon == Monotonicity::Not) {
+                    notMonotone.insert(var);
+                } else if (mon == Monotonicity::Incr) {
+                    monotoneIncr.insert(var);
+                } else {
+                    monotoneDecr.insert(var);
+                }
+            }
+
         }
 
         template class MonotonicityResult<storm::RationalFunctionVariable>;

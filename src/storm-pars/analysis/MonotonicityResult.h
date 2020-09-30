@@ -62,6 +62,9 @@ namespace storm {
             std::map<VariableType, Monotonicity> getMonotonicityResult() const;
 
 
+            void splitBasedOnMonotonicity(std::set<VariableType> const& consideredVariables, std::set<VariableType>& monotoneIncr, std::set<VariableType>& monotoneDecr, std::set<VariableType> & notMontone) const;
+
+
             std::pair<std::set<VariableType>, std::set<VariableType>> splitVariables(std::set<VariableType> const& consideredVariables) const;
             /*!
              * Constructs a string output of all variables and their corresponding Monotonicity
@@ -103,6 +106,8 @@ namespace storm {
             void setAllMonotonicity(bool done = true);
 
             void setDoneForVar(VariableType);
+
+            void setDoneVariables(std::set<VariableType> doneVariables);
 
             /*!
              * Constructs a new MonotonicityResult object that is a copy of the current one

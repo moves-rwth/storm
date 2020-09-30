@@ -497,7 +497,7 @@ namespace storm {
         }
 
         template<typename ParametricType>
-        typename ParameterRegion<ParametricType>::Valuation ParameterRegion<ParametricType>::getPoint(storm::solver::OptimizationDirection dir, storm::analysis::MonotonicityResult<VariableType> &monRes) {
+        typename ParameterRegion<ParametricType>::Valuation ParameterRegion<ParametricType>::getPoint(storm::solver::OptimizationDirection dir, storm::analysis::MonotonicityResult<VariableType> &monRes) const {
             auto val = this->getCenterPoint();
             for (auto monRes : monRes.getMonotonicityResult()) {
                 if (monRes.second == storm::analysis::MonotonicityResult<VariableType>::Monotonicity::Incr) {

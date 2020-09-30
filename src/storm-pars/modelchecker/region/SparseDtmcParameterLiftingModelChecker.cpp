@@ -579,21 +579,26 @@ namespace storm {
                 state = order->getNextAddedState(state);
             }
             auto const statesAtVariable = parameterLifter->getOccuringStatesAtVariable();
+            bool allDone = true;
             for (auto const & entry : statesAtVariable) {
                 auto states = entry.second;
                 auto var = entry.first;
                 bool done = true;
                 for (auto const& state : states) {
                     done &= order->contains(state) && localMonotonicityResult->getMonotonicity(state, var) != storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Unknown;
+                    auto check = localMonotonicityResult->getMonotonicity(state, var);
                     if (!done) {
                         break;
                     }
                 }
+
+                allDone &= done;
                 if (done) {
                     localMonotonicityResult->getGlobalMonotonicityResult()->setDoneForVar(var);
-                    // TODO: Hack
-                    order->setDoneBuilding();
                 }
+            }
+            if (allDone) {
+                order->setDoneBuilding();
             }
         }
 
