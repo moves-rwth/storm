@@ -441,20 +441,33 @@ namespace storm {
             assert (order->compare(state1, state2) == Order::UNKNOWN);
             assert (minValues.find(order) != minValues.end());
             assert (maxValues.find(order) != maxValues.end());
-            if (minValues.at(order)[state1] > maxValues.at(order)[state2]) {
-                // state 1 will always be larger than state2
-                if (!order->contains(state1)) {
-                    order->add(state1);
-                }
-                if (!order->contains(state2)) {
-                    order->add(state2);
+            if (minValues.at(order)[state1] >= maxValues.at(order)[state2]) {
+                if (minValues.at(order)[state1] == maxValues.at(order)[state1]
+                    && minValues.at(order)[state2] == maxValues.at(order)[state2]) {
+                    if (order->contains(state1)) {
+                        if (order->contains(state2)) {
+                            order->merge(state1, state2);
+                        } else {
+                            order->addToNode(state2, order->getNode(state1));
+                        }
+                    } else {
+                        order->addToNode(state1, order->getNode(state2));
+                    }
+                }  else {
+                    // state 1 will always be larger than state2
+                    if (!order->contains(state1)) {
+                        order->add(state1);
+                    }
+                    if (!order->contains(state2)) {
+                        order->add(state2);
+                    }
                 }
 
                 assert (order->compare(state1, state2) != Order::BELOW);
                 assert (order->compare(state1, state2) != Order::SAME);
                 order->addRelation(state1, state2);
                 return Order::ABOVE;
-            } else if (minValues.at(order)[state2] > maxValues.at(order)[state1]) {
+            } else if (minValues.at(order)[state2] >= maxValues.at(order)[state1]) {
                 // state2 will always be larger than state1
                 if (!order->contains(state1)) {
                     order->add(state1);
