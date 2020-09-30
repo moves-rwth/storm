@@ -269,11 +269,10 @@ namespace storm {
                         checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon);
                     }
                     for (auto &v : region.getVerticesOfRegion(notMon)) {
-                        for (auto & var : monIncr) {
-                            v[var] = point[var];
-                        }
-                        for (auto & var : monDecr) {
-                            v[var] = point[var];
+                        for (auto &var : region.getVariables()) {
+                            if (v.find(var) == v.end()) {
+                                v[var] = point[var];
+                            }
                         }
                         auto currValue = getInstantiationChecker().check(env, v)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
                         if (!value.is_initialized() || (storm::solver::minimize(dir) ? currValue < value.get() : currValue > value.get())) {

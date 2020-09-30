@@ -123,7 +123,7 @@ namespace storm {
                     }
                 } else {
                     typename std::set<VariableType>::iterator itr = consideredVariables.begin();
-                    std::advance(itr, splitIndex);
+                    std::advance(itr, (splitIndex % consideredVariables.size()));
                     for (auto i = 0; i < splitThreshold; ++i) {
                         auto const &variable = *itr;
 
