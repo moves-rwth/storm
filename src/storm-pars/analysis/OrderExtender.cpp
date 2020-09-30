@@ -126,7 +126,7 @@ namespace storm {
                     auto currentState = rowEntry.getColumn();
                     if (currentState != bottom) {
                         if (bottomTopOrder->contains(currentState)) {
-                            bottomTopOrder->addBelow(currentState, bottomTopOrder->getTop());
+                            // Do nothing, as this state will point at =( and =)
                         } else {
                             bottomTopOrder->add(currentState);
                         }
