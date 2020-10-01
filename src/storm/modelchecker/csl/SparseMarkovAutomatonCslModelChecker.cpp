@@ -33,7 +33,7 @@ namespace storm {
         template <typename ModelType>
         bool SparseMarkovAutomatonCslModelChecker<ModelType>::canHandleStatic(CheckTask<storm::logic::Formula, ValueType> const& checkTask, bool* requiresSingleInitialState) {
             auto singleObjectiveFragment = storm::logic::csl().setGloballyFormulasAllowed(false).setNextFormulasAllowed(false).setRewardOperatorsAllowed(true).setReachabilityRewardFormulasAllowed(true).setTotalRewardFormulasAllowed(true).setTimeAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setLongRunAverageRewardFormulasAllowed(true).setRewardAccumulationAllowed(true).setInstantaneousFormulasAllowed(false);
-            auto multiObjectiveFragment = storm::logic::multiObjective().setTimeAllowed(true).setTimeBoundedUntilFormulasAllowed(true);
+            auto multiObjectiveFragment = storm::logic::multiObjective().setTimeAllowed(true).setTimeBoundedUntilFormulasAllowed(true).setRewardAccumulationAllowed(true);
             if (!storm::NumberTraits<ValueType>::SupportsExponential) {
                 singleObjectiveFragment.setBoundedUntilFormulasAllowed(false).setCumulativeRewardFormulasAllowed(false);
                 multiObjectiveFragment.setTimeBoundedUntilFormulasAllowed(false).setCumulativeRewardFormulasAllowed(false);
