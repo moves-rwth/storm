@@ -95,7 +95,7 @@ namespace storm {
                 digitizeTimeBounds(upperTimeBounds, digitizationConstant);
                 
                 // Check whether there is a cycle in of probabilistic states
-                bool acyclic = storm::utility::graph::hasCycle(PS.toPS);
+                bool acyclic = !storm::utility::graph::hasCycle(PS.toPS);
                 
                 // Initialize a minMaxSolver to compute an optimal scheduler (w.r.t. PS) for each epoch
                 // No EC elimination is necessary as we assume non-zenoness
