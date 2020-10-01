@@ -90,6 +90,8 @@ namespace storm {
 
                 virtual std::size_t hash() const override;
 
+                virtual bool isPartiallyObservable() const override;
+
             protected:
                 /*!
                  * Return a string that is additonally added to the state information in the dot stream.

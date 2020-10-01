@@ -126,6 +126,11 @@ namespace storm {
             }
 
             template<typename ValueType, typename RewardModelType>
+            bool Pomdp<ValueType, RewardModelType>::isPartiallyObservable() const {
+                return true;
+            }
+
+            template<typename ValueType, typename RewardModelType>
             std::size_t Pomdp<ValueType, RewardModelType>::hash() const {
 
                 std::size_t seed = 0;
