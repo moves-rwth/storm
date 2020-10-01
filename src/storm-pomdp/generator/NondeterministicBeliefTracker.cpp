@@ -4,6 +4,7 @@
 #include "storm/storage/geometry/nativepolytopeconversion/QuickHull.h"
 #include "storm/storage/geometry/ReduceVertexCloud.h"
 #include "storm/utility/vector.h"
+#include "storm/utility/Stopwatch.h"
 
 namespace storm {
     namespace generator {
@@ -207,7 +208,9 @@ namespace storm {
 
         template<typename ValueType>
         void SparseBeliefState<ValueType>::setSupport(storm::storage::BitVector& support) const {
-            assert(false);
+            for(auto const& entry : belief) {
+                support.set(entry.first, true);
+            }
         }
 
         template<typename ValueType>
@@ -425,8 +428,8 @@ namespace storm {
 
 
         template<typename ValueType, typename BeliefState>
-        NondeterministicBeliefTracker<ValueType, BeliefState>::NondeterministicBeliefTracker(storm::models::sparse::Pomdp<ValueType> const& pomdp) :
-        pomdp(pomdp), manager(std::make_shared<BeliefStateManager<ValueType>>(pomdp)), beliefs() {
+        NondeterministicBeliefTracker<ValueType, BeliefState>::NondeterministicBeliefTracker(storm::models::sparse::Pomdp<ValueType> const& pomdp, typename NondeterministicBeliefTracker<ValueType, BeliefState>::Options options ) :
+        pomdp(pomdp), manager(std::make_shared<BeliefStateManager<ValueType>>(pomdp)), beliefs(), options(options) {
             //
         }
 
@@ -448,8 +451,12 @@ namespace storm {
             STORM_LOG_THROW(!beliefs.empty(), storm::exceptions::InvalidOperationException, "Cannot track without a belief (need to reset).");
             std::unordered_set<BeliefState> newBeliefs;
             //for (uint64_t action = 0; action < manager->getActionsForObservation(lastObservation); ++action) {
+            storm::utility::Stopwatch trackTimer(true);
             for (auto const& belief : beliefs) {
                 belief.update(newObservation, newBeliefs);
+                if (options.trackTimeOut > 0 && trackTimer.getTimeInMilliseconds() > options.trackTimeOut) {
+                    return false;
+                }
             }
             //}
             beliefs = newBeliefs;
@@ -492,11 +499,28 @@ namespace storm {
             return lastObservation;
         }
 
+        template<typename ValueType, typename BeliefState>
+        uint64_t NondeterministicBeliefTracker<ValueType, BeliefState>::getNumberOfBeliefs() const {
+            return beliefs.size();
+        }
+
+        template<typename ValueType, typename BeliefState>
+        uint64_t NondeterministicBeliefTracker<ValueType, BeliefState>::getCurrentDimension() const {
+            storm::storage::BitVector support(beliefs.begin()->getSupportSize());
+            for(auto const& belief : beliefs) {
+                belief.setSupport(support);
+            }
+            return support.getNumberOfSetBits();
+        }
+
+
+
 //
         template<typename ValueType, typename BeliefState>
         uint64_t NondeterministicBeliefTracker<ValueType, BeliefState>::reduce() {
+            reductionTimedOut = false;
             std::shared_ptr<storm::utility::solver::SmtSolverFactory> solverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
-            storm::storage::geometry::ReduceVertexCloud<ValueType> rvc(solverFactory);
+            storm::storage::geometry::ReduceVertexCloud<ValueType> rvc(solverFactory, options.wiggle, options.timeOut);
             std::vector<std::map<uint64_t, ValueType>> points;
             std::vector<typename std::unordered_set<BeliefState>::iterator> iterators;
             for (auto it = beliefs.begin(); it != beliefs.end(); ++it) {
@@ -504,13 +528,22 @@ namespace storm {
                 points.push_back(it->getBeliefMap());
                 iterators.push_back(it);
             }
-            storm::storage::BitVector eliminate = ~rvc.eliminate(points, pomdp.getNumberOfStates());
+            auto res = rvc.eliminate(points, pomdp.getNumberOfStates());
+            storm::storage::BitVector eliminate = ~res.first;
+            if (res.second) {
+                reductionTimedOut = true;
+            }
 
             auto selectedIterators = storm::utility::vector::filterVector(iterators, eliminate);
             for (auto iter : selectedIterators) {
                 beliefs.erase(iter);
             }
             return eliminate.getNumberOfSetBits();
+        }
+
+        template<typename ValueType, typename BeliefState>
+        bool NondeterministicBeliefTracker<ValueType, BeliefState>::hasTimedOut() const {
+            return reductionTimedOut;
         }
 
 
@@ -521,6 +554,9 @@ namespace storm {
         //template bool operator==(ObservationDenseBeliefState<double> const&, ObservationDenseBeliefState<double> const&);
         //template class NondeterministicBeliefTracker<double, ObservationDenseBeliefState<double>>;
 
+        template class SparseBeliefState<storm::RationalNumber>;
+        template bool operator==(SparseBeliefState<storm::RationalNumber> const&, SparseBeliefState<storm::RationalNumber> const&);
+        template class NondeterministicBeliefTracker<storm::RationalNumber, SparseBeliefState<storm::RationalNumber>>;
 
     }
 }

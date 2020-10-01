@@ -93,23 +93,34 @@ namespace storm {
             uint64_t prevId;
         };
 
+
         template<typename ValueType, typename BeliefState>
         class NondeterministicBeliefTracker {
+
         public:
-            NondeterministicBeliefTracker(storm::models::sparse::Pomdp<ValueType> const& pomdp);
+            struct Options {
+                uint64_t trackTimeOut = 0;
+                uint64_t timeOut = 0; // for reduction, in milliseconds, 0 is no timeout
+                ValueType wiggle; // tolerance, anything above 0 means that we are incomplete.
+            };
+            NondeterministicBeliefTracker(storm::models::sparse::Pomdp<ValueType> const& pomdp, typename NondeterministicBeliefTracker<ValueType, BeliefState>::Options options = Options());
             bool reset(uint32_t observation);
             bool track(uint64_t newObservation);
             std::unordered_set<BeliefState> const& getCurrentBeliefs() const;
             uint32_t getCurrentObservation() const;
+            uint64_t getNumberOfBeliefs() const;
             ValueType getCurrentRisk(bool max=true);
             void setRisk(std::vector<ValueType> const& risk);
+            uint64_t getCurrentDimension() const;
             uint64_t reduce();
+            bool hasTimedOut() const;
 
         private:
-
             storm::models::sparse::Pomdp<ValueType> const& pomdp;
             std::shared_ptr<BeliefStateManager<ValueType>> manager;
             std::unordered_set<BeliefState> beliefs;
+            bool reductionTimedOut = false;
+            Options options;
             uint32_t lastObservation;
         };
     }

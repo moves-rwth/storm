@@ -23,7 +23,7 @@ namespace storm {
             }
 
             template<typename ValueType>
-            storm::storage::BitVector ReduceVertexCloud<ValueType>::eliminate(std::vector<std::map<uint64_t, ValueType>> const& input, uint64_t maxdimension) {
+            std::pair<storm::storage::BitVector, bool> ReduceVertexCloud<ValueType>::eliminate(std::vector<std::map<uint64_t, ValueType>> const& input, uint64_t maxdimension) {
                 std::shared_ptr<storm::expressions::ExpressionManager> expressionManager = std::make_shared<storm::expressions::ExpressionManager>();
                 std::vector<storm::storage::BitVector> supports;
                 std::vector<storm::expressions::Variable> weightVariables;
@@ -48,14 +48,23 @@ namespace storm {
                     smtSolver->add((weightVariableExpr >= expressionManager->rational(0.0)));
                     smtSolver->add(weightVariableExpr < expressionManager->rational(1.0));
                 }
-                smtSolver->add(storm::expressions::sum(weightVariableExpressions) <= expressionManager->rational(1.0 + wiggle));
-                smtSolver->add(storm::expressions::sum(weightVariableExpressions) >= expressionManager->rational(1 - wiggle));
+                if (storm::utility::isZero(wiggle)) {
+                    smtSolver->add(storm::expressions::sum(weightVariableExpressions) <=
+                                   expressionManager->rational(1));
+                } else {
+                    smtSolver->add(storm::expressions::sum(weightVariableExpressions) <=
+                                   expressionManager->rational(1.0 + wiggle));
+                    smtSolver->add(storm::expressions::sum(weightVariableExpressions) >=
+                                   expressionManager->rational(1 - wiggle));
+                }
 
                 storm::utility::Stopwatch solverTime;
                 storm::utility::Stopwatch totalTime(true);
                 storm::storage::BitVector vertices(input.size());
                 for (uint64_t pointIndex = 0; pointIndex < input.size(); ++pointIndex) {
+#ifdef _DEBUG_REUCE_VERTEX_CLOUD
                     std::cout << pointIndex << " out of " << input.size() << std::endl;
+#endif
                     smtSolver->push();
                     std::map<uint64_t, std::vector<storm::expressions::Expression>> dimensionTerms;
                     for (auto const& entry : input[pointIndex]) {
@@ -104,16 +113,26 @@ namespace storm {
                         }
                         std::cout << std::endl;
                     }
+                    if (timeOut > )
 #endif
+                    if (timeOut > 0 && totalTime.getTimeInMilliseconds() > timeOut) {
+                        for (uint64_t remainingPoint = pointIndex + 1; remainingPoint < input.size(); ++remainingPoint) {
+                            vertices.set(remainingPoint);
+                        }
+                        return {vertices, true};
+                    }
                     smtSolver->pop();
+#ifdef _DEBUG_REDUCE_VERTEX_CLOUD
                     std::cout << "Solver time " << solverTime.getTimeInMilliseconds() << std::endl;
                     std::cout << "Total time " << totalTime.getTimeInMilliseconds() << std::endl;
+#endif
                 }
-                return vertices;
+                return {vertices, false};
 
             }
 
             template class ReduceVertexCloud<double>;
+            template class ReduceVertexCloud<storm::RationalNumber>;
         }
     }
 }
