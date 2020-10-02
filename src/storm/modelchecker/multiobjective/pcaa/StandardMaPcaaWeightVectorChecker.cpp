@@ -7,6 +7,7 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
+#include "storm/utility/SignalHandler.h"
 #include "storm/logic/Formulas.h"
 #include "storm/solver/SolverSelectionOptions.h"
 
@@ -113,7 +114,7 @@ namespace storm {
                 
                 auto upperTimeBoundIt = upperTimeBounds.begin();
                 uint_fast64_t currentEpoch = upperTimeBounds.empty() ? 0 : upperTimeBoundIt->first;
-                while (true) {
+                while (!storm::utility::resources::isTerminate()) {
                     // Update the objectives that are considered at the current time epoch as well as the (weighted) reward vectors.
                     updateDataToCurrentEpoch(MS, PS, *minMax, consideredObjectives, currentEpoch, weightVector, upperTimeBoundIt, upperTimeBounds);
                     
@@ -129,6 +130,7 @@ namespace storm {
                         break;
                     }
                 }
+                STORM_LOG_WARN_COND(!storm::utility::resources::isTerminate(), "Time-bounded reachability computation aborted.");
                 
                 // compose the results from MS and PS
                 storm::utility::vector::setVectorValues(this->weightedResult, MS.states, MS.weightedSolutionVector);
