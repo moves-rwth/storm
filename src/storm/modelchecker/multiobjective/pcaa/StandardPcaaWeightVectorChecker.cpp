@@ -11,6 +11,8 @@
 #include "storm/modelchecker/prctl/helper/DsMpiUpperRewardBoundsComputer.h"
 #include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 #include "storm/modelchecker/multiobjective/preprocessing/SparseMultiObjectiveRewardAnalysis.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
 #include "storm/solver/MinMaxLinearEquationSolver.h"
 #include "storm/utility/graph.h"
 #include "storm/utility/macros.h"
@@ -103,6 +105,21 @@ namespace storm {
                 offsetsToUnderApproximation.resize(this->objectives.size(), storm::utility::zero<ValueType>());
                 offsetsToOverApproximation.resize(this->objectives.size(), storm::utility::zero<ValueType>());
                 optimalChoices.resize(transitionMatrix.getRowGroupCount(), 0);
+                
+                // Print some statistics (if requested)
+                if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+                    STORM_PRINT_AND_LOG("Weight Vector Checker Statistics:" << std::endl);
+                    STORM_PRINT_AND_LOG("Final preprocessed model has " << transitionMatrix.getRowGroupCount() << " states." << std::endl);
+                    STORM_PRINT_AND_LOG("Final preprocessed model has " << transitionMatrix.getRowCount() << " actions." << std::endl);
+                    if (lraMecDecomposition) {
+                        STORM_PRINT_AND_LOG("Found " << lraMecDecomposition->mecs.size() << " end components that are relevant for LRA-analysis." << std::endl);
+                        uint64_t numLraMecStates = 0;
+                        for (auto const& mec : this->lraMecDecomposition->mecs) {
+                            numLraMecStates += mec.size();
+                        }
+                        STORM_PRINT_AND_LOG(numLraMecStates << " states lie on such an end component." << std::endl);
+                    }
+                }
             }
 
             template <class SparseModelType>
