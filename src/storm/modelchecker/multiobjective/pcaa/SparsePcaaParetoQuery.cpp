@@ -7,6 +7,7 @@
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
+#include "storm/utility/SignalHandler.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/modelchecker/multiobjective/MultiObjectivePostprocessing.h"
 
@@ -59,9 +60,12 @@ namespace storm {
                     WeightVector direction(this->objectives.size(), storm::utility::zero<GeometryValueType>());
                     direction[objIndex] = storm::utility::one<GeometryValueType>();
                     this->performRefinementStep(env, std::move(direction));
+                    if (storm::utility::resources::isTerminate()) {
+                        break;
+                    }
                 }
                 
-                while(!this->maxStepsPerformed(env)) {
+                while(!this->maxStepsPerformed(env) && !storm::utility::resources::isTerminate()) {
                     // Get the halfspace of the underApproximation with maximal distance to a vertex of the overApproximation
                     std::vector<storm::storage::geometry::Halfspace<GeometryValueType>> underApproxHalfspaces = this->underApproximation->getHalfspaces();
                     std::vector<Point> overApproxVertices = this->overApproximation->getVertices();
@@ -84,11 +88,9 @@ namespace storm {
                     WeightVector direction = underApproxHalfspaces[farestHalfspaceIndex].normalVector();
                     this->performRefinementStep(env, std::move(direction));
                 }
-                STORM_LOG_ERROR("Could not reach the desired precision: Exceeded maximum number of refinement steps");
+                STORM_LOG_ERROR("Could not reach the desired precision: Termination requested or maximum number of refinement steps exceeded.");
             }
             
-            
-
             
 #ifdef STORM_HAVE_CARL
             template class SparsePcaaParetoQuery<storm::models::sparse::Mdp<double>, storm::RationalNumber>;
