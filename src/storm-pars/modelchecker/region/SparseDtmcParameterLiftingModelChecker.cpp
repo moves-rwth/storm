@@ -514,7 +514,7 @@ namespace storm {
         }
 
         template<typename SparseModelType, typename ConstantType>
-        std::shared_ptr<storm::analysis::Order>  SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::extendOrder(Environment const& env, std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<typename SparseModelType::ValueType> region) {
+        std::shared_ptr<storm::analysis::Order> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::extendOrder(Environment const& env, std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<typename SparseModelType::ValueType> region) {
             typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::CoefficientType CoefficientType;
 
             if (this->orderExtender) {
@@ -522,11 +522,15 @@ namespace storm {
                 order = std::get<0>(res);
                 while (!order->getDoneBuilding() && order->existsNextSortedState()) {
                     // TODO: move this to order extender?
-                    auto state = order->getNextSortedState();
-                    if ((std::get<1>(res) == state || std::get<2>(res) == state) || parameterLifter->getOccurringVariablesAtState()[state].size() == 0) {
+                    auto scc = order->getSCC(order->getNextSCCNumber(-1));
+                    auto state = *(scc.begin());
+                    assert (state < order->getNumberOfStates());
+                    if (scc.isTrivial() && ((std::get<1>(res) == state || std::get<2>(res) == state) || parameterLifter->getOccurringVariablesAtState()[state].size() == 0)) {
                         // First || checks if all successors could be order, second part checks if all transitions have constant probability
                         assert (std::get<0>(res) == order);
+                        assert (!order->contains(state));
                         order->add(state);
+                        order->setAddedSCC(order->getNextSCCNumber(-1));
                         if (!order->existsNextSortedState()) {
                             // This was the last state, either it has only constant probabilities so we are done, or all successors could be sorted.
                             order->setDoneBuilding();
@@ -535,7 +539,6 @@ namespace storm {
                             res = this->orderExtender.get().extendOrder(order, region);
                         }
                     } else {
-                        order->addStateToHandle(state);
                         this->orderExtender.get().setUnknownStates(order, std::get<1>(res), std::get<2>(res));
                         break;
                     }
