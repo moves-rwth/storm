@@ -72,7 +72,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) const {
+        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(uint_fast64_t val1, uint_fast64_t val2,std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType>& minValues, std::vector<ConstantType>& maxValues) const {
             // First check if based on sample points the assumption can be discharged
             AssumptionStatus result = AssumptionStatus::UNKNOWN;
             if (useSamples) {
@@ -93,9 +93,9 @@ namespace storm {
                                 "Only Greater Or Equal assumptions supported");
 
                 // Row with successors of the first state
-                auto row1 = matrix.getRow(std::stoi(assumption->getFirstOperand()->asVariableExpression().getVariableName()));
+                auto row1 = matrix.getRow(val1);
                 // Row with successors of the second state
-                auto row2 = matrix.getRow(std::stoi(assumption->getSecondOperand()->asVariableExpression().getVariableName()));
+                auto row2 = matrix.getRow(val2);
 
                 if (row1.getNumberOfEntries() == 2 && row2.getNumberOfEntries() == 2) {
                     // If both states on which we make the assumptions have only 2 successors, we try to validate it without using a SMT solver.
@@ -118,13 +118,13 @@ namespace storm {
                                 result = AssumptionStatus::VALID;
                             }
                         } else {
-                            result = validateAssumptionSMTSolver(assumption, order, region);
+                            result = validateAssumptionSMTSolver(val1, val2, assumption, order, region, minValues, maxValues);
                         }
                     } else {
-                        result = validateAssumptionSMTSolver(assumption, order, region);
+                        result = validateAssumptionSMTSolver(val1, val2, assumption, order, region, minValues, maxValues);
                     }
                 } else {
-                    result = validateAssumptionSMTSolver(assumption, order, region);
+                    result = validateAssumptionSMTSolver(val1, val2, assumption, order, region, minValues, maxValues);
                 }
             }
             return result;
@@ -152,15 +152,15 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionSMTSolver(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) const {
+        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionSMTSolver(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType>& minValues, std::vector<ConstantType>& maxValues) const {
             std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
             std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
 
             AssumptionStatus result;
             auto var1 = assumption->getFirstOperand()->asVariableExpression().getVariableName();
             auto var2 = assumption->getSecondOperand()->asVariableExpression().getVariableName();
-            auto row1 = matrix.getRow(std::stoi(var1));
-            auto row2 = matrix.getRow(std::stoi(var2));
+            auto row1 = matrix.getRow(val1);
+            auto row2 = matrix.getRow(val2);
 
             bool orderKnown = true;
             // if the state with number var1 (var2) occurs in the successors of the state with number var2 (var1) we need to add var1 == expr1 (var2 == expr2) to the bounds
@@ -208,38 +208,46 @@ namespace storm {
                         } else if (comp == Order::NodeComparison::SAME) {
                             exprOrderSucc = exprOrderSucc && (manager->getVariable(varname1) = manager->getVariable(varname2));
                         } else {
-                            orderKnown = false;
+                            // Couldn't add relation between val1 and val2 based on min/max values;
+                            orderKnown = minValues.size() > 0;
+                            auto varname2 = "s" + std::to_string(itr2->getColumn());
+                            if (orderKnown && !manager->hasVariable(varname2)) {
+                                stateVariables.insert(manager->declareRationalVariable(varname2));
+                            }
                         }
                     }
                 }
             }
 
-            if (orderKnown) {
+            if (orderKnown || minValues.size() > 0) {
                 solver::Z3SmtSolver s(*manager);
                 auto valueTypeToExpression = expressions::RationalFunctionToExpression<ValueType>(manager);
                 expressions::Expression expr1 = manager->rational(0);
                 for (auto itr1 = row1.begin(); itr1 != row1.end(); ++itr1) {
-                    expr1 = expr1 + (valueTypeToExpression.toExpression(itr1->getValue()) * manager->getVariable("s" + std::to_string(itr1->getColumn())));
+                    expr1 = expr1 + (valueTypeToExpression.toExpression(itr1->getValue()) *
+                                     manager->getVariable("s" + std::to_string(itr1->getColumn())));
                 }
 
                 expressions::Expression expr2 = manager->rational(0);
                 for (auto itr2 = row2.begin(); itr2 != row2.end(); ++itr2) {
-                    expr2 = expr2 + (valueTypeToExpression.toExpression(itr2->getValue()) * manager->getVariable("s" + std::to_string(itr2->getColumn())));
+                    expr2 = expr2 + (valueTypeToExpression.toExpression(itr2->getValue()) *
+                                     manager->getVariable("s" + std::to_string(itr2->getColumn())));
                 }
 
                 // Create expression for the assumption based on the relation to successors
                 // It is the negation of actual assumption
-                expressions::Expression exprToCheck ;
+                expressions::Expression exprToCheck;
                 if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater) {
                     exprToCheck = expr1 <= expr2;
                 } else {
-                    assert (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Equal);
-                    exprToCheck = expr1 != expr2 ;
+                    assert (assumption->getRelationType() ==
+                            expressions::BinaryRelationExpression::RelationType::Equal);
+                    exprToCheck = expr1 != expr2;
                 }
 
                 auto variables = manager->getVariables();
                 // Bounds for the state probabilities and parameters
-                expressions::Expression exprBounds =  manager->boolean(true);
+                expressions::Expression exprBounds = manager->boolean(true);
                 if (addVar1) {
                     exprBounds = exprBounds && (manager->getVariable("s" + var1) == expr1);
                 }
@@ -249,10 +257,20 @@ namespace storm {
                 for (auto var : variables) {
                     if (find(stateVariables.begin(), stateVariables.end(), var) != stateVariables.end()) {
                         // the var is a state
-                        exprBounds = exprBounds && manager->rational(0) <= var && var <= manager->rational(1);
+                        if (minValues.size() > 0) {
+                            std::string  test = var.getName();
+                            auto val = std::stoi(test.substr(1,test.size()-1));
+                            exprBounds = exprBounds && manager->rational(minValues[val]) <= var &&
+                                         var <= manager->rational(maxValues[val]);
+                        } else {
+                            exprBounds = exprBounds && manager->rational(0) <= var &&
+                                         var <= manager->rational(1);
+                        }
                     } else if (find(topVariables.begin(), topVariables.end(), var) != topVariables.end()) {
+                        // the var is =)
                         exprBounds = exprBounds && var == manager->rational(1);
                     } else if (find(bottomVariables.begin(), bottomVariables.end(), var) != bottomVariables.end()) {
+                        // the var is =(
                         exprBounds = exprBounds && var == manager->rational(0);
                     } else {
                         // the var is a parameter
@@ -276,10 +294,7 @@ namespace storm {
                 } else {
                     result = AssumptionStatus::UNKNOWN;
                 }
-            } else {
-                result = AssumptionStatus::UNKNOWN;
             }
-
             return result;
         }
 

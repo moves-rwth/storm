@@ -280,18 +280,31 @@ namespace storm {
                         assert (stateSucc2 == numberOfStates);
                         currentState = order->getNextSortedState();
                     } else {
-                        auto minMaxAdding = usePLA.find(order) != usePLA.end() && usePLA[order] ?
-                                this->addStatesBasedOnMinMax(order, stateSucc1, stateSucc2) : Order::UNKNOWN;
+                        bool usePLANow = usePLA.find(order) != usePLA.end() && usePLA[order];
+                        auto minMaxAdding = usePLANow ? this->addStatesBasedOnMinMax(order, stateSucc1, stateSucc2) : Order::UNKNOWN;
                         if (minMaxAdding == Order::UNKNOWN) {
-                            auto assumptions = assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order,
-                                                                                          region);
-                            if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
-                                handleAssumption(order, assumptions.begin()->first);
+                            if (usePLANow) {
+                                auto assumptions = assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order,
+                                                                                              region, minValues[order], maxValues[order]);
+                                if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
+                                    handleAssumption(order, assumptions.begin()->first);
+                                } else {
+                                    // Put currentState in the list of states we should handle as we couldn't add it yet.
+                                    order->addStateToHandle(currentState);
+                                    return std::make_tuple(order, stateSucc1, stateSucc2);
+                                }
                             } else {
-                                // Put currentState in the list of states we should handle as we couldn't add it yet.
-                                order->addStateToHandle(currentState);
-                                return std::make_tuple(order, stateSucc1, stateSucc2);
+                                auto assumptions = assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order,
+                                                                                              region);
+                                if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
+                                    handleAssumption(order, assumptions.begin()->first);
+                                } else {
+                                    // Put currentState in the list of states we should handle as we couldn't add it yet.
+                                    order->addStateToHandle(currentState);
+                                    return std::make_tuple(order, stateSucc1, stateSucc2);
+                                }
                             }
+
                         }
                     }
                     assert (order->sortStates(&successors).size() == successors.size());
