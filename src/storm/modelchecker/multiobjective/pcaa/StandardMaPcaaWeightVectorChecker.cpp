@@ -10,6 +10,8 @@
 #include "storm/utility/SignalHandler.h"
 #include "storm/logic/Formulas.h"
 #include "storm/solver/SolverSelectionOptions.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
 
 #include "storm/environment/solver/SolverEnvironment.h"
 #include "storm/environment/solver/MinMaxSolverEnvironment.h"
@@ -62,6 +64,10 @@ namespace storm {
                         STORM_LOG_THROW(!rewModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Found state rewards for time bounded objective " << this->objectives[objIndex].originalFormula << ". This is not supported.");
                         STORM_LOG_WARN_COND(this->objectives[objIndex].originalFormula->isProbabilityOperatorFormula() && this->objectives[objIndex].originalFormula->asProbabilityOperatorFormula().getSubformula().isBoundedUntilFormula(), "Objective " << this->objectives[objIndex].originalFormula << " was simplified to a cumulative reward formula. Correctness of the algorithm is unknown for this type of property.");
                     }
+                }
+                // Print some statistics (if requested)
+                if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+                    STORM_PRINT_AND_LOG("Final preprocessed model has " << markovianStates.getNumberOfSetBits() << " Markovian states." << std::endl);
                 }
             }
 

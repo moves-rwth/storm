@@ -119,6 +119,7 @@ namespace storm {
                         }
                         STORM_PRINT_AND_LOG(numLraMecStates << " states lie on such an end component." << std::endl);
                     }
+                    STORM_PRINT_AND_LOG(std::endl);
                 }
             }
 

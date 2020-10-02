@@ -38,23 +38,32 @@ namespace storm {
                         // Intentionally left empty
                     }
                     
-                    
-                    bool containsOnlyTotalRewardFormulas() const {
+                    uint64_t getNumberOfTotalRewardFormulas() const {
+                        uint64_t count = 0;
                         for (auto const& obj : objectives) {
-                            if (!obj.formula->isRewardOperatorFormula() || !obj.formula->getSubformula().isTotalRewardFormula()) {
-                                return false;
+                            if (obj.formula->isRewardOperatorFormula() && obj.formula->getSubformula().isTotalRewardFormula()) {
+                                ++count;
                             }
                         }
-                        return true;
+                        return count;
+                    }
+                    
+                    bool containsOnlyTotalRewardFormulas() const {
+                        return getNumberOfTotalRewardFormulas() == objectives.size();
+                    }
+                    
+                    uint64_t getNumberOfLongRunAverageRewardFormulas() const {
+                        uint64_t count = 0;
+                        for (auto const& obj : objectives) {
+                            if (obj.formula->isRewardOperatorFormula() && obj.formula->getSubformula().isLongRunAverageRewardFormula()) {
+                                ++count;
+                            }
+                        }
+                        return count;
                     }
                     
                     bool containsLongRunAverageRewardFormulas() const {
-                        for (auto const& obj : objectives) {
-                            if (obj.formula->isRewardOperatorFormula() && obj.formula->getSubformula().isLongRunAverageRewardFormula()) {
-                                return true;
-                            }
-                        }
-                        return false;
+                        return getNumberOfLongRunAverageRewardFormulas() > 0;
                     }
                     
                     bool containsOnlyTrivialObjectives() const {
@@ -88,12 +97,14 @@ namespace storm {
                         out << "--------------------------------------------------------------" << std::endl;
                         out << "\t" << originalFormula << std::endl;
                         out << std::endl;
-                        out << "Objectives:" << std::endl;
+                        out << "The query considers " << objectives.size() << " objectives:" << std::endl;
                         out << "--------------------------------------------------------------" << std::endl;
                         for (auto const& obj : objectives) {
                             obj.printToStream(out);
                             out << std::endl;
                         }
+                        out << "Number of Long-Run-Average Reward Objectives (after preprocessing): " << getNumberOfLongRunAverageRewardFormulas() << "." << std::endl;
+                        out << "Number of Total Reward Objectives (after preprocessing): " << getNumberOfTotalRewardFormulas() << "." << std::endl;
                         out << "--------------------------------------------------------------" << std::endl;
                         out << std::endl;
                         out << "Original Model Information:" << std::endl;
