@@ -134,6 +134,8 @@ namespace storm {
             analysis::AssumptionMaker<ValueType, ConstantType>* assumptionMaker;
 
             std::vector<uint_fast64_t> statesSorted;
+
+            uint_fast64_t getNextStateSCC(storage::StronglyConnectedComponent& scc, std::set<uint_fast64_t> const seenStates);
         };
     }
 }

@@ -40,6 +40,8 @@ namespace storm {
             this->formula = formula;
 //            usePLA = false;
             this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(matrix);
+            statesSorted = storm::utility::graph::getTopologicalSort(matrix);
+            std::reverse(statesSorted.begin(), statesSorted.end());
         }
 
         template <typename ValueType, typename ConstantType>
@@ -66,6 +68,8 @@ namespace storm {
             cyclic = storm::utility::graph::hasCycle(matrix);
             this->bottomTopOrder = std::shared_ptr<Order>(new Order(topStates, bottomStates, numberOfStates, storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options)));
             this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(matrix);
+            statesSorted = storm::utility::graph::getTopologicalSort(matrix);
+            std::reverse(statesSorted.begin(), statesSorted.end());
         }
 
         template <typename ValueType, typename ConstantType>
@@ -188,9 +192,9 @@ namespace storm {
             }
             uint_fast64_t currentSCCNumber = order->getNextSCCNumber(-1);
             storage::StronglyConnectedComponent currentSCC = order->getSCC(currentSCCNumber);
-            auto sccItr = currentSCC.begin();
             assert (currentSCC.size() > 0);
-            auto currentState = *sccItr;
+            std::set<uint_fast64_t> seenStates;
+            auto currentState = getNextStateSCC(currentSCC, seenStates);
 
             while (currentState != numberOfStates && currentSCC.size() > 0) {
                 assert (currentSCC.begin() != currentSCC.end());
@@ -243,21 +247,20 @@ namespace storm {
                         }
                     }
                     // Get the next state
-                    sccItr++;
-                    if (sccItr == currentSCC.end()) {
+                    seenStates.insert(currentState);
+                    currentState = getNextStateSCC(currentSCC, seenStates);
+                    if (currentState == numberOfStates) {
                         order->setAddedSCC(currentSCCNumber);
 
                         // Need to go to next
                         currentSCCNumber = order->getNextSCCNumber(currentSCCNumber);
                         currentSCC = order->getSCC(currentSCCNumber);
+                        seenStates.clear();
                         if (currentSCC.size() == 0) {
                             currentState = numberOfStates;
                         } else {
-                            sccItr = currentSCC.begin();
-                            currentState = *sccItr;
+                            currentState = getNextStateSCC(currentSCC, seenStates);
                         }
-                    } else {
-                        currentState = *sccItr;
                     }
                 }
             }
@@ -279,9 +282,9 @@ namespace storm {
             uint_fast64_t currentSCCNumber = order->getNextSCCNumber(-1);
 
             storage::StronglyConnectedComponent currentSCC = order->getSCC(currentSCCNumber);
-            auto sccItr = currentSCC.begin();
+            std::set<uint_fast64_t> seenStates;
+            auto currentState = getNextStateSCC(currentSCC, seenStates);
             assert (currentSCC.size() > 0);
-            auto currentState = *sccItr;
             if (order->isOnlyBottomTopOrder()) {
                 order->add(currentState);
             }
@@ -315,21 +318,20 @@ namespace storm {
                 if (stateSucc1 == numberOfStates) {
                     assert (stateSucc2 == numberOfStates);
                     // Get the next state
-                    sccItr++;
-                    if (sccItr == currentSCC.end()) {
+                    seenStates.insert(currentState);
+                    currentState = getNextStateSCC(currentSCC, seenStates);
+                    if (currentState == numberOfStates) {
                         order->setAddedSCC(currentSCCNumber);
 
                         // Need to go to next
                         currentSCCNumber = order->getNextSCCNumber(currentSCCNumber);
                         currentSCC = order->getSCC(currentSCCNumber);
+                        seenStates.clear();
                         if (currentSCC.size() == 0) {
                             currentState = numberOfStates;
                         } else {
-                            sccItr = currentSCC.begin();
-                            currentState = *sccItr;
+                            currentState = getNextStateSCC(currentSCC, seenStates);
                         }
-                    } else {
-                        currentState = *sccItr;
                     }
                 } else {
                     // We couldn't order the states, so we check if we could add based on PLA or assumptions
@@ -364,13 +366,10 @@ namespace storm {
                             beenhere = true;
                             currentSCCNumber = order->getNextSCCNumber(currentSCCNumber);
                             currentSCC = order->getSCC(currentSCCNumber);
+                            seenStates.clear();
+                            currentState = getNextStateSCC(currentSCC, seenStates);
                         }
-                        if (currentSCC.size() == 0) {
-                            return {order, stateSucc1, stateSucc2};
-                        } else {
-                            sccItr = currentSCC.begin();
-                            currentState = *sccItr;
-                        }
+
                     }
                     assert (order->sortStates(&successors).size() == successors.size());
                 }
@@ -708,6 +707,21 @@ namespace storm {
                 assert (maxValues.find(orderOriginal) != maxValues.end());
                 maxValues[orderCopy] = maxValues[orderOriginal];
             }
+        }
+
+        template<typename ValueType, typename ConstantType>
+        uint_fast64_t OrderExtender<ValueType, ConstantType>::getNextStateSCC(storage::StronglyConnectedComponent& scc, std::set<uint_fast64_t> const seenStates) {
+            if (scc.size() == 1 && seenStates.size() == 0) {
+                return *scc.begin();
+            } else if (scc.size() == 1) {
+                return numberOfStates;
+            }
+            for (auto state : statesSorted) {
+                if (scc.containsState(state) && seenStates.find(state) == seenStates.end()) {
+                   return state;
+                }
+            }
+            return numberOfStates;
         }
 
         template class OrderExtender<RationalFunction, double>;
