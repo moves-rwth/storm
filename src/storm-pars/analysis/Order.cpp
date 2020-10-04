@@ -309,97 +309,56 @@ namespace storm {
             return result;
         }
 
-        std::vector<uint_fast64_t> Order::sortStatesForForward(std::vector<uint_fast64_t> const& states) {
+        std::pair<std::pair<uint_fast64_t,uint_fast64_t>, std::vector<uint_fast64_t>> Order::sortStatesForForward(uint_fast64_t currentState, std::vector<uint_fast64_t> const& states) {
             uint_fast64_t numberOfStatesToSort = states.size();
-            std::vector<uint_fast64_t> result;
+            std::vector<uint_fast64_t> statesSorted;
+            statesSorted.push_back(currentState);
             // Go over all states
             bool oneUnknown = false;
+            bool unknown = false;
             uint_fast64_t s1 = numberOfStates;
             uint_fast64_t s2 = numberOfStates;
             for (auto & state : states) {
-                bool unknown = false;
-                if (result.size() == 0) {
-                    result.push_back(state);
-                } else {
-                    if (!unknown) {
-                        bool added = false;
-                        for (auto itr = result.begin(); itr != result.end(); ++itr) {
-                            auto compareRes = compare(state, (*itr));
-                            if (compareRes == ABOVE || compareRes == SAME) {
-                                // insert at current pointer (while keeping other values)
-                                result.insert(itr, state);
-                                added = true;
-                                break;
-                            } else if (compareRes == UNKNOWN && !oneUnknown) {
-                                // We miss state in the result.
-                                s1 = state;
-                                s2 = *itr;
-                                oneUnknown = true;
-                                break;
-                            } else if (compareRes == UNKNOWN && oneUnknown) {
-                                unknown = true;
-                                break;
-                            }
+                unknown = false;
+                bool added = false;
+                for (auto itr = statesSorted.begin(); itr != statesSorted.end(); ++itr) {
+                    auto compareRes = compare(state, (*itr));
+                    if (compareRes == ABOVE || compareRes == SAME) {
+                        if (!contains(state) && compareRes == ABOVE) {
+                            add(state);
                         }
-                        if (unknown) {
-                            break;
-                        }
-                        if (!added) {
-                            result.push_back(state);
-                        }
+                        added = true;
+                        // insert at current pointer (while keeping other values)
+                        statesSorted.insert(itr, state);
+                        break;
+                    } else if (compareRes == UNKNOWN && !oneUnknown) {
+                        // We miss state in the result.
+                        s1 = state;
+                        s2 = *itr;
+                        oneUnknown = true;
+                        added = true;
+                        break;
+                    } else if (compareRes == UNKNOWN && oneUnknown) {
+                        unknown = true;
+                        added = true;
+                        break;
                     }
                 }
-            }
-            if (oneUnknown) {
-                result.clear();
-                // Try again, now without s2
-                for (auto & state : states) {
-                    bool unknown = false;
-                    if (result.size() == 0) {
-                        result.push_back(state);
-                    } else {
-                        if (state == s2) {
-                            continue;
-                        }
-                        if (!unknown) {
-                            bool added = false;
-                            for (auto itr = result.begin(); itr != result.end(); ++itr) {
-                                auto compareRes = compare(state, (*itr));
-                                if (compareRes == ABOVE || compareRes == SAME) {
-                                    // insert at current pointer (while keeping other values)
-                                    result.insert(itr, state);
-                                    added = true;
-                                    break;
-                                } else if (compareRes == UNKNOWN) {
-                                    unknown = true;
-                                    break;
-                                }
-                            }
-                            if (!added) {
-                                result.push_back(state);
-                            }
-                            if (unknown) {
-                                break;
-                            }
-                        }
-                    }
+                if (!added ) {
+                    // State will be last in the list
+                    statesSorted.push_back(state);
+                }
+                if (unknown && oneUnknown) {
+                    break;
                 }
             }
-            if ((!oneUnknown && result.size() < numberOfStatesToSort) || (oneUnknown && result.size() < numberOfStatesToSort - 1)) {
-                while (result.size() < numberOfStatesToSort) {
-                    result.push_back(s1);
-                }
-                assert (s1 < numberOfStates);
-                assert (s2 < numberOfStates);
-                result.push_back(s2);
-                result.push_back(s1);
-                assert (result.size() - 2 == numberOfStatesToSort);
-                assert (result[result.size() - 1] < numberOfStates);
-                assert (result[result.size() - 2] < numberOfStates);
+            if (!unknown && oneUnknown) {
+                assert (statesSorted.size() == numberOfStatesToSort);
+                s2 = numberOfStates;
             }
+            assert (s1 == numberOfStates || (s1 != numberOfStates && s2 == numberOfStates && statesSorted.size() == numberOfStatesToSort) || (s1 !=numberOfStates && s2 != numberOfStates && statesSorted.size() < numberOfStatesToSort));
 
-            assert (result.size() == numberOfStatesToSort + 2 || result.size() == numberOfStatesToSort || result.size() == numberOfStatesToSort - 1);
-            return result;
+            return {{s1, s2}, statesSorted};
         }
 
         std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> Order::sortStatesUnorderedPair(const std::vector<uint_fast64_t>* states) {

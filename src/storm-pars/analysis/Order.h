@@ -250,12 +250,12 @@ namespace storm {
                      * Sorts the given states if possible.
                      *
                      * @param states Vector of the states to be sorted.
-                     * @return Vector with states sorted, length equals number of states to sort.
-                     * If >= 2 states cannot be sorted, last states of the vector also > #states will be the two unsorted states
-                     * If 1 state cannot be sorted, result.size will be states.size-1
-                     * Direction: which direction to sort in
+                     * @return s1, s2, vector
+                     * if s1 == numberOfSTates, all states could be sorted including current
+                     * if s1 < numberOfStates && s2 == numberOfStates, all states excluding s1 could be sorted, forward reasonging can be continued
+                     * else assumption is needed
                      */
-                    std::vector<uint_fast64_t> sortStatesForForward(std::vector<uint_fast64_t> const& successors);
+                    std::pair<std::pair<uint_fast64_t,uint_fast64_t>, std::vector<uint_fast64_t>> sortStatesForForward(uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors);
 
                     /*!
                      * Sorts the given states if possible.
