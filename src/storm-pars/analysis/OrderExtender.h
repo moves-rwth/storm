@@ -137,6 +137,10 @@ namespace storm {
             std::vector<uint_fast64_t> statesSorted;
 
             uint_fast64_t getNextStateSCC(storage::StronglyConnectedComponent& scc, std::set<uint_fast64_t> const seenStates);
+
+            std::pair<uint_fast64_t, uint_fast64_t> getNextState(std::shared_ptr<Order> order, uint_fast64_t sccNumber, std::set<uint_fast64_t>& seenStates, bool trick = false);
+
+            std::set<uint_fast64_t> nonParametericStates;
         };
     }
 }
