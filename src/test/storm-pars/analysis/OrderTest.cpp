@@ -1,3 +1,4 @@
+#include <storm/storage/StronglyConnectedComponentDecomposition.h>
 #include "test/storm_gtest.h"
 #include "storm-config.h"
 #include "storm-pars/api/analysis.h"
@@ -9,9 +10,14 @@ TEST(OrderTest, Simple) {
     above.set(0);
     auto below = storm::storage::BitVector(numberOfStates);
     below.set(1);
-    std::vector<uint_fast64_t> statesSorted;
+    storm::storage::SparseMatrixBuilder<storm::RationalFunction> matrixBuilder(2,2,2);
+    matrixBuilder.addNextValue(0,0,storm::RationalFunction(1));
+    matrixBuilder.addNextValue(1,1,storm::RationalFunction(1));
+    storm::storage::StronglyConnectedComponentDecompositionOptions options;
+    options.forceTopologicalSort();
+    auto statesSorted = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrixBuilder.build(), options);
 
-    auto order = storm::analysis::Order(&above, &below, numberOfStates, &statesSorted);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, statesSorted);
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0,1));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1,0));
     EXPECT_EQ(nullptr, order.getNode(2));
@@ -75,9 +81,14 @@ TEST(OrderTest, copy_order) {
     above.set(0);
     auto below = storm::storage::BitVector(numberOfStates);
     below.set(1);
-    std::vector<uint_fast64_t> statesSorted;
+    storm::storage::SparseMatrixBuilder<storm::RationalFunction> matrixBuilder(2,2,2);
+    matrixBuilder.addNextValue(0,0,storm::RationalFunction(1));
+    matrixBuilder.addNextValue(1,1,storm::RationalFunction(1));
+    storm::storage::StronglyConnectedComponentDecompositionOptions options;
+    options.forceTopologicalSort();
+    auto statesSorted = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrixBuilder.build(), options);
 
-    auto order = storm::analysis::Order(&above, &below, numberOfStates, &statesSorted);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, statesSorted);
     order.add(2);
     order.add(3);
     order.addToNode(4, order.getNode(2));
@@ -140,9 +151,14 @@ TEST(OrderTest, merge_nodes) {
     above.set(0);
     auto below = storm::storage::BitVector(numberOfStates);
     below.set(1);
-    std::vector<uint_fast64_t> statesSorted;
+    storm::storage::SparseMatrixBuilder<storm::RationalFunction> matrixBuilder(2,2,2);
+    matrixBuilder.addNextValue(0,0,storm::RationalFunction(1));
+    matrixBuilder.addNextValue(1,1,storm::RationalFunction(1));
+    storm::storage::StronglyConnectedComponentDecompositionOptions options;
+    options.forceTopologicalSort();
+    auto statesSorted = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrixBuilder.build(), options);
 
-    auto order = storm::analysis::Order(&above, &below, numberOfStates, &statesSorted);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, statesSorted);
     order.add(2);
     order.add(3);
     order.addToNode(4, order.getNode(2));
@@ -174,9 +190,14 @@ TEST(OrderTest, sort_states) {
     above.set(0);
     auto below = storm::storage::BitVector(numberOfStates);
     below.set(1);
-    std::vector<uint_fast64_t> statesSorted;
+    storm::storage::SparseMatrixBuilder<storm::RationalFunction> matrixBuilder(2,2,2);
+    matrixBuilder.addNextValue(0,0,storm::RationalFunction(1));
+    matrixBuilder.addNextValue(1,1,storm::RationalFunction(1));
+    storm::storage::StronglyConnectedComponentDecompositionOptions options;
+    options.forceTopologicalSort();
+    auto statesSorted = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrixBuilder.build(), options);
 
-    auto order = storm::analysis::Order(&above, &below, numberOfStates, &statesSorted);
+    auto order = storm::analysis::Order(&above, &below, numberOfStates, statesSorted);
     order.add(2);
     order.add(3);
     order.addToNode(4, order.getNode(2));

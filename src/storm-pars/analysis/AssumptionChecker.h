@@ -70,6 +70,7 @@ namespace storm {
              * @return AssumptionStatus::VALID, or AssumptionStatus::UNKNOWN, or AssumptionStatus::INVALID
              */
             AssumptionStatus validateAssumption(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region,  std::vector<ConstantType>& minValues, std::vector<ConstantType>& maxValue) const;
+            AssumptionStatus validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) const;
 
         private:
             bool useSamples;

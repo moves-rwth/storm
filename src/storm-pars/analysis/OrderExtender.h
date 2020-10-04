@@ -132,6 +132,8 @@ namespace storm {
             std::unordered_map<ValueType, std::unordered_map<VariableType, ValueType>> derivatives;
 
             analysis::AssumptionMaker<ValueType, ConstantType>* assumptionMaker;
+
+            std::vector<uint_fast64_t> statesSorted;
         };
     }
 }

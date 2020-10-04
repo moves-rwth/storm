@@ -314,7 +314,8 @@ namespace storm {
             std::vector<uint_fast64_t> result;
             // Go over all states
             bool oneUnknown = false;
-            uint_fast64_t s1, s2;
+            uint_fast64_t s1 = numberOfStates;
+            uint_fast64_t s2 = numberOfStates;
             for (auto & state : states) {
                 bool unknown = false;
                 if (result.size() == 0) {
@@ -384,12 +385,17 @@ namespace storm {
                     }
                 }
             }
-            if (!oneUnknown || (oneUnknown && result.size() < numberOfStatesToSort - 1)) {
+            if ((!oneUnknown && result.size() < numberOfStatesToSort) || (oneUnknown && result.size() < numberOfStatesToSort - 1)) {
                 while (result.size() < numberOfStatesToSort) {
                     result.push_back(s1);
                 }
+                assert (s1 < numberOfStates);
+                assert (s2 < numberOfStates);
                 result.push_back(s2);
                 result.push_back(s1);
+                assert (result.size() - 2 == numberOfStatesToSort);
+                assert (result[result.size() - 1] < numberOfStates);
+                assert (result[result.size() - 2] < numberOfStates);
             }
 
             assert (result.size() == numberOfStatesToSort + 2 || result.size() == numberOfStatesToSort || result.size() == numberOfStatesToSort - 1);
@@ -710,7 +716,7 @@ namespace storm {
         }
 
         storage::StronglyConnectedComponent& Order::getSCC(uint_fast64_t currentSCC) {
-            if (currentSCC > decomposition.size()) {
+            if (currentSCC >= decomposition.size()) {
                 return dummySCC;
             }
             return decomposition[currentSCC];

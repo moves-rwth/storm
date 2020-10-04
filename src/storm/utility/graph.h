@@ -706,9 +706,6 @@ namespace storm {
             template <typename T>
             std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint64_t> const& firstStates = {}) ;
 
-            template <typename T>
-            std::vector<storage::StronglyConnectedComponent*> getTopologicalSortSCC(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint64_t> const& firstStates = {}) ;
-
         } // namespace graph
     } // namespace utility
 } // namespace storm

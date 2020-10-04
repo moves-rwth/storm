@@ -196,8 +196,6 @@ TEST(MonotonicityCheckerTest, Casestudy2) {
     // Order
     auto res =orderExtender.extendOrder(nullptr, region);
     auto order = std::get<0>(res);
-    order->add(1);
-    order->add(2);
     order->addRelation(1,3);
     order->addRelation(3,2);
 

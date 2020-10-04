@@ -74,6 +74,8 @@ namespace storm {
         template <typename ValueType, typename ConstantType>
         AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(uint_fast64_t val1, uint_fast64_t val2,std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType>& minValues, std::vector<ConstantType>& maxValues) const {
             // First check if based on sample points the assumption can be discharged
+            assert (val1 == std::stoi(assumption->getFirstOperand()->asVariableExpression().getVariableName()));
+            assert (val2 == std::stoi(assumption->getSecondOperand()->asVariableExpression().getVariableName()));
             AssumptionStatus result = AssumptionStatus::UNKNOWN;
             if (useSamples) {
                 result = checkOnSamples(assumption);
@@ -91,41 +93,7 @@ namespace storm {
                                 expressions::BinaryRelationExpression::RelationType::Equal,
                                 exceptions::NotSupportedException,
                                 "Only Greater Or Equal assumptions supported");
-
-                // Row with successors of the first state
-                auto row1 = matrix.getRow(val1);
-                // Row with successors of the second state
-                auto row2 = matrix.getRow(val2);
-
-                if (row1.getNumberOfEntries() == 2 && row2.getNumberOfEntries() == 2) {
-                    // If both states on which we make the assumptions have only 2 successors, we try to validate it without using a SMT solver.
-
-                    auto state1succ1 = row1.begin(); // First successor of state 1 (getColumn() will give stateNumber of successor, getValue() will give probability of reaching this successor)
-                    auto state1succ2 = (++row1.begin()); // Second successor of state 1
-                    auto state2succ1 = row2.begin(); // First successor of state 2
-                    auto state2succ2 = (++row2.begin()); // Second successor of state 2
-
-                    if (state1succ1->getColumn() == state2succ2->getColumn() && state2succ1->getColumn() == state1succ2->getColumn()) {
-                        // swap if the successors of both states are the same, but not in the same position
-                        std::swap(state1succ1, state1succ2);
-                    }
-
-                    if (state1succ1->getColumn() == state2succ1->getColumn() && state1succ2->getColumn() == state2succ2->getColumn()) {
-                        if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Equal) {
-                            // The assumption is equal, the successors are the same,
-                            // so if the probability of reaching the successors is the same, we have a valid assumption
-                            if (state1succ1->getValue() == state2succ1->getValue()) {
-                                result = AssumptionStatus::VALID;
-                            }
-                        } else {
-                            result = validateAssumptionSMTSolver(val1, val2, assumption, order, region, minValues, maxValues);
-                        }
-                    } else {
-                        result = validateAssumptionSMTSolver(val1, val2, assumption, order, region, minValues, maxValues);
-                    }
-                } else {
-                    result = validateAssumptionSMTSolver(val1, val2, assumption, order, region, minValues, maxValues);
-                }
+                result = validateAssumptionSMTSolver(val1, val2, assumption, order, region, minValues, maxValues);
             }
             return result;
         }
@@ -156,7 +124,7 @@ namespace storm {
             std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
             std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
 
-            AssumptionStatus result;
+            AssumptionStatus result = AssumptionStatus::UNKNOWN;
             auto var1 = assumption->getFirstOperand()->asVariableExpression().getVariableName();
             auto var2 = assumption->getSecondOperand()->asVariableExpression().getVariableName();
             auto row1 = matrix.getRow(val1);
@@ -236,6 +204,7 @@ namespace storm {
 
                 // Create expression for the assumption based on the relation to successors
                 // It is the negation of actual assumption
+
                 expressions::Expression exprToCheck;
                 if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater) {
                     exprToCheck = expr1 <= expr2;
@@ -258,7 +227,7 @@ namespace storm {
                     if (find(stateVariables.begin(), stateVariables.end(), var) != stateVariables.end()) {
                         // the var is a state
                         if (minValues.size() > 0) {
-                            std::string  test = var.getName();
+                            std::string test = var.getName();
                             auto val = std::stoi(test.substr(1,test.size()-1));
                             exprBounds = exprBounds && manager->rational(minValues[val]) <= var &&
                                          var <= manager->rational(maxValues[val]);
@@ -290,12 +259,24 @@ namespace storm {
                     // If there is no thing satisfying the negation we are safe.
                     result = AssumptionStatus::VALID;
                 } else if (smtRes == solver::SmtSolver::CheckResult::Sat) {
-                    result = AssumptionStatus::INVALID;
-                } else {
-                    result = AssumptionStatus::UNKNOWN;
+                    if (!orderKnown) {
+                        result = AssumptionStatus::UNKNOWN;
+                    } else {
+                        result = AssumptionStatus::INVALID;
+                    }
                 }
             }
             return result;
+        }
+
+        template<typename ValueType, typename ConstantType>
+        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(
+                std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order,
+                storage::ParameterRegion<ValueType> region) const {
+            auto var1 = std::stoi(assumption->getFirstOperand()->asVariableExpression().getVariableName());
+            auto var2 = std::stoi(assumption->getSecondOperand()->asVariableExpression().getVariableName());
+            std::vector<ConstantType> vals;
+            return validateAssumption(var1, var2, assumption, order, region, vals, vals);
         }
 
         template class AssumptionChecker<RationalFunction, double>;
