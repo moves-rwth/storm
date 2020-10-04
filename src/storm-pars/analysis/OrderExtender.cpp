@@ -360,17 +360,20 @@ namespace storm {
                                     stateSucc1 = numberOfStates;
                                 }
                             }
+                        } else {
+                            continue;
                         }
                         if (stateSucc1 != numberOfStates) {
-                            // For now we go to the next SCC
-                            // We are in a scc, currentState is not there, and we have been in this situation before, so we return;
                             if (currentSCC.isTrivial()) {
                                 return {order, stateSucc1, stateSucc2};
                             }
 
                             if (doneTrick) {
+                                // We are in a scc, currentState is not there, and we have been in this situation before, so we return;
+
                                 return {order, stateSucc1, stateSucc2};
                             } else {
+                                // Try another state in scc
                                 auto res = seenStates.insert(currentState);
                                 currentState = getNextStateSCC(currentSCC, seenStates);
                                 seenStates.erase(res.first);

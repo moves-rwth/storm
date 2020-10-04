@@ -343,6 +343,12 @@ namespace storm {
                             orderExtender->setMaxValues(order, bounds);
                             orderExtender->setMinValues(order, getBound(env, currRegion, storm::solver::OptimizationDirection::Minimize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
                         }
+                        // We try to extend the order again based on minMaxValues
+                        auto i = order->getNumberOfAddedStates();
+                        this->extendOrder(env, order, currRegion);
+                        if (i < order->getNumberOfAddedStates()) {
+                            this->extendLocalMonotonicityResult(currRegion, order, localMonotonicityResult);
+                        }
                     }
                     if (this->isUseMonotonicitySet()) {
                         this->splitSmart(currRegion, newRegions, order, *(localMonotonicityResult->getGlobalMonotonicityResult()));

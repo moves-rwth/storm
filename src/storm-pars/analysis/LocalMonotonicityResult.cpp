@@ -9,6 +9,7 @@ namespace storm {
             globalMonotonicityResult = std::make_shared<MonotonicityResult<VariableType>>();
             statesMonotone = storm::storage::BitVector(numberOfStates, false);
             dummyPointer = std::make_shared<MonotonicityResult<VariableType>>();
+            done = false;
         }
 
         template <typename VariableType>
@@ -156,6 +157,11 @@ namespace storm {
         template<typename VariableType>
         bool LocalMonotonicityResult<VariableType>::isFixedParametersSet() const {
             return setFixedParameters;
+        }
+
+        template<typename VariableType>
+        void LocalMonotonicityResult<VariableType>::setDone(bool done) {
+            this->done = done;
         }
 
 

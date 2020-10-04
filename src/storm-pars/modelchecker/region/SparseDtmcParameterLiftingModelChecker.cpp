@@ -601,6 +601,7 @@ namespace storm {
                 }
             }
             if (allDone) {
+                localMonotonicityResult->setDone();
                 order->setDoneBuilding();
             }
         }

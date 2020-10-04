@@ -60,6 +60,7 @@ namespace storm {
              * @return true if done is set to true, false otherwise.
              */
             bool isDone() const;
+            void setDone(bool done = true);
 
             bool isNoMonotonicity() const;
 
@@ -96,7 +97,7 @@ namespace storm {
             void setStatesMonotone(storm::storage::BitVector statesMonotone);
 
             storm::storage::BitVector statesMonotone;
-            bool done = false;
+            bool done;
 
             int indexMinimize = -1;
             int indexMaximize = -1;
