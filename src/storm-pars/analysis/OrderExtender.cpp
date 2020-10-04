@@ -275,7 +275,7 @@ namespace storm {
         template <typename ValueType, typename ConstantType>
         std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region) {
             // TODO @Jip: dit niet zo doen maar meegeven via functie?
-            if (continueExtending[order]) {
+            if (order == nullptr || continueExtending[order]) {
                 this->region = region;
                 if (order == nullptr) {
                     order = getBottomTopOrder();
@@ -577,7 +577,9 @@ namespace storm {
             this->minValues[order] = minValues;
             auto maxValues = this->maxValues[order];
             usePLA[order] = this->maxValues.find(order) != this->maxValues.end();
-            if (unknownStatesMap.find(order) != unknownStatesMap.end()) {
+            if (maxValues.size() == 0) {
+                continueExtending[order] = false;
+            } else if (unknownStatesMap.find(order) != unknownStatesMap.end()) {
                 if (unknownStatesMap[order].first != numberOfStates) {
                     continueExtending[order] = minValues[unknownStatesMap[order].first] >= maxValues[unknownStatesMap[order].second] ||  minValues[unknownStatesMap[order].second] >= maxValues[unknownStatesMap[order].first];
                 } else if (lastUnknownStatesMap.find(order) != lastUnknownStatesMap.end() && lastUnknownStatesMap[order].first != numberOfStates) {
@@ -595,11 +597,19 @@ namespace storm {
             this->maxValues[order] = maxValues;//maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
             usePLA[order] = this->minValues.find(order) != this->minValues.end();
             auto minValues = this->minValues[order];
-            if (unknownStatesMap.find(order) != unknownStatesMap.end()) {
+            if (minValues.size() == 0) {
+                continueExtending[order] = false;
+            } else  if (unknownStatesMap.find(order) != unknownStatesMap.end()) {
                 if (unknownStatesMap[order].first != numberOfStates) {
-                    continueExtending[order] = minValues[unknownStatesMap[order].first] >= maxValues[unknownStatesMap[order].second] ||  minValues[unknownStatesMap[order].second] >= maxValues[unknownStatesMap[order].first];
-                } else if (lastUnknownStatesMap.find(order) != lastUnknownStatesMap.end() && lastUnknownStatesMap[order].first != numberOfStates) {
-                    continueExtending[order] = minValues[lastUnknownStatesMap[order].first] >= maxValues[lastUnknownStatesMap[order].second] ||  minValues[lastUnknownStatesMap[order].second] >= maxValues[lastUnknownStatesMap[order].first];
+                    continueExtending[order] =
+                            minValues[unknownStatesMap[order].first] >= maxValues[unknownStatesMap[order].second] ||
+                            minValues[unknownStatesMap[order].second] >= maxValues[unknownStatesMap[order].first];
+                } else if (lastUnknownStatesMap.find(order) != lastUnknownStatesMap.end() &&
+                           lastUnknownStatesMap[order].first != numberOfStates) {
+                    continueExtending[order] = minValues[lastUnknownStatesMap[order].first] >=
+                                               maxValues[lastUnknownStatesMap[order].second] ||
+                                               minValues[lastUnknownStatesMap[order].second] >=
+                                               maxValues[lastUnknownStatesMap[order].first];
                 } else {
                     continueExtending[order] = true;
                 }
