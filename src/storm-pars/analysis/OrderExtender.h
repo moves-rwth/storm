@@ -113,6 +113,7 @@ namespace storm {
             std::map<std::shared_ptr<Order>, std::pair<uint_fast64_t, uint_fast64_t>> lastUnknownStatesMap;
 
             std::map<std::shared_ptr<Order>, bool> usePLA;
+            std::map<std::shared_ptr<Order>, bool> continueExtending;
             bool cyclic;
 
             std::shared_ptr<logic::Formula const> formula;
