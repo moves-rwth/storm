@@ -833,29 +833,26 @@ namespace storm {
                                 statistics.nrCulledStates = statistics.nrCulledStates.get() + 1;
                                 bool addedSucc = underApproximation->addTransitionToBelief(0, cullingResult.targetBelief, storm::utility::one<ValueType>() - cullingResult.delta, true);
                                 if(computeRewards){
-                                    //Determine a sound reward bound
-                                    /*auto bestRewardBound = storm::utility::infinity<ValueType>();
+                                    //Determine a sound reward bound for the transition to the target state
+                                    auto bestRewardBound = min ? storm::utility::infinity<ValueType>() : -storm::utility::infinity<ValueType>();
                                     for (uint64 action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
-                                        auto currRewardBound = storm::utility::zero<ValueType>();
+                                        auto currRewardBound = beliefManager->getBeliefActionReward(currId, action);
                                         auto successors = beliefManager->expand(currId, action);
                                         for (auto const &successor : successors) {
                                             currRewardBound += successor.second * (min ? underApproximation->computeUpperValueBoundAtBelief(successor.first)
                                                                                             : underApproximation->computeLowerValueBoundAtBelief(successor.first));
                                         }
                                         bestRewardBound = min ? storm::utility::min(bestRewardBound, currRewardBound) : storm::utility::max(bestRewardBound, currRewardBound);
-                                    }*/
+                                    }
                                     underApproximation->addTransitionsToExtraStates(0, cullingResult.delta);
                                     underApproximation->addRewardToCurrentState(0, storm::utility::zero<ValueType>());
+                                    underApproximation->addCullingRewardToCurrentState(0, bestRewardBound);
                                 } else {
                                     underApproximation->addTransitionsToExtraStates(0, storm::utility::zero<ValueType>(), cullingResult.delta);
                                 }
-                                STORM_LOG_ASSERT(addedSucc, "Didn't add a transition after culling.");
                             } else {
                                 stopExploration = true;
                             }
-                        }
-                        if(stopExploration){
-                            underApproximation->setCurrentStateIsTruncated();
                         }
                         if(!cullBelief || stopExploration) {
                             for (uint64 action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
@@ -863,8 +860,8 @@ namespace storm {
                                 if (stateAlreadyExplored) {
                                     underApproximation->restoreOldBehaviorAtCurrentState(action);
                                 } else {
-                                    ValueType truncationProbability = storm::utility::zero<ValueType>();
-                                    ValueType truncationValueBound = storm::utility::zero<ValueType>();
+                                    auto truncationProbability = storm::utility::zero<ValueType>();
+                                    auto truncationValueBound = storm::utility::zero<ValueType>();
                                     auto successors = beliefManager->expand(currId, action);
                                     for (auto const &successor : successors) {
                                         bool added = underApproximation->addTransitionToBelief(action, successor.first, successor.second, stopExploration);
