@@ -116,34 +116,34 @@ namespace storm {
                 bottomTopOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, numberOfStates, storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options)));
             }
 
-            auto transpose = matrix.transpose();
-            for (auto const& bottom : bottomTopOrder->getBottom()->states) {
-                auto currentStates = transpose.getRow(bottom);
-                for (auto const &rowEntry : currentStates) {
-                    auto currentState = rowEntry.getColumn();
-                    if (currentState != bottom) {
-                        if (bottomTopOrder->contains(currentState)) {
-                            bottomTopOrder->addAbove(currentState, bottomTopOrder->getBottom());
-                        } else {
-                            bottomTopOrder->add(currentState);
-                        }
-                    }
-                }
-            }
-
-            for (auto const& bottom : bottomTopOrder->getTop()->states) {
-                auto currentStates = transpose.getRow(bottom);
-                for (auto const &rowEntry : currentStates) {
-                    auto currentState = rowEntry.getColumn();
-                    if (currentState != bottom) {
-                        if (bottomTopOrder->contains(currentState)) {
-                            // Do nothing, as this state will point at =( and =)
-                        } else {
-                            bottomTopOrder->add(currentState);
-                        }
-                    }
-                }
-            }
+//            auto transpose = matrix.transpose();
+//            for (auto const& bottom : bottomTopOrder->getBottom()->states) {
+//                auto currentStates = transpose.getRow(bottom);
+//                for (auto const &rowEntry : currentStates) {
+//                    auto currentState = rowEntry.getColumn();
+//                    if (currentState != bottom) {
+//                        if (bottomTopOrder->contains(currentState)) {
+//                            bottomTopOrder->addAbove(currentState, bottomTopOrder->getBottom());
+//                        } else {
+//                            bottomTopOrder->add(currentState);
+//                        }
+//                    }
+//                }
+//            }
+//
+//            for (auto const& bottom : bottomTopOrder->getTop()->states) {
+//                auto currentStates = transpose.getRow(bottom);
+//                for (auto const &rowEntry : currentStates) {
+//                    auto currentState = rowEntry.getColumn();
+//                    if (currentState != bottom) {
+//                        if (bottomTopOrder->contains(currentState)) {
+//                            // Do nothing, as this state will point at =( and =)
+//                        } else {
+//                            bottomTopOrder->add(currentState);
+//                        }
+//                    }
+//                }
+//            }
             storm::storage::StronglyConnectedComponentDecompositionOptions const options;
             auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
             return bottomTopOrder;
@@ -218,9 +218,7 @@ namespace storm {
             std::set<uint_fast64_t> seenStates;
             auto currentStateSCC = getNextState(order, -1, seenStates);
 
-            if (order->isOnlyBottomTopOrder()) {
-                order->add(currentStateSCC.first);
-            }
+
             bool doneTrick = false;
 
             while (currentStateSCC.first != numberOfStates) {
@@ -229,21 +227,14 @@ namespace storm {
                 auto successors = stateMap[currentState];
                 auto stateSucc1 = numberOfStates;
                 auto stateSucc2 = numberOfStates;
-
                 if (successors.size() == 1) {
-                    if (successors[0] != currentState) {
-                        if (order->contains(successors[0])) {
-                            handleOneSuccessor(order, currentState, successors[0]);
-                        } else if (order->contains(currentState)) {
-                            handleOneSuccessor(order, successors[0], currentState);
-                        } else {
-                            assert(false);
-                        }
-                    }
-                } else if (order->isOnlyBottomTopOrder()) {
-                    order->add(currentState);
+                    assert (order->contains(successors[0]));
+                    handleOneSuccessor(order, currentState, successors[0]);
                 } else if (!successors.empty()) {
-                    // If it is cyclic, we do forward reasoning
+                    if (order->isOnlyBottomTopOrder()) {
+                        order->add(currentState);
+                    }
+                    // If it is cyclic, we first do forward reasoning, when this didn't work we do backward reasoning
                     if (!order->getSCC(currentStateSCC.second).isTrivial() && order->contains(currentState)) {
                         // Try to extend the order for this scc
                         auto res = extendByForwardReasoning(order, currentState, successors, assumption != nullptr);
@@ -367,6 +358,9 @@ namespace storm {
         std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) {
             assert (!order->isOnlyBottomTopOrder());
             assert (successors.size() > 1);
+            for (auto& state : successors) {
+                assert (order->contains(state));
+            }
 
             // temp.first = pair of unordered states, if this is numberOfStates all successor states could be sorted, so temp.second is fully sorted and contains all successors.
             auto temp = order->sortStatesUnorderedPair(&successors);
@@ -451,33 +445,29 @@ namespace storm {
                 maxs = maxValues.at(order);
 
             }
-            if (mins[state1] >= maxs[state2]) {
-                if (mins[state1] == maxs[state1]
-                    && mins[state2] == maxs[state2]) {
-                    if (order->contains(state1)) {
-                        if (order->contains(state2)) {
-                            order->merge(state1, state2);
-                        } else {
-                            order->addToNode(state2, order->getNode(state1));
-                        }
+            if (mins[state1] == maxs[state1]
+                && mins[state2] == maxs[state2]) {
+                if (order->contains(state1)) {
+                    if (order->contains(state2)) {
+                        order->merge(state1, state2);
                     } else {
-                        order->addToNode(state1, order->getNode(state2));
-                    }
-                }  else {
-                    // state 1 will always be larger than state2
-                    if (!order->contains(state1)) {
-                        order->add(state1);
-                    }
-                    if (!order->contains(state2)) {
-                        order->add(state2);
+                        order->addToNode(state2, order->getNode(state1));
                     }
                 }
-
+                return Order::SAME;
+            } else if (mins[state1] > maxs[state2]) {
+                // state 1 will always be larger than state2
+                if (!order->contains(state1)) {
+                    order->add(state1);
+                }
+                if (!order->contains(state2)) {
+                    order->add(state2);
+                }
                 assert (order->compare(state1, state2) != Order::BELOW);
                 assert (order->compare(state1, state2) != Order::SAME);
                 order->addRelation(state1, state2);
                 return Order::ABOVE;
-            } else if (mins[state2] >= maxs[state1]) {
+            } else if (mins[state2] > maxs[state1]) {
                 // state2 will always be larger than state1
                 if (!order->contains(state1)) {
                     order->add(state1);
@@ -505,18 +495,22 @@ namespace storm {
                 auto env = Environment();
                 const modelchecker::CheckTask<logic::Formula, ValueType> checkTask = modelchecker::CheckTask<logic::Formula, ValueType>(*formula);
                 STORM_LOG_THROW(plaModelChecker.canHandle(model, checkTask), exceptions::NotSupportedException, "Cannot handle this formula");
-                plaModelChecker.specify(env, model, checkTask, false);
+                plaModelChecker.specify(env, model, checkTask, false, false);
 
                 modelchecker::ExplicitQuantitativeCheckResult<ConstantType> minCheck = plaModelChecker.check(env, region, solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>();
                 modelchecker::ExplicitQuantitativeCheckResult<ConstantType> maxCheck = plaModelChecker.check(env, region, solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>();
 
                 minValuesOnce = minCheck.getValueVector();
                 maxValuesOnce = maxCheck.getValueVector();
+                assert (minValuesOnce->size() == numberOfStates);
+                assert (maxValuesOnce->size() == numberOfStates);
             }
         }
 
         template <typename ValueType, typename ConstantType>
         void OrderExtender<ValueType, ConstantType>::setMinMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>& minValues, std::vector<ConstantType>& maxValues) {
+            assert (minValues.size() == numberOfStates);
+            assert (maxValues.size() == numberOfStates);
             this->minValues[order] = minValues;//minCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
             this->maxValues[order] = maxValues;//maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
             usePLA[order] = true;
@@ -535,6 +529,7 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         void OrderExtender<ValueType, ConstantType>::setMinValues(std::shared_ptr<Order> order, std::vector<ConstantType>& minValues) {
+            assert (minValues.size() == numberOfStates);
             this->minValues[order] = minValues;
             auto maxValues = this->maxValues[order];
             usePLA[order] = this->maxValues.find(order) != this->maxValues.end();
@@ -555,6 +550,7 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         void OrderExtender<ValueType, ConstantType>::setMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>& maxValues) {
+            assert (maxValues.size() == numberOfStates);
             this->maxValues[order] = maxValues;//maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
             usePLA[order] = this->minValues.find(order) != this->minValues.end();
             auto minValues = this->minValues[order];

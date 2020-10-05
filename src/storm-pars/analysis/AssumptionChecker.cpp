@@ -72,7 +72,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(uint_fast64_t val1, uint_fast64_t val2,std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType>& minValues, std::vector<ConstantType>& maxValues) const {
+        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumption(uint_fast64_t val1, uint_fast64_t val2,std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType>const minValues, std::vector<ConstantType>const maxValues) const {
             // First check if based on sample points the assumption can be discharged
             assert (val1 == std::stoi(assumption->getFirstOperand()->asVariableExpression().getVariableName()));
             assert (val2 == std::stoi(assumption->getSecondOperand()->asVariableExpression().getVariableName()));
@@ -120,7 +120,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionSMTSolver(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType>& minValues, std::vector<ConstantType>& maxValues) const {
+        AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionSMTSolver(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType>const minValues, std::vector<ConstantType>const maxValues) const {
             std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
             std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
 
@@ -167,21 +167,24 @@ namespace storm {
                             }
                         }
                         auto comp = order->compare(itr1->getColumn(), itr2->getColumn());
+                        if (minValues.size() > 0 && comp == Order::NodeComparison::UNKNOWN) {
+                            // Couldn't add relation between varname1 and varname2 but maybe we can based on min/max values;
+                            if (minValues[itr2->getColumn()] > maxValues[itr1->getColumn()]) {
+                                order->addRelation(itr2->getColumn(), itr1->getColumn());
+                                comp = Order::NodeComparison::BELOW;
+                            } else if (minValues[itr1->getColumn()] > maxValues[itr2->getColumn()]) {
+                                order->addRelation(itr1->getColumn(), itr2->getColumn());
+                                comp = Order::NodeComparison::ABOVE;
+                            }
+                        }
                         if (comp == Order::NodeComparison::ABOVE) {
-                            exprOrderSucc = exprOrderSucc && !(manager->getVariable(varname1) <=
-                                                              manager->getVariable(varname2));
+                            exprOrderSucc = exprOrderSucc && !(manager->getVariable(varname1) <= manager->getVariable(varname2));
                         } else if (comp == Order::NodeComparison::BELOW) {
-                            exprOrderSucc = exprOrderSucc && !(manager->getVariable(varname1) >=
-                                                              manager->getVariable(varname2));
+                            exprOrderSucc = exprOrderSucc && !(manager->getVariable(varname1) >= manager->getVariable(varname2));
                         } else if (comp == Order::NodeComparison::SAME) {
                             exprOrderSucc = exprOrderSucc && (manager->getVariable(varname1) >= manager->getVariable(varname2)) && (manager->getVariable(varname1) <= manager->getVariable(varname2));
                         } else {
-                            // Couldn't add relation between val1 and val2 based on min/max values;
-                            orderKnown = minValues.size() > 0;
-                            auto varname2 = "s" + std::to_string(itr2->getColumn());
-                            if (orderKnown && !manager->hasVariable(varname2)) {
-                                stateVariables.insert(manager->declareRationalVariable(varname2));
-                            }
+                            orderKnown = false;
                         }
                     }
                 }
@@ -252,6 +255,7 @@ namespace storm {
                 s.add(exprOrderSucc);
                 s.add(exprBounds);
                 // assert that sorting of successors in the order and the bounds on the expression are at least satisfiable
+                // when this is not the case, the order is invalid
                 assert (s.check() == solver::SmtSolver::CheckResult::Sat);
                 s.add(exprToCheck);
                 auto smtRes = s.check();
