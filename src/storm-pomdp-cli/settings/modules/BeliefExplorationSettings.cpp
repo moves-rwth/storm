@@ -55,7 +55,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, triangulationModeOption, false,"Sets how to triangulate beliefs when discretizing.").setIsAdvanced().addArgument(
                         storm::settings::ArgumentBuilder::createStringArgument("value","the triangulation mode").setDefaultValueString("dynamic").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"dynamic", "static"})).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, explHeuristicOption, false,"Sets how to sort the states into the exploration queue.").setIsAdvanced().addArgument(
-                        storm::settings::ArgumentBuilder::createStringArgument("value","the exploration heuristic").setDefaultValueString("bfs").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"bfs", "lowerBound", "upperBound", "gap"})).build()).build());
+                        storm::settings::ArgumentBuilder::createStringArgument("value","the exploration heuristic").setDefaultValueString("bfs").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"bfs", "lowerBound", "upperBound", "gap", "prob"})).build()).build());
             }
 
             bool BeliefExplorationSettings::isRefineSet() const {
@@ -155,6 +155,9 @@ namespace storm {
                 }
                 if(this->getOption(explHeuristicOption).getArgumentByName("value").getValueAsString() == "gap") {
                     return storm::builder::ExplorationHeuristic::GapPrio;
+                }
+                if(this->getOption(explHeuristicOption).getArgumentByName("value").getValueAsString() == "prob") {
+                    return storm::builder::ExplorationHeuristic::ProbabilityPrio;
                 }
                 return storm::builder::ExplorationHeuristic::BreadthFirst;
             }

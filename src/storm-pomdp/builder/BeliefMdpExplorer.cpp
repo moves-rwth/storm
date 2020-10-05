@@ -53,13 +53,15 @@ namespace storm {
             beliefIdToMdpStateMap.clear();
             exploredBeliefIds.clear();
             exploredBeliefIds.grow(beliefManager->getNumberOfBeliefIds(), false);
-            mdpStatesToExplore = std::priority_queue<std::pair<ValueType, uint64_t>, std::deque<std::pair<ValueType, uint64_t>>, std::less<>>();
+            mdpStatesToExplorePrioState.clear();
+            mdpStatesToExploreStatePrio.clear();
             stateRemapping.clear();
             lowerValueBounds.clear();
             upperValueBounds.clear();
             values.clear();
             exploredMdpTransitions.clear();
             exploredChoiceIndices.clear();
+            probabilityEstimation.clear();
             mdpActionRewards.clear();
             targetStates.clear();
             truncatedStates.clear();
@@ -76,6 +78,7 @@ namespace storm {
                 currentMdpState = getCurrentNumberOfMdpStates();
                 extraBottomState = currentMdpState;
                 mdpStateToBeliefIdMap.push_back(beliefManager->noId());
+                probabilityEstimation.push_back(storm::utility::zero<ValueType>());
                 insertValueHints(extraBottomStateValue.get(), extraBottomStateValue.get());
 
                 internalAddTransition(getStartOfCurrentRowGroup(), extraBottomState.get(), storm::utility::one<ValueType>());
@@ -88,6 +91,7 @@ namespace storm {
                 currentMdpState = getCurrentNumberOfMdpStates();
                 extraTargetState = currentMdpState;
                 mdpStateToBeliefIdMap.push_back(beliefManager->noId());
+                probabilityEstimation.push_back(storm::utility::zero<ValueType>());
                 insertValueHints(extraTargetStateValue.get(), extraTargetStateValue.get());
 
                 internalAddTransition(getStartOfCurrentRowGroup(), extraTargetState.get(), storm::utility::one<ValueType>());
@@ -119,6 +123,7 @@ namespace storm {
             cullingTransitionRewards.clear();
             exploredChoiceIndices = exploredMdp->getNondeterministicChoiceIndices();
             mdpActionRewards.clear();
+            probabilityEstimation.clear();
             if (exploredMdp->hasRewardModel()) {
                 // Can be overwritten during exploration
                 mdpActionRewards = exploredMdp->getUniqueRewardModel().getStateActionRewardVector();
@@ -127,7 +132,8 @@ namespace storm {
             truncatedStates = storm::storage::BitVector(getCurrentNumberOfMdpStates(), false);
             culledStates = storm::storage::BitVector(getCurrentNumberOfMdpStates(), false);
             delayedExplorationChoices.clear();
-            mdpStatesToExplore = std::priority_queue<std::pair<ValueType, uint64_t>, std::deque<std::pair<ValueType, uint64_t>>, std::less<>>();
+            mdpStatesToExplorePrioState.clear();
+            mdpStatesToExploreStatePrio.clear();
 
             // The extra states are not changed
             if (extraBottomState) {
@@ -148,7 +154,7 @@ namespace storm {
         template<typename PomdpType, typename BeliefValueType>
         bool BeliefMdpExplorer<PomdpType, BeliefValueType>::hasUnexploredState() const {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
-            return !mdpStatesToExplore.empty();
+            return !mdpStatesToExploreStatePrio.empty();
         }
 
         template<typename PomdpType, typename BeliefValueType>
@@ -160,9 +166,19 @@ namespace storm {
             }
 
             // Pop from the queue.
-            currentMdpState = mdpStatesToExplore.top().second;
-            auto currprio = mdpStatesToExplore.top().first;
-            mdpStatesToExplore.pop();
+            /*currentMdpState = mdpStatesToExplore.top().second;
+            auto currprio = mdpStatesToExplore.top().first;*/
+            currentMdpState = mdpStatesToExplorePrioState.rbegin()->second;
+            auto currprio = mdpStatesToExplorePrioState.rbegin()->first;
+            auto range = mdpStatesToExplorePrioState.equal_range(currprio);
+            for(auto i = range.first; i != range.second; ++i) {
+                if(i->second == currentMdpState){
+                    mdpStatesToExplorePrioState.erase(i);
+                    break;
+                }
+            }
+            mdpStatesToExploreStatePrio.erase(currentMdpState);
+            //mdpStatesToExplore.pop();
             if (currentMdpState != nextId && !currentStateHasOldBehavior()) {
                 stateRemapping[currentMdpState] = nextId;
                 STORM_LOG_DEBUG(
@@ -174,6 +190,9 @@ namespace storm {
 
             if(!currentStateHasOldBehavior()) {
                 ++nextId;
+            }
+            if(explHeuristic == ExplorationHeuristic::ProbabilityPrio){
+                probabilityEstimation.push_back(currprio);
             }
 
             return mdpStateToBeliefIdMap[currentMdpState];
@@ -219,7 +238,7 @@ namespace storm {
                     return false;
                 }
             } else {
-                column = getOrAddMdpState(transitionTarget);
+                column = getOrAddMdpState(transitionTarget, value);
             }
             uint64_t row = getStartOfCurrentRowGroup() + localActionIndex;
             internalAddTransition(row, column, value);
@@ -387,10 +406,19 @@ namespace storm {
                             case ExplorationHeuristic::GapPrio        :
                                 currentPrio = getUpperValueBoundAtCurrentState() - getLowerValueBoundAtCurrentState();
                                 break;
+                            case ExplorationHeuristic::ProbabilityPrio:
+                                if(getCurrentMdpState() != noState()) {
+                                    currentPrio = probabilityEstimation[getCurrentMdpState()] * transition.getValue();
+                                } else {
+                                    currentPrio = storm::utility::one<ValueType>();
+                                }
+                                break;
                             default :
                                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Other heuristics not implemented yet");
                         }
-                        mdpStatesToExplore.push(std::make_pair(currentPrio, transition.getColumn()));
+                        //mdpStatesToExplore.push(std::make_pair(currentPrio, transition.getColumn()));
+                        mdpStatesToExploreStatePrio[transition.getColumn()] = currentPrio;
+                        mdpStatesToExplorePrioState.emplace(currentPrio, transition.getColumn());
                     }
                 }
             }
@@ -905,9 +933,25 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
-        typename BeliefMdpExplorer<PomdpType, BeliefValueType>::MdpStateType BeliefMdpExplorer<PomdpType, BeliefValueType>::getOrAddMdpState(BeliefId const &beliefId) {
+        typename BeliefMdpExplorer<PomdpType, BeliefValueType>::MdpStateType BeliefMdpExplorer<PomdpType, BeliefValueType>::getOrAddMdpState(BeliefId const &beliefId, ValueType const &transitionValue) {
             exploredBeliefIds.grow(beliefId + 1, false);
             if (exploredBeliefIds.get(beliefId)) {
+                if(explHeuristic == ExplorationHeuristic::ProbabilityPrio && mdpStatesToExploreStatePrio.find(beliefIdToMdpStateMap[beliefId]) != mdpStatesToExploreStatePrio.end()){
+                    // We check if the value is higher than the current priority and update if necessary
+                    auto newPrio = probabilityEstimation[getCurrentMdpState()] * transitionValue;
+                    if(newPrio > mdpStatesToExploreStatePrio[beliefIdToMdpStateMap[beliefId]]) {
+                        // Erase the state from the "queue" map and re-insert it with the new value
+                        auto range = mdpStatesToExplorePrioState.equal_range(mdpStatesToExploreStatePrio[beliefIdToMdpStateMap[beliefId]]);
+                        for (auto i = range.first; i != range.second; ++i) {
+                            if (i->second == beliefIdToMdpStateMap[beliefId]) {
+                                mdpStatesToExplorePrioState.erase(i);
+                                break;
+                            }
+                        }
+                        mdpStatesToExplorePrioState.emplace(newPrio, beliefIdToMdpStateMap[beliefId]);
+                        mdpStatesToExploreStatePrio[beliefIdToMdpStateMap[beliefId]] = newPrio;
+                    }
+                }
                 return beliefIdToMdpStateMap[beliefId];
             } else {
                 // This state needs exploration
@@ -917,7 +961,6 @@ namespace storm {
                 if (exploredMdp) {
                     auto findRes = beliefIdToMdpStateMap.find(beliefId);
                     if (findRes != beliefIdToMdpStateMap.end()) {
-                        //TODO set priority
                         ValueType currentPrio;
                         switch (explHeuristic) {
                             case ExplorationHeuristic::BreadthFirst :
@@ -933,10 +976,19 @@ namespace storm {
                             case ExplorationHeuristic::GapPrio        :
                                 currentPrio = getUpperValueBoundAtCurrentState() - getLowerValueBoundAtCurrentState();
                                 break;
+                            case ExplorationHeuristic::ProbabilityPrio:
+                                if(getCurrentMdpState() != noState()) {
+                                    currentPrio = probabilityEstimation[getCurrentMdpState()] * transitionValue;
+                                } else {
+                                    currentPrio = storm::utility::one<ValueType>();
+                                }
+                                break;
                             default :
                                 STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Other heuristics not implemented yet");
                         }
-                        mdpStatesToExplore.push(std::make_pair(currentPrio, findRes->second));
+                        //mdpStatesToExplore.push(std::make_pair(currentPrio, findRes->second));
+                        mdpStatesToExploreStatePrio[findRes->second] = currentPrio;
+                        mdpStatesToExplorePrioState.emplace(currentPrio, findRes->second);
                         return findRes->second;
                     }
                 }
@@ -946,7 +998,6 @@ namespace storm {
                 mdpStateToBeliefIdMap.push_back(beliefId);
                 beliefIdToMdpStateMap[beliefId] = result;
                 insertValueHints(computeLowerValueBoundAtBelief(beliefId), computeUpperValueBoundAtBelief(beliefId));
-                //TODO set priority
                 ValueType currentPrio;
                 switch (explHeuristic) {
                     case ExplorationHeuristic::BreadthFirst :
@@ -962,10 +1013,19 @@ namespace storm {
                     case ExplorationHeuristic::GapPrio        :
                         currentPrio = getUpperValueBoundAtCurrentState() - getLowerValueBoundAtCurrentState();
                         break;
+                    case ExplorationHeuristic::ProbabilityPrio:
+                        if(getCurrentMdpState() != noState()) {
+                            currentPrio = probabilityEstimation[getCurrentMdpState()] * transitionValue;
+                        } else {
+                            currentPrio = storm::utility::one<ValueType>();
+                        }
+                        break;
                     default :
                         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Other heuristics not implemented yet");
                 }
-                mdpStatesToExplore.push(std::make_pair(currentPrio, result));
+                //mdpStatesToExplore.push(std::make_pair(currentPrio, result));
+                mdpStatesToExploreStatePrio[result] = currentPrio;
+                mdpStatesToExplorePrioState.emplace(currentPrio, result);
                 return result;
             }
         }

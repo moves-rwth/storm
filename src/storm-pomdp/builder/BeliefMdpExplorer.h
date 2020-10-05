@@ -19,7 +19,8 @@ namespace storm {
             BreadthFirst,
             LowerBoundPrio,
             UpperBoundPrio,
-            GapPrio
+            GapPrio,
+            ProbabilityPrio
         };
 
         template<typename PomdpType, typename BeliefValueType = typename PomdpType::ValueType>
@@ -213,8 +214,8 @@ namespace storm {
 
             void insertValueHints(ValueType const &lowerBound, ValueType const &upperBound);
 
-            MdpStateType getOrAddMdpState(BeliefId const &beliefId);
-            
+            MdpStateType getOrAddMdpState(BeliefId const &beliefId, ValueType const &transitionValue = storm::utility::zero<ValueType>());
+
             // Belief state related information
             std::shared_ptr<BeliefManagerType> beliefManager;
             std::vector<BeliefId> mdpStateToBeliefIdMap;
@@ -222,7 +223,10 @@ namespace storm {
             storm::storage::BitVector exploredBeliefIds;
             
             // Exploration information
-            std::priority_queue<std::pair<ValueType, uint64_t>, std::deque<std::pair<ValueType, uint64_t>>, std::less<>> mdpStatesToExplore;
+            //std::priority_queue<std::pair<ValueType, uint64_t>, std::deque<std::pair<ValueType, uint64_t>>, std::less<>> mdpStatesToExplore;
+            std::multimap<ValueType, uint64_t> mdpStatesToExplorePrioState;
+            std::map<uint64_t, ValueType> mdpStatesToExploreStatePrio;
+            std::vector<ValueType> probabilityEstimation;
             std::vector<std::map<MdpStateType, ValueType>> exploredMdpTransitions;
             std::vector<MdpStateType> exploredChoiceIndices;
             std::vector<ValueType> mdpActionRewards;
