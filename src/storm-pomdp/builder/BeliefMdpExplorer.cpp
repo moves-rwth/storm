@@ -975,6 +975,19 @@ namespace storm {
             return mdpStateToBeliefIdMap;
         }
 
+        template<typename PomdpType, typename BeliefValueType>
+        std::vector<typename BeliefMdpExplorer<PomdpType, BeliefValueType>::BeliefId> BeliefMdpExplorer<PomdpType, BeliefValueType>::getBeliefsWithObservationInMdp(uint32_t obs) const {
+            std::vector<BeliefId> res;
+            for (auto const &belief : mdpStateToBeliefIdMap) {
+                if(belief != beliefManager->noId()) {
+                    if (beliefManager->getBeliefObservation(belief) == obs) {
+                        res.push_back(belief);
+                    }
+                }
+            }
+            return res;
+        }
+
         template
         class BeliefMdpExplorer<storm::models::sparse::Pomdp<double>>;
 

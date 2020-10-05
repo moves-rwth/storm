@@ -188,6 +188,8 @@ namespace storm {
              */
             void computeOptimalChoicesAndReachableMdpStates(ValueType const &ancillaryChoicesEpsilon, bool relativeDifference);
 
+            std::vector<BeliefId> getBeliefsWithObservationInMdp(uint32_t obs) const;
+
             std::vector<BeliefId> getBeliefsInMdp();
 
             void addCullingRewardToCurrentState(uint64 const &localActionIndex, ValueType rewardValue);
