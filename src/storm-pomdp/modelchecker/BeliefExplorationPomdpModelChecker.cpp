@@ -826,8 +826,34 @@ namespace storm {
                             }
                         }
                         if(cullBelief){
+                            std::priority_queue<std::pair<ValueType, uint64_t>, std::vector<std::pair<ValueType, uint64_t>>, std::less<>> restrictedCandidates;
+                            uint64_t nrCandidates = 10;
+                            statistics.cullingPreTime.start();
+                            for(auto const &candidateBelief : underApproximation->getBeliefsWithObservationInMdp(currObservation)){
+                                if(!beliefManager->isEqual(candidateBelief,currId)){
+                                    if (restrictedCandidates.size() < nrCandidates) {
+                                        restrictedCandidates.push(std::make_pair(beliefManager->computeDifference1norm(candidateBelief, currId), candidateBelief));
+                                    } else {
+                                        auto currentWorst = restrictedCandidates.top().first;
+                                        if (currentWorst > beliefManager->computeDifference1norm(candidateBelief, currId)) {
+                                            restrictedCandidates.pop();
+                                            restrictedCandidates.push(std::make_pair(beliefManager->computeDifference1norm(candidateBelief, currId), candidateBelief));
+                                        }
+                                    }
+                                }
+                            }
+                            std::vector<uint64_t> candidates(nrCandidates);
+                            while(!restrictedCandidates.empty()){
+                                candidates.push_back(restrictedCandidates.top().second);
+                                //STORM_PRINT(beliefManager->toString(restrictedCandidates.top().second) << std::endl)
+                                restrictedCandidates.pop();
+                            }
+                            statistics.cullingPreTime.stop();
                             // Belief is to be culled, find the best candidate
-                            auto cullingResult = beliefManager->cullBelief(currId, heuristicParameters.cullingThreshold, underApproximation->getBeliefsInMdp());
+                            statistics.nrCullingAttempts = statistics.nrCullingAttempts.get() + 1;
+                            statistics.cullWatch.start();
+                            auto cullingResult = beliefManager->cullBelief(currId, heuristicParameters.cullingThreshold, candidates /*underApproximation->getBeliefsInMdp()*/);
+                            statistics.cullWatch.stop();
                             if(cullingResult.isCullable){
                                 underApproximation->setCurrentStateIsCulled();
                                 statistics.nrCulledStates = statistics.nrCulledStates.get() + 1;
