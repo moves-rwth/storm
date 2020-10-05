@@ -155,7 +155,7 @@ namespace storm {
                 stream << "# Max. Number of states with same observation: " << pomdp().getMaxNrStatesWithSameObservation() << std::endl;
                 
                 if (statistics.beliefMdpDetectedToBeFinite) {
-                    stream << "# Pre-computations detected that the belief MDP is finite.";
+                    stream << "# Pre-computations detected that the belief MDP is finite." << std::endl;
                 }
                 if (statistics.aborted) {
                     stream << "# Computation aborted early" << std::endl;
@@ -193,11 +193,26 @@ namespace storm {
                     if (options.refine) {
                         stream << "final ";
                     }
-                    stream << "grid MDP for the under-approximation: ";
+                    stream << "belief MDP for the under-approximation: ";
                     if (statistics.underApproximationBuildAborted) {
                         stream << ">=";
                     }
                     stream << statistics.underApproximationStates.get() << std::endl;
+                    if(statistics.nrCullingAttempts) {
+                        stream << "# Culling attempts (culled states) for the under-approximation: ";
+                        if (statistics.underApproximationBuildAborted) {
+                            stream << ">=";
+                        }
+                        stream << statistics.nrCullingAttempts.get() << " (" << statistics.nrCulledStates.get() << ")" << std::endl;
+                        stream << "# Total Culling Preprocessing time: " << statistics.cullingPreTime << std::endl;
+                        stream << "# Total culling time: " << statistics.cullWatch << std::endl;
+                    } else if (statistics.nrTruncatedStates){
+                        stream << "# Truncated states for the under-approximation: ";
+                        if (statistics.underApproximationBuildAborted) {
+                            stream << ">=";
+                        }
+                        stream << statistics.nrTruncatedStates.get() << std::endl;
+                    }
                     if (statistics.underApproximationStateLimit) {
                         stream << "# Exploration state limit for under-approximation: " << statistics.underApproximationStateLimit.get() << std::endl;
                     }
@@ -751,6 +766,10 @@ namespace storm {
                 bool useBeliefCulling = heuristicParameters.cullingThreshold > storm::utility::zero<ValueType>();
                 STORM_LOG_INFO_COND(!useBeliefCulling, "Use Belief Culling with threshold " << storm::utility::to_string(heuristicParameters.cullingThreshold));
                 statistics.underApproximationBuildTime.start();
+                if(useBeliefCulling){
+                    statistics.nrCullingAttempts = 0;
+                    statistics.nrCulledStates = 0;
+                }
                 bool fixPoint = true;
                 if (heuristicParameters.sizeThreshold != std::numeric_limits<uint64_t>::max()) {
                     statistics.underApproximationStateLimit = heuristicParameters.sizeThreshold;
@@ -803,6 +822,7 @@ namespace storm {
                             } else if (underApproximation->getCurrentNumberOfMdpStates() >= heuristicParameters.sizeThreshold) {
                                 cullBelief = useBeliefCulling;
                                 stopExploration = !useBeliefCulling;
+                                underApproximation->setCurrentStateIsTruncated();
                             }
                         }
                         if(cullBelief){
@@ -810,6 +830,7 @@ namespace storm {
                             auto cullingResult = beliefManager->cullBelief(currId, heuristicParameters.cullingThreshold, underApproximation->getBeliefsInMdp());
                             if(cullingResult.isCullable){
                                 underApproximation->setCurrentStateIsCulled();
+                                statistics.nrCulledStates = statistics.nrCulledStates.get() + 1;
                                 bool addedSucc = underApproximation->addTransitionToBelief(0, cullingResult.targetBelief, storm::utility::one<ValueType>() - cullingResult.delta, true);
                                 if(computeRewards){
                                     //Determine a sound reward bound
@@ -894,11 +915,13 @@ namespace storm {
                 statistics.underApproximationCheckTime.start();
                 underApproximation->computeValuesOfExploredMdp(min ? storm::solver::OptimizationDirection::Minimize : storm::solver::OptimizationDirection::Maximize);
                 statistics.underApproximationCheckTime.stop();
-
-                // FOR DEBUGGING, ALWAYS OUTPUT BELIEF-MDP WHEN CULLING
-                if(useBeliefCulling){
-                    storm::api::exportSparseModelAsDot(std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(underApproximation->getExploredMdp()), "underapprox.dot");
+                if(underApproximation->getExploredMdp()->getStateLabeling().getStates("truncated").getNumberOfSetBits() > 0){
+                    statistics.nrTruncatedStates = underApproximation->getExploredMdp()->getStateLabeling().getStates("truncated").getNumberOfSetBits();
                 }
+                // FOR DEBUGGING, ALWAYS OUTPUT BELIEF-MDP
+                //if(useBeliefCulling){
+                //    storm::api::exportSparseModelAsDot(std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(underApproximation->getExploredMdp()), "underapprox.dot");
+                //}
                 // don't overwrite statistics of a previous, successful computation
                 if (!storm::utility::resources::isTerminate() || !statistics.underApproximationStates) {
                     statistics.underApproximationStates = underApproximation->getExploredMdp()->getNumberOfStates();

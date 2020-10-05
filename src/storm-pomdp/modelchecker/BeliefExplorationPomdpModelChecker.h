@@ -116,6 +116,11 @@ namespace storm {
                     storm::utility::Stopwatch underApproximationBuildTime;
                     storm::utility::Stopwatch underApproximationCheckTime;
                     boost::optional<uint64_t> underApproximationStateLimit;
+                    boost::optional<uint64_t> nrCullingAttempts;
+                    boost::optional<uint64_t> nrCulledStates;
+                    boost::optional<uint64_t> nrTruncatedStates;
+                    storm::utility::Stopwatch cullWatch;
+                    storm::utility::Stopwatch cullingPreTime;
                     
                     bool aborted;
                 };
