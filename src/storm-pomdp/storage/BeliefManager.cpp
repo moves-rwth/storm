@@ -531,6 +531,46 @@ namespace storm {
             return destinations;
 
         }
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType BeliefManager<PomdpType, BeliefValueType, StateType>::computeDifference1norm(BeliefId const &belief1, BeliefId const &belief2){
+            return computeDifference1normInternal(getBelief(belief1), getBelief(belief2));
+        }
+
+       template<typename PomdpType, typename BeliefValueType, typename StateType>
+        typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType BeliefManager<PomdpType, BeliefValueType, StateType>::computeDifference1normInternal(BeliefType const &belief1, BeliefType const &belief2){
+            auto sum = storm::utility::zero<ValueType>();
+
+            auto lhIt = belief1.begin();
+            auto rhIt = belief2.begin();
+            while(lhIt != belief1.end() || rhIt != belief2.end()){
+                // Iterate over the entries simultaneously
+                if(lhIt == belief1.end()){
+                    sum += rhIt->second;
+                    ++rhIt;
+                } else if(rhIt == belief2.end()){
+                    sum += lhIt->second;
+                    ++lhIt;
+                } else if(lhIt->first == rhIt->first){
+                    // Both iterators are on the same state, take the difference and add it to the sum
+                    if(lhIt->second > rhIt->second) {
+                        sum += lhIt->second - rhIt->second;
+                    } else if(rhIt->second > lhIt->second){
+                        sum += rhIt->second - lhIt->second;
+                    }
+                    ++lhIt;
+                    ++rhIt;
+                } else if(lhIt->first > rhIt->first){
+                    // Iterator 1 skipped a state which belief 2 contains
+                    sum += rhIt->second;
+                    ++rhIt;
+                } else {
+                    // Iterator 2 skipped a state which belief 1 contains
+                    sum += lhIt->second;
+                    ++lhIt;
+                }
+            }
+            return sum;
+        }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
         typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefCulling

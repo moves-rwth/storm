@@ -81,10 +81,14 @@ namespace storm {
 
             BeliefCulling cullBelief(BeliefId const &beliefId, ValueType threshold = storm::utility::one<ValueType>(), boost::optional<std::vector<BeliefId>> const &targets = boost::none);
 
+            ValueType computeDifference1norm(BeliefId const &belief1, BeliefId const &belief2);
+
         private:
 
             template<typename DistributionType>
             void adjustDistribution(DistributionType &distr);
+
+            ValueType computeDifference1normInternal(BeliefType const &belief1, BeliefType const &belief2);
 
             struct BeliefHash {
                 std::size_t operator()(const BeliefType &belief) const;
