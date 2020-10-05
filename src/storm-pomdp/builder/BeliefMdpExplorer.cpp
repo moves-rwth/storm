@@ -65,6 +65,7 @@ namespace storm {
             truncatedStates.clear();
             culledStates.clear();
             delayedExplorationChoices.clear();
+            cullingTransitionRewards.clear();
             optimalChoices = boost::none;
             optimalChoicesReachableMdpStates = boost::none;
             exploredMdp = nullptr;
@@ -115,6 +116,7 @@ namespace storm {
             exploredBeliefIds.grow(beliefManager->getNumberOfBeliefIds(), false);
             exploredMdpTransitions.clear();
             exploredMdpTransitions.resize(exploredMdp->getNumberOfChoices());
+            cullingTransitionRewards.clear();
             exploredChoiceIndices = exploredMdp->getNondeterministicChoiceIndices();
             mdpActionRewards.clear();
             if (exploredMdp->hasRewardModel()) {
@@ -242,6 +244,13 @@ namespace storm {
             }
             uint64_t row = getStartOfCurrentRowGroup() + localActionIndex;
             mdpActionRewards[row] = rewardValue;
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::addCullingRewardToCurrentState(uint64 const &localActionIndex, ValueType rewardValue) {
+            STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
+            uint64_t row = getStartOfCurrentRowGroup() + localActionIndex;
+            cullingTransitionRewards[row] = rewardValue;
         }
 
         template<typename PomdpType, typename BeliefValueType>
@@ -472,8 +481,26 @@ namespace storm {
             std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> mdpRewardModels;
             if (!mdpActionRewards.empty()) {
                 mdpActionRewards.resize(getCurrentNumberOfMdpChoices(), storm::utility::zero<ValueType>());
-                mdpRewardModels.emplace("default",
-                                        storm::models::sparse::StandardRewardModel<ValueType>(boost::optional<std::vector<ValueType>>(), std::move(mdpActionRewards)));
+                if(!cullingTransitionRewards.empty()){
+                    storm::storage::SparseMatrixBuilder<ValueType> rewardBuilder(getCurrentNumberOfMdpChoices(), getCurrentNumberOfMdpStates(), cullingTransitionRewards.size(), true, true,getCurrentNumberOfMdpStates());
+                    for (uint64_t groupIndex = 0; groupIndex < exploredChoiceIndices.size() - 1; ++groupIndex) {
+                        uint64_t rowIndex = exploredChoiceIndices[groupIndex];
+                        uint64_t groupEnd = exploredChoiceIndices[groupIndex + 1];
+                        rewardBuilder.newRowGroup(rowIndex);
+                        for (; rowIndex < groupEnd; ++rowIndex) {
+                            if(cullingTransitionRewards.find(rowIndex) != cullingTransitionRewards.end()){
+                                STORM_LOG_ASSERT(extraTargetState.is_initialized(), "Requested a transition to the extra target state but there is none.");
+                                rewardBuilder.addNextValue(rowIndex, extraTargetState.get(), cullingTransitionRewards[rowIndex]);
+                            }
+                        }
+                    }
+                    auto transitionRewardMatrix = rewardBuilder.build();
+                    mdpRewardModels.emplace("default",
+                                            storm::models::sparse::StandardRewardModel<ValueType>(boost::optional<std::vector<ValueType>>(), std::move(mdpActionRewards), std::move(transitionRewardMatrix)));
+                } else {
+                    mdpRewardModels.emplace("default",
+                                            storm::models::sparse::StandardRewardModel<ValueType>(boost::optional<std::vector<ValueType>>(), std::move(mdpActionRewards)));
+                }
             }
 
             // Create model components

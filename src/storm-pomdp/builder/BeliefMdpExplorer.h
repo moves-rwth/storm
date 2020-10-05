@@ -190,6 +190,8 @@ namespace storm {
 
             std::vector<BeliefId> getBeliefsInMdp();
 
+            void addCullingRewardToCurrentState(uint64 const &localActionIndex, ValueType rewardValue);
+
         private:
             MdpStateType noState() const;
 
@@ -222,6 +224,7 @@ namespace storm {
             std::vector<std::map<MdpStateType, ValueType>> exploredMdpTransitions;
             std::vector<MdpStateType> exploredChoiceIndices;
             std::vector<ValueType> mdpActionRewards;
+            std::map<MdpStateType, ValueType> cullingTransitionRewards;
             uint64_t currentMdpState;
             std::map<MdpStateType, MdpStateType> stateRemapping;
             uint64_t nextId;
