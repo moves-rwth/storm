@@ -109,7 +109,7 @@ namespace storm {
              * @param dotOutfileName Name for the files of the dot outputs should they be generated
              * @return Map which maps each order to its Reachability Order and used assumptions.
              */
-            std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> checkMonotonicityInBuild(std::ostream& outfile, std::string dotOutfileName = "dotOutput");
+            std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> checkMonotonicityInBuild(std::ostream& outfile, bool usePLA, std::string dotOutfileName = "dotOutput");
 
             /*!
              * Checks for local monotonicity at the given state.
@@ -125,9 +125,9 @@ namespace storm {
         private:
             void createOrder();
 
-            std::map<VariableType, std::pair<bool, bool>> checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples);
+            void checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Dtmc<ValueType>> model, uint_fast64_t numberOfSamples);
 
-            std::map<VariableType, std::pair<bool, bool>> checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples);
+            void checkMonotonicityOnSamples(std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples);
 
             void extendOrderWithAssumptions(std::shared_ptr<Order> order, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions, std::shared_ptr<MonotonicityResult<VariableType>> monRes);
 
@@ -146,7 +146,7 @@ namespace storm {
 
             bool onlyCheckOnOrder;
 
-            std::map<VariableType, std::pair<bool, bool>> resultCheckOnSamples;
+            MonotonicityResult<VariableType> resultCheckOnSamples;
 
             std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> monResults;
 

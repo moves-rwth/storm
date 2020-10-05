@@ -119,14 +119,19 @@ namespace storm {
             addBetween(state, getNode(above), getNode(below));
         }
 
-        void Order::addRelation(uint_fast64_t above, uint_fast64_t below) {
+        void Order::addRelation(uint_fast64_t above, uint_fast64_t below, bool allowMerge) {
             assert (getNode(above) != nullptr && getNode(below) != nullptr);
-            addRelationNodes(getNode(above), getNode(below));
+            addRelationNodes(getNode(above), getNode(below), allowMerge);
         }
 
-        void Order::addRelationNodes(Order::Node *above, Order::Node * below) {
-            assert (compare(above, below) != BELOW);
-
+        void Order::addRelationNodes(Order::Node *above, Order::Node * below, bool allowMerge) {
+            assert (allowMerge || compare(above, below) != BELOW);
+            if (allowMerge) {
+                if (compare(above, below) == BELOW) {
+                    mergeNodes(above, below);
+                }
+                return;
+            }
             for (auto const &state : above->states) {
                 below->statesAbove.set(state);
             }
@@ -587,6 +592,13 @@ namespace storm {
             this->addedStates = storm::storage::BitVector(numberOfStates);
             this->doneBuilding = doneBuilding;
             this->decomposition = decomposition;
+            auto test = storm::storage::BitVector(numberOfStates);
+            for (auto scc : decomposition) {
+                for (auto state : scc.getStates()) {
+                    assert (!test[state]);
+                    test.set(state);
+                }
+            }
             this->addedSCCs  = storm::storage::BitVector(decomposition.size());
             this->top = new Node();
             this->bottom = new Node();

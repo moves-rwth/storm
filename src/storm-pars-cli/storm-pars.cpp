@@ -746,36 +746,44 @@ namespace storm {
                 if (monSettings.isExportMonotonicitySet()) {
                     std::ofstream outfile;
                     utility::openFile(monSettings.getExportMonotonicityFilename(), outfile);
-                    monotonicityHelper.checkMonotonicityInBuild(outfile, monSettings.getDotOutputFilename());
+                    monotonicityHelper.checkMonotonicityInBuild(outfile, monSettings.isUsePLAForMonotonicityAnalysis(), monSettings.getDotOutputFilename());
                     utility::closeFile(outfile);
                 } else {
-                    monotonicityHelper.checkMonotonicityInBuild(std::cout, monSettings.getDotOutputFilename());
+                    monotonicityHelper.checkMonotonicityInBuild(std::cout, monSettings.isUsePLAForMonotonicityAnalysis(), monSettings.getDotOutputFilename());
                 }
                 monotonicityWatch.stop();
                 STORM_PRINT(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl
                                     << std::endl);
                 return;
-            }
+            } else {
 
-            std::string samplesAsString = parSettings.getSamples();
-            SampleInformation<ValueType> samples;
-            if (!samplesAsString.empty()) {
-                samples = parseSamples<ValueType>(model, samplesAsString, parSettings.isSamplesAreGraphPreservingSet());
-                samples.exact = parSettings.isSampleExactSet();
-            }
+                std::string samplesAsString = parSettings.getSamples();
+                SampleInformation<ValueType> samples;
+                if (!samplesAsString.empty()) {
+                    samples = parseSamples<ValueType>(model, samplesAsString,
+                                                      parSettings.isSamplesAreGraphPreservingSet());
+                    samples.exact = parSettings.isSampleExactSet();
+                }
 
-            if (model) {
-                storm::cli::exportModel<DdType, ValueType>(model, input);
-            }
+                if (model) {
+                    storm::cli::exportModel<DdType, ValueType>(model, input);
+                }
 
-            if (parSettings.onlyObtainConstraints()) {
-                STORM_LOG_THROW(parSettings.exportResultToFile(), storm::exceptions::InvalidSettingsException, "When computing constraints, export path has to be specified.");
-                storm::api::exportParametricResultToFile<ValueType>(boost::none, storm::analysis::ConstraintCollector<ValueType>(*(model->as<storm::models::sparse::Model<ValueType>>())), parSettings.exportResultPath());
-                return;
-            }
+                if (parSettings.onlyObtainConstraints()) {
+                    STORM_LOG_THROW(parSettings.exportResultToFile(), storm::exceptions::InvalidSettingsException,
+                                    "When computing constraints, export path has to be specified.");
+                    storm::api::exportParametricResultToFile<ValueType>(boost::none,
+                                                                        storm::analysis::ConstraintCollector<ValueType>(
+                                                                                *(model->as<storm::models::sparse::Model<ValueType>>())),
+                                                                        parSettings.exportResultPath());
+                    return;
+                }
 
-            if (model) {
-                verifyParametricModel<DdType, ValueType>(model, input, regions, samples, parSettings.isUseMonotonicitySet(), monSettings.getMonotonicityThreshold());
+                if (model) {
+                    verifyParametricModel<DdType, ValueType>(model, input, regions, samples,
+                                                             parSettings.isUseMonotonicitySet(),
+                                                             monSettings.getMonotonicityThreshold());
+                }
             }
         }
 

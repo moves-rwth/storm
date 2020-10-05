@@ -106,7 +106,7 @@ namespace storm {
                      * @param above The node closest to the top Node of the Order.
                      * @param below The node closest to the bottom Node of the Order.
                      */
-                    void addRelationNodes(storm::analysis::Order::Node *above, storm::analysis::Order::Node * below);
+                    void addRelationNodes(storm::analysis::Order::Node *above, storm::analysis::Order::Node * below, bool allowMerge = false);
 
                     /*!
                     * Adds a new relation between two states to the order.
@@ -114,7 +114,7 @@ namespace storm {
                     * @param above The state closest to the top Node of the Order.
                     * @param below The state closest to the bottom Node of the Order.
                     */
-                    void addRelation(uint_fast64_t above, uint_fast64_t below);
+                    void addRelation(uint_fast64_t above, uint_fast64_t below, bool allowMerge = false);
 
                     /*!
                      * Adds state to the states of the given node.

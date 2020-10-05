@@ -14,6 +14,7 @@ namespace storm {
 
             const std::string MonotonicitySettings::moduleName = "monotonicity";
             const std::string MonotonicitySettings::monotonicityAnalysis = "monotonicity-analysis";
+            const std::string MonotonicitySettings::plaForMonotonicityAnalysis = "mon-pla";
             const std::string MonotonicitySettings::sccElimination = "mon-elim-scc";
             const std::string MonotonicitySettings::samplesMonotonicityAnalysis = "mon-samples";
             const std::string MonotonicitySettings::precision = "mon-precision";
@@ -27,6 +28,7 @@ namespace storm {
 
             MonotonicitySettings::MonotonicitySettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, monotonicityAnalysis, false, "Sets whether monotonicity analysis is done").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, plaForMonotonicityAnalysis, false, "Sets whether pla should be used for monotonicity analysis").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, sccElimination, false, "Sets whether SCCs should be eliminated in the monotonicity analysis").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, samplesMonotonicityAnalysis, false, "Sets whether monotonicity should be checked on samples").setIsAdvanced()
                                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("mon-samples", "The number of samples taken in monotonicity-analysis can be given, default is 0, no samples").setDefaultValueUnsignedInteger(0).build()).build());
@@ -44,6 +46,10 @@ namespace storm {
 
             bool MonotonicitySettings::isMonotonicityAnalysisSet() const {
                 return this->getOption(monotonicityAnalysis).getHasOptionBeenSet();
+            }
+
+            bool MonotonicitySettings::isUsePLAForMonotonicityAnalysis() const {
+                return this->getOption(plaForMonotonicityAnalysis).getHasOptionBeenSet();
             }
 
             bool MonotonicitySettings::isSccEliminationSet() const {

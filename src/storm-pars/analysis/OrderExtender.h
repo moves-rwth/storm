@@ -49,18 +49,8 @@ namespace storm {
              *         is unknown but needed. When the states have as number the number of states, no states are
              *         unplaced but needed.
              */
-            std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> toOrder(std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr);
+            std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> toOrder(storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr);
 
-            /*!
-             * Extends the order based on the given assumption.
-             *
-             * @param order The order.
-             * @param assumption The assumption on states.
-             * @return A triple with a pointer to the order and two states of which the current place in the order
-             *         is unknown but needed. When the states have as number the number of states, no states are
-             *         unplaced but needed.
-             */
-            std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr);
 
             /*!
              * Extends the order for the given region.
@@ -71,7 +61,7 @@ namespace storm {
              *         is unknown but needed. When the states have as number the number of states, no states are
              *         unplaced or needed.
              */
-            std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region);
+            std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr, std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr);
 
             void setMinMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType> &minValues, std::vector<ConstantType> &maxValues);
             void setMinValues(std::shared_ptr<Order> order, std::vector<ConstantType> &minValues);
@@ -82,6 +72,7 @@ namespace storm {
             std::pair<uint_fast64_t, uint_fast64_t> getUnknownStates(std::shared_ptr<Order> order) const;
             void setUnknownStates(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
             void copyMinMax(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
+            void initializeMinMaxValues();
 
 
         private:
@@ -89,19 +80,20 @@ namespace storm {
 
             Order::NodeComparison addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) const;
 
-            std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors) const;
+            std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) const;
 
-            std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors);
+            std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge);
 
             void handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor);
 
             void handleAssumption(std::shared_ptr<Order> order, std::shared_ptr<expressions::BinaryRelationExpression> assumption) const;
 
-            void getMinMaxValues();
 
             std::shared_ptr<Order> bottomTopOrder = nullptr;
 
             std::map<std::shared_ptr<Order>, std::vector<ConstantType>> minValues;
+            boost::optional<std::vector<ConstantType>> minValuesOnce;
+            boost::optional<std::vector<ConstantType>> maxValuesOnce;
             std::map<std::shared_ptr<Order>, std::vector<ConstantType>> maxValues;
 
             storage::SparseMatrix<ValueType> matrix;
@@ -113,6 +105,7 @@ namespace storm {
             std::map<std::shared_ptr<Order>, std::pair<uint_fast64_t, uint_fast64_t>> lastUnknownStatesMap;
 
             std::map<std::shared_ptr<Order>, bool> usePLA;
+            boost::optional<bool> usePLAOnce;
             std::map<std::shared_ptr<Order>, bool> continueExtending;
             bool cyclic;
 
@@ -141,6 +134,18 @@ namespace storm {
             std::pair<uint_fast64_t, uint_fast64_t> getNextState(std::shared_ptr<Order> order, uint_fast64_t sccNumber, std::set<uint_fast64_t>& seenStates, bool trick = false);
 
             std::set<uint_fast64_t> nonParametericStates;
+
+            /*!
+             * Extends the order based on the given assumption.
+             *
+             * @param order The order.
+             * @param assumption The assumption on states.
+             * @return A triple with a pointer to the order and two states of which the current place in the order
+             *         is unknown but needed. When the states have as number the number of states, no states are
+             *         unplaced but needed.
+             */
+            std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr);
+
         };
     }
 }

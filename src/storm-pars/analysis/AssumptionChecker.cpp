@@ -136,7 +136,7 @@ namespace storm {
             bool addVar2 = false;
             // Check if the order between the different successors is known
             // Also start creating expression for order of states
-            expressions::Expression exprOrderSucc = manager->boolean(true);
+            auto exprOrderSucc = manager->boolean(true);
             std::set<expressions::Variable> stateVariables;
             std::set<expressions::Variable> topVariables;
             std::set<expressions::Variable> bottomVariables;
@@ -174,7 +174,7 @@ namespace storm {
                             exprOrderSucc = exprOrderSucc && !(manager->getVariable(varname1) >=
                                                               manager->getVariable(varname2));
                         } else if (comp == Order::NodeComparison::SAME) {
-                            exprOrderSucc = exprOrderSucc && (manager->getVariable(varname1) = manager->getVariable(varname2));
+                            exprOrderSucc = exprOrderSucc && (manager->getVariable(varname1) >= manager->getVariable(varname2)) && (manager->getVariable(varname1) <= manager->getVariable(varname2));
                         } else {
                             // Couldn't add relation between val1 and val2 based on min/max values;
                             orderKnown = minValues.size() > 0;

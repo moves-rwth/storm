@@ -38,7 +38,7 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation) {
     ASSERT_EQ(model->getNumberOfTransitions(), 383);
 
     auto *extender = new storm::analysis::OrderExtender<storm::RationalFunction, double>(model, formulas[0], region);
-    auto criticalTuple = extender->toOrder(nullptr);
+    auto criticalTuple = extender->toOrder(region, nullptr);
     ASSERT_EQ(183, std::get<1>(criticalTuple));
     ASSERT_EQ(186, std::get<2>(criticalTuple));
 
@@ -107,7 +107,6 @@ TEST(AssumptionMakerTest, Simple1) {
     assumptionMaker.setSampleValues(samples);
     result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);
     EXPECT_EQ(1, result.size());
-    std::cout << *(result.begin()->first) << std::endl;
     auto itr = result.begin();
     EXPECT_EQ(storm::analysis::AssumptionStatus::VALID, itr->second);
     EXPECT_EQ(true, itr->first->getFirstOperand()->isVariable());

@@ -52,7 +52,7 @@ TEST(MonotonicityCheckerTest, Simple1_larger_region) {
     storm::storage::SparseMatrix<storm::RationalFunction> matrix =  model->getTransitionMatrix();
     auto orderExtender = storm::analysis::OrderExtender<storm::RationalFunction, double>(&topStates, &bottomStates, matrix);
     // Order
-    auto order = std::get<0>(orderExtender.toOrder(nullptr));
+    auto order = std::get<0>(orderExtender.toOrder(region, nullptr));
     // monchecker
     auto monChecker = new storm::analysis::MonotonicityChecker<storm::RationalFunction>(model->getTransitionMatrix());
 
@@ -97,9 +97,9 @@ TEST(MonotonicityCheckerTest, Simple1_small_region) {
     storm::storage::SparseMatrix<storm::RationalFunction> matrix =  model->getTransitionMatrix();
     auto orderExtender = storm::analysis::OrderExtender<storm::RationalFunction, double>(&topStates, &bottomStates, matrix);
     // Order
-    auto order = std::get<0>(orderExtender.toOrder(nullptr));
+    auto order = std::get<0>(orderExtender.toOrder(region, nullptr));
     // TODO: this shouldn't be necessary, check orderextender
-    order->addRelation(1,2);
+//    order->addRelation(1,2);
     // monchecker
     auto monChecker = new storm::analysis::MonotonicityChecker<storm::RationalFunction>(model->getTransitionMatrix());
 
