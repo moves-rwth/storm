@@ -30,6 +30,20 @@ namespace storm {
                  * @return The integer tolerance to be used.
                  */
                 double getIntegerTolerance() const;
+
+                /*!
+                 * Retrieves whether the optimality tolerance has been set.
+                 *
+                 * @return True iff the optimality tolerance has been set.
+                 */
+                bool isOptimalityToleranceSet() const;
+
+                /*!
+                 * Retrieves the optimality tolerance to be used.
+                 *
+                 * @return The optimality tolerance to be used.
+                 */
+                double getOptimalityTolerance() const;
                 
                 /*!
                  * Retrieves whether the number of threads has been set.
@@ -75,6 +89,7 @@ namespace storm {
             private:
                 // Define the string names of the options as constants.
                 static const std::string integerToleranceOption;
+                static const std::string optimalityToleranceOption;
                 static const std::string threadsOption;
                 static const std::string outputOption;
                 static const std::string mipFocusOption;

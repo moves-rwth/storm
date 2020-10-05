@@ -86,7 +86,10 @@ namespace storm {
             // Enable the following line to force Gurobi to be as precise about the binary variables as required by the given precision option.
             error = GRBsetdblparam(env, "IntFeasTol", storm::settings::getModule<storm::settings::modules::GurobiSettings>().getIntegerTolerance());
             STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to set Gurobi Parameter IntFeasTol (" << GRBgeterrormsg(env) << ", error code " << error << ").");
-            
+
+            error = GRBsetdblparam(env, "OptimalityTol", storm::settings::getModule<storm::settings::modules::GurobiSettings>().getOptimalityTolerance());
+            STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to set Gurobi Parameter OptimalityTol (" << GRBgeterrormsg(env) << ", error code " << error << ").");
+
             // error = GRBsetintparam(env, "NumericFocus", 3);
             // STORM_LOG_THROW(error == 0, storm::exceptions::InvalidStateException, "Unable to set Gurobi Parameter NumericFocus (" << GRBgeterrormsg(env) << ", error code " << error << ").");
         }

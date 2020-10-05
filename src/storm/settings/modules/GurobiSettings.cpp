@@ -13,6 +13,7 @@ namespace storm {
             
             const std::string GurobiSettings::moduleName = "gurobi";
             const std::string GurobiSettings::integerToleranceOption = "inttol";
+            const std::string GurobiSettings::optimalityToleranceOption = "opttol";
             const std::string GurobiSettings::threadsOption = "threads";
             const std::string GurobiSettings::outputOption = "output";
             const std::string GurobiSettings::mipFocusOption = "mipfocus";
@@ -24,7 +25,9 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, outputOption, true, "If set, the Gurobi output will be printed to the command line.").setIsAdvanced().build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, integerToleranceOption, true, "Sets Gurobi's precision for integer variables.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
-                
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, optimalityToleranceOption, true, "Sets Gurobi's precision for optimality.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("value", "The precision to achieve.").setDefaultValueDouble(1e-06).addValidatorDouble(ArgumentValidatorFactory::createDoubleRangeValidatorExcluding(0.0, 1.0)).build()).build());
+
                 this->addOption(storm::settings::OptionBuilder(moduleName, mipFocusOption, true, "The high level solution strategy used to solve MILPs.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("value", "The number of the strategy.").setDefaultValueUnsignedInteger(0).addValidatorUnsignedInteger(ArgumentValidatorFactory::createUnsignedRangeValidatorIncluding(0, 3)).build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, concurrentMipThreadsOption, true, "The number of MIP solvers Gurobi spawns in parallel. Shall not be larger then the number of threads.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("value", "The number of parallel solvers.").setDefaultValueUnsignedInteger(1).addValidatorUnsignedInteger(ArgumentValidatorFactory::createUnsignedGreaterEqualValidator(1)).build()).build());
@@ -36,6 +39,14 @@ namespace storm {
             
             double GurobiSettings::getIntegerTolerance() const {
                 return this->getOption(integerToleranceOption).getArgumentByName("value").getValueAsDouble();
+            }
+
+            bool GurobiSettings::isOptimalityToleranceSet() const {
+                return this->getOption(optimalityToleranceOption).getHasOptionBeenSet();
+            }
+
+            double GurobiSettings::getOptimalityTolerance() const {
+                return this->getOption(optimalityToleranceOption).getArgumentByName("value").getValueAsDouble();
             }
             
             bool GurobiSettings::isNumberOfThreadsSet() const {
