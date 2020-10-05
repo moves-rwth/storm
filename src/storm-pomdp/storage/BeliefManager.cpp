@@ -556,61 +556,88 @@ namespace storm {
             STORM_LOG_DEBUG("Cull Belief with ID " << beliefId << " (" << toString(beliefId) << ")");
             for(auto const &candidate : beliefToIdMap[obs]) {
                 if (candidate.second != beliefId) {
-                    if (candidate.first.size() > getBelief(beliefId).size()) {
-                        STORM_LOG_DEBUG("Belief with ID " << candidate.second << " has larger support and is not suitable");
-                    } else {
+                    if(targets){
                         // if a target list is set and the candidate is not on it, skip
-                        if(targets){
-                            if(std::find(targets.get().begin(), targets.get().end(), candidate.second) == targets.get().end()){
-                                //STORM_LOG_DEBUG("Belief with ID " << candidate.second << " not on target list!!!");
-                                continue;
-                            }
+                        if(std::find(targets.get().begin(), targets.get().end(), candidate.second) == targets.get().end()){
+                            //STORM_LOG_DEBUG("Belief with ID " << candidate.second << " not on target list!!!");
+                            continue;
                         }
-                        STORM_LOG_DEBUG("Add constraints for Belief with ID " << candidate.second << " " << toString(candidate.second));
-                        consideredCandidates.push_back(candidate.second);
-                        // Add variables a_j, D_j
-                        auto decisionVar = lpSolver->addBinaryVariable("a_" + std::to_string(candidate.second));
-                        decisionVariables.push_back(storm::expressions::Expression(decisionVar));
-                        // Add variables for the DELTA values, their overall sum is to be minimized
-                        auto bigDelta = lpSolver->addBoundedContinuousVariable("D_" + std::to_string(candidate.second), storm::utility::zero<ValueType>(), threshold,
-                                                                               storm::utility::one<ValueType>());
-                        std::vector<storm::expressions::Expression> deltas;
-                        i = 0;
-                        for (auto const &state : getBelief(beliefId)) {
-                            auto localDelta = lpSolver->addBoundedContinuousVariable("d_" + std::to_string(i) + "_" + std::to_string(candidate.second), storm::utility::zero<ValueType>(),
-                                                                                     threshold);
-                            deltas.push_back(storm::expressions::Expression(localDelta));
-                            lpSolver->update();
-                            // Add the constraint to describe the transformation between the state values in the beliefs
-                            // b(s_i) - d_i_j
-                            storm::expressions::Expression leftSide = lpSolver->getConstant(state.second) - localDelta;
-                            storm::expressions::Expression targetValue;
-                            try {
-                                targetValue = lpSolver->getConstant(candidate.first.at(state.first));
-                            } catch (const std::out_of_range &) {
-                                targetValue = lpSolver->getConstant(storm::utility::zero<ValueType>());
+                    }
+                    if (!std::includes(getBelief(beliefId).begin(), getBelief(beliefId).end(), candidate.first.begin(), candidate.first.end(),
+                                      [](const std::pair<StateType, BeliefValueType> b1, const std::pair<StateType, BeliefValueType> b2){
+                                            return b1.first < b2.first;
+                                        })
+                    ){
+                        // Check if the support of the candidate is a subset of the belief's support
+                        STORM_LOG_DEBUG("Belief with ID " << candidate.second << " has unsuitable support for culling");
+                    } else {
+                        // Check if reductions to zero would exceed the threshold
+                        // First create a map of all 0 values in the candidate which are set in the belief
+                        std::map<StateType, BeliefValueType> compHelper;
+                        std::set_difference(getBelief(beliefId).begin(), getBelief(beliefId).end(), candidate.first.begin(), candidate.first.end(), std::inserter(compHelper, compHelper.end()),
+                                            [](const std::pair<StateType, BeliefValueType> b1, const std::pair<StateType, BeliefValueType> b2) {
+                                                return b1.first < b2.first;
+                                            });
+                        // Check if the sum of all values in the newly created map exceeds the threshold
+                        if (std::accumulate(compHelper.begin(), compHelper.end(), storm::utility::zero<ValueType>(),
+                                            [](const ValueType acc, const std::pair<StateType, BeliefValueType> belief) { return acc + belief.second; }) > threshold) {
+                            STORM_LOG_DEBUG("Belief with ID " << candidate.second << " exceeds culling threshold");
+                            STORM_PRINT("DEBUG ---- Belief with ID " << candidate.second << " exceeds culling threshold" << std::endl)
+                            STORM_PRINT("DEBUG ---- Belief (" << toString(beliefId) << ")" << std::endl << "Candidate (" << toString(candidate.second) << ")" << std::endl)
+                        } else {
+                            STORM_LOG_DEBUG("Add constraints for Belief with ID " << candidate.second << " " << toString(candidate.second));
+                            consideredCandidates.push_back(candidate.second);
+                            // Add variables a_j, D_j
+                            auto decisionVar = lpSolver->addBinaryVariable("a_" + std::to_string(candidate.second));
+                            decisionVariables.push_back(storm::expressions::Expression(decisionVar));
+                            // Add variables for the DELTA values, their overall sum is to be minimized
+                            auto bigDelta = lpSolver->addBoundedContinuousVariable("D_" + std::to_string(candidate.second), storm::utility::zero<ValueType>(), threshold,
+                                                                                   storm::utility::one<ValueType>());
+                            std::vector<storm::expressions::Expression> deltas;
+                            i = 0;
+                            for (auto const &state : getBelief(beliefId)) {
+                                auto localDelta = lpSolver->addBoundedContinuousVariable("d_" + std::to_string(i) + "_" + std::to_string(candidate.second),
+                                                                                         storm::utility::zero<ValueType>(),
+                                                                                         threshold);
+                                deltas.push_back(storm::expressions::Expression(localDelta));
+                                lpSolver->update();
+                                // Add the constraint to describe the transformation between the state values in the beliefs
+                                // b(s_i) - d_i_j
+                                storm::expressions::Expression leftSide = lpSolver->getConstant(state.second) - localDelta;
+                                storm::expressions::Expression targetValue;
+                                try {
+                                    targetValue = lpSolver->getConstant(candidate.first.at(state.first));
+                                } catch (const std::out_of_range &) {
+                                    targetValue = lpSolver->getConstant(storm::utility::zero<ValueType>());
+                                }
+                                // b_j(s_i) * (1 - D_j) + (1-a_j) * (b(s_i) - b_j(s_i))
+                                storm::expressions::Expression rightSide =
+                                        targetValue * (lpSolver->getConstant(storm::utility::one<ValueType>()) - storm::expressions::Expression(bigDelta))
+                                        + (lpSolver->getConstant(storm::utility::one<ValueType>()) - storm::expressions::Expression(decisionVar)) *
+                                          (lpSolver->getConstant(state.second) - targetValue);
+                                // Add equality
+                                lpSolver->addConstraint("state_eq_" + std::to_string(i) + "_" + std::to_string(candidate.second), leftSide == rightSide);
+                                ++i;
                             }
-                            // b_j(s_i) * (1 - D_j) + (1-a_j) * (b(s_i) - b_j(s_i))
-                            storm::expressions::Expression rightSide =
-                                    targetValue * (lpSolver->getConstant(storm::utility::one<ValueType>()) - storm::expressions::Expression(bigDelta))
-                                    + (lpSolver->getConstant(storm::utility::one<ValueType>()) - storm::expressions::Expression(decisionVar)) *
-                                      (lpSolver->getConstant(state.second) - targetValue);
-                            // Add equality
-                            lpSolver->addConstraint("state_eq_" + std::to_string(i) + "_" + std::to_string(candidate.second), leftSide == rightSide);
-                            ++i;
+                            // Link decision and D_j
+                            lpSolver->addConstraint("dec_" + std::to_string(candidate.second),
+                                                    storm::expressions::Expression(bigDelta) <= storm::expressions::Expression(decisionVar));
+                            // Link D_j and d_i_j
+                            lpSolver->addConstraint("delta_" + std::to_string(candidate.second), storm::expressions::Expression(bigDelta) == storm::expressions::sum(deltas));
+                            // Exclude D_j = 0. This can only occur due to duplicate beliefs or numerical inaccuracy
+                            //lpSolver->addConstraint("not_zero_" + std::to_string(candidate.second), storm::expressions::Expression(bigDelta) > lpSolver->getConstant(storm::utility::zero<ValueType>()));
+                            // Exclude D_j = 1. We do not include this constraint as we minimize and can later check if the optimal value is one
+                            // lpSolver->addConstraint("not_one_" + std::to_string(candidate.second), storm::expressions::Expression(bigDelta) < lpSolver->getConstant(storm::utility::one<ValueType>()));
                         }
-                        // Link decision and D_j
-                        lpSolver->addConstraint("dec_" + std::to_string(candidate.second), storm::expressions::Expression(bigDelta) <= storm::expressions::Expression(decisionVar));
-                        // Link D_j and d_i_j
-                        lpSolver->addConstraint("delta_" + std::to_string(candidate.second), storm::expressions::Expression(bigDelta) == storm::expressions::sum(deltas));
                     }
                 }
             }
-            // Only one target belief should be chosen
+            // If no valid candidate was found, we cannot cull the belief
             if(decisionVariables.empty()){
                 STORM_LOG_DEBUG("Belief " << beliefId << " cannot be culled - no candidate with valid support");
                 return BeliefCulling{false, beliefId, noId(), storm::utility::zero<BeliefValueType>()};
             }
+            // Only one target belief should be chosen
             lpSolver->addConstraint("choice", storm::expressions::sum(decisionVariables) == lpSolver->getConstant(storm::utility::one<ValueType>()));
 
             lpSolver->optimize();
@@ -618,13 +645,25 @@ namespace storm {
             BeliefId targetBelief = noId();
             auto optDelta = storm::utility::zero<BeliefValueType>();
             if(lpSolver->isOptimal()){
+                optDelta = lpSolver->getObjectiveValue();
+                if(optDelta == storm::utility::one<ValueType>()){
+                    // If we get an optimal value of 1, we cannot cull the belief as by definition this would correspond to a division by 0.
+                    return BeliefCulling{false, beliefId, noId(), storm::utility::zero<BeliefValueType>()};
+                }
                 for(auto const &candidate : consideredCandidates) {
                     if(lpSolver->getBinaryValue(lpSolver->getManager().getVariable("a_" + std::to_string(candidate)))){
                         targetBelief = candidate;
                         break;
                     }
                 }
-                optDelta = lpSolver->getObjectiveValue();
+                if(optDelta == storm::utility::zero<ValueType>()){
+                    // If we get an optimal value of 0, the LP solver considers two beliefs to be equal, possibly due to numerical instability
+                    // For a sound result, we consider the state to be uncullable
+                    STORM_LOG_WARN("LP solver returned an optimal value of 0. Consider increasing the solver's precision");
+                    STORM_LOG_WARN("Origin [Bel " << beliefId << "] " << toString(beliefId));
+                    STORM_LOG_WARN("Target [Bel " << targetBelief << "] " << toString(targetBelief));
+                    return BeliefCulling{false, beliefId, noId(), storm::utility::zero<BeliefValueType>()};
+                }
                 STORM_LOG_ASSERT(cc.isEqual(optDelta, lpSolver->getContinuousValue(lpSolver->getManager().getVariable("D_" + std::to_string(targetBelief)))), "Objective values is not equal to the Delta for the target state");
             }
             return BeliefCulling{lpSolver->isOptimal(), beliefId, targetBelief, optDelta};
