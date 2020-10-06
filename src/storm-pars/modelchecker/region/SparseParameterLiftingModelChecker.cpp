@@ -417,16 +417,11 @@ namespace storm {
                         first = false;
                         monParams += param.name();
                     }
-                    for (auto& param : mon.second) {
-                        if (!first) {
-                            monParams += ", ";
-                        }
-                        first = false;
-                        monParams += param.name();
 
+                    STORM_LOG_INFO("Current number of monotone parameters: " << mon.first.size() << ".");
+                    if (mon.first.size() > 0) {
+                        STORM_LOG_INFO("    Monotone parameters: " << monParams << ".");
                     }
-                    STORM_LOG_INFO("Current number of monotone parameters: " << (mon.first.size() + mon.second.size()) << ".");
-                    STORM_LOG_INFO("    Monotone parameters: " << monParams << ".");
                 }
                 STORM_LOG_INFO("Covered " << (coveredArea * storm::utility::convertNumber<ConstantType>(100.0) / totalArea) << "% of the region." << std::endl);
             }
