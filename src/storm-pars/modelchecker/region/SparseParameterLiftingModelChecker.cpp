@@ -256,18 +256,23 @@ namespace storm {
                 }
 
                 // Only split vertices which are not monotone
-                auto point = region.getPoint(dir, *(monRes->getGlobalMonotonicityResult()));
                 if (monRes->getGlobalMonotonicityResult()->isDone() && monRes->getGlobalMonotonicityResult()->isAllMonotonicity()) {
+                    auto point = region.getPoint(dir, *(monRes->getGlobalMonotonicityResult()));
                     valuation = point;
                     value = getInstantiationChecker().check(env, valuation)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
-                    STORM_LOG_INFO("Current value for extremum: " << value.get() << ".");
+                    STORM_LOG_INFO("Extremum found with global monotonicity: " << value.get() << ".");
+                    return std::make_pair(storm::utility::convertNumber<typename SparseModelType::ValueType>(value.get()), valuation);
                 } else {
                     std::set<VariableType> monIncr, monDecr, notMon;
                     monRes->getGlobalMonotonicityResult()->splitBasedOnMonotonicity(region.getVariables(), monIncr, monDecr, notMon);
                     if (monIncr.size() == 0 && monDecr.size() == 0) {
                         notMon.clear();
                         checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon);
+                        STORM_LOG_INFO("Getting initial vertices based on possible monotonicity");
+                    } else {
+                        STORM_LOG_INFO("Getting initial points based on global monotonicity");
                     }
+                    auto point = region.getPoint(dir, monIncr, monDecr);
                     for (auto &v : region.getVerticesOfRegion(notMon)) {
                         for (auto &var : region.getVariables()) {
                             if (v.find(var) == v.end()) {
