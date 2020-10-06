@@ -18,11 +18,22 @@ namespace storm {
 
             std::vector<uint_fast64_t> succs;
             std::vector<Monotonicity> succsMonUnsorted;
+            std::vector<uint_fast64_t> statesIncr;
+            std::vector<uint_fast64_t>  statesDecr;
+            bool checkAllow = true;
             for (auto entry : row) {
                 auto succState = entry.getColumn();
-                succsMonUnsorted.push_back(checkTransitionMonRes(entry.getValue(), var, region));
+                auto mon = checkTransitionMonRes(entry.getValue(), var, region);
+                succsMonUnsorted.push_back(mon);
                 succs.push_back(succState);
                 ignore &= entry.getValue().isConstant();
+                if (mon == Monotonicity::Incr) {
+                    statesIncr.push_back(succState);
+                } else if (mon == Monotonicity::Decr) {
+                    statesDecr.push_back(succState);
+                } else if (mon == Monotonicity::Not) {
+                    checkAllow = false;
+                }
             }
             if (ignore) {
                 return Monotonicity::Constant;
@@ -31,6 +42,30 @@ namespace storm {
 
             uint_fast64_t succSize = succs.size();
             if (succsSorted[succSize - 1] == matrix.getColumnCount()) {
+                // Maybe we can still do something
+                // If one is decreasing and all others increasing, and this one is above all others or vice versa
+                if (checkAllow) {
+                    if (statesIncr.size() == 1 && statesDecr.size() > 1) {
+                        auto comp = order->allAboveBelow(statesDecr, statesIncr.back());
+                        if (comp.first) {
+                            // All decreasing states are above the increasing state, therefore decreasing
+                            return Monotonicity::Decr;
+                        } else if (comp.second) {
+                            // All decreasing states are below the increasing state, therefore increasing
+                            return Monotonicity::Incr;
+                        }
+                    } else if (statesDecr.size() == 1 && statesIncr.size() > 1) {
+                        auto comp = order->allAboveBelow(statesDecr, statesIncr.back());
+                        if (comp.first) {
+                            // All increasing states are below the decreasing state, therefore increasing
+                            return Monotonicity::Incr;
+                        } else if (comp.second) {
+                            // All increasing states are above the decreasing state, therefore decreasing
+                            return Monotonicity::Decr;
+                        }
+                    }
+                }
+
                 return Monotonicity::Unknown;
             }
 

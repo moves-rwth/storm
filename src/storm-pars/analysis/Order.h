@@ -245,6 +245,7 @@ namespace storm {
                      * If states cannot be sorted, last state of the vector will always equal the length of the BitVector.
                      */
                     std::vector<uint_fast64_t> sortStates(std::vector<uint_fast64_t>* states);
+                    std::pair<bool, bool> allAboveBelow(std::vector<uint_fast64_t>const states, uint_fast64_t state);
 
                     /*!
                      * Sorts the given states if possible.

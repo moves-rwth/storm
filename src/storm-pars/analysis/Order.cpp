@@ -712,5 +712,16 @@ namespace storm {
         void Order::addStateToHandle(uint_fast64_t state) {
             statesToHandle.push_back(state);
         }
+
+        std::pair<bool, bool> Order::allAboveBelow(std::vector<uint_fast64_t> const states, uint_fast64_t state) {
+            auto allAbove = true;
+            auto allBelow = true;
+            for (auto & checkState : states) {
+                auto comp = compare(checkState, state);
+                allAbove &= (comp == ABOVE || comp == SAME);
+                allBelow &= (comp == BELOW || comp == SAME);
+            }
+            return {allAbove, allBelow};
+        }
     }
 }
