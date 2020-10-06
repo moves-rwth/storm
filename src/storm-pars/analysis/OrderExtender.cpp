@@ -217,18 +217,15 @@ namespace storm {
             if (assumption != nullptr) {
                 handleAssumption(order, assumption);
             }
+
             std::set<uint_fast64_t> seenStates;
             auto currentStateSCC = getNextState(order, -1, seenStates);
-
-
-            bool doneTrick = false;
-
+            std::vector<uint_fast64_t> statesToHandle;
             while (currentStateSCC.first != numberOfStates) {
                 assert (currentStateSCC.first < numberOfStates);
                 auto currentState = currentStateSCC.first;
                 auto successors = stateMap[currentState];
-                auto stateSucc1 = numberOfStates;
-                auto stateSucc2 = numberOfStates;
+                std::pair<uint_fast64_t, uint_fast64_t> result =  {numberOfStates, numberOfStates};
                 if (successors.size() == 1) {
                     assert (order->contains(successors[0]));
                     handleOneSuccessor(order, currentState, successors[0]);
@@ -236,123 +233,135 @@ namespace storm {
                     if (order->isOnlyBottomTopOrder()) {
                         order->add(currentState);
                     }
-                    // If it is cyclic, we first do forward reasoning, when this didn't work we do backward reasoning
-                    if (currentStateSCC.second == -1 || !order->getSCC(currentStateSCC.second).isTrivial()) {
-                        if (order->contains(currentState)) {
-                            // Try to extend the order for this scc
-                            auto res = extendByForwardReasoning(order, currentState, successors, assumption != nullptr);
-                            if (res.first != numberOfStates && currentStateSCC.second != -1 ) {
-                                stateSucc1 = res.first;
-                                stateSucc2 = res.second;
-                                auto backwardResult = extendByBackwardReasoning(order, currentState, successors,
-                                                                                assumption != nullptr);
-                                if (backwardResult.first == numberOfStates) {
-                                    stateSucc1 = numberOfStates;
-                                    stateSucc2 = numberOfStates;
-                                }
-                            }
-                        } else {
-                            auto backwardResult = extendByBackwardReasoning(order, currentState, successors,assumption != nullptr);
-                            stateSucc1 = backwardResult.first;
-                            stateSucc2 = backwardResult.second;
-                        }
+                    if (currentStateSCC.second == -1) {
+                        result = extendStateToHandle(order, currentState, successors, assumption != nullptr);
                     } else {
-                        // Do backward reasoning, all successor states must be in the order
-                        for (auto& state : successors) {
-                            assert (order->contains(state));
-                        }
-                        auto backwardResult = extendByBackwardReasoning(order, currentState, successors,assumption != nullptr);
-                        stateSucc1 = backwardResult.first;
-                        stateSucc2 = backwardResult.second;
+                        result = extendNormal(order, currentState, currentStateSCC.second, successors, assumption != nullptr);
                     }
                 }
 
-                // Try to add states based on min/max and assumptions
-                if (stateSucc1 != numberOfStates) {
-                    // We couldn't extend the order
-                    assert (stateSucc2 != numberOfStates);
-                    assert (stateSucc1 < numberOfStates);
-                    assert (stateSucc2 < numberOfStates);
-                    if (usePLAOnce) {
-                        auto minMaxAdding = usePLAOnce.get() ? this->addStatesBasedOnMinMax(order, stateSucc1, stateSucc2) : Order::UNKNOWN;
-                        if (minMaxAdding == Order::UNKNOWN) {
-                            auto assumptions = usePLAOnce.get() ? assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2,  order, region, minValuesOnce.get(), maxValuesOnce.get()) : assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, region);
-                            if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
-                                handleAssumption(order, assumptions.begin()->first);
-                                stateSucc1 = numberOfStates;
-                                // Assumptions worked, we continue
-                                continue;
-                            }
-                        } else {
-                            // MinMax adding worked, we continue
-                            continue;
-                        }
-                    } else {
-                        bool usePLANow = usePLA.find(order) != usePLA.end() && usePLA[order];
-                        auto minMaxAdding = usePLANow ? this->addStatesBasedOnMinMax(order, stateSucc1, stateSucc2) : Order::UNKNOWN;
-                        if (minMaxAdding == Order::UNKNOWN) {
-                            auto assumptions = usePLANow ? assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2,  order, region, minValues[order], maxValues[order]) : assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, region);
-                            if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
-                                handleAssumption(order, assumptions.begin()->first);
-                                stateSucc1 = numberOfStates;
-                                // Assumptions worked, we continue
-                                continue;
-                            }
-                        } else {
-                            // MinMax adding worked, we continue
-                            continue;
-                        }
-                    }
-
-                    if (stateSucc1 != numberOfStates) {
-                        if (nonParametericStates.find(currentState) != nonParametericStates.end()) {
-                            order->add(currentState);
-                            seenStates.insert(currentState);
-                            currentStateSCC = getNextState(order, currentStateSCC.second, seenStates);
-                        } else if (doneTrick) {
-                            // We are in a scc, currentState is not there, and we have been in this situation before, so we return;
-                            return {order, stateSucc1, stateSucc2};
-                        } else {
-                            // Try another state in scc
-                            auto res = seenStates.insert(currentState);
-                            currentStateSCC = getNextState(order, currentStateSCC.second, seenStates, true);
-                            currentState = currentStateSCC.first;
-                            seenStates.erase(res.first);
-                            if (currentState == numberOfStates) {
-                                return {order, stateSucc1, stateSucc2};
-                            } else if (stateMap[currentState].size() == 1 && !order->contains(stateMap[currentState][0])) {
-                                return {order, stateSucc1, stateSucc2};
-                            } else {
-                                doneTrick = true;
-                            }
-                        }
-                    }
-                } else {
+                if (result.first == numberOfStates) {
                     // We did extend the order
-                    assert (stateSucc1 == numberOfStates && stateSucc2 == numberOfStates);
+                    assert (result.second == numberOfStates);
                     assert (order->sortStates(&successors).size() == successors.size());
                     assert (order->contains(currentState) && order->getNode(currentState) != nullptr);
+                    if (currentStateSCC.second != -1) {
+                        while (!statesToHandle.empty()) {
+                            order->addStateToHandle(statesToHandle.back());
+                            statesToHandle.pop_back();
+                        }
+                    }
 
-                    if (monRes != nullptr) {
+                    if (monRes != nullptr && currentStateSCC.second != -1) {
                         auto succsOrdered = order->sortStates(&stateMap[currentState]);
                         for (auto param : params) {
                             checkParOnStateMonRes(currentState, succsOrdered, param, monRes);
                         }
-                    } else {
-                        doneTrick = false;
                     }
-                    // Get the next state
-                    seenStates.insert(currentState);
+                    bool prev = currentStateSCC.second;
+                    if (prev != -1) {
+                        seenStates.insert(currentState);
+                    }
                     assert (order->sortStates(&stateMap[currentState]).size() == stateMap[currentState].size());
+                    // Get the next state
                     currentStateSCC = getNextState(order, currentStateSCC.second, seenStates);
+                } else {
+                    assert (result.first < numberOfStates);
+                    assert (result.second < numberOfStates);
+                    // Try to add states based on min/max and assumptions
+                    if (extendByMinMaxOrAssumptions(order, currentState, result.first, result.second)) {
+                        continue;
+                    }
+                    // We couldn't extend the order
+                    if (nonParametericStates.find(currentState) != nonParametericStates.end()) {
+                        if (!order->contains(currentState)) {
+                            // State is not parametric, so we hope that just adding it between =) and =( will help us
+                            order->add(currentState);
+                        }
+                        seenStates.insert(currentState);
+                        currentStateSCC = getNextState(order, currentStateSCC.second, seenStates);
+                    } else {
+                        if (currentStateSCC.second == -1) {
+                            // The state was based on statesToHandle, so it is not bad if we cannot continue with this.
+                            statesToHandle.push_back(currentState);
+                            currentStateSCC = getNextState(order, currentStateSCC.second, seenStates);
+                        } else {
+                            // The state was based on the topological sorting, so we need to return, but first add all the not yet handled states to the order
+                            while (!statesToHandle.empty()) {
+                                order->addStateToHandle(statesToHandle.back());
+                                statesToHandle.pop_back();
+                            }
+                            return {order, result.first, result.second};
+                        }
+                    }
                 }
+                // End while loop
             }
-
             order->setDoneBuilding();
             if (monRes != nullptr) {
                 monRes->setDone();
             }
             return std::make_tuple(order, numberOfStates, numberOfStates);
+        }
+
+        template<typename ValueType, typename ConstantType>
+        std::pair<uint_fast64_t, uint_fast64_t>
+        OrderExtender<ValueType, ConstantType>::extendStateToHandle(std::shared_ptr<Order> order, uint_fast64_t currentState,
+                                                                    const vector<uint_fast64_t> &successors, bool allowMerge) const {
+            std::pair<uint_fast64_t, uint_fast64_t> result;
+            if (order->contains(currentState)) {
+                // Try to extend the order for this scc
+                result = extendByForwardReasoning(order, currentState, successors, allowMerge);
+                while (result.first != numberOfStates) {
+                    auto res2 = extendByBackwardReasoning(order, currentState, successors, allowMerge);
+                    if (res2.first != numberOfStates) {
+                        if (usePLA.find(order) != usePLA.end() && usePLA.at(order)) {
+                            auto check = addStatesBasedOnMinMax(order, res2.first, res2.second);
+                            if (check != Order::UNKNOWN) {
+                                result = extendByForwardReasoning(order, currentState, successors, allowMerge);
+                            } else {
+                                break;
+                            }
+                        } else {
+                            break;
+                        }
+                    } else {
+                        result = res2;
+                    }
+                }
+            } else {
+                result = extendByBackwardReasoning(order, currentState, successors, allowMerge);
+            }
+            return result;
+        }
+
+        template<typename ValueType, typename ConstantType>
+        std::pair<uint_fast64_t, uint_fast64_t>
+        OrderExtender<ValueType, ConstantType>::extendNormal(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t currentSCC,
+                                                                    const vector<uint_fast64_t> &successors, bool allowMerge) const {
+            // If it is cyclic, we first do forward reasoning, when this didn't work we do backward reasoning
+            std::pair<uint_fast64_t, uint_fast64_t> result;
+            if (!order->getSCC(currentSCC).isTrivial()) {
+                if (order->contains(currentState)) {
+                    // Try to extend the order for this scc
+                    result = extendByForwardReasoning(order, currentState, successors, allowMerge);
+                    if (result.first != numberOfStates ) {
+                        auto backwardResult = extendByBackwardReasoning(order, currentState, successors, allowMerge);
+                        if (backwardResult.first == numberOfStates) {
+                            result = std::move(backwardResult);
+                        }
+                    }
+                } else {
+                    result = extendByBackwardReasoning(order, currentState, successors, allowMerge);
+                }
+            } else {
+                // Do backward reasoning, all successor states must be in the order
+                for (auto& state : successors) {
+                    assert (order->contains(state));
+                }
+                result = extendByBackwardReasoning(order, currentState, successors, allowMerge);
+            }
+            return result;
         }
 
         template<typename ValueType, typename ConstantType>
@@ -366,7 +375,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) {
+        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) const{
             assert (!order->isOnlyBottomTopOrder());
             assert (successors.size() > 1);
 
@@ -437,6 +446,42 @@ namespace storm {
                 return {temp.first.first, temp.first.second};
             }
             return {numberOfStates, numberOfStates};
+        }
+
+        template<typename ValueType, typename ConstantType>
+        bool OrderExtender<ValueType, ConstantType>::extendByMinMaxOrAssumptions(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t stateSucc1, uint_fast64_t stateSucc2) {
+            if (usePLAOnce) {
+                auto minMaxAdding = usePLAOnce.get() ? this->addStatesBasedOnMinMax(order, stateSucc1, stateSucc2) : Order::UNKNOWN;
+                if (minMaxAdding == Order::UNKNOWN) {
+                    auto assumptions = usePLAOnce.get() ? assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2,  order, region, minValuesOnce.get(), maxValuesOnce.get()) : assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, region);
+                    if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
+                        handleAssumption(order, assumptions.begin()->first);
+                        stateSucc1 = numberOfStates;
+                        // Assumptions worked, we continue
+                        return true;
+                    }
+                } else {
+                    // MinMax adding worked, we continue
+                    return true;
+                }
+            } else {
+                bool usePLANow = usePLA.find(order) != usePLA.end() && usePLA[order];
+                auto minMaxAdding = usePLANow ? this->addStatesBasedOnMinMax(order, stateSucc1, stateSucc2) : Order::UNKNOWN;
+                if (minMaxAdding == Order::UNKNOWN) {
+                    auto assumptions = usePLANow ? assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2,  order, region, minValues[order], maxValues[order]) : assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, region);
+                    if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
+                        handleAssumption(order, assumptions.begin()->first);
+                        stateSucc1 = numberOfStates;
+                        // Assumptions worked, we continue
+                        return true;
+                    }
+                } else {
+                    // MinMax adding worked, we continue
+                    return true;
+                }
+            }
+            return false;
+
         }
 
         template <typename ValueType, typename ConstantType>
@@ -794,6 +839,9 @@ namespace storm {
                 }
             }
         }
+
+
+
 
         template class OrderExtender<RationalFunction, double>;
         template class OrderExtender<RationalFunction, RationalNumber>;

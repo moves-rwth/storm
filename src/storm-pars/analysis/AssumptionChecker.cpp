@@ -170,9 +170,25 @@ namespace storm {
                         if (minValues.size() > 0 && comp == Order::NodeComparison::UNKNOWN) {
                             // Couldn't add relation between varname1 and varname2 but maybe we can based on min/max values;
                             if (minValues[itr2->getColumn()] > maxValues[itr1->getColumn()]) {
+                                if (!order->contains(itr1->getColumn())) {
+                                    order->add(itr1->getColumn());
+                                    order->addStateToHandle(itr1->getColumn());
+                                }
+                                if (!order->contains(itr2->getColumn())) {
+                                    order->add(itr2->getColumn());
+                                    order->addStateToHandle(itr2->getColumn());
+                                }
                                 order->addRelation(itr2->getColumn(), itr1->getColumn());
                                 comp = Order::NodeComparison::BELOW;
                             } else if (minValues[itr1->getColumn()] > maxValues[itr2->getColumn()]) {
+                                if (!order->contains(itr1->getColumn())) {
+                                    order->add(itr1->getColumn());
+                                    order->addStateToHandle(itr1->getColumn());
+                                }
+                                if (!order->contains(itr2->getColumn())) {
+                                    order->add(itr2->getColumn());
+                                    order->addStateToHandle(itr2->getColumn());
+                                }
                                 order->addRelation(itr1->getColumn(), itr2->getColumn());
                                 comp = Order::NodeComparison::ABOVE;
                             }

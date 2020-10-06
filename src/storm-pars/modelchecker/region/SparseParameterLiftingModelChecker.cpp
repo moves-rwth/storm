@@ -263,7 +263,8 @@ namespace storm {
                     STORM_LOG_INFO("Extremum found with global monotonicity: " << value.get() << ".");
                     return std::make_pair(storm::utility::convertNumber<typename SparseModelType::ValueType>(value.get()), valuation);
                 } else {
-                    std::set<VariableType> monIncr, monDecr, notMon;monRes->getGlobalMonotonicityResult()->splitBasedOnMonotonicity(region.getVariables(), monIncr, monDecr, notMon);
+                    std::set<VariableType> monIncr, monDecr, notMon;
+                    monRes->getGlobalMonotonicityResult()->splitBasedOnMonotonicity(region.getVariables(), monIncr, monDecr, notMon);
                     if (monIncr.size() == 0 && monDecr.size() == 0) {
                         notMon.clear();
                         checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon);
@@ -287,7 +288,7 @@ namespace storm {
 
                         }
                         STORM_LOG_INFO("Getting initial points based on global monotonicity, global monotonicity found for " << (monIncr.size() + monDecr.size()) << " parameters.");
-                        STORM_LOG_INFO("    Monotone parameters" << monParams);
+                        STORM_LOG_INFO("    Monotone parameters: " << monParams);
                     }
                     auto point = region.getPoint(dir, monIncr, monDecr);
                     for (auto &v : region.getVerticesOfRegion(notMon)) {
@@ -405,6 +406,28 @@ namespace storm {
                 }
 
                 STORM_LOG_INFO("Current value : " << value.get() << ", current bound: " << regionQueue.top().bound << ".");
+                if (this->isUseMonotonicitySet()) {
+                    auto mon = localMonotonicityResult->getGlobalMonotonicityResult()->splitVariables(region.getVariables());
+                    bool first = true;
+                    std::string monParams;
+                    for (auto& param : mon.first) {
+                        if (!first) {
+                            monParams += ", ";
+                        }
+                        first = false;
+                        monParams += param.name();
+                    }
+                    for (auto& param : mon.second) {
+                        if (!first) {
+                            monParams += ", ";
+                        }
+                        first = false;
+                        monParams += param.name();
+
+                    }
+                    STORM_LOG_INFO("Current number of monotone parameters: " << (mon.first.size() + mon.second.size()) << ".");
+                    STORM_LOG_INFO("    Monotone parameters: " << monParams << ".");
+                }
                 STORM_LOG_INFO("Covered " << (coveredArea * storm::utility::convertNumber<ConstantType>(100.0) / totalArea) << "% of the region." << std::endl);
             }
             

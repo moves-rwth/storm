@@ -138,8 +138,9 @@ namespace storm {
         template <typename VariableType>
         bool MonotonicityResult<VariableType>::existsMonotonicity() {
             if (!somewhereMonotonicity) {
+
                 for (auto itr : monotonicityResult) {
-                    if (itr.second != MonotonicityResult<VariableType>::Monotonicity::Unknown && itr.second != MonotonicityResult<VariableType>::Monotonicity::Not) {
+                    if (isDoneForVar(itr.first) && itr.second != MonotonicityResult<VariableType>::Monotonicity::Unknown && itr.second != MonotonicityResult<VariableType>::Monotonicity::Not) {
                         setSomewhereMonotonicity(true);
                         break;
                     }
@@ -181,13 +182,17 @@ namespace storm {
                                                                    std::set<VariableType> & monotoneDecr,
                                                                    std::set<VariableType> & notMonotone) const {
             for (auto& var : consideredVariables) {
-                auto mon = getMonotonicity(var);
-                if (mon == Monotonicity::Unknown || mon == Monotonicity::Not) {
+                if (!isDoneForVar(var)) {
                     notMonotone.insert(var);
-                } else if (mon == Monotonicity::Incr) {
-                    monotoneIncr.insert(var);
                 } else {
-                    monotoneDecr.insert(var);
+                    auto mon = getMonotonicity(var);
+                    if (mon == Monotonicity::Unknown || mon == Monotonicity::Not) {
+                        notMonotone.insert(var);
+                    } else if (mon == Monotonicity::Incr) {
+                        monotoneIncr.insert(var);
+                    } else {
+                        monotoneDecr.insert(var);
+                    }
                 }
             }
 
