@@ -190,7 +190,7 @@ namespace storm {
                 }
             }
 
-            if (orderKnown || minValues.size() > 0) {
+            if (orderKnown) {
                 solver::Z3SmtSolver s(*manager);
                 auto valueTypeToExpression = expressions::RationalFunctionToExpression<ValueType>(manager);
                 expressions::Expression expr1 = manager->rational(0);

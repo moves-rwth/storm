@@ -235,26 +235,37 @@ namespace storm {
                         order->add(currentState);
                     }
                     // If it is cyclic, we first do forward reasoning, when this didn't work we do backward reasoning
-                    if (!order->getSCC(currentStateSCC.second).isTrivial() && order->contains(currentState)) {
-                        // Try to extend the order for this scc
-                        auto res = extendByForwardReasoning(order, currentState, successors, assumption != nullptr);
-                        if (res.first != numberOfStates) {
-                            stateSucc1 = res.first;
-                            stateSucc2 = res.second;
-                            auto backwardResult = extendByBackwardReasoning(order, currentState, successors, assumption != nullptr);
-                            if (backwardResult.first == numberOfStates) {
-                                stateSucc1 = numberOfStates;
-                                stateSucc2 = numberOfStates;
+                    if (!order->getSCC(currentStateSCC.second).isTrivial()) {
+                        if (order->contains(currentState)) {
+                            // Try to extend the order for this scc
+                            auto res = extendByForwardReasoning(order, currentState, successors, assumption != nullptr);
+                            if (res.first != numberOfStates) {
+                                stateSucc1 = res.first;
+                                stateSucc2 = res.second;
+                                auto backwardResult = extendByBackwardReasoning(order, currentState, successors,
+                                                                                assumption != nullptr);
+                                if (backwardResult.first == numberOfStates) {
+                                    stateSucc1 = numberOfStates;
+                                    stateSucc2 = numberOfStates;
+                                }
                             }
+                        } else {
+                            auto backwardResult = extendByBackwardReasoning(order, currentState, successors,assumption != nullptr);
+                            stateSucc1 = backwardResult.first;
+                            stateSucc2 = backwardResult.second;
                         }
                     } else {
-                        // Do backward reasoning
+                        // Do backward reasoning, all successor states must be in the order
+                        for (auto& state : successors) {
+                            assert (order->contains(state));
+                        }
                         auto backwardResult = extendByBackwardReasoning(order, currentState, successors,assumption != nullptr);
                         stateSucc1 = backwardResult.first;
                         stateSucc2 = backwardResult.second;
                     }
                 }
 
+                // Try to add states based on min/max and assumptions
                 if (stateSucc1 != numberOfStates) {
                     // We couldn't extend the order
                     assert (stateSucc2 != numberOfStates);
@@ -358,9 +369,7 @@ namespace storm {
         std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) {
             assert (!order->isOnlyBottomTopOrder());
             assert (successors.size() > 1);
-            for (auto& state : successors) {
-                assert (order->contains(state));
-            }
+
 
             // temp.first = pair of unordered states, if this is numberOfStates all successor states could be sorted, so temp.second is fully sorted and contains all successors.
             auto temp = order->sortStatesUnorderedPair(&successors);
