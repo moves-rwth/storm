@@ -267,7 +267,7 @@ namespace storm {
                     monRes->getGlobalMonotonicityResult()->splitBasedOnMonotonicity(region.getVariables(), monIncr, monDecr, notMon);
                     if (monIncr.size() == 0 && monDecr.size() == 0) {
                         notMon.clear();
-                        checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon);
+                        checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, region.getVariables());
                         STORM_LOG_INFO("Getting initial vertices based on possible monotonicity");
                     } else {
                         std::string monParams;
@@ -287,8 +287,20 @@ namespace storm {
                             monParams += param.name();
 
                         }
-                        STORM_LOG_INFO("Getting initial points based on global monotonicity, global monotonicity found for " << (monIncr.size() + monDecr.size()) << " parameters.");
-                        STORM_LOG_INFO("    Monotone parameters: " << monParams);
+
+                        if (notMon.size() > 10) {
+                            STORM_LOG_INFO("Getting initial points based on global monotonicity and possible Monotonicity, as there are too many not monotone parameters (> 10)");
+                            auto i = monIncr.size() + monDecr.size();
+                            STORM_LOG_INFO("    Global monotonicity found for " << i << " parameters.");
+                            std::set<VariableType> newNotMon;
+                            checkForPossibleMonotonicity(env, region, monIncr, monDecr, newNotMon, notMon);
+                            STORM_LOG_INFO("    Monotone parameters: " << monParams);
+                            STORM_LOG_INFO("    Possible global monotonicity found for " << (monIncr.size() + monDecr.size() - i) << " parameters.");
+                            notMon = std::move(newNotMon);
+                        } else {
+                            STORM_LOG_INFO("Getting initial points based on global monotonicity, global monotonicity found for " << (monIncr.size() + monDecr.size()) << " parameters.");
+                            STORM_LOG_INFO("    Monotone parameters: " << monParams);
+                        }
                     }
                     auto point = region.getPoint(dir, monIncr, monDecr);
                     for (auto &v : region.getVerticesOfRegion(notMon)) {
@@ -425,16 +437,16 @@ namespace storm {
                 }
                 STORM_LOG_INFO("Covered " << (coveredArea * storm::utility::convertNumber<ConstantType>(100.0) / totalArea) << "% of the region." << std::endl);
             }
-            
+
             return std::make_pair(storm::utility::convertNumber<typename SparseModelType::ValueType>(value.get()), valuation);
         }
 
-        
+
         template <typename SparseModelType, typename ConstantType>
         SparseModelType const& SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getConsideredParametricModel() const {
             return *parametricModel;
         }
-        
+
         template <typename SparseModelType, typename ConstantType>
         CheckTask<storm::logic::Formula, ConstantType> const& SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getCurrentCheckTask() const {
             return *currentCheckTask;
@@ -482,10 +494,9 @@ namespace storm {
                                                                                                              const storage::ParameterRegion<typename SparseModelType::ValueType> &region,
                                                                                                              std::set<VariableType>& possibleMonotoneIncrParameters,
                                                                                                              std::set<VariableType>& possibleMonotoneDecrParameters,
-                                                                                                             std::set<VariableType>& possibleNotMonotoneParameters) {
+                                                                                                             std::set<VariableType>& possibleNotMonotoneParameters, std::set<VariableType>const& consideredVariables) {
 
             // For each of the variables create a model in which we only change the value for this specific variable
-            auto consideredVariables = region.getVariables();
 
             for (auto& var : consideredVariables) {
                 ConstantType previousCenter = -1;
