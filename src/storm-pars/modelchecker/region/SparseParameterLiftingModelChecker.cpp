@@ -269,7 +269,25 @@ namespace storm {
                         checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon);
                         STORM_LOG_INFO("Getting initial vertices based on possible monotonicity");
                     } else {
+                        std::string monParams;
+                        bool first = true;
+                        for (auto& param : monIncr) {
+                            if (!first) {
+                                monParams += ", ";
+                            }
+                            first = false;
+                            monParams += param.name();
+                        }
+                        for (auto& param : monDecr) {
+                            if (!first) {
+                                monParams += ", ";
+                            }
+                            first = false;
+                            monParams += param.name();
+
+                        }
                         STORM_LOG_INFO("Getting initial points based on global monotonicity, global monotonicity found for " << (monIncr.size() + monDecr.size()) << " parameters.");
+                        STORM_LOG_INFO("    Monotone parameters" << monParams);
                     }
                     auto point = region.getPoint(dir, monIncr, monDecr);
                     for (auto &v : region.getVerticesOfRegion(notMon)) {
