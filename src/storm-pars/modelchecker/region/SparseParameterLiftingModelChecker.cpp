@@ -263,14 +263,13 @@ namespace storm {
                     STORM_LOG_INFO("Extremum found with global monotonicity: " << value.get() << ".");
                     return std::make_pair(storm::utility::convertNumber<typename SparseModelType::ValueType>(value.get()), valuation);
                 } else {
-                    std::set<VariableType> monIncr, monDecr, notMon;
-                    monRes->getGlobalMonotonicityResult()->splitBasedOnMonotonicity(region.getVariables(), monIncr, monDecr, notMon);
+                    std::set<VariableType> monIncr, monDecr, notMon;monRes->getGlobalMonotonicityResult()->splitBasedOnMonotonicity(region.getVariables(), monIncr, monDecr, notMon);
                     if (monIncr.size() == 0 && monDecr.size() == 0) {
                         notMon.clear();
                         checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon);
                         STORM_LOG_INFO("Getting initial vertices based on possible monotonicity");
                     } else {
-                        STORM_LOG_INFO("Getting initial points based on global monotonicity");
+                        STORM_LOG_INFO("Getting initial points based on global monotonicity, global monotonicity found for " << (monIncr.size() + monDecr.size()) << " parameters.");
                     }
                     auto point = region.getPoint(dir, monIncr, monDecr);
                     for (auto &v : region.getVerticesOfRegion(notMon)) {
@@ -453,36 +452,54 @@ namespace storm {
             auto consideredVariables = region.getVariables();
 
             for (auto& var : consideredVariables) {
-                ConstantType previous = -1;
+                ConstantType previousCenter = -1;
+                ConstantType previousUpper = -1;
+                ConstantType previousLower = -1;
                 bool monDecr = true;
                 bool monIncr = true;
 
                 // Check monotonicity in variable (*itr) by instantiating the model
                 // all other variables fixed on lb, only increasing (*itr)
-                auto valuation = region.getCenterPoint();
-                valuation[var] = region.getLowerBoundary(var);
+                auto valuationCenter = region.getCenterPoint();
+                auto valuationLower = region.getLowerBoundaries();
+                auto valuationUpper = region.getUpperBoundaries();
+                valuationCenter[var] = region.getLowerBoundary(var);
+                valuationLower[var] = region.getLowerBoundary(var);
+                valuationUpper[var] = region.getLowerBoundary(var);
                 int numberOfSamples = 10;
                 auto stepSize = (region.getUpperBoundary(var) - region.getLowerBoundary(var)) / numberOfSamples;
 
-                while (valuation[var] <= region.getUpperBoundary(var)) {
+                while (valuationCenter[var] <= region.getUpperBoundary(var)) {
                     // Create valuation
+                    assert (valuationLower[var] <= region.getUpperBoundary(var));
+                    assert (valuationUpper[var] <= region.getUpperBoundary(var));
 
-                    ConstantType value = getInstantiationChecker().check(env, valuation)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
+                    ConstantType valueCenter = getInstantiationChecker().check(env, valuationCenter)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
+                    ConstantType valueUpper = getInstantiationChecker().check(env, valuationUpper)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
+                    ConstantType valueLower = getInstantiationChecker().check(env, valuationLower)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
 
                     // Calculate difference with result for previous valuation
-                    ConstantType diff = previous - value;
-                    assert (previous == -1 || diff >= -1 && diff <= 1);
+                    ConstantType diffCenter = previousCenter - valueCenter;
+                    ConstantType diffLower = previousLower - valueLower;
+                    ConstantType diffUpper = previousUpper - valueUpper;
+                    assert (previousCenter == -1 || (diffCenter >= -1 && diffCenter <= 1));
+                    assert (previousUpper == -1 || (diffUpper >= -1 && diffUpper <= 1));
+                    assert (previousLower == -1 || (diffLower >= -1 && diffLower <= 1));
 
-                    if (previous != -1) {
-                        monDecr &= diff > 0; // then previous value is larger than the current value from the initial states
-                        monIncr &= diff < 0;
+                    if (previousLower != -1) {
+                        assert (previousUpper != -1 && previousCenter != -1);
+                        monDecr &= diffCenter > 0 && diffLower > 0 && diffUpper > 0; // then previous value is larger than the current value from the initial states
+                        monIncr &= diffCenter < 0 && diffLower < 0 && diffUpper < 0;
                     }
-                    previous = value;
+                    previousCenter = valueCenter;
+                    previousLower = valueLower;
+                    previousUpper = valueUpper;
                     if (!monDecr && ! monIncr) {
                         break;
                     }
-                    valuation[var] += stepSize;
-
+                    valuationCenter[var] += stepSize;
+                    valuationLower[var] += stepSize;
+                    valuationUpper[var] += stepSize;
                 }
                 if (monIncr) {
                     possibleMonotoneIncrParameters.insert(var);

@@ -116,34 +116,36 @@ namespace storm {
                 bottomTopOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, numberOfStates, storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options)));
             }
 
-//            auto transpose = matrix.transpose();
-//            for (auto const& bottom : bottomTopOrder->getBottom()->states) {
-//                auto currentStates = transpose.getRow(bottom);
-//                for (auto const &rowEntry : currentStates) {
-//                    auto currentState = rowEntry.getColumn();
-//                    if (currentState != bottom) {
-//                        if (bottomTopOrder->contains(currentState)) {
-//                            bottomTopOrder->addAbove(currentState, bottomTopOrder->getBottom());
-//                        } else {
-//                            bottomTopOrder->add(currentState);
-//                        }
-//                    }
-//                }
-//            }
-//
-//            for (auto const& bottom : bottomTopOrder->getTop()->states) {
-//                auto currentStates = transpose.getRow(bottom);
-//                for (auto const &rowEntry : currentStates) {
-//                    auto currentState = rowEntry.getColumn();
-//                    if (currentState != bottom) {
-//                        if (bottomTopOrder->contains(currentState)) {
-//                            // Do nothing, as this state will point at =( and =)
-//                        } else {
-//                            bottomTopOrder->add(currentState);
-//                        }
-//                    }
-//                }
-//            }
+            auto transpose = matrix.transpose();
+            for (auto const& bottom : bottomTopOrder->getBottom()->states) {
+                auto currentStates = transpose.getRow(bottom);
+                for (auto const &rowEntry : currentStates) {
+                    auto currentState = rowEntry.getColumn();
+                    if (currentState != bottom) {
+                        if (bottomTopOrder->contains(currentState)) {
+                            bottomTopOrder->addAbove(currentState, bottomTopOrder->getBottom());
+                        } else {
+                            bottomTopOrder->add(currentState);
+                        }
+                        bottomTopOrder->addStateToHandle(currentState);
+                    }
+                }
+            }
+
+            for (auto const& bottom : bottomTopOrder->getTop()->states) {
+                auto currentStates = transpose.getRow(bottom);
+                for (auto const &rowEntry : currentStates) {
+                    auto currentState = rowEntry.getColumn();
+                    if (currentState != bottom) {
+                        if (bottomTopOrder->contains(currentState)) {
+                            // Do nothing, as this state will point at =( and =)
+                        } else {
+                            bottomTopOrder->add(currentState);
+                            bottomTopOrder->addStateToHandle(currentState);
+                        }
+                    }
+                }
+            }
             storm::storage::StronglyConnectedComponentDecompositionOptions const options;
             auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
             return bottomTopOrder;
@@ -235,11 +237,11 @@ namespace storm {
                         order->add(currentState);
                     }
                     // If it is cyclic, we first do forward reasoning, when this didn't work we do backward reasoning
-                    if (!order->getSCC(currentStateSCC.second).isTrivial()) {
+                    if (currentStateSCC.second == -1 || !order->getSCC(currentStateSCC.second).isTrivial()) {
                         if (order->contains(currentState)) {
                             // Try to extend the order for this scc
                             auto res = extendByForwardReasoning(order, currentState, successors, assumption != nullptr);
-                            if (res.first != numberOfStates) {
+                            if (res.first != numberOfStates && currentStateSCC.second != -1 ) {
                                 stateSucc1 = res.first;
                                 stateSucc2 = res.second;
                                 auto backwardResult = extendByBackwardReasoning(order, currentState, successors,
@@ -301,8 +303,6 @@ namespace storm {
                             continue;
                         }
                     }
-
-
 
                     if (stateSucc1 != numberOfStates) {
                         if (nonParametericStates.find(currentState) != nonParametericStates.end()) {
@@ -425,13 +425,13 @@ namespace storm {
                 }
 
                 if (temp.second[0] == currentState) {
-                    // Asssumption nuilllptr doorgeven
-
                     order->addRelation(temp.first.first, temp.second[0], allowMerge);
                     order->addRelation(temp.first.first, temp.second[temp.second.size() - 1], allowMerge);
+                    order->addStateToHandle(temp.first.first);
                 } else if (temp.second[temp.second.size() - 1] == currentState) {
                     order->addRelation(temp.second[0], temp.first.first, allowMerge);
                     order->addRelation(temp.second[temp.second.size() - 1], temp.first.first, allowMerge);
+                    order->addStateToHandle(temp.first.first);
                 }
             } else {
                 return {temp.first.first, temp.first.second};
@@ -754,6 +754,9 @@ namespace storm {
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t>
         OrderExtender<ValueType, ConstantType>::getNextState(std::shared_ptr<Order> order, uint_fast64_t currentSCCNumber, std::set<uint_fast64_t>& seenStates, bool trick) {
+            if (order->existsStateToHandle()) {
+                return {order->getStateToHandle(), -1};
+            }
             if (currentSCCNumber == -1) {
                 currentSCCNumber = order->getNextSCCNumber(currentSCCNumber);
             }

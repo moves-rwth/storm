@@ -275,20 +275,15 @@ namespace storm {
                      */
                     std::vector<uint_fast64_t> sortStates(storm::storage::BitVector* states);
 
-                    /*!
-                     * Returns the next state to handle, if the statesToHandle list is empty, it continues with the sorted states list.
-                     *
-                     * @return The next state to be handled.
-                     */
                     storage::StronglyConnectedComponent& getSCC(uint_fast64_t currentSCC);
                     uint_fast64_t getNextSCCNumber(uint_fast64_t currentSCC);
 
-                    /*!
-                     * Returns if there exists a next state to handle, (if the statesToHandle list is empty, it checks the sorted states list).
-                     *
-                     * @return The next state to be handled.
-                     */
-                    bool existsNextSortedState();
+                    bool existsNextSCC();
+                    bool existsStateToHandle();
+
+                    uint_fast64_t getStateToHandle();
+
+                    void addStateToHandle(uint_fast64_t state);
 
                     /*!
                      * If the order is fully built, this can be set to true.
@@ -341,6 +336,8 @@ namespace storm {
                     storm::storage::BitVector addedStates;
 
                     std::vector<Node*> nodes;
+
+                    std::vector<uint_fast64_t> statesToHandle;
 
                     storm::storage::BitVector addedSCCs;
 

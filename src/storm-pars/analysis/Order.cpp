@@ -682,7 +682,7 @@ namespace storm {
             return label;
         }
 
-        bool Order::existsNextSortedState() {
+        bool Order::existsNextSCC() {
             return !addedSCCs.full();
         }
 
@@ -696,6 +696,21 @@ namespace storm {
         uint_fast64_t Order::getNextSCCNumber(uint_fast64_t sccNumber) {
             return addedSCCs.getNextUnsetIndex(sccNumber + 1);
 
+        }
+
+        uint_fast64_t Order::getStateToHandle() {
+            assert (existsStateToHandle());
+            auto state = statesToHandle.back();
+            statesToHandle.pop_back();
+            return state;
+        }
+
+        bool Order::existsStateToHandle() {
+            return !statesToHandle.empty();
+        }
+
+        void Order::addStateToHandle(uint_fast64_t state) {
+            statesToHandle.push_back(state);
         }
     }
 }
