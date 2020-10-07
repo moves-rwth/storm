@@ -59,6 +59,17 @@ namespace storm {
             }
 
             this->extender = new analysis::OrderExtender<ValueType, ConstantType>(model, formulas[0], region);
+
+            for (auto i = 0; i < matrix.getRowCount(); ++i) {
+                std::set<VariableType> occurringVariables;
+
+                for (auto &entry : matrix.getRow(i)) {
+                    storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
+                }
+                for (auto& var : occurringVariables) {
+                    occuringStatesAtVariable[var].push_back(i);
+                }
+            }
         }
 
 
@@ -172,6 +183,17 @@ namespace storm {
                 assert (newAssumptions.size() <= 3);
                 auto itr = newAssumptions.begin();
                 if (newAssumptions.size() == 0) {
+                    for (auto& entry : occuringStatesAtVariable) {
+                        for (auto & state : entry.second) {
+                            extender->checkParOnStateMonRes(state, order, entry.first, monRes);
+                            if (monRes->getMonotonicity(entry.first) == Monotonicity::Unknown) {
+                                break;
+                            }
+                        }
+                    }
+                    if (monRes->existsMonotonicity()) {
+                        monResults.insert({order, {monRes, assumptions}});
+                    }
                     STORM_LOG_INFO("    None of the assumptions were valid, we stop exploring the current order");
                 } else {
                     STORM_LOG_INFO("    Created " << newAssumptions.size() << " assumptions, we continue extending the current order");
@@ -193,9 +215,12 @@ namespace storm {
                             }
 
                             auto criticalTuple = extender->extendOrder(orderCopy, region, monResCopy, assumption.first);
-                            if (monResCopy->existsMonotonicity()) {
+//                            if (monResCopy->existsMonotonicity()) {
                                 extendOrderWithAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptionsCopy, monResCopy);
-                            }
+//                            } else {
+//                                STORM_LOG_INFO("No monotonicity found in branch with last assumption " << *assumption.first << std::endl);
+//                            }
+
                         } else {
                             // It is the last one, so we don't need to create a copy.
                             if (assumption.second == AssumptionStatus::UNKNOWN) {
@@ -204,16 +229,15 @@ namespace storm {
                             }
 
                             auto criticalTuple = extender->extendOrder(order, region, monRes, assumption.first);
-                            if (monRes->existsMonotonicity()) {
+//                            if (monRes->existsMonotonicity()) {
                                 extendOrderWithAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptions, monRes);
-                            }
+//                            }  else {
+//                                STORM_LOG_INFO("No monotonicity found in branch with last assumption " << *assumption.first << std::endl);
+//                            }
+
                         }
                     }
                 }
-//                if (this->monResults.size() == 0) {
-//                    auto resAssumptionPair = std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>(monRes, assumptions);
-//                    monResults.insert(std::pair<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>(std::move(order), std::move(resAssumptionPair)));
-//                }
             }
         }
 

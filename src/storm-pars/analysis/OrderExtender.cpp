@@ -255,6 +255,8 @@ namespace storm {
                     if (monRes != nullptr && currentStateSCC.second != -1) {
                         auto succsOrdered = order->sortStates(&stateMap[currentState]);
                         for (auto param : params) {
+                            assert (succsOrdered[succsOrdered.size() -1] != numberOfStates);
+                            assert (succsOrdered.size() == stateMap[currentState].size());
                             checkParOnStateMonRes(currentState, succsOrdered, param, monRes);
                         }
                     }
@@ -655,6 +657,17 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
+        void OrderExtender<ValueType, ConstantType>::checkParOnStateMonRes(uint_fast64_t s, std::shared_ptr<Order> order, typename OrderExtender<ValueType, ConstantType>::VariableType param, std::shared_ptr<MonotonicityResult<VariableType>> monResult) {
+            auto succsOrdered = order->sortStates(&stateMap[s]);
+            if (succsOrdered.back() == numberOfStates) {
+                monResult->updateMonotonicityResult(param, Monotonicity::Unknown);
+            } else {
+                checkParOnStateMonRes(s, succsOrdered, param, monResult);
+            }
+        }
+
+
+            template <typename ValueType, typename ConstantType>
         void OrderExtender<ValueType, ConstantType>::checkParOnStateMonRes(uint_fast64_t s, const std::vector<uint_fast64_t>& succ, typename OrderExtender<ValueType, ConstantType>::VariableType param, std::shared_ptr<MonotonicityResult<VariableType>> monResult) {
             uint_fast64_t succSize = succ.size();
             if (succSize == 2) {

@@ -73,6 +73,7 @@ namespace storm {
             void setUnknownStates(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
             void copyMinMax(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
             void initializeMinMaxValues();
+            void checkParOnStateMonRes(uint_fast64_t s, std::shared_ptr<Order> order, typename OrderExtender<ValueType, ConstantType>::VariableType param, std::shared_ptr<MonotonicityResult<VariableType>> monResult);
 
 
         private:
@@ -91,6 +92,8 @@ namespace storm {
             void handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor);
 
             void handleAssumption(std::shared_ptr<Order> order, std::shared_ptr<expressions::BinaryRelationExpression> assumption) const;
+
+            void checkParOnStateMonRes(uint_fast64_t s, const std::vector<uint_fast64_t>& succ, typename OrderExtender<ValueType, ConstantType>::VariableType param, std::shared_ptr<MonotonicityResult<VariableType>> monResult);
 
 
             std::shared_ptr<Order> bottomTopOrder = nullptr;
@@ -121,7 +124,6 @@ namespace storm {
 
             Monotonicity checkTransitionMonRes(ValueType function, typename OrderExtender<ValueType, ConstantType>::VariableType param);
 
-            void checkParOnStateMonRes(uint_fast64_t s, const std::vector<uint_fast64_t>& succ, typename OrderExtender<ValueType, ConstantType>::VariableType param, std::shared_ptr<MonotonicityResult<VariableType>> monResult);
 
             std::set<VariableType> params;
 
