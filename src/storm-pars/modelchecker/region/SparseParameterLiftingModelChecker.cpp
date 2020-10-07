@@ -265,7 +265,7 @@ namespace storm {
                 } else {
                     std::set<VariableType> monIncr, monDecr, notMon;
                     monRes->getGlobalMonotonicityResult()->splitBasedOnMonotonicity(region.getVariables(), monIncr, monDecr, notMon);
-                    if (monIncr.size() == 0 && monDecr.size() == 0) {
+                    if (monIncr.size() == 0 && monDecr.size() == 0 && notMon.size() > 10) {
                         notMon.clear();
                         checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, region.getVariables());
                         STORM_LOG_INFO("Getting initial vertices based on possible monotonicity");
