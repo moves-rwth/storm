@@ -735,55 +735,104 @@ namespace storm {
 
             std::vector<storm::storage::ParameterRegion<ValueType>> regions = parseRegions<ValueType>(model);
 
+            auto sparseModel = model->as<models::sparse::Model<ValueType>>();
             if (model && monSettings.isMonotonicityAnalysisSet()) {
-                std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
-                // Monotonicity
-                storm::utility::Stopwatch monotonicityWatch(true);
+                std::ofstream outfile;
 
-                STORM_LOG_THROW(regions.size() <= 1, storm::exceptions::InvalidArgumentException, "Monotonicity analysis only allowed on single region");
-                // TODO @Jip: type, should this be double?
-                storm::analysis::MonotonicityHelper<ValueType, double> monotonicityHelper = storm::analysis::MonotonicityHelper<ValueType, double>(model->as<models::sparse::Model<ValueType>>(), formulas, regions, monSettings.getNumberOfSamples(), monSettings.getMonotonicityAnalysisPrecision(), monSettings.isDotOutputSet());
                 if (monSettings.isExportMonotonicitySet()) {
-                    std::ofstream outfile;
                     utility::openFile(monSettings.getExportMonotonicityFilename(), outfile);
-                    monotonicityHelper.checkMonotonicityInBuild(outfile, monSettings.isUsePLAForMonotonicityAnalysis(), monSettings.getDotOutputFilename());
-                    utility::closeFile(outfile);
+                }
+                std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
+                storm::utility::Stopwatch monotonicityWatch(true);
+                STORM_LOG_THROW(regions.size() <= 1, storm::exceptions::InvalidArgumentException, "Monotonicity analysis only allowed on single region");
+                if (!monSettings.isMonSolutionSet()) {
+                    auto monotonicityHelper = storm::analysis::MonotonicityHelper<ValueType, double>(sparseModel, formulas, regions, monSettings.getNumberOfSamples(), monSettings.getMonotonicityAnalysisPrecision(), monSettings.isDotOutputSet());
+                    if (monSettings.isExportMonotonicitySet()) {
+                        monotonicityHelper.checkMonotonicityInBuild(outfile, monSettings.isUsePLAForMonotonicityAnalysis(), monSettings.getDotOutputFilename());
+                    } else {
+                        monotonicityHelper.checkMonotonicityInBuild(std::cout, monSettings.isUsePLAForMonotonicityAnalysis(), monSettings.getDotOutputFilename());
+                    }
                 } else {
-                    monotonicityHelper.checkMonotonicityInBuild(std::cout, monSettings.isUsePLAForMonotonicityAnalysis(), monSettings.getDotOutputFilename());
+
+                    auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
+                    auto regionSettings = storm::settings::getModule<storm::settings::modules::RegionSettings>();
+                    auto engine = regionSettings.getRegionCheckEngine();
+
+                    std::function<std::unique_ptr<storm::modelchecker::CheckResult>(std::shared_ptr<storm::logic::Formula const> const& formula)> verificationCallback;
+                    std::function<void(std::unique_ptr<storm::modelchecker::CheckResult> const&)> postprocessingCallback;
+
+                    // Check the given set of regions with or without refinement
+                    verificationCallback = [&] (std::shared_ptr<storm::logic::Formula const> const& formula) {
+                        std::unique_ptr<storm::modelchecker::CheckResult> result = storm::api::verifyWithSparseEngine<ValueType>(sparseModel, storm::api::createTask<ValueType>(formula, true));
+                        return result;
+                    };
+
+                    for (auto & property : input.properties) {
+                        auto result = verificationCallback(property.getRawFormula())->asExplicitQuantitativeCheckResult<ValueType>().getValueVector();
+                        ValueType valuation;
+
+                        auto states= sparseModel->getInitialStates();
+                        for (auto state : states) {
+                            valuation += result[state];
+                        }
+
+                        storm::analysis::MonotonicityResult<storm::RationalFunctionVariable> monRes;
+                        for (auto & var : storm::models::sparse::getProbabilityParameters(*sparseModel)) {
+                            auto res = storm::analysis::MonotonicityChecker<ValueType>::checkDerivative(valuation.derivative(var), regions[0]);
+
+                            if (res.first && res.second) {
+                                monRes.addMonotonicityResult(var, analysis::MonotonicityResult<storm::RationalFunctionVariable>::Monotonicity::Constant);
+                            } else if (res.first) {
+                                monRes.addMonotonicityResult(var, analysis::MonotonicityResult<storm::RationalFunctionVariable>::Monotonicity::Incr);
+                            } else if (res.second) {
+                                monRes.addMonotonicityResult(var, analysis::MonotonicityResult<storm::RationalFunctionVariable>::Monotonicity::Decr);
+                            } else {
+                                monRes.addMonotonicityResult(var, analysis::MonotonicityResult<storm::RationalFunctionVariable>::Monotonicity::Not);
+                            }
+                        }
+                        if (monSettings.isExportMonotonicitySet()) {
+                            outfile << monRes.toString();
+                        } else {
+                            STORM_PRINT(monRes.toString());
+                        }
+                    }
                 }
+
+                if (monSettings.isExportMonotonicitySet()) {
+                    utility::closeFile(outfile);
+                }
+
                 monotonicityWatch.stop();
-                STORM_PRINT(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl
-                                    << std::endl);
+                STORM_PRINT(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl << std::endl);
                 return;
-            } else {
+            }
 
-                std::string samplesAsString = parSettings.getSamples();
-                SampleInformation<ValueType> samples;
-                if (!samplesAsString.empty()) {
-                    samples = parseSamples<ValueType>(model, samplesAsString,
-                                                      parSettings.isSamplesAreGraphPreservingSet());
-                    samples.exact = parSettings.isSampleExactSet();
-                }
+            std::string samplesAsString = parSettings.getSamples();
+            SampleInformation<ValueType> samples;
+            if (!samplesAsString.empty()) {
+                samples = parseSamples<ValueType>(model, samplesAsString,
+                                                  parSettings.isSamplesAreGraphPreservingSet());
+                samples.exact = parSettings.isSampleExactSet();
+            }
 
-                if (model) {
-                    storm::cli::exportModel<DdType, ValueType>(model, input);
-                }
+            if (model) {
+                storm::cli::exportModel<DdType, ValueType>(model, input);
+            }
 
-                if (parSettings.onlyObtainConstraints()) {
-                    STORM_LOG_THROW(parSettings.exportResultToFile(), storm::exceptions::InvalidSettingsException,
-                                    "When computing constraints, export path has to be specified.");
-                    storm::api::exportParametricResultToFile<ValueType>(boost::none,
-                                                                        storm::analysis::ConstraintCollector<ValueType>(
-                                                                                *(model->as<storm::models::sparse::Model<ValueType>>())),
-                                                                        parSettings.exportResultPath());
-                    return;
-                }
+            if (parSettings.onlyObtainConstraints()) {
+                STORM_LOG_THROW(parSettings.exportResultToFile(), storm::exceptions::InvalidSettingsException,
+                                "When computing constraints, export path has to be specified.");
+                storm::api::exportParametricResultToFile<ValueType>(boost::none,
+                                                                    storm::analysis::ConstraintCollector<ValueType>(
+                                                                            *(model->as<storm::models::sparse::Model<ValueType>>())),
+                                                                    parSettings.exportResultPath());
+                return;
+            }
 
-                if (model) {
-                    verifyParametricModel<DdType, ValueType>(model, input, regions, samples,
-                                                             parSettings.isUseMonotonicitySet(),
-                                                             monSettings.getMonotonicityThreshold());
-                }
+            if (model) {
+                verifyParametricModel<DdType, ValueType>(model, input, regions, samples,
+                                                         parSettings.isUseMonotonicitySet(),
+                                                         monSettings.getMonotonicityThreshold());
             }
         }
 

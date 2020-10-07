@@ -56,6 +56,7 @@ namespace storm {
                  *
                  */
                 bool isExportMonotonicitySet() const;
+                bool isMonSolutionSet() const;
 
                 /*!
                  *
@@ -81,6 +82,7 @@ namespace storm {
                 static const std::string exportMonotonicityName;
                 const static std::string monotonicityThreshold;
                 const static std::string monotoneParameters;
+                const static std::string monSolution;
 
             };
 

@@ -23,6 +23,7 @@ namespace storm {
             const std::string MonotonicitySettings::exportMonotonicityName = "exportmonotonicity";
             const std::string MonotonicitySettings::monotonicityThreshold ="mon-threshold";
             const std::string MonotonicitySettings::monotoneParameters ="mon-parameters";
+            const std::string MonotonicitySettings::monSolution ="mon-solution";
 
 
 
@@ -32,6 +33,7 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, sccElimination, false, "Sets whether SCCs should be eliminated in the monotonicity analysis").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, samplesMonotonicityAnalysis, false, "Sets whether monotonicity should be checked on samples").setIsAdvanced()
                                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("mon-samples", "The number of samples taken in monotonicity-analysis can be given, default is 0, no samples").setDefaultValueUnsignedInteger(0).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, monSolution, false, "Sets whether monotonicity should be checked on solutionfiunction").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, precision, false, "Sets precision of monotonicity checking on samples").setIsAdvanced()
                                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("mon-precision", "The precision of checking monotonicity on samples, default is 1e-6").setDefaultValueDouble(0.000001).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, dotOutput, false, "Sets whether a dot output of the ROs is needed").setIsAdvanced().build());
@@ -93,6 +95,10 @@ namespace storm {
 
             uint_fast64_t MonotonicitySettings::getMonotonicityThreshold() const {
                 return this->getOption(monotonicityThreshold).getArgumentByName("mon-threshold").getValueAsUnsignedInteger();
+            }
+
+            bool MonotonicitySettings::isMonSolutionSet() const {
+                return this->getOption(monSolution).getHasOptionBeenSet();
             }
         } // namespace modules
     } // namespace settings
