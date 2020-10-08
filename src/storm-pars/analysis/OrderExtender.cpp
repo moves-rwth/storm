@@ -126,36 +126,36 @@ namespace storm {
                 bottomTopOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, numberOfStates, storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options)));
             }
 
-//            auto transpose = matrix.transpose();
-//            for (auto const& bottom : bottomTopOrder->getBottom()->states) {
-//                auto currentStates = transpose.getRow(bottom);
-//                for (auto const &rowEntry : currentStates) {
-//                    auto currentState = rowEntry.getColumn();
-//                    if (currentState != bottom) {
-//                        if (bottomTopOrder->contains(currentState)) {
-//                            bottomTopOrder->addAbove(currentState, bottomTopOrder->getBottom());
-//                        } else {
-//                            bottomTopOrder->add(currentState);
-//                        }
-//                        bottomTopOrder->addStateToHandle(currentState);
-//                    }
-//                }
-//            }
-//
-//            for (auto const& bottom : bottomTopOrder->getTop()->states) {
-//                auto currentStates = transpose.getRow(bottom);
-//                for (auto const &rowEntry : currentStates) {
-//                    auto currentState = rowEntry.getColumn();
-//                    if (currentState != bottom) {
-//                        if (bottomTopOrder->contains(currentState)) {
-//                            // Do nothing, as this state will point at =( and =)
-//                        } else {
-//                            bottomTopOrder->add(currentState);
-//                            bottomTopOrder->addStateToHandle(currentState);
-//                        }
-//                    }
-//                }
-//            }
+            auto transpose = matrix.transpose();
+            for (auto const& bottom : bottomTopOrder->getBottom()->states) {
+                auto currentStates = transpose.getRow(bottom);
+                for (auto const &rowEntry : currentStates) {
+                    auto currentState = rowEntry.getColumn();
+                    if (currentState != bottom) {
+                        if (bottomTopOrder->contains(currentState)) {
+                            bottomTopOrder->addAbove(currentState, bottomTopOrder->getBottom());
+                        } else {
+                            bottomTopOrder->add(currentState);
+                        }
+                        bottomTopOrder->addStateToHandle(currentState);
+                    }
+                }
+            }
+
+            for (auto const& bottom : bottomTopOrder->getTop()->states) {
+                auto currentStates = transpose.getRow(bottom);
+                for (auto const &rowEntry : currentStates) {
+                    auto currentState = rowEntry.getColumn();
+                    if (currentState != bottom) {
+                        if (bottomTopOrder->contains(currentState)) {
+                            // Do nothing, as this state will point at =( and =)
+                        } else {
+                            bottomTopOrder->add(currentState);
+                            bottomTopOrder->addStateToHandle(currentState);
+                        }
+                    }
+                }
+            }
             storm::storage::StronglyConnectedComponentDecompositionOptions const options;
             auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
             return bottomTopOrder;
