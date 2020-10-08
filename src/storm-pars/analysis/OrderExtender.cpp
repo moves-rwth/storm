@@ -133,7 +133,7 @@ namespace storm {
                 auto currentStates = transpose.getRow(bottom);
                 for (auto const &rowEntry : currentStates) {
                     auto currentState = rowEntry.getColumn();
-                    if (currentState != bottom) {
+                    if (currentState != bottom && stateMap[currentState].size() == 2) {
                         if (bottomTopOrder->contains(currentState)) {
                             bottomTopOrder->addAbove(currentState, bottomTopOrder->getBottom());
                         } else {
@@ -150,7 +150,7 @@ namespace storm {
                 auto currentStates = transpose.getRow(bottom);
                 for (auto const &rowEntry : currentStates) {
                     auto currentState = rowEntry.getColumn();
-                    if (currentState != bottom) {
+                    if (currentState != bottom && stateMap[currentState].size() == 2) {
                         if (bottomTopOrder->contains(currentState)) {
                             // Do nothing, as this state will point at =( and =)
                         } else {
@@ -873,12 +873,14 @@ namespace storm {
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t>
         OrderExtender<ValueType, ConstantType>::getNextState(std::shared_ptr<Order> order, uint_fast64_t currentSCCNumber, std::set<uint_fast64_t>& seenStates, bool trick) {
-            if (order->existsStateToHandle()) {
-                return {order->getStateToHandle(), -1};
-            }
             if (currentSCCNumber == -1) {
                 currentSCCNumber = order->getNextSCCNumber(currentSCCNumber);
             }
+
+            if (cyclic && order->existsStateToHandle()) {
+                return {order->getStateToHandle(), -1};
+            }
+
 
             storage::StronglyConnectedComponent& scc = order->getSCC(currentSCCNumber);
             if (scc.size() == 0) {
