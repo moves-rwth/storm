@@ -164,6 +164,7 @@ namespace storm {
             for(auto const& i : node2->states) {
                 nodes[i] = node1;
             }
+
         }
 
         void Order::merge(uint_fast64_t var1, uint_fast64_t var2) {
@@ -175,8 +176,10 @@ namespace storm {
         Order::NodeComparison Order::compare(uint_fast64_t state1, uint_fast64_t state2){
             return compare(getNode(state1), getNode(state2));
         }
-
-        Order::NodeComparison Order::compare(Node* node1, Node* node2) {
+        Order::NodeComparison Order::compareFast(uint_fast64_t state1, uint_fast64_t state2){
+            return compare(getNode(state1), getNode(state2));
+        }
+        Order::NodeComparison Order::compareFast(Node* node1, Node* node2) {
             if (node1 != nullptr && node2 != nullptr) {
                 if (node1 == node2) {
                     return SAME;
@@ -188,6 +191,20 @@ namespace storm {
 
                 if (aboveFast(node2, node1)) {
                     return BELOW;
+                }
+            }  else if (node1 == top || node2 == bottom) {
+                return ABOVE;
+            } else if (node2 == top || node1 == bottom) {
+                return BELOW;
+            }
+            return UNKNOWN;
+        }
+
+        Order::NodeComparison Order::compare(Node* node1, Node* node2) {
+            if (node1 != nullptr && node2 != nullptr) {
+                auto comp = compareFast(node1, node2);
+                if (comp != UNKNOWN) {
+                    return comp;
                 }
                 if (above(node1, node2)) {
                     assert(!above(node2, node1));

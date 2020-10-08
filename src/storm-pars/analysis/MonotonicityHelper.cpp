@@ -86,6 +86,13 @@ namespace storm {
 
             //output of results
             for (auto itr : monResults) {
+                if (checkSamples) {
+                    for (auto & entry : resultCheckOnSamples.getMonotonicityResult()) {
+                        if (entry.second == Monotonicity::Not) {
+                            itr.second.first->updateMonotonicityResult(entry.first, entry.second, true);
+                        }
+                    }
+                }
                 std::string temp = itr.second.first->toString();
                 bool first = true;
                 for (auto& assumption : itr.second.second) {
@@ -103,7 +110,6 @@ namespace storm {
                     outfile << "No Assumptions" << std::endl;
                 }
                 outfile << "Monotonicity Result: " << std::endl << "    " << temp << std::endl << std::endl;
-
             }
 
             if (monResults.size() == 0) {
@@ -213,28 +219,16 @@ namespace storm {
                                 // only add assumption to the set of assumptions if it is unknown whether it holds or not
                                 assumptionsCopy.push_back(std::move(assumption.first));
                             }
-
                             auto criticalTuple = extender->extendOrder(orderCopy, region, monResCopy, assumption.first);
-//                            if (monResCopy->existsMonotonicity()) {
-                                extendOrderWithAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptionsCopy, monResCopy);
-//                            } else {
-//                                STORM_LOG_INFO("No monotonicity found in branch with last assumption " << *assumption.first << std::endl);
-//                            }
-
+                            extendOrderWithAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptionsCopy, monResCopy);
                         } else {
                             // It is the last one, so we don't need to create a copy.
                             if (assumption.second == AssumptionStatus::UNKNOWN) {
                                 // only add assumption to the set of assumptions if it is unknown whether it holds or not
                                 assumptions.push_back(std::move(assumption.first));
                             }
-
                             auto criticalTuple = extender->extendOrder(order, region, monRes, assumption.first);
-//                            if (monRes->existsMonotonicity()) {
-                                extendOrderWithAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptions, monRes);
-//                            }  else {
-//                                STORM_LOG_INFO("No monotonicity found in branch with last assumption " << *assumption.first << std::endl);
-//                            }
-
+                            extendOrderWithAssumptions(std::get<0>(criticalTuple), std::get<1>(criticalTuple), std::get<2>(criticalTuple), assumptions, monRes);
                         }
                     }
                 }

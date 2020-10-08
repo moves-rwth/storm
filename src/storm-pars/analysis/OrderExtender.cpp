@@ -233,11 +233,23 @@ namespace storm {
                     if (order->isOnlyBottomTopOrder()) {
                         order->add(currentState);
                     }
-                    if (currentStateSCC.second == -1) {
-                        result = extendStateToHandle(order, currentState, successors, assumption != nullptr);
+                    if (usePLAOnce || (usePLA.find(order) != usePLA.end() && usePLA[order])) {
+                        result = extendByMinMax(order, currentState, successors, assumption != nullptr);
+                        if (result.first != numberOfStates) {
+                            if (currentStateSCC.second == -1) {
+                                result = extendStateToHandle(order, currentState, successors, assumption != nullptr, result.first == currentState);
+                            } else {
+                                result = extendNormal(order, currentState, currentStateSCC.second, successors, assumption != nullptr, result.first == currentState);
+                            }
+                        }
                     } else {
-                        result = extendNormal(order, currentState, currentStateSCC.second, successors, assumption != nullptr);
+                        if (currentStateSCC.second == -1) {
+                            result = extendStateToHandle(order, currentState, successors, assumption != nullptr, false);
+                        } else {
+                            result = extendNormal(order, currentState, currentStateSCC.second, successors, assumption != nullptr, false);
+                        }
                     }
+
                 }
 
                 if (result.first == numberOfStates) {
@@ -271,7 +283,7 @@ namespace storm {
                     assert (result.first < numberOfStates);
                     assert (result.second < numberOfStates);
                     // Try to add states based on min/max and assumptions
-                    if (extendByMinMaxOrAssumptions(order, currentState, result.first, result.second)) {
+                    if (extendByAssumption(order, currentState, result.first, result.second)) {
                         continue;
                     }
                     // We couldn't extend the order
@@ -309,9 +321,9 @@ namespace storm {
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t>
         OrderExtender<ValueType, ConstantType>::extendStateToHandle(std::shared_ptr<Order> order, uint_fast64_t currentState,
-                                                                    const vector<uint_fast64_t> &successors, bool allowMerge) const {
+                                                                    const vector<uint_fast64_t> &successors, bool allowMerge,  bool onlyBackwards) const {
             std::pair<uint_fast64_t, uint_fast64_t> result;
-            if (order->contains(currentState)) {
+            if (!onlyBackwards && order->contains(currentState)) {
                 // Try to extend the order for this scc
                 result = extendByForwardReasoning(order, currentState, successors, allowMerge);
                 while (result.first != numberOfStates) {
@@ -340,10 +352,10 @@ namespace storm {
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t>
         OrderExtender<ValueType, ConstantType>::extendNormal(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t currentSCC,
-                                                                    const vector<uint_fast64_t> &successors, bool allowMerge) const {
+                                                                    const vector<uint_fast64_t> &successors, bool allowMerge,  bool onlyBackwards) const {
             // If it is cyclic, we first do forward reasoning, when this didn't work we do backward reasoning
             std::pair<uint_fast64_t, uint_fast64_t> result;
-            if (!order->getSCC(currentSCC).isTrivial()) {
+            if (!onlyBackwards && !order->getSCC(currentSCC).isTrivial()) {
                 if (order->contains(currentState)) {
                     // Try to extend the order for this scc
                     result = extendByForwardReasoning(order, currentState, successors, allowMerge);
@@ -376,11 +388,42 @@ namespace storm {
             }
         }
 
+        template<typename ValueType, typename ConstantType>
+        std::pair<uint_fast64_t, uint_fast64_t>
+        OrderExtender<ValueType, ConstantType>::extendByMinMax(std::shared_ptr<Order> order, uint_fast64_t currentState,
+                                                               const vector<uint_fast64_t> &successors,
+                                                               bool allowMerge) const {
+            bool addedCurrent = false;
+            for (auto i1 = 0; i1 < successors.size(); i1++) {
+                auto state1 = successors.at(i1);
+                auto state2 = currentState;
+                if (order->compareFast(state1, state2) == Order::UNKNOWN) {
+                    if (addStatesBasedOnMinMax(order, state1, state2) != Order::UNKNOWN) {
+                        addedCurrent = true;
+                    }
+                } else {
+                    addedCurrent = true;
+                }
+                for (auto i2 = i1 + 1; i2 < successors.size(); ++i2) {
+                    state2 = successors.at(i2);
+                    if (order->compareFast(state1, state2) == Order::UNKNOWN) {
+                        if (addStatesBasedOnMinMax(order, state1, state2) == Order::UNKNOWN) {
+                            return {state1, state2};
+                        }
+                    }
+                }
+            }
+
+            if (!addedCurrent) {
+                return {currentState, currentState};
+            }
+            return {numberOfStates, numberOfStates};
+        }
+
         template <typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) const{
             assert (!order->isOnlyBottomTopOrder());
             assert (successors.size() > 1);
-
 
             // temp.first = pair of unordered states, if this is numberOfStates all successor states could be sorted, so temp.second is fully sorted and contains all successors.
             auto temp = order->sortStatesUnorderedPair(&successors);
@@ -451,39 +494,24 @@ namespace storm {
         }
 
         template<typename ValueType, typename ConstantType>
-        bool OrderExtender<ValueType, ConstantType>::extendByMinMaxOrAssumptions(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t stateSucc1, uint_fast64_t stateSucc2) {
+        bool OrderExtender<ValueType, ConstantType>::extendByAssumption(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t stateSucc1, uint_fast64_t stateSucc2) {
             if (usePLAOnce) {
-                auto minMaxAdding = usePLAOnce.get() ? this->addStatesBasedOnMinMax(order, stateSucc1, stateSucc2) : Order::UNKNOWN;
-                if (minMaxAdding == Order::UNKNOWN) {
                     auto assumptions = usePLAOnce.get() ? assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2,  order, region, minValuesOnce.get(), maxValuesOnce.get()) : assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, region);
                     if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
                         handleAssumption(order, assumptions.begin()->first);
-                        stateSucc1 = numberOfStates;
                         // Assumptions worked, we continue
                         return true;
                     }
-                } else {
-                    // MinMax adding worked, we continue
-                    return true;
-                }
             } else {
                 bool usePLANow = usePLA.find(order) != usePLA.end() && usePLA[order];
-                auto minMaxAdding = usePLANow ? this->addStatesBasedOnMinMax(order, stateSucc1, stateSucc2) : Order::UNKNOWN;
-                if (minMaxAdding == Order::UNKNOWN) {
                     auto assumptions = usePLANow ? assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2,  order, region, minValues[order], maxValues[order]) : assumptionMaker->createAndCheckAssumptions(stateSucc1, stateSucc2, order, region);
                     if (assumptions.size() == 1 && assumptions.begin()->second == AssumptionStatus::VALID) {
                         handleAssumption(order, assumptions.begin()->first);
-                        stateSucc1 = numberOfStates;
                         // Assumptions worked, we continue
                         return true;
                     }
-                } else {
-                    // MinMax adding worked, we continue
-                    return true;
-                }
             }
             return false;
-
         }
 
         template <typename ValueType, typename ConstantType>
@@ -502,7 +530,8 @@ namespace storm {
 
             }
             if (mins[state1] == maxs[state1]
-                && mins[state2] == maxs[state2]) {
+                && mins[state2] == maxs[state2]
+                   && mins[state1] == mins[state2]) {
                 if (order->contains(state1)) {
                     if (order->contains(state2)) {
                         order->merge(state1, state2);
@@ -857,7 +886,6 @@ namespace storm {
                 }
             }
         }
-
 
 
 

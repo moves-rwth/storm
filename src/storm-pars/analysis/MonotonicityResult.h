@@ -44,7 +44,7 @@ namespace storm {
              * @param var The variable.
              * @param mon The new Monotonicity to be considered.
              */
-            void updateMonotonicityResult(VariableType var, Monotonicity mon);
+            void updateMonotonicityResult(VariableType var, Monotonicity mon, bool force = false);
 
             /*!
              * Returns the  current monotonicity of a given parameter.

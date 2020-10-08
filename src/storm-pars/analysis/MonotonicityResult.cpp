@@ -21,29 +21,40 @@ namespace storm {
         }
 
         template <typename VariableType>
-        void MonotonicityResult<VariableType>::updateMonotonicityResult(VariableType var, MonotonicityResult<VariableType>::Monotonicity mon) {
+        void MonotonicityResult<VariableType>::updateMonotonicityResult(VariableType var, MonotonicityResult<VariableType>::Monotonicity mon, bool force) {
             assert (!isDoneForVar(var));
-            if (mon == MonotonicityResult<VariableType>::Monotonicity::Not) {
-                mon = MonotonicityResult<VariableType>::Monotonicity::Unknown;
-            }
-
-            if (monotonicityResult.find(var) == monotonicityResult.end()) {
-                addMonotonicityResult(std::move(var), std::move(mon));
-            } else {
-                auto monRes = monotonicityResult[var];
-                if (monRes == MonotonicityResult<VariableType>::Monotonicity::Unknown || monRes == mon || mon == MonotonicityResult<VariableType>::Monotonicity::Constant) {
-                    return;
-                } else if (mon == MonotonicityResult<VariableType>::Monotonicity::Unknown || monRes == MonotonicityResult<VariableType>::Monotonicity::Constant ) {
-                    monotonicityResult[var] = mon;
+            if (force) {
+                assert (mon == MonotonicityResult<VariableType>::Monotonicity::Not);
+                if (monotonicityResult.find(var) == monotonicityResult.end()) {
+                    addMonotonicityResult(std::move(var), std::move(mon));
                 } else {
-                    monotonicityResult[var] = MonotonicityResult<VariableType>::Monotonicity::Unknown;
+                    monotonicityResult[var] = mon;
                 }
-            }
-            if (monotonicityResult[var] == MonotonicityResult<VariableType>::Monotonicity::Unknown) {
-                setAllMonotonicity(false);
-                setSomewhereMonotonicity(false);
             } else {
-                setSomewhereMonotonicity(true);
+                if (mon == MonotonicityResult<VariableType>::Monotonicity::Not) {
+                    mon = MonotonicityResult<VariableType>::Monotonicity::Unknown;
+                }
+
+                if (monotonicityResult.find(var) == monotonicityResult.end()) {
+                    addMonotonicityResult(std::move(var), std::move(mon));
+                } else {
+                    auto monRes = monotonicityResult[var];
+                    if (monRes == MonotonicityResult<VariableType>::Monotonicity::Unknown || monRes == mon ||
+                        mon == MonotonicityResult<VariableType>::Monotonicity::Constant) {
+                        return;
+                    } else if (mon == MonotonicityResult<VariableType>::Monotonicity::Unknown ||
+                               monRes == MonotonicityResult<VariableType>::Monotonicity::Constant) {
+                        monotonicityResult[var] = mon;
+                    } else {
+                        monotonicityResult[var] = MonotonicityResult<VariableType>::Monotonicity::Unknown;
+                    }
+                }
+                if (monotonicityResult[var] == MonotonicityResult<VariableType>::Monotonicity::Unknown) {
+                    setAllMonotonicity(false);
+                    setSomewhereMonotonicity(false);
+                } else {
+                    setSomewhereMonotonicity(true);
+                }
             }
         }
 

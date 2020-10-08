@@ -146,6 +146,7 @@ namespace storm {
                      *         UNKNOWN if it is unclear from the structure of the order how the nodes relate.
                      */
                     Order::NodeComparison compare(uint_fast64_t state1, uint_fast64_t state2);
+                    Order::NodeComparison compareFast(uint_fast64_t state1, uint_fast64_t state2);
 
                     /*!
                      * Compares the level of the two nodes.
@@ -158,6 +159,7 @@ namespace storm {
                      *         UNKNOWN if it is unclear from the structure of the order how the nodes relate.
                      */
                     NodeComparison compare(Node* node1, Node* node2);
+                    NodeComparison compareFast(Node* node1, Node* node2);
 
                     /*!
                      * Check if state is already contained in order.
