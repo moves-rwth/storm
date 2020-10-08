@@ -510,6 +510,7 @@ namespace storm {
                         order->addToNode(state2, order->getNode(state1));
                     }
                 }
+                std::cout << "Added state " << state1 << " and " << state2 << " based on min-max" << std::endl;
                 return Order::SAME;
             } else if (mins[state1] > maxs[state2]) {
                 // state 1 will always be larger than state2
@@ -522,6 +523,8 @@ namespace storm {
                 assert (order->compare(state1, state2) != Order::BELOW);
                 assert (order->compare(state1, state2) != Order::SAME);
                 order->addRelation(state1, state2);
+                std::cout << "Added state " << state1 << " and " << state2 << " based on min-max" << std::endl;
+
                 return Order::ABOVE;
             } else if (mins[state2] > maxs[state1]) {
                 // state2 will always be larger than state1
@@ -534,6 +537,8 @@ namespace storm {
                 assert (order->compare(state2, state1) != Order::BELOW);
                 assert (order->compare(state2, state1) != Order::SAME);
                 order->addRelation(state2, state1);
+                std::cout << "Added state " << state1 << " and " << state2 << " based on min-max" << std::endl;
+
                 return Order::BELOW;
             } else {
                 // Couldn't add relation between state1 and state 2 based on min/max values;
