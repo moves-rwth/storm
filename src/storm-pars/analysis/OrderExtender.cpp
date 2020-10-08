@@ -116,36 +116,36 @@ namespace storm {
                 bottomTopOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, numberOfStates, storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options)));
             }
 
-            auto transpose = matrix.transpose();
-            for (auto const& bottom : bottomTopOrder->getBottom()->states) {
-                auto currentStates = transpose.getRow(bottom);
-                for (auto const &rowEntry : currentStates) {
-                    auto currentState = rowEntry.getColumn();
-                    if (currentState != bottom) {
-                        if (bottomTopOrder->contains(currentState)) {
-                            bottomTopOrder->addAbove(currentState, bottomTopOrder->getBottom());
-                        } else {
-                            bottomTopOrder->add(currentState);
-                        }
-                        bottomTopOrder->addStateToHandle(currentState);
-                    }
-                }
-            }
-
-            for (auto const& bottom : bottomTopOrder->getTop()->states) {
-                auto currentStates = transpose.getRow(bottom);
-                for (auto const &rowEntry : currentStates) {
-                    auto currentState = rowEntry.getColumn();
-                    if (currentState != bottom) {
-                        if (bottomTopOrder->contains(currentState)) {
-                            // Do nothing, as this state will point at =( and =)
-                        } else {
-                            bottomTopOrder->add(currentState);
-                            bottomTopOrder->addStateToHandle(currentState);
-                        }
-                    }
-                }
-            }
+//            auto transpose = matrix.transpose();
+//            for (auto const& bottom : bottomTopOrder->getBottom()->states) {
+//                auto currentStates = transpose.getRow(bottom);
+//                for (auto const &rowEntry : currentStates) {
+//                    auto currentState = rowEntry.getColumn();
+//                    if (currentState != bottom) {
+//                        if (bottomTopOrder->contains(currentState)) {
+//                            bottomTopOrder->addAbove(currentState, bottomTopOrder->getBottom());
+//                        } else {
+//                            bottomTopOrder->add(currentState);
+//                        }
+//                        bottomTopOrder->addStateToHandle(currentState);
+//                    }
+//                }
+//            }
+//
+//            for (auto const& bottom : bottomTopOrder->getTop()->states) {
+//                auto currentStates = transpose.getRow(bottom);
+//                for (auto const &rowEntry : currentStates) {
+//                    auto currentState = rowEntry.getColumn();
+//                    if (currentState != bottom) {
+//                        if (bottomTopOrder->contains(currentState)) {
+//                            // Do nothing, as this state will point at =( and =)
+//                        } else {
+//                            bottomTopOrder->add(currentState);
+//                            bottomTopOrder->addStateToHandle(currentState);
+//                        }
+//                    }
+//                }
+//            }
             storm::storage::StronglyConnectedComponentDecompositionOptions const options;
             auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
             return bottomTopOrder;
@@ -381,10 +381,12 @@ namespace storm {
         template<typename ValueType, typename ConstantType>
         void OrderExtender<ValueType, ConstantType>::handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor) {
             assert (order->contains(successor));
-            if (order->contains(currentState)) {
-                order->merge(currentState, successor);
-            } else {
-                order->addToNode(currentState, order->getNode(successor));
+            if (currentState != successor) {
+                if (order->contains(currentState)) {
+                    order->merge(currentState, successor);
+                } else {
+                    order->addToNode(currentState, order->getNode(successor));
+                }
             }
         }
 
@@ -480,12 +482,18 @@ namespace storm {
 
                 if (temp.second[0] == currentState) {
                     order->addRelation(temp.first.first, temp.second[0], allowMerge);
+                    assert ((order->compare(temp.first.first, temp.second[0]) == Order::ABOVE) || (allowMerge && (order->compare(temp.first.first, temp.second[temp.second.size() - 1]) == Order::SAME)));
                     order->addRelation(temp.first.first, temp.second[temp.second.size() - 1], allowMerge);
+                    assert ((order->compare(temp.first.first, temp.second[temp.second.size() - 1]) == Order::ABOVE) || (allowMerge && (order->compare(temp.first.first, temp.second[temp.second.size() - 1]) == Order::SAME)));
                     order->addStateToHandle(temp.first.first);
                 } else if (temp.second[temp.second.size() - 1] == currentState) {
                     order->addRelation(temp.second[0], temp.first.first, allowMerge);
+                    assert ((order->compare(temp.first.first, temp.second[0]) == Order::BELOW) || (allowMerge && (order->compare(temp.first.first, temp.second[temp.second.size() - 1]) == Order::SAME)));
                     order->addRelation(temp.second[temp.second.size() - 1], temp.first.first, allowMerge);
+                    assert ((order->compare(temp.first.first, temp.second[temp.second.size() - 1]) == Order::BELOW) || (allowMerge && (order->compare(temp.first.first, temp.second[temp.second.size() - 1]) == Order::SAME)));
                     order->addStateToHandle(temp.first.first);
+                } else {
+                    assert (false);
                 }
             } else {
                 return {temp.first.first, temp.first.second};

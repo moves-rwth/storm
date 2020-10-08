@@ -120,6 +120,7 @@ namespace storm {
         }
 
         void Order::addRelation(uint_fast64_t above, uint_fast64_t below, bool allowMerge) {
+            std::cout << "Adding " << above << " above " << below << std::endl;
             assert (getNode(above) != nullptr && getNode(below) != nullptr);
             addRelationNodes(getNode(above), getNode(below), allowMerge);
         }
@@ -129,8 +130,8 @@ namespace storm {
             if (allowMerge) {
                 if (compare(above, below) == BELOW) {
                     mergeNodes(above, below);
+                    return;
                 }
-                return;
             }
             for (auto const &state : above->states) {
                 below->statesAbove.set(state);
@@ -157,12 +158,24 @@ namespace storm {
             // Merges node2 into node 1
             // everything above n2 also above n1
             node1->statesAbove |= ((node2->statesAbove));
-
             // add states of node 2 to node 1
             node1->states.insert(node2->states.begin(), node2->states.end());
 
             for(auto const& i : node2->states) {
                 nodes[i] = node1;
+            }
+
+            for (auto const& node : nodes) {
+                if (node != nullptr) {
+                    for (auto state2 : node2->states) {
+                        if (node->statesAbove[state2]) {
+                            for (auto state1 : node1->states) {
+                                node->statesAbove.set(state1);
+                            }
+                            break;
+                        }
+                    }
+                }
             }
 
         }
