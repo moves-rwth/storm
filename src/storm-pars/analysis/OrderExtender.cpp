@@ -238,7 +238,6 @@ namespace storm {
 
             std::set<uint_fast64_t> seenStates;
             auto currentStateSCC = getNextState(order, -1, seenStates);
-            std::vector<uint_fast64_t> statesToHandle;
             while (currentStateSCC.first != numberOfStates) {
                 assert (currentStateSCC.first < numberOfStates);
                 auto currentState = currentStateSCC.first;
@@ -264,12 +263,6 @@ namespace storm {
                     assert (result.second == numberOfStates);
                     assert (order->sortStates(&successors).size() == successors.size());
                     assert (order->contains(currentState) && order->getNode(currentState) != nullptr);
-                    if (currentStateSCC.second != -1) {
-                        while (!statesToHandle.empty()) {
-                            order->addStateToHandle(statesToHandle.back());
-                            statesToHandle.pop_back();
-                        }
-                    }
 
                     if (monRes != nullptr && currentStateSCC.second != -1) {
                         for (auto param : occuringVariablesAtState[currentState]) {
@@ -301,14 +294,9 @@ namespace storm {
                     } else {
                         if (currentStateSCC.second == -1) {
                             // The state was based on statesToHandle, so it is not bad if we cannot continue with this.
-                            statesToHandle.push_back(currentState);
                             currentStateSCC = getNextState(order, currentStateSCC.second, seenStates);
                         } else {
                             // The state was based on the topological sorting, so we need to return, but first add all the not yet handled states to the order
-                            while (!statesToHandle.empty()) {
-                                order->addStateToHandle(statesToHandle.back());
-                                statesToHandle.pop_back();
-                            }
                             return {order, result.first, result.second};
                         }
                     }
@@ -325,7 +313,7 @@ namespace storm {
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t>
         OrderExtender<ValueType, ConstantType>::extendStateToHandle(std::shared_ptr<Order> order, uint_fast64_t currentState,
-                                                                    const vector<uint_fast64_t> &successors, bool allowMerge,  bool onlyBackwards) const {
+                                                                    const vector<uint_fast64_t> &successors, bool allowMerge,  bool onlyBackwards)  {
             std::pair<uint_fast64_t, uint_fast64_t> result;
             if (!onlyBackwards && order->contains(currentState)) {
                 // Try to extend the order for this scc
@@ -356,7 +344,7 @@ namespace storm {
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t>
         OrderExtender<ValueType, ConstantType>::extendNormal(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t currentSCC,
-                                                                    const vector<uint_fast64_t> &successors, bool allowMerge,  bool onlyBackwards) const {
+                                                                    const vector<uint_fast64_t> &successors, bool allowMerge,  bool onlyBackwards)  {
             // If it is cyclic, we first do forward reasoning, when this didn't work we do backward reasoning
             std::pair<uint_fast64_t, uint_fast64_t> result;
             if (!onlyBackwards && !order->getSCC(currentSCC).isTrivial()) {
@@ -398,7 +386,7 @@ namespace storm {
         std::pair<uint_fast64_t, uint_fast64_t>
         OrderExtender<ValueType, ConstantType>::extendByMinMax(std::shared_ptr<Order> order, uint_fast64_t currentState,
                                                                const vector<uint_fast64_t> &successors,
-                                                               bool allowMerge) const {
+                                                               bool allowMerge)  {
             bool addedCurrent = false;
             for (auto i1 = 0; i1 < successors.size(); i1++) {
                 auto state1 = successors.at(i1);
@@ -427,7 +415,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) const{
+        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) {
             assert (!order->isOnlyBottomTopOrder());
             assert (successors.size() > 1);
 
@@ -436,7 +424,7 @@ namespace storm {
             bool pla = usePLAOnce || (usePLA.find(order) != usePLA.end() && usePLA.at(order));
             std::vector<uint_fast64_t> sortedSuccs;
 
-            if (pla) {
+            if (pla && (continueExtending.find(order) == continueExtending.end() || continueExtending.at(order))) {
                 for (auto state1 : successors) {
                     if (sortedSuccs.size() == 0) {
                         sortedSuccs.push_back(state1);
@@ -455,6 +443,7 @@ namespace storm {
                                 added = true;
                                 break;
                             } else if (compareRes == Order::NodeComparison::UNKNOWN) {
+                                continueExtending[order] = false;
                                 return {state1, state2};
                             }
                         }
@@ -505,7 +494,7 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByForwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) const {
+        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByForwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge)  {
             assert (successors.size() > 1);
             assert (order->contains(currentState));
             assert (cyclic);
@@ -637,7 +626,6 @@ namespace storm {
 
                 modelchecker::ExplicitQuantitativeCheckResult<ConstantType> minCheck = plaModelChecker.check(env, region, solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>();
                 modelchecker::ExplicitQuantitativeCheckResult<ConstantType> maxCheck = plaModelChecker.check(env, region, solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>();
-
                 minValuesOnce = minCheck.getValueVector();
                 maxValuesOnce = maxCheck.getValueVector();
                 assert (minValuesOnce->size() == numberOfStates);
