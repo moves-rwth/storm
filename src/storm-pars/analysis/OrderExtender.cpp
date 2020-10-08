@@ -19,7 +19,7 @@ namespace storm {
     namespace analysis {
 
         template <typename ValueType, typename ConstantType>
-        OrderExtender<ValueType, ConstantType>::OrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula,  storage::ParameterRegion<ValueType> region) {
+        OrderExtender<ValueType, ConstantType>::OrderExtender(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula,  storage::ParameterRegion<ValueType> region) : monotonicityChecker(MonotonicityChecker<ValueType>(model->getTransitionMatrix())) {
             this->model = model;
             this->matrix = model->getTransitionMatrix();
             this->numberOfStates = this->model->getNumberOfStates();
@@ -57,9 +57,11 @@ namespace storm {
         }
 
         template <typename ValueType, typename ConstantType>
-        OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix) {
+        OrderExtender<ValueType, ConstantType>::OrderExtender(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix) : monotonicityChecker(MonotonicityChecker<ValueType>(matrix)) {
             this->matrix = matrix;
             this->model = nullptr;
+            this->monotonicityChecker = MonotonicityChecker<ValueType>(matrix);
+
             storm::storage::StronglyConnectedComponentDecompositionOptions options;
             options.forceTopologicalSort();
 
@@ -275,11 +277,11 @@ namespace storm {
                     }
 
                     if (monRes != nullptr && currentStateSCC.second != -1) {
-                        auto succsOrdered = order->sortStates(&stateMap[currentState]);
+//                        auto succsOrdered = order->sortStates(&stateMap[currentState]);
                         for (auto param : occuringVariablesAtState[currentState]) {
-                            assert (succsOrdered[succsOrdered.size() -1] != numberOfStates);
-                            assert (succsOrdered.size() == stateMap[currentState].size());
-                            checkParOnStateMonRes(currentState, succsOrdered, param, monRes);
+//                            assert (succsOrdered[succsOrdered.size() -1] != numberOfStates);
+//                            assert (succsOrdered.size() == stateMap[currentState].size());
+                            checkParOnStateMonRes(currentState, order, param, monRes);
                         }
                     }
                     bool prev = currentStateSCC.second;
@@ -724,16 +726,12 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         void OrderExtender<ValueType, ConstantType>::checkParOnStateMonRes(uint_fast64_t s, std::shared_ptr<Order> order, typename OrderExtender<ValueType, ConstantType>::VariableType param, std::shared_ptr<MonotonicityResult<VariableType>> monResult) {
-            auto succsOrdered = order->sortStates(&stateMap[s]);
-            if (succsOrdered.back() == numberOfStates) {
-                monResult->updateMonotonicityResult(param, Monotonicity::Unknown);
-            } else {
-                checkParOnStateMonRes(s, succsOrdered, param, monResult);
-            }
+            auto mon = monotonicityChecker.checkLocalMonotonicity(order, s, param, region);
+            monResult->updateMonotonicityResult(param, mon);
         }
 
 
-            template <typename ValueType, typename ConstantType>
+        template <typename ValueType, typename ConstantType>
         void OrderExtender<ValueType, ConstantType>::checkParOnStateMonRes(uint_fast64_t s, const std::vector<uint_fast64_t>& succ, typename OrderExtender<ValueType, ConstantType>::VariableType param, std::shared_ptr<MonotonicityResult<VariableType>> monResult) {
             uint_fast64_t succSize = succ.size();
             if (succSize == 2) {
@@ -914,8 +912,6 @@ namespace storm {
                 }
             }
         }
-
-
 
         template class OrderExtender<RationalFunction, double>;
         template class OrderExtender<RationalFunction, RationalNumber>;

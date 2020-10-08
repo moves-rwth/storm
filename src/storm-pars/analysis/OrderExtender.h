@@ -9,6 +9,7 @@
 
 #include "storm-pars/analysis/Order.h"
 #include "storm-pars/analysis/MonotonicityResult.h"
+#include "storm-pars/analysis/MonotonicityChecker.h"
 #include "storm-pars/storage/ParameterRegion.h"
 #include "AssumptionMaker.h"
 
@@ -144,6 +145,7 @@ namespace storm {
 
             std::map<VariableType, std::vector<uint_fast64_t>> occuringStatesAtVariable;
             std::vector<std::set<VariableType>> occuringVariablesAtState;
+            MonotonicityChecker<ValueType> monotonicityChecker;
 
 
             /*!
