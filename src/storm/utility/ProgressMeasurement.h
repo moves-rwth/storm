@@ -29,19 +29,23 @@ namespace storm {
             void startNewMeasurement(uint64_t startCount);
             
             /*!
-             * Updates the progress to the current count.
+             * Updates the progress to the current count and prints it if the delay passed.
+             * The progress is only updated and printed if the ShowProgress setting is enabled.
+             *
              * @param count The currently achieved count.
-             * @return true iff the progress was printed (i.e., the delay passed).
+             * @return True iff the progress was printed (i.e., the delay passed and showProgress setting enabled).
              */
             bool updateProgress(uint64_t count);
             
             /*!
              * Updates the progress to the current count.
+             * The update and printing is done independently of the showProgress setting.
+             *
              * @param count The currently achieved count.
              * @param outstream The stream to which the progress is printed (if the delay passed)
-             * @return true iff the progress was printed (i.e., the delay passed)
+             * @return True iff the progress was printed (i.e., the delay passed)
              */
-            bool updateProgress(uint64_t value, std::ostream& outstream);
+            bool updateProgress(uint64_t count, std::ostream& outstream);
             
             /*!
              * Returns whether a maximal count (which is required to achieve 100% progress) has been specified
@@ -86,7 +90,10 @@ namespace storm {
             void setItemName(std::string const& name);
 
         private:
-        
+
+            // Whether progress should be printed to standard output.
+            bool showProgress;
+
             // The delay (in seconds) between progress emission.
             uint64_t delay;
             // A name for what this is measuring (iterations, states, ...)
