@@ -135,7 +135,7 @@ TEST(MonotonicityHelperTest, Brp_with_bisimulation_no_samples) {
     // Start testing
     storm::analysis::MonotonicityHelper<storm::RationalFunction, double> MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, true);
     // Check if correct result size
-    auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout);
+    auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout, false);
     EXPECT_EQ(1, result.size());
 
     // Check if the order and general monotonicity result is correct.
@@ -186,7 +186,7 @@ TEST(MonotonicityHelperTest, Brp_with_bisimulation_samples) {
     // Start testing
     storm::analysis::MonotonicityHelper<storm::RationalFunction, double> MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, true, 50);
     // Check if correct result size
-    auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout);
+    auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout, false);
     EXPECT_EQ(1, result.size());
 
     // Check if the order and general monotonicity result is correct.
@@ -236,7 +236,7 @@ TEST(MonotonicityHelperTest, zeroconf) {
     // Start testing
     auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, true, 50);
     // Check if correct result size
-    auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout);
+    auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout, false);
     EXPECT_EQ(1, result.size());
 
     // Check if the order and general monotonicity result is correct.
@@ -273,20 +273,20 @@ TEST(MonotonicityHelperTest, Simple1) {
 
     // Create region
     auto modelParameters = storm::models::sparse::getProbabilityParameters(*model);
-    auto region=storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.9", modelParameters);
+    auto region=storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.49", modelParameters);
     std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> regions = {region};
 
     // Start testing
     auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
 
     // Check if correct result size
-    auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout);
+    auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout, false);
     EXPECT_EQ(1, result.size());
 
     // Check if the order and general monotonicity result is correct.
     auto order = result.begin()->first;
     auto monotonicityResult = result.begin()->second.first;
-    EXPECT_FALSE(monotonicityResult->isDone());
+    EXPECT_TRUE(monotonicityResult->isDone());
     EXPECT_FALSE(monotonicityResult->existsMonotonicity());
     EXPECT_FALSE(monotonicityResult->isAllMonotonicity());
     auto assumptions = result.begin()->second.second;
@@ -322,7 +322,7 @@ TEST(MonotonicityHelperTest, Casestudy1) {
     ASSERT_EQ(model->getNumberOfTransitions(), 8);
 
     auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
-    auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout);
+    auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout, false);
     ASSERT_EQ(1, result.size());
 
     auto order = result.begin()->first;
@@ -365,23 +365,8 @@ TEST(MonotonicityHelperTest, CaseStudy2) {
     auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
 
     // Check if correct result size
-    auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout);
-    EXPECT_EQ(1, result.size());
-
-    // Check if the order and general monotonicity result is correct.
-    auto order = result.begin()->first;
-    auto monotonicityResult = result.begin()->second.first;
-    EXPECT_FALSE(monotonicityResult->isDone());
-    EXPECT_TRUE(monotonicityResult->existsMonotonicity());
-    EXPECT_TRUE(monotonicityResult->isAllMonotonicity());
-    auto assumptions = result.begin()->second.second;
-    EXPECT_EQ(0, assumptions.size());
-
-    // Check if result for each variable is correct
-    auto monRes = monotonicityResult->getMonotonicityResult();
-    for (auto entry : monRes) {
-        EXPECT_EQ(storm::analysis::MonotonicityResult<storm::RationalFunctionVariable>::Monotonicity::Incr, entry.second);
-    }
+    auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout, false);
+    EXPECT_EQ(0, result.size());
 }
 
 TEST(MonotonicityHelperTest, Casestudy3_not_monotone) {
@@ -407,7 +392,7 @@ TEST(MonotonicityHelperTest, Casestudy3_not_monotone) {
     ASSERT_EQ(model->getNumberOfTransitions(), 8);
 
     auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
-    auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout);
+    auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout, false);
 
     ASSERT_EQ(1, result.size());
     auto order = result.begin()->first;
@@ -448,7 +433,7 @@ TEST(MonotonicityHelperTest, Casestudy3_monotone) {
     ASSERT_EQ(model->getNumberOfTransitions(), 8);
 
     auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
-    auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout);
+    auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout, false);
 
     ASSERT_EQ(1, result.size());
     auto order = result.begin()->first;

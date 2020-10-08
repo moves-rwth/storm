@@ -503,7 +503,21 @@ namespace storm {
                     assert ((order->compare(temp.first.first, temp.second[temp.second.size() - 1]) == Order::BELOW) || (allowMerge && (order->compare(temp.first.first, temp.second[temp.second.size() - 1]) == Order::SAME)));
                     order->addStateToHandle(temp.first.first);
                 } else {
-                    assert (false);
+                    bool continueSearch = true;
+                    for (auto& entry :  matrix.getRow(currentState)) {
+                        if (entry.getColumn() == temp.first.first) {
+                            if (entry.getValue().isConstant()) {
+                                continueSearch = false;
+                            }
+                        }
+                    }
+                    if (continueSearch) {
+                        for (auto &i : temp.second) {
+                            if (order->compare(i, temp.first.first) == Order::UNKNOWN) {
+                                return {i, temp.first.first};
+                            }
+                        }
+                    }
                 }
             } else {
                 return {temp.first.first, temp.first.second};
@@ -793,9 +807,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename ConstantType>
-        void
-        OrderExtender<ValueType, ConstantType>::setUnknownStates(std::shared_ptr<Order> order, uint_fast64_t state1,
-                                                                 uint_fast64_t state2) {
+        void OrderExtender<ValueType, ConstantType>::setUnknownStates(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) {
             assert (state1 != numberOfStates && state2 != numberOfStates);
             if (unknownStatesMap.find(order) == unknownStatesMap.end()) {
                 unknownStatesMap.insert({order, {state1, state2}});
@@ -817,8 +829,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename ConstantType>
-        std::pair<uint_fast64_t, uint_fast64_t>
-        OrderExtender<ValueType, ConstantType>::getUnknownStates(std::shared_ptr<Order> order) const {
+        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::getUnknownStates(std::shared_ptr<Order> order) const {
             if (unknownStatesMap.find(order) != unknownStatesMap.end()) {
                 return unknownStatesMap.at(order);
             }
@@ -826,8 +837,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename ConstantType>
-        void OrderExtender<ValueType, ConstantType>::setUnknownStates(std::shared_ptr<Order> orderOriginal,
-                                                                      std::shared_ptr<Order> orderCopy) {
+        void OrderExtender<ValueType, ConstantType>::setUnknownStates(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy) {
             assert (unknownStatesMap.find(orderCopy) == unknownStatesMap.end());
             assert (lastUnknownStatesMap.find(orderCopy) == lastUnknownStatesMap.end());
             unknownStatesMap.insert({orderCopy,{unknownStatesMap[orderOriginal].first, unknownStatesMap[orderOriginal].second}});
