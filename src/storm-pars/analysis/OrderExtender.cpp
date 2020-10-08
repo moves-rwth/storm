@@ -50,7 +50,6 @@ namespace storm {
             cyclic = storm::utility::graph::hasCycle(matrix);
             this->region = region;
             this->formula = formula;
-//            usePLA = false;
             this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(matrix);
             statesSorted = storm::utility::graph::getTopologicalSort(matrix);
             std::reverse(statesSorted.begin(), statesSorted.end());
@@ -88,8 +87,9 @@ namespace storm {
                     occuringStatesAtVariable[var].push_back(state);
                 }
             }
-            cyclic = storm::utility::graph::hasCycle(matrix);
-            this->bottomTopOrder = std::shared_ptr<Order>(new Order(topStates, bottomStates, numberOfStates, storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options)));
+            auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
+            cyclic = decomposition.size() < numberOfStates;
+            this->bottomTopOrder = std::shared_ptr<Order>(new Order(topStates, bottomStates, numberOfStates, std::move(decomposition)));
             this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(matrix);
             statesSorted = storm::utility::graph::getTopologicalSort(matrix);
             std::reverse(statesSorted.begin(), statesSorted.end());
@@ -125,7 +125,9 @@ namespace storm {
                 auto matrix = this->model->getTransitionMatrix();
                 storm::storage::StronglyConnectedComponentDecompositionOptions options;
                 options.forceTopologicalSort();
-                bottomTopOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, numberOfStates, storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options)));
+                auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
+                cyclic = decomposition.size() < numberOfStates;
+                bottomTopOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, numberOfStates, std::move(decomposition)));
             }
 
             auto transpose = matrix.transpose();
@@ -270,10 +272,7 @@ namespace storm {
                     }
 
                     if (monRes != nullptr && currentStateSCC.second != -1) {
-//                        auto succsOrdered = order->sortStates(&stateMap[currentState]);
                         for (auto param : occuringVariablesAtState[currentState]) {
-//                            assert (succsOrdered[succsOrdered.size() -1] != numberOfStates);
-//                            assert (succsOrdered.size() == stateMap[currentState].size());
                             checkParOnStateMonRes(currentState, order, param, monRes);
                         }
                     }
@@ -509,6 +508,7 @@ namespace storm {
         std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByForwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) const {
             assert (successors.size() > 1);
             assert (order->contains(currentState));
+            assert (cyclic);
             auto temp = order->sortStatesForForward(currentState, successors);
             if (temp.first.first == numberOfStates) {
                 assert (temp.second.size() == successors.size() + 1);
@@ -577,18 +577,9 @@ namespace storm {
         template <typename ValueType, typename ConstantType>
         Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) const {
             assert (order->compare(state1, state2) == Order::UNKNOWN);
-            std::vector<ConstantType> mins, maxs;
-            if (usePLAOnce) {
-                assert (usePLAOnce.get());
-                mins = minValuesOnce.get();
-                maxs = maxValuesOnce.get();
-            } else {
-                assert (minValues.find(order) != minValues.end());
-                assert (maxValues.find(order) != maxValues.end());
-                mins = minValues.at(order);
-                maxs = maxValues.at(order);
+            std::vector<ConstantType> const& mins = usePLAOnce ? minValuesOnce.get() : minValues.at(order);
+            std::vector<ConstantType> const& maxs = usePLAOnce ? maxValuesOnce.get() : maxValues.at(order);
 
-            }
             if (mins[state1] == maxs[state1]
                 && mins[state2] == maxs[state2]
                    && mins[state1] == mins[state2]) {
