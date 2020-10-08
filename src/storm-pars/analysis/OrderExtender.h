@@ -142,6 +142,10 @@ namespace storm {
 
             std::set<uint_fast64_t> nonParametericStates;
 
+            std::map<VariableType, std::vector<uint_fast64_t>> occuringStatesAtVariable;
+            std::vector<std::set<VariableType>> occuringVariablesAtState;
+
+
             /*!
              * Extends the order based on the given assumption.
              *

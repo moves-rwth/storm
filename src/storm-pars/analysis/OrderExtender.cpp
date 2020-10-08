@@ -27,19 +27,25 @@ namespace storm {
 
             // Build stateMap
             for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
-                bool nonParam = true;
                 auto row = matrix.getRow(state);
                 stateMap[state] = std::vector<uint_fast64_t>();
-                for (auto rowItr = row.begin(); rowItr != row.end(); ++rowItr) {
-                    nonParam &= rowItr->getValue().isConstant();
+                std::set<VariableType> occurringVariables;
+
+                for (auto& entry : matrix.getRow(state)) {
                     // ignore self-loops when there are more transitions
-                    if (state != rowItr->getColumn() || row.getNumberOfEntries() == 1) {
-                        stateMap[state].push_back(rowItr->getColumn());
+                    if (state != entry.getColumn() || row.getNumberOfEntries() == 1) {
+                        stateMap[state].push_back(entry.getColumn());
                     }
+                    storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
+
                 }
-                if (nonParam) {
+                if (occurringVariables.empty()) {
                     nonParametericStates.insert(state);
                 }
+                for (auto& var : occurringVariables) {
+                    occuringStatesAtVariable[var].push_back(state);
+                }
+                occuringVariablesAtState.push_back(std::move(occurringVariables));
             }
             cyclic = storm::utility::graph::hasCycle(matrix);
             this->region = region;
@@ -59,21 +65,25 @@ namespace storm {
 
             this->numberOfStates = matrix.getColumnCount();
 
-            // TODO: can we do this differently?
             // Build stateMap
             for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
-                bool nonParam = true;
                 auto row = matrix.getRow(state);
                 stateMap[state] = std::vector<uint_fast64_t>();
-                for (auto rowItr = row.begin(); rowItr != row.end(); ++rowItr) {
-                    nonParam &= rowItr->getValue().isConstant();
+                std::set<VariableType> occurringVariables;
+
+                for (auto& entry : matrix.getRow(state)) {
                     // ignore self-loops when there are more transitions
-                    if (state != rowItr->getColumn() || row.getNumberOfEntries() == 1) {
-                        stateMap[state].push_back(rowItr->getColumn());
+                    if (state != entry.getColumn() || row.getNumberOfEntries() == 1) {
+                        stateMap[state].push_back(entry.getColumn());
                     }
+                    storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
+
                 }
-                if (nonParam) {
+                if (occurringVariables.empty()) {
                     nonParametericStates.insert(state);
+                }
+                for (auto& var : occurringVariables) {
+                    occuringStatesAtVariable[var].push_back(state);
                 }
             }
             cyclic = storm::utility::graph::hasCycle(matrix);
@@ -266,7 +276,7 @@ namespace storm {
 
                     if (monRes != nullptr && currentStateSCC.second != -1) {
                         auto succsOrdered = order->sortStates(&stateMap[currentState]);
-                        for (auto param : params) {
+                        for (auto param : occuringVariablesAtState[currentState]) {
                             assert (succsOrdered[succsOrdered.size() -1] != numberOfStates);
                             assert (succsOrdered.size() == stateMap[currentState].size());
                             checkParOnStateMonRes(currentState, succsOrdered, param, monRes);

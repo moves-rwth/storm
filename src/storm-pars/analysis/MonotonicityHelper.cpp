@@ -189,6 +189,7 @@ namespace storm {
                 assert (newAssumptions.size() <= 3);
                 auto itr = newAssumptions.begin();
                 if (newAssumptions.size() == 0) {
+                    monRes = std::make_shared<MonotonicityResult<VariableType>>(MonotonicityResult<VariableType>());
                     for (auto& entry : occuringStatesAtVariable) {
                         for (auto & state : entry.second) {
                             extender->checkParOnStateMonRes(state, order, entry.first, monRes);
@@ -196,6 +197,7 @@ namespace storm {
                                 break;
                             }
                         }
+                        monRes->setDoneForVar(entry.first);
                     }
                     if (monRes->existsMonotonicity()) {
                         monResults.insert({order, {monRes, assumptions}});
