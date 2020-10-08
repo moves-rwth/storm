@@ -139,7 +139,9 @@ namespace storm {
                         } else {
                             bottomTopOrder->add(currentState);
                         }
-                        bottomTopOrder->addStateToHandle(currentState);
+                        if (cyclic) {
+                            bottomTopOrder->addStateToHandle(currentState);
+                        }
                     }
                 }
             }
@@ -153,7 +155,9 @@ namespace storm {
                             // Do nothing, as this state will point at =( and =)
                         } else {
                             bottomTopOrder->add(currentState);
-                            bottomTopOrder->addStateToHandle(currentState);
+                            if (cyclic) {
+                                bottomTopOrder->addStateToHandle(currentState);
+                            }
                         }
                     }
                 }
@@ -295,7 +299,7 @@ namespace storm {
                     assert (result.first < numberOfStates);
                     assert (result.second < numberOfStates);
                     // Try to add states based on min/max and assumptions
-                    if (extendByAssumption(order, currentState, result.first, result.second)) {
+                    if (currentStateSCC.second < numberOfStates && extendByAssumption(order, currentState, result.first, result.second)) {
                         continue;
                     }
                     // We couldn't extend the order
