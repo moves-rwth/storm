@@ -120,7 +120,6 @@ namespace storm {
         }
 
         void Order::addRelation(uint_fast64_t above, uint_fast64_t below, bool allowMerge) {
-            std::cout << "Adding " << above << " above " << below << std::endl;
             assert (getNode(above) != nullptr && getNode(below) != nullptr);
             addRelationNodes(getNode(above), getNode(below), allowMerge);
         }
