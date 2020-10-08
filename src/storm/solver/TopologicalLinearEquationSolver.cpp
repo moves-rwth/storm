@@ -144,11 +144,12 @@ namespace storm {
             }
             
             if (hasDiagonalEntry) {
-                    if (storm::utility::isZero(denominator)) {
-                        STORM_LOG_THROW(storm::utility::isZero(xi), storm::exceptions::InvalidOperationException, "The equation system has no solution.");
-                    } else {
-                        xi /= denominator;
-                    }
+                STORM_LOG_WARN_COND_DEBUG(storm::NumberTraits<ValueType>::IsExact || !storm::utility::isAlmostZero(denominator) || storm::utility::isZero(denominator), "State " << sccState << " has a selfloop with probability '1-(" << denominator << ")'. This could be an indication for numerical issues.");
+                if (storm::utility::isZero(denominator)) {
+                    STORM_LOG_THROW(storm::utility::isZero(xi), storm::exceptions::InvalidOperationException, "The equation system has no solution.");
+                } else {
+                    xi /= denominator;
+                }
             }
             return true;
         }

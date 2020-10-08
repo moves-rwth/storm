@@ -55,12 +55,14 @@ namespace storm {
             return std::isnan(value);
         }
         
-        bool isAlmostZero(double const& a) {
-            return a < 1e-12 && a > -1e-12;
+        template<typename ValueType>
+        bool isAlmostZero(ValueType const& a) {
+            return a < convertNumber<ValueType>(1e-12) && a > -convertNumber<ValueType>(1e-12);
         }
         
-        bool isAlmostOne(double const& a) {
-            return a < (1.0 + 1e-12) && a > (1.0 - 1e-12);
+        template<typename ValueType>
+        bool isAlmostOne(ValueType const& a) {
+            return a < convertNumber<ValueType>(1.0 + 1e-12) && a > convertNumber<ValueType>(1.0 - 1e-12);
         }
         
         template<typename ValueType>
@@ -819,6 +821,16 @@ namespace storm {
         }
         
         template<>
+        bool isAlmostZero(storm::RationalFunction const& a) {
+            return a.isConstant() && isAlmostZero(convertNumber<RationalFunctionCoefficient>(a));
+        }
+        
+        template<>
+        bool isAlmostOne(storm::RationalFunction const& a) {
+            return a.isConstant() && isAlmostOne(convertNumber<RationalFunctionCoefficient>(a));
+        }
+        
+        template<>
         std::pair<storm::RationalFunction, storm::RationalFunction> minmax(std::vector<storm::RationalFunction> const&) {
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Minimum/maximum for rational functions is not defined.");
         }
@@ -885,6 +897,8 @@ namespace storm {
         template double infinity();
         template bool isOne(double const& value);
         template bool isZero(double const& value);
+        template bool isAlmostZero(double const& value);
+        template bool isAlmostOne(double const& value);
         template bool isConstant(double const& value);
         template bool isInfinity(double const& value);
         template bool isInteger(double const& number);
@@ -982,6 +996,8 @@ namespace storm {
         template bool isConstant(storm::ClnRationalNumber const& value);
         template bool isInfinity(storm::ClnRationalNumber const& value);
         template bool isNan(storm::ClnRationalNumber const& value);
+        template bool isAlmostZero(storm::ClnRationalNumber const& value);
+        template bool isAlmostOne(storm::ClnRationalNumber const& value);
         template storm::NumberTraits<ClnRationalNumber>::IntegerType convertNumber(storm::NumberTraits<ClnRationalNumber>::IntegerType const& number);
         template storm::ClnRationalNumber convertNumber(storm::ClnRationalNumber const& number);
         template storm::ClnRationalNumber simplify(storm::ClnRationalNumber value);
@@ -1008,6 +1024,8 @@ namespace storm {
         template bool isConstant(storm::GmpRationalNumber const& value);
         template bool isInfinity(storm::GmpRationalNumber const& value);
         template bool isNan(storm::GmpRationalNumber const& value);
+        template bool isAlmostZero(storm::GmpRationalNumber const& value);
+        template bool isAlmostOne(storm::GmpRationalNumber const& value);
         template storm::NumberTraits<GmpRationalNumber>::IntegerType convertNumber(storm::NumberTraits<GmpRationalNumber>::IntegerType const& number);
         template storm::GmpRationalNumber convertNumber(storm::GmpRationalNumber const& number);
         template storm::GmpRationalNumber simplify(storm::GmpRationalNumber value);

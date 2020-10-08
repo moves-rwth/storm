@@ -1,7 +1,10 @@
 #include "storm-pars/storage/ParameterRegion.h"
 
+#include <limits>
+
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/OutOfRangeException.h"
 #include "storm/utility/constants.h"
 
 namespace storm {
@@ -99,6 +102,7 @@ namespace storm {
             assert ((splitThreshold && splitIndex >= 0 && splitIndex < consideredVariables.size()) || (!splitThreshold) || consideredVariables.size() == 0);
             std::size_t const numOfVariables = splitThreshold && consideredVariables.size() > splitThreshold.get() ?
                                                splitThreshold.get() : consideredVariables.size();
+            STORM_LOG_THROW(numOfVariables <= std::numeric_limits<std::size_t>::digits, storm::exceptions::OutOfRangeException, "Number of variables " << numOfVariables << " is too high.");
             std::size_t const numOfVertices = std::pow(2, numOfVariables);
             std::vector<Valuation> resultingVector(numOfVertices);
             

@@ -343,8 +343,6 @@ namespace storm {
     
                 template<typename SparseModelType>
                 void SparseMultiObjectivePreprocessor<SparseModelType>::preprocessTimeOperatorFormula(storm::logic::TimeOperatorFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data) {
-                    // Time formulas are only supported for Markov automata
-                    STORM_LOG_THROW(data.model->isOfType(storm::models::ModelType::MarkovAutomaton), storm::exceptions::InvalidPropertyException, "Time operator formulas are only supported for Markov automata.");
                     
                     data.objectives.back()->lowerResultBound = storm::utility::zero<ValueType>();
                     
@@ -474,11 +472,15 @@ namespace storm {
                                 }
                             }
                             data.model->addRewardModel(rewardModelName, std::move(objectiveRewards));
-                        } else if (formula.isReachabilityTimeFormula() && data.model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                        } else if (formula.isReachabilityTimeFormula()) {
                             
-                            // build stateAction reward vector that only gives reward for relevant states
+                            // build state reward vector that only gives reward for relevant states
                             std::vector<typename SparseModelType::ValueType> timeRewards(data.model->getNumberOfStates(), storm::utility::zero<typename SparseModelType::ValueType>());
-                            storm::utility::vector::setVectorValues(timeRewards, dynamic_cast<storm::models::sparse::MarkovAutomaton<typename SparseModelType::ValueType> const&>(*data.model).getMarkovianStates() & reachableFromInit, storm::utility::one<typename SparseModelType::ValueType>());
+                            if (data.model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
+                                storm::utility::vector::setVectorValues(timeRewards, dynamic_cast<storm::models::sparse::MarkovAutomaton<typename SparseModelType::ValueType> const&>(*data.model).getMarkovianStates() & reachableFromInit, storm::utility::one<typename SparseModelType::ValueType>());
+                            } else {
+                                storm::utility::vector::setVectorValues(timeRewards, reachableFromInit, storm::utility::one<typename SparseModelType::ValueType>());
+                            }
                             data.model->addRewardModel(rewardModelName, typename SparseModelType::RewardModelType(std::move(timeRewards)));
                         } else {
                             STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "The formula " << formula << " neither considers reachability probabilities nor reachability rewards " << (data.model->isOfType(storm::models::ModelType::MarkovAutomaton) ?  "nor reachability time" : "") << ". This is not supported.");

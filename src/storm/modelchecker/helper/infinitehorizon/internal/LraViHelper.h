@@ -128,8 +128,13 @@ namespace storm {
                     bool nondetIs() const;
 
                     
+                    void setComponent(ComponentType component);
                     
-                    ComponentType const& _component;
+                    // We need to make sure that states/choices will be processed in ascending order
+                    typedef std::map<uint64_t, std::set<uint64_t>> InternalComponentType;
+
+                    
+                    InternalComponentType _component;
                     storm::storage::SparseMatrix<ValueType> const& _transitionMatrix;
                     storm::storage::BitVector const* _timedStates; // e.g. Markovian states of a Markov automaton.
                     bool _hasInstantStates;
