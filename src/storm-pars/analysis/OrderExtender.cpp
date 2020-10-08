@@ -249,21 +249,10 @@ namespace storm {
                     if (order->isOnlyBottomTopOrder()) {
                         order->add(currentState);
                     }
-                    if (usePLAOnce || (usePLA.find(order) != usePLA.end() && usePLA[order])) {
-                        result = extendByMinMax(order, currentState, successors, assumption != nullptr);
-                        if (result.first != numberOfStates) {
-                            if (currentStateSCC.second == -1) {
-                                result = extendStateToHandle(order, currentState, successors, assumption != nullptr, result.first == currentState);
-                            } else {
-                                result = extendNormal(order, currentState, currentStateSCC.second, successors, assumption != nullptr, result.first == currentState);
-                            }
-                        }
+                    if (currentStateSCC.second == -1) {
+                        result = extendStateToHandle(order, currentState, successors, assumption != nullptr, result.first == currentState);
                     } else {
-                        if (currentStateSCC.second == -1) {
-                            result = extendStateToHandle(order, currentState, successors, assumption != nullptr, false);
-                        } else {
-                            result = extendNormal(order, currentState, currentStateSCC.second, successors, assumption != nullptr, false);
-                        }
+                        result = extendNormal(order, currentState, currentStateSCC.second, successors, assumption != nullptr, result.first == currentState);
                     }
 
                 }
@@ -444,13 +433,46 @@ namespace storm {
             assert (successors.size() > 1);
 
             // temp.first = pair of unordered states, if this is numberOfStates all successor states could be sorted, so temp.second is fully sorted and contains all successors.
-            auto temp = order->sortStatesUnorderedPair(&successors);
-            if (temp.first.first != numberOfStates) {
-                assert (temp.first.first < numberOfStates);
-                assert (temp.first.second < numberOfStates);
-                return temp.first;
+            bool change = true;
+            bool pla = usePLAOnce || (usePLA.find(order) != usePLA.end() && usePLA.at(order));
+            std::vector<uint_fast64_t> sortedSuccs;
+
+            if (pla) {
+                for (auto state1 : successors) {
+                    if (sortedSuccs.size() == 0) {
+                        sortedSuccs.push_back(state1);
+                    } else {
+                        bool added = false;
+                        for (auto itr = sortedSuccs.begin(); itr != sortedSuccs.end(); ++itr) {
+                            auto state2 = *itr;
+                            auto compareRes = order->compare(state1, state2);
+                            if (compareRes == Order::NodeComparison::UNKNOWN) {
+                                compareRes = addStatesBasedOnMinMax(order, state1, state2);
+                            }
+                            if (compareRes == Order::NodeComparison::ABOVE ||
+                                compareRes == Order::NodeComparison::SAME) {
+                                // insert at current pointer (while keeping other values)
+                                sortedSuccs.insert(itr, state1);
+                                added = true;
+                                break;
+                            } else if (compareRes == Order::NodeComparison::UNKNOWN) {
+                                return {state1, state2};
+                            }
+                        }
+                        if (!added) {
+                            sortedSuccs.push_back(state1);
+                        }
+                    }
+                }
+            } else {
+                auto temp = order->sortStatesUnorderedPair(&successors);
+                if (temp.first.first != numberOfStates) {
+                    return temp.first;
+                } else {
+                    sortedSuccs = std::move(temp.second);
+                }
             }
-            auto sortedSuccs = temp.second;
+
             if (order->compare(sortedSuccs[0], sortedSuccs[sortedSuccs.size() - 1]) == Order::SAME) {
                 if (!order->contains(currentState)) {
                     order->addToNode(currentState, order->getNode(sortedSuccs[0]));
