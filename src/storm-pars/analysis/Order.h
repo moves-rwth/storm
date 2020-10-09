@@ -41,7 +41,7 @@ namespace storm {
                      * @param numberOfStates Maximum number of states in order.
                      * @param statesSorted Pointer to a vector which contains the states which still need to added to the order.
                      */
-                    Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> statesSorted);
+                    Order(storm::storage::BitVector* topStates, storm::storage::BitVector* bottomStates, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> sccsSorted, std::vector<uint_fast64_t> statesSorted);
 
                     /*!
                      * Constructs an order with the given top state and bottom state.
@@ -51,7 +51,7 @@ namespace storm {
                      * @param numberOfStates Maximum number of states in order.
                      * @param statesSorted Pointer to a vector which contains the states which still need to added to the order.
                      */
-                    Order(uint_fast64_t top, uint_fast64_t bottom, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> statesSorted);
+                    Order(uint_fast64_t top, uint_fast64_t bottom, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> sccsSorted, std::vector<uint_fast64_t> statesSorted);
 
                     /*!
                      * Constructs a new Order.
@@ -145,8 +145,8 @@ namespace storm {
                      *         BELOW if the node of the second state is closer to top than the node of the first state;
                      *         UNKNOWN if it is unclear from the structure of the order how the nodes relate.
                      */
-                    Order::NodeComparison compare(uint_fast64_t state1, uint_fast64_t state2);
-                    Order::NodeComparison compareFast(uint_fast64_t state1, uint_fast64_t state2);
+                    Order::NodeComparison compare(uint_fast64_t state1, uint_fast64_t state2, NodeComparison hypothesis = UNKNOWN);
+                    Order::NodeComparison compareFast(uint_fast64_t state1, uint_fast64_t state2, NodeComparison hypothesis = UNKNOWN);
 
                     /*!
                      * Compares the level of the two nodes.
@@ -158,8 +158,8 @@ namespace storm {
                      *         BELOW if node2 is closer to top than node1;
                      *         UNKNOWN if it is unclear from the structure of the order how the nodes relate.
                      */
-                    NodeComparison compare(Node* node1, Node* node2);
-                    NodeComparison compareFast(Node* node1, Node* node2);
+                    NodeComparison compare(Node* node1, Node* node2, NodeComparison hypothesis = UNKNOWN);
+                    NodeComparison compareFast(Node* node1, Node* node2, NodeComparison hypothesis = UNKNOWN);
 
                     /*!
                      * Check if state is already contained in order.
@@ -279,7 +279,9 @@ namespace storm {
                     std::vector<uint_fast64_t> sortStates(storm::storage::BitVector* states);
 
                     storage::StronglyConnectedComponent& getSCC(uint_fast64_t currentSCC);
+                    uint_fast64_t getSCCState(uint_fast64_t state);
                     uint_fast64_t getNextSCCNumber(uint_fast64_t currentSCC);
+                    std::pair<uint_fast64_t, uint_fast64_t> getNextStateNumber();
 
                     bool existsNextSCC();
                     bool existsStateToHandle();
@@ -287,6 +289,7 @@ namespace storm {
                     uint_fast64_t getStateToHandle();
 
                     void addStateToHandle(uint_fast64_t state);
+                    void addStateSorted(uint_fast64_t state);
 
                     /*!
                      * If the order is fully built, this can be set to true.
@@ -337,6 +340,7 @@ namespace storm {
                     bool onlyBottomTopOrder;
 
                     storm::storage::BitVector addedStates;
+                    storm::storage::BitVector doneStates;
 
                     std::vector<Node*> nodes;
 
@@ -355,6 +359,9 @@ namespace storm {
                     storage::Decomposition<storage::StronglyConnectedComponent> decomposition;
 
                     storage::StronglyConnectedComponent dummySCC;
+                    std::vector<uint_fast64_t> statesSorted;
+
+
                 };
             }
 }

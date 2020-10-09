@@ -51,8 +51,6 @@ namespace storm {
             this->region = region;
             this->formula = formula;
             this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(matrix);
-            statesSorted = storm::utility::graph::getTopologicalSort(matrix);
-            std::reverse(statesSorted.begin(), statesSorted.end());
         }
 
         template <typename ValueType, typename ConstantType>
@@ -89,10 +87,11 @@ namespace storm {
             }
             auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
             cyclic = decomposition.size() < numberOfStates;
-            this->bottomTopOrder = std::shared_ptr<Order>(new Order(topStates, bottomStates, numberOfStates, std::move(decomposition)));
-            this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(matrix);
-            statesSorted = storm::utility::graph::getTopologicalSort(matrix);
+            auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
             std::reverse(statesSorted.begin(), statesSorted.end());
+            this->bottomTopOrder = std::shared_ptr<Order>(new Order(topStates, bottomStates, numberOfStates, std::move(decomposition), std::move(statesSorted)));
+            this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(matrix);
+
         }
 
         template <typename ValueType, typename ConstantType>
@@ -127,37 +126,38 @@ namespace storm {
                 options.forceTopologicalSort();
                 auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
                 cyclic = decomposition.size() < numberOfStates;
-                bottomTopOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, numberOfStates, std::move(decomposition)));
+                auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
+                std::reverse(statesSorted.begin(), statesSorted.end());
+                bottomTopOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, numberOfStates, std::move(decomposition), std::move(statesSorted)));
             }
 
-            auto transpose = matrix.transpose();
-            for (auto const& bottom : bottomTopOrder->getBottom()->states) {
-                auto currentStates = transpose.getRow(bottom);
-                for (auto const &rowEntry : currentStates) {
-                    auto currentState = rowEntry.getColumn();
-                    if (currentState != bottom && stateMap[currentState].size() == 2) {
-                        if (bottomTopOrder->contains(currentState)) {
-                            bottomTopOrder->addAbove(currentState, bottomTopOrder->getBottom());
-                        } else {
-                            bottomTopOrder->add(currentState);
-                        }
-                        if (cyclic) {
+            if (cyclic) {
+                // TODO: dit kan sneller
+                auto transpose = matrix.transpose();
+                for (auto const &bottom : bottomTopOrder->getBottom()->states) {
+                    auto currentStates = transpose.getRow(bottom);
+                    for (auto const &rowEntry : currentStates) {
+                        auto currentState = rowEntry.getColumn();
+                        if (currentState != bottom && stateMap[currentState].size() == 2) {
+                            if (bottomTopOrder->contains(currentState)) {
+                                bottomTopOrder->addAbove(currentState, bottomTopOrder->getBottom());
+                            } else {
+                                bottomTopOrder->add(currentState);
+                            }
                             bottomTopOrder->addStateToHandle(currentState);
                         }
                     }
                 }
-            }
 
-            for (auto const& bottom : bottomTopOrder->getTop()->states) {
-                auto currentStates = transpose.getRow(bottom);
-                for (auto const &rowEntry : currentStates) {
-                    auto currentState = rowEntry.getColumn();
-                    if (currentState != bottom && stateMap[currentState].size() == 2) {
-                        if (bottomTopOrder->contains(currentState)) {
-                            // Do nothing, as this state will point at =( and =)
-                        } else {
-                            bottomTopOrder->add(currentState);
-                            if (cyclic) {
+                for (auto const &bottom : bottomTopOrder->getTop()->states) {
+                    auto currentStates = transpose.getRow(bottom);
+                    for (auto const &rowEntry : currentStates) {
+                        auto currentState = rowEntry.getColumn();
+                        if (currentState != bottom && stateMap[currentState].size() == 2) {
+                            if (bottomTopOrder->contains(currentState)) {
+                                // Do nothing, as this state will point at =( and =)
+                            } else {
+                                bottomTopOrder->add(currentState);
                                 bottomTopOrder->addStateToHandle(currentState);
                             }
                         }
@@ -269,10 +269,10 @@ namespace storm {
                             checkParOnStateMonRes(currentState, order, param, monRes);
                         }
                     }
-                    bool prev = currentStateSCC.second;
-                    if (prev != -1) {
-                        seenStates.insert(currentState);
-                    }
+//                    bool prev = currentStateSCC.second;
+//                    if (prev != -1) {
+//                        seenStates.insert(currentState);
+//                    }
                     assert (order->sortStates(&stateMap[currentState]).size() == stateMap[currentState].size());
                     // Get the next state
                     currentStateSCC = getNextState(order, currentStateSCC.second, seenStates);
@@ -289,14 +289,15 @@ namespace storm {
                             // State is not parametric, so we hope that just adding it between =) and =( will help us
                             order->add(currentState);
                         }
-                        seenStates.insert(currentState);
+//                        seenStates.insert(currentState);
                         currentStateSCC = getNextState(order, currentStateSCC.second, seenStates);
                     } else {
                         if (currentStateSCC.second == -1) {
                             // The state was based on statesToHandle, so it is not bad if we cannot continue with this.
                             currentStateSCC = getNextState(order, currentStateSCC.second, seenStates);
                         } else {
-                            // The state was based on the topological sorting, so we need to return, but first add all the not yet handled states to the order
+                            // The state was based on the topological sorting, so we need to return, but first add this state to the states Sorted as we are not done with it
+                            order->addStateSorted(currentState);
                             return {order, result.first, result.second};
                         }
                     }
@@ -432,7 +433,7 @@ namespace storm {
                         bool added = false;
                         for (auto itr = sortedSuccs.begin(); itr != sortedSuccs.end(); ++itr) {
                             auto state2 = *itr;
-                            auto compareRes = order->compare(state1, state2);
+                            auto compareRes = order->compareFast(state1, state2);
                             if (compareRes == Order::NodeComparison::UNKNOWN) {
                                 compareRes = addStatesBasedOnMinMax(order, state1, state2);
                             }
@@ -498,7 +499,18 @@ namespace storm {
             assert (successors.size() > 1);
             assert (order->contains(currentState));
             assert (cyclic);
+
             auto temp = order->sortStatesForForward(currentState, successors);
+
+            while (temp.first.first != numberOfStates && temp.first.second != numberOfStates) {
+                auto comp = addStatesBasedOnMinMax(order, temp.first.first, temp.first.second);
+                if (comp != Order::NodeComparison::UNKNOWN) {
+                    temp = order->sortStatesForForward(currentState, successors);
+                } else {
+                    break;
+                }
+            }
+
             if (temp.first.first == numberOfStates) {
                 assert (temp.second.size() == successors.size() + 1);
                 // all could be sorted, no need to do anything
@@ -565,7 +577,7 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         Order::NodeComparison OrderExtender<ValueType, ConstantType>::addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) const {
-            assert (order->compare(state1, state2) == Order::UNKNOWN);
+            assert (order->compareFast(state1, state2) == Order::UNKNOWN);
             std::vector<ConstantType> const& mins = usePLAOnce ? minValuesOnce.get() : minValues.at(order);
             std::vector<ConstantType> const& maxs = usePLAOnce ? maxValuesOnce.get() : maxValues.at(order);
 
@@ -863,58 +875,78 @@ namespace storm {
             } else if (scc.size() == 1) {
                 return numberOfStates;
             }
-            for (auto state : statesSorted) {
-                if (scc.containsState(state) && seenStates.find(state) == seenStates.end()) {
-                   return state;
-                }
+            auto stateItr = scc.begin();
+            while (seenStates.find(*stateItr) != seenStates.end() && stateItr != scc.end()) {
+                stateItr++;
             }
-            return numberOfStates;
+
+            if (stateItr == scc.end()) {
+                return numberOfStates;
+            } else {
+                return *stateItr;
+            }
+//            for (auto state : statesSorted) {
+//                if (scc.containsState(state) && seenStates.find(state) == seenStates.end()) {
+//                   return state;
+//                }
+//            }
+//            return numberOfStates;
         }
 
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t>
         OrderExtender<ValueType, ConstantType>::getNextState(std::shared_ptr<Order> order, uint_fast64_t currentSCCNumber, std::set<uint_fast64_t>& seenStates, bool trick) {
-            if (currentSCCNumber == -1) {
-                currentSCCNumber = order->getNextSCCNumber(currentSCCNumber);
-            }
-
             if (cyclic && order->existsStateToHandle()) {
                 return {order->getStateToHandle(), -1};
+            } else if (currentSCCNumber == -1) {
+                currentSCCNumber = order->getNextSCCNumber(currentSCCNumber);
+            }
+            if (currentSCCNumber == numberOfStates) {
+                assert (order->getNextStateNumber().first == numberOfStates);
+                return {numberOfStates, numberOfStates};
             }
 
-
-            storage::StronglyConnectedComponent& scc = order->getSCC(currentSCCNumber);
-            if (scc.size() == 0) {
-                return {numberOfStates, numberOfStates};
-            } else {
-                auto nextState = getNextStateSCC(scc, seenStates);
-                if (nextState == numberOfStates) {
-                    if (trick) {
-                        currentSCCNumber = order->getNextSCCNumber(currentSCCNumber);
-                        nextState = getNextStateSCC(order->getSCC(currentSCCNumber), seenStates);
-                        if (nextState == numberOfStates) {
-                            return {numberOfStates, numberOfStates};
-                        } else {
-                            assert (order->getSCC(currentSCCNumber).containsState(nextState));
-                            return {nextState, currentSCCNumber};
-                        }
-                    } else {
-                        order->setAddedSCC(currentSCCNumber);
-                        currentSCCNumber = order->getNextSCCNumber(currentSCCNumber);
-                        seenStates.clear();
-                        if (order->getSCC(currentSCCNumber).size() == 0) {
-                            return {numberOfStates, numberOfStates};
-                        } else {
-                            nextState = getNextStateSCC(order->getSCC(currentSCCNumber), seenStates);
-                            assert (order->getSCC(currentSCCNumber).containsState(nextState));
-                            return {nextState, currentSCCNumber};
-                        }
-                    }
-                } else {
-                    assert (order->getSCC(currentSCCNumber).containsState(nextState));
-                    return {nextState, currentSCCNumber};
+            while (order->getSCC(currentSCCNumber).empty()) {
+                order->setAddedSCC(currentSCCNumber);
+                currentSCCNumber = order->getNextSCCNumber(currentSCCNumber);
+                if (currentSCCNumber == numberOfStates) {
+                    return {numberOfStates, numberOfStates};
                 }
             }
+            return order->getNextStateNumber();
+//
+//
+//            if (scc.size() == 0) {
+//                return {numberOfStates, numberOfStates};
+//            } else {
+//                auto nextState = getNextStateSCC(scc, seenStates);
+//                if (nextState == numberOfStates) {
+//                    if (trick) {
+//                        currentSCCNumber = order->getNextSCCNumber(currentSCCNumber);
+//                        nextState = getNextStateSCC(order->getSCC(currentSCCNumber), seenStates);
+//                        if (nextState == numberOfStates) {
+//                            return {numberOfStates, numberOfStates};
+//                        } else {
+//                            assert (order->getSCC(currentSCCNumber).containsState(nextState));
+//                            return {nextState, currentSCCNumber};
+//                        }
+//                    } else {
+//                        order->setAddedSCC(currentSCCNumber);
+//                        currentSCCNumber = order->getNextSCCNumber(currentSCCNumber);
+//                        seenStates.clear();
+//                        if (order->getSCC(currentSCCNumber).size() == 0) {
+//                            return {numberOfStates, numberOfStates};
+//                        } else {
+//                            nextState = getNextStateSCC(order->getSCC(currentSCCNumber), seenStates);
+//                            assert (order->getSCC(currentSCCNumber).containsState(nextState));
+//                            return {nextState, currentSCCNumber};
+//                        }
+//                    }
+//                } else {
+//                    assert (order->getSCC(currentSCCNumber).containsState(nextState));
+//                    return {nextState, currentSCCNumber};
+//                }
+//            }
         }
 
         template class OrderExtender<RationalFunction, double>;
