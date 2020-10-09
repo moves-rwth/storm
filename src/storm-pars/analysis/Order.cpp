@@ -25,7 +25,7 @@ namespace storm {
                 this->nodes[i] = bottom;
                 numberOfAddedStates++;
             }
-            // assert (addedStates.getNumberOfSetBits() == (topStates->getNumberOfSetBits() + bottomStates->getNumberOfSetBits()));
+            assert (addedStates.getNumberOfSetBits() == (topStates->getNumberOfSetBits() + bottomStates->getNumberOfSetBits()));
         }
 
         Order::Order(uint_fast64_t topState, uint_fast64_t bottomState, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted) {
@@ -42,7 +42,7 @@ namespace storm {
             this->nodes[bottomState] = bottom;
             this->numberOfAddedStates = 2;
             this->statesSorted = statesSorted;
-            // assert (addedStates.getNumberOfSetBits() == 2);
+            assert (addedStates.getNumberOfSetBits() == 2);
         }
 
         Order::Order(){
@@ -52,12 +52,12 @@ namespace storm {
         /*** Modifying the order ***/
 
         void Order::add(uint_fast64_t state) {
-            // assert (!(addedStates)[state]);
+            assert (!(addedStates)[state]);
             addBetween(state, top, bottom);
         }
 
         void Order::addAbove(uint_fast64_t state, Node *node) {
-            // assert (!(addedStates)[state]);
+            assert (!(addedStates)[state]);
             Node *newNode = new Node();
             nodes[state] = newNode;
 
@@ -73,7 +73,7 @@ namespace storm {
         }
 
         void Order::addBelow(uint_fast64_t state, Node *node) {
-            // assert (!(addedStates)[state]);
+            assert (!(addedStates)[state]);
             Node *newNode = new Node();
             nodes[state] = newNode;
             newNode->states.insert(state);
@@ -88,8 +88,8 @@ namespace storm {
         }
 
         void Order::addBetween(uint_fast64_t state, Node *above, Node *below) {
-            // assert(compare(above, below) == ABOVE);
-            // assert (above != nullptr && below != nullptr);
+            assert(compare(above, below) == ABOVE);
+            assert (above != nullptr && below != nullptr);
             if (!(addedStates)[state]) {
                 // State is not in the order yet
                 Node *newNode = new Node();
@@ -112,20 +112,20 @@ namespace storm {
         }
 
         void Order::addBetween(uint_fast64_t state, uint_fast64_t above, uint_fast64_t below) {
-            // assert (compare(above, below) == ABOVE);
-            // assert (getNode(below)->states.find(below) != getNode(below)->states.end());
-            // assert (getNode(above)->states.find(above) != getNode(above)->states.end());
+            assert (compare(above, below) == ABOVE);
+            assert (getNode(below)->states.find(below) != getNode(below)->states.end());
+            assert (getNode(above)->states.find(above) != getNode(above)->states.end());
 
             addBetween(state, getNode(above), getNode(below));
         }
 
         void Order::addRelation(uint_fast64_t above, uint_fast64_t below, bool allowMerge) {
-            // assert (getNode(above) != nullptr && getNode(below) != nullptr);
+            assert (getNode(above) != nullptr && getNode(below) != nullptr);
             addRelationNodes(getNode(above), getNode(below), allowMerge);
         }
 
         void Order::addRelationNodes(Order::Node *above, Order::Node * below, bool allowMerge) {
-            // assert (allowMerge || compare(above, below) != BELOW);
+            assert (allowMerge || compare(above, below) != BELOW);
             if (allowMerge) {
                 if (compare(below, above) == ABOVE) {
                     mergeNodes(above, below);
@@ -136,7 +136,7 @@ namespace storm {
                 below->statesAbove.set(state);
             }
             below->statesAbove |= ((above->statesAbove));
-            // assert (compare(above, below) == ABOVE);
+            assert (compare(above, below) == ABOVE);
         }
 
         void Order::addToNode(uint_fast64_t state, Node *node) {
@@ -222,7 +222,7 @@ namespace storm {
                     return comp;
                 }
                 if ((hypothesis == UNKNOWN || hypothesis == ABOVE) && above(node1, node2)) {
-                    // assert(!above(node2, node1));
+                    assert(!above(node2, node1));
                     return ABOVE;
                 }
 
@@ -235,7 +235,7 @@ namespace storm {
                 if (doneBuilding) {
                     doneBuilding = false;
                     if ((hypothesis == UNKNOWN || hypothesis == ABOVE) && above(node1, node2)) {
-                        // assert(!above(node2, node1));
+                        assert(!above(node2, node1));
                         doneBuilding = true;
                         return ABOVE;
                     }
@@ -274,7 +274,7 @@ namespace storm {
         }
 
         Order::Node *Order::getNode(uint_fast64_t stateNumber) const {
-            // assert (stateNumber < numberOfStates);
+            assert (stateNumber < numberOfStates);
             return nodes[stateNumber];
         }
 
@@ -309,7 +309,7 @@ namespace storm {
         }
 
         std::vector<uint_fast64_t> Order::sortStates(std::vector<uint_fast64_t>* states) {
-            // assert (states != nullptr);
+            assert (states != nullptr);
             uint_fast64_t numberOfStatesToSort = states->size();
             std::vector<uint_fast64_t> result;
             // Go over all states
@@ -342,7 +342,7 @@ namespace storm {
             while (result.size() < numberOfStatesToSort) {
                 result.push_back(numberOfStates);
             }
-            // assert (result.size() == numberOfStatesToSort);
+            assert (result.size() == numberOfStatesToSort);
             return result;
         }
 
@@ -389,16 +389,16 @@ namespace storm {
                 }
             }
             if (!unknown && oneUnknown) {
-                // assert (statesSorted.size() == numberOfStatesToSort);
+                assert (statesSorted.size() == states.size());
                 s2 = numberOfStates;
             }
-            // assert (s1 == numberOfStates || (s1 != numberOfStates && s2 == numberOfStates && statesSorted.size() == numberOfStatesToSort) || (s1 !=numberOfStates && s2 != numberOfStates && statesSorted.size() < numberOfStatesToSort));
+            assert (s1 == numberOfStates || (s1 != numberOfStates && s2 == numberOfStates && statesSorted.size() == states.size()) || (s1 !=numberOfStates && s2 != numberOfStates && statesSorted.size() < states.size()));
 
             return {{s1, s2}, statesSorted};
         }
 
         std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> Order::sortStatesUnorderedPair(const std::vector<uint_fast64_t>* states) {
-            // assert (states != nullptr);
+            assert (states != nullptr);
             uint_fast64_t numberOfStatesToSort = states->size();
             std::vector<uint_fast64_t> result;
             // Go over all states
@@ -428,7 +428,7 @@ namespace storm {
                 }
             }
 
-            // assert (result.size() == numberOfStatesToSort);
+            assert (result.size() == numberOfStatesToSort);
             return {{numberOfStates, numberOfStates}, std::move(result)};
         }
 
@@ -467,7 +467,7 @@ namespace storm {
                 result.push_back(numberOfStates);
                 ++i;
             }
-            // assert (result.size() == numberOfStatesToSort);
+            assert (result.size() == numberOfStatesToSort);
             return result;
         }
 
@@ -518,7 +518,7 @@ namespace storm {
         /*** Setters ***/
 
         void Order::setDoneBuilding(bool done) {
-            // assert (!done || addedStates.full());
+            assert (!done || addedStates.full());
             doneBuilding = done;
         }
 
@@ -710,18 +710,6 @@ namespace storm {
         bool Order::existsNextState() {
             return !doneStates.full();
         }
-//
-//        storage::StronglyConnectedComponent& Order::getSCC(uint_fast64_t currentSCC) {
-//            if (currentSCC >= decomposition.size()) {
-//                return dummySCC;
-//            }
-//            return decomposition[currentSCC];
-//        }
-//
-//        uint_fast64_t Order::getNextSCCNumber(uint_fast64_t sccNumber) {
-//            auto i =  addedSCCs.getNextUnsetIndex(sccNumber + 1);
-//            return i < addedSCCs.size() ? i : numberOfStates;
-//        }
 
         bool Order::isTrivial(uint_fast64_t state) {
             return trivialStates[state];
@@ -731,11 +719,6 @@ namespace storm {
             if (!statesSorted.empty()) {
                 auto state = statesSorted.back();
                 statesSorted.pop_back();
-//                auto sccNum = isTrivial(state);
-                // assert (sccNum != numberOfStates);
-//                auto& scc = getSCC(sccNum);
-                // assert (scc.containsState(state));
-//                scc.erase(state);
                 return {state, true};
             } else {
                 return {numberOfStates, true};
@@ -743,7 +726,7 @@ namespace storm {
         }
 
         std::pair<uint_fast64_t, bool> Order::getStateToHandle() {
-            // assert (existsStateToHandle());
+            assert (existsStateToHandle());
             auto state = statesToHandle.back();
             statesToHandle.pop_back();
             return {state, false};
@@ -758,8 +741,6 @@ namespace storm {
         }
 
         void Order::addStateSorted(uint_fast64_t state) {
-//            auto scc = getSCC(getNextSCCNumber(-1));
-//            scc.insert(state);
             statesSorted.push_back(state);
         }
 
