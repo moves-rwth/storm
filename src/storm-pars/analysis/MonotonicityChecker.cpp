@@ -130,14 +130,12 @@ namespace storm {
         }
 
         template <typename ValueType>
-        ValueType MonotonicityChecker<ValueType>::getDerivative(ValueType function, typename MonotonicityChecker<ValueType>::VariableType var) {
-            if (function.isConstant()) {
-                return utility::zero<ValueType>();
+        ValueType& MonotonicityChecker<ValueType>::getDerivative(ValueType function, typename MonotonicityChecker<ValueType>::VariableType var) {
+            auto& derivativeMap = derivatives[function];
+            if (derivativeMap.find(var) == derivativeMap.end()) {
+                derivativeMap[var] = function.derivative(var);
             }
-            if ((derivatives[function]).find(var) == (derivatives[function]).end()) {
-                (derivatives[function])[var] = function.derivative(var);
-            }
-            return (derivatives[function])[var];
+            return derivativeMap[var];
         }
 
         template class MonotonicityChecker<RationalFunction>;

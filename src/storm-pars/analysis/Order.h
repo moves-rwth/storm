@@ -278,15 +278,16 @@ namespace storm {
                      */
                     std::vector<uint_fast64_t> sortStates(storm::storage::BitVector* states);
 
-                    storage::StronglyConnectedComponent& getSCC(uint_fast64_t currentSCC);
+//                    storage::StronglyConnectedComponent& getSCC(uint_fast64_t currentSCC);
                     uint_fast64_t getSCCState(uint_fast64_t state);
-                    uint_fast64_t getNextSCCNumber(uint_fast64_t currentSCC);
-                    std::pair<uint_fast64_t, uint_fast64_t> getNextStateNumber();
+//                    uint_fast64_t getNextSCCNumber(uint_fast64_t currentSCC);
+                    std::pair<uint_fast64_t, bool> getNextStateNumber();
 
-                    bool existsNextSCC();
+//                    bool existsNextSCC();
+                    bool existsNextState();
                     bool existsStateToHandle();
 
-                    uint_fast64_t getStateToHandle();
+                    std::pair<uint_fast64_t, bool> getStateToHandle();
 
                     void addStateToHandle(uint_fast64_t state);
                     void addStateSorted(uint_fast64_t state);
@@ -314,7 +315,8 @@ namespace storm {
                      * @return Pointer to the copy.
                      */
                     std::shared_ptr<Order> copy() const;
-                    void setAddedSCC(uint_fast64_t sccNumber);
+//                    void setAddedSCC(uint_fast64_t sccNumber);
+                    void setAddedState(uint_fast64_t sccNumber);
 
                 protected:
                     storage::Decomposition<storage::StronglyConnectedComponent> getDecomposition() const;
