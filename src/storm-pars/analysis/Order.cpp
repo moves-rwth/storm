@@ -232,7 +232,7 @@ namespace storm {
 
                 // tweak for cyclic pmcs it might be possible that we missed something due to forward reasoning
                 //TODO: fix this
-                if (doneBuilding) {
+                if (!trivialStates.full() && doneBuilding) {
                     doneBuilding = false;
                     if ((hypothesis == UNKNOWN || hypothesis == ABOVE) && above(node1, node2)) {
                         assert(!above(node2, node1));
