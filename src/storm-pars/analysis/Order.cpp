@@ -416,7 +416,7 @@ namespace storm {
                             added = true;
                             break;
                         } else if (compareRes == UNKNOWN) {
-                            return {{(*itr), state}, result};
+                            return {{(*itr), state}, std::move(result)};
                         }
                     }
                     if (unknown) {
@@ -429,7 +429,7 @@ namespace storm {
             }
 
             // assert (result.size() == numberOfStatesToSort);
-            return std::pair<std::pair<uint_fast64_t, uint_fast64_t>, std::vector<uint_fast64_t>>(std::pair<uint_fast64_t, uint_fast64_t>(numberOfStates, numberOfStates), result);
+            return {{numberOfStates, numberOfStates}, std::move(result)};
         }
 
         std::vector<uint_fast64_t> Order::sortStates(storm::storage::BitVector* states) {
@@ -475,18 +475,13 @@ namespace storm {
 
         std::shared_ptr<Order> Order::copy() const {
             std::shared_ptr<Order> copiedOrder = std::make_shared<Order>();
-
             copiedOrder->nodes = std::vector<Node *>(numberOfStates, nullptr);
             copiedOrder->onlyBottomTopOrder = this->isOnlyBottomTopOrder();
             copiedOrder->numberOfStates = this->getNumberOfStates();
             copiedOrder->addedStates = storm::storage::BitVector(addedStates);
-            copiedOrder->decomposition = this->decomposition;
             copiedOrder->statesSorted = std::vector<uint_fast64_t>(this->statesSorted);
-
-            copiedOrder->addedSCCs = storm::storage::BitVector(decomposition.size());
-//            for (auto sccNumber : addedSCCs) {
-//                copiedOrder->setAddedSCC(sccNumber);
-//            }
+            copiedOrder->trivialStates = storm::storage::BitVector(trivialStates);
+            copiedOrder->doneStates = storm::storage::BitVector(doneStates);
 
             //copy nodes
             copiedOrder->top = new Node();
@@ -526,10 +521,6 @@ namespace storm {
             // assert (!done || addedStates.full());
             doneBuilding = done;
         }
-
-//        void Order::setAddedSCC(uint_fast64_t sccNumber) {
-//            addedSCCs.set(sccNumber);
-//        }
 
         void Order::setAddedState(uint_fast64_t stateNumber) {
             doneStates.set(stateNumber);
@@ -625,16 +616,20 @@ namespace storm {
         void Order::init(uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, bool doneBuilding) {
             this->numberOfStates = numberOfStates;
             this->nodes = std::vector<Node *>(numberOfStates, nullptr);
-            this->addedStates = storm::storage::BitVector(numberOfStates);
-            this->doneStates = storm::storage::BitVector(numberOfStates);
+            this->addedStates = storm::storage::BitVector(numberOfStates, false);
+            this->doneStates = storm::storage::BitVector(numberOfStates, false);
+            this->trivialStates = storm::storage::BitVector(numberOfStates, false);
             this->doneBuilding = doneBuilding;
-            this->decomposition = decomposition;
-            this->addedSCCs  = storm::storage::BitVector(decomposition.size());
             this->top = new Node();
             this->bottom = new Node();
             this->top->statesAbove = storm::storage::BitVector(numberOfStates);
             this->bottom->statesAbove = storm::storage::BitVector(numberOfStates);
             this->dummySCC = storage::StronglyConnectedComponent();
+            for (auto& scc : decomposition) {
+                if (scc.size() == 1) {
+                    trivialStates.set(*(scc.begin()));
+                }
+            }
         }
 
         bool Order::aboveFast(Node* node1, Node* node2) {
@@ -728,19 +723,15 @@ namespace storm {
 //            return i < addedSCCs.size() ? i : numberOfStates;
 //        }
 
-        uint_fast64_t Order::getSCCState(uint_fast64_t state) {
-            auto i =  addedSCCs.getNextUnsetIndex(0);
-            while (!decomposition[i].containsState(state)) {
-                i = addedSCCs.getNextUnsetIndex(i);
-            }
-            return i < addedSCCs.size() ? i : numberOfStates;
+        bool Order::isTrivial(uint_fast64_t state) {
+            return trivialStates[state];
         }
 
         std::pair<uint_fast64_t, bool> Order::getNextStateNumber() {
             if (!statesSorted.empty()) {
                 auto state = statesSorted.back();
                 statesSorted.pop_back();
-//                auto sccNum = getSCCState(state);
+//                auto sccNum = isTrivial(state);
                 // assert (sccNum != numberOfStates);
 //                auto& scc = getSCC(sccNum);
                 // assert (scc.containsState(state));

@@ -278,9 +278,7 @@ namespace storm {
                      */
                     std::vector<uint_fast64_t> sortStates(storm::storage::BitVector* states);
 
-//                    storage::StronglyConnectedComponent& getSCC(uint_fast64_t currentSCC);
-                    uint_fast64_t getSCCState(uint_fast64_t state);
-//                    uint_fast64_t getNextSCCNumber(uint_fast64_t currentSCC);
+                    bool isTrivial(uint_fast64_t state);
                     std::pair<uint_fast64_t, bool> getNextStateNumber();
 
 //                    bool existsNextSCC();
@@ -343,12 +341,11 @@ namespace storm {
 
                     storm::storage::BitVector addedStates;
                     storm::storage::BitVector doneStates;
+                    storm::storage::BitVector trivialStates;
 
                     std::vector<Node*> nodes;
 
                     std::vector<uint_fast64_t> statesToHandle;
-
-                    storm::storage::BitVector addedSCCs;
 
                     Node* top;
 
@@ -357,8 +354,6 @@ namespace storm {
                     uint_fast64_t numberOfStates;
 
                     uint_fast64_t numberOfAddedStates;
-
-                    storage::Decomposition<storage::StronglyConnectedComponent> decomposition;
 
                     storage::StronglyConnectedComponent dummySCC;
                     std::vector<uint_fast64_t> statesSorted;
