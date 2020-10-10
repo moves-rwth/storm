@@ -74,6 +74,7 @@ namespace storm {
             std::map<VariableType, std::set<uint_fast64_t>> getOccuringStatesAtVariable() const;
 
             uint_fast64_t getRowGroupIndex(uint_fast64_t originalState) const;
+            uint_fast64_t getOriginalStateNumber(uint_fast64_t newState) const;
             uint_fast64_t getRowGroupSize(uint_fast64_t originalState) const;
             uint_fast64_t getRowGroupCount() const;
 
@@ -96,7 +97,8 @@ namespace storm {
                 std::set<VariableType> const& getLowerParameters() const;
                 std::set<VariableType> const& getUpperParameters() const;
                 std::set<VariableType> const& getUnspecifiedParameters() const;
-                
+                uint_fast64_t getOriginalState(uint_fast64_t newStateNumber) const;
+
                 /*!
                  * Returns the concrete valuation(s) (w.r.t. the provided region) represented by this abstract valuation.
                  * Note that an abstract valuation represents 2^(#unspecified parameters) many concrete valuations.
@@ -159,6 +161,7 @@ namespace storm {
             std::vector<AbstractValuation> rowLabels;
 
             std::vector<uint_fast64_t> oldToNewColumnIndexMapping; // Mapping from old to new columnIndex used for monotonicity
+            std::vector<uint_fast64_t> rowGroupToStateNumber; // Mapping from new to old columnIndex used for monotonicity
 
             storm::storage::SparseMatrix<ConstantType> matrix; //The resulting matrix;
             std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>> matrixAssignment; // Connection of matrix entries with placeholders

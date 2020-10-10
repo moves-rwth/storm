@@ -29,9 +29,11 @@ namespace storm {
             
             // The matrix builder for the new matrix. The correct number of rows and entries is not known yet.
             storm::storage::SparseMatrixBuilder<ConstantType> builder(0, selectedColumns.getNumberOfSetBits(), 0, true, true, selectedRows.getNumberOfSetBits());
+            rowGroupToStateNumber = std::vector<uint_fast64_t>();
             uint_fast64_t newRowIndex = 0;
             for (auto const& rowIndex : selectedRows) {
                 builder.newRowGroup(newRowIndex);
+                rowGroupToStateNumber.push_back(rowIndex);
                 
                 // Gather the occurring variables within this row and set which entries are non-constant
                 std::set<VariableType> occurringVariables;
@@ -112,14 +114,16 @@ namespace storm {
                     occurringVariablesAtState[rowIndex] = std::move(occurringVariables);
                 }
             }
-            
+
+
+
             // Matrix and vector are now filled with constant results from constant functions and place holders for non-constant functions.
             matrix = builder.build(newRowIndex);
             vector.shrink_to_fit();
             matrixAssignment.shrink_to_fit();
             vectorAssignment.shrink_to_fit();
             nonConstMatrixEntries.resize(pMatrixEntryCount);
-            
+
             // Now insert the correct iterators for the matrix and vector assignment
             auto matrixAssignmentIt = matrixAssignment.begin();
             uint_fast64_t startEntryOfRow = 0;
@@ -165,6 +169,11 @@ namespace storm {
         template<typename ParametricType, typename ConstantType>
         uint_fast64_t ParameterLifter<ParametricType, ConstantType>::getRowGroupIndex(uint_fast64_t originalState) const {
             return matrix.getRowGroupIndices()[oldToNewColumnIndexMapping[originalState]];
+        }
+
+        template<typename ParametricType, typename ConstantType>
+        uint_fast64_t ParameterLifter<ParametricType, ConstantType>::getOriginalStateNumber(uint_fast64_t newState) const {
+            return rowGroupToStateNumber[newState];
         }
 
         template<typename ParametricType, typename ConstantType>
@@ -304,7 +313,13 @@ namespace storm {
             }
             return result;
         }
-        
+
+        template<typename ParametricType, typename ConstantType>
+        uint_fast64_t ParameterLifter<ParametricType, ConstantType>::AbstractValuation::getOriginalState(
+                uint_fast64_t newStateNumber) const {
+            return 0;
+        }
+
         template<typename ParametricType, typename ConstantType>
         ConstantType& ParameterLifter<ParametricType, ConstantType>::FunctionValuationCollector::add(ParametricType const& function, AbstractValuation const& valuation) {
             ParametricType simplifiedFunction = function;

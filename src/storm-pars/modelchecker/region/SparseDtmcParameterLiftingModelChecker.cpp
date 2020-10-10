@@ -317,19 +317,18 @@ namespace storm {
                     }
 
                     // TODO: this only works since we decided to keep all columns
+                    auto const & occuringVariables = parameterLifter->getOccurringVariablesAtState();
                     for (auto state = 0; state < parameterLifter->getRowGroupCount(); ++state) {
-                        auto& variables = parameterLifter->getOccurringVariablesAtState()[state];
+
+                        auto oldStateNumber = parameterLifter->getOriginalStateNumber(state);
+                        auto& variables = occuringVariables.at(oldStateNumber);
                         // point at which we start with rows for this state
-                        auto rowGroupIndex = parameterLifter->getRowGroupIndex(state);
-                        // number of rows (= #transitions) for this state
-                        auto numberOfRows = parameterLifter->getRowGroupSize(state);
 
                         STORM_LOG_THROW(variables.size() <= 1, storm::exceptions::NotImplementedException, "Using localMonRes not yet implemented for states with 2 or more variables, please run without --use-monotonicity");
-                        assert (variables.size() == 0 || numberOfRows == 2);//std::pow(2, variables.size()) == numberOfRows);
 
                         bool allMonotone = true;
                         for (auto var : variables) {
-                            auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
+                            auto monotonicity = localMonotonicityResult->getMonotonicity(oldStateNumber, var);
 
                             bool ignoreUpperBound = monotonicity == Monotonicity::Constant || (useMinimize && monotonicity == Monotonicity::Incr) || (!useMinimize && monotonicity == Monotonicity::Decr);
                             bool ignoreLowerBound = !ignoreUpperBound && ((useMinimize && monotonicity == Monotonicity::Decr) || (!useMinimize && monotonicity == Monotonicity::Incr));
