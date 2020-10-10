@@ -306,6 +306,8 @@ namespace storm {
                 solver->setTrackScheduler(true);
 
                 if (localMonotonicityResult != nullptr) {
+                    storm::storage::BitVector fixedStates(parameterLifter->getRowGroupCount(), false);
+
                     bool useMinimize = storm::solver::minimize(dirForParameters);
                     if (useMinimize && !minSchedChoices) {
                         minSchedChoices = std::vector<uint_fast64_t>(parameterLifter->getRowGroupCount(), 0);
@@ -314,8 +316,9 @@ namespace storm {
                         maxSchedChoices = std::vector<uint_fast64_t>(parameterLifter->getRowGroupCount(), 0);
                     }
 
+                    // TODO: this only works since we decided to keep all columns
                     for (auto state = 0; state < parameterLifter->getRowGroupCount(); ++state) {
-                        auto variables = parameterLifter->getOccurringVariablesAtState()[state];
+                        auto& variables = parameterLifter->getOccurringVariablesAtState()[state];
                         // point at which we start with rows for this state
                         auto rowGroupIndex = parameterLifter->getRowGroupIndex(state);
                         // number of rows (= #transitions) for this state
@@ -324,11 +327,13 @@ namespace storm {
                         STORM_LOG_THROW(variables.size() <= 1, storm::exceptions::NotImplementedException, "Using localMonRes not yet implemented for states with 2 or more variables, please run without --use-monotonicity");
                         assert (variables.size() == 0 || numberOfRows == 2);//std::pow(2, variables.size()) == numberOfRows);
 
+                        bool allMonotone = true;
                         for (auto var : variables) {
                             auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
 
                             bool ignoreUpperBound = monotonicity == Monotonicity::Constant || (useMinimize && monotonicity == Monotonicity::Incr) || (!useMinimize && monotonicity == Monotonicity::Decr);
                             bool ignoreLowerBound = !ignoreUpperBound && ((useMinimize && monotonicity == Monotonicity::Decr) || (!useMinimize && monotonicity == Monotonicity::Incr));
+                            allMonotone &= ignoreUpperBound || ignoreLowerBound;
                             if (ignoreLowerBound) {
                                 if (useMinimize) {
                                     minSchedChoices.get()[state] = 1;
@@ -343,7 +348,11 @@ namespace storm {
                                 }
                             }
                         }
+                        if (allMonotone) {
+                            fixedStates.set(state);
+                        }
                     }
+                    solver->setFixedStates(std::move(fixedStates));
                 }
 
                 if (storm::solver::minimize(dirForParameters) && minSchedChoices)
