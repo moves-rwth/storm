@@ -618,18 +618,23 @@ namespace storm {
             this->nodes = std::vector<Node *>(numberOfStates, nullptr);
             this->addedStates = storm::storage::BitVector(numberOfStates, false);
             this->doneStates = storm::storage::BitVector(numberOfStates, false);
-            this->trivialStates = storm::storage::BitVector(numberOfStates, false);
+            if (decomposition.size() == 0) {
+                this->trivialStates = storm::storage::BitVector(numberOfStates, true);
+            } else {
+                this->trivialStates = storm::storage::BitVector(numberOfStates, false);
+                for (auto& scc : decomposition) {
+                    if (scc.size() == 1) {
+                        trivialStates.set(*(scc.begin()));
+                    }
+                }
+            }
             this->doneBuilding = doneBuilding;
             this->top = new Node();
             this->bottom = new Node();
             this->top->statesAbove = storm::storage::BitVector(numberOfStates);
             this->bottom->statesAbove = storm::storage::BitVector(numberOfStates);
             this->dummySCC = storage::StronglyConnectedComponent();
-            for (auto& scc : decomposition) {
-                if (scc.size() == 1) {
-                    trivialStates.set(*(scc.begin()));
-                }
-            }
+
         }
 
         bool Order::aboveFast(Node* node1, Node* node2) {

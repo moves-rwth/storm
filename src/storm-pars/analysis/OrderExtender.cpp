@@ -83,8 +83,18 @@ namespace storm {
                     occuringStatesAtVariable[var].push_back(state);
                 }
             }
-            auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
-            cyclic = decomposition.size() < numberOfStates;
+            storm::storage::BitVector ignoreStates (topStates->size(), true);
+            for (auto state : *topStates) {
+                ignoreStates.set(state, false);
+            }
+            for (auto state : *bottomStates) {
+                ignoreStates.set(state, false);
+            }
+            cyclic = storm::utility::graph::hasCycle(matrix, ignoreStates);
+            storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition;
+            if (cyclic) {
+                decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
+            }
             auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
             std::reverse(statesSorted.begin(), statesSorted.end());
             this->bottomTopOrder = std::shared_ptr<Order>(new Order(topStates, bottomStates, numberOfStates, std::move(decomposition), std::move(statesSorted)));
@@ -120,10 +130,20 @@ namespace storm {
                 STORM_LOG_THROW(topStates.begin() != topStates.end(), exceptions::NotSupportedException,"Formula yields to no 1 states");
                 STORM_LOG_THROW(bottomStates.begin() != bottomStates.end(), exceptions::NotSupportedException,"Formula yields to no zero states");
                 auto& matrix = this->model->getTransitionMatrix();
-                storm::storage::StronglyConnectedComponentDecompositionOptions options;
-                options.forceTopologicalSort();
-                auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
-                cyclic = decomposition.size() < numberOfStates;
+                storm::storage::BitVector ignoreStates (topStates.size(), true);
+                for (auto state : topStates) {
+                    ignoreStates.set(state, false);
+                }
+                for (auto state : bottomStates) {
+                    ignoreStates.set(state, false);
+                }
+                cyclic = storm::utility::graph::hasCycle(matrix, ignoreStates);
+                storm::storage::StronglyConnectedComponentDecomposition<ValueType> decomposition;
+                if (cyclic) {
+                    storm::storage::StronglyConnectedComponentDecompositionOptions options;
+                    options.forceTopologicalSort();
+                    decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
+                }
                 auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
                 std::reverse(statesSorted.begin(), statesSorted.end());
                 bottomTopOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, numberOfStates, std::move(decomposition), std::move(statesSorted)));
