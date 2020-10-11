@@ -28,11 +28,6 @@ namespace storm {
         template<typename ParametricType>
         void ParameterRegion<ParametricType>::init(boost::optional<int> splittingThreshold) {
             this->splitThreshold = splittingThreshold;
-            if (this->splitThreshold) {
-                splitIndexNonMon = 0;
-                splitIndexMon = 0;
-                splitIndex = 0;
-            }
             //check whether both mappings map the same variables, check that lower boundary <= upper boundary,  and pre-compute the set of variables
             for (auto const& variableWithLowerBoundary : this->lowerBoundaries) {
                 auto variableWithUpperBoundary = this->upperBoundaries.find(variableWithLowerBoundary.first);
@@ -99,9 +94,7 @@ namespace storm {
 
         template<typename ParametricType>
         std::vector<typename ParameterRegion<ParametricType>::Valuation> ParameterRegion<ParametricType>::getVerticesOfRegion(std::set<VariableType> const& consideredVariables) const {
-            assert ((splitThreshold && splitIndex >= 0 && splitIndex < consideredVariables.size()) || (!splitThreshold) || consideredVariables.size() == 0);
-            std::size_t const numOfVariables = splitThreshold && consideredVariables.size() > splitThreshold.get() ?
-                                               splitThreshold.get() : consideredVariables.size();
+            std::size_t const numOfVariables = consideredVariables.size();
             STORM_LOG_THROW(numOfVariables <= std::numeric_limits<std::size_t>::digits, storm::exceptions::OutOfRangeException, "Number of variables " << numOfVariables << " is too high.");
             std::size_t const numOfVertices = std::pow(2, numOfVariables);
             std::vector<Valuation> resultingVector(numOfVertices);
@@ -112,38 +105,13 @@ namespace storm {
                 //(00...0 = lower boundaries for all variables, 11...1 = upper boundaries for all variables)
                 uint_fast64_t variableIndex = 0;
 
-
-                // Normal implementation
-                if (!splitThreshold || consideredVariables.size() < splitThreshold.get()) {
-                    for (auto variable : consideredVariables) {
-                        if ((vertexId >> variableIndex) % 2 == 0) {
-                            resultingVector[vertexId].insert(
-                                    std::pair<VariableType, CoefficientType>(variable, getLowerBoundary(variable)));
-                        } else {
-                            resultingVector[vertexId].insert(
-                                    std::pair<VariableType, CoefficientType>(variable, getUpperBoundary(variable)));
-                        }
-                        ++variableIndex;
+                for (auto variable : consideredVariables) {
+                    if ((vertexId >> variableIndex) % 2 == 0) {
+                        resultingVector[vertexId].insert(std::pair<VariableType, CoefficientType>(variable, getLowerBoundary(variable)));
+                    } else {
+                        resultingVector[vertexId].insert(std::pair<VariableType, CoefficientType>(variable, getUpperBoundary(variable)));
                     }
-                } else {
-                    typename std::set<VariableType>::iterator itr = consideredVariables.begin();
-                    std::advance(itr, (splitIndex % consideredVariables.size()));
-                    for (auto i = 0; i < splitThreshold; ++i) {
-                        auto const &variable = *itr;
-
-                        if ((vertexId >> variableIndex) % 2 == 0) {
-                            resultingVector[vertexId].insert(
-                                    std::pair<VariableType, CoefficientType>(variable, getLowerBoundary(variable)));
-                        } else {
-                            resultingVector[vertexId].insert(
-                                    std::pair<VariableType, CoefficientType>(variable, getUpperBoundary(variable)));
-                        }
-                        ++variableIndex;
-                        ++itr;
-                        if (itr == consideredVariables.end()) {
-                            itr = consideredVariables.begin();
-                        }
-                    }
+                    ++variableIndex;
                 }
             }
             return resultingVector;
@@ -208,136 +176,137 @@ namespace storm {
             }
         }
 
-        template<typename ParametricType>
-        void ParameterRegion<ParametricType>::split(const ParameterRegion<ParametricType>::Valuation &splittingPoint,
-                std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector,
-                storm::analysis::MonotonicityResult<ParameterRegion<ParametricType>::VariableType> & monRes,
-                bool onlyMonotoneVars, double parameterThreshold) {
-            if (!monRes.existsMonotonicity()) {
-                return split(splittingPoint, regionVector);
-            }
-            //Check if splittingPoint is valid.
-            STORM_LOG_THROW(splittingPoint.size() == this->variables.size(), storm::exceptions::InvalidArgumentException, "Tried to split a region w.r.t. a point, but the point considers a different number of variables.");
-            for(auto const& variable : this->variables){
-                auto splittingPointEntry=splittingPoint.find(variable);
-                STORM_LOG_THROW(splittingPointEntry != splittingPoint.end(), storm::exceptions::InvalidArgumentException, "Tried to split a region but a variable of this region is not defined by the splitting point.");
-                STORM_LOG_THROW(this->getLowerBoundary(variable) <=splittingPointEntry->second, storm::exceptions::InvalidArgumentException, "Tried to split a region but the splitting point is not contained in the region.");
-                STORM_LOG_THROW(this->getUpperBoundary(variable) >=splittingPointEntry->second, storm::exceptions::InvalidArgumentException, "Tried to split a region but the splitting point is not contained in the region.");
-            }
-
-            //Now compute the subregions.
-            std::pair<std::set<VariableType>, std::set<VariableType>> monNonMonVariables = monRes.splitVariables(this->getVariables());
-            std::vector<Valuation> vertices;
-
-            bool switchOutput = false;
-            if (this->splitThreshold) {
-                bool allToSmallMon = true;
-                bool allToSmallNonMon = true;
-
-                if (parameterThreshold < 1) {
-                    for (auto &variable: monNonMonVariables.first) {
-                        CoefficientType diff = getUpperBoundary(variable) - getLowerBoundary(variable);
-                        if (diff > storm::utility::convertNumber<CoefficientType>(parameterThreshold)) {
-                            allToSmallMon = false;
-                            break;
-                        }
-                    }
-                    for (auto &variable: monNonMonVariables.second) {
-                        CoefficientType diff = getUpperBoundary(variable) - getLowerBoundary(variable);
-                        if (diff > storm::utility::convertNumber<CoefficientType>(parameterThreshold)) {
-                            allToSmallNonMon = false;
-                            break;
-                        }
-                    }
-                } else {
-                    allToSmallMon = false;
-                    allToSmallNonMon = false;
-                }
-
-                // Heuristic for splitting when a splitThreshold is given
-                // Split in mon in the following cases:
-                //  - mon set, and variable range still makes sense
-                //  - nonmon set, but variable range for nonmon is too small and variable range for mon still makes sense
-                //  - both ranges for mon and nonmon are too small and last split was in nonmon
-                bool splitMon = (onlyMonotoneVars && !allToSmallMon)
-                                    || (!onlyMonotoneVars && allToSmallNonMon && !allToSmallMon)
-                                    || (allToSmallMon && allToSmallNonMon && !lastSplitMonotone);
-                bool splitNonMon = (!onlyMonotoneVars && !allToSmallNonMon)
-                                   || (!onlyMonotoneVars && !allToSmallNonMon && allToSmallMon)
-                                   || (allToSmallMon && allToSmallNonMon && lastSplitMonotone);
-                assert (splitMon || splitNonMon);
-                splitIndex = splitMon ? splitIndexMon : splitIndexNonMon;
-                vertices = getVerticesOfRegion(splitMon ? monNonMonVariables.first : monNonMonVariables.second);
-                lastSplitMonotone = allToSmallNonMon && allToSmallMon ? !lastSplitMonotone : lastSplitMonotone;
-                if (splitMon) {
-                    splitIndexMon = (splitIndexMon + splitThreshold.get()) % monNonMonVariables.first.size();
-                } else {
-                    splitIndexNonMon = (splitIndexNonMon + splitThreshold.get()) % monNonMonVariables.second.size();
-                }
-
-                auto textLookingAt = onlyMonotoneVars ? "non-monotone" : "monotone";
-                auto textOriginal = onlyMonotoneVars ? "monotone" : "non-monotone";
-
-                if ((allToSmallMon && !allToSmallNonMon) || (allToSmallNonMon && !allToSmallMon)) {
-                    switchOutput = true;
-                    STORM_LOG_INFO("Looking at " << textLookingAt << " instead of " << textOriginal);
-                }
-            } else {
-                if (onlyMonotoneVars) {
-                    vertices = getVerticesOfRegion(monNonMonVariables.first);
-                } else {
-                    vertices = getVerticesOfRegion(monNonMonVariables.second);
-                }
-            }
-
-            auto textOriginal = (!switchOutput && onlyMonotoneVars) || (switchOutput && !onlyMonotoneVars) ? "monotone" : "non-monotone";
-            STORM_LOG_INFO("Splitting region " << this->toString() << " in " << vertices.size()
-                                               << " regions (original implementation would have splitted in 2^"
-                                               << this->getVariables().size() << ").");
-            if (splitThreshold) {
-                STORM_LOG_INFO("Using only " << textOriginal << " variables capped at " << splitThreshold.get()
-                                             << " variables per split.");
-            } else {
-                STORM_LOG_INFO("Using only " << textOriginal << " variables.");
-            }
-
-            for (auto const& vertex : vertices) {
-                //The resulting subregion is the smallest region containing vertex and splittingPoint.
-                Valuation subLower, subUpper;
-                for (auto variableBound : this->lowerBoundaries) {
-                    VariableType variable = variableBound.first;
-                    auto vertexEntry=vertex.find(variable);
-                    if (vertexEntry != vertex.end()) {
-                        auto splittingPointEntry = splittingPoint.find(variable);
-                        CoefficientType diff = getUpperBoundary(variable) - getLowerBoundary(variable);
-                        if (parameterThreshold < 1 && diff < storm::utility::convertNumber<CoefficientType>(parameterThreshold)) {
-                            subLower.insert(typename Valuation::value_type(variable, getLowerBoundary(variable)));
-                            subUpper.insert(typename Valuation::value_type(variable, getUpperBoundary(variable)));
-                        } else {
-                            subLower.insert(typename Valuation::value_type(variable, std::min(vertexEntry->second, splittingPointEntry->second)));
-                            subUpper.insert(typename Valuation::value_type(variable, std::max(vertexEntry->second, splittingPointEntry->second)));
-                        }
-                    } else {
-                        subLower.insert(typename Valuation::value_type(variable, getLowerBoundary(variable)));
-                        subUpper.insert(typename Valuation::value_type(variable, getUpperBoundary(variable)));
-                    }
-                }
-
-                ParameterRegion<ParametricType> subRegion(std::move(subLower), std::move(subUpper), this->splitThreshold);
-                subRegion.setNextVariableRangMon(splitIndexMon);
-                subRegion.setNextVariableRangNonMon(splitIndexNonMon);
-                subRegion.setLastSplitMonotone(lastSplitMonotone);
-
-                if (!storm::utility::isZero(subRegion.area())) {
-                    regionVector.push_back(std::move(subRegion));
-                }
-            }
-        }
+//        template<typename ParametricType>
+//        void ParameterRegion<ParametricType>::split(const ParameterRegion<ParametricType>::Valuation &splittingPoint,
+//                std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector,
+//                storm::analysis::MonotonicityResult<ParameterRegion<ParametricType>::VariableType> & monRes,
+//                bool onlyMonotoneVars, double parameterThreshold) {
+//            if (!monRes.existsMonotonicity()) {
+//                return split(splittingPoint, regionVector);
+//            }
+//            //Check if splittingPoint is valid.
+//            STORM_LOG_THROW(splittingPoint.size() == this->variables.size(), storm::exceptions::InvalidArgumentException, "Tried to split a region w.r.t. a point, but the point considers a different number of variables.");
+//            for(auto const& variable : this->variables){
+//                auto splittingPointEntry=splittingPoint.find(variable);
+//                STORM_LOG_THROW(splittingPointEntry != splittingPoint.end(), storm::exceptions::InvalidArgumentException, "Tried to split a region but a variable of this region is not defined by the splitting point.");
+//                STORM_LOG_THROW(this->getLowerBoundary(variable) <=splittingPointEntry->second, storm::exceptions::InvalidArgumentException, "Tried to split a region but the splitting point is not contained in the region.");
+//                STORM_LOG_THROW(this->getUpperBoundary(variable) >=splittingPointEntry->second, storm::exceptions::InvalidArgumentException, "Tried to split a region but the splitting point is not contained in the region.");
+//            }
+//
+//            //Now compute the subregions.
+//            std::pair<std::set<VariableType>, std::set<VariableType>> monNonMonVariables = monRes.splitVariables(this->getVariables());
+//            std::vector<Valuation> vertices;
+//
+//            bool switchOutput = false;
+//            if (this->splitThreshold) {
+//                bool allToSmallMon = true;
+//                bool allToSmallNonMon = true;
+//
+//                if (parameterThreshold < 1) {
+//                    for (auto &variable: monNonMonVariables.first) {
+//                        CoefficientType diff = getUpperBoundary(variable) - getLowerBoundary(variable);
+//                        if (diff > storm::utility::convertNumber<CoefficientType>(parameterThreshold)) {
+//                            allToSmallMon = false;
+//                            break;
+//                        }
+//                    }
+//                    for (auto &variable: monNonMonVariables.second) {
+//                        CoefficientType diff = getUpperBoundary(variable) - getLowerBoundary(variable);
+//                        if (diff > storm::utility::convertNumber<CoefficientType>(parameterThreshold)) {
+//                            allToSmallNonMon = false;
+//                            break;
+//                        }
+//                    }
+//                } else {
+//                    allToSmallMon = false;
+//                    allToSmallNonMon = false;
+//                }
+//
+//                // Heuristic for splitting when a splitThreshold is given
+//                // Split in mon in the following cases:
+//                //  - mon set, and variable range still makes sense
+//                //  - nonmon set, but variable range for nonmon is too small and variable range for mon still makes sense
+//                //  - both ranges for mon and nonmon are too small and last split was in nonmon
+//                bool splitMon = (onlyMonotoneVars && !allToSmallMon)
+//                                    || (!onlyMonotoneVars && allToSmallNonMon && !allToSmallMon)
+//                                    || (allToSmallMon && allToSmallNonMon && !lastSplitMonotone);
+//                bool splitNonMon = (!onlyMonotoneVars && !allToSmallNonMon)
+//                                   || (!onlyMonotoneVars && !allToSmallNonMon && allToSmallMon)
+//                                   || (allToSmallMon && allToSmallNonMon && lastSplitMonotone);
+//                assert (splitMon || splitNonMon);
+//                splitIndex = splitMon ? splitIndexMon : splitIndexNonMon;
+//                vertices = getVerticesOfRegion(splitMon ? monNonMonVariables.first : monNonMonVariables.second);
+//                lastSplitMonotone = allToSmallNonMon && allToSmallMon ? !lastSplitMonotone : lastSplitMonotone;
+//                if (splitMon) {
+//                    splitIndexMon = (splitIndexMon + splitThreshold.get()) % monNonMonVariables.first.size();
+//                } else {
+//                    splitIndexNonMon = (splitIndexNonMon + splitThreshold.get()) % monNonMonVariables.second.size();
+//                }
+//
+//                auto textLookingAt = onlyMonotoneVars ? "non-monotone" : "monotone";
+//                auto textOriginal = onlyMonotoneVars ? "monotone" : "non-monotone";
+//
+//                if ((allToSmallMon && !allToSmallNonMon) || (allToSmallNonMon && !allToSmallMon)) {
+//                    switchOutput = true;
+//                    STORM_LOG_INFO("Looking at " << textLookingAt << " instead of " << textOriginal);
+//                }
+//            } else {
+//                if (onlyMonotoneVars) {
+//                    vertices = getVerticesOfRegion(monNonMonVariables.first);
+//                } else {
+//                    vertices = getVerticesOfRegion(monNonMonVariables.second);
+//                }
+//            }
+//
+//            auto textOriginal = (!switchOutput && onlyMonotoneVars) || (switchOutput && !onlyMonotoneVars) ? "monotone" : "non-monotone";
+//            STORM_LOG_INFO("Splitting region " << this->toString() << " in " << vertices.size()
+//                                               << " regions (original implementation would have splitted in 2^"
+//                                               << this->getVariables().size() << ").");
+//            if (splitThreshold) {
+//                STORM_LOG_INFO("Using only " << textOriginal << " variables capped at " << splitThreshold.get()
+//                                             << " variables per split.");
+//            } else {
+//                STORM_LOG_INFO("Using only " << textOriginal << " variables.");
+//            }
+//
+//            for (auto const& vertex : vertices) {
+//                //The resulting subregion is the smallest region containing vertex and splittingPoint.
+//                Valuation subLower, subUpper;
+//                for (auto variableBound : this->lowerBoundaries) {
+//                    VariableType variable = variableBound.first;
+//                    auto vertexEntry=vertex.find(variable);
+//                    if (vertexEntry != vertex.end()) {
+//                        auto splittingPointEntry = splittingPoint.find(variable);
+//                        CoefficientType diff = getUpperBoundary(variable) - getLowerBoundary(variable);
+//                        if (parameterThreshold < 1 && diff < storm::utility::convertNumber<CoefficientType>(parameterThreshold)) {
+//                            subLower.insert(typename Valuation::value_type(variable, getLowerBoundary(variable)));
+//                            subUpper.insert(typename Valuation::value_type(variable, getUpperBoundary(variable)));
+//                        } else {
+//                            subLower.insert(typename Valuation::value_type(variable, std::min(vertexEntry->second, splittingPointEntry->second)));
+//                            subUpper.insert(typename Valuation::value_type(variable, std::max(vertexEntry->second, splittingPointEntry->second)));
+//                        }
+//                    } else {
+//                        subLower.insert(typename Valuation::value_type(variable, getLowerBoundary(variable)));
+//                        subUpper.insert(typename Valuation::value_type(variable, getUpperBoundary(variable)));
+//                    }
+//                }
+//
+//                ParameterRegion<ParametricType> subRegion(std::move(subLower), std::move(subUpper), this->splitThreshold);
+//                subRegion.setNextVariableRangMon(splitIndexMon);
+//                subRegion.setNextVariableRangNonMon(splitIndexNonMon);
+//                subRegion.setLastSplitMonotone(lastSplitMonotone);
+//
+//                if (!storm::utility::isZero(subRegion.area())) {
+//                    regionVector.push_back(std::move(subRegion));
+//                }
+//            }
+//        }
 
         template<typename ParametricType>
         void ParameterRegion<ParametricType>::split(const ParameterRegion::Valuation &splittingPoint,
                                                     std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector,
                                                     const std::set<VariableType> &consideredVariables) const {
+            assert (!splitThreshold || consideredVariables.size() < splitThreshold.get());
 
             if (consideredVariables.size() == 2) {
                 // TODO: Clean this up
@@ -527,6 +496,16 @@ namespace storm {
 
 
             return val;
+        }
+
+        template<typename ParametricType>
+        int ParameterRegion<ParametricType>::getSplitThreshold() const {
+            return splitThreshold.get();
+        }
+
+        template<typename ParametricType>
+        boost::optional<int> ParameterRegion<ParametricType>::getOptionalSplitThreshold() const {
+            return splitThreshold;
         }
 
         template <typename ParametricType>

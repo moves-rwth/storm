@@ -53,7 +53,9 @@ namespace storm {
              * Returns the center point of this region
              */
             Valuation getCenterPoint() const;
-                
+            int getSplitThreshold() const;
+            boost::optional<int> getOptionalSplitThreshold() const;
+
             /*!
              * Returns the area of this region
              */
@@ -67,7 +69,7 @@ namespace storm {
             void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector) const;
             void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector, std::set<VariableType> const& consideredVariables) const;
 
-            void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector, storm::analysis::MonotonicityResult<VariableType> & monRes, bool onlyMonotoneVars, double parameterThreshold);
+//            void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector, storm::analysis::MonotonicityResult<VariableType> & monRes, bool onlyMonotoneVars, double parameterThreshold);
             Valuation getPoint(storm::solver::OptimizationDirection dir, storm::analysis::MonotonicityResult<VariableType> & monRes) const;
             Valuation getPoint(storm::solver::OptimizationDirection dir, std::set<VariableType> const& possibleMonotoneIncrParameters, std::set<VariableType>const & possibleMonotoneDecrParameters) const;
 

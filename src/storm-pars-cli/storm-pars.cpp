@@ -437,6 +437,7 @@ namespace storm {
             auto engine = regionSettings.getRegionCheckEngine();
             storm::solver::OptimizationDirection direction = regionSettings.getExtremumDirection();
             ValueType precision = storm::utility::convertNumber<ValueType>(regionSettings.getExtremumValuePrecision());
+            bool generateSplitEstimates = regionSettings.isSplittingThresholdSet();
             for (auto const& property : input.properties) {
                 for (auto const& region : regions) {
                     if (useMonotonicity) {
@@ -451,7 +452,8 @@ namespace storm {
                                                                                      << "..." << std::endl);
                     }
                     storm::utility::Stopwatch watch(true);
-                    auto valueValuation = storm::api::computeExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(property.getRawFormula(), true), region, engine, direction, precision, useMonotonicity, useOnlyGlobal, useBounds, monotoneParameters);
+                    auto valueValuation = storm::api::computeExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(property.getRawFormula(), true), region, engine, direction, precision, useMonotonicity, generateSplitEstimates, useOnlyGlobal, useBounds, monotoneParameters);
+                    assert ((!region.getOptionalSplitThreshold()  && !generateSplitEstimates) || (region.getOptionalSplitThreshold() && generateSplitEstimates));
                     watch.stop();
                     std::stringstream valuationStr;
                     bool first = true;

@@ -621,13 +621,25 @@ namespace storm {
             }
             if (regionVector.size() == 0) {
                 std::multimap<double,typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> sortedOnValues;
+
                 for (auto& entry : regionSplitEstimates) {
                     sortedOnValues.insert({-entry.second, entry.first});
                 }
                 std::set<VariableType> consideredVariables;
-                for (auto itr = sortedOnValues.begin(); itr != sortedOnValues.end() && consideredVariables.size() < 2; ++itr) {
-                    if (!monRes.isMonotone(itr->second)) {
-                        consideredVariables.insert(itr->second);
+                if (regionSplitEstimationsEnabled) {
+                    assert (region.getOptionalSplitThreshold());
+                    for (auto itr = sortedOnValues.begin();
+                         itr != sortedOnValues.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
+                        if (!monRes.isMonotone(itr->second)) {
+                            consideredVariables.insert(itr->second);
+                        }
+                    }
+                } else {
+                    for (auto itr = sortedOnValues.begin();
+                        itr != sortedOnValues.end() && consideredVariables.size() < 2; ++itr) {
+                        if (itr->second != 0) {
+                            consideredVariables.insert(itr->second);
+                        }
                     }
                 }
 

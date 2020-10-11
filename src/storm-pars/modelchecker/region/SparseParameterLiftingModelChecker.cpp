@@ -266,7 +266,7 @@ namespace storm {
                     monRes->getGlobalMonotonicityResult()->splitBasedOnMonotonicity(region.getVariables(), monIncr, monDecr, notMon);
                     if (monIncr.size() == 0 && monDecr.size() == 0 && notMon.size() > 10) {
                         notMon.clear();
-                        checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, region.getVariables(), *(monRes->getGlobalMonotonicityResult()));
+                        checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, region.getVariables(), dir);
                         STORM_LOG_INFO("Getting initial vertices based on possible monotonicity");
                     } else {
                         std::string monParams;
@@ -292,7 +292,7 @@ namespace storm {
                             auto i = monIncr.size() + monDecr.size();
                             STORM_LOG_INFO("    Global monotonicity found for " << i << " parameters.");
                             std::set<VariableType> newNotMon;
-                            checkForPossibleMonotonicity(env, region, monIncr, monDecr, newNotMon, notMon, *(monRes->getGlobalMonotonicityResult()));
+                            checkForPossibleMonotonicity(env, region, monIncr, monDecr, newNotMon, notMon, dir);
                             STORM_LOG_INFO("    Monotone parameters: " << monParams);
                             STORM_LOG_INFO("    Possible global monotonicity found for " << (monIncr.size() + monDecr.size() - i) << " parameters.");
                             notMon = std::move(newNotMon);
@@ -508,11 +508,8 @@ namespace storm {
                                                                                                              std::set<VariableType>& possibleMonotoneDecrParameters,
                                                                                                              std::set<VariableType>& possibleNotMonotoneParameters,
                                                                                                              std::set<VariableType>const& consideredVariables,
-                                                                                                             storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> & monRes) {
-
-            bool minimize = isLowerBound(this->currentCheckTask->getBound().comparisonType);
-            // For each of the variables create a model in which we only change the value for this specific variable
-
+                                                                                                             storm::solver::OptimizationDirection const& dir) {
+            bool minimize = storm::solver::minimize(dir);
             for (auto& var : consideredVariables) {
                 ConstantType previousCenter = -1;
                 ConstantType previousUpper = -1;
@@ -523,30 +520,10 @@ namespace storm {
                 auto valuationLower = region.getLowerBoundaries();
                 auto valuationUpper = region.getUpperBoundaries();
 
-                // Check monotonicity in variable (*itr) by instantiating the model
-                // all other variables fixed on lb, only increasing (*itr)
-                for (auto& entry : monRes.getMonotonicityResult()) {
-                    if (monRes.isDoneForVar(entry.first) && (entry.second != storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>::Monotonicity::Not ||
-                            entry.second != storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>::Monotonicity::Unknown)) {
-                        if ((entry.second == storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>::Monotonicity::Incr && minimize)
-                            || (entry.second == storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>::Monotonicity::Decr && !minimize)){
-                            auto & val =region.getUpperBoundary(entry.first);
-                            valuationCenter[entry.first] = val;
-                            valuationLower[entry.first] = val;
-                            valuationUpper[entry.first] = val;
-                        } else if ((entry.second == storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>::Monotonicity::Incr && !minimize)
-                                   || (entry.second == storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>::Monotonicity::Decr && minimize)){
-                            auto & val =region.getUpperBoundary(entry.first);
-                            valuationCenter[entry.first] = val;
-                            valuationLower[entry.first] = val;
-                            valuationUpper[entry.first] = val;
-                        }
-                    }
-                }
-
                 valuationCenter[var] = region.getLowerBoundary(var);
                 valuationLower[var] = region.getLowerBoundary(var);
                 valuationUpper[var] = region.getLowerBoundary(var);
+                // TODO: make cmdline argument
                 int numberOfSamples = 10;
                 auto stepSize = (region.getUpperBoundary(var) - region.getLowerBoundary(var)) / numberOfSamples;
 
@@ -555,9 +532,9 @@ namespace storm {
                     assert (valuationLower[var] <= region.getUpperBoundary(var));
                     assert (valuationUpper[var] <= region.getUpperBoundary(var));
 
+                    ConstantType valueLower = getInstantiationChecker().check(env, valuationLower)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
                     ConstantType valueCenter = getInstantiationChecker().check(env, valuationCenter)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
                     ConstantType valueUpper = getInstantiationChecker().check(env, valuationUpper)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
-                    ConstantType valueLower = getInstantiationChecker().check(env, valuationLower)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
 
                     // Calculate difference with result for previous valuation
                     ConstantType diffCenter = previousCenter - valueCenter;
@@ -571,6 +548,8 @@ namespace storm {
                         assert (previousUpper != -1 && previousCenter != -1);
                         monDecr &= diffCenter > 0 && diffLower > 0 && diffUpper > 0; // then previous value is larger than the current value from the initial states
                         monIncr &= diffCenter < 0 && diffLower < 0 && diffUpper < 0;
+                    } else {
+                        assert (previousUpper == -1 && previousCenter == -1);
                     }
                     previousCenter = valueCenter;
                     previousLower = valueLower;
