@@ -141,52 +141,60 @@ namespace storm {
             ValueType& xi = globalX[sccState];
             bool firstRow = true;
             uint64_t bestRow;
-            
-            for (uint64_t row = this->A->getRowGroupIndices()[sccState]; row < this->A->getRowGroupIndices()[sccState + 1]; ++row) {
-                ValueType rowValue = globalB[row];
-                bool hasDiagonalEntry = false;
-                ValueType denominator;
-                for (auto const& entry : this->A->getRow(row)) {
-                    if (entry.getColumn() == sccState) {
-                        hasDiagonalEntry = true;
-                        denominator = storm::utility::one<ValueType>() - entry.getValue();
-                    } else {
-                        rowValue += entry.getValue() * globalX[entry.getColumn()];
-                    }
-                }
-                if (hasDiagonalEntry) {
-                    STORM_LOG_WARN_COND_DEBUG(storm::NumberTraits<ValueType>::IsExact || !storm::utility::isAlmostZero(denominator) || storm::utility::isZero(denominator), "State " << sccState << " has a selfloop with probability '1-(" << denominator << ")'. This could be an indication for numerical issues.");
-                    if (storm::utility::isZero(denominator)) {
-                        // In this case we have a selfloop on this state. This can never an optimal choice:
-                        // When minimizing, we are looking for the largest fixpoint (which will never be attained by this action)
-                        // When maximizing, this choice reflects probability zero (non-optimal) or reward infinity (should already be handled during preprocessing).
-                        continue;
-                    } else {
-                        rowValue /= denominator;
-                    }
-                }
-                if (firstRow) {
-                    xi = std::move(rowValue);
-                    bestRow = row;
-                    firstRow = false;
-                } else {
-                    if (minimize(dir)) {
-                        if (rowValue < xi) {
-                            xi = std::move(rowValue);
-                            bestRow = row;
-                        }
-                    } else {
-                        if (rowValue > xi) {
-                            xi = std::move(rowValue);
-                            bestRow = row;
+            if (this->fixedStates && this->fixedStates.get()[sccState]) {
+                STORM_LOG_INFO("Ignoring state" << sccState << " as the scheduler is fixed by monotonicity, current probability for this state is: " << this->schedulerChoices.get()[sccState]);
+            } else {
+                for (uint64_t row = this->A->getRowGroupIndices()[sccState];
+                     row < this->A->getRowGroupIndices()[sccState + 1]; ++row) {
+                    ValueType rowValue = globalB[row];
+                    bool hasDiagonalEntry = false;
+                    ValueType denominator;
+                    for (auto const &entry : this->A->getRow(row)) {
+                        if (entry.getColumn() == sccState) {
+                            hasDiagonalEntry = true;
+                            denominator = storm::utility::one<ValueType>() - entry.getValue();
+                        } else {
+                            rowValue += entry.getValue() * globalX[entry.getColumn()];
                         }
                     }
+                    if (hasDiagonalEntry) {
+                        STORM_LOG_WARN_COND_DEBUG(
+                                storm::NumberTraits<ValueType>::IsExact || !storm::utility::isAlmostZero(denominator) ||
+                                storm::utility::isZero(denominator),
+                                "State " << sccState << " has a selfloop with probability '1-(" << denominator
+                                         << ")'. This could be an indication for numerical issues.");
+                        if (storm::utility::isZero(denominator)) {
+                            // In this case we have a selfloop on this state. This can never an optimal choice:
+                            // When minimizing, we are looking for the largest fixpoint (which will never be attained by this action)
+                            // When maximizing, this choice reflects probability zero (non-optimal) or reward infinity (should already be handled during preprocessing).
+                            continue;
+                        } else {
+                            rowValue /= denominator;
+                        }
+                    }
+                    if (firstRow) {
+                        xi = std::move(rowValue);
+                        bestRow = row;
+                        firstRow = false;
+                    } else {
+                        if (minimize(dir)) {
+                            if (rowValue < xi) {
+                                xi = std::move(rowValue);
+                                bestRow = row;
+                            }
+                        } else {
+                            if (rowValue > xi) {
+                                xi = std::move(rowValue);
+                                bestRow = row;
+                            }
+                        }
+                    }
                 }
+                if (this->isTrackSchedulerSet()) {
+                    this->schedulerChoices.get()[sccState] = bestRow - this->A->getRowGroupIndices()[sccState];
+                }
+                STORM_LOG_THROW(!firstRow, storm::exceptions::UnexpectedException, "Empty row group in MinMax equation system.");
             }
-            if (this->isTrackSchedulerSet()) {
-                this->schedulerChoices.get()[sccState] = bestRow - this->A->getRowGroupIndices()[sccState];
-            }
-            STORM_LOG_THROW(!firstRow, storm::exceptions::UnexpectedException, "Empty row group in MinMax equation system.");
             //std::cout << "Solved trivial scc " << sccState << " with result " << globalX[sccState] << std::endl;
             return true;
         }
