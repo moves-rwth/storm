@@ -236,12 +236,11 @@ namespace storm {
             boost::optional<ConstantType> value;
             typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation valuation;
 
-
-
             auto cmp = storm::solver::minimize(dir) ?
                     [](RegionBound<SparseModelType, ConstantType> const& lhs, RegionBound<SparseModelType, ConstantType> const& rhs) { return lhs.bound > rhs.bound ; } :
                     [](RegionBound<SparseModelType, ConstantType> const& lhs, RegionBound<SparseModelType, ConstantType> const& rhs) { return lhs.bound < rhs.bound ; };
             std::priority_queue<RegionBound<SparseModelType, ConstantType>, std::vector<RegionBound<SparseModelType, ConstantType>>, decltype(cmp)> regionQueue(cmp);
+            storm::utility::Stopwatch initialWatch(true);
             if (this->isUseMonotonicitySet()) {
                 auto o = this->extendOrder(env, nullptr, region);
 
@@ -338,6 +337,12 @@ namespace storm {
                 }
             }
 
+            initialWatch.stop();
+            STORM_PRINT(std::endl << "Total time for initial points: " << initialWatch << "." << std::endl << std::endl);
+
+
+            storm::utility::Stopwatch loopWatch(true);
+            auto numberOfSplits = 0;
             auto totalArea = storm::utility::convertNumber<ConstantType>(region.area());
             auto coveredArea = storm::utility::zero<ConstantType>();
             while (!regionQueue.empty()) {
@@ -394,6 +399,9 @@ namespace storm {
 
                 if (newRegions.empty()) {
                     coveredArea += storm::utility::convertNumber<ConstantType>(currRegion.area());
+                } else {
+                    STORM_LOG_INFO("Splitting region " << currRegion << " into " << newRegions.size());
+                    numberOfSplits++;
                 }
                 regionQueue.pop();
 
@@ -437,6 +445,10 @@ namespace storm {
                 }
                 STORM_LOG_INFO("Covered " << (coveredArea * storm::utility::convertNumber<ConstantType>(100.0) / totalArea) << "% of the region." << std::endl);
             }
+
+            loopWatch.stop();
+            STORM_LOG_INFO("Total number of splits: " << numberOfSplits);
+            STORM_PRINT(std::endl << "Total time for region refinement: " << loopWatch << "." << std::endl << std::endl);
 
             return std::make_pair(storm::utility::convertNumber<typename SparseModelType::ValueType>(value.get()), valuation);
         }
