@@ -53,6 +53,7 @@ namespace storm {
              * @return Incr, Decr, Constant, Not or Unknown.
              */
             Monotonicity getMonotonicity(VariableType var) const;
+            bool isMonotone(VariableType var) const;
 
             /*!
              * Returns the results so far.
