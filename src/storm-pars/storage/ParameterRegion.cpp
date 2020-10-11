@@ -80,12 +80,12 @@ namespace storm {
         }
 
         template<typename ParametricType>
-        typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion<ParametricType>::getDifference(VariableType const& variable) const {
+        typename ParameterRegion<ParametricType>::CoefficientType ParameterRegion<ParametricType>::getDifference(VariableType const& variable) const {
             return getUpperBoundary(variable) - getLowerBoundary(variable);
         }
 
         template<typename ParametricType>
-        typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion<ParametricType>::getDifference(const std::string varName) const {
+        typename ParameterRegion<ParametricType>::CoefficientType ParameterRegion<ParametricType>::getDifference(const std::string varName) const {
             return getUpperBoundary(varName) - getLowerBoundary(varName);
         }
 

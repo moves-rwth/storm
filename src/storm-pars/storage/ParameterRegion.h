@@ -30,8 +30,8 @@ namespace storm {
             CoefficientType const& getLowerBoundary(const std::string varName) const;
             CoefficientType const& getUpperBoundary(VariableType const& variable) const;
             CoefficientType const& getUpperBoundary(const std::string varName) const;
-            CoefficientType const& getDifference(const std::string varName) const;
-            CoefficientType const& getDifference(VariableType const& variable) const;
+            CoefficientType getDifference(const std::string varName) const;
+            CoefficientType getDifference(VariableType const& variable) const;
             Valuation const& getLowerBoundaries() const;
             Valuation const& getUpperBoundaries() const;
 
