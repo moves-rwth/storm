@@ -184,12 +184,13 @@ namespace storm {
         template <typename ValueType>
         std::shared_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRegionModelChecker(Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine, bool allowModelSimplification = true, bool useMonotonicity = false, bool useOnlyGlobal = false, bool useBounds = false, boost::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>> monotoneParameters = boost::none) {
             switch (engine) {
+                // TODO: now we always use regionsplitestimates
                     case storm::modelchecker::RegionCheckEngine::ParameterLifting:
-                            return initializeParameterLiftingRegionModelChecker<ValueType, double>(env, model, task, false, allowModelSimplification, useMonotonicity, useOnlyGlobal, useBounds, monotoneParameters);
+                            return initializeParameterLiftingRegionModelChecker<ValueType, double>(env, model, task, true, allowModelSimplification, useMonotonicity, useOnlyGlobal, useBounds, monotoneParameters);
                     case storm::modelchecker::RegionCheckEngine::ExactParameterLifting:
-                            return initializeParameterLiftingRegionModelChecker<ValueType, storm::RationalNumber>(env, model, task, false, allowModelSimplification, useMonotonicity, useOnlyGlobal, useBounds, monotoneParameters);
+                            return initializeParameterLiftingRegionModelChecker<ValueType, storm::RationalNumber>(env, model, task, true, allowModelSimplification, useMonotonicity, useOnlyGlobal, useBounds, monotoneParameters);
                     case storm::modelchecker::RegionCheckEngine::ValidatingParameterLifting:
-                            return initializeValidatingRegionModelChecker<ValueType, double, storm::RationalNumber>(env, model, task, false, allowModelSimplification);
+                            return initializeValidatingRegionModelChecker<ValueType, double, storm::RationalNumber>(env, model, task, true, allowModelSimplification);
                     default:
                             STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unexpected region model checker type.");
             }
