@@ -319,7 +319,6 @@ namespace storm {
                     // TODO: this only works since we decided to keep all columns
                     auto const & occuringVariables = parameterLifter->getOccurringVariablesAtState();
                     for (auto state = 0; state < parameterLifter->getRowGroupCount(); ++state) {
-
                         auto oldStateNumber = parameterLifter->getOriginalStateNumber(state);
                         auto& variables = occuringVariables.at(oldStateNumber);
                         // point at which we start with rows for this state
@@ -332,7 +331,7 @@ namespace storm {
 
                             bool ignoreUpperBound = monotonicity == Monotonicity::Constant || (useMinimize && monotonicity == Monotonicity::Incr) || (!useMinimize && monotonicity == Monotonicity::Decr);
                             bool ignoreLowerBound = !ignoreUpperBound && ((useMinimize && monotonicity == Monotonicity::Decr) || (!useMinimize && monotonicity == Monotonicity::Incr));
-                            allMonotone &= ignoreUpperBound || ignoreLowerBound;
+                            allMonotone &= (ignoreUpperBound || ignoreLowerBound);
                             if (ignoreLowerBound) {
                                 if (useMinimize) {
                                     minSchedChoices.get()[state] = 1;

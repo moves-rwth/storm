@@ -115,8 +115,6 @@ namespace storm {
                 }
             }
 
-
-
             // Matrix and vector are now filled with constant results from constant functions and place holders for non-constant functions.
             matrix = builder.build(newRowIndex);
             vector.shrink_to_fit();

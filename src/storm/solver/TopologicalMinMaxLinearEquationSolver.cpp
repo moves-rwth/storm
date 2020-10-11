@@ -97,16 +97,16 @@ namespace storm {
                         sccRowsAsBitVector.clear();
                         for (auto const& group : scc) { // Group refers to state
                             bool allIgnored = true;
-                            for (uint64_t row = this->A->getRowGroupIndices()[group]; row < this->A->getRowGroupIndices()[group + 1]; ++row) {
-                                if (!this->fixedStates || !this->fixedStates.get()[group]) {
-                                    sccRowsAsBitVector.set(row, true);
-                                    allIgnored = false;
-                                }
-                            }
                             sccRowGroupsAsBitVector.set(group, true);
-                            if (allIgnored) {
+
+                            if (!this->fixedStates || !this->fixedStates.get()[group]) {
+                                for (uint64_t row = this->A->getRowGroupIndices()[group]; row < this->A->getRowGroupIndices()[group + 1]; ++row) {
+                                    sccRowsAsBitVector.set(row, true);
+                                }
+                            } else {
                                 auto row = this->A->getRowGroupIndices()[group]+this->getInitialScheduler()[group];
                                 sccRowsAsBitVector.set(row, true);
+                                STORM_LOG_INFO("Fixing state " << group << " to option " << this->getInitialScheduler()[group] << " because of local monotonicity.");
                             }
                         }
                         returnValue = solveScc(sccSolverEnvironment, dir, sccRowGroupsAsBitVector, sccRowsAsBitVector, x, b) && returnValue;
@@ -272,7 +272,7 @@ namespace storm {
         
         template<typename ValueType>
         bool TopologicalMinMaxLinearEquationSolver<ValueType>::solveScc(storm::Environment const& sccSolverEnvironment, OptimizationDirection dir, storm::storage::BitVector const& sccRowGroups, storm::storage::BitVector const& sccRows, std::vector<ValueType>& globalX, std::vector<ValueType> const& globalB) const {
-            
+
             // Set up the SCC solver
             if (!this->sccSolver) {
                 this->sccSolver = GeneralMinMaxLinearEquationSolverFactory<ValueType>().create(sccSolverEnvironment);
@@ -294,8 +294,16 @@ namespace storm {
             this->sccSolver->setTrackScheduler(this->isTrackSchedulerSet());
             
             // SCC Matrix
-            storm::storage::SparseMatrix<ValueType> sccA = this->A->getSubmatrix(false, sccRows, sccRows);
+            storm::storage::SparseMatrix<ValueType> sccA;
+            if (this->fixedStates) {
+                sccA = this->A->getSubmatrix(false, sccRows, sccRowGroups);
+            } else {
+                sccA = this->A->getSubmatrix(true, sccRowGroups, sccRowGroups);
+
+            }
+
 //            std::cout << "Matrix is " << sccA << std::endl;
+
             this->sccSolver->setMatrix(std::move(sccA));
             
             // x Vector
@@ -317,6 +325,13 @@ namespace storm {
             // initial scheduler
             if (this->hasInitialScheduler()) {
                 auto sccInitChoices = storm::utility::vector::filterVector(this->getInitialScheduler(), sccRowGroups);
+                if (this->fixedStates) {
+                    for (auto i : sccRowGroups) {
+                        if (this->fixedStates.get()[i]) {
+                            sccInitChoices[i] = 0;
+                        }
+                    }
+                }
                 this->sccSolver->setInitialScheduler(std::move(sccInitChoices));
             }
             

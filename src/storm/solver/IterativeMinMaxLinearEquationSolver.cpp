@@ -98,13 +98,18 @@ namespace storm {
             // Resolve the nondeterminism according to the given scheduler.
             bool convertToEquationSystem = this->linearEquationSolverFactory->getEquationProblemFormat(env) == LinearEquationSolverProblemFormat::EquationSystem;
             storm::storage::SparseMatrix<ValueType> submatrix;
+            if (this->fixedStates) {
+                for (auto state : this->fixedStates.get()) {
+                    assert (this->A->getRowGroupSize(state) == 1);
+                }
+            }
 
             submatrix = this->A->selectRowsFromRowGroups(scheduler, convertToEquationSystem);
             if (convertToEquationSystem) {
                 submatrix.convertToEquationSystem();
             }
             storm::utility::vector::selectVectorValues<ValueType>(subB, scheduler, this->A->getRowGroupIndices(), originalB);
-            
+
             // Check whether the linear equation solver is already initialized
             if (!linearEquationSolver) {
                 // Initialize the equation solver
