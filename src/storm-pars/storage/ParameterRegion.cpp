@@ -46,7 +46,7 @@ namespace storm {
         }
 
         template<typename ParametricType>
-            typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion<ParametricType>::getLowerBoundary(VariableType const& variable) const {
+        typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion<ParametricType>::getLowerBoundary(VariableType const& variable) const {
             auto const& result = lowerBoundaries.find(variable);
             if (result == lowerBoundaries.end()) {
                 std::cout << variable << std::endl;
@@ -80,6 +80,16 @@ namespace storm {
                 }
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Tried to find an upper boundary for variableName " << varName << " which is not specified by this region");
+        }
+
+        template<typename ParametricType>
+        typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion<ParametricType>::getDifference(VariableType const& variable) const {
+            return getUpperBoundary(variable) - getLowerBoundary(variable);
+        }
+
+        template<typename ParametricType>
+        typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion<ParametricType>::getDifference(const std::string varName) const {
+            return getUpperBoundary(varName) - getLowerBoundary(varName);
         }
 
         template<typename ParametricType>
