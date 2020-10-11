@@ -266,7 +266,7 @@ namespace storm {
                     monRes->getGlobalMonotonicityResult()->splitBasedOnMonotonicity(region.getVariables(), monIncr, monDecr, notMon);
                     if (monIncr.size() == 0 && monDecr.size() == 0 && notMon.size() > 10) {
                         notMon.clear();
-                        checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, region.getVariables());
+                        checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, region.getVariables(), *(monRes->getGlobalMonotonicityResult()));
                         STORM_LOG_INFO("Getting initial vertices based on possible monotonicity");
                     } else {
                         std::string monParams;
@@ -292,7 +292,7 @@ namespace storm {
                             auto i = monIncr.size() + monDecr.size();
                             STORM_LOG_INFO("    Global monotonicity found for " << i << " parameters.");
                             std::set<VariableType> newNotMon;
-                            checkForPossibleMonotonicity(env, region, monIncr, monDecr, newNotMon, notMon);
+                            checkForPossibleMonotonicity(env, region, monIncr, monDecr, newNotMon, notMon, *(monRes->getGlobalMonotonicityResult()));
                             STORM_LOG_INFO("    Monotone parameters: " << monParams);
                             STORM_LOG_INFO("    Possible global monotonicity found for " << (monIncr.size() + monDecr.size() - i) << " parameters.");
                             notMon = std::move(newNotMon);
@@ -506,8 +506,11 @@ namespace storm {
                                                                                                              const storage::ParameterRegion<typename SparseModelType::ValueType> &region,
                                                                                                              std::set<VariableType>& possibleMonotoneIncrParameters,
                                                                                                              std::set<VariableType>& possibleMonotoneDecrParameters,
-                                                                                                             std::set<VariableType>& possibleNotMonotoneParameters, std::set<VariableType>const& consideredVariables) {
+                                                                                                             std::set<VariableType>& possibleNotMonotoneParameters,
+                                                                                                             std::set<VariableType>const& consideredVariables,
+                                                                                                             storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> & monRes) {
 
+            bool minimize = isLowerBound(this->currentCheckTask->getBound().comparisonType);
             // For each of the variables create a model in which we only change the value for this specific variable
 
             for (auto& var : consideredVariables) {
@@ -516,12 +519,31 @@ namespace storm {
                 ConstantType previousLower = -1;
                 bool monDecr = true;
                 bool monIncr = true;
-
-                // Check monotonicity in variable (*itr) by instantiating the model
-                // all other variables fixed on lb, only increasing (*itr)
                 auto valuationCenter = region.getCenterPoint();
                 auto valuationLower = region.getLowerBoundaries();
                 auto valuationUpper = region.getUpperBoundaries();
+
+                // Check monotonicity in variable (*itr) by instantiating the model
+                // all other variables fixed on lb, only increasing (*itr)
+                for (auto& entry : monRes.getMonotonicityResult()) {
+                    if (monRes.isDoneForVar(entry.first) && (entry.second != storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>::Monotonicity::Not ||
+                            entry.second != storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>::Monotonicity::Unknown)) {
+                        if ((entry.second == storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>::Monotonicity::Incr && minimize)
+                            || (entry.second == storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>::Monotonicity::Decr && !minimize)){
+                            auto & val =region.getUpperBoundary(entry.first);
+                            valuationCenter[entry.first] = val;
+                            valuationLower[entry.first] = val;
+                            valuationUpper[entry.first] = val;
+                        } else if ((entry.second == storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>::Monotonicity::Incr && !minimize)
+                                   || (entry.second == storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>::Monotonicity::Decr && minimize)){
+                            auto & val =region.getUpperBoundary(entry.first);
+                            valuationCenter[entry.first] = val;
+                            valuationLower[entry.first] = val;
+                            valuationUpper[entry.first] = val;
+                        }
+                    }
+                }
+
                 valuationCenter[var] = region.getLowerBoundary(var);
                 valuationLower[var] = region.getLowerBoundary(var);
                 valuationUpper[var] = region.getLowerBoundary(var);
