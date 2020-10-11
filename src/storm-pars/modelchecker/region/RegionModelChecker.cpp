@@ -384,13 +384,13 @@ namespace storm {
 
         template <typename ParametricType>
         void RegionModelChecker<ParametricType>::setUseBounds(bool bounds) {
-            assert (useMonotonicity);
+            assert (!bounds || useMonotonicity);
             this->useBounds = bounds;
         }
 
         template <typename ParametricType>
         void RegionModelChecker<ParametricType>::setUseOnlyGlobal(bool global) {
-            assert (useMonotonicity);
+            assert (!global || useMonotonicity);
             this->useOnlyGlobal = global;
         }
 
