@@ -48,9 +48,6 @@ namespace storm {
         template<typename ParametricType>
         typename ParameterRegion<ParametricType>::CoefficientType const& ParameterRegion<ParametricType>::getLowerBoundary(VariableType const& variable) const {
             auto const& result = lowerBoundaries.find(variable);
-            if (result == lowerBoundaries.end()) {
-                std::cout << variable << std::endl;
-            }
             STORM_LOG_THROW(result != lowerBoundaries.end(), storm::exceptions::InvalidArgumentException, "Tried to find a lower boundary for variable " << variable << " which is not specified by this region");
             return (*result).second;
         }
@@ -482,11 +479,13 @@ namespace storm {
         template<typename ParametricType>
         typename ParameterRegion<ParametricType>::Valuation ParameterRegion<ParametricType>::getPoint(storm::solver::OptimizationDirection dir, storm::analysis::MonotonicityResult<VariableType> &monRes) const {
             auto val = this->getCenterPoint();
-            for (auto monRes : monRes.getMonotonicityResult()) {
-                if (monRes.second == storm::analysis::MonotonicityResult<VariableType>::Monotonicity::Incr) {
-                    val[monRes.first] = storm::solver::minimize(dir) ? getLowerBoundary(monRes.first) : getUpperBoundary(monRes.first);
-                } else if (monRes.second == storm::analysis::MonotonicityResult<VariableType>::Monotonicity::Decr) {
-                    val[monRes.first] = storm::solver::maximize(dir) ? getLowerBoundary(monRes.first) : getUpperBoundary(monRes.first);
+            for (auto monResEntry : monRes.getMonotonicityResult()) {
+                if (monRes.isDoneForVar(monResEntry.first)) {
+                    if (monResEntry.second == storm::analysis::MonotonicityResult<VariableType>::Monotonicity::Incr) {
+                        val[monResEntry.first] = storm::solver::minimize(dir) ? getLowerBoundary(monResEntry.first) : getUpperBoundary(monResEntry.first);
+                    } else if (monResEntry.second == storm::analysis::MonotonicityResult<VariableType>::Monotonicity::Decr) {
+                        val[monResEntry.first] = storm::solver::maximize(dir) ? getLowerBoundary(monResEntry.first) : getUpperBoundary(monResEntry.first);
+                    }
                 }
             }
             return val;
