@@ -368,8 +368,30 @@ namespace storm {
         }
 
         template <typename ParametricType>
-        void RegionModelChecker<ParametricType>::setUseMonotonicityInFuture(bool monotonicity) {
+        bool RegionModelChecker<ParametricType>::isUseBoundsSet() {
+            return useBounds;
+        }
+
+        template <typename ParametricType>
+        bool RegionModelChecker<ParametricType>::isOnlyGlobalSet() {
+            return useOnlyGlobal;
+        }
+
+        template <typename ParametricType>
+        void RegionModelChecker<ParametricType>::setUseMonotonicity(bool monotonicity) {
             this->useMonotonicity = monotonicity;
+        }
+
+        template <typename ParametricType>
+        void RegionModelChecker<ParametricType>::setUseBounds(bool bounds) {
+            assert (useMonotonicity);
+            this->useBounds = bounds;
+        }
+
+        template <typename ParametricType>
+        void RegionModelChecker<ParametricType>::setUseOnlyGlobal(bool global) {
+            assert (useMonotonicity);
+            this->useOnlyGlobal = global;
         }
 
         template <typename ParametricType>

@@ -370,7 +370,7 @@ namespace storm {
 
                 if ((storm::solver::minimize(dir) && currBound < value.get() - storm::utility::convertNumber<ConstantType>(precision))
                     || (!storm::solver::minimize(dir) && currBound > value.get() + storm::utility::convertNumber<ConstantType>(precision))) {
-                    if (this->isUseMonotonicitySet() && !order->getDoneBuilding()) {
+                    if (this->isUseBoundsSet() && !order->getDoneBuilding()) {
                         if (storm::solver::minimize(dir)) {
                             orderExtender->setMinValues(order, bounds);
                             orderExtender->setMaxValues(order, getBound(env, currRegion, storm::solver::OptimizationDirection::Maximize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());

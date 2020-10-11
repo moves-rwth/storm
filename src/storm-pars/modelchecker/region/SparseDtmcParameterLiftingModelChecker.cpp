@@ -305,7 +305,8 @@ namespace storm {
                 }
                 solver->setTrackScheduler(true);
 
-                if (localMonotonicityResult != nullptr) {
+                if (!this->isOnlyGlobalSet() && this->isUseMonotonicitySet()) {
+                    assert (localMonotonicityResult != nullptr);
                     storm::storage::BitVector fixedStates(parameterLifter->getRowGroupCount(), false);
 
                     bool useMinimize = storm::solver::minimize(dirForParameters);

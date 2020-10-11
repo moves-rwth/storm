@@ -23,7 +23,7 @@ namespace storm {
                  */
                 bool isMonotonicityAnalysisSet() const;
 
-                bool isUsePLAForMonotonicityAnalysis() const;
+                bool isUsePLABoundsSet() const;
 
                 /*!
                  * Retrieves whether SCCs in the monotonicity analysis should be eliminated.
@@ -56,6 +56,7 @@ namespace storm {
                  *
                  */
                 bool isExportMonotonicitySet() const;
+
                 bool isMonSolutionSet() const;
 
                 /*!
@@ -73,7 +74,7 @@ namespace storm {
 
             private:
                 const static std::string monotonicityAnalysis;
-                const static std::string plaForMonotonicityAnalysis;
+                const static std::string usePLABounds;
                 const static std::string sccElimination;
                 const static std::string samplesMonotonicityAnalysis;
                 const static std::string precision;
