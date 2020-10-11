@@ -97,7 +97,9 @@ namespace storm {
             
             // Resolve the nondeterminism according to the given scheduler.
             bool convertToEquationSystem = this->linearEquationSolverFactory->getEquationProblemFormat(env) == LinearEquationSolverProblemFormat::EquationSystem;
-            storm::storage::SparseMatrix<ValueType> submatrix = this->A->selectRowsFromRowGroups(scheduler, convertToEquationSystem);
+            storm::storage::SparseMatrix<ValueType> submatrix;
+
+            submatrix = this->A->selectRowsFromRowGroups(scheduler, convertToEquationSystem);
             if (convertToEquationSystem) {
                 submatrix.convertToEquationSystem();
             }
@@ -168,6 +170,7 @@ namespace storm {
                 // Group staat voor de states?
                 for (uint_fast64_t group = 0; group < this->A->getRowGroupCount(); ++group) {
                     uint_fast64_t currentChoice = scheduler[group];
+                    // TODO: remove, as this should already be fixed by implementation to determine matrix/vector
                     if (!this->fixedStates || (this->fixedStates && !(this->fixedStates.get()[group]))) {
                         for (uint_fast64_t choice = this->A->getRowGroupIndices()[group];
                              choice < this->A->getRowGroupIndices()[group + 1]; ++choice) {
