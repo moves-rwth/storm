@@ -266,7 +266,6 @@ namespace storm {
         
         template <typename SparseModelType, typename ConstantType>
         std::unique_ptr<CheckResult> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) {
-            typedef typename storm::analysis::MonotonicityResult<VariableType>::Monotonicity Monotonicity;
 
             if (maybeStates.empty()) {
                 return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(resultsForNonMaybeStates);
@@ -554,9 +553,9 @@ namespace storm {
                 } else {
                     for (auto const& var : variables) {
                         auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
-                        if (monotonicity == storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Unknown || monotonicity == storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Not) {
+                        if (monotonicity == Monotonicity::Unknown || monotonicity == Monotonicity::Not) {
                             monotonicity = monotonicityChecker->checkLocalMonotonicity(order, state, var, region);
-                            if (monotonicity == storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Unknown ||  monotonicity == storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Not) {
+                            if (monotonicity == Monotonicity::Unknown ||  monotonicity == Monotonicity::Not) {
                                 // TODO: Skip for now?
                             } else {
                                 localMonotonicityResult->setMonotonicity(state, var, monotonicity);
@@ -573,7 +572,7 @@ namespace storm {
                 auto var = entry.first;
                 bool done = true;
                 for (auto const& state : states) {
-                    done &= order->contains(state) && localMonotonicityResult->getMonotonicity(state, var) != storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Unknown;
+                    done &= order->contains(state) && localMonotonicityResult->getMonotonicity(state, var) != Monotonicity::Unknown;
                     auto check = localMonotonicityResult->getMonotonicity(state, var);
                     if (!done) {
                         break;
@@ -599,9 +598,10 @@ namespace storm {
                 storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> & monRes) const {
             assert (order !=  nullptr);
             if (!order->getDoneBuilding() && this->orderExtender) {
+                STORM_LOG_INFO("Trying to split in variables which occur in both unknown states of the reachability order");
                 auto states = this->orderExtender.get().getUnknownStates((order));
                 if (states.first != states.second) {
-                    auto variablesAtStates = parameterLifter->getOccurringVariablesAtState();
+                    auto& variablesAtStates = parameterLifter->getOccurringVariablesAtState();
                     std::set<VariableType> variables = variablesAtStates[states.first];
                     bool sameVariables = false;
 
@@ -612,26 +612,27 @@ namespace storm {
                         }
                         variables.insert(var);
                     }
-                    if (!sameVariables) {
+                    if (sameVariables) {
+                        STORM_LOG_INFO("Splitting in 2^" << variables.size() << " variables where original implementation would have splitted in 2^" << region.getVariables().size());
                         region.split(region.getCenterPoint(), regionVector, variables);
+
                     }
                 }
             }
             if (regionVector.size() == 0) {
-                if (thresholdTask) {
-                    ConstantType currentValue = SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::lastValue;
-                    ConstantType difference = abs(thresholdTask.get() - currentValue);
-                    ConstantType thresholdDifference = 0.5;
-                    if (difference < thresholdDifference) {
-                        region.split(region.getCenterPoint(), regionVector, monRes, true,
-                                     storm::utility::convertNumber<double>(difference));
-                    } else {
-                        region.split(region.getCenterPoint(), regionVector, monRes, false,
-                                     storm::utility::convertNumber<double>(difference));
-                    }
-                } else {
-                    region.split(region.getCenterPoint(), regionVector, monRes, false, 1);
+                std::multimap<double,typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> sortedOnValues;
+                for (auto& entry : regionSplitEstimates) {
+                    sortedOnValues.insert({-entry.second, entry.first});
                 }
+                std::set<VariableType> consideredVariables;
+                for (auto itr = sortedOnValues.begin(); itr != sortedOnValues.end() && consideredVariables.size() < 2; ++itr) {
+                    if (!monRes.isMonotone(itr->second)) {
+                        consideredVariables.insert(itr->second);
+                    }
+                }
+
+                STORM_LOG_INFO("Splitting in 2^" << consideredVariables.size() << " variables where original implementation would have splitted in 2^" << region.getVariables().size());
+                region.split(region.getCenterPoint(), regionVector, std::move(consideredVariables));
             }
         }
 

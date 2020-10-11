@@ -19,6 +19,7 @@ namespace storm {
         class SparseDtmcParameterLiftingModelChecker : public SparseParameterLiftingModelChecker<SparseModelType, ConstantType> {
         public:
             typedef typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType VariableType;
+            typedef typename storm::analysis::MonotonicityResult<VariableType>::Monotonicity Monotonicity;
             SparseDtmcParameterLiftingModelChecker();
             SparseDtmcParameterLiftingModelChecker(std::unique_ptr<storm::solver::MinMaxLinearEquationSolverFactory<ConstantType>>&& solverFactory);
             virtual ~SparseDtmcParameterLiftingModelChecker() = default;
