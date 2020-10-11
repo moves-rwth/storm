@@ -264,7 +264,7 @@ namespace storm {
                 } else {
                     std::set<VariableType> monIncr, monDecr, notMon;
                     monRes->getGlobalMonotonicityResult()->splitBasedOnMonotonicity(region.getVariables(), monIncr, monDecr, notMon);
-                    if (monIncr.size() == 0 && monDecr.size() == 0 && notMon.size() > 10) {
+                    if (region.getOptionalSplitThreshold() && monIncr.size() == 0 && monDecr.size() == 0 && notMon.size() > region.getSplitThreshold()) {
                         notMon.clear();
                         checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, region.getVariables(), dir);
                         STORM_LOG_INFO("Getting initial vertices based on possible monotonicity");
@@ -287,7 +287,7 @@ namespace storm {
 
                         }
 
-                        if (notMon.size() > 10) {
+                        if (region.getOptionalSplitThreshold() && notMon.size() > region.getSplitThreshold()) {
                             STORM_LOG_INFO("Getting initial points based on global monotonicity and possible Monotonicity, as there are too many not monotone parameters (> 10)");
                             auto i = monIncr.size() + monDecr.size();
                             STORM_LOG_INFO("    Global monotonicity found for " << i << " parameters.");
