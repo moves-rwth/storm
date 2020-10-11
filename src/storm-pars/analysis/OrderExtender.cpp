@@ -304,7 +304,7 @@ namespace storm {
                 // Try to extend the order for this scc
                 return  extendByForwardReasoning(order, currentState, successors, allowMerge);
             } else {
-                assert (order->isTrivial(currentState));
+                assert (order->isTrivial(currentState) || !order->contains(currentState));
                 // Do backward reasoning, all successor states must be in the order
                 return  extendByBackwardReasoning(order, currentState, successors, allowMerge);
             }
