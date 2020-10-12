@@ -363,7 +363,7 @@ namespace storm {
         }
 
         template <typename ParametricType>
-        bool RegionModelChecker<ParametricType>::isUseMonotonicitySet() {
+        bool RegionModelChecker<ParametricType>::isUseMonotonicitySet() const{
             return useMonotonicity;
         }
 

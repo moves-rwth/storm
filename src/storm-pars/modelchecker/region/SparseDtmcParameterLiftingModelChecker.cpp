@@ -594,7 +594,7 @@ namespace storm {
                 std::shared_ptr<storm::analysis::Order> order,
                 storm::analysis::MonotonicityResult<VariableType> & monRes) const {
             assert (order !=  nullptr);
-            if (!order->getDoneBuilding() && this->orderExtender) {
+            if (order != nullptr && !order->getDoneBuilding() && this->orderExtender) {
                 STORM_LOG_INFO("Trying to split in variables which occur in both unknown states of the reachability order");
                 auto states = this->orderExtender.get().getUnknownStates((order));
                 if (states.first != states.second) {
@@ -624,7 +624,7 @@ namespace storm {
                     assert (region.getOptionalSplitThreshold());
                     for (auto itr = sortedOnValues.begin();
                          itr != sortedOnValues.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
-                        if (!monRes.isMonotone(itr->second)) {
+                        if (!this->isUseMonotonicitySet() || !monRes.isMonotone(itr->second)) {
                             consideredVariables.insert(itr->second);
                         }
                     }
@@ -638,14 +638,14 @@ namespace storm {
                     if (consideredVariables.size() == 0) {
                         // Take the five not monotone parameters with the largerest parameter space
                         for (auto itr = sortedOnDifference.begin(); itr != sortedOnDifference.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
-                            if (!monRes.isMonotone(itr->second)) {
+                            if (!this->isUseMonotonicitySet() || !monRes.isMonotone(itr->second)) {
                                 consideredVariables.insert(itr->second);
                             }
                         }
                     }
                 } else {
                     for (auto & entry : monRes.getMonotonicityResult()) {
-                        if (!monRes.isMonotone(entry.first)) {
+                        if (!this->isUseMonotonicitySet() || !monRes.isMonotone(entry.first)) {
                             consideredVariables.insert(entry.first);
                         }
                     }

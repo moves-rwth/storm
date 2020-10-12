@@ -84,7 +84,7 @@ namespace storm {
 
             virtual void setConstantEntries(std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
 
-            bool isUseMonotonicitySet();
+            bool isUseMonotonicitySet() const;
             bool isUseBoundsSet();
             bool isOnlyGlobalSet();
 

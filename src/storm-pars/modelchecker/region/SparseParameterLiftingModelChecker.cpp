@@ -390,7 +390,7 @@ namespace storm {
                             this->extendLocalMonotonicityResult(currRegion, order, localMonotonicityResult);
                         }
                     }
-                    if (this->isUseMonotonicitySet()) {
+                    if (this->isUseMonotonicitySet() || this->isRegionSplitEstimateSupported()) {
                         this->splitSmart(currRegion, newRegions, order, *(localMonotonicityResult->getGlobalMonotonicityResult()));
                     } else {
                         currRegion.split(currRegion.getCenterPoint(), newRegions);
