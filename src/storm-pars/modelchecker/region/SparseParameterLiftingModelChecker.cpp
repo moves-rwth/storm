@@ -447,7 +447,7 @@ namespace storm {
             }
 
             loopWatch.stop();
-            STORM_LOG_INFO("Total number of splits: " << numberOfSplits);
+            STORM_PRINT("Total number of splits: " << numberOfSplits);
             STORM_PRINT(std::endl << "Total time for region refinement: " << loopWatch << "." << std::endl << std::endl);
 
             return std::make_pair(storm::utility::convertNumber<typename SparseModelType::ValueType>(value.get()), valuation);
