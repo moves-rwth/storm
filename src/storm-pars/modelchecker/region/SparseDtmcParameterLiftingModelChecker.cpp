@@ -618,16 +618,7 @@ namespace storm {
             }
             if (regionVector.size() == 0) {
                 std::multimap<double, VariableType> sortedOnValues;
-                std::multimap<CoefficientType, VariableType> sortedOnDifference;
-
-                bool allZero = true;
-                for (auto& entry : regionSplitEstimates) {
-                    allZero &= entry.second == 0;
-                    sortedOnValues.insert({-entry.second, entry.first});
-                    if (allZero) {
-                        sortedOnDifference.insert({-region.getDifference(entry.first), entry.first});
-                    }
-                }
+                std::multimap<CoefficientType, VariableType> sortedOnDifference; // Difference between lower and upper boundary of parameter
                 std::set<VariableType> consideredVariables;
                 if (regionSplitEstimationsEnabled) {
                     assert (region.getOptionalSplitThreshold());
@@ -637,22 +628,30 @@ namespace storm {
                             consideredVariables.insert(itr->second);
                         }
                     }
+
+                    bool allZero = true;
+                    for (auto& entry : regionSplitEstimates) {
+                        allZero &= entry.second == 0;
+                        sortedOnValues.insert({-entry.second, entry.first});
+                        sortedOnDifference.insert({-region.getDifference(entry.first), entry.first});
+                    }
+                    if (consideredVariables.size() == 0) {
+                        // Take the five not monotone parameters with the largerest parameter space
+                        for (auto itr = sortedOnDifference.begin(); itr != sortedOnDifference.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
+                            if (!monRes.isMonotone(itr->second)) {
+                                consideredVariables.insert(itr->second);
+                            }
+                        }
+                    }
                 } else {
-                    for (auto itr = sortedOnValues.begin();
-                        itr != sortedOnValues.end() && consideredVariables.size() < 2; ++itr) {
-                        if (itr->second != 0) {
-                            consideredVariables.insert(itr->second);
+                    for (auto & entry : monRes.getMonotonicityResult()) {
+                        if (!monRes.isMonotone(entry.first)) {
+                            consideredVariables.insert(entry.first);
                         }
                     }
                 }
-                if (consideredVariables.size() == 0) {
-                    // Take the five not monotone parameters with the largerest parameter space
-                    for (auto itr = sortedOnDifference.begin(); itr != sortedOnDifference.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
-                        if (!monRes.isMonotone(itr->second)) {
-                            consideredVariables.insert(itr->second);
-                        }
-                    }
-                }
+
+                assert (consideredVariables.size() > 0 || (monRes.isDone() && monRes.isAllMonotonicity()));
 
                 STORM_LOG_INFO("Splitting in 2^" << consideredVariables.size() << " variables where original implementation would have splitted in 2^" << region.getVariables().size());
                 region.split(region.getCenterPoint(), regionVector, std::move(consideredVariables));
