@@ -390,8 +390,11 @@ namespace storm {
                             this->extendLocalMonotonicityResult(currRegion, order, localMonotonicityResult);
                         }
                     }
-                    if (this->isUseMonotonicitySet() || this->isRegionSplitEstimateSupported()) {
+                    if (this->isUseMonotonicitySet()) {
                         this->splitSmart(currRegion, newRegions, order, *(localMonotonicityResult->getGlobalMonotonicityResult()));
+                    } else if (this->isRegionSplitEstimateSupported()) {
+                        auto empty = storm::analysis::MonotonicityResult<VariableType>();
+                        this->splitSmart(currRegion, newRegions, order, empty);
                     } else {
                         currRegion.split(currRegion.getCenterPoint(), newRegions);
                     }
