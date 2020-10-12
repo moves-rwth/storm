@@ -151,7 +151,8 @@ namespace storm {
             bool firstRow = true;
             uint64_t bestRow;
             if (this->fixedStates && this->fixedStates.get()[sccState]) {
-                uint64_t row = this->A->getRowGroupIndices()[sccState] + this->schedulerChoices.get()[sccState];
+                assert (this->hasInitialScheduler());
+                uint64_t row = this->A->getRowGroupIndices()[sccState] + this->initialScheduler.get()[sccState];
                 ValueType rowValue = globalB[row];
                 bool hasDiagonalEntry = false;
                 ValueType denominator;
@@ -170,10 +171,8 @@ namespace storm {
                     rowValue /= denominator;
                 }
                 if (minimize(dir)) {
-                    assert (rowValue <= xi);
                     xi = std::move(rowValue);
                 } else {
-                    assert (rowValue >= xi);
                     xi = std::move(rowValue);
                 }
                 STORM_LOG_INFO("Ignoring state" << sccState << " as the scheduler is fixed by monotonicity, current probability for this state is: " << this->schedulerChoices.get()[sccState]);
@@ -325,14 +324,10 @@ namespace storm {
             // initial scheduler
             if (this->hasInitialScheduler()) {
                 auto sccInitChoices = storm::utility::vector::filterVector(this->getInitialScheduler(), sccRowGroups);
-                if (this->fixedStates) {
-                    for (auto i : sccRowGroups) {
-                        if (this->fixedStates.get()[i]) {
-                            sccInitChoices[i] = 0;
-                        }
-                    }
-                }
                 this->sccSolver->setInitialScheduler(std::move(sccInitChoices));
+                if (this->fixedStates) {
+                    this->sccSolver->updateScheduler();
+                }
             }
             
             // lower/upper bounds

@@ -71,6 +71,7 @@ namespace storm {
             void unsetOptimizationDirection();
 
             void setFixedStates(storm::storage::BitVector&& states);
+            void updateScheduler();
 
             /*!
              * Sets whether the solution to the min max equation system is known to be unique.

@@ -161,12 +161,15 @@ namespace storm {
         void MinMaxLinearEquationSolver<ValueType>::setFixedStates(storm::storage::BitVector&& states) {
             assert (!this->initialScheduler || states.size() == this->getInitialScheduler().size());
             this->fixedStates = std::move(states);
-            if (this->initialScheduler) {
-                for (auto state : this->fixedStates.get()) {
-                    initialScheduler.get()[state] = 0;
-                }
-            }
             assert (this->fixedStates);
+        }
+
+        template<class ValueType>
+        void MinMaxLinearEquationSolver<ValueType>::updateScheduler() {
+            assert (this->initialScheduler && this->fixedStates);
+            for (auto state : this->fixedStates.get()) {
+                this->initialScheduler.get()[state] = 0;
+            }
         }
 
         template<typename ValueType>
