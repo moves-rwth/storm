@@ -1664,6 +1664,40 @@ namespace storm {
             }
 
             template <typename T>
+            std::vector<uint_fast64_t> getBFSSort(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint_fast64_t> const& firstStates) {
+                storm::storage::BitVector seenStates(matrix.getRowGroupCount());
+
+                std::vector<uint_fast64_t> stateQueue;
+                stateQueue.reserve(matrix.getRowGroupCount());
+                std::vector<uint_fast64_t> result;
+                result.reserve(matrix.getRowGroupCount());
+
+                storm::storage::sparse::state_type currentPosition = 0;
+                auto count = matrix.getRowGroupCount() - 1;
+                for (auto const& state : firstStates) {
+                    stateQueue.push_back(state);
+                    result[count] = state;
+                    count--;
+                }
+
+                // Perform a BFS.
+                while (!stateQueue.empty()) {
+                    auto state = stateQueue.back();
+                    stateQueue.pop_back();
+                    seenStates.set(state);
+                    for (auto const& successorEntry : matrix.getRowGroup(state)) {
+                        auto succ = successorEntry.geColumn();
+                        if (!seenStates[succ]) {
+                            result[count] = succ;
+                            count--;
+                            stateQueue.insert(stateQueue.begin(), succ);
+                        }
+                    }
+                }
+                return result;
+            }
+
+            template <typename T>
             std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint64_t> const& firstStates) {
                 if (matrix.getRowCount() != matrix.getColumnCount()) {
                     STORM_LOG_ERROR("Provided matrix is required to be square.");

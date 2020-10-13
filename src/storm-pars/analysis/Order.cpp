@@ -12,6 +12,7 @@ namespace storm {
             this->onlyBottomTopOrder = true;
             for (auto const& i : *topStates) {
                 this->addedStates.set(i);
+                this->doneStates.set(i);
                 this->bottom->statesAbove.set(i);
                 this->top->states.insert(i);
                 this->nodes[i] = top;
@@ -21,6 +22,7 @@ namespace storm {
 
             for (auto const& i : *bottomStates) {
                 this->addedStates.set(i);
+                this->doneStates.set(i);
                 this->bottom->states.insert(i);
                 this->nodes[i] = bottom;
                 numberOfAddedStates++;
@@ -33,11 +35,15 @@ namespace storm {
 
             this->onlyBottomTopOrder = true;
             this->addedStates.set(topState);
+            this->doneStates.set(topState);
+
             this->bottom->statesAbove.set(topState);
             this->top->states.insert(topState);
             this->nodes[topState] = top;
 
             this->addedStates.set(bottomState);
+            this->doneStates.set(bottomState);
+
             this->bottom->states.insert(bottomState);
             this->nodes[bottomState] = bottom;
             this->numberOfAddedStates = 2;
@@ -54,6 +60,7 @@ namespace storm {
         void Order::add(uint_fast64_t state) {
             assert (!(addedStates)[state]);
             addBetween(state, top, bottom);
+            addStateToHandle(state);
         }
 
         void Order::addAbove(uint_fast64_t state, Node *node) {
@@ -738,6 +745,10 @@ namespace storm {
             assert (existsStateToHandle());
             auto state = statesToHandle.back();
             statesToHandle.pop_back();
+            while (!statesToHandle.empty() && doneStates[state]) {
+                state = statesToHandle.back();
+                statesToHandle.pop_back();
+            }
             return {state, false};
         }
 
