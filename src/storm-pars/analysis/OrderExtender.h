@@ -76,6 +76,7 @@ namespace storm {
             void initializeMinMaxValues();
             void checkParOnStateMonRes(uint_fast64_t s, std::shared_ptr<Order> order, typename OrderExtender<ValueType, ConstantType>::VariableType param, std::shared_ptr<MonotonicityResult<VariableType>> monResult);
 
+            bool isHope(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType>);
         private:
 
             Order::NodeComparison addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) const;
@@ -125,9 +126,6 @@ namespace storm {
             std::map<VariableType, std::vector<uint_fast64_t>> occuringStatesAtVariable;
             std::vector<std::set<VariableType>> occuringVariablesAtState;
             MonotonicityChecker<ValueType> monotonicityChecker;
-
-
-
 
         };
     }

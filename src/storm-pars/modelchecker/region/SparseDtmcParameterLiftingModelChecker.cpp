@@ -525,6 +525,9 @@ namespace storm {
             if (this->orderExtender) {
                 auto res = this->orderExtender.get().extendOrder(order, region);
                 order = std::get<0>(res);
+                if (std::get<1>(res) != order->getNumberOfStates()) {
+                    this->orderExtender.get().setUnknownStates(order, std::get<1>(res), std::get<2>(res));
+                }
             } else {
                 STORM_LOG_WARN("Extending order for RegionModelChecker not implemented");
             }
@@ -541,26 +544,30 @@ namespace storm {
                     localMonotonicityResult->setMonotoneDecreasing(var);
                 }
             }
-            auto state = order->getNextAddedState(-1);
+            auto state = order->getNextDoneState(-1);
             auto const variablesAtState = parameterLifter->getOccurringVariablesAtState();
             while (state != order->getNumberOfStates()) {
-                auto variables = variablesAtState[state];
-                if (variables.size() == 0 || order->isBottomState(state) || order->isTopState(state)) {
-                    localMonotonicityResult->setConstant(state);
-                } else {
-                    for (auto const& var : variables) {
-                        auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
-                        if (monotonicity == Monotonicity::Unknown || monotonicity == Monotonicity::Not) {
-                            monotonicity = monotonicityChecker->checkLocalMonotonicity(order, state, var, region);
-                            if (monotonicity == Monotonicity::Unknown ||  monotonicity == Monotonicity::Not) {
-                                // TODO: Skip for now?
-                            } else {
-                                localMonotonicityResult->setMonotonicity(state, var, monotonicity);
+                if (localMonotonicityResult->getMonotonicity(state) == nullptr) {
+                    auto variables = variablesAtState[state];
+                    if (variables.size() == 0 || order->isBottomState(state) || order->isTopState(state)) {
+                        localMonotonicityResult->setConstant(state);
+                    } else {
+                        for (auto const &var : variables) {
+                            auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
+                            if (monotonicity == Monotonicity::Unknown || monotonicity == Monotonicity::Not) {
+                                monotonicity = monotonicityChecker->checkLocalMonotonicity(order, state, var, region);
+                                if (monotonicity == Monotonicity::Unknown || monotonicity == Monotonicity::Not) {
+                                    // TODO: Skip for now?
+                                } else {
+                                    localMonotonicityResult->setMonotonicity(state, var, monotonicity);
+                                }
                             }
                         }
                     }
+                } else {
+                    // Do nothing, we already checked this one
                 }
-                state = order->getNextAddedState(state);
+                state = order->getNextDoneState(state);
             }
             auto const statesAtVariable = parameterLifter->getOccuringStatesAtVariable();
             bool allDone = true;
@@ -593,28 +600,28 @@ namespace storm {
                 std::vector<storm::storage::ParameterRegion<ValueType>> &regionVector,
                 std::shared_ptr<storm::analysis::Order> order,
                 storm::analysis::MonotonicityResult<VariableType> & monRes) const {
-            if (order != nullptr && !order->getDoneBuilding() && this->orderExtender) {
-                STORM_LOG_INFO("Trying to split in variables which occur in both unknown states of the reachability order");
-                auto states = this->orderExtender.get().getUnknownStates((order));
-                if (states.first != states.second) {
-                    auto& variablesAtStates = parameterLifter->getOccurringVariablesAtState();
-                    std::set<VariableType> variables = variablesAtStates[states.first];
-                    bool sameVariables = false;
-
-                    for (auto var : variablesAtStates[states.second]) {
-                        sameVariables = variables.find(var) != variables.end();
-                        if (sameVariables) {
-                            break;
-                        }
-                        variables.insert(var);
-                    }
-                    if (sameVariables) {
-                        STORM_LOG_INFO("Splitting in 2^" << variables.size() << " variables where original implementation would have splitted in 2^" << region.getVariables().size());
-                        region.split(region.getCenterPoint(), regionVector, variables);
-
-                    }
-                }
-            }
+//            if (order != nullptr && !order->getDoneBuilding() && this->orderExtender) {
+//                STORM_LOG_INFO("Trying to split in variables which occur in both unknown states of the reachability order");
+//                auto states = this->orderExtender.get().getUnknownStates((order));
+//                if (states.first != states.second) {
+//                    auto& variablesAtStates = parameterLifter->getOccurringVariablesAtState();
+//                    std::set<VariableType> variables = variablesAtStates[states.first];
+//                    bool sameVariables = false;
+//
+//                    for (auto var : variablesAtStates[states.second]) {
+//                        sameVariables = variables.find(var) != variables.end();
+//                        if (sameVariables) {
+//                            break;
+//                        }
+//                        variables.insert(var);
+//                    }
+//                    if (sameVariables) {
+//                        STORM_LOG_INFO("Splitting in 2^" << variables.size() << " variables where original implementation would have splitted in 2^" << region.getVariables().size());
+//                        region.split(region.getCenterPoint(), regionVector, variables);
+//
+//                    }
+//                }
+//            }
             if (regionVector.size() == 0) {
                 std::multimap<double, VariableType> sortedOnValues;
                 std::multimap<CoefficientType, VariableType> sortedOnDifference; // Difference between lower and upper boundary of parameter
@@ -643,9 +650,9 @@ namespace storm {
                         }
                     }
                 } else {
-                    for (auto & entry : monRes.getMonotonicityResult()) {
-                        if (!this->isUseMonotonicitySet() || !monRes.isMonotone(entry.first)) {
-                            consideredVariables.insert(entry.first);
+                    for (auto & var : region.getVariables()) {
+                        if (!this->isUseMonotonicitySet() || !monRes.isMonotone(var)) {
+                            consideredVariables.insert(var);
                         }
                     }
                 }

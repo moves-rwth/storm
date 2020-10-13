@@ -30,6 +30,7 @@ namespace storm {
              * @return The local Monotonicity.
              */
             Monotonicity getMonotonicity(uint_fast64_t state, VariableType var) const;
+            std::shared_ptr<MonotonicityResult<VariableType>> getMonotonicity(uint_fast64_t state) const;
 
             /*!
              * Sets the local Monotonicity of a parameter at a given state.

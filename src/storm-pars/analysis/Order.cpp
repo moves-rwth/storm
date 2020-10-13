@@ -273,6 +273,10 @@ namespace storm {
             return addedStates.getNextSetIndex(state + 1);
         }
 
+        uint_fast64_t Order::getNextDoneState(uint_fast64_t state) const {
+            return doneStates.getNextSetIndex(state + 1);
+        }
+
         Order::Node *Order::getNode(uint_fast64_t stateNumber) const {
             assert (stateNumber < numberOfStates);
             return nodes[stateNumber];

@@ -93,6 +93,8 @@ namespace storm {
             // store the current formula. Note that currentCheckTask only stores a reference to the formula.
             std::shared_ptr<storm::logic::Formula const> currentFormula;
             std::shared_ptr<storm::analysis::Order> copyOrder(std::shared_ptr<storm::analysis::Order> order);
+            std::map<std::shared_ptr<storm::analysis::Order>, uint_fast64_t> numberOfCopiesOrder;
+            std::map<std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>, uint_fast64_t> numberOfCopiesMonRes;
         };
     }
 }

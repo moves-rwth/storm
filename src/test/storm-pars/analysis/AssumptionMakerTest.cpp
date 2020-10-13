@@ -92,8 +92,9 @@ TEST(AssumptionMakerTest, Simple1) {
     below.set(4);
     storm::storage::StronglyConnectedComponentDecompositionOptions options;
     options.forceTopologicalSort();
-    auto statesSorted = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(model->getTransitionMatrix(), options);
-    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, statesSorted));
+    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(model->getTransitionMatrix(), options);
+    auto statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
+    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, decomposition, statesSorted));
 
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction, double>(model->getTransitionMatrix());
     auto result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);
@@ -143,8 +144,9 @@ TEST(AssumptionMakerTest, Casestudy1) {
 
     storm::storage::StronglyConnectedComponentDecompositionOptions options;
     options.forceTopologicalSort();
-    auto statesSorted = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(model->getTransitionMatrix(), options);
-    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, statesSorted));
+    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(model->getTransitionMatrix(), options);
+    auto statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
+    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, decomposition, statesSorted));
 
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction, double>(model->getTransitionMatrix());
     auto result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);

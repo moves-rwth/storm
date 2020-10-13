@@ -216,10 +216,14 @@ namespace storm {
 
         template<typename VariableType>
         bool MonotonicityResult<VariableType>::isMonotone(VariableType var) const {
-            auto monRes = monotonicityResult.at(var);
-            return isDoneForVar(var) && (monRes == Monotonicity::Incr
-                                        || monRes == Monotonicity::Decr
-                                        || monRes == Monotonicity::Constant);
+            if (monotonicityResult.find(var) == monotonicityResult.end()) {
+                return false;
+            } else {
+                auto monRes = monotonicityResult.at(var);
+                return isDoneForVar(var) && (monRes == Monotonicity::Incr
+                                             || monRes == Monotonicity::Decr
+                                             || monRes == Monotonicity::Constant);
+            }
         }
 
         template class MonotonicityResult<storm::RationalFunctionVariable>;

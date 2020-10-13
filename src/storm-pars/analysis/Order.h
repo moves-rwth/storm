@@ -189,6 +189,7 @@ namespace storm {
                      * Returns the next added state of the order, returns the number of state if end of added states is reached.
                      */
                     uint_fast64_t getNextAddedState(uint_fast64_t state) const;
+                    uint_fast64_t getNextDoneState(uint_fast64_t state) const;
 
                     uint_fast64_t getNumberOfDoneStates() const;
 

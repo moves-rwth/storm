@@ -41,6 +41,8 @@ namespace storm {
                 if (occurringVariables.empty()) {
                     nonParametricStates.insert(state);
                 }
+                STORM_PRINT("Number of nonparametric states: " << nonParametricStates.size());
+
                 for (auto& var : occurringVariables) {
                     occuringStatesAtVariable[var].push_back(state);
                 }
@@ -620,7 +622,6 @@ namespace storm {
         template <typename ValueType, typename ConstantType>
         void OrderExtender<ValueType, ConstantType>::setMinValues(std::shared_ptr<Order> order, std::vector<ConstantType>& minValues) {
             assert (minValues.size() == numberOfStates);
-            this->minValues[order] = std::move(minValues);
             auto& maxValues = this->maxValues[order];
             usePLA[order] = this->maxValues.find(order) != this->maxValues.end();
             if (maxValues.size() == 0) {
@@ -636,12 +637,13 @@ namespace storm {
             } else {
                 continueExtending[order] = true;
             }
+            this->minValues[order] = std::move(minValues);
+
         }
 
         template <typename ValueType, typename ConstantType>
         void OrderExtender<ValueType, ConstantType>::setMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>& maxValues) {
             assert (maxValues.size() == numberOfStates);
-            this->maxValues[order] = std::move(maxValues);//maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
             usePLA[order] = this->minValues.find(order) != this->minValues.end();
             auto& minValues = this->minValues[order];
             if (minValues.size() == 0) {
@@ -663,6 +665,8 @@ namespace storm {
             } else {
                 continueExtending[order] = true;
             }
+            this->maxValues[order] = std::move(maxValues);//maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+
         }
 
         template <typename ValueType, typename ConstantType>
@@ -734,6 +738,18 @@ namespace storm {
                 return order->getNextStateNumber();
             }
             return {numberOfStates, true};
+        }
+
+        template<typename ValueType, typename ConstantType>
+        bool OrderExtender<ValueType, ConstantType>::isHope(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) {
+            assert (unknownStatesMap.find(order) != unknownStatesMap.end());
+            auto pairOfStates = unknownStatesMap[order];
+            if (pairOfStates.first == numberOfStates) {
+                assert (lastUnknownStatesMap.find(order) != lastUnknownStatesMap.end());
+                pairOfStates = lastUnknownStatesMap[order];
+            }
+            auto assumptions = assumptionMaker->createAndCheckAssumptions(pairOfStates.first, pairOfStates.second, order, region);
+            return assumptions.size() == 1 && (*assumptions.begin()).second == AssumptionStatus::VALID;
         }
 
         template class OrderExtender<RationalFunction, double>;

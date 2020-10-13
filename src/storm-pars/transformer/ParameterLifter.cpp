@@ -31,6 +31,7 @@ namespace storm {
             storm::storage::SparseMatrixBuilder<ConstantType> builder(0, selectedColumns.getNumberOfSetBits(), 0, true, true, selectedRows.getNumberOfSetBits());
             rowGroupToStateNumber = std::vector<uint_fast64_t>();
             uint_fast64_t newRowIndex = 0;
+            uint_fast64_t countNonParam = 0;
             for (auto const& rowIndex : selectedRows) {
                 builder.newRowGroup(newRowIndex);
                 rowGroupToStateNumber.push_back(rowIndex);
@@ -53,6 +54,9 @@ namespace storm {
                     }
                 }
 
+                if (constant) {
+                    countNonParam++;
+                }
                 ParametricType const& pVectorEntry = pVector[rowIndex];
                 std::set<VariableType> vectorEntryVariables;
                 if (!storm::utility::isConstant(pVectorEntry)) {
@@ -115,6 +119,7 @@ namespace storm {
                 }
             }
 
+            STORM_PRINT("Total number of non-param states: " << countNonParam);
             // Matrix and vector are now filled with constant results from constant functions and place holders for non-constant functions.
             matrix = builder.build(newRowIndex);
             vector.shrink_to_fit();

@@ -90,6 +90,7 @@ namespace storm {
 
             std::unique_ptr<storm::analysis::MonotonicityChecker<ValueType>> monotonicityChecker;
 
+
         };
     }
 }

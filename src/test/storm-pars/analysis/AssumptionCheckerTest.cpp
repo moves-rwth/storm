@@ -54,9 +54,10 @@ TEST(AssumptionCheckerTest, Brp_no_bisimulation) {
 
     storm::storage::StronglyConnectedComponentDecompositionOptions options;
     options.forceTopologicalSort();
-    auto statesSorted = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(model->getTransitionMatrix(), options);
+    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(model->getTransitionMatrix(), options);
 
-    auto dummyOrder = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 193, statesSorted));
+    auto statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
+    auto dummyOrder = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 193, decomposition, statesSorted));
 
     auto assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(), expressionManager->getVariable("7").getExpression().getBaseExpressionPointer(), expressionManager->getVariable("5").getExpression().getBaseExpressionPointer(), storm::expressions::BinaryRelationExpression::RelationType::Greater));
     EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, checker.validateAssumption(assumption, dummyOrder, region));
@@ -131,13 +132,14 @@ TEST(AssumptionCheckerTest, Simple1) {
     expressionManager->declareRationalVariable("2");
     storm::storage::StronglyConnectedComponentDecompositionOptions options;
     options.forceTopologicalSort();
-    auto statesSorted = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(model->getTransitionMatrix(), options);
+    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(model->getTransitionMatrix(), options);
 
     storm::storage::BitVector above(5);
     above.set(3);
     storm::storage::BitVector below(5);
     below.set(4);
-    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, statesSorted));
+    auto statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
+    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, decomposition, statesSorted));
 
     // Validating
     auto assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
@@ -220,9 +222,9 @@ TEST(AssumptionCheckerTest, Casestudy1) {
 
     storm::storage::StronglyConnectedComponentDecompositionOptions options;
     options.forceTopologicalSort();
-    auto statesSorted = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(model->getTransitionMatrix(), options);
-
-    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, statesSorted));
+    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(model->getTransitionMatrix(), options);
+    auto statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
+    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, decomposition, statesSorted));
 
     // Validating
     auto assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
@@ -307,9 +309,9 @@ TEST(AssumptionCheckerTest, Casestudy2) {
 
     storm::storage::StronglyConnectedComponentDecompositionOptions options;
     options.forceTopologicalSort();
-    auto statesSorted = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(model->getTransitionMatrix(), options);
-
-    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 6, statesSorted));
+    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(model->getTransitionMatrix(), options);
+    auto statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
+    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 6, decomposition, statesSorted));
     order->add(3);
 
     // Checking on samples and validate
@@ -371,9 +373,9 @@ TEST(AssumptionCheckerTest, Casestudy3) {
     below.set(4);
     storm::storage::StronglyConnectedComponentDecompositionOptions options;
     options.forceTopologicalSort();
-    auto statesSorted = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(model->getTransitionMatrix(), options);
-
-    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, statesSorted));
+    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(model->getTransitionMatrix(), options);
+    auto statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
+    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, decomposition, statesSorted));
 
     auto assumption = std::make_shared<storm::expressions::BinaryRelationExpression>(
             storm::expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),

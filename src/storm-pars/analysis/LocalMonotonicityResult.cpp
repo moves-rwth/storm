@@ -15,11 +15,10 @@ namespace storm {
         template <typename VariableType>
         typename LocalMonotonicityResult<VariableType>::Monotonicity LocalMonotonicityResult<VariableType>::getMonotonicity(uint_fast64_t state, VariableType var) const {
             if (stateMonRes[state] == dummyPointer) {
-                assert (globalMonotonicityResult->getMonotonicity(var) == Monotonicity::Constant);
                 return Monotonicity::Constant;
             } else if (stateMonRes[state] != nullptr) {
                 auto res = stateMonRes[state]->getMonotonicity(var);
-                if (globalMonotonicityResult->isDoneForVar(var) && res == Monotonicity::Unknown) {
+                if (res == Monotonicity::Unknown && globalMonotonicityResult->isDoneForVar(var)) {
                     return globalMonotonicityResult->getMonotonicity(var);
                 }
                 return res;
@@ -162,6 +161,12 @@ namespace storm {
         template<typename VariableType>
         void LocalMonotonicityResult<VariableType>::setDone(bool done) {
             this->done = done;
+        }
+
+        template<typename VariableType>
+        std::shared_ptr<MonotonicityResult<VariableType>>
+        LocalMonotonicityResult<VariableType>::getMonotonicity(uint_fast64_t state) const {
+            return stateMonRes[state];
         }
 
 
