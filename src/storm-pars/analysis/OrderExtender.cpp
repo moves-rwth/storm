@@ -332,7 +332,6 @@ namespace storm {
 
             if (pla && (continueExtending.find(order) == continueExtending.end() || continueExtending.at(order))) {
                 for (auto& state1 : successors) {
-                    assert (order->contains(state1));
                     if (sortedSuccs.size() == 0) {
                         sortedSuccs.push_back(state1);
                     } else {
