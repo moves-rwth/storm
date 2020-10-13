@@ -593,7 +593,6 @@ namespace storm {
                 std::vector<storm::storage::ParameterRegion<ValueType>> &regionVector,
                 std::shared_ptr<storm::analysis::Order> order,
                 storm::analysis::MonotonicityResult<VariableType> & monRes) const {
-            assert (order !=  nullptr);
             if (order != nullptr && !order->getDoneBuilding() && this->orderExtender) {
                 STORM_LOG_INFO("Trying to split in variables which occur in both unknown states of the reachability order");
                 auto states = this->orderExtender.get().getUnknownStates((order));

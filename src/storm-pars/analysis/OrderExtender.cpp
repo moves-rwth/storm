@@ -471,6 +471,7 @@ namespace storm {
 
                 if (statesSorted[0] == currentState) {
                     order->addRelation(s1, statesSorted[0], allowMerge);
+                    auto res = order->compare(s1, statesSorted[0]);
                     assert ((order->compare(s1, statesSorted[0]) == Order::ABOVE) || (allowMerge && (order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::SAME)));
                     order->addRelation(s1, statesSorted[statesSorted.size() - 1], allowMerge);
                     assert ((order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::ABOVE) || (allowMerge && (order->compare(s1, statesSorted[statesSorted.size() - 1]) == Order::SAME)));

@@ -759,5 +759,9 @@ namespace storm {
             }
             return {allAbove, allBelow};
         }
+
+        uint_fast64_t Order::getNumberOfDoneStates() const {
+            return doneStates.getNumberOfSetBits();
+        }
     }
 }

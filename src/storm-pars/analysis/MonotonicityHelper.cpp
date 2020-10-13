@@ -86,6 +86,9 @@ namespace storm {
 
             //output of results
             for (auto itr : monResults) {
+                if (itr.first != nullptr) {
+                    std::cout << "Number of done states: " << itr.first->getNumberOfDoneStates() << std::endl;
+                }
                 if (checkSamples) {
                     for (auto & entry : resultCheckOnSamples.getMonotonicityResult()) {
                         if (entry.second == Monotonicity::Not) {
@@ -199,9 +202,9 @@ namespace storm {
                         }
                         monRes->setDoneForVar(entry.first);
                     }
-                    if (monRes->existsMonotonicity()) {
+//                    if (monRes->existsMonotonicity()) {
                         monResults.insert({order, {monRes, assumptions}});
-                    }
+//                    }
                     STORM_LOG_INFO("    None of the assumptions were valid, we stop exploring the current order");
                 } else {
                     STORM_LOG_INFO("    Created " << newAssumptions.size() << " assumptions, we continue extending the current order");

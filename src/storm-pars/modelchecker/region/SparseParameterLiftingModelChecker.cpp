@@ -254,7 +254,7 @@ namespace storm {
                     regionQueue.emplace(region, o, monRes, storm::utility::one<ConstantType>());
                 }
 
-                // Only split vertices which are not monotone
+                // Only split vertices which are not monotone and when fullfilling bound
                 if (monRes->getGlobalMonotonicityResult()->isDone() && monRes->getGlobalMonotonicityResult()->isAllMonotonicity()) {
                     auto point = region.getPoint(dir, *(monRes->getGlobalMonotonicityResult()));
                     valuation = point;
@@ -264,11 +264,7 @@ namespace storm {
                 } else {
                     std::set<VariableType> monIncr, monDecr, notMon;
                     monRes->getGlobalMonotonicityResult()->splitBasedOnMonotonicity(region.getVariables(), monIncr, monDecr, notMon);
-                    if (region.getOptionalSplitThreshold() && monIncr.size() == 0 && monDecr.size() == 0 && notMon.size() > region.getSplitThreshold()) {
-                        notMon.clear();
-                        checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, region.getVariables(), dir);
-                        STORM_LOG_INFO("Getting initial vertices based on possible monotonicity");
-                    } else {
+                    if (!region.getOptionalSplitThreshold() || notMon.size() <= region.getSplitThreshold()){
                         std::string monParams;
                         bool first = true;
                         for (auto& param : monIncr) {
@@ -285,20 +281,6 @@ namespace storm {
                             first = false;
                             monParams += param.name();
 
-                        }
-
-                        if (region.getOptionalSplitThreshold() && notMon.size() > region.getSplitThreshold()) {
-                            STORM_LOG_INFO("Getting initial points based on global monotonicity and possible Monotonicity, as there are too many not monotone parameters (> 10)");
-                            auto i = monIncr.size() + monDecr.size();
-                            STORM_LOG_INFO("    Global monotonicity found for " << i << " parameters.");
-                            std::set<VariableType> newNotMon;
-                            checkForPossibleMonotonicity(env, region, monIncr, monDecr, newNotMon, notMon, dir);
-                            STORM_LOG_INFO("    Monotone parameters: " << monParams);
-                            STORM_LOG_INFO("    Possible global monotonicity found for " << (monIncr.size() + monDecr.size() - i) << " parameters.");
-                            notMon = std::move(newNotMon);
-                        } else {
-                            STORM_LOG_INFO("Getting initial points based on global monotonicity, global monotonicity found for " << (monIncr.size() + monDecr.size()) << " parameters.");
-                            STORM_LOG_INFO("    Monotone parameters: " << monParams);
                         }
                     }
                     auto point = region.getPoint(dir, monIncr, monDecr);
@@ -322,14 +304,20 @@ namespace storm {
                     }
                 }
             } else {
-                for (auto &v : region.getVerticesOfRegion(region.getVariables())) {
-                    auto currValue = getInstantiationChecker().check(env, v)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
-                    if (!value.is_initialized() || (storm::solver::minimize(dir) ? currValue < value.get() : currValue > value.get())) {
-                        value = currValue;
-                        valuation = v;
-                        STORM_LOG_INFO("Current value for extremum: " << value.get() << ".");
+                if (!region.getOptionalSplitThreshold() || region.getVariables().size() <= region.getSplitThreshold()) {
+                    for (auto &v : region.getVerticesOfRegion(region.getVariables())) {
+                        auto currValue = getInstantiationChecker().check(env, v)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
+                        if (!value.is_initialized() ||
+                            (storm::solver::minimize(dir) ? currValue < value.get() : currValue > value.get())) {
+                            value = currValue;
+                            valuation = v;
+                            STORM_LOG_INFO("Current value for extremum: " << value.get() << ".");
+                        }
                     }
+                } else {
+                    STORM_LOG_INFO("Not checking initial vertices as there are too many parameters");
                 }
+
                 if (storm::solver::minimize(dir)) {
                     regionQueue.emplace(region, nullptr, nullptr, storm::utility::zero<ConstantType>());
                 } else {
@@ -348,7 +336,6 @@ namespace storm {
             while (!regionQueue.empty()) {
                 auto currRegion = regionQueue.top().region;
                 STORM_LOG_INFO("Currently looking at region: " << currRegion);
-                assert (value);
                 std::shared_ptr<storm::analysis::Order> order = regionQueue.top().order;
                 std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult = regionQueue.top().localMonRes;
                 std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> newRegions;
@@ -364,7 +351,7 @@ namespace storm {
                 // Check whether this region contains a new 'good' value
                 auto point = this->isUseMonotonicitySet() ? currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult())) : currRegion.getCenterPoint();
                 auto currValue = getInstantiationChecker().check(env, point)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
-                if (storm::solver::minimize(dir) ? currValue < value.get() : currValue > value.get()) {
+                if (!value || (value && (storm::solver::minimize(dir) ? currValue < value.get() : currValue > value.get()))) {
                     value = currValue;
                     valuation = point;
                 }

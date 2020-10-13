@@ -190,6 +190,8 @@ namespace storm {
                      */
                     uint_fast64_t getNextAddedState(uint_fast64_t state) const;
 
+                    uint_fast64_t getNumberOfDoneStates() const;
+
                     /*!
                      * Retrieves the pointer to a Node at which the state occurs.
                      *

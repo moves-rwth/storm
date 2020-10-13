@@ -313,7 +313,7 @@ namespace storm {
         void ParameterRegion<ParametricType>::split(const ParameterRegion::Valuation &splittingPoint,
                                                     std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector,
                                                     const std::set<VariableType> &consideredVariables) const {
-            assert (!splitThreshold || consideredVariables.size() < splitThreshold.get());
+            assert (!splitThreshold || consideredVariables.size() <= splitThreshold.get() || consideredVariables.size() == 2);
 
             if (consideredVariables.size() == 2) {
                 // TODO: Clean this up
