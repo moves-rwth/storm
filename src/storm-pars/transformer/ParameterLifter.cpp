@@ -119,7 +119,7 @@ namespace storm {
                 }
             }
 
-            STORM_PRINT("Total number of non-param states: " << countNonParam);
+            STORM_PRINT("Total number of non-param states: " << countNonParam << std::endl);
             // Matrix and vector are now filled with constant results from constant functions and place holders for non-constant functions.
             matrix = builder.build(newRowIndex);
             vector.shrink_to_fit();
