@@ -265,9 +265,17 @@ namespace storm {
                 }
             } else {
                 if (this->isUseMonotonicitySet()) {
-                    auto o = regionQueue.top().order;
-                    auto monRes = regionQueue.top().localMonRes;
+                    auto o = this->extendOrder(env, nullptr, region);
 
+                    auto monRes = std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>(
+                            new storm::analysis::LocalMonotonicityResult<VariableType>(o->getNumberOfStates()));
+                    this->extendLocalMonotonicityResult(region, o, monRes);
+
+                    if (storm::solver::minimize(dir)) {
+                        regionQueue.emplace(region, o, monRes, storm::utility::zero<ConstantType>());
+                    } else {
+                        regionQueue.emplace(region, o, monRes, storm::utility::one<ConstantType>());
+                    }
                     // Only split vertices which are not monotone and when fullfilling bound
                     if (monRes->getGlobalMonotonicityResult()->isDone() &&
                         monRes->getGlobalMonotonicityResult()->isAllMonotonicity()) {
