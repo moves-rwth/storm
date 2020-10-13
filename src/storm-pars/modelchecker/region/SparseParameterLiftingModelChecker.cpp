@@ -256,6 +256,12 @@ namespace storm {
                     } else {
                         regionQueue.emplace(region, o, monRes, storm::utility::one<ConstantType>());
                     }
+                } else {
+                    if (storm::solver::minimize(dir)) {
+                        regionQueue.emplace(region, nullptr, nullptr, storm::utility::zero<ConstantType>());
+                    } else {
+                        regionQueue.emplace(region, nullptr, nullptr, storm::utility::one<ConstantType>());
+                    }
                 }
             } else {
                 if (this->isUseMonotonicitySet()) {
