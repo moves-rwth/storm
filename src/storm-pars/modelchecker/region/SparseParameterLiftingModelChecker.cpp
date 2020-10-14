@@ -1,6 +1,7 @@
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
 
 #include <queue>
+#include <boost/container/flat_set.hpp>
 #include <storm-pars/analysis/MonotonicityChecker.h>
 
 #include "storm/adapters/RationalFunctionAdapter.h"
@@ -343,6 +344,7 @@ namespace storm {
             auto numberOfMonResCopies = 0;
             auto totalArea = storm::utility::convertNumber<ConstantType>(region.area());
             auto coveredArea = storm::utility::zero<ConstantType>();
+            boost::container::flat_set<std::shared_ptr<storm::analysis::Order>> changedOrders;
             while (!regionQueue.empty()) {
                 auto currRegion = regionQueue.top().region;
                 STORM_LOG_INFO("Currently looking at region: " << currRegion);
@@ -352,12 +354,16 @@ namespace storm {
 
                 bool changedOrder = false;
                 if (this->isUseMonotonicitySet() && !order->getDoneBuilding()) {
+                    changedOrder = changedOrders.contains(order);
                     assert (orderExtender);
                     if (orderExtender->isHope(order, currRegion)) {
                         if (numberOfCopiesOrder[order] != 1) {
                             order = copyOrder(order);
                             numberOfOrderCopies++;
                             numberOfCopiesOrder[order]--;
+                        } else {
+                            assert (numberOfCopiesOrder[order] == 1);
+                            changedOrders.erase(order);
                         }
                         this->extendOrder(env, order, currRegion);
                         changedOrder = true;
@@ -369,42 +375,45 @@ namespace storm {
                     this->extendLocalMonotonicityResult(currRegion, order, localMonotonicityResult);
                 }
 
-                // Check whether this region contains a new 'good' value
-                auto point = this->isUseMonotonicitySet() ? currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult())) : currRegion.getCenterPoint();
-                auto currValue = getInstantiationChecker().check(env, point)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
-                if (!value || (value && (storm::solver::minimize(dir) ? currValue < value.get() : currValue > value.get()))) {
-                    value = currValue;
-                    valuation = point;
-                }
-
                 // Check whether this region needs further investigation (i.e. splitting)
                 auto bounds = getBound(env, currRegion, dir, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
                 auto currBound = bounds[*this->parametricModel->getInitialStates().begin()];
 
-                if ((storm::solver::minimize(dir) && currBound < value.get() - storm::utility::convertNumber<ConstantType>(precision))
-                    || (!storm::solver::minimize(dir) && currBound > value.get() + storm::utility::convertNumber<ConstantType>(precision))) {
-                    if (this->isUseBoundsSet() && !order->getDoneBuilding()) {
-                        if (storm::solver::minimize(dir)) {
-                            orderExtender->setMinValues(order, bounds);
-                            orderExtender->setMaxValues(order, getBound(env, currRegion, storm::solver::OptimizationDirection::Maximize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
-                        } else {
-                            orderExtender->setMaxValues(order, bounds);
-                            orderExtender->setMinValues(order, getBound(env, currRegion, storm::solver::OptimizationDirection::Minimize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
-                        }
-                        // We try to extend the order again based on minMaxValues
-                        auto i = order->getNumberOfDoneStates();
-                        this->extendOrder(env, order, currRegion);
-                        if (i < order->getNumberOfDoneStates()) {
-                            this->extendLocalMonotonicityResult(currRegion, order, localMonotonicityResult);
-                        }
+                if (!value || ((storm::solver::minimize(dir) && currBound < value.get() - storm::utility::convertNumber<ConstantType>(precision)) || ((!storm::solver::minimize(dir) && currBound > value.get() + storm::utility::convertNumber<ConstantType>(precision))))) {
+                    // Check whether this region contains a new 'good' value
+                    auto point = this->isUseMonotonicitySet() ? currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult())) : currRegion.getCenterPoint();
+                    auto currValue = getInstantiationChecker().check(env, point)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
+                    if (!value || (value && (storm::solver::minimize(dir) ? currValue < value.get() : currValue > value.get()))) {
+                        value = currValue;
+                        valuation = point;
                     }
-                    if (this->isUseMonotonicitySet()) {
-                        this->splitSmart(currRegion, newRegions, order, *(localMonotonicityResult->getGlobalMonotonicityResult()));
-                    } else if (this->isRegionSplitEstimateSupported()) {
-                        auto empty = storm::analysis::MonotonicityResult<VariableType>();
-                        this->splitSmart(currRegion, newRegions, order, empty);
-                    } else {
-                        currRegion.split(currRegion.getCenterPoint(), newRegions);
+                    if ((storm::solver::minimize(dir) && currBound < value.get() - storm::utility::convertNumber<ConstantType>(precision))
+                        || (!storm::solver::minimize(dir) && currBound > value.get() + storm::utility::convertNumber<ConstantType>(precision))) {
+                        if (this->isUseBoundsSet() && !order->getDoneBuilding()) {
+                            if (storm::solver::minimize(dir)) {
+                                orderExtender->setMinValues(order, bounds);
+                                orderExtender->setMaxValues(order, getBound(env, currRegion, storm::solver::OptimizationDirection::Maximize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
+                            } else {
+                                orderExtender->setMaxValues(order, bounds);
+                                orderExtender->setMinValues(order, getBound(env, currRegion, storm::solver::OptimizationDirection::Minimize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
+                            }
+                            // We try to extend the order again based on minMaxValues
+                            auto i = order->getNumberOfDoneStates();
+                            this->extendOrder(env, order, currRegion);
+                            if (i < order->getNumberOfDoneStates()) {
+                                changedOrders.insert(order);
+                                this->extendLocalMonotonicityResult(currRegion, order, localMonotonicityResult);
+                            }
+                        }
+                        if (this->isUseMonotonicitySet()) {
+                            this->splitSmart(currRegion, newRegions, order,
+                                             *(localMonotonicityResult->getGlobalMonotonicityResult()));
+                        } else if (this->isRegionSplitEstimateSupported()) {
+                            auto empty = storm::analysis::MonotonicityResult<VariableType>();
+                            this->splitSmart(currRegion, newRegions, order, empty);
+                        } else {
+                            currRegion.split(currRegion.getCenterPoint(), newRegions);
+                        }
                     }
                 }
 
