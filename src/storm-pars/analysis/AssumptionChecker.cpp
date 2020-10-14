@@ -123,7 +123,7 @@ namespace storm {
         AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionSMTSolver(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType>const minValues, std::vector<ConstantType>const maxValues) const {
             std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
             std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
-
+STORM_LOG_INFO("Validating with smt solver");
             AssumptionStatus result = AssumptionStatus::UNKNOWN;
             auto var1 = assumption->getFirstOperand()->asVariableExpression().getVariableName();
             auto var2 = assumption->getSecondOperand()->asVariableExpression().getVariableName();
@@ -205,6 +205,7 @@ namespace storm {
                     }
                 }
             }
+            STORM_LOG_INFO("Order is known");
 
             if (orderKnown) {
                 solver::Z3SmtSolver s(*manager);
@@ -286,6 +287,8 @@ namespace storm {
                     }
                 }
             }
+            STORM_LOG_INFO("Done");
+
             return result;
         }
 

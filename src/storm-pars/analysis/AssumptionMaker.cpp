@@ -21,6 +21,7 @@ namespace storm {
             template <typename ValueType, typename ConstantType>
         std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> AssumptionMaker<ValueType, ConstantType>::createAndCheckAssumptions(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValues) const {
             std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> result;
+            STORM_LOG_INFO("Creating assumptions for " << val1 << " and " << val2);
             auto assumption = createAndCheckAssumption(val1, val2, expressions::BinaryRelationExpression::RelationType::Greater, order, region, minValues, maxValues);
             if (assumption.second != AssumptionStatus::INVALID) {
                 result.insert(assumption);
@@ -67,7 +68,9 @@ namespace storm {
             expressions::Variable var1 = expressionManager->getVariable(std::to_string(val1));
             expressions::Variable var2 = expressionManager->getVariable(std::to_string(val2));
             auto assumption = std::make_shared<expressions::BinaryRelationExpression>(expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(), var1.getExpression().getBaseExpressionPointer(), var2.getExpression().getBaseExpressionPointer(), relationType));
+            STORM_LOG_INFO("Assumption created");
             AssumptionStatus validationResult = assumptionChecker.validateAssumption(val1, val2, assumption, order, region, minValues, maxValues);
+            STORM_LOG_INFO("Assumption validated");
             return std::pair<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus>(assumption, validationResult);
         }
 
