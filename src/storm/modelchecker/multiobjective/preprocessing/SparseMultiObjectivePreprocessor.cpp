@@ -189,7 +189,7 @@ namespace storm {
                             auto lraStates = mc.check(pathFormula)->asExplicitQualitativeCheckResult().getTruthValuesVector();
                             // Compute Sat(Forall F (Forall G not "lraStates"))
                             auto forallGloballyNotLraStates = storm::utility::graph::performProb0A(backwardTransitions, ~lraStates, lraStates);
-                            absorbingStatesForSubformula = storm::utility::graph::performProb1A(model->getTransitionMatrix(), model->getNondeterministicChoiceIndices(), backwardTransitions, storm::storage::BitVector(model->getNumberOfStates(), true), forallGloballyNotLraStates);
+                            absorbingStatesForSubformula = storm::utility::graph::performProb1A(model->getTransitionMatrix(), model->getNondeterministicChoiceIndices(), backwardTransitions, ~lraStates, forallGloballyNotLraStates);
                         } else {
                             STORM_LOG_THROW(false, storm::exceptions::InvalidPropertyException, "Could not preprocess the subformula " << *opFormula << " of " << originalFormula << " because it is not supported");
                         }
