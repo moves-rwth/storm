@@ -123,7 +123,7 @@ namespace storm {
         AssumptionStatus AssumptionChecker<ValueType, ConstantType>::validateAssumptionSMTSolver(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType>const minValues, std::vector<ConstantType>const maxValues) const {
             std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
             std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
-STORM_LOG_INFO("Validating with smt solver");
+            STORM_LOG_INFO("Validating with smt solver");
             AssumptionStatus result = AssumptionStatus::UNKNOWN;
             auto var1 = assumption->getFirstOperand()->asVariableExpression().getVariableName();
             auto var2 = assumption->getSecondOperand()->asVariableExpression().getVariableName();
@@ -229,8 +229,7 @@ STORM_LOG_INFO("Validating with smt solver");
                 if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater) {
                     exprToCheck = expr1 <= expr2;
                 } else {
-                    assert (assumption->getRelationType() ==
-                            expressions::BinaryRelationExpression::RelationType::Equal);
+                    assert (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Equal);
                     exprToCheck = expr1 != expr2;
                 }
 
