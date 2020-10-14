@@ -771,6 +771,9 @@ namespace storm {
                 assert (lastUnknownStatesMap.find(order) != lastUnknownStatesMap.end());
                 pairOfStates = lastUnknownStatesMap[order];
             }
+            if (pairOfStates.first == numberOfStates) {
+                return true;
+            }
             auto assumptions = assumptionMaker->createAndCheckAssumptions(pairOfStates.first, pairOfStates.second, order, region);
             return assumptions.size() == 1 && (*assumptions.begin()).second == AssumptionStatus::VALID;
         }

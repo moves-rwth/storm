@@ -356,7 +356,7 @@ namespace storm {
                 if (this->isUseMonotonicitySet() && !order->getDoneBuilding()) {
                     changedOrder = changedOrders.contains(order);
                     assert (orderExtender);
-                    if (orderExtender->isHope(order, currRegion)) {
+                    if (!changedOrder || orderExtender->isHope(order, currRegion)) {
                         if (numberOfCopiesOrder[order] != 1) {
                             order = copyOrder(order);
                             numberOfOrderCopies++;
