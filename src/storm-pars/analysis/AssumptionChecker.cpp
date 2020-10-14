@@ -82,6 +82,26 @@ namespace storm {
             }
             assert (result != AssumptionStatus::VALID);
 
+            if (minValues.size() != 0) {
+                if (assumption->getRelationType() == expressions::BinaryRelationExpression::RelationType::Greater) {
+                    if (minValues[val1] > maxValues[val2]) {
+                        return AssumptionStatus::VALID;
+                    } else  if (minValues[val1] == maxValues[val2] && minValues[val1] == maxValues[val1] && minValues[val2] == maxValues[val2]) {
+                        return AssumptionStatus::INVALID;
+                    }  else if (minValues[val2] > maxValues[val1]) {
+                        return AssumptionStatus::INVALID;
+                    }
+                } else {
+                    if (minValues[val1] == maxValues[val2] && minValues[val1] == maxValues[val1] && minValues[val2] == maxValues[val2]) {
+                        return AssumptionStatus::VALID;
+                    } else if (minValues[val1] > maxValues[val2]) {
+                        return AssumptionStatus::INVALID;
+                    }  else if (minValues[val2] > maxValues[val1]) {
+                        return AssumptionStatus::INVALID;
+                    }
+                }
+            }
+
             if (result == AssumptionStatus::UNKNOWN) {
                 // If result from sample checking was unknown, the assumption might hold
                 std::set<expressions::Variable> vars = std::set<expressions::Variable>({});
@@ -268,6 +288,7 @@ namespace storm {
 
                 s.add(exprOrderSucc);
                 s.add(exprBounds);
+                s.setTimeout(100);
                 // assert that sorting of successors in the order and the bounds on the expression are at least satisfiable
                 // when this is not the case, the order is invalid
                 assert (s.check() == solver::SmtSolver::CheckResult::Sat);
