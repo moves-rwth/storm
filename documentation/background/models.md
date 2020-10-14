@@ -6,6 +6,10 @@ category_weight: 1
 categories: [Background]
 ---
 
+<h1>Models</h1>
+
+{% include includes/toc.html %}
+
 The model types Storm supports can be categorized along two dimensions. First, the *notion of time* in a model may be either discrete (or "time-abstract") or continuous. While the former formalizes time as discrete steps, time in the latter flows continuously. Second, models may contain *nondeterminism*. That is, there are choices that are resolved nondeterministically in the sense that there is no information about a likelihood of the involved choices. Rather, any possible resolution has to be taken into account when reasoning about such systems. Typical sources of nondeterminism include scheduling freedom (as found in distributed systems), abstraction and underspecification. In the following, we briefly describe each model type.
 
 ## Models without nondeterminism

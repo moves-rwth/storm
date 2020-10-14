@@ -6,6 +6,10 @@ category_weight: 4
 categories: [Background]
 ---
 
+<h1>Engines</h1>
+
+{% include includes/toc.html %}
+
 As with so many things, there is no one-size-fits-all in probabilistic model checking. Generally, it depends on the characteristics of the input model, which of the model checking approaches works best (for example in terms of time or memory requirements). Therefore, established model checkers provide a range of different *engines* that pursue different approaches to solve the same problem. In practice, the functionality of the engines is typically incomparable, that is there may be features that an engine can solve that another one cannot and vice versa. In the following, we give a brief intuitive overview on the engines provided by Storm. We also indicate how to select them, in which cases certain engines are well-suited and which major restrictions exist.
 
 ## Sparse
@@ -14,16 +18,16 @@ Storm's main engine is the sparse engine in the sense that it tends to have the 
 
 **Select**: `--engine sparse` or `-e sparse`
 
-##### **Characteristics**:
+**Characteristics**:
 - model building is rather memory- and time-consuming
 - numerical computations tend to be fast
 
-##### **Advisable if**:
+**Advisable if**:
 - model is moderately sized
 - model is asymmetrical
 - model checking needs heavy numerical computations (i.e. many iterations, etc.)
 
-##### **Major restrictions**:
+**Major restrictions**:
 - none
 
 ## DD
@@ -32,16 +36,16 @@ Storm's main engine is the sparse engine in the sense that it tends to have the 
 
 **Select**: `--engine dd` or `-e dd`
 
-##### **Characteristics**:
+**Characteristics**:
 - model building is fast and memory-efficient if the model is structured in some way
 - numerical computations tend to be slower
 
-##### **Advisable if**:
+**Advisable if**:
 - model is large
 - model is structured (for example symmetrical)
 - target query does not involve heavy numerical computations (for example qualitative queries)
 
-##### **Major restrictions**:
+**Major restrictions**:
 - only supports [discrete-time models](models.html)
 
 ## Hybrid
@@ -50,12 +54,12 @@ The hybrid engine tries to combine the [sparse](#sparse) and [dd](#dd) engines. 
 
 **Select**: `--engine hybrid` or `-e hybrid`
 
-##### **Characteristics**:
+**Characteristics**:
 - model building is fast and memory-efficient if the model is structured in some way
 - translation from DDs to sparse matrices requires the sparse matrix to fit into memory
 - numerical computations tend to be fast
 
-##### **Advisable if**:
+**Advisable if**:
 - model is not too large
 - model is structured (for example symmetrical)
 
@@ -65,12 +69,12 @@ All engines so far have the requirement that a representation of the model needs
 
 **Select**: `--engine expl` or `-e expl`
 
-##### **Advisable if**:
+**Advisable if**:
 - large but finite models
 - small parts of the system potentially influence the model checking result significantly
 - low target precision
 
-##### **Major restrictions**:
+**Major restrictions**:
 - only supports [discrete-time models](models.html)
 - only supports reachability objectives
 
@@ -83,11 +87,11 @@ This engine relies heavily on SMT solving (more concretely an enumeration of all
 
 **Select**: `--engine abs` or `-e abs`
 
-##### **Advisable if**:
+**Advisable if**:
 - model is gigantic or infinite
 - model is well structured
 
-##### **Major restrictions**:
+**Major restrictions**:
 - only supports [discrete-time models](models.html)
 - only supports reachability objectives
 

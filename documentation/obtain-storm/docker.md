@@ -6,7 +6,9 @@ category_weight: 3
 categories: [Obtain Storm]
 ---
 
-# Use a Docker Container
+<h1>Use a Docker Container</h1>
+
+{% include includes/toc.html %}
 
 For easy and fast access to Storm, we provide Docker containers containing Storm in different versions. The Docker containers are similar to the [Virtual machine](vm.html) but come with less overhead and offer more recent versions of Storm.
 

@@ -6,7 +6,9 @@ category_weight: 5
 categories: [Obtain Storm]
 ---
 
-# Common issues
+<h1>Troubleshooting</h1>
+
+{% include includes/toc.html %}
 
 ## Dependencies
 - In general, if issues occur installing certain dependencies of Storm make sure to also consult the documentation of the corresponding dependency.
@@ -36,7 +38,7 @@ We list common issues for specific operating systems.
   ```
   For more infos see this [GitHub issue](https://github.com/neovim/neovim/issues/9050#issuecomment-424417456).
 
-# File an issue
+## File an issue
 
 If you encounter problems when building (or using) Storm, feel free to [contact us]({{ site.github.url }}/about.html#people) by writing a mail to
 - <i class="fa fa-envelope" aria-hidden="true"></i> support ```at``` stormchecker.org.

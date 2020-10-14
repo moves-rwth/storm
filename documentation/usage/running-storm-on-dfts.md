@@ -6,10 +6,11 @@ category_weight: 2
 categories: [Use Storm]
 ---
 
+<h1>Running Storm on DFTs</h1>
+
 {% include includes/toc.html %}
 
-
-## Running Storm on DFTs
+## Analyzing DFTs
 
 The support for fault tree analysis is bundled in the `storm-dft` binary which should be created during the [build]({{ site.github.url }}/documentation/obtain-storm/build.html#build-step). The input of Dynamic fault trees (DFTs) is given in the [Galileo format]({{ site.github.url }}/documentation/background/languages.html#dfts).
 
@@ -74,4 +75,4 @@ $ storm-dft -dft hecs.dft --timebound 500 -symred --modularisation
 
 {% include includes/show_output.html class="dft_hecs_timebound_mod" path="dft/hecs_timebound_mod.out" %}
 
-Here independent subtrees are analysed separately and the results are combined yielding the total reliability.
+Here independent subtrees are analyzed separately and the results are combined yielding the total reliability.

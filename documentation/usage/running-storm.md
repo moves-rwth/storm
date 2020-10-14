@@ -6,6 +6,8 @@ category_weight: 1
 categories: [Use Storm]
 ---
 
+<h1>Running Storm</h1>
+
 {% include includes/toc.html %}
 
 ## Storm's executables
@@ -362,7 +364,7 @@ $ storm --jani philosophers.jani --constants TIME_BOUND=10 --janiproperty MaxPrR
 
 {% include includes/show_output.html class="gspn_philosophers_output_deadlock_tb" path="gspn/philosophers_deadlock_tb.out" %}
 
-For additional commandline options see the help for GSPNs with:
+For additional command-line options see the help for GSPNs with:
 
 ```console
 $ storm-gspn --help gspn
