@@ -7,10 +7,14 @@
 #include "storm/models/sparse/StandardRewardModel.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
+#include "storm/utility/SignalHandler.h"
 #include "storm/logic/Formulas.h"
 #include "storm/solver/SolverSelectionOptions.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
 
-#include "storm/environment/solver/NativeSolverEnvironment.h"
+#include "storm/environment/solver/SolverEnvironment.h"
+#include "storm/environment/solver/MinMaxSolverEnvironment.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
@@ -35,7 +39,8 @@ namespace storm {
                 exitRates = model.getExitRates();
                 
                 // Set the (discretized) state action rewards.
-                this->actionRewards.resize(this->objectives.size());
+                this->actionRewards.assign(this->objectives.size(), {});
+                this->stateRewards.assign(this->objectives.size(), {});
                 for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                     auto const& formula = *this->objectives[objIndex].formula;
                     STORM_LOG_THROW(formula.isRewardOperatorFormula() && formula.asRewardOperatorFormula().hasRewardModelName(), storm::exceptions::UnexpectedException, "Unexpected type of operator formula: " << formula);
@@ -49,14 +54,37 @@ namespace storm {
                                 this->actionRewards[objIndex][model.getTransitionMatrix().getRowGroupIndices()[markovianState]] += rewModel.getStateReward(markovianState) / exitRates[markovianState];
                             }
                         }
+                    } else if (formula.getSubformula().isLongRunAverageRewardFormula()) {
+                        // The LRA methods for MA require keeping track of state- and action rewards separately
+                        if (rewModel.hasStateRewards()) {
+                            this->stateRewards[objIndex] = rewModel.getStateRewardVector();
+                        }
                     } else {
                         STORM_LOG_THROW(formula.getSubformula().isCumulativeRewardFormula() && formula.getSubformula().asCumulativeRewardFormula().getTimeBoundReference().isTimeBound(), storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula());
                         STORM_LOG_THROW(!rewModel.hasStateRewards(), storm::exceptions::InvalidPropertyException, "Found state rewards for time bounded objective " << this->objectives[objIndex].originalFormula << ". This is not supported.");
                         STORM_LOG_WARN_COND(this->objectives[objIndex].originalFormula->isProbabilityOperatorFormula() && this->objectives[objIndex].originalFormula->asProbabilityOperatorFormula().getSubformula().isBoundedUntilFormula(), "Objective " << this->objectives[objIndex].originalFormula << " was simplified to a cumulative reward formula. Correctness of the algorithm is unknown for this type of property.");
                     }
                 }
+                // Print some statistics (if requested)
+                if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+                    STORM_PRINT_AND_LOG("Final preprocessed model has " << markovianStates.getNumberOfSetBits() << " Markovian states." << std::endl);
+                }
             }
 
+            template <class SparseMdpModelType>
+            storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<typename SparseMdpModelType::ValueType> StandardMaPcaaWeightVectorChecker<SparseMdpModelType>::createNondetInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitions) const {
+                STORM_LOG_ASSERT(transitions.getRowGroupCount() == this->transitionMatrix.getRowGroupCount(), "Unexpected size of given matrix.");
+                return storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType>(transitions, this->markovianStates, this->exitRates);
+            }
+            
+            template <class SparseMdpModelType>
+            storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<typename SparseMdpModelType::ValueType> StandardMaPcaaWeightVectorChecker<SparseMdpModelType>::createDetInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitions) const {
+                STORM_LOG_ASSERT(transitions.getRowGroupCount() == this->transitionMatrix.getRowGroupCount(), "Unexpected size of given matrix.");
+                // TODO: Right now, there is no dedicated support for "deterministic" Markov automata so we have to pick the nondeterministic one.
+                auto result = storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType>(transitions, this->markovianStates, this->exitRates);
+                result.setOptimizationDirection(storm::solver::OptimizationDirection::Maximize);
+                return result;
+            }
             
             template <class SparseMaModelType>
             void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::boundedPhase(Environment const& env, std::vector<ValueType> const& weightVector, std::vector<ValueType>& weightedRewardVector) {
@@ -64,7 +92,7 @@ namespace storm {
                 // Split the preprocessed model into transitions from/to probabilistic/Markovian states.
                 SubModel MS = createSubModel(true, weightedRewardVector);
                 SubModel PS = createSubModel(false, weightedRewardVector);
-
+                
                 // Apply digitization to Markovian transitions
                 ValueType digitizationConstant = getDigitizationConstant(weightVector);
                 digitize(MS, digitizationConstant);
@@ -73,23 +101,26 @@ namespace storm {
                 TimeBoundMap upperTimeBounds;
                 digitizeTimeBounds(upperTimeBounds, digitizationConstant);
                 
+                // Check whether there is a cycle in of probabilistic states
+                bool acyclic = !storm::utility::graph::hasCycle(PS.toPS);
+                
                 // Initialize a minMaxSolver to compute an optimal scheduler (w.r.t. PS) for each epoch
                 // No EC elimination is necessary as we assume non-zenoness
-                std::unique_ptr<MinMaxSolverData> minMax = initMinMaxSolver(env, PS, weightVector);
+                std::unique_ptr<MinMaxSolverData> minMax = initMinMaxSolver(env, PS, acyclic, weightVector);
                 
                 // create a linear equation solver for the model induced by the optimal choice vector.
                 // the solver will be updated whenever the optimal choice vector has changed.
-                std::unique_ptr<LinEqSolverData> linEq = initLinEqSolver(env, PS);
+                std::unique_ptr<LinEqSolverData> linEq = initLinEqSolver(env, PS, acyclic);
                 
                 // Store the optimal choices of PS as computed by the minMax solver.
                 std::vector<uint_fast64_t> optimalChoicesAtCurrentEpoch(PS.getNumberOfStates(), std::numeric_limits<uint_fast64_t>::max());
                 
                 // Stores the objectives for which we need to compute values in the current time epoch.
-                storm::storage::BitVector consideredObjectives = this->objectivesWithNoUpperTimeBound;
+                storm::storage::BitVector consideredObjectives = this->objectivesWithNoUpperTimeBound & ~this->lraObjectives;
                 
                 auto upperTimeBoundIt = upperTimeBounds.begin();
                 uint_fast64_t currentEpoch = upperTimeBounds.empty() ? 0 : upperTimeBoundIt->first;
-                while (true) {
+                while (!storm::utility::resources::isTerminate()) {
                     // Update the objectives that are considered at the current time epoch as well as the (weighted) reward vectors.
                     updateDataToCurrentEpoch(MS, PS, *minMax, consideredObjectives, currentEpoch, weightVector, upperTimeBoundIt, upperTimeBounds);
                     
@@ -105,6 +136,7 @@ namespace storm {
                         break;
                     }
                 }
+                STORM_LOG_WARN_COND(!storm::utility::resources::isTerminate(), "Time-bounded reachability computation aborted.");
                 
                 // compose the results from MS and PS
                 storm::utility::vector::setVectorValues(this->weightedResult, MS.states, MS.weightedSolutionVector);
@@ -136,7 +168,7 @@ namespace storm {
                     std::vector<ValueType> const& objRewards = this->actionRewards[objIndex];
                     std::vector<ValueType> subModelObjRewards;
                     subModelObjRewards.reserve(result.getNumberOfChoices());
-                    for (auto const& choice : result.choices) {
+                    for (auto choice : result.choices) {
                         subModelObjRewards.push_back(objRewards[choice]);
                     }
                     result.objectiveRewardVectors.push_back(std::move(subModelObjRewards));
@@ -197,7 +229,7 @@ namespace storm {
                 VT delta = smallestNonZeroBound / smallestStepBound;
                 while(true) {
                     bool deltaValid = true;
-                    for (auto const& objIndex : objectivesWithTimeBound) {
+                    for (auto objIndex : objectivesWithTimeBound) {
                         auto const& timeBound = timeBounds[objIndex];
                         if (timeBound/delta != std::floor(timeBound/delta)) {
                             deltaValid = false;
@@ -296,15 +328,21 @@ namespace storm {
             }
             
             template <class SparseMaModelType>
-            std::unique_ptr<typename StandardMaPcaaWeightVectorChecker<SparseMaModelType>::MinMaxSolverData> StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initMinMaxSolver(Environment const& env, SubModel const& PS, std::vector<ValueType> const& weightVector) const {
+            std::unique_ptr<typename StandardMaPcaaWeightVectorChecker<SparseMaModelType>::MinMaxSolverData> StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initMinMaxSolver(Environment const& env, SubModel const& PS, bool acyclic, std::vector<ValueType> const& weightVector) const {
                 std::unique_ptr<MinMaxSolverData> result(new MinMaxSolverData());
+                result->env = std::make_unique<storm::Environment>(env);
+                // For acyclic models we switch to the more efficient acyclic solver (Unless the solver / method was explicitly specified)
+                if (acyclic && result->env->solver().minMax().isMethodSetFromDefault() && result->env->solver().minMax().getMethod() != storm::solver::MinMaxMethod::Acyclic) {
+                    STORM_LOG_INFO("Switching to Acyclic linear equation solver method. To overwrite this, explicitly specify another solver.");
+                    result->env->solver().minMax().setMethod(storm::solver::MinMaxMethod::Acyclic);
+                }
                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxSolverFactory;
-                result->solver = minMaxSolverFactory.create(env, PS.toPS);
+                result->solver = minMaxSolverFactory.create(*result->env, PS.toPS);
                 result->solver->setHasUniqueSolution(true);
                 result->solver->setHasNoEndComponents(true); // Non-zeno MA
                 result->solver->setTrackScheduler(true);
                 result->solver->setCachingEnabled(true);
-                auto req = result->solver->getRequirements(env, storm::solver::OptimizationDirection::Maximize, false);
+                auto req = result->solver->getRequirements(*result->env, storm::solver::OptimizationDirection::Maximize, false);
                 boost::optional<ValueType> lowerBound = this->computeWeightedResultBound(true, weightVector, storm::storage::BitVector(weightVector.size(), true));
                 if (lowerBound) {
                     result->solver->setLowerBound(lowerBound.get());
@@ -314,6 +352,9 @@ namespace storm {
                 if (upperBound) {
                     result->solver->setUpperBound(upperBound.get());
                     req.clearUpperBounds();
+                }
+                if (acyclic) {
+                    req.clearAcyclic();
                 }
                 STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
                 result->solver->setRequirementsChecked(true);
@@ -326,15 +367,14 @@ namespace storm {
 
             template <class SparseMaModelType>
             template <typename VT, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type>
-            std::unique_ptr<typename StandardMaPcaaWeightVectorChecker<SparseMaModelType>::LinEqSolverData> StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initLinEqSolver(Environment const& env, SubModel const& PS) const {
+            std::unique_ptr<typename StandardMaPcaaWeightVectorChecker<SparseMaModelType>::LinEqSolverData> StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initLinEqSolver(Environment const& env, SubModel const& PS, bool acyclic) const {
                 std::unique_ptr<LinEqSolverData> result(new LinEqSolverData());
-                result->env = std::make_unique<Environment>();
-                // Unless the solver / method was explicitly specified, we switch it to Native / Power.
-                // We choose the Power method since we call the solver very frequently on 'easy' inputs and power has little overhead).
-                if ((result->env->solver().isLinearEquationSolverTypeSetFromDefaultValue() || result->env->solver().getLinearEquationSolverType() == storm::solver::EquationSolverType::Native) && (result->env->solver().native().isMethodSetFromDefault() || result->env->solver().native().getMethod() == storm::solver::NativeLinearEquationSolverMethod::Power)) {
-                    STORM_LOG_INFO("Switching to Native/Power linear equation solver method. To overwrite this, explicitly specify another method.");
-                    result->env->solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Native);
-                    result->env->solver().native().setMethod(storm::solver::NativeLinearEquationSolverMethod::Power);
+                result->env = std::make_unique<Environment>(env);
+                result->acyclic = acyclic;
+                // For acyclic models we switch to the more efficient acyclic solver (Unless the solver / method was explicitly specified)
+                if (acyclic && result->env->solver().isLinearEquationSolverTypeSetFromDefaultValue() && result->env->solver().getLinearEquationSolverType() != storm::solver::EquationSolverType::Acyclic) {
+                    STORM_LOG_INFO("Switching to Acyclic linear equation solver method. To overwrite this, explicitly specify another solver.");
+                    result->env->solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Acyclic);
                 }
                 result->factory = std::make_unique<storm::solver::GeneralLinearEquationSolverFactory<ValueType>>();
                 result->b.resize(PS.getNumberOfStates());
@@ -343,7 +383,7 @@ namespace storm {
               
             template <class SparseMaModelType>
             template <typename VT, typename std::enable_if<!storm::NumberTraits<VT>::SupportsExponential, int>::type>
-            std::unique_ptr<typename StandardMaPcaaWeightVectorChecker<SparseMaModelType>::LinEqSolverData> StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initLinEqSolver(Environment const& env, SubModel const& PS) const {
+            std::unique_ptr<typename StandardMaPcaaWeightVectorChecker<SparseMaModelType>::LinEqSolverData> StandardMaPcaaWeightVectorChecker<SparseMaModelType>::initLinEqSolver(Environment const& env, SubModel const& PS, bool acyclic) const {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Computing bounded probabilities of MAs is unsupported for this value type.");
             }
             
@@ -369,7 +409,7 @@ namespace storm {
             template <class SparseMaModelType>
             void StandardMaPcaaWeightVectorChecker<SparseMaModelType>::performPSStep(Environment const& env, SubModel& PS, SubModel const& MS, MinMaxSolverData& minMax, LinEqSolverData& linEq, std::vector<uint_fast64_t>& optimalChoicesAtCurrentEpoch,  storm::storage::BitVector const& consideredObjectives, std::vector<ValueType> const& weightVector) const {
                 // compute a choice vector for the probabilistic states that is optimal w.r.t. the weighted reward vector
-                minMax.solver->solveEquations(env, PS.weightedSolutionVector, minMax.b);
+                minMax.solver->solveEquations(*minMax.env, PS.weightedSolutionVector, minMax.b);
                 auto const& newChoices = minMax.solver->getSchedulerChoices();
                 if (consideredObjectives.getNumberOfSetBits() == 1 && storm::utility::isOne(weightVector[*consideredObjectives.begin()])) {
                     // In this case there is no need to perform the computation on the individual objectives
@@ -390,6 +430,11 @@ namespace storm {
                         }
                         linEq.solver = linEq.factory->create(*linEq.env, std::move(linEqMatrix));
                         linEq.solver->setCachingEnabled(true);
+                        auto req = linEq.solver->getRequirements(*linEq.env);
+                        if (linEq.acyclic) {
+                            req.clearAcyclic();
+                        }
+                        STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
                     }
                     
                     // Get the results for the individual objectives.
@@ -443,13 +488,13 @@ namespace storm {
             template double StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::getDigitizationConstant<double>(std::vector<double> const& direction) const;
             template void StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::digitize<double>(StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::SubModel& subModel, double const& digitizationConstant) const;
             template void StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::digitizeTimeBounds<double>( StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::TimeBoundMap& upperTimeBounds, double const& digitizationConstant);
-            template std::unique_ptr<typename StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::LinEqSolverData>  StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::initLinEqSolver<double>(Environment const& env,  StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::SubModel const& PS ) const;
+            template std::unique_ptr<typename StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::LinEqSolverData>  StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::initLinEqSolver<double>(Environment const& env,  StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<double>>::SubModel const& PS, bool acyclic) const;
 #ifdef STORM_HAVE_CARL
             template class StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
             template storm::RationalNumber StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::getDigitizationConstant<storm::RationalNumber>(std::vector<storm::RationalNumber> const& direction) const;
             template void StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::digitize<storm::RationalNumber>(StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::SubModel& subModel, storm::RationalNumber const& digitizationConstant) const;
             template void StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::digitizeTimeBounds<storm::RationalNumber>(StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::TimeBoundMap& upperTimeBounds, storm::RationalNumber const& digitizationConstant);
-            template std::unique_ptr<typename StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::LinEqSolverData>  StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::initLinEqSolver<storm::RationalNumber>(Environment const& env,  StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::SubModel const& PS ) const;
+            template std::unique_ptr<typename StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::LinEqSolverData>  StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::initLinEqSolver<storm::RationalNumber>(Environment const& env,  StandardMaPcaaWeightVectorChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>::SubModel const& PS, bool acyclic) const;
 #endif
             
         }

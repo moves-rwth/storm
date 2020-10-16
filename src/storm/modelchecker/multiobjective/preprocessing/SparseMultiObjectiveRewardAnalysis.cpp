@@ -48,43 +48,39 @@ namespace storm {
                     std::vector<uint_fast64_t> const& groupIndices = transitions.getRowGroupIndices();
                     storm::storage::BitVector allStates(stateCount, true);
     
-                    // Get the choices that yield non-zero reward
-                    storm::storage::BitVector zeroRewardChoices(preprocessorResult.preprocessedModel->getNumberOfChoices(), true);
+                    // Get the choices without any reward for the various objective types
+                    storm::storage::BitVector zeroLraRewardChoices(preprocessorResult.preprocessedModel->getNumberOfChoices(), true);
+                    storm::storage::BitVector zeroTotalRewardChoices(preprocessorResult.preprocessedModel->getNumberOfChoices(), true);
+                    storm::storage::BitVector zeroCumulativeRewardChoices(preprocessorResult.preprocessedModel->getNumberOfChoices(), true);
                     for (auto const& obj : preprocessorResult.objectives) {
                         if (obj.formula->isRewardOperatorFormula()) {
-                            STORM_LOG_WARN_COND(obj.formula->getSubformula().isTotalRewardFormula() || obj.formula->getSubformula().isCumulativeRewardFormula(), "Analyzing reachability reward formulas is not supported properly.");
                             auto const& rewModel = preprocessorResult.preprocessedModel->getRewardModel(obj.formula->asRewardOperatorFormula().getRewardModelName());
-                            zeroRewardChoices &= rewModel.getChoicesWithZeroReward(transitions);
-                        }
-                    }
-                    
-                    // Get the states that have reward for at least one (or for all) choices assigned to it.
-                    storm::storage::BitVector statesWithRewardForOneChoice = storm::storage::BitVector(stateCount, false);
-                    storm::storage::BitVector statesWithRewardForAllChoices = storm::storage::BitVector(stateCount, true);
-                    for (uint_fast64_t state = 0; state < stateCount; ++state) {
-                        bool stateHasChoiceWithReward = false;
-                        bool stateHasChoiceWithoutReward = false;
-                        uint_fast64_t const& groupEnd = groupIndices[state + 1];
-                        for (uint_fast64_t choice = groupIndices[state]; choice < groupEnd; ++choice) {
-                            if (zeroRewardChoices.get(choice)) {
-                                stateHasChoiceWithoutReward = true;
+                            if (obj.formula->getSubformula().isLongRunAverageRewardFormula()) {
+                                zeroLraRewardChoices &= rewModel.getChoicesWithZeroReward(transitions);
+                            } else if (obj.formula->getSubformula().isTotalRewardFormula()) {
+                                zeroTotalRewardChoices &= rewModel.getChoicesWithZeroReward(transitions);
                             } else {
-                                stateHasChoiceWithReward = true;
+                                STORM_LOG_WARN_COND(obj.formula->getSubformula().isCumulativeRewardFormula(), "Analyzing subformula " << obj.formula->getSubformula() << " is not supported properly.");
+                                zeroCumulativeRewardChoices &= rewModel.getChoicesWithZeroReward(transitions);
                             }
                         }
-                        if (stateHasChoiceWithReward) {
-                            statesWithRewardForOneChoice.set(state, true);
-                        }
-                        if (stateHasChoiceWithoutReward) {
-                            statesWithRewardForAllChoices.set(state, false);
-                        }
                     }
                     
-                    // get the states for which there is a scheduler yielding reward zero
-                    result.reward0EStates = storm::utility::graph::performProbGreater0A(transitions, groupIndices, backwardTransitions, allStates, statesWithRewardForAllChoices, false, 0, zeroRewardChoices);
-                    result.reward0EStates.complement();
-                    result.reward0AStates = storm::utility::graph::performProb0A(backwardTransitions, allStates, statesWithRewardForOneChoice);
-                    assert(result.reward0AStates.isSubsetOf(result.reward0EStates));
+                    // get the states for which there is a scheduler yielding total reward zero
+                    auto statesWithTotalRewardForAllChoices = transitions.getRowGroupFilter(~zeroTotalRewardChoices, true);
+                    result.totalReward0EStates = storm::utility::graph::performProbGreater0A(transitions, groupIndices, backwardTransitions, allStates, statesWithTotalRewardForAllChoices, false, 0, zeroTotalRewardChoices);
+                    result.totalReward0EStates.complement();
+                    
+                    // Get the states for which all schedulers yield a reward of 0
+                    // Starting with LRA objectives
+                    auto statesWithoutLraReward = transitions.getRowGroupFilter(zeroLraRewardChoices, true);
+                    // Compute Sat(Forall F (Forall G "LRAStatesWithoutReward"))
+                    auto forallGloballyStatesWithoutLraReward = storm::utility::graph::performProb0A(backwardTransitions, statesWithoutLraReward, ~statesWithoutLraReward);
+                    result.reward0AStates = storm::utility::graph::performProb1A(transitions, groupIndices, backwardTransitions, allStates, forallGloballyStatesWithoutLraReward);
+                    // Now also incorporate cumulative and total reward objectives
+                    auto statesWithTotalOrCumulativeReward = transitions.getRowGroupFilter(~(zeroTotalRewardChoices & zeroCumulativeRewardChoices), false);
+                    result.reward0AStates &= storm::utility::graph::performProb0A(backwardTransitions, allStates, statesWithTotalOrCumulativeReward);
+                    assert(result.reward0AStates.isSubsetOf(result.totalReward0EStates));
                 }
              
                 template<typename SparseModelType>
@@ -126,8 +122,8 @@ namespace storm {
                             result.rewardFinitenessType = RewardFinitenessType::Infinite;
                         } else {
                             // Check whether there is a scheduler under which all rewards are finite.
-                            result.rewardLessInfinityEStates = storm::utility::graph::performProb1E(transitions, groupIndices, backwardTransitions, allStates, result.reward0EStates);
-                            if ((result.rewardLessInfinityEStates.get() & preprocessorResult.preprocessedModel->getInitialStates()).empty()) {
+                            result.totalRewardLessInfinityEStates = storm::utility::graph::performProb1E(transitions, groupIndices, backwardTransitions, allStates, result.totalReward0EStates);
+                            if ((result.totalRewardLessInfinityEStates.get() & preprocessorResult.preprocessedModel->getInitialStates()).empty()) {
                                 // There is no scheduler that induces finite reward for the initial state
                                 result.rewardFinitenessType = RewardFinitenessType::Infinite;
                             } else {
@@ -135,7 +131,7 @@ namespace storm {
                             }
                         }
                     } else {
-                        result.rewardLessInfinityEStates = allStates;
+                        result.totalRewardLessInfinityEStates = allStates;
                     }
                 }
             

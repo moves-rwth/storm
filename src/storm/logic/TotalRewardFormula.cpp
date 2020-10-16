@@ -24,6 +24,10 @@ namespace storm {
             return rewardAccumulation.get();
         }
         
+       std::shared_ptr<TotalRewardFormula const> TotalRewardFormula::stripRewardAccumulation() const {
+            return std::make_shared<TotalRewardFormula>();
+        }
+        
         boost::any TotalRewardFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }

@@ -406,6 +406,7 @@ namespace storm {
              * @param psiStates The set of all states satisfying psi.
              * @param useStepBound A flag that indicates whether or not to use the given number of maximal steps for the search.
              * @param maximalSteps The maximal number of steps to reach the psi states.
+             * @param choiceConstraint If set, we assume that only the specified choices exist in the model
              * @return A bit vector that represents all states with probability 0.
              */
             template <typename T>
