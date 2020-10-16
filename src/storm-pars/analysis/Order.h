@@ -316,6 +316,14 @@ namespace storm {
                      */
                     std::shared_ptr<Order> copy() const;
 
+                    /*!
+                     * Adds an action for a state in an mdp
+                     *
+                     * @param state the considered state
+                     * @param action the action that should be taken by this scheduler at the state
+                     */
+                    void addToMdpScheduler(uint64_t state, uint64_t action);
+
                 protected:
                     std::vector<uint_fast64_t> getStatesSorted() const;
 

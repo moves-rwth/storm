@@ -197,6 +197,11 @@ namespace storm {
             mergeNodes(getNode(var1), getNode(var2));
         }
 
+        void Order::addToMdpScheduler(uint64_t state, uint64_t action) {
+            assert(mdpScheduler != boost::none);
+            mdpScheduler.get()[state] = action;
+        }
+
         /*** Checking on the order ***/
 
         Order::NodeComparison Order::compare(uint_fast64_t state1, uint_fast64_t state2){
@@ -656,6 +661,7 @@ namespace storm {
             }
             return found;
         }
+
 
         std::string Order::nodeName(Node n) const {
             auto itr = n.states.begin();

@@ -81,8 +81,8 @@ namespace storm {
 
             void setUnknownStates(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
 
-
-        private:
+        // TODO changed private to protected for inheritance for now. Change later.
+        protected:
             std::shared_ptr<Order> getBottomTopOrder();
 
             Order::NodeComparison addStatesBasedOnMinMax(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2) const;
