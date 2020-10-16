@@ -161,7 +161,7 @@ namespace storm {
                 unboundedIndividualPhase(env, weightVector);
                 // Only invoke boundedPhase if necessarry, i.e., if there is at least one objective with a time bound
                 for (auto const& obj : this->objectives) {
-                    if (!obj.formula->getSubformula().isTotalRewardFormula()) {
+                    if (!obj.formula->getSubformula().isTotalRewardFormula() && !obj.formula->getSubformula().isLongRunAverageRewardFormula()) {
                         boundedPhase(env, weightVector, weightedRewardVector);
                         break;
                     }

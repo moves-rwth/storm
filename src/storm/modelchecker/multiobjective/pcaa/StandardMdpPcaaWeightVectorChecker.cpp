@@ -83,7 +83,7 @@ namespace storm {
                 }
                 
                 // Stores the objectives for which we need to compute values in the current time epoch.
-                storm::storage::BitVector consideredObjectives = this->objectivesWithNoUpperTimeBound;
+                storm::storage::BitVector consideredObjectives = this->objectivesWithNoUpperTimeBound & ~this->lraObjectives;
                 
                 auto stepBoundIt = stepBounds.begin();
                 uint_fast64_t currentEpoch = stepBounds.empty() ? 0 : stepBoundIt->first;

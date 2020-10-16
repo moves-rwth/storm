@@ -116,7 +116,7 @@ namespace storm {
                 std::vector<uint_fast64_t> optimalChoicesAtCurrentEpoch(PS.getNumberOfStates(), std::numeric_limits<uint_fast64_t>::max());
                 
                 // Stores the objectives for which we need to compute values in the current time epoch.
-                storm::storage::BitVector consideredObjectives = this->objectivesWithNoUpperTimeBound;
+                storm::storage::BitVector consideredObjectives = this->objectivesWithNoUpperTimeBound & ~this->lraObjectives;
                 
                 auto upperTimeBoundIt = upperTimeBounds.begin();
                 uint_fast64_t currentEpoch = upperTimeBounds.empty() ? 0 : upperTimeBoundIt->first;
