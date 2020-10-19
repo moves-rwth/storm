@@ -25,12 +25,12 @@ Assuming that the directory `dependencies` contains the `*.deb` files, and `carl
 #!/bin/bash
 
 # Get the number of available threads for multithreaded compiling
-$THREADS=$(nproc)
+THREADS=$(nproc)
 
 # cd to the directory where the script lies in
 cd "$( dirname "${BASH_SOURCE[0]}" )"
 
-echo "Installing dependencies. You might need to enter the root password 'tacas20ae'"
+echo "Installing dependencies. You might need to enter the root password"
 cd dependencies
 sudo dpkg -i *.deb
 cd ..
