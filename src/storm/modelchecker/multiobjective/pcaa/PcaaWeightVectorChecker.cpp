@@ -35,7 +35,7 @@ namespace storm {
             boost::optional<typename SparseModelType::ValueType> PcaaWeightVectorChecker<SparseModelType>::computeWeightedResultBound(bool lower, std::vector<ValueType> const& weightVector, storm::storage::BitVector const& objectiveFilter) const {
                 
                 ValueType result = storm::utility::zero<ValueType>();
-                for (auto const& objIndex : objectiveFilter) {
+                for (auto objIndex : objectiveFilter) {
                     boost::optional<ValueType> const& objBound = (lower == storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType())) ? this->objectives[objIndex].upperResultBound : this->objectives[objIndex].lowerResultBound;
                     if (objBound) {
                         if (storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType())) {

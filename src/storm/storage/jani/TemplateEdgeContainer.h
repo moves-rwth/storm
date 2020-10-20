@@ -11,6 +11,7 @@ namespace storm {
         struct TemplateEdgeContainer : public std::unordered_set<std::shared_ptr<TemplateEdge>>   {
             TemplateEdgeContainer() = default;
             TemplateEdgeContainer(TemplateEdgeContainer const& other);
+            TemplateEdgeContainer& operator=(TemplateEdgeContainer const& other);
         };
     }
 }

@@ -15,12 +15,12 @@ namespace storm {
             }
 
             template <typename ValueType, typename RewardModelType>
-            Pomdp<ValueType, RewardModelType>::Pomdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const &components, bool canonicFlag) : Mdp<ValueType, RewardModelType>(components, storm::models::ModelType::Pomdp), observations(components.observabilityClasses.get()), canonicFlag(canonicFlag)  {
+            Pomdp<ValueType, RewardModelType>::Pomdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const &components, bool canonicFlag) : Mdp<ValueType, RewardModelType>(components, storm::models::ModelType::Pomdp), observations(components.observabilityClasses.get()), canonicFlag(canonicFlag) , observationValuations(components.observationValuations) {
                 computeNrObservations();
             }
 
             template <typename ValueType, typename RewardModelType>
-            Pomdp<ValueType, RewardModelType>::Pomdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> &&components, bool canonicFlag): Mdp<ValueType, RewardModelType>(components, storm::models::ModelType::Pomdp), observations(components.observabilityClasses.get()), canonicFlag(canonicFlag) {
+            Pomdp<ValueType, RewardModelType>::Pomdp(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> &&components, bool canonicFlag): Mdp<ValueType, RewardModelType>(components, storm::models::ModelType::Pomdp), observations(components.observabilityClasses.get()), canonicFlag(canonicFlag) , observationValuations(components.observationValuations) {
                 computeNrObservations();
             }
 
@@ -101,6 +101,21 @@ namespace storm {
             }
 
             template<typename ValueType, typename RewardModelType>
+            bool Pomdp<ValueType, RewardModelType>::hasObservationValuations() const {
+                return static_cast<bool>(observationValuations);
+            }
+
+            template<typename ValueType, typename RewardModelType>
+            storm::storage::sparse::StateValuations const& Pomdp<ValueType, RewardModelType>::getObservationValuations() const {
+                return observationValuations.get();
+            }
+
+            template<typename ValueType, typename RewardModelType>
+            boost::optional<storm::storage::sparse::StateValuations> const& Pomdp<ValueType, RewardModelType>::getOptionalObservationValuations() const {
+                return observationValuations;
+            }
+
+            template<typename ValueType, typename RewardModelType>
             bool Pomdp<ValueType, RewardModelType>::isCanonic() const {
                 return canonicFlag;
             }
@@ -108,6 +123,11 @@ namespace storm {
             template<typename ValueType, typename RewardModelType>
             void Pomdp<ValueType, RewardModelType>::setIsCanonic(bool newValue) {
                 this->canonicFlag = newValue;
+            }
+
+            template<typename ValueType, typename RewardModelType>
+            bool Pomdp<ValueType, RewardModelType>::isPartiallyObservable() const {
+                return true;
             }
 
             template<typename ValueType, typename RewardModelType>

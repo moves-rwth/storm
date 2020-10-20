@@ -74,7 +74,7 @@ namespace storm {
                     auto notPhi = std::make_shared<storm::logic::UnaryBooleanStateFormula>(storm::logic::UnaryBooleanStateFormula::OperatorType::Not, subsubFormula.asGloballyFormula().getSubformula().asSharedPointer());
                     memory = memory.product(getGoalMemory(model, *notPhi));
                 } else {
-                    STORM_LOG_THROW(subsubFormula.isTotalRewardFormula() || subsubFormula.isCumulativeRewardFormula(), storm::exceptions::NotSupportedException, "The given Formula " << subsubFormula << " is not supported.");
+                    STORM_LOG_THROW(subFormula->isLongRunAverageOperatorFormula() || subsubFormula.isTotalRewardFormula() || subsubFormula.isCumulativeRewardFormula() || subsubFormula.isLongRunAverageRewardFormula(), storm::exceptions::NotSupportedException, "The given Formula " << subsubFormula << " is not supported.");
                 }
             }
 

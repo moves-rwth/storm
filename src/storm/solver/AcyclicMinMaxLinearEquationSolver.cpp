@@ -27,15 +27,7 @@ namespace storm {
         bool AcyclicMinMaxLinearEquationSolver<ValueType>::internalSolveEquations(Environment const& env, OptimizationDirection dir, std::vector<ValueType>& x, std::vector<ValueType> const& b) const {
             STORM_LOG_ASSERT(x.size() == this->A->getRowGroupCount(), "Provided x-vector has invalid size.");
             STORM_LOG_ASSERT(b.size() == this->A->getRowCount(), "Provided b-vector has invalid size.");
-            // Allocate memory for the scheduler (if required)
-            if (this->isTrackSchedulerSet()) {
-                if (this->schedulerChoices) {
-                    this->schedulerChoices->resize(this->A->getRowGroupCount());
-                } else {
-                    this->schedulerChoices = std::vector<uint_fast64_t>(this->A->getRowGroupCount());
-                }
-            }
-            
+
             if (!multiplier) {
                 // We have not allocated cache memory, yet
                 rowGroupOrdering = helper::computeTopologicalGroupOrdering(*this->A);
@@ -72,15 +64,39 @@ namespace storm {
                 bPtr = &auxiliaryRowVector.get();
             }
             
+            // Allocate memory for the scheduler (if required)
+            std::vector<uint64_t>* choicesPtr = nullptr;
             if (this->isTrackSchedulerSet()) {
-                this->multiplier->multiplyAndReduceGaussSeidel(env, dir, *xPtr, bPtr, &this->schedulerChoices.get(), true);
-            } else {
-                this->multiplier->multiplyAndReduceGaussSeidel(env, dir, *xPtr, bPtr, nullptr, true);
+                if (this->schedulerChoices) {
+                    this->schedulerChoices->resize(this->A->getRowGroupCount());
+                } else {
+                    this->schedulerChoices = std::vector<uint64_t>(this->A->getRowGroupCount());
+                }
+                if (rowGroupOrdering) {
+                    if (auxiliaryRowGroupIndexVector) {
+                        auxiliaryRowGroupIndexVector->resize(this->A->getRowGroupCount());
+                    } else {
+                        auxiliaryRowGroupIndexVector = std::vector<uint64_t>(this->A->getRowGroupCount());
+                    }
+                    choicesPtr = &(auxiliaryRowGroupIndexVector.get());
+                } else {
+                    choicesPtr = &(this->schedulerChoices.get());
+                }
             }
             
+            // Since a topological ordering is guaranteed, we can solve the equations with a single matrix-vector Multiplication step.
+            this->multiplier->multiplyAndReduceGaussSeidel(env, dir, *xPtr, bPtr, choicesPtr, true);
+
             if (rowGroupOrdering) {
+                // Restore the correct input-order for the output vector
                 for (uint64_t newGroupIndex = 0; newGroupIndex < x.size(); ++newGroupIndex) {
                     x[(*rowGroupOrdering)[newGroupIndex]] = (*xPtr)[newGroupIndex];
+                }
+                if (this->isTrackSchedulerSet()) {
+                    // Do the same for the scheduler choices
+                    for (uint64_t newGroupIndex = 0; newGroupIndex < x.size(); ++newGroupIndex) {
+                        this->schedulerChoices.get()[(*rowGroupOrdering)[newGroupIndex]] = (*choicesPtr)[newGroupIndex];
+                    }
                 }
             }
             
@@ -105,6 +121,7 @@ namespace storm {
             rowGroupOrdering = boost::none;
             auxiliaryRowVector = boost::none;
             auxiliaryRowGroupVector = boost::none;
+            auxiliaryRowGroupIndexVector = boost::none;
             bFactors.clear();
         }
         

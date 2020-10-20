@@ -69,13 +69,14 @@ namespace storm {
                     static void preprocessProbabilityOperatorFormula(storm::logic::ProbabilityOperatorFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data);
                     static void preprocessRewardOperatorFormula(storm::logic::RewardOperatorFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data);
                     static void preprocessTimeOperatorFormula(storm::logic::TimeOperatorFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data);
+                    static void preprocessLongRunAverageOperatorFormula(storm::logic::LongRunAverageOperatorFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data);
                     static void preprocessUntilFormula(storm::logic::UntilFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data, std::shared_ptr<storm::logic::Formula const> subformula = nullptr);
                     static void preprocessBoundedUntilFormula(storm::logic::BoundedUntilFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data);
                     static void preprocessGloballyFormula(storm::logic::GloballyFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data);
                     static void preprocessEventuallyFormula(storm::logic::EventuallyFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data, boost::optional<std::string> const& optionalRewardModelName = boost::none);
                     static void preprocessCumulativeRewardFormula(storm::logic::CumulativeRewardFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data, boost::optional<std::string> const& optionalRewardModelName = boost::none);
-                    static void preprocessTotalRewardFormula(storm::logic::OperatorInformation const& opInfo, PreprocessorData& data, boost::optional<std::string> const& optionalRewardModelName = boost::none); // The total reward formula itself does not need to be provided as it is unique.
-                    
+                    static void preprocessTotalRewardFormula(storm::logic::TotalRewardFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data, boost::optional<std::string> const& optionalRewardModelName = boost::none);
+                    static void preprocessLongRunAverageRewardFormula(storm::logic::LongRunAverageRewardFormula const& formula, storm::logic::OperatorInformation const& opInfo, PreprocessorData& data, boost::optional<std::string> const& optionalRewardModelName = boost::none);
                     
                     /*!
                      * Builds the result from preprocessing

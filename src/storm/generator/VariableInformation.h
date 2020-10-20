@@ -89,6 +89,12 @@ namespace storm {
 
             bool observable;
         };
+
+        struct ObservationLabelInformation {
+            ObservationLabelInformation(std::string const& name);
+            std::string name;
+            bool deterministic = true;
+        };
         
         // A structure storing information about the used variables of the program.
         struct VariableInformation {
@@ -113,7 +119,10 @@ namespace storm {
             
             /// The integer variables.
             std::vector<IntegerVariableInformation> integerVariables;
-            
+
+            /// The observation labels
+            std::vector<ObservationLabelInformation> observationLabels;
+
             /// Replacements for each array variable
             std::unordered_map<storm::expressions::Variable, std::vector<uint64_t>> arrayVariableToElementInformations;
 

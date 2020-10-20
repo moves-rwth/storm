@@ -643,6 +643,15 @@ namespace storm {
             storm::storage::BitVector getRowFilter(storm::storage::BitVector const& groupConstraint, storm::storage::BitVector const& columnConstraints) const;
             
             /*!
+             * Returns the indices of all row groups selected by the row constraints
+             *
+             * @param rowConstraint the selected rows
+             * @param setIfForAllRowsInGroup if true, a group is selected if the rowConstraint is true for *all* rows within that group. If false, a group is selected if the rowConstraint is true for *some* row within that group
+             * @return a bit vector that is true at position i iff row i satisfies the constraints.
+             */
+            storm::storage::BitVector getRowGroupFilter(storm::storage::BitVector const& rowConstraint, bool setIfForAllRowsInGroup) const;
+            
+            /*!
              * This function makes the given rows absorbing.
              *
              * @param rows A bit vector indicating which rows are to be made absorbing.

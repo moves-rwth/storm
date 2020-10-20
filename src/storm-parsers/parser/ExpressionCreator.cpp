@@ -141,18 +141,18 @@ namespace storm {
             return manager.boolean(false);
         }
         
-        storm::expressions::Expression ExpressionCreator::createUnaryExpression(boost::optional<storm::expressions::OperatorType> const& operatorType, storm::expressions::Expression const& e1, bool& pass) const {
+        storm::expressions::Expression ExpressionCreator::createUnaryExpression(std::vector<storm::expressions::OperatorType> const& operatorTypes, storm::expressions::Expression const& e1, bool& pass) const {
             if (this->createExpressions) {
                 try {
-                    if (operatorType) {
-                        switch (operatorType.get()) {
-                            case storm::expressions::OperatorType::Not: return !e1; break;
-                            case storm::expressions::OperatorType::Minus: return -e1; break;
+                    storm::expressions::Expression result = e1;
+                    for (auto const& op : operatorTypes) {
+                        switch (op) {
+                            case storm::expressions::OperatorType::Not: result = !result; break;
+                            case storm::expressions::OperatorType::Minus: result = -result; break;
                             default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
                         }
-                    } else {
-                        return e1;
                     }
+                    return result;
                 } catch (storm::exceptions::InvalidTypeException const& e) {
                     pass = false;
                 }

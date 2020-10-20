@@ -30,6 +30,8 @@ namespace storm {
         }
 
         template class BeliefSupportTracker<double>;
+        template class BeliefSupportTracker<storm::RationalNumber>;
+
 
     }
 }
