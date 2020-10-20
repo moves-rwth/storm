@@ -153,46 +153,10 @@ namespace storm {
             //return std::equal(lhs.belief.begin(), lhs.belief.end(), rhs.belief.begin());
         }
 
-        template<typename ValueType>
-        SparseBeliefState<ValueType> SparseBeliefState<ValueType>::update(uint64_t action, uint32_t observation) const {
-            std::map<uint64_t, ValueType> newBelief;
-            ValueType sum = storm::utility::zero<ValueType>();
-            for (auto const& beliefentry : belief) {
-                assert(manager->getPomdp().getNumberOfChoices(beliefentry.first) > action);
-                auto row = manager->getPomdp().getNondeterministicChoiceIndices()[beliefentry.first] + action;
-                for (auto const& transition : manager->getPomdp().getTransitionMatrix().getRow(row)) {
-                    if (observation != manager->getPomdp().getObservation(transition.getColumn())) {
-                        continue;
-                    }
-
-                    if (newBelief.count(transition.getColumn()) == 0) {
-                        newBelief[transition.getColumn()] = transition.getValue() * beliefentry.second;
-                    } else {
-                        newBelief[transition.getColumn()] += transition.getValue() * beliefentry.second;
-                    }
-                    sum += transition.getValue() * beliefentry.second;
-                }
-            }
-            std::size_t newHash = 0;
-            ValueType risk = storm::utility::zero<ValueType>();
-            for(auto& entry : newBelief) {
-                assert(!storm::utility::isZero(sum));
-                entry.second /= sum;
-                //boost::hash_combine(newHash, std::hash<ValueType>()(entry.second));
-                boost::hash_combine(newHash, entry.first);
-                risk += entry.second * manager->getRisk(entry.first);
-            }
-            return SparseBeliefState<ValueType>(manager, newBelief, newHash, risk, id);
-        }
 
         template<typename ValueType>
         void SparseBeliefState<ValueType>::update(uint32_t newObservation, std::unordered_set<SparseBeliefState<ValueType>>& previousBeliefs) const {
             updateHelper({{}}, {storm::utility::zero<ValueType>()}, belief.begin(), newObservation, previousBeliefs);
-        }
-
-        template<typename ValueType>
-        Eigen::Matrix<ValueType, Eigen::Dynamic, 1> SparseBeliefState<ValueType>::toEigenVector(storm::storage::BitVector const& support) const {
-            assert(false);
         }
 
         template<typename ValueType>
@@ -386,11 +350,6 @@ namespace storm {
         }
 
         template<typename ValueType>
-        Eigen::Matrix<ValueType, Eigen::Dynamic, 1> ObservationDenseBeliefState<ValueType>::toEigenVector(storm::storage::BitVector const& support) const {
-            return storm::adapters::EigenAdapter::toEigenVector(storm::utility::vector::filterVector(belief, support));
-        }
-
-        template<typename ValueType>
         uint64_t ObservationDenseBeliefState<ValueType>::getSupportSize() const {
             return belief.size();
         }
@@ -398,8 +357,6 @@ namespace storm {
         template<typename ValueType>
         void ObservationDenseBeliefState<ValueType>::setSupport(storm::storage::BitVector& support) const {
             storm::utility::vector::setNonzeroIndices(belief, support);
-            std::cout << "Belief is " << storm::utility::vector::toString(belief) << std::endl;
-            std::cout << "Support is now " << support << std::endl;
         }
 
 
@@ -450,7 +407,6 @@ namespace storm {
         bool NondeterministicBeliefTracker<ValueType, BeliefState>::track(uint64_t newObservation) {
             STORM_LOG_THROW(!beliefs.empty(), storm::exceptions::InvalidOperationException, "Cannot track without a belief (need to reset).");
             std::unordered_set<BeliefState> newBeliefs;
-            //for (uint64_t action = 0; action < manager->getActionsForObservation(lastObservation); ++action) {
             storm::utility::Stopwatch trackTimer(true);
             for (auto const& belief : beliefs) {
                 belief.update(newObservation, newBeliefs);
@@ -458,7 +414,6 @@ namespace storm {
                     return false;
                 }
             }
-            //}
             beliefs = newBeliefs;
             lastObservation = newObservation;
             return !beliefs.empty();
