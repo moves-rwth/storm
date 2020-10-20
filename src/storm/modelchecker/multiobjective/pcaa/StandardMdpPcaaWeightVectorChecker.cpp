@@ -37,13 +37,25 @@ namespace storm {
                         auto const& cumulativeRewardFormula = formula.getSubformula().asCumulativeRewardFormula();
                         STORM_LOG_THROW(!cumulativeRewardFormula.isMultiDimensional() && !cumulativeRewardFormula.getTimeBoundReference().isRewardBound(), storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula());
                     } else {
-                        STORM_LOG_THROW(formula.getSubformula().isTotalRewardFormula(), storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula());
+                        STORM_LOG_THROW(formula.getSubformula().isTotalRewardFormula() || formula.getSubformula().isLongRunAverageRewardFormula(), storm::exceptions::UnexpectedException, "Unexpected type of sub-formula: " << formula.getSubformula());
                         
                     }
                     typename SparseMdpModelType::RewardModelType const& rewModel = model.getRewardModel(formula.asRewardOperatorFormula().getRewardModelName());
                     STORM_LOG_THROW(!rewModel.hasTransitionRewards(), storm::exceptions::NotSupportedException, "Reward model has transition rewards which is not expected.");
                     this->actionRewards[objIndex] = rewModel.getTotalRewardVector(model.getTransitionMatrix());
                 }
+            }
+            
+            template <class SparseMdpModelType>
+            storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<typename SparseMdpModelType::ValueType> StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::createNondetInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitions) const {
+                STORM_LOG_ASSERT(transitions.getRowGroupCount() == this->transitionMatrix.getRowGroupCount(), "Unexpected size of given matrix.");
+                return storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType>(transitions);
+            }
+            
+            template <class SparseMdpModelType>
+            storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<typename SparseMdpModelType::ValueType> StandardMdpPcaaWeightVectorChecker<SparseMdpModelType>::createDetInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitions) const {
+                STORM_LOG_ASSERT(transitions.getRowGroupCount() == this->transitionMatrix.getRowGroupCount(), "Unexpected size of given matrix.");
+                return storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<ValueType>(transitions);
             }
             
             template <class SparseMdpModelType>
@@ -71,7 +83,7 @@ namespace storm {
                 }
                 
                 // Stores the objectives for which we need to compute values in the current time epoch.
-                storm::storage::BitVector consideredObjectives = this->objectivesWithNoUpperTimeBound;
+                storm::storage::BitVector consideredObjectives = this->objectivesWithNoUpperTimeBound & ~this->lraObjectives;
                 
                 auto stepBoundIt = stepBounds.begin();
                 uint_fast64_t currentEpoch = stepBounds.empty() ? 0 : stepBoundIt->first;

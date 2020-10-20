@@ -8,6 +8,8 @@
 #include "storm/modelchecker/multiobjective/MultiObjectivePostprocessing.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/storage/geometry/Hyperrectangle.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/CoreSettings.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
 #include "storm/io/export.h"
@@ -18,6 +20,12 @@ namespace storm {
     namespace modelchecker {
         namespace multiobjective {
             
+            template <class SparseModelType, typename GeometryValueType>
+            SparsePcaaQuery<SparseModelType, GeometryValueType>::~SparsePcaaQuery() {
+                if (storm::settings::getModule<storm::settings::modules::CoreSettings>().isShowStatisticsSet()) {
+                    STORM_PRINT_AND_LOG("Pareto Curve Approximation Algorithm terminated after " << this->refinementSteps.size() << " refinement steps." << std::endl);
+                }
+            }
             
             template <class SparseModelType, typename GeometryValueType>
             SparsePcaaQuery<SparseModelType, GeometryValueType>::SparsePcaaQuery(preprocessing::SparseMultiObjectivePreprocessorResult<SparseModelType>& preprocessorResult) :

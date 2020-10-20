@@ -25,7 +25,9 @@ namespace storm {
             namespace internal {
                 
                 template <typename ValueType, typename ComponentType, LraViTransitionsType TransitionsType>
-                LraViHelper<ValueType, ComponentType, TransitionsType>::LraViHelper(ComponentType const& component, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, ValueType const& aperiodicFactor, storm::storage::BitVector const* timedStates, std::vector<ValueType> const* exitRates) : _component(component), _transitionMatrix(transitionMatrix), _timedStates(timedStates), _hasInstantStates(TransitionsType == LraViTransitionsType::DetTsNondetIs || TransitionsType == LraViTransitionsType::DetTsDetIs), _Tsx1IsCurrent(false) {
+                LraViHelper<ValueType, ComponentType, TransitionsType>::LraViHelper(ComponentType const& component, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, ValueType const& aperiodicFactor, storm::storage::BitVector const* timedStates, std::vector<ValueType> const* exitRates) : _transitionMatrix(transitionMatrix), _timedStates(timedStates), _hasInstantStates(TransitionsType == LraViTransitionsType::DetTsNondetIs || TransitionsType == LraViTransitionsType::DetTsDetIs), _Tsx1IsCurrent(false) {
+                    setComponent(component);
+                    
                     // Run through the component and collect some data:
                     // We create two submodels, one consisting of the timed states of the component and one consisting of the instant states of the component.
                     // For this, we create a state index map that point from state indices of the input model to indices of the corresponding submodel of that state.
@@ -38,20 +40,20 @@ namespace storm {
                     _uniformizationRate = exitRates == nullptr ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>();
                     // Now run over the MEC and collect the required data.
                     for (auto const& element : _component) {
-                        uint64_t componentState = getComponentElementState(element);
+                        uint64_t componentState = element.first;
                         if (isTimedState(componentState)) {
                             toSubModelStateMapping.emplace(componentState, numTsSubModelStates);
                             ++numTsSubModelStates;
-                            numTsSubModelChoices += getComponentElementChoiceCount(element);
-                            STORM_LOG_ASSERT(nondetTs() || getComponentElementChoiceCount(element) == 1, "Timed state has multiple choices but only a single choice was expected.");
+                            numTsSubModelChoices += element.second.size();
+                            STORM_LOG_ASSERT(nondetTs() || element.second.size() == 1, "Timed state has multiple choices but only a single choice was expected.");
                             if (exitRates) {
                                 _uniformizationRate = std::max(_uniformizationRate, (*exitRates)[componentState]);
                             }
                         } else {
                             toSubModelStateMapping.emplace(componentState, numIsSubModelStates);
                             ++numIsSubModelStates;
-                            numIsSubModelChoices += getComponentElementChoiceCount(element);
-                            STORM_LOG_ASSERT(nondetIs() || getComponentElementChoiceCount(element) == 1, "Instant state has multiple choices but only a single choice was expected.");
+                            numIsSubModelChoices += element.second.size();
+                            STORM_LOG_ASSERT(nondetIs() || element.second.size() == 1, "Instant state has multiple choices but only a single choice was expected.");
                         }
                     }
                     assert(numIsSubModelStates + numTsSubModelStates == _component.size());
@@ -78,7 +80,7 @@ namespace storm {
                     uint64_t currTsRow = 0;
                     uint64_t currIsRow = 0;
                     for (auto const& element : _component) {
-                        uint64_t componentState = getComponentElementState(element);
+                        uint64_t componentState = element.first;
                         if (isTimedState(componentState)) {
                             // The currently processed state is timed.
                             if (nondetTs()) {
@@ -93,9 +95,9 @@ namespace storm {
                             }
                             // We need to uniformize which means that a diagonal entry for the selfloop will be inserted.
                             ValueType selfLoopProb = storm::utility::one<ValueType>() - uniformizationFactor;
-                            for (auto componentChoiceIt = getComponentElementChoicesBegin(element); componentChoiceIt != getComponentElementChoicesEnd(element); ++componentChoiceIt) {
+                            for (auto const& componentChoice : element.second) {
                                 tsTransitionsBuilder.addDiagonalEntry(currTsRow, selfLoopProb);
-                                for (auto const& entry : this->_transitionMatrix.getRow(*componentChoiceIt)) {
+                                for (auto const& entry : this->_transitionMatrix.getRow(componentChoice)) {
                                     uint64_t subModelColumn = toSubModelStateMapping[entry.getColumn()];
                                     if (isTimedState(entry.getColumn())) {
                                         // We have a transition from a timed state to a timed state
@@ -115,8 +117,8 @@ namespace storm {
                                 isTransitionsBuilder.newRowGroup(currIsRow);
                                 isToTsTransitionsBuilder.newRowGroup(currIsRow);
                             }
-                            for (auto componentChoiceIt = getComponentElementChoicesBegin(element); componentChoiceIt != getComponentElementChoicesEnd(element); ++componentChoiceIt) {
-                                for (auto const& entry : this->_transitionMatrix.getRow(*componentChoiceIt)) {
+                            for (auto const& componentChoice : element.second) {
+                                for (auto const& entry : this->_transitionMatrix.getRow(componentChoice)) {
                                     uint64_t subModelColumn = toSubModelStateMapping[entry.getColumn()];
                                     if (isTimedState(entry.getColumn())) {
                                         // We have a transition from an instant state to a timed state
@@ -139,6 +141,20 @@ namespace storm {
                         _IsToTsTransitions = isToTsTransitionsBuilder.build();
                     }
                 }
+                
+                template <typename ValueType, typename ComponentType, LraViTransitionsType TransitionsType>
+                void LraViHelper<ValueType, ComponentType, TransitionsType>::setComponent(ComponentType component) {
+                    _component.clear();
+                    for (auto const& element : component) {
+                        uint64_t componentState = getComponentElementState(element);
+                        std::set<uint64_t> componentChoices;
+                        for (auto componentChoiceIt = getComponentElementChoicesBegin(element); componentChoiceIt != getComponentElementChoicesEnd(element); ++componentChoiceIt) {
+                            componentChoices.insert(*componentChoiceIt);
+                        }
+                        _component.emplace(std::move(componentState), std::move(componentChoices));
+                    }
+                }
+
                 
                 template <typename ValueType, typename ComponentType, LraViTransitionsType TransitionsType>
                 ValueType LraViHelper<ValueType, ComponentType, TransitionsType>::performValueIteration(Environment const& env, ValueGetter const& stateValueGetter, ValueGetter const& actionValueGetter, std::vector<ValueType> const* exitRates, storm::solver::OptimizationDirection const* dir, std::vector<uint64_t>* choices) {
@@ -199,20 +215,20 @@ namespace storm {
                     // Set the new choice-based values
                     ValueType actionRewardScalingFactor = storm::utility::one<ValueType>() / _uniformizationRate;
                     for (auto const& element : _component) {
-                        uint64_t componentState = getComponentElementState(element);
+                        uint64_t componentState = element.first;
                         if (isTimedState(componentState)) {
                             if (exitRates) {
                                 actionRewardScalingFactor = (*exitRates)[componentState] / _uniformizationRate;
                             }
-                            for (auto componentChoiceIt = getComponentElementChoicesBegin(element); componentChoiceIt != getComponentElementChoicesEnd(element); ++componentChoiceIt) {
+                            for (auto const& componentChoice : element.second) {
                                 // Compute the values obtained for this choice.
-                                _TsChoiceValues.push_back(stateValueGetter(componentState) / _uniformizationRate + actionValueGetter(*componentChoiceIt) * actionRewardScalingFactor);
+                                _TsChoiceValues.push_back(stateValueGetter(componentState) / _uniformizationRate + actionValueGetter(componentChoice) * actionRewardScalingFactor);
                             }
                         } else {
-                            for (auto componentChoiceIt = getComponentElementChoicesBegin(element); componentChoiceIt != getComponentElementChoicesEnd(element); ++componentChoiceIt) {
+                            for (auto const& componentChoice : element.second) {
                                 // Compute the values obtained for this choice.
                                 // State values do not count here since no time passes in instant states.
-                                _IsChoiceValues.push_back(actionValueGetter(*componentChoiceIt));
+                                _IsChoiceValues.push_back(actionValueGetter(componentChoice));
                             }
                         }
                     }
@@ -301,13 +317,17 @@ namespace storm {
                     // Transform the local choices (within this mec) to choice indices for the input model
                     uint64_t localState = 0;
                     for (auto const& element : _component) {
-                        uint64_t elementState = getComponentElementState(element);
+                        uint64_t elementState = element.first;
                         if ((setChoiceZeroToTimedStates && isTimedState(elementState)) || (setChoiceZeroToInstantStates && !isTimedState(elementState))) {
                             choices[elementState] = 0;
                         } else {
                             uint64_t choice = localMecChoices[localState];
-                            STORM_LOG_ASSERT(choice < getComponentElementChoiceCount(element), "The selected choice does not seem to exist.");
-                            uint64_t globalChoiceIndex = *(getComponentElementChoicesBegin(element) + choice);
+                            STORM_LOG_ASSERT(choice < element.second.size(), "The selected choice does not seem to exist.");
+                            auto globalChoiceIndexIt = element.second.begin();
+                            for (uint64_t i = 0; i < choice; ++i) {
+                                ++globalChoiceIndexIt;
+                            }
+                            uint64_t globalChoiceIndex = *(globalChoiceIndexIt);
                             choices[elementState] = globalChoiceIndex - _transitionMatrix.getRowGroupIndices()[elementState];
                             ++localState;
                         }

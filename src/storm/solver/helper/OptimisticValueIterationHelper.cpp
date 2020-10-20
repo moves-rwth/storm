@@ -3,6 +3,7 @@
 #include "storm/utility/vector.h"
 #include "storm/utility/SignalHandler.h"
 #include "storm/environment/solver/OviSolverEnvironment.h"
+#include "storm/utility/ProgressMeasurement.h"
 
 #include "storm/exceptions/NotSupportedException.h"
 
@@ -260,6 +261,8 @@ namespace storm {
     
                 SolverStatus status = SolverStatus::InProgress;
     
+                storm::utility::ProgressMeasurement progress("iterations.");
+                progress.startNewMeasurement(0);
                 while (status == SolverStatus::InProgress && overallIterations < maxOverallIterations) {
                     // Perform value iteration until convergence
                     lastValueIterationIterations = dir ? iterationHelper.repeatedIterate(dir.get(), *lowerX, b, iterationPrecision, relative) : iterationHelper.repeatedIterate(*lowerX, b, iterationPrecision, relative);
@@ -351,8 +354,8 @@ namespace storm {
                     if (storm::utility::resources::isTerminate()) {
                         status = SolverStatus::Aborted;
                     }
+                    progress.updateProgress(overallIterations);
                 } // end while
-                
                 // Swap the results into the output vectors (if necessary).
                 assert(initLowerX != lowerX || (initLowerX == lowerX && initUpperX == upperX));
                 if (initLowerX != lowerX) {

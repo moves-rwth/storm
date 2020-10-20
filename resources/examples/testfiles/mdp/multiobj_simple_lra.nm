@@ -1,0 +1,28 @@
+mdp
+module main
+	
+	x : [0..3];
+	[a] x=0 -> 0.5 : (x'=1) + 0.5 : (x'=0);
+	[a] x=0 -> 0.2 : (x'=0) + 0.8 : (x'=3);
+	[b] x=1 -> (x'=1);
+	[c] x=2 -> (x'=2);
+	[d] x=1 -> (x'=2);
+	[d] x=2 -> 0.1 : (x'=1) + 0.9 : (x'=2);
+    [] x=3 -> (x'=3);
+endmodule
+
+rewards "first"
+	[a] true : 1;
+	[b] true : 5;
+	[d] true : 5;
+endrewards
+
+rewards "second"
+	[a] true : 1;
+	[c] true : 8;
+	x=2 : 8;
+endrewards
+
+rewards "third"
+    x=0 : 1;
+endrewards

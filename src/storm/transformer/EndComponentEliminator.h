@@ -24,6 +24,8 @@ namespace storm {
                 // States of a removed ECs are mapped to the state that substitutes the EC.
                 // If the given state does not exist in the result (i.e., it is not in the provided subsystem), the returned value will be std::numeric_limits<uint_fast64_t>::max(), i.e., an invalid index.
                 std::vector<uint_fast64_t> oldToNewStateMapping;
+                // Indicates the rows that represent "staying" in the eliminated EC for ever
+                storm::storage::BitVector sinkRows;
             };
             
             /*
@@ -52,7 +54,7 @@ namespace storm {
                 EndComponentEliminatorReturnType result;
                 std::vector<uint_fast64_t> newRowGroupIndices;
                 result.oldToNewStateMapping = std::vector<uint_fast64_t>(originalMatrix.getRowGroupCount(), std::numeric_limits<uint_fast64_t>::max());
-                storm::storage::BitVector sinkRows(originalMatrix.getRowCount(), false); // will be resized as soon as the rowCount of the resulting matrix is known
+                result.sinkRows = storm::storage::BitVector(originalMatrix.getRowCount(), false); // will be resized as soon as the rowCount of the resulting matrix is known
                 
                 for(auto keptState : keptStates) {
                     result.oldToNewStateMapping[keptState] = newRowGroupIndices.size(); // i.e., the current number of processed states
@@ -75,14 +77,14 @@ namespace storm {
                     }
                     if(ecGetsSinkRow) {
                         STORM_LOG_ASSERT(result.newToOldRowMapping.size() < originalMatrix.getRowCount(), "Didn't expect to see more rows in the reduced matrix than in the original one.");
-                        sinkRows.set(result.newToOldRowMapping.size(), true);
+                        result.sinkRows.set(result.newToOldRowMapping.size(), true);
                         result.newToOldRowMapping.push_back(*ec.begin()->second.begin());
                     }
                 }
                 newRowGroupIndices.push_back(result.newToOldRowMapping.size());
-                sinkRows.resize(result.newToOldRowMapping.size());
+                result.sinkRows.resize(result.newToOldRowMapping.size());
                 
-                result.matrix = buildTransformedMatrix(originalMatrix, newRowGroupIndices, result.newToOldRowMapping, result.oldToNewStateMapping, sinkRows, addSelfLoopAtSinkStates);
+                result.matrix = buildTransformedMatrix(originalMatrix, newRowGroupIndices, result.newToOldRowMapping, result.oldToNewStateMapping, result.sinkRows, addSelfLoopAtSinkStates);
                 STORM_LOG_DEBUG("EndComponentEliminator is done. Resulting matrix has " << result.matrix.getRowGroupCount() << " row groups.");
                 return result;
             }

@@ -347,6 +347,12 @@ namespace storm {
             
             SymbolicInput output = input;
             
+            // Preprocess properties (if requested)
+            if (ioSettings.isPropertiesAsMultiSet()) {
+                STORM_LOG_THROW(!input.properties.empty(), storm::exceptions::InvalidArgumentException, "Can not translate properties to multi-objective formula because no properties were specified.");
+                output.properties = {storm::api::createMultiObjectiveProperty(output.properties)};
+            }
+            
             // Substitute constant definitions in symbolic input.
             std::string constantDefinitionString = ioSettings.getConstantDefinitionString();
             std::map<storm::expressions::Variable, storm::expressions::Expression> constantDefinitions;

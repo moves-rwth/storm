@@ -339,6 +339,11 @@ namespace storm {
                  */
                 std::string getQvbsRoot() const;
                 
+                /*!
+                 * Retrieves whether the input properties are to be interpreted as a single multi-objective formula
+                 */
+                bool isPropertiesAsMultiSet() const;
+                
                 bool check() const override;
                 void finalize() override;
 
@@ -377,6 +382,7 @@ namespace storm {
                 static const std::string qvbsInputOptionName;
                 static const std::string qvbsInputOptionShortName;
                 static const std::string qvbsRootOptionName;
+                static const std::string propertiesAsMultiOptionName;
 
             };
 
