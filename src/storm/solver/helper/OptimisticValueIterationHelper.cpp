@@ -276,6 +276,9 @@ namespace storm {
 
                     bool cancelGuess = false;
                     while (status == SolverStatus::InProgress && overallIterations < maxOverallIterations) {
+                        if (storm::utility::resources::isTerminate()) {
+                            status = SolverStatus::Aborted;
+                        }
                         ++overallIterations;
                         ++currentVerificationIterations;
                         // Perform value iteration stepwise for lower bound and guessed upper bound
