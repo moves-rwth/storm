@@ -341,6 +341,7 @@ namespace storm {
             storm::utility::Stopwatch loopWatch(true);
             auto numberOfSplits = 0;
             auto numberOfPLACalls = 0;
+            auto numberOfPLACallsBounds = 0;
             auto numberOfOrderCopies = 0;
             auto numberOfMonResCopies = 0;
             auto totalArea = storm::utility::convertNumber<ConstantType>(region.area());
@@ -405,6 +406,7 @@ namespace storm {
                             || (!storm::solver::minimize(dir) &&
                                 currBound > value.get() + storm::utility::convertNumber<ConstantType>(precision))) {
                             if (this->isUseBoundsSet() && !order->getDoneBuilding()) {
+                                numberOfPLACallsBounds++;
                                 if (storm::solver::minimize(dir)) {
                                     orderExtender->setMinValues(order, bounds);
                                     orderExtender->setMaxValues(order, getBound(env, currRegion,
@@ -492,6 +494,7 @@ namespace storm {
             STORM_PRINT("Total number of splits: " << numberOfSplits << std::endl);
             STORM_PRINT("Total number of plaCalls: " << numberOfPLACalls << std::endl);
             if (this->isUseMonotonicitySet()) {
+                STORM_PRINT("Total number of plaCalls for bounds for monotonicity checking: " << numberOfPLACallsBounds << std::endl);
                 STORM_PRINT("Total number of copies of the order: " << numberOfOrderCopies << std::endl);
                 STORM_PRINT("Total number of copies of the local monotonicity result: " << numberOfMonResCopies
                                                                                         << std::endl);
