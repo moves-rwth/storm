@@ -1,6 +1,7 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm-pomdp/transformer/ObservationTraceUnfolder.h"
 #include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/utility/ConstantsComparator.h"
 
 #undef _VERBOSE_OBSERVATION_UNFOLDING
 
@@ -131,13 +132,14 @@ namespace storm {
             // Now, take care of the last step.
             uint64_t sinkState = newStateIndex;
             uint64_t targetState = newStateIndex + 1;
+            auto cc = storm::utility::ConstantsComparator<ValueType>();
             for (auto const& unfoldedToOldEntry : unfoldedToOldNextStep) {
                 svbuilder.addState(unfoldedToOldEntry.first, {}, {static_cast<int64_t>(unfoldedToOldEntry.second)});
 
                 transitionMatrixBuilder.newRowGroup(newRowGroupStart);
                 STORM_LOG_ASSERT(risk.size() > unfoldedToOldEntry.second, "Must be a state");
-                STORM_LOG_ASSERT(risk[unfoldedToOldEntry.second] <= storm::utility::one<ValueType>(), "Risk must be a probability");
-                STORM_LOG_ASSERT(risk[unfoldedToOldEntry.second] >= storm::utility::zero<ValueType>(), "Risk must be a probability");
+                STORM_LOG_ASSERT(!cc.isLess(storm::utility::one<ValueType>(), risk[unfoldedToOldEntry.second]), "Risk must be a probability");
+                STORM_LOG_ASSERT(!cc.isLess(risk[unfoldedToOldEntry.second], storm::utility::zero<ValueType>()), "Risk must be a probability");
                 //std::cout << "risk is" <<  risk[unfoldedToOldEntry.second] << std::endl;
                 if (!storm::utility::isOne(risk[unfoldedToOldEntry.second])) {
                     transitionMatrixBuilder.addNextValue(newRowGroupStart, sinkState,
