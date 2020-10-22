@@ -8,6 +8,9 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.6.x
 -------------
 
+## Version 1.6.3 (??)
+- Added support for multi-objective model checking of long-run average objectives including mixtures with other kinds of objectives.
+
 ## Version 1.6.2 (2020/09)
 - Prism program simplification improved.
 - Revamped implementation of long-run-average algorithms, including scheduler export for LRA properties on Markov automata.
