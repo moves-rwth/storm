@@ -10,6 +10,7 @@ Version 1.6.x
 
 ## Version 1.6.3 (??)
 - Added support for multi-objective model checking of long-run average objectives including mixtures with other kinds of objectives.
+- Added support for generating optimal schedulers for globally formulae
 
 ## Version 1.6.2 (2020/09)
 - Prism program simplification improved.
