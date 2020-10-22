@@ -332,8 +332,7 @@ namespace storm {
                 std::unique_ptr<MinMaxSolverData> result(new MinMaxSolverData());
                 result->env = std::make_unique<storm::Environment>(env);
                 // For acyclic models we switch to the more efficient acyclic solver (Unless the solver / method was explicitly specified)
-                if (acyclic && result->env->solver().minMax().isMethodSetFromDefault() && result->env->solver().minMax().getMethod() != storm::solver::MinMaxMethod::Acyclic) {
-                    STORM_LOG_INFO("Switching to Acyclic linear equation solver method. To overwrite this, explicitly specify another solver.");
+                if (acyclic) {
                     result->env->solver().minMax().setMethod(storm::solver::MinMaxMethod::Acyclic);
                 }
                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> minMaxSolverFactory;
@@ -372,8 +371,7 @@ namespace storm {
                 result->env = std::make_unique<Environment>(env);
                 result->acyclic = acyclic;
                 // For acyclic models we switch to the more efficient acyclic solver (Unless the solver / method was explicitly specified)
-                if (acyclic && result->env->solver().isLinearEquationSolverTypeSetFromDefaultValue() && result->env->solver().getLinearEquationSolverType() != storm::solver::EquationSolverType::Acyclic) {
-                    STORM_LOG_INFO("Switching to Acyclic linear equation solver method. To overwrite this, explicitly specify another solver.");
+                if (acyclic) {
                     result->env->solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Acyclic);
                 }
                 result->factory = std::make_unique<storm::solver::GeneralLinearEquationSolverFactory<ValueType>>();
