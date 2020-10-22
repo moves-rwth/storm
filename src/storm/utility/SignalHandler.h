@@ -103,6 +103,12 @@ namespace storm {
                 int lastSignal;
             };
 
+
+            inline void resetTimeoutAlarm() {
+                SignalInformation::infos().setTerminate(false);
+                alarm(0);
+            }
+
             /*!
              * Check whether the program should terminate (due to some abort signal).
              *

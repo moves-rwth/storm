@@ -296,7 +296,7 @@ namespace storm {
         
         Type const& ExpressionManager::getVariableType(uint_fast64_t index) const {
             auto indexTypePair = indexToTypeMapping.find(index);
-            STORM_LOG_ASSERT(indexTypePair != indexToTypeMapping.end(), "Unable to retrieve type of unknown variable index.");
+            STORM_LOG_ASSERT(indexTypePair != indexToTypeMapping.end(), "Unable to retrieve type of unknown variable index '" << index << "'.");
             return indexTypePair->second;
         }
         
