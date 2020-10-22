@@ -202,6 +202,11 @@ namespace storm {
             mdpScheduler.get()[state] = action;
         }
 
+        uint64_t Order::getActionAtState(uint64_t state) {
+            assert(mdpScheduler != boost::none);
+            return mdpScheduler.get()[state];
+        }
+
         /*** Checking on the order ***/
 
         Order::NodeComparison Order::compare(uint_fast64_t state1, uint_fast64_t state2){

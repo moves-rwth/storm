@@ -42,14 +42,14 @@ namespace storm {
         std::pair<uint_fast64_t, uint_fast64_t> OrderExtenderMdp<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, bool prMax) {
             // Finding the best action for the current state
             // TODO implement =)/=( case (or is that not necessary?)
+            uint64_t  bestAct = 0;
             if(mdpStateMap[currentState].size() == 1){
                 // if we only have one possible action, we already know which one we take.
-                order->addToMdpScheduler(currentState, 0);
+                order->addToMdpScheduler(currentState, bestAct);
             } else {
                 // note that succs in this function mean potential succs
                 auto orderedSuccs = order->sortStates(gatherPotentialSuccs(currentState));
                 auto nrOfSuccs = orderedSuccs.size();
-                uint64_t  bestAct = 0;
                 if (prMax) {
                     if (nrOfSuccs == 2) {
                         uint64_t bestSucc = orderedSuccs[0];
@@ -134,8 +134,9 @@ namespace storm {
             }
 
             // TODO actual extending of the order here
-            std::vector<uint64_t> successors; // = actual successors resulting from the chosen action (need to be ordered, right? so maybe order them.);
-            this->extendByBackwardReasoning(order, currentState, successors); // Base Class function
+            std::vector<uint64_t> successors = mdpStateMap[currentState][bestAct]; // Get actual succs
+            successors = order->sortStates(&successors); // Order them
+            return this->extendByBackwardReasoning(order, currentState, successors); // Call Base Class function.
 
         }
 
