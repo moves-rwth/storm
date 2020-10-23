@@ -141,12 +141,14 @@ namespace storm {
                         if (unexploredStates.get(state)) {
                             unexploredStates.set(state, false);
                             for (auto const& entry : transitionMatrix.getRowGroup(state)) {
-                                if (unexploredStates.get(entry.getColumn())) {
-                                    dfsStack.push_back(entry.getColumn());
-                                } else {
-                                    if (!acyclicStates.get(entry.getColumn())) {
-                                        // The state has been visited before but is not known to be acyclic.
-                                        return true;
+                                if (!storm::utility::isZero(entry.getValue())) {
+                                    if (unexploredStates.get(entry.getColumn())) {
+                                        dfsStack.push_back(entry.getColumn());
+                                    } else {
+                                        if (!acyclicStates.get(entry.getColumn())) {
+                                            // The state has been visited before but is not known to be acyclic.
+                                            return true;
+                                        }
                                     }
                                 }
                             }
