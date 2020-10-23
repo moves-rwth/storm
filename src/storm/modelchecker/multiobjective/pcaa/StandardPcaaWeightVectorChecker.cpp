@@ -436,7 +436,7 @@ namespace storm {
                        }
                    }
                 } else {
-                   storm::storage::SparseMatrix<ValueType> deterministicMatrix = transitionMatrix.selectRowsFromRowGroups(this->optimalChoices, true); // TODO: why diagonal entries?
+                   storm::storage::SparseMatrix<ValueType> deterministicMatrix = transitionMatrix.selectRowsFromRowGroups(this->optimalChoices, false);
                    storm::storage::SparseMatrix<ValueType> deterministicBackwardTransitions = deterministicMatrix.transpose();
                    std::vector<ValueType> deterministicStateRewards(deterministicMatrix.getRowCount()); // allocate here
                    storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
