@@ -12,6 +12,7 @@ Version 1.6.x
 - Added support for multi-objective model checking of long-run average objectives including mixtures with other kinds of objectives.
 - Added support for generating optimal schedulers for globally formulae
 - Simulator supports exact arithmetic
+- Added switch `--no-simplify` to disable simplification of PRISM programs (which sometimes costs a bit of time on extremely large inputs)
 - `storm-pomdp`: States can be labelled with values for observable predicates
 - `storm-pomdp`: (Only API) Track state estimates
 - `storm-pomdp`: (Only API) Reduce computation of state estimates to computation on unrolled MDP

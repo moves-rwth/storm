@@ -67,10 +67,11 @@ namespace storm {
         };
         
         void parseSymbolicModelDescription(storm::settings::modules::IOSettings const& ioSettings, SymbolicInput& input) {
+            auto buildSettings = storm::settings::getModule<storm::settings::modules::BuildSettings>();
             if (ioSettings.isPrismOrJaniInputSet()) {
                 storm::utility::Stopwatch modelParsingWatch(true);
                 if (ioSettings.isPrismInputSet()) {
-                    input.model = storm::api::parseProgram(ioSettings.getPrismInputFilename(), storm::settings::getModule<storm::settings::modules::BuildSettings>().isPrismCompatibilityEnabled());
+                    input.model = storm::api::parseProgram(ioSettings.getPrismInputFilename(), buildSettings.isPrismCompatibilityEnabled(), !buildSettings.isNoSimplifySet());
                 } else {
                     boost::optional<std::vector<std::string>> propertyFilter;
                     if (ioSettings.isJaniPropertiesSet()) {
