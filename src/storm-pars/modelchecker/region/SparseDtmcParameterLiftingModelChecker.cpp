@@ -39,7 +39,7 @@ namespace storm {
         }
         
         template <typename SparseModelType, typename ConstantType>
-        bool SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask) const {
+        bool SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::canHandle(std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ValueType> const& checkTask) const {
             bool result = parametricModel->isOfType(storm::models::ModelType::Dtmc);
             result &= parametricModel->isSparseModel();
             result &= parametricModel->supportsParameters();
@@ -50,9 +50,9 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool generateRegionSplitEstimates, bool allowModelSimplification) {
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specify(Environment const& env, std::shared_ptr<storm::models::ModelBase> parametricModel, CheckTask<storm::logic::Formula, ValueType> const& checkTask, bool generateRegionSplitEstimates, bool allowModelSimplification) {
             auto dtmc = parametricModel->template as<SparseModelType>();
-            monotonicityChecker = std::make_unique<storm::analysis::MonotonicityChecker<typename SparseModelType::ValueType>>(dtmc->getTransitionMatrix());
+            monotonicityChecker = std::make_unique<storm::analysis::MonotonicityChecker<ValueType>>(dtmc->getTransitionMatrix());
             specify_internal(env, dtmc, checkTask, generateRegionSplitEstimates, !allowModelSimplification);
             if (checkTask.isBoundSet()) {
                 thresholdTask = storm::utility::convertNumber<ConstantType>(checkTask.getBoundThreshold());
@@ -60,7 +60,7 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specify_internal(Environment const& env, std::shared_ptr<SparseModelType> parametricModel, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask, bool generateRegionSplitEstimates, bool skipModelSimplification) {
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::specify_internal(Environment const& env, std::shared_ptr<SparseModelType> parametricModel, CheckTask<storm::logic::Formula, ValueType> const& checkTask, bool generateRegionSplitEstimates, bool skipModelSimplification) {
             STORM_LOG_ASSERT(this->canHandle(parametricModel, checkTask), "specified model and formula can not be handled by this.");
 
             reset();
@@ -113,8 +113,8 @@ namespace storm {
             // if there are maybestates, create the parameterLifter
             if (!maybeStates.empty()) {
                 // Create the vector of one-step probabilities to go to target states.
-                std::vector<typename SparseModelType::ValueType> b = this->parametricModel->getTransitionMatrix().getConstrainedRowSumVector(storm::storage::BitVector(this->parametricModel->getTransitionMatrix().getRowCount(), true), psiStates);
-                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates, false, RegionModelChecker<typename SparseModelType::ValueType>::isUseMonotonicitySet());
+                std::vector<ValueType> b = this->parametricModel->getTransitionMatrix().getConstrainedRowSumVector(storm::storage::BitVector(this->parametricModel->getTransitionMatrix().getRowCount(), true), psiStates);
+                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates, false, RegionModelChecker<ValueType>::isUseMonotonicitySet());
             }
             
             // We know some bounds for the results so set them
@@ -125,8 +125,12 @@ namespace storm {
 
             // For monotonicity checking
             std::pair<storm::storage::BitVector, storm::storage::BitVector> statesWithProbability01 = storm::utility::graph::performProb01(this->parametricModel->getBackwardTransitions(), phiStates, psiStates);
+<<<<<<< HEAD
             // TODO change this to OEDtmc (currently causes an "undefinde reference" error during compilation)
             this->orderExtender = storm::analysis::OrderExtender<typename SparseModelType::ValueType,ConstantType>(&statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
+=======
+            this->orderExtender = storm::analysis::OrderExtender<ValueType,ConstantType>(&statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
+>>>>>>> origin/pla-mon
         }
 
         template <typename SparseModelType, typename ConstantType>
@@ -148,8 +152,8 @@ namespace storm {
             // if there are maybestates, create the parameterLifter
             if (!maybeStates.empty()) {
                 // Create the vector of one-step probabilities to go to target states.
-                std::vector<typename SparseModelType::ValueType> b = this->parametricModel->getTransitionMatrix().getConstrainedRowSumVector(storm::storage::BitVector(this->parametricModel->getTransitionMatrix().getRowCount(), true), statesWithProbability01.second);
-                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates, regionSplitEstimationsEnabled, RegionModelChecker<typename SparseModelType::ValueType>::isUseMonotonicitySet());
+                std::vector<ValueType> b = this->parametricModel->getTransitionMatrix().getConstrainedRowSumVector(storm::storage::BitVector(this->parametricModel->getTransitionMatrix().getRowCount(), true), statesWithProbability01.second);
+                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates, regionSplitEstimationsEnabled, RegionModelChecker<ValueType>::isUseMonotonicitySet());
             }
             
             // We know some bounds for the results so set them
@@ -162,8 +166,12 @@ namespace storm {
             STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
             solverFactory->setRequirementsChecked(true);
 
+<<<<<<< HEAD
             // TODO change this to OEDtmc (currently causes an "undefinde reference" error during compilation)
             this->orderExtender =  storm::analysis::OrderExtender<typename SparseModelType::ValueType,ConstantType>(&statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
+=======
+            this->orderExtender =  storm::analysis::OrderExtender<ValueType,ConstantType>(&statesWithProbability01.second, &statesWithProbability01.first, this->parametricModel->getTransitionMatrix());
+>>>>>>> origin/pla-mon
         }
 
         template <typename SparseModelType, typename ConstantType>
@@ -188,9 +196,9 @@ namespace storm {
 
                 typename SparseModelType::RewardModelType const& rewardModel = checkTask.isRewardModelSet() ? this->parametricModel->getRewardModel(checkTask.getRewardModel()) : this->parametricModel->getUniqueRewardModel();
 
-                std::vector<typename SparseModelType::ValueType> b = rewardModel.getTotalRewardVector(this->parametricModel->getTransitionMatrix());
+                std::vector<ValueType> b = rewardModel.getTotalRewardVector(this->parametricModel->getTransitionMatrix());
                 
-                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates, regionSplitEstimationsEnabled);
+                parameterLifter = std::make_unique<storm::transformer::ParameterLifter<ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates, regionSplitEstimationsEnabled);
             }
             
             // We only know a lower bound for the result
@@ -226,9 +234,9 @@ namespace storm {
             // Create the reward vector
             STORM_LOG_THROW((checkTask.isRewardModelSet() && this->parametricModel->hasRewardModel(checkTask.getRewardModel())) || (!checkTask.isRewardModelSet() && this->parametricModel->hasUniqueRewardModel()), storm::exceptions::InvalidPropertyException, "The reward model specified by the CheckTask is not available in the given model.");
             typename SparseModelType::RewardModelType const& rewardModel = checkTask.isRewardModelSet() ? this->parametricModel->getRewardModel(checkTask.getRewardModel()) : this->parametricModel->getUniqueRewardModel();
-            std::vector<typename SparseModelType::ValueType> b = rewardModel.getTotalRewardVector(this->parametricModel->getTransitionMatrix());
+            std::vector<ValueType> b = rewardModel.getTotalRewardVector(this->parametricModel->getTransitionMatrix());
             
-            parameterLifter = std::make_unique<storm::transformer::ParameterLifter<typename SparseModelType::ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates);
+            parameterLifter = std::make_unique<storm::transformer::ParameterLifter<ValueType, ConstantType>>(this->parametricModel->getTransitionMatrix(), b, maybeStates, maybeStates);
             
             // We only know a lower bound for the result
             lowerResultBound = storm::utility::zero<ConstantType>();
@@ -241,7 +249,7 @@ namespace storm {
         storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationCheckerSAT() {
             if (!instantiationCheckerSAT) {
                 instantiationCheckerSAT = std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(*this->parametricModel);
-                instantiationCheckerSAT->specifyFormula(this->currentCheckTask->template convertValueType<typename SparseModelType::ValueType>());
+                instantiationCheckerSAT->specifyFormula(this->currentCheckTask->template convertValueType<ValueType>());
                 instantiationCheckerSAT->setInstantiationsAreGraphPreserving(true);
             }
             return *instantiationCheckerSAT;
@@ -251,7 +259,7 @@ namespace storm {
         storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationCheckerVIO() {
             if (!instantiationCheckerVIO) {
                 instantiationCheckerVIO = std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(*this->parametricModel);
-                instantiationCheckerVIO->specifyFormula(this->currentCheckTask->template convertValueType<typename SparseModelType::ValueType>());
+                instantiationCheckerVIO->specifyFormula(this->currentCheckTask->template convertValueType<ValueType>());
                 instantiationCheckerVIO->setInstantiationsAreGraphPreserving(true);
             }
             return *instantiationCheckerVIO;
@@ -261,16 +269,14 @@ namespace storm {
         storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::getInstantiationChecker() {
             if (!instantiationChecker) {
                 instantiationChecker = std::make_unique<storm::modelchecker::SparseDtmcInstantiationModelChecker<SparseModelType, ConstantType>>(*this->parametricModel);
-                instantiationChecker->specifyFormula(this->currentCheckTask->template convertValueType<typename SparseModelType::ValueType>());
+                instantiationChecker->specifyFormula(this->currentCheckTask->template convertValueType<ValueType>());
                 instantiationChecker->setInstantiationsAreGraphPreserving(true);
             }
             return *instantiationChecker;
         }
         
         template <typename SparseModelType, typename ConstantType>
-        std::unique_ptr<CheckResult> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::Order> reachabilityOrder, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult) {
-            typedef typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType VariableType;
-            typedef typename storm::analysis::MonotonicityResult<VariableType>::Monotonicity Monotonicity;
+        std::unique_ptr<CheckResult> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeQuantitativeValues(Environment const& env, storm::storage::ParameterRegion<ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult) {
 
             if (maybeStates.empty()) {
                 return std::make_unique<storm::modelchecker::ExplicitQuantitativeCheckResult<ConstantType>>(resultsForNonMaybeStates);
@@ -309,7 +315,10 @@ namespace storm {
                 }
                 solver->setTrackScheduler(true);
 
-                if (localMonotonicityResult != nullptr) {
+                if (!this->isOnlyGlobalSet() && this->isUseMonotonicitySet()) {
+                    assert (localMonotonicityResult != nullptr);
+                    storm::storage::BitVector fixedStates(parameterLifter->getRowGroupCount(), false);
+
                     bool useMinimize = storm::solver::minimize(dirForParameters);
                     if (useMinimize && !minSchedChoices) {
                         minSchedChoices = std::vector<uint_fast64_t>(parameterLifter->getRowGroupCount(), 0);
@@ -318,45 +327,41 @@ namespace storm {
                         maxSchedChoices = std::vector<uint_fast64_t>(parameterLifter->getRowGroupCount(), 0);
                     }
 
+                    // TODO: this only works since we decided to keep all columns
+                    auto const & occuringVariables = parameterLifter->getOccurringVariablesAtState();
                     for (auto state = 0; state < parameterLifter->getRowGroupCount(); ++state) {
-                        if (reachabilityOrder->isBottomState(state) || reachabilityOrder->isTopState(state)) {
-                            // Do nothing
-                        } else {
-                            auto variables = parameterLifter->getOccurringVariablesAtState()[state];
-                            // point at which we start with rows for this state
-                            auto rowGroupIndex = parameterLifter->getRowGroupIndex(state);
-                            // number of rows (= #transitions) for this state
-                            auto numberOfRows = parameterLifter->getRowGroupSize(state);
-                            // variable at pos. index, changes lower/upperbound at 2^index
-                            // within a rowgroup we interprete vertexId as a bit sequence
-                            // the consideredVariables.size() least significant bits of vertex will always represent the next vertex
-                            // (00...0 = lower boundaries for all variables, 11...1 = upper boundaries for all variables)
-                            auto index = 0;
+                        auto oldStateNumber = parameterLifter->getOriginalStateNumber(state);
+                        auto& variables = occuringVariables.at(oldStateNumber);
+                        // point at which we start with rows for this state
 
-                            assert (std::pow(2, variables.size()) == numberOfRows);
+                        STORM_LOG_THROW(variables.size() <= 1, storm::exceptions::NotImplementedException, "Using localMonRes not yet implemented for states with 2 or more variables, please run without --use-monotonicity");
 
-                            STORM_LOG_THROW(variables.size() <= 1, storm::exceptions::NotImplementedException, "Using localMonRes not yet implemented for states with 2 or more variables, please run without --use-monotonicity");
-                            for (auto var : variables) {
-                                auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
+                        bool allMonotone = true;
+                        for (auto var : variables) {
+                            auto monotonicity = localMonotonicityResult->getMonotonicity(oldStateNumber, var);
 
-                                bool ignoreUpperBound = monotonicity == Monotonicity::Constant || (useMinimize && monotonicity == Monotonicity::Incr) || (!useMinimize && monotonicity == Monotonicity::Decr);
-                                bool ignoreLowerBound = !ignoreUpperBound && ((useMinimize && monotonicity == Monotonicity::Decr) || (!useMinimize && monotonicity == Monotonicity::Incr));
-                                if (ignoreLowerBound) {
-                                    if (useMinimize) {
-                                        minSchedChoices.get()[state] = 1;
-                                    } else {
-                                        maxSchedChoices.get()[state] = 1;
-                                    }
-                                } else if (ignoreUpperBound) {
-                                    if (useMinimize) {
-                                        minSchedChoices.get()[state] = 0;
-                                    } else {
-                                        maxSchedChoices.get()[state] = 0;
-                                    }
+                            bool ignoreUpperBound = monotonicity == Monotonicity::Constant || (useMinimize && monotonicity == Monotonicity::Incr) || (!useMinimize && monotonicity == Monotonicity::Decr);
+                            bool ignoreLowerBound = !ignoreUpperBound && ((useMinimize && monotonicity == Monotonicity::Decr) || (!useMinimize && monotonicity == Monotonicity::Incr));
+                            allMonotone &= (ignoreUpperBound || ignoreLowerBound);
+                            if (ignoreLowerBound) {
+                                if (useMinimize) {
+                                    minSchedChoices.get()[state] = 1;
+                                } else {
+                                    maxSchedChoices.get()[state] = 1;
+                                }
+                            } else if (ignoreUpperBound) {
+                                if (useMinimize) {
+                                    minSchedChoices.get()[state] = 0;
+                                } else {
+                                    maxSchedChoices.get()[state] = 0;
                                 }
                             }
                         }
+                        if (allMonotone) {
+                            fixedStates.set(state);
+                        }
                     }
+                    solver->setFixedStates(std::move(fixedStates));
                 }
 
                 if (storm::solver::minimize(dirForParameters) && minSchedChoices)
@@ -407,8 +412,8 @@ namespace storm {
         }
         
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeRegionSplitEstimates(std::vector<ConstantType> const& quantitativeResult, std::vector<uint_fast64_t> const& schedulerChoices, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
-            std::map<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType, double> deltaLower, deltaUpper;
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::computeRegionSplitEstimates(std::vector<ConstantType> const& quantitativeResult, std::vector<uint_fast64_t> const& schedulerChoices, storm::storage::ParameterRegion<ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) {
+            std::map<VariableType, double> deltaLower, deltaUpper;
             for (auto const& p : region.getVariables()) {
                 deltaLower.insert(std::make_pair(p, 0.0));
                 deltaUpper.insert(std::make_pair(p, 0.0));
@@ -527,35 +532,12 @@ namespace storm {
         }
 
         template<typename SparseModelType, typename ConstantType>
-        std::shared_ptr<storm::analysis::Order>  SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::extendOrder(Environment const& env, std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<typename SparseModelType::ValueType> region) {
-            typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::CoefficientType CoefficientType;
-
+        std::shared_ptr<storm::analysis::Order> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::extendOrder(Environment const& env, std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ValueType> region) {
             if (this->orderExtender) {
-                auto minValues = computeQuantitativeValues(env, region, storm::solver::OptimizationDirection::Minimize)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-                auto maxValues = computeQuantitativeValues(env, region, storm::solver::OptimizationDirection::Maximize)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-                this->orderExtender.get().setMinMaxValues(minValues, maxValues);
                 auto res = this->orderExtender.get().extendOrder(order, region);
                 order = std::get<0>(res);
-                while (!order->getDoneBuilding() && order->existsNextSortedState()) {
-                    // TODO: move this to order extender?
-                    auto state = order->getNextSortedState();
-                    if ((std::get<1>(res) == state || std::get<2>(res) == state) || parameterLifter->getOccurringVariablesAtState()[state].size() == 0) {
-                        // First || checks if all successors could be order, second part checks if all transitions have constant probability
-                        assert (std::get<0>(res) == order);
-                        order->add(state);
-                        if (!order->existsNextSortedState()) {
-                            // This was the last state, either it has only constant probabilities so we are done, or all successors could be sorted.
-                            order->setDoneBuilding();
-                        } else {
-                            // We continue as there are more states left
-                            res = this->orderExtender.get().extendOrder(order, region);
-                        }
-                    } else {
-                        order->addStateToHandle(state);
-                        this->orderExtender.get().setUnknownStates(order, std::get<1>(res), std::get<2>(res));
-                        break;
-                    }
-                    order = std::get<0>(res);
+                if (std::get<1>(res) != order->getNumberOfStates()) {
+                    this->orderExtender.get().setUnknownStates(order, std::get<1>(res), std::get<2>(res));
                 }
             } else {
                 STORM_LOG_WARN("Extending order for RegionModelChecker not implemented");
@@ -564,81 +546,132 @@ namespace storm {
         }
 
         template <typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::extendLocalMonotonicityResult(storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult){
-            auto state = order->getNextAddedState(-1);
+        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::extendLocalMonotonicityResult(storm::storage::ParameterRegion<ValueType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult) {
+            if (this->monotoneIncrParameters && !localMonotonicityResult->isFixedParametersSet()) {
+                for (auto & var : this->monotoneIncrParameters.get()) {
+                    localMonotonicityResult->setMonotoneIncreasing(var);
+                }
+                for (auto & var : this->monotoneDecrParameters.get()) {
+                    localMonotonicityResult->setMonotoneDecreasing(var);
+                }
+            }
+            auto state = order->getNextDoneState(-1);
             auto const variablesAtState = parameterLifter->getOccurringVariablesAtState();
             while (state != order->getNumberOfStates()) {
-                auto variables = variablesAtState[state];
-                if (variables.size() == 0 || order->isBottomState(state) || order->isTopState(state)) {
-                    localMonotonicityResult->setConstant(state);
-                } else {
-                    for (auto const& var : variables) {
-                        auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
-                        if (monotonicity == storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Unknown || monotonicity == storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Not) {
-                            monotonicity = monotonicityChecker->checkLocalMonotonicity(order, state, var, region);
-                            if (monotonicity == storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Unknown ||  monotonicity == storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Not) {
-                                // Skip for now?
-                            } else {
-                                localMonotonicityResult->setMonotonicity(state, var, monotonicity);
+                if (localMonotonicityResult->getMonotonicity(state) == nullptr) {
+                    auto variables = variablesAtState[state];
+                    if (variables.size() == 0 || order->isBottomState(state) || order->isTopState(state)) {
+                        localMonotonicityResult->setConstant(state);
+                    } else {
+                        for (auto const &var : variables) {
+                            auto monotonicity = localMonotonicityResult->getMonotonicity(state, var);
+                            if (monotonicity == Monotonicity::Unknown || monotonicity == Monotonicity::Not) {
+                                monotonicity = monotonicityChecker->checkLocalMonotonicity(order, state, var, region);
+                                if (monotonicity == Monotonicity::Unknown || monotonicity == Monotonicity::Not) {
+                                    // TODO: Skip for now?
+                                } else {
+                                    localMonotonicityResult->setMonotonicity(state, var, monotonicity);
+                                }
                             }
                         }
                     }
+                } else {
+                    // Do nothing, we already checked this one
                 }
-                state = order->getNextAddedState(state);
+                state = order->getNextDoneState(state);
             }
             auto const statesAtVariable = parameterLifter->getOccuringStatesAtVariable();
+            bool allDone = true;
             for (auto const & entry : statesAtVariable) {
                 auto states = entry.second;
                 auto var = entry.first;
                 bool done = true;
                 for (auto const& state : states) {
-                    done &= order->contains(state) && localMonotonicityResult->getMonotonicity(state, var) != storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Unknown;
+                    done &= order->contains(state) && localMonotonicityResult->getMonotonicity(state, var) != Monotonicity::Unknown;
+                    auto check = localMonotonicityResult->getMonotonicity(state, var);
                     if (!done) {
                         break;
                     }
                 }
+
+                allDone &= done;
                 if (done) {
                     localMonotonicityResult->getGlobalMonotonicityResult()->setDoneForVar(var);
                 }
+            }
+            if (allDone) {
+                localMonotonicityResult->setDone();
+                order->setDoneBuilding();
             }
         }
 
         template <typename SparseModelType, typename ConstantType>
         void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::splitSmart (
-                storm::storage::ParameterRegion<typename SparseModelType::ValueType> &region,
-                std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> &regionVector,
-                storm::analysis::MonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType> & monRes) const{
-            if (thresholdTask) {
-                ConstantType currentValue = SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::lastValue;
-                ConstantType difference = abs(thresholdTask.get() - currentValue);
-                ConstantType thresholdDifference = 0.5;
-                if (difference < thresholdDifference) {
-                    region.split(region.getCenterPoint(), regionVector, monRes, true,
-                                 storm::utility::convertNumber<double>(difference));
-                } else {
-                    region.split(region.getCenterPoint(), regionVector, monRes, false,
-                                 storm::utility::convertNumber<double>(difference));
-                }
-            } else {
-                region.split(region.getCenterPoint(), regionVector, monRes, false, 1);
-            }
-        }
-
-        template<typename SparseModelType, typename ConstantType>
-        void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::splitSmart (
-                storm::storage::ParameterRegion<typename SparseModelType::ValueType> &region,
-                std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> &regionVector,
-                std::shared_ptr<storm::analysis::Order> order) {
-            if (this->orderExtender) {
-                auto states = this->orderExtender.get().getUnknownStates((order));
-                if (states.first != states.second) {
-                    auto variablesAtStates = parameterLifter->getOccurringVariablesAtState();
-                    std::set<VariableType> variables = variablesAtStates[states.first];
-                    for (auto var : variablesAtStates[states.second]) {
-                        variables.insert(var);
+                storm::storage::ParameterRegion<ValueType> &region,
+                std::vector<storm::storage::ParameterRegion<ValueType>> &regionVector,
+                std::shared_ptr<storm::analysis::Order> order,
+                storm::analysis::MonotonicityResult<VariableType> & monRes) const {
+//            if (order != nullptr && !order->getDoneBuilding() && this->orderExtender) {
+//                STORM_LOG_INFO("Trying to split in variables which occur in both unknown states of the reachability order");
+//                auto states = this->orderExtender.get().getUnknownStates((order));
+//                if (states.first != states.second) {
+//                    auto& variablesAtStates = parameterLifter->getOccurringVariablesAtState();
+//                    std::set<VariableType> variables = variablesAtStates[states.first];
+//                    bool sameVariables = false;
+//
+//                    for (auto var : variablesAtStates[states.second]) {
+//                        sameVariables = variables.find(var) != variables.end();
+//                        if (sameVariables) {
+//                            break;
+//                        }
+//                        variables.insert(var);
+//                    }
+//                    if (sameVariables) {
+//                        STORM_LOG_INFO("Splitting in 2^" << variables.size() << " variables where original implementation would have splitted in 2^" << region.getVariables().size());
+//                        region.split(region.getCenterPoint(), regionVector, variables);
+//
+//                    }
+//                }
+//            }
+            if (regionVector.size() == 0) {
+                std::multimap<double, VariableType> sortedOnValues;
+                std::multimap<CoefficientType, VariableType> sortedOnDifference; // Difference between lower and upper boundary of parameter
+                std::set<VariableType> consideredVariables;
+                if (regionSplitEstimationsEnabled) {
+                    assert (region.getOptionalSplitThreshold());
+                    for (auto itr = sortedOnValues.begin();
+                         itr != sortedOnValues.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
+                        if (!this->isUseMonotonicitySet() || !monRes.isMonotone(itr->second)) {
+                            consideredVariables.insert(itr->second);
+                        }
                     }
-                    region.split(region.getCenterPoint(), regionVector, variables);
+
+                    bool allZero = true;
+                    for (auto& entry : regionSplitEstimates) {
+                        allZero &= entry.second == 0;
+                        sortedOnValues.insert({-entry.second, entry.first});
+                        sortedOnDifference.insert({-region.getDifference(entry.first), entry.first});
+                    }
+                    if (consideredVariables.size() == 0) {
+                        // Take the five not monotone parameters with the largerest parameter space
+                        for (auto itr = sortedOnDifference.begin(); itr != sortedOnDifference.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
+                            if (!this->isUseMonotonicitySet() || !monRes.isMonotone(itr->second)) {
+                                consideredVariables.insert(itr->second);
+                            }
+                        }
+                    }
+                } else {
+                    for (auto & var : region.getVariables()) {
+                        if (!this->isUseMonotonicitySet() || !monRes.isMonotone(var)) {
+                            consideredVariables.insert(var);
+                        }
+                    }
                 }
+
+                assert (consideredVariables.size() > 0 || (monRes.isDone() && monRes.isAllMonotonicity()));
+
+                STORM_LOG_INFO("Splitting in 2^" << consideredVariables.size() << " variables where original implementation would have splitted in 2^" << region.getVariables().size());
+                region.split(region.getCenterPoint(), regionVector, std::move(consideredVariables));
             }
         }
 

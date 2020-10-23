@@ -30,6 +30,7 @@ namespace storm {
              * @return The local Monotonicity.
              */
             Monotonicity getMonotonicity(uint_fast64_t state, VariableType var) const;
+            std::shared_ptr<MonotonicityResult<VariableType>> getMonotonicity(uint_fast64_t state) const;
 
             /*!
              * Sets the local Monotonicity of a parameter at a given state.
@@ -60,6 +61,7 @@ namespace storm {
              * @return true if done is set to true, false otherwise.
              */
             bool isDone() const;
+            void setDone(bool done = true);
 
             bool isNoMonotonicity() const;
 
@@ -76,6 +78,13 @@ namespace storm {
              */
             std::string toString() const;
 
+            void setMonotoneIncreasing(VariableType var);
+            void setMonotoneDecreasing(VariableType var);
+
+            bool isFixedParametersSet() const;
+
+
+
 
         private:
             std::vector<std::shared_ptr<MonotonicityResult<VariableType>>> stateMonRes;
@@ -89,11 +98,13 @@ namespace storm {
             void setStatesMonotone(storm::storage::BitVector statesMonotone);
 
             storm::storage::BitVector statesMonotone;
-            bool done = false;
+            bool done;
 
             int indexMinimize = -1;
             int indexMaximize = -1;
             std::shared_ptr<MonotonicityResult<VariableType>> dummyPointer;
+
+            bool setFixedParameters = false;
 
         };
     }

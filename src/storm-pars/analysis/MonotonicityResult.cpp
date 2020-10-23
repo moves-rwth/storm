@@ -21,29 +21,40 @@ namespace storm {
         }
 
         template <typename VariableType>
-        void MonotonicityResult<VariableType>::updateMonotonicityResult(VariableType var, MonotonicityResult<VariableType>::Monotonicity mon) {
-
-            if (mon == MonotonicityResult<VariableType>::Monotonicity::Not) {
-                mon = MonotonicityResult<VariableType>::Monotonicity::Unknown;
-            }
-
-            if (monotonicityResult.find(var) == monotonicityResult.end()) {
-                addMonotonicityResult(std::move(var), std::move(mon));
-            } else {
-                auto monRes = monotonicityResult[var];
-                if (monRes == MonotonicityResult<VariableType>::Monotonicity::Unknown || monRes == mon || mon == MonotonicityResult<VariableType>::Monotonicity::Constant) {
-                    return;
-                } else if (mon == MonotonicityResult<VariableType>::Monotonicity::Unknown || monRes == MonotonicityResult<VariableType>::Monotonicity::Constant ) {
-                    monotonicityResult[var] = mon;
+        void MonotonicityResult<VariableType>::updateMonotonicityResult(VariableType var, MonotonicityResult<VariableType>::Monotonicity mon, bool force) {
+            assert (!isDoneForVar(var));
+            if (force) {
+                assert (mon == MonotonicityResult<VariableType>::Monotonicity::Not);
+                if (monotonicityResult.find(var) == monotonicityResult.end()) {
+                    addMonotonicityResult(std::move(var), std::move(mon));
                 } else {
-                    monotonicityResult[var] = MonotonicityResult<VariableType>::Monotonicity::Unknown;
+                    monotonicityResult[var] = mon;
                 }
-            }
-            if (monotonicityResult[var] == MonotonicityResult<VariableType>::Monotonicity::Unknown) {
-                setAllMonotonicity(false);
-                setSomewhereMonotonicity(false);
             } else {
-                setSomewhereMonotonicity(true);
+                if (mon == MonotonicityResult<VariableType>::Monotonicity::Not) {
+                    mon = MonotonicityResult<VariableType>::Monotonicity::Unknown;
+                }
+
+                if (monotonicityResult.find(var) == monotonicityResult.end()) {
+                    addMonotonicityResult(std::move(var), std::move(mon));
+                } else {
+                    auto monRes = monotonicityResult[var];
+                    if (monRes == MonotonicityResult<VariableType>::Monotonicity::Unknown || monRes == mon ||
+                        mon == MonotonicityResult<VariableType>::Monotonicity::Constant) {
+                        return;
+                    } else if (mon == MonotonicityResult<VariableType>::Monotonicity::Unknown ||
+                               monRes == MonotonicityResult<VariableType>::Monotonicity::Constant) {
+                        monotonicityResult[var] = mon;
+                    } else {
+                        monotonicityResult[var] = MonotonicityResult<VariableType>::Monotonicity::Unknown;
+                    }
+                }
+                if (monotonicityResult[var] == MonotonicityResult<VariableType>::Monotonicity::Unknown) {
+                    setAllMonotonicity(false);
+                    setSomewhereMonotonicity(false);
+                } else {
+                    setSomewhereMonotonicity(true);
+                }
             }
         }
 
@@ -83,13 +94,17 @@ namespace storm {
         template <typename VariableType>
         std::string MonotonicityResult<VariableType>::toString() const {
             std::string result;
+            auto countIncr = 0;
+            auto countDecr = 0;
             for (auto res : getMonotonicityResult()) {
                 result += res.first.name();
                 switch (res.second) {
                     case MonotonicityResult<VariableType>::Monotonicity::Incr:
+                        countIncr++;
                         result += " MonIncr; ";
                         break;
                     case MonotonicityResult<VariableType>::Monotonicity::Decr:
+                        countDecr++;
                         result += " MonDecr; ";
                         break;
                     case MonotonicityResult<VariableType>::Monotonicity::Constant:
@@ -105,6 +120,7 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Could not get a string from the region monotonicity check result. The case has not been implemented");
                 }
             }
+            result = "#Incr: " + std::to_string(countIncr) + " #Decr" + std::to_string(countDecr) + "\n" + result;
             return result;
         }
 
@@ -138,14 +154,15 @@ namespace storm {
         template <typename VariableType>
         bool MonotonicityResult<VariableType>::existsMonotonicity() {
             if (!somewhereMonotonicity) {
+
                 for (auto itr : monotonicityResult) {
-                    if (itr.second != MonotonicityResult<VariableType>::Monotonicity::Unknown && itr.second != MonotonicityResult<VariableType>::Monotonicity::Not) {
+                    if (isDoneForVar(itr.first) && itr.second != MonotonicityResult<VariableType>::Monotonicity::Unknown && itr.second != MonotonicityResult<VariableType>::Monotonicity::Not) {
                         setSomewhereMonotonicity(true);
                         break;
                     }
                 }
             }
-            return somewhereMonotonicity;
+            return monotonicityResult.size() > 0 && somewhereMonotonicity;
         }
 
         template <typename VariableType>
@@ -165,7 +182,48 @@ namespace storm {
             copy->setAllMonotonicity(allMonotonicity);
             copy->setSomewhereMonotonicity(somewhereMonotonicity);
             copy->setDone(done);
+            copy->setDoneVariables(doneVariables);
             return copy;
+        }
+
+        template<typename VariableType>
+        void MonotonicityResult<VariableType>::setDoneVariables(std::set<VariableType> doneVariables) {
+            this->doneVariables = doneVariables;
+        }
+
+        template<typename VariableType>
+        void
+        MonotonicityResult<VariableType>::splitBasedOnMonotonicity(const std::set<VariableType> &consideredVariables,
+                                                                   std::set<VariableType> & monotoneIncr,
+                                                                   std::set<VariableType> & monotoneDecr,
+                                                                   std::set<VariableType> & notMonotone) const {
+            for (auto& var : consideredVariables) {
+                if (!isDoneForVar(var)) {
+                    notMonotone.insert(var);
+                } else {
+                    auto mon = getMonotonicity(var);
+                    if (mon == Monotonicity::Unknown || mon == Monotonicity::Not) {
+                        notMonotone.insert(var);
+                    } else if (mon == Monotonicity::Incr) {
+                        monotoneIncr.insert(var);
+                    } else {
+                        monotoneDecr.insert(var);
+                    }
+                }
+            }
+
+        }
+
+        template<typename VariableType>
+        bool MonotonicityResult<VariableType>::isMonotone(VariableType var) const {
+            if (monotonicityResult.find(var) == monotonicityResult.end()) {
+                return false;
+            } else {
+                auto monRes = monotonicityResult.at(var);
+                return isDoneForVar(var) && (monRes == Monotonicity::Incr
+                                             || monRes == Monotonicity::Decr
+                                             || monRes == Monotonicity::Constant);
+            }
         }
 
         template class MonotonicityResult<storm::RationalFunctionVariable>;

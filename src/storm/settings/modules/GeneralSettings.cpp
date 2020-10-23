@@ -65,6 +65,10 @@ namespace storm {
             bool GeneralSettings::isVerboseSet() const {
                 return this->getOption(verboseOptionName).getHasOptionBeenSet();
             }
+
+            bool GeneralSettings::isShowProgressSet() const {
+                return this->getOption(showProgressOptionName).getHasOptionBeenSet();
+            }
             
             uint64_t GeneralSettings::getShowProgressDelay() const {
                 return this->getOption(showProgressOptionName).getArgumentByName("delay").getValueAsUnsignedInteger();

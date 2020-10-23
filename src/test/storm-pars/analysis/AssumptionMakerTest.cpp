@@ -1,3 +1,4 @@
+#include <storm/storage/StronglyConnectedComponentDecomposition.h>
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
@@ -37,7 +38,7 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation) {
     ASSERT_EQ(model->getNumberOfTransitions(), 383);
 
     auto *extender = new storm::analysis::OrderExtender<storm::RationalFunction, double>(model, formulas[0], region);
-    auto criticalTuple = extender->toOrder(nullptr);
+    auto criticalTuple = extender->toOrder(region, nullptr);
     ASSERT_EQ(183, std::get<1>(criticalTuple));
     ASSERT_EQ(186, std::get<2>(criticalTuple));
 
@@ -89,14 +90,15 @@ TEST(AssumptionMakerTest, Simple1) {
     above.set(3);
     storm::storage::BitVector below(5);
     below.set(4);
-    std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
-
-    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, &statesSorted));
+    storm::storage::StronglyConnectedComponentDecompositionOptions options;
+    options.forceTopologicalSort();
+    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(model->getTransitionMatrix(), options);
+    auto statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
+    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, decomposition, statesSorted));
 
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction, double>(model->getTransitionMatrix());
     auto result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);
-    EXPECT_EQ(1, result.size());
-    EXPECT_EQ(storm::analysis::AssumptionStatus::UNKNOWN, result.begin()->second);
+    EXPECT_EQ(0, result.size());
     assumptionMaker.initializeCheckingOnSamples(formulas[0], model, region, 10);
     result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);
     EXPECT_EQ(0, result.size());
@@ -140,9 +142,11 @@ TEST(AssumptionMakerTest, Casestudy1) {
     storm::storage::BitVector below(5);
     below.set(4);
 
-    std::vector<uint_fast64_t> statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
-
-    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, &statesSorted));
+    storm::storage::StronglyConnectedComponentDecompositionOptions options;
+    options.forceTopologicalSort();
+    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(model->getTransitionMatrix(), options);
+    auto statesSorted = storm::utility::graph::getTopologicalSort(model->getTransitionMatrix());
+    auto order = std::shared_ptr<storm::analysis::Order>(new storm::analysis::Order(&above, &below, 5, decomposition, statesSorted));
 
     auto assumptionMaker = storm::analysis::AssumptionMaker<storm::RationalFunction, double>(model->getTransitionMatrix());
     auto result = assumptionMaker.createAndCheckAssumptions(1, 2, order, region);

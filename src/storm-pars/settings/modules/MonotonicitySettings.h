@@ -23,6 +23,8 @@ namespace storm {
                  */
                 bool isMonotonicityAnalysisSet() const;
 
+                bool isUsePLABoundsSet() const;
+
                 /*!
                  * Retrieves whether SCCs in the monotonicity analysis should be eliminated.
                  */
@@ -32,11 +34,13 @@ namespace storm {
                  * Retrieves whether a dot output of the reachability orders should be given
                  */
                 bool isDotOutputSet() const;
+                bool isMonotoneParametersSet() const;
 
                 /*!
                  * Retrieves the name of the file for a possible dot output
                  */
                 std::string getDotOutputFilename() const;
+                std::string getMonotoneParameterFilename() const;
 
                 /*!
                  * Retrieves the number of samples used for sampling in the monotonicity analysis
@@ -53,6 +57,8 @@ namespace storm {
                  */
                 bool isExportMonotonicitySet() const;
 
+                bool isMonSolutionSet() const;
+
                 /*!
                  *
                  */
@@ -68,6 +74,7 @@ namespace storm {
 
             private:
                 const static std::string monotonicityAnalysis;
+                const static std::string usePLABounds;
                 const static std::string sccElimination;
                 const static std::string samplesMonotonicityAnalysis;
                 const static std::string precision;
@@ -75,6 +82,8 @@ namespace storm {
                 const static std::string dotOutputName;
                 static const std::string exportMonotonicityName;
                 const static std::string monotonicityThreshold;
+                const static std::string monotoneParameters;
+                const static std::string monSolution;
 
             };
 

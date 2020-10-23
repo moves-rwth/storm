@@ -84,22 +84,30 @@ namespace storm {
 
             virtual void setConstantEntries(std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
 
-            bool isUseMonotonicitySet();
+            bool isUseMonotonicitySet() const;
+            bool isUseBoundsSet();
+            bool isOnlyGlobalSet();
 
-            void setUseMonotonicityInFuture(bool monotonicity = true);
+            void setUseMonotonicity(bool monotonicity = true);
+            void setUseBounds(bool bounds = true);
+            void setUseOnlyGlobal(bool global = true);
+
+            void setMonotoneParameters(std::pair<std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>> monotoneParameters);
 
         private:
             bool useMonotonicity = false;
+            bool useOnlyGlobal = false;
+            bool useBounds = false;
 
         protected:
 
             uint_fast64_t numberOfRegionsKnownThroughMonotonicity;
+            boost::optional<std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>> monotoneIncrParameters;
+            boost::optional<std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>> monotoneDecrParameters;
 
             virtual void extendLocalMonotonicityResult(storm::storage::ParameterRegion<ParametricType> const& region, std::shared_ptr<storm::analysis::Order> order, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
 
-            virtual void splitSmart(storm::storage::ParameterRegion<ParametricType> & region, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector, storm::analysis::MonotonicityResult<VariableType> & monRes) const;
-
-            virtual void splitSmart(storm::storage::ParameterRegion<ParametricType> & region, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector, std::shared_ptr<storm::analysis::Order> order) ;
+            virtual void splitSmart(storm::storage::ParameterRegion<ParametricType> & region, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector, std::shared_ptr<storm::analysis::Order> order, storm::analysis::MonotonicityResult<VariableType> & monRes) const;
 
         };
 

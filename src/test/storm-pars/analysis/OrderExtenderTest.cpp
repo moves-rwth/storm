@@ -46,13 +46,13 @@ TEST(OrderExtenderTest, Brp_with_bisimulation_on_model) {
 
     auto extender = storm::analysis::OrderExtender<storm::RationalFunction, double>(model, formulas[0], region);
     auto monRes = new storm::analysis::MonotonicityResult<typename storm::analysis::OrderExtender<storm::RationalFunction, double>::VariableType>;
-    auto criticalTuple = extender.toOrder(make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::OrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
+    auto criticalTuple = extender.toOrder(region, make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::OrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
     EXPECT_EQ(model->getNumberOfStates(), std::get<1>(criticalTuple));
     EXPECT_EQ(model->getNumberOfStates(), std::get<2>(criticalTuple));
 
     auto order = std::get<0>(criticalTuple);
     for (uint_fast64_t i = 0; i < model->getNumberOfStates(); ++i) {
-        EXPECT_TRUE((*order->getAddedStates())[i]);
+        EXPECT_TRUE((order->getAddedStates())[i]);
     }
 
     // Check on some nodes
@@ -85,7 +85,7 @@ TEST(OrderExtenderTest, Brp_without_bisimulation_on_model) {
 
     auto extender = storm::analysis::OrderExtender<storm::RationalFunction, double>(model, formulas[0], region);
     auto monRes = new storm::analysis::MonotonicityResult<typename storm::analysis::OrderExtender<storm::RationalFunction, double>::VariableType>;
-    auto criticalTuple = extender.toOrder(make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::OrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
+    auto criticalTuple = extender.toOrder(region, make_shared<storm::analysis::MonotonicityResult<typename storm::analysis::OrderExtender<storm::RationalFunction, double>::VariableType>>(*monRes));
     EXPECT_EQ(183ul, std::get<1>(criticalTuple));
     EXPECT_EQ(186ul, std::get<2>(criticalTuple));
 }
@@ -175,7 +175,7 @@ TEST(OrderExtenderTest, Brp_without_bisimulation_on_matrix) {
     auto extender = storm::analysis::OrderExtender<storm::RationalFunction, double>(&topStates, &bottomStates, model->getTransitionMatrix());
     auto res = extender.extendOrder(nullptr, region);
     auto order = std::get<0>(res);
-    EXPECT_FALSE(order->getAddedStates()->full());
+    EXPECT_FALSE(order->getAddedStates().full());
     EXPECT_FALSE(order->getDoneBuilding());
 }
 
@@ -198,20 +198,20 @@ TEST(OrderExtenderTest, simple1_on_model) {
     auto region=storm::api::parseRegion<storm::RationalFunction>("0.51<=p<=0.9", modelParameters);
 
     auto extender = storm::analysis::OrderExtender<storm::RationalFunction, double>(model, formulas[0], region);
-    auto order = std::get<0>(extender.toOrder());
-    EXPECT_EQ(order->getNumberOfAddedStates(), 4);
-    EXPECT_FALSE(order->getDoneBuilding());
+    auto order = std::get<0>(extender.toOrder(region));
+    EXPECT_EQ(order->getNumberOfAddedStates(), 5);
+    EXPECT_TRUE(order->getDoneBuilding());
 
     // Check on all states
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(3,0));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,0));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,1));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,2));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,4));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(1,0));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(1,2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,0));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,2));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,4));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(0,2));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(0,4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(0,2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(0,4));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(2,4));
 }
 
@@ -284,20 +284,20 @@ TEST(OrderExtenderTest, casestudy1_on_model) {
     auto region=storm::api::parseRegion<storm::RationalFunction>("0.51<=p<=0.9", modelParameters);
 
     auto extender = storm::analysis::OrderExtender<storm::RationalFunction, double>(model, formulas[0], region);
-    auto order = std::get<0>(extender.toOrder());
-    EXPECT_EQ(order->getNumberOfAddedStates(), 4);
-    EXPECT_FALSE(order->getDoneBuilding());
+    auto order = std::get<0>(extender.toOrder(region));
 
+    EXPECT_EQ(order->getNumberOfAddedStates(), 5);
+    EXPECT_TRUE(order->getDoneBuilding());
     // Check on all states
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(3,0));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,0));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,1));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,2));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(3,4));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(1,0));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(1,2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,0));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,2));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(1,4));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(0,2));
-    EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(0,4));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(0,2));
+    EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(0,4));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(2,4));
 }
 

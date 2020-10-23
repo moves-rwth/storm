@@ -231,7 +231,7 @@ namespace storm {
 
                                 std::vector<storm::storage::ParameterRegion<ParametricType>> newKnownRegions;
                                 // Only split in (non)monotone vars
-                                splitSmart(currentRegion, newRegions, *(localMonotonicityResult->getGlobalMonotonicityResult()));
+                                splitSmart(currentRegion, newRegions, order, *(localMonotonicityResult->getGlobalMonotonicityResult()));
                                 assert (newRegions.size() != 0);
 
                                 initResForNewRegions = (res == RegionResult::CenterSat) ? RegionResult::ExistsSat :
@@ -363,27 +363,47 @@ namespace storm {
         }
 
         template <typename ParametricType>
-        bool RegionModelChecker<ParametricType>::isUseMonotonicitySet() {
+        bool RegionModelChecker<ParametricType>::isUseMonotonicitySet() const{
             return useMonotonicity;
         }
 
         template <typename ParametricType>
-        void RegionModelChecker<ParametricType>::setUseMonotonicityInFuture(bool monotonicity) {
+        bool RegionModelChecker<ParametricType>::isUseBoundsSet() {
+            return useBounds;
+        }
+
+        template <typename ParametricType>
+        bool RegionModelChecker<ParametricType>::isOnlyGlobalSet() {
+            return useOnlyGlobal;
+        }
+
+        template <typename ParametricType>
+        void RegionModelChecker<ParametricType>::setUseMonotonicity(bool monotonicity) {
             this->useMonotonicity = monotonicity;
         }
 
         template <typename ParametricType>
-        void RegionModelChecker<ParametricType>::splitSmart(storm::storage::ParameterRegion<ParametricType> & currentRegion, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector, storm::analysis::MonotonicityResult<VariableType> & monRes) const {
+        void RegionModelChecker<ParametricType>::setUseBounds(bool bounds) {
+            assert (!bounds || useMonotonicity);
+            this->useBounds = bounds;
+        }
+
+        template <typename ParametricType>
+        void RegionModelChecker<ParametricType>::setUseOnlyGlobal(bool global) {
+            assert (!global || useMonotonicity);
+            this->useOnlyGlobal = global;
+        }
+
+        template <typename ParametricType>
+        void RegionModelChecker<ParametricType>::splitSmart(storm::storage::ParameterRegion<ParametricType> & currentRegion, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector, std::shared_ptr<storm::analysis::Order> order, storm::analysis::MonotonicityResult<VariableType> & monRes) const {
             STORM_LOG_WARN("Smart splitting for this model checker not implemented");
             currentRegion.split(currentRegion.getCenterPoint(), regionVector);
         }
 
         template<typename ParametricType>
-        void RegionModelChecker<ParametricType>::splitSmart(storage::ParameterRegion<ParametricType> &currentRegion, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector,
-                                                            std::shared_ptr<storm::analysis::Order> order) {
-            STORM_LOG_WARN("Smart splitting for this model checker not implemented");
-            currentRegion.split(currentRegion.getCenterPoint(), regionVector);
-
+        void RegionModelChecker<ParametricType>::setMonotoneParameters(std::pair<std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ParametricType>::VariableType>> monotoneParameters) {
+            monotoneIncrParameters = std::move(monotoneParameters.first);
+            monotoneDecrParameters = std::move(monotoneParameters.second);
         }
 
 #ifdef STORM_HAVE_CARL

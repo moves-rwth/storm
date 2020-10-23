@@ -2,6 +2,7 @@
 #define STORM_MONOTONICITYCHECKER_H
 
 #include <map>
+#include <boost/container/flat_map.hpp>
 #include "Order.h"
 #include "LocalMonotonicityResult.h"
 #include "MonotonicityResult.h"
@@ -102,11 +103,11 @@ namespace storm {
         private:
             Monotonicity checkTransitionMonRes(ValueType function, VariableType param, Region region);
 
-            ValueType getDerivative(ValueType function, VariableType var);
+            ValueType& getDerivative(ValueType function, VariableType var);
 
             storage::SparseMatrix<ValueType> matrix;
 
-            std::unordered_map<ValueType, std::unordered_map<VariableType, ValueType>> derivatives;
+            boost::container::flat_map<ValueType, boost::container::flat_map<VariableType, ValueType>> derivatives;
         };
     }
 }

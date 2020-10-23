@@ -44,7 +44,7 @@ namespace storm {
              * @param var The variable.
              * @param mon The new Monotonicity to be considered.
              */
-            void updateMonotonicityResult(VariableType var, Monotonicity mon);
+            void updateMonotonicityResult(VariableType var, Monotonicity mon, bool force = false);
 
             /*!
              * Returns the  current monotonicity of a given parameter.
@@ -53,6 +53,7 @@ namespace storm {
              * @return Incr, Decr, Constant, Not or Unknown.
              */
             Monotonicity getMonotonicity(VariableType var) const;
+            bool isMonotone(VariableType var) const;
 
             /*!
              * Returns the results so far.
@@ -60,6 +61,9 @@ namespace storm {
              * @return The parameter / Monotonicity map
              */
             std::map<VariableType, Monotonicity> getMonotonicityResult() const;
+
+
+            void splitBasedOnMonotonicity(std::set<VariableType> const& consideredVariables, std::set<VariableType>& monotoneIncr, std::set<VariableType>& monotoneDecr, std::set<VariableType> & notMontone) const;
 
 
             std::pair<std::set<VariableType>, std::set<VariableType>> splitVariables(std::set<VariableType> const& consideredVariables) const;
@@ -103,6 +107,8 @@ namespace storm {
             void setAllMonotonicity(bool done = true);
 
             void setDoneForVar(VariableType);
+
+            void setDoneVariables(std::set<VariableType> doneVariables);
 
             /*!
              * Constructs a new MonotonicityResult object that is a copy of the current one
