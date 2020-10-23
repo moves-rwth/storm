@@ -344,6 +344,7 @@ namespace storm {
             }
         }
 
+        // TODO: remove successors from arguments
         template <typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) {
              assert (!order->isOnlyBottomTopOrder());
@@ -351,7 +352,7 @@ namespace storm {
 
             bool pla = usePLAOnce || (usePLA.find(order) != usePLA.end() && usePLA.at(order));
             std::vector<uint_fast64_t> sortedSuccs;
-
+            // wir machen hier genau was order->sortStates macht, also brauchst du dich noch nicht an zu gucken.
             if (pla && (continueExtending.find(order) == continueExtending.end() || continueExtending.at(order))) {
                 for (auto& state1 : successors) {
                     if (sortedSuccs.size() == 0) {
@@ -392,6 +393,8 @@ namespace storm {
                     sortedSuccs = std::move(temp.second);
                 }
             }
+
+            //
 
             if (order->compare(sortedSuccs[0], sortedSuccs[sortedSuccs.size() - 1]) == Order::SAME) {
                 if (!order->contains(currentState)) {

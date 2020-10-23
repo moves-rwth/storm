@@ -34,7 +34,6 @@ namespace storm {
                 for (auto & succ : act) {
                     res.set(succ, true);
                 }
-
             }
         }
 
@@ -43,7 +42,7 @@ namespace storm {
             // Finding the best action for the current state
             // TODO implement =)/=( case (or is that not necessary?)
             uint64_t  bestAct = 0;
-            if(mdpStateMap[currentState].size() == 1){
+            if (mdpStateMap[currentState].size() == 1){
                 // if we only have one possible action, we already know which one we take.
                 order->addToMdpScheduler(currentState, bestAct);
             } else {
@@ -54,6 +53,7 @@ namespace storm {
                     if (nrOfSuccs == 2) {
                         uint64_t bestSucc = orderedSuccs[0];
                         // TODO is this the right way to create a constant function?
+                        // Why do you need this?
                         storm::RationalFunction bestFunc = storm::RationalFunction(0);
                         for (auto & action : this->matrix.getRowGroup(currentState)) {
                             auto itr = action.begin();
@@ -63,6 +63,7 @@ namespace storm {
                             if (itr != action.end() && itr->getEntry() > bestFunc) {
                                 bestFunc = itr->getEntry();
                                 // TODO How to get the index of an action?
+                                //  you can just start with auto index = 0, each time you do itr++ you do index++
                                 // bestAct = action index;
                             }
                         }
@@ -80,9 +81,11 @@ namespace storm {
                                 currentCoeff += entry.getEntry() * weightMap[entry.getColumn()];
                             }
                             // TODO how to compare rational functions (shouldn't there be regions involved?)
+                            // Yes if you want to compare them you need regions, maybe the assumptionvalidater could inspire you here?
                             if (bestCoeff < currentCoeff) {
                                 bestCoeff = currentCoeff;
                                 // TODO How to get the index of an action?
+                                //  you can just start with auto index = 0, each time you do itr++ you do index++
                                 // bestAct = action index;
                             }
                         }
