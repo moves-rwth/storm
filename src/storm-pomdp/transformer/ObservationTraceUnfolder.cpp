@@ -10,7 +10,7 @@ namespace storm {
         template<typename ValueType>
         ObservationTraceUnfolder<ValueType>::ObservationTraceUnfolder(storm::models::sparse::Pomdp<ValueType> const& model, std::vector<ValueType> const& risk,
                                                                       std::shared_ptr<storm::expressions::ExpressionManager>& exprManager) : model(model), risk(risk), exprManager(exprManager) {
-            statesPerObservation = std::vector<storm::storage::BitVector>(model.getNrObservations(), storm::storage::BitVector(model.getNumberOfStates()));
+            statesPerObservation = std::vector<storm::storage::BitVector>(model.getNrObservations() + 1, storm::storage::BitVector(model.getNumberOfStates()));
             for (uint64_t state = 0; state < model.getNumberOfStates(); ++state) {
                 statesPerObservation[model.getObservation(state)].set(state, true);
             }
@@ -34,7 +34,6 @@ namespace storm {
             }
             STORM_LOG_THROW(actualInitialStates.getNumberOfSetBits() == 1, storm::exceptions::InvalidArgumentException, "Must have unique initial state matching the observation");
             //
-            statesPerObservation.resize(model.getNrObservations() + 1);
             statesPerObservation[model.getNrObservations()] = actualInitialStates;
 
 #ifdef _VERBOSE_OBSERVATION_UNFOLDING
