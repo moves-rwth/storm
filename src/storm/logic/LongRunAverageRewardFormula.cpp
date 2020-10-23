@@ -24,6 +24,10 @@ namespace storm {
             return rewardAccumulation.get();
         }
         
+        std::shared_ptr<LongRunAverageRewardFormula const> LongRunAverageRewardFormula::stripRewardAccumulation() const {
+            return std::make_shared<LongRunAverageRewardFormula>();
+        }
+        
         boost::any LongRunAverageRewardFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }

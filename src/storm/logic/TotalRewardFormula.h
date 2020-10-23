@@ -20,6 +20,7 @@ namespace storm {
             virtual bool isRewardPathFormula() const override;
             bool hasRewardAccumulation() const;
             RewardAccumulation const& getRewardAccumulation() const;
+            std::shared_ptr<TotalRewardFormula const> stripRewardAccumulation() const;
 
             virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
 

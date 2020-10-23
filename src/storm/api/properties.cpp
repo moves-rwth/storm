@@ -58,5 +58,18 @@ namespace storm {
             return formulas;
         }
         
+        storm::jani::Property createMultiObjectiveProperty(std::vector<storm::jani::Property> const& properties) {
+            std::set<storm::expressions::Variable> undefConstants;
+            std::string name = "";
+            std::string comment = "";
+            for (auto const& prop : properties) {
+                undefConstants.insert(prop.getUndefinedConstants().begin(), prop.getUndefinedConstants().end());
+                name += prop.getName();
+                comment += prop.getComment();
+                STORM_LOG_WARN_COND(prop.getFilter().isDefault(), "Non-default property filter of property " + prop.getName() + " will be dropped during conversion to multi-objective property.");
+            }
+            auto multiFormula = std::make_shared<storm::logic::MultiObjectiveFormula>(extractFormulasFromProperties(properties));
+            return storm::jani::Property(name, multiFormula, undefConstants, comment);
+        }
     }
 }

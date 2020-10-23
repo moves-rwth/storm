@@ -106,6 +106,7 @@ namespace storm {
             bool isApplyMaximalProgressAssumptionSet() const;
             bool isBuildChoiceLabelsSet() const;
             bool isBuildStateValuationsSet() const;
+            bool isBuildObservationValuationsSet() const;
             bool isBuildChoiceOriginsSet() const;
             bool isBuildAllRewardModelsSet() const;
             bool isBuildAllLabelsSet() const;
@@ -159,6 +160,14 @@ namespace storm {
              * @return this
              */
             BuilderOptions& setBuildStateValuations(bool newValue = true);
+
+            /**
+             * Should a observation valuation mapping be built?
+             * @param newValue The new value (default true)
+             * @return this
+             */
+             BuilderOptions& setBuildObservationValuations(bool newValue = true);
+
             /**
              * Should the origins the different choices be built?
              * @param newValue The new value (default true)
@@ -236,6 +245,9 @@ namespace storm {
             
             /// A flag indicating whether or not to build for each state the variable valuation from which it originates.
             bool buildStateValuations;
+
+            /// A flag indicating whether or not to build observation valuations
+            bool buildObservationValuations;
             
             // A flag that indicates whether or not to generate the information from which parts of the model specification
             // each choice originates.

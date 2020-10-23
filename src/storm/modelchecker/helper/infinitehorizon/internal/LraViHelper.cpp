@@ -259,12 +259,8 @@ namespace storm {
                             bool isAcyclic = !storm::utility::graph::hasCycle(_IsTransitions);
                             if (isAcyclic) {
                                 STORM_LOG_INFO("Instant transitions are acyclic.");
-                                if (_IsSolverEnv->solver().minMax().isMethodSetFromDefault()) {
-                                    _IsSolverEnv->solver().minMax().setMethod(storm::solver::MinMaxMethod::Acyclic);
-                                }
-                                if (_IsSolverEnv->solver().isLinearEquationSolverTypeSetFromDefaultValue()) {
-                                   _IsSolverEnv->solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Acyclic);
-                                }
+                                _IsSolverEnv->solver().minMax().setMethod(storm::solver::MinMaxMethod::Acyclic);
+                                _IsSolverEnv->solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Acyclic);
                             }
                             if (nondetIs()) {
                                 storm::solver::GeneralMinMaxLinearEquationSolverFactory<ValueType> factory;

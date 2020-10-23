@@ -44,6 +44,8 @@ namespace storm {
             mutable boost::optional<std::vector<ValueType>> auxiliaryRowVector; // A.rowCount() entries
             // can be used if the entries in 'x' need to be reordered
             mutable boost::optional<std::vector<ValueType>> auxiliaryRowGroupVector; // A.rowGroupCount() entries
+            // can be used if the performed scheduler choices need to be reordered
+            mutable boost::optional<std::vector<uint64_t>> auxiliaryRowGroupIndexVector; // A.rowGroupCount() entries
             // contains factors applied to scale the entries of the 'b' vector
             mutable std::vector<std::pair<uint64_t, ValueType>> bFactors;
 

@@ -48,8 +48,11 @@ namespace storm {
             template <typename ValueType>
             ValueType getNonStrictBound() const;
             
+            std::vector<TimeBound> const& getBounds() const;
+            
             bool hasRewardAccumulation() const;
             RewardAccumulation const& getRewardAccumulation() const;
+            std::shared_ptr<CumulativeRewardFormula const> stripRewardAccumulation() const;
             
             std::shared_ptr<CumulativeRewardFormula const> restrictToDimension(unsigned i) const;
             

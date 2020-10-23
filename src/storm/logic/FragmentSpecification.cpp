@@ -106,6 +106,9 @@ namespace storm {
             multiObjective.setBoundedUntilFormulasAllowed(true);
             multiObjective.setStepBoundedUntilFormulasAllowed(true);
             multiObjective.setTimeBoundedUntilFormulasAllowed(true);
+            multiObjective.setLongRunAverageOperatorsAllowed(true);
+            multiObjective.setLongRunAverageRewardFormulasAllowed(true);
+
 
             return multiObjective;
         }

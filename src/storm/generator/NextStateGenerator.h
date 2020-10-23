@@ -64,7 +64,9 @@ namespace storm {
             
             /// Adds the valuation for the currently loaded state to the given builder
             virtual void addStateValuation(storm::storage::sparse::state_type const& currentStateIndex, storm::storage::sparse::StateValuationsBuilder& valuationsBuilder) const;
-            
+            /// Adds the valuation for the currently loaded state
+            virtual storm::storage::sparse::StateValuations makeObservationValuation() const;
+
             virtual std::size_t getNumberOfRewardModels() const = 0;
             virtual storm::builder::RewardModelInformation getRewardModelInformation(uint64_t const& index) const = 0;
             
@@ -94,6 +96,8 @@ namespace storm {
             storm::models::sparse::StateLabeling label(storm::storage::sparse::StateStorage<StateType> const& stateStorage, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices, std::vector<std::pair<std::string, storm::expressions::Expression>> labelsAndExpressions);
 
             virtual storm::storage::BitVector evaluateObservationLabels(CompressedState const& state) const =0;
+
+            virtual storm::storage::sparse::StateValuationsBuilder initializeObservationValuationsBuilder() const;
 
             void postprocess(StateBehavior<ValueType, StateType>& result);
             

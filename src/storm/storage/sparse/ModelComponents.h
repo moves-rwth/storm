@@ -67,6 +67,8 @@ namespace storm {
                 // The POMDP observations
                 boost::optional<std::vector<uint32_t>> observabilityClasses;
 
+                boost::optional<storm::storage::sparse::StateValuations> observationValuations;
+
                 // Continuous time specific components (CTMCs, Markov Automata):
                 // True iff the transition values (for Markovian choices) are interpreted as rates.
                 bool rateTransitions;

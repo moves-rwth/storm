@@ -10,7 +10,7 @@ namespace storm {
     namespace storage {
         namespace sparse {
             
-            StateValuations::StateValuation::StateValuation(std::vector<bool>&& booleanValues, std::vector<int64_t>&& integerValues, std::vector<storm::RationalNumber>&& rationalValues) : booleanValues(std::move(booleanValues)), integerValues(std::move(integerValues)), rationalValues(std::move(rationalValues)) {
+            StateValuations::StateValuation::StateValuation(std::vector<bool>&& booleanValues, std::vector<int64_t>&& integerValues, std::vector<storm::RationalNumber>&& rationalValues, std::vector<int64_t>&& observationLabelValues) : booleanValues(std::move(booleanValues)), integerValues(std::move(integerValues)), rationalValues(std::move(rationalValues)), observationLabelValues(std::move(observationLabelValues)) {
                 // Intentionally left empty
             }
             
@@ -20,15 +20,46 @@ namespace storm {
                 return valuations[stateIndex];
             }
 
-            StateValuations::StateValueIterator::StateValueIterator(typename std::map<storm::expressions::Variable, uint64_t>::const_iterator variableIt, StateValuation const* valuation) : variableIt(variableIt), valuation(valuation) {
+            StateValuations::StateValueIterator::StateValueIterator(typename std::map<storm::expressions::Variable, uint64_t>::const_iterator variableIt,
+                                                                    typename std::map<std::string, uint64_t>::const_iterator labelIt,
+                                                                    typename std::map<storm::expressions::Variable, uint64_t>::const_iterator variableBegin ,
+                                                                    typename std::map<storm::expressions::Variable, uint64_t>::const_iterator variableEnd,
+                                                                    typename std::map<std::string, uint64_t>::const_iterator labelBegin,
+                                                                    typename std::map<std::string, uint64_t>::const_iterator labelEnd,
+                                                                    StateValuation const* valuation) : variableIt(variableIt), labelIt(labelIt),
+                                                                    variableBegin(variableBegin), variableEnd(variableEnd),
+                                                                    labelBegin(labelBegin), labelEnd(labelEnd), valuation(valuation) {
                 // Intentionally left empty.
             }
 
-            storm::expressions::Variable const& StateValuations::StateValueIterator::getVariable() const { return variableIt->first; }
-            bool StateValuations::StateValueIterator::isBoolean() const { return getVariable().hasBooleanType(); }
-            bool StateValuations::StateValueIterator::isInteger() const { return getVariable().hasIntegerType(); }
-            bool StateValuations::StateValueIterator::isRational() const { return getVariable().hasRationalType(); }
-            
+            bool StateValuations::StateValueIterator::isVariableAssignment() const {
+                return variableIt != variableEnd;
+            }
+
+            bool StateValuations::StateValueIterator::isLabelAssignment() const {
+                return variableIt == variableEnd;
+            }
+
+            storm::expressions::Variable const& StateValuations::StateValueIterator::getVariable() const {
+                STORM_LOG_ASSERT(isVariableAssignment(), "Does not point to a variable");
+                return variableIt->first;
+            }
+            std::string const& StateValuations::StateValueIterator::getLabel() const {
+                STORM_LOG_ASSERT(isLabelAssignment(), "Does not point to a label");
+                return labelIt->first;
+            }
+            bool StateValuations::StateValueIterator::isBoolean() const { return isVariableAssignment() && getVariable().hasBooleanType(); }
+            bool StateValuations::StateValueIterator::isInteger() const { return isVariableAssignment() && getVariable().hasIntegerType(); }
+            bool StateValuations::StateValueIterator::isRational() const { return isVariableAssignment() && getVariable().hasRationalType(); }
+
+            std::string const& StateValuations::StateValueIterator::getName() const {
+                if(isVariableAssignment()) {
+                    return getVariable().getName();
+                } else {
+                    return getLabel();
+                }
+            }
+
             bool StateValuations::StateValueIterator::getBooleanValue() const {
                 STORM_LOG_ASSERT(isBoolean(), "Variable has no boolean type.");
                 return valuation->booleanValues[variableIt->second];
@@ -38,7 +69,13 @@ namespace storm {
                 STORM_LOG_ASSERT(isInteger(), "Variable has no integer type.");
                 return valuation->integerValues[variableIt->second];
             }
-            
+
+            int64_t StateValuations::StateValueIterator::getLabelValue() const {
+                STORM_LOG_ASSERT(isLabelAssignment(), "Not a label assignment");
+                STORM_LOG_ASSERT(labelIt->second < valuation->observationLabelValues.size(), "Label index " << labelIt->second << " larger than number of labels " << valuation->observationLabelValues.size());
+                return valuation->observationLabelValues[labelIt->second];
+            }
+
             storm::RationalNumber StateValuations::StateValueIterator::getRationalValue() const {
                 STORM_LOG_ASSERT(isRational(), "Variable has no rational type.");
                 return valuation->rationalValues[variableIt->second];
@@ -46,33 +83,41 @@ namespace storm {
             
             bool StateValuations::StateValueIterator::operator==(StateValueIterator const& other) {
                 STORM_LOG_ASSERT(valuation == valuation, "Comparing iterators for different states");
-                return variableIt == other.variableIt;
+                return variableIt == other.variableIt && labelIt == other.labelIt;
             }
             bool StateValuations::StateValueIterator::operator!=(StateValueIterator const& other) {
-                STORM_LOG_ASSERT(valuation == valuation, "Comparing iterators for different states");
-                return variableIt != other.variableIt;
+                return !(*this == other);
             }
             
             typename StateValuations::StateValueIterator& StateValuations::StateValueIterator::operator++() {
-                ++variableIt;
+                if(variableIt != variableEnd ) {
+                    ++variableIt;
+                } else {
+                    ++labelIt;
+                }
+
                 return *this;
             }
             
             typename StateValuations::StateValueIterator& StateValuations::StateValueIterator::operator--() {
-                --variableIt;
+                if (labelIt != labelBegin) {
+                    --labelIt;
+                } else {
+                    --variableIt;
+                }
                 return *this;
             }
             
-            StateValuations::StateValueIteratorRange::StateValueIteratorRange(std::map<storm::expressions::Variable, uint64_t> const& variableMap, StateValuation const* valuation) : variableMap(variableMap), valuation(valuation) {
+            StateValuations::StateValueIteratorRange::StateValueIteratorRange(std::map<storm::expressions::Variable, uint64_t> const& variableMap, std::map<std::string, uint64_t> const& labelMap, StateValuation const* valuation) : variableMap(variableMap), labelMap(labelMap), valuation(valuation) {
                 // Intentionally left empty.
             }
             
             StateValuations::StateValueIterator StateValuations::StateValueIteratorRange::begin() const {
-                return StateValueIterator(variableMap.cbegin(), valuation);
+                return StateValueIterator(variableMap.cbegin(), labelMap.cbegin(), variableMap.cbegin(), variableMap.cend(), labelMap.cbegin(), labelMap.cend(), valuation);
             }
             
             StateValuations::StateValueIterator StateValuations::StateValueIteratorRange::end() const {
-                return StateValueIterator(variableMap.cend(), valuation);
+                return StateValueIterator(variableMap.cend(), labelMap.cend(), variableMap.cbegin(), variableMap.cend(), labelMap.cbegin(), labelMap.cend(),  valuation);
             }
             
             bool StateValuations::getBooleanValue(storm::storage::sparse::state_type const& stateIndex, storm::expressions::Variable const& booleanVariable) const {
@@ -94,8 +139,8 @@ namespace storm {
             }
             
             bool StateValuations::isEmpty(storm::storage::sparse::state_type const& stateIndex) const {
-                auto const& valuation = getValuation(stateIndex);
-                return valuation.booleanValues.empty() && valuation.integerValues.empty() && valuation.rationalValues.empty();
+                auto const& valuation = valuations[stateIndex]; // Do not use getValuations, as that is only valid after adding stuff.
+                return valuation.booleanValues.empty() && valuation.integerValues.empty() && valuation.rationalValues.empty() && valuation.observationLabelValues.empty();
             }
             
             std::string StateValuations::toString(storm::storage::sparse::state_type const& stateIndex, bool pretty, boost::optional<std::set<storm::expressions::Variable>> const& selectedVariables) const {
@@ -115,11 +160,13 @@ namespace storm {
                         if (valIt.isBoolean() && !valIt.getBooleanValue()) {
                             stream << "!";
                         }
-                        stream << valIt.getVariable().getName();
+                        stream << valIt.getName();
                         if (valIt.isInteger()) {
                             stream << "=" << valIt.getIntegerValue();
                         } else if (valIt.isRational()) {
                             stream << "=" << valIt.getRationalValue();
+                        } else if (valIt.isLabelAssignment()) {
+                            stream << "=" << valIt.getLabelValue();
                         } else {
                             STORM_LOG_THROW(valIt.isBoolean(), storm::exceptions::InvalidTypeException, "Unexpected variable type.");
                         }
@@ -130,6 +177,8 @@ namespace storm {
                             stream << valIt.getIntegerValue();
                         } else if (valIt.isRational()) {
                             stream << valIt.getRationalValue();
+                        } else if (valIt.isLabelAssignment()) {
+                            stream << valIt.getLabelValue();
                         }
                     }
                     assignments.push_back(stream.str());
@@ -161,12 +210,12 @@ namespace storm {
                     }
                     
                     if (valIt.isBoolean()) {
-                        result[valIt.getVariable().getName()] = valIt.getBooleanValue();
+                        result[valIt.getName()] = valIt.getBooleanValue();
                     } else if (valIt.isInteger()) {
-                        result[valIt.getVariable().getName()] = valIt.getIntegerValue();
+                        result[valIt.getName()] = valIt.getIntegerValue();
                     } else {
                         STORM_LOG_ASSERT(valIt.isRational(), "Unexpected variable type.");
-                        result[valIt.getVariable().getName()] = valIt.getRationalValue();
+                        result[valIt.getName()] = valIt.getRationalValue();
                     }
                 
                     if (selectedVariables) {
@@ -220,7 +269,7 @@ namespace storm {
             
             typename StateValuations::StateValueIteratorRange StateValuations::at(state_type const& state) const {
                 STORM_LOG_ASSERT(state < getNumberOfStates(), "Invalid state index.");
-                return StateValueIteratorRange({variableToIndexMap, &(valuations[state])});
+                return StateValueIteratorRange({variableToIndexMap, observationLabels,  &(valuations[state])});
             }
             
             uint_fast64_t StateValuations::getNumberOfStates() const {
@@ -256,7 +305,7 @@ namespace storm {
                 return StateValuations(variableToIndexMap, std::move(newValuations));
             }
             
-            StateValuationsBuilder::StateValuationsBuilder() : booleanVarCount(0), integerVarCount(0), rationalVarCount(0) {
+            StateValuationsBuilder::StateValuationsBuilder() : booleanVarCount(0), integerVarCount(0), rationalVarCount(0), labelCount(0) {
                 // Intentionally left empty.
             }
             
@@ -273,17 +322,33 @@ namespace storm {
                     currentStateValuations.variableToIndexMap[variable] = rationalVarCount++;
                 }
             }
+
+            void StateValuationsBuilder::addObservationLabel(const std::string &label) {
+                currentStateValuations.observationLabels[label] = labelCount++;
+            }
             
-            void StateValuationsBuilder::addState(storm::storage::sparse::state_type const& state, std::vector<bool>&& booleanValues, std::vector<int64_t>&& integerValues, std::vector<storm::RationalNumber>&& rationalValues) {
+            void StateValuationsBuilder::addState(storm::storage::sparse::state_type const& state, std::vector<bool>&& booleanValues, std::vector<int64_t>&& integerValues, std::vector<storm::RationalNumber>&& rationalValues,std::vector<int64_t>&& observationLabelValues) {
                 if (state > currentStateValuations.valuations.size()) {
                     currentStateValuations.valuations.resize(state);
                 }
                 if (state == currentStateValuations.valuations.size()) {
-                    currentStateValuations.valuations.emplace_back(std::move(booleanValues), std::move(integerValues), std::move(rationalValues));
+                    currentStateValuations.valuations.emplace_back(std::move(booleanValues), std::move(integerValues), std::move(rationalValues), std::move(observationLabelValues));
                 } else {
                     STORM_LOG_ASSERT(currentStateValuations.isEmpty(state), "Adding a valuation to the same state multiple times.");
-                    currentStateValuations.valuations[state] = typename StateValuations::StateValuation(std::move(booleanValues), std::move(integerValues), std::move(rationalValues));
+                    currentStateValuations.valuations[state] = typename StateValuations::StateValuation(std::move(booleanValues), std::move(integerValues), std::move(rationalValues), std::move(observationLabelValues));
                 }
+            }
+
+            uint64_t StateValuationsBuilder::getBooleanVarCount() const {
+                return booleanVarCount;
+            }
+
+            uint64_t StateValuationsBuilder::getIntegerVarCount() const {
+                return integerVarCount;
+            }
+
+            uint64_t StateValuationsBuilder::getLabelCount() const {
+                return labelCount;
             }
             
             StateValuations StateValuationsBuilder::build(std::size_t totalStateCount) {
@@ -291,6 +356,7 @@ namespace storm {
                 booleanVarCount = 0;
                 integerVarCount = 0;
                 rationalVarCount = 0;
+                labelCount = 0;
             }
         }
     }

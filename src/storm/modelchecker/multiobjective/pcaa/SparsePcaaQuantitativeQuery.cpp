@@ -8,6 +8,7 @@
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
+#include "storm/utility/SignalHandler.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
@@ -97,7 +98,7 @@ namespace storm {
                     // We don't care for the optimizing objective at this point
                     this->diracWeightVectorsToBeChecked.set(indexOfOptimizingObjective, false);
                 
-                    while(!this->maxStepsPerformed(env)){
+                    while(!this->maxStepsPerformed(env) && !storm::utility::resources::isTerminate()){
                         WeightVector separatingVector = this->findSeparatingVector(thresholds);
                         this->updateWeightedPrecisionInAchievabilityPhase(separatingVector);
                         this->performRefinementStep(env, std::move(separatingVector));
@@ -114,7 +115,7 @@ namespace storm {
                     // If there is only one objective than its the optimizing one. Thus the query has to be achievable.
                     return true;
                 }
-                STORM_LOG_ERROR("Could not check whether thresholds are achievable: Exceeded maximum number of refinement steps");
+                STORM_LOG_ERROR("Could not check whether thresholds are achievable: Termination requested or maximum number of refinement steps exceeded.");
                 return false;
             }
             
@@ -149,7 +150,7 @@ namespace storm {
                 // the supremum over all strategies. Hence, one could combine a scheduler inducing the optimum value (but possibly violating strict
                 // thresholds) and (with very low probability) a scheduler that satisfies all (possibly strict) thresholds.
                 GeometryValueType result = storm::utility::zero<GeometryValueType>();
-                while(!this->maxStepsPerformed(env)) {
+                while(!this->maxStepsPerformed(env) && !storm::utility::resources::isTerminate()) {
                     if (this->refinementSteps.empty()) {
                         // We did not make any refinement steps during the checkAchievability phase (e.g., because there is only one objective).
                         this->weightVectorChecker->setWeightedPrecision(storm::utility::convertNumber<typename SparseModelType::ValueType>(env.modelchecker().multi().getPrecision()));
@@ -178,7 +179,7 @@ namespace storm {
                     this->updateWeightedPrecisionInImprovingPhase(env, separatingVector);
                     this->performRefinementStep(env, std::move(separatingVector));
                 }
-               STORM_LOG_ERROR("Could not reach the desired precision: Exceeded maximum number of refinement steps");
+               STORM_LOG_ERROR("Could not reach the desired precision: Termination requested or maximum number of refinement steps exceeded.");
                return result;
             }
             

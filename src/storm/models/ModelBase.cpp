@@ -35,6 +35,10 @@ namespace storm {
             }
             return false;
         }
+
+        bool ModelBase::isPartiallyObservable() const {
+            return false;
+        }
         
         bool ModelBase::supportsParameters() const {
             return false;

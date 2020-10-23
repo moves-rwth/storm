@@ -30,7 +30,9 @@ namespace storm {
 
             protected:
                 virtual void initializeModelTypeSpecificData(SparseMaModelType const& model) override;
-
+                virtual storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType> createNondetInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitions) const override;
+                virtual storm::modelchecker::helper::SparseNondeterministicInfiniteHorizonHelper<ValueType> createDetInfiniteHorizonHelper(storm::storage::SparseMatrix<ValueType> const& transitions) const override;
+                
             private:
                 
                 /*
@@ -64,12 +66,14 @@ namespace storm {
                  * Stores the data that is relevant to invoke the minMaxSolver and retrieve the result.
                  */
                 struct MinMaxSolverData {
+                    std::unique_ptr<Environment> env;
                     std::unique_ptr<storm::solver::MinMaxLinearEquationSolver<ValueType>> solver;
                     std::vector<ValueType> b;
                 };
                 
                 struct LinEqSolverData {
                     std::unique_ptr<Environment> env;
+                    bool acyclic;
                     std::unique_ptr<storm::solver::LinearEquationSolverFactory<ValueType>> factory;
                     std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver;
                     std::vector<ValueType> b;
@@ -118,15 +122,15 @@ namespace storm {
                 /*!
                  * Initializes the data for the MinMax solver
                  */
-                std::unique_ptr<MinMaxSolverData> initMinMaxSolver(Environment const& env, SubModel const& PS, std::vector<ValueType> const& weightVector) const;
+                std::unique_ptr<MinMaxSolverData> initMinMaxSolver(Environment const& env, SubModel const& PS, bool acyclic, std::vector<ValueType> const& weightVector) const;
                 
                 /*!
                  * Initializes the data for the LinEq solver
                  */
                 template <typename VT = ValueType, typename std::enable_if<storm::NumberTraits<VT>::SupportsExponential, int>::type = 0>
-                std::unique_ptr<LinEqSolverData> initLinEqSolver(Environment const& env, SubModel const& PS) const;
+                std::unique_ptr<LinEqSolverData> initLinEqSolver(Environment const& env, SubModel const& PS, bool acyclic) const;
                 template <typename VT = ValueType, typename std::enable_if<!storm::NumberTraits<VT>::SupportsExponential, int>::type = 0>
-                std::unique_ptr<LinEqSolverData> initLinEqSolver(Environment const& env, SubModel const& PS) const;
+                std::unique_ptr<LinEqSolverData> initLinEqSolver(Environment const& env, SubModel const& PS, bool acyclic) const;
                 
                 /*
                  * Updates the reward vectors within the split model,

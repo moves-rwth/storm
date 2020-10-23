@@ -745,6 +745,29 @@ namespace storm {
         }
         
         template<typename ValueType>
+        storm::storage::BitVector SparseMatrix<ValueType>::getRowGroupFilter(storm::storage::BitVector const& rowConstraint, bool setIfForAllRowsInGroup) const {
+            STORM_LOG_ASSERT(!this->hasTrivialRowGrouping(), "Tried to get a row group filter but this matrix does not have row groups");
+            storm::storage::BitVector result(this->getRowGroupCount(), false);
+            auto const& groupIndices = this->getRowGroupIndices();
+            if (setIfForAllRowsInGroup) {
+                for (uint64_t group = 0; group < this->getRowGroupCount(); ++group) {
+                    if (rowConstraint.getNextUnsetIndex(groupIndices[group]) >= groupIndices[group + 1]) {
+                        // All rows within this group are set
+                        result.set(group, true);
+                    }
+                }
+            } else {
+                for (uint64_t group = 0; group < this->getRowGroupCount(); ++group) {
+                    if (rowConstraint.getNextSetIndex(groupIndices[group]) < groupIndices[group + 1]) {
+                        // Some row is set
+                        result.set(group, true);
+                    }
+                }
+            }
+            return result;
+        }
+        
+        template<typename ValueType>
         void SparseMatrix<ValueType>::makeRowsAbsorbing(storm::storage::BitVector const& rows) {
             for (auto row : rows) {
                 makeRowDirac(row, row);

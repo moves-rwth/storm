@@ -151,6 +151,7 @@ namespace storm {
             modelcomponents.stateValuations = pomdp.getOptionalStateValuations();
             modelcomponents.choiceLabeling = pomdp.getChoiceLabeling();
             modelcomponents.choiceLabeling->permuteItems(permutation);
+            modelcomponents.observationValuations = pomdp.getOptionalObservationValuations();
             return std::make_shared<storm::models::sparse::Pomdp<ValueType>>(modelcomponents, true);
         }
 
