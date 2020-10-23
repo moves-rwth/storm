@@ -190,7 +190,10 @@ namespace storm {
         }
 
         void Order::addToMdpScheduler(uint64_t state, uint64_t action) {
-            assert(mdpScheduler != boost::none);
+            if (!mdpScheduler){
+                mdpScheduler = std::vector<uint64_t>(numberOfStates);
+                std::fill(mdpScheduler->begin(), mdpScheduler->end(), std::numeric_limits<uint64_t>::max());
+            }
             mdpScheduler.get()[state] = action;
         }
 

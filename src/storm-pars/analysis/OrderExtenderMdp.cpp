@@ -4,13 +4,15 @@ namespace storm {
     namespace analysis {
 
         template<typename ValueType, typename ConstantType>
-        OrderExtenderMdp<ValueType, ConstantType>::OrderExtenderMdp(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, storage::ParameterRegion<ValueType> region) : OrderExtender<ValueType, ConstantType>(model, formula, region) {
+        OrderExtenderMdp<ValueType, ConstantType>::OrderExtenderMdp(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, storage::ParameterRegion<ValueType> region, bool prMax) : OrderExtender<ValueType, ConstantType>(model, formula, region) {
             initMdpStateMap();
+            this->prMax = prMax;
         }
 
         template<typename ValueType, typename ConstantType>
-        OrderExtenderMdp<ValueType, ConstantType>::OrderExtenderMdp(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix) : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix) {
+        OrderExtenderMdp<ValueType, ConstantType>::OrderExtenderMdp(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool prMax) : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix) {
             initMdpStateMap();
+            this->prMax = prMax;
         }
 
         template<typename ValueType, typename ConstantType>
@@ -38,10 +40,21 @@ namespace storm {
         }
 
         template<typename ValueType, typename ConstantType>
-        std::pair<uint_fast64_t, uint_fast64_t> OrderExtenderMdp<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, bool prMax) {
+        std::pair<uint_fast64_t, uint_fast64_t> OrderExtenderMdp<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState) {
             // Finding the best action for the current state
-            // TODO implement =)/=( case (or is that not necessary?)
             uint64_t  bestAct = 0;
+            if (order->isTopState(currentState)) {
+                // in this case the state should be absorbing so we just take action 0
+                order->addToMdpScheduler(currentState, bestAct);
+                order->addToNode(currentState, order->getTop());
+                // TODO what to return?
+            }
+            if (order ->isBottomState(currentState)) {
+                // in this case the state should be absorbing so we just take action 0
+                order->addToMdpScheduler(currentState, bestAct);
+                order->addToNode(currentState, order->getBottom());
+                // TODO what to return?
+            }
             if (mdpStateMap[currentState].size() == 1){
                 // if we only have one possible action, we already know which one we take.
                 order->addToMdpScheduler(currentState, bestAct);
@@ -52,13 +65,11 @@ namespace storm {
                 if (prMax) {
                     if (nrOfSuccs == 2) {
                         uint64_t bestSucc = orderedSuccs[0];
-                        // TODO is this the right way to create a constant function?
-                        // Why do you need this?
                         boost::optional<storm::RationalFunction> bestFunc;
                         auto index = 0;
                         for (auto & action : this->matrix.getRowGroup(currentState)) {
                             auto itr = action.begin();
-                            while (itr != action.end() && itr->getColumn != bestSucc) {
+                            while (itr != action.end() && itr->getColumn() != bestSucc) {
                                 itr++;
                             }
                             if (!bestFunc || (itr != action.end() && itr->getEntry() > bestFunc.get())) {
@@ -73,21 +84,20 @@ namespace storm {
                         for (uint64_t i = 0; i < nrOfSuccs; i++) {
                             weightMap.insert(orderedSuccs[i], nrOfSuccs - i);
                         }
-                        storm::RationalFunction bestCoeff = storm::RationalFunction(0);
+                        boost::optional<storm::RationalFunction> bestCoeff;
+                        auto index = 0;
                         for (auto & action : this->matrix.getRowGroup(currentState)) {
-                            storm::RationalFunction currentCoeff = storm::RationalFunction(0);
+                            storm::RationalFunction currentCoeff;
                             for (auto & entry : action) {
-                                // TODO does this work?
                                 currentCoeff += entry.getEntry() * weightMap[entry.getColumn()];
                             }
                             // TODO how to compare rational functions (shouldn't there be regions involved?)
                             // Yes if you want to compare them you need regions, maybe the assumptionvalidater could inspire you here?
-                            if (bestCoeff < currentCoeff) {
+                            if (!bestCoeff || bestCoeff < currentCoeff) {
                                 bestCoeff = currentCoeff;
-                                // TODO How to get the index of an action?
-                                //  you can just start with auto index = 0, each time you do itr++ you do index++
-                                // bestAct = action index;
+                                bestAct = index;
                             }
+                            index++;
                         }
 
                     }
@@ -96,20 +106,18 @@ namespace storm {
                     // TODO make sure I am not having a big miscalculation in my thoughts here
                     if (nrOfSuccs == 2) {
                         uint64_t bestSucc = orderedSuccs[1];
-                        // TODO is this the right way to create a constant function?
-                        storm::RationalFunction bestFunc = storm::RationalFunction(2);
+                        boost::optional<storm::RationalFunction> bestFunc;
+                        auto index = 0;
                         for (auto & action : this->matrix.getRowGroup(currentState)) {
                             auto itr = action.begin();
-                            auto index = 0;
                             while (itr != action.end() && itr->getColumn != bestSucc) {
                                 itr++;
-                                index++;
                             }
-                            if (itr != action.end() && itr->getEntry() < bestFunc) {
+                            if (!bestFunc || (itr != action.end() && itr->getEntry() < bestFunc)) {
                                 bestFunc = itr->getEntry();
-                                // TODO How to get the index of an action?
-                                // bestAct = action index;
+                                bestAct = index;
                             }
+                            index++;
                         }
                     } else {
                         // more than 2 succs
@@ -117,28 +125,26 @@ namespace storm {
                         for (uint64_t i = 0; i < nrOfSuccs; i++) {
                             weightMap.insert(orderedSuccs[i], nrOfSuccs - i);
                         }
-                        storm::RationalFunction bestCoeff = storm::RationalFunction(nrOfSuccs + 1);
+                        boost::optional<storm::RationalFunction> bestCoeff;
+                        auto index = 0;
                         for (auto & action : this->matrix.getRowGroup(currentState)) {
-                            storm::RationalFunction currentCoeff = storm::RationalFunction(0);
+                            storm::RationalFunction currentCoeff;
                             for (auto & entry : action) {
-                                // TODO does this work?
                                 currentCoeff += entry.getEntry() * weightMap[entry.getColumn()];
                             }
                             // TODO how to compare rational functions (shouldn't there be regions involved?)
-                            if (currentCoeff < bestCoeff) {
+                            if (!bestCoeff || currentCoeff < bestCoeff) {
                                 bestCoeff = currentCoeff;
-                                // TODO How to get the index of an action?
-                                // bestAct = action index;
+                                bestAct = index;
                             }
+                            index++;
                         }
 
                     }
                 }
-
-                order->addToMdpScheduler(currentState, bestAct);
             }
 
-            // TODO actual extending of the order here
+            // Actual extending of the order here
             std::vector<uint64_t> successors = mdpStateMap[currentState][bestAct]; // Get actual succs
             successors = order->sortStates(&successors); // Order them
             return this->extendByBackwardReasoning(order, currentState, successors); // Call Base Class function.
