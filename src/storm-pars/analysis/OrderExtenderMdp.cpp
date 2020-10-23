@@ -54,18 +54,18 @@ namespace storm {
                         uint64_t bestSucc = orderedSuccs[0];
                         // TODO is this the right way to create a constant function?
                         // Why do you need this?
-                        storm::RationalFunction bestFunc = storm::RationalFunction(0);
+                        boost::optional<storm::RationalFunction> bestFunc;
+                        auto index = 0;
                         for (auto & action : this->matrix.getRowGroup(currentState)) {
                             auto itr = action.begin();
                             while (itr != action.end() && itr->getColumn != bestSucc) {
                                 itr++;
                             }
-                            if (itr != action.end() && itr->getEntry() > bestFunc) {
+                            if (!bestFunc || (itr != action.end() && itr->getEntry() > bestFunc.get())) {
                                 bestFunc = itr->getEntry();
-                                // TODO How to get the index of an action?
-                                //  you can just start with auto index = 0, each time you do itr++ you do index++
-                                // bestAct = action index;
+                                bestAct = index;
                             }
+                            ++index;
                         }
                     } else {
                         // more than 2 succs
@@ -100,8 +100,10 @@ namespace storm {
                         storm::RationalFunction bestFunc = storm::RationalFunction(2);
                         for (auto & action : this->matrix.getRowGroup(currentState)) {
                             auto itr = action.begin();
+                            auto index = 0;
                             while (itr != action.end() && itr->getColumn != bestSucc) {
                                 itr++;
+                                index++;
                             }
                             if (itr != action.end() && itr->getEntry() < bestFunc) {
                                 bestFunc = itr->getEntry();
