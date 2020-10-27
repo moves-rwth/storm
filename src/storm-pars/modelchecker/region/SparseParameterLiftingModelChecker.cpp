@@ -311,13 +311,15 @@ namespace storm {
 
             storm::utility::Stopwatch loopWatch(true);
             auto numberOfSplits = 0;
+            auto count = 0;
             auto numberOfPLACalls = 0;
             auto numberOfPLACallsBounds = 0;
             auto numberOfOrderCopies = 0;
             auto numberOfMonResCopies = 0;
             auto totalArea = storm::utility::convertNumber<ConstantType>(region.area());
             auto coveredArea = storm::utility::zero<ConstantType>();
-
+            std::ofstream myfile;
+            myfile.open ("example.txt");
             while (!regionQueue.empty()) {
                 auto currRegion = regionQueue.top().region;
                 auto order = regionQueue.top().order;
@@ -419,6 +421,8 @@ namespace storm {
                     STORM_LOG_INFO("Splitting region " << currRegion << " into " << newRegions.size());
                     numberOfSplits++;
                 }
+                myfile << count << ";" << currBound << ";" << currRegion << ";" << std::endl;
+                count++;
 
                 regionQueue.pop();
 
@@ -439,7 +443,6 @@ namespace storm {
                         regionQueue.emplace(r, nullptr, nullptr, currBound);
                     }
                 }
-
 
                 STORM_LOG_INFO("Current value : " << value.get() << ", current bound: " << regionQueue.top().bound << ".");
                 STORM_LOG_INFO("Covered " << (coveredArea * storm::utility::convertNumber<ConstantType>(100.0) / totalArea) << "% of the region." << std::endl);
@@ -470,6 +473,7 @@ namespace storm {
                                                                                         << std::endl);
             }
             STORM_PRINT(std::endl << "Total time for region refinement: " << loopWatch << "." << std::endl << std::endl);
+            myfile.close();
 
             return std::make_pair(storm::utility::convertNumber<typename SparseModelType::ValueType>(value.get()), valuation);
         }
