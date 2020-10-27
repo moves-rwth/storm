@@ -362,11 +362,12 @@ TEST(MonotonicityHelperTest, CaseStudy2) {
     ASSERT_EQ(model->getNumberOfTransitions(), 12);
 
     // Start testing
-    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
+    auto monotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 10);
 
     // Check if correct result size
-    auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout, false);
-    EXPECT_EQ(0, result.size());
+    auto result = monotonicityHelper.checkMonotonicityInBuild(std::cout, false);
+    EXPECT_EQ(1, result.size());
+    EXPECT_FALSE(result.begin()->first->getDoneBuilding());
 }
 
 TEST(MonotonicityHelperTest, Casestudy3_not_monotone) {
