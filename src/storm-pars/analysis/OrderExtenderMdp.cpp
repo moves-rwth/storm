@@ -151,6 +151,31 @@ namespace storm {
 
         }
 
+        // Method to compare two functions
+        // We want to prove f1 >= f2, to do so we need UNSAT for f1 < f2
+        // std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
+        // std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
+        // 1) transform functions into expressions
+        // auto valueTypeToExpression = expressions::RationalFunctionToExpression<ValueType>(manager);
+        // exprF1 = valueTypeToExpression(f1);
+        // exprF2 = valueTypeToExpression(f2);
+        // 2) Now add the bounds for the parameters
+        //                 expressions::Expression exprBounds = manager->boolean(true);
+        // auto variables = manager->getVariables();
+        //                 for (auto var : variables) {
+        //auto lb = utility::convertNumber<RationalNumber>(region.getLowerBoundary(var.getName()));
+        //                        auto ub = utility::convertNumber<RationalNumber>(region.getUpperBoundary(var.getName()));
+        //                        exprBounds = exprBounds && manager->rational(lb) < var && var < manager->rational(ub);
+        // }
+        // auto exprToCheck = f1 < f2
+        //                 solver::Z3SmtSolver s(*manager);
+        // s.add(exprToCheck);
+        // s.add(exprBounds);
+        // auto smtRes = s.check();
+        // if (smtRes == solver::SmtSolver::CheckResult::Unsat) {}
+        //
+
+
 
     }
 }
