@@ -42,18 +42,19 @@ namespace storm {
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t> OrderExtenderMdp<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState) {
             // Finding the best action for the current state
+            // TODO this does not work in every case
             uint64_t  bestAct = 0;
             if (order->isTopState(currentState)) {
                 // in this case the state should be absorbing so we just take action 0
                 order->addToMdpScheduler(currentState, bestAct);
                 order->addToNode(currentState, order->getTop());
-                // TODO what to return?
+                return {this->numberOfStates, this->numberOfStates};
             }
             if (order ->isBottomState(currentState)) {
                 // in this case the state should be absorbing so we just take action 0
                 order->addToMdpScheduler(currentState, bestAct);
                 order->addToNode(currentState, order->getBottom());
-                // TODO what to return?
+                return {this->numberOfStates, this->numberOfStates};
             }
             if (mdpStateMap[currentState].size() == 1){
                 // if we only have one possible action, we already know which one we take.
@@ -91,9 +92,7 @@ namespace storm {
                             for (auto & entry : action) {
                                 currentCoeff += entry.getEntry() * weightMap[entry.getColumn()];
                             }
-                            // TODO how to compare rational functions (shouldn't there be regions involved?)
-                            // Yes if you want to compare them you need regions, maybe the assumptionvalidater could inspire you here?
-                            if (!bestCoeff || bestCoeff < currentCoeff) {
+                            if (!bestCoeff || !isFunctionGreaterEqual(bestCoeff, currentCoeff, this->region)) {
                                 bestCoeff = currentCoeff;
                                 bestAct = index;
                             }
@@ -132,8 +131,7 @@ namespace storm {
                             for (auto & entry : action) {
                                 currentCoeff += entry.getEntry() * weightMap[entry.getColumn()];
                             }
-                            // TODO how to compare rational functions (shouldn't there be regions involved?)
-                            if (!bestCoeff || currentCoeff < bestCoeff) {
+                            if (!bestCoeff || !isFunctionGreaterEqual(currentCoeff, bestCoeff, this->region)) {
                                 bestCoeff = currentCoeff;
                                 bestAct = index;
                             }
@@ -142,6 +140,7 @@ namespace storm {
 
                     }
                 }
+                order->addToMdpScheduler(currentState, bestAct);
             }
 
             // Actual extending of the order here
@@ -151,29 +150,43 @@ namespace storm {
 
         }
 
-        // Method to compare two functions
-        // We want to prove f1 >= f2, to do so we need UNSAT for f1 < f2
-        // std::shared_ptr<utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<utility::solver::MathsatSmtSolverFactory>();
-        // std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
-        // 1) transform functions into expressions
-        // auto valueTypeToExpression = expressions::RationalFunctionToExpression<ValueType>(manager);
-        // exprF1 = valueTypeToExpression(f1);
-        // exprF2 = valueTypeToExpression(f2);
-        // 2) Now add the bounds for the parameters
-        //                 expressions::Expression exprBounds = manager->boolean(true);
-        // auto variables = manager->getVariables();
-        //                 for (auto var : variables) {
-        //auto lb = utility::convertNumber<RationalNumber>(region.getLowerBoundary(var.getName()));
-        //                        auto ub = utility::convertNumber<RationalNumber>(region.getUpperBoundary(var.getName()));
-        //                        exprBounds = exprBounds && manager->rational(lb) < var && var < manager->rational(ub);
-        // }
-        // auto exprToCheck = f1 < f2
-        //                 solver::Z3SmtSolver s(*manager);
-        // s.add(exprToCheck);
-        // s.add(exprBounds);
-        // auto smtRes = s.check();
-        // if (smtRes == solver::SmtSolver::CheckResult::Unsat) {}
-        //
+        // TODO Maybe a better name for this function?
+        template<typename ValueType, typename ConstantType>
+        bool OrderExtenderMdp<ValueType, ConstantType>::isFunctionGreaterEqual(storm::RationalFunction f1, storm::RationalFunction f2, storage::ParameterRegion<ValueType> region) {
+            // We want to prove f1 >= f2, so we need UNSAT for f1 < f2
+            std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
+
+            // Transform functions into expressions
+            auto valueTypeToExpression = expressions::RationalFunctionToExpression<ValueType>(manager);
+            auto exprF1 = valueTypeToExpression(f1);
+            auto exprF2 = valueTypeToExpression(f2);
+
+            // Add bounds for parameters from region
+            expressions::Expression exprBounds = manager->boolean(true);
+            auto variables = manager->getVariables();
+            for (auto var : variables) {
+                auto lb = utility::convertNumber<RationalNumber>(region.getLowerBoundary(var.getName()));
+                auto ub = utility::convertNumber<RationalNumber>(region.getUpperBoundary(var.getName()));
+                exprBounds = exprBounds && manager->rational(lb) < var && var < manager->rational(ub);
+            }
+
+            // Use SMTSolver
+            auto exprToCheck = exprF1 < exprF2;
+            solver::Z3SmtSolver s(*manager);
+            s.add(exprToCheck);
+            s.add(exprBounds);
+            auto smtRes = s.check();
+
+            // Evaluate Result
+            // TODO what happens if the function is neither always geq nor less than the other in the given regions?
+            if (smtRes == solver::SmtSolver::CheckResult::Unsat) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+       
 
 
 
