@@ -17,7 +17,7 @@ namespace storm {
 
                 void initMdpStateMap();
 
-                // TODO can't really do override with different parameter signature (bc of prMax bool) (also this version doesnt need the successor param). How to do this?
+                // TODO can't really do override with different parameter signature (also this version doesnt need the successor param). How to do this?
                 std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState);
 
                 /*!

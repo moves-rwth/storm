@@ -61,24 +61,21 @@ namespace storm {
 
             // Build stateMap
             for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
-                //auto const& row = matrix.getRow(state);
+                auto const& row = matrix.getRow(state);
                 stateMap[state] = std::vector<uint_fast64_t>();
                 std::set<VariableType> occurringVariables;
-
-                for (auto& row : matrix.getRowGroup(state)){
-                    for (auto& entry : row) {
-
-                        // ignore self-loops when there are more transitions
-                        if (state != entry.getColumn() || row.getNumberOfEntries() == 1) {
-                            if (!subStates[entry.getColumn()] && !bottomTopOrder->contains(state)) {
-                                bottomTopOrder->add(state);
-                            }
-                            stateMap[state].push_back(entry.getColumn());
+                for (auto& entry : matrix.getRow(state)) {
+                    // ignore self-loops when there are more transitions
+                    if (state != entry.getColumn() || row.getNumberOfEntries() == 1) {
+                        if (!subStates[entry.getColumn()] && !bottomTopOrder->contains(state)) {
+                            bottomTopOrder->add(state);
                         }
-                        storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
+                        stateMap[state].push_back(entry.getColumn());
+                    }
+                    storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
 
                     }
-                }
+
 
                 if (occurringVariables.empty()) {
                     nonParametricStates.insert(state);
