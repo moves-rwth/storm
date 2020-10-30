@@ -632,5 +632,8 @@ namespace storm {
             outStream << "\t}" << std::endl;
 
         }
+
+        void Automaton::reduceStateSpace() {
+        }
     }
 }

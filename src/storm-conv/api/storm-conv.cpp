@@ -56,6 +56,10 @@ namespace storm {
             if (options.simplifyComposition) {
                 janiModel.simplifyComposition();
             }
+
+            if (options.reduceStateSpace) {
+                janiModel.reduceStateSpace();
+            }
             
             if (options.flatten) {
                 std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory;

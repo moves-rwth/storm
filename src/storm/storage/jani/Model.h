@@ -423,6 +423,11 @@ namespace storm {
              * duplicated su that each automata occurs at most once.
              */
             void simplifyComposition();
+
+            /*!
+             * Attempts to reduce the size of the final model.
+             */
+            void reduceStateSpace();
             
             /*!
              * Retrieves the set of action names.
