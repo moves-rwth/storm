@@ -5,32 +5,17 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         OrderExtenderMdp<ValueType, ConstantType>::OrderExtenderMdp(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, storage::ParameterRegion<ValueType> region, bool prMax) : OrderExtender<ValueType, ConstantType>(model, formula, region) {
-            initMdpStateMap();
             this->prMax = prMax;
         }
 
         template<typename ValueType, typename ConstantType>
         OrderExtenderMdp<ValueType, ConstantType>::OrderExtenderMdp(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool prMax) : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix) {
-            initMdpStateMap();
             this->prMax = prMax;
         }
 
         template<typename ValueType, typename ConstantType>
-        void OrderExtenderMdp<ValueType, ConstantType>::initMdpStateMap() {
-            for (uint64_t stateNr = 0; stateNr < this->numberOfStates; stateNr++) {
-                for (auto & row : this->matrix.getRowGroup(stateNr)) {
-                    auto i = 0;
-                    for (auto & rowEntry : row) {
-                        mdpStateMap[stateNr][i].push_back(rowEntry.getColumn());
-                    }
-                    i++;
-                }
-            }
-        }
-
-        template<typename ValueType, typename ConstantType>
         storm::storage::BitVector OrderExtenderMdp<ValueType, ConstantType>::gatherPotentialSuccs(uint64_t state) {
-            auto succs = mdpStateMap[state];
+            auto succs = this->stateMap[state];
             auto res = storm::storage::BitVector(this->numberOfStates);
             for (auto & act : succs) {
                 for (auto & succ : act) {
@@ -56,7 +41,7 @@ namespace storm {
                 order->addToNode(currentState, order->getBottom());
                 return {this->numberOfStates, this->numberOfStates};
             }
-            if (mdpStateMap[currentState].size() == 1){
+            if (this->tateMap[currentState].size() == 1){
                 // if we only have one possible action, we already know which one we take.
                 order->addToMdpScheduler(currentState, bestAct);
             } else {
@@ -144,7 +129,7 @@ namespace storm {
             }
 
             // Actual extending of the order here
-            std::vector<uint64_t> successors = mdpStateMap[currentState][bestAct]; // Get actual succs
+            std::vector<uint64_t> successors = this->stateMap[currentState][bestAct]; // Get actual succs
             successors = order->sortStates(&successors); // Order them
             return this->extendByBackwardReasoning(order, currentState, successors); // Call Base Class function.
 

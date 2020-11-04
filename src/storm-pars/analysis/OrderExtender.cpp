@@ -62,19 +62,36 @@ namespace storm {
             // Build stateMap
             for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
                 auto const& row = matrix.getRow(state);
-                stateMap[state] = std::vector<uint_fast64_t>();
+                stateMap[state] = std::vector<std::vector<uint_fast64_t>>();
                 std::set<VariableType> occurringVariables;
-                for (auto& entry : matrix.getRow(state)) {
-                    // ignore self-loops when there are more transitions
-                    if (state != entry.getColumn() || row.getNumberOfEntries() == 1) {
-                        if (!subStates[entry.getColumn()] && !bottomTopOrder->contains(state)) {
-                            bottomTopOrder->add(state);
-                        }
-                        stateMap[state].push_back(entry.getColumn());
-                    }
-                    storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
 
+                auto rowCount = 0;
+                auto currentOption = 0;
+                auto numberOfOptionsForState = 0;
+                for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
+                    numberOfOptionsForState = matrix.getRowGroupSize(state);
+                    while (currentOption < numberOfOptionsForState) {
+                        auto row = matrix.getRow(rowCount);
+
+                        for (auto& entry : row) {
+                            // ignore self-loops when there are more transitions
+                            if (state != entry.getColumn() || row.getNumberOfEntries() == 1) {
+                                if (!subStates[entry.getColumn()] && !bottomTopOrder->contains(state)) {
+                                    bottomTopOrder->add(state);
+                                }
+                                stateMap[state][currentOption].push_back(entry.getColumn());
+                            }
+                            storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
+
+                        }
+
+                        currentOption++;
+                        rowCount++;
                     }
+                    currentOption = 0;
+                }
+
+
 
 
                 if (occurringVariables.empty()) {
@@ -143,21 +160,37 @@ namespace storm {
                 // Build stateMap
                 for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
                     auto const& row = matrix.getRow(state);
-                    stateMap[state] = std::vector<uint_fast64_t>();
+                    stateMap[state] = std::vector<std::vector<uint_fast64_t>>();
                     std::set<VariableType> occurringVariables;
 
-                    for (auto& entry : matrix.getRow(state)) {
 
-                        // ignore self-loops when there are more transitions
-                        if (state != entry.getColumn() || row.getNumberOfEntries() == 1) {
-                            if (!subStates[entry.getColumn()] && !bottomTopOrder->contains(state)) {
-                                bottomTopOrder->add(state);
+                    auto rowCount = 0;
+                    auto currentOption = 0;
+                    auto numberOfOptionsForState = 0;
+                    for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
+                        numberOfOptionsForState = matrix.getRowGroupSize(state);
+                        while (currentOption < numberOfOptionsForState) {
+                            auto row = matrix.getRow(rowCount);
+                            for (auto& entry : row) {
+
+                                // ignore self-loops when there are more transitions
+                                if (state != entry.getColumn() || row.getNumberOfEntries() == 1) {
+                                    if (!subStates[entry.getColumn()] && !bottomTopOrder->contains(state)) {
+                                        bottomTopOrder->add(state);
+                                    }
+                                    stateMap[state][currentOption].push_back(entry.getColumn());
+                                }
+                                storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
+
                             }
-                            stateMap[state].push_back(entry.getColumn());
-                        }
-                        storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
 
+                            currentOption++;
+                            rowCount++;
+                        }
+                        currentOption = 0;
                     }
+
+
                     if (occurringVariables.empty()) {
                         nonParametricStates.insert(state);
                     }
@@ -243,7 +276,8 @@ namespace storm {
             while (currentStateMode.first != numberOfStates) {
                 assert (currentStateMode.first < numberOfStates);
                 auto& currentState = currentStateMode.first;
-                auto& successors = stateMap[currentState];
+                // TODO changed to action 0 (maybe move to OEdtmc)
+                auto& successors = stateMap[currentState][0];
                 std::pair<uint_fast64_t, uint_fast64_t> result =  {numberOfStates, numberOfStates};
 
                 if (successors.size() == 1) {
