@@ -21,6 +21,8 @@ namespace storm {
         
         std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseJaniModel(std::string const& filename, boost::optional<std::vector<std::string>> const& propertyFilter = boost::none);
         std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseJaniModel(std::string const& filename, storm::jani::ModelFeatures const& allowedFeatures, boost::optional<std::vector<std::string>> const& propertyFilter = boost::none);
+        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseJaniModelFromString(std::string const& jsonstring, boost::optional<std::vector<std::string>> const& propertyFilter = boost::none);
+        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseJaniModelFromString(std::string const& jsonstring, storm::jani::ModelFeatures const& allowedFeatures, boost::optional<std::vector<std::string>> const& propertyFilter = boost::none);
         void simplifyJaniModel(storm::jani::Model& model, std::vector<storm::jani::Property>& properties , storm::jani::ModelFeatures const& supportedFeatures);
 
     }

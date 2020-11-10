@@ -84,7 +84,13 @@ namespace storm {
         }
 
         template <typename ValueType>
-        JaniParser<ValueType>::JaniParser(std::string const& jsonstring) {
+        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> JaniParser<ValueType>::parseFromString(std::string const& jsonstring, bool parseProperties) {
+            JaniParser parser(jsonstring);
+            return parser.parseModel(parseProperties);
+        }
+
+        template <typename ValueType>
+        JaniParser<ValueType>::JaniParser(std::string const& jsonstring) : expressionManager(new storm::expressions::ExpressionManager()) {
             parsedStructure = Json::parse(jsonstring);
         }
 
