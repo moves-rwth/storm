@@ -72,14 +72,12 @@ namespace storm {
 
             std::pair<uint_fast64_t, uint_fast64_t> getUnknownStates(std::shared_ptr<Order> order);
 
-            // TODO @Jip I moved these from protected to public bc I kept getting errors during compiling
             void initializeMinMaxValues();
             void checkParOnStateMonRes(uint_fast64_t s, std::shared_ptr<Order> order, typename OrderExtender<ValueType, ConstantType>::VariableType param, std::shared_ptr<MonotonicityResult<VariableType>> monResult);
             bool isHope(std::shared_ptr<Order> order, storage::ParameterRegion<ValueType>);
             void setUnknownStates(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
             void copyMinMax(std::shared_ptr<Order> orderOriginal, std::shared_ptr<Order> orderCopy);
 
-            // TODO changed private to protected for inheritance for now. Change later.
         protected:
             std::shared_ptr<Order> getBottomTopOrder();
             std::pair<uint_fast64_t, uint_fast64_t> getUnknownStates(std::shared_ptr<Order> order) const;

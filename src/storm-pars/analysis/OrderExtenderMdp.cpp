@@ -22,6 +22,7 @@ namespace storm {
                     res.set(succ, true);
                 }
             }
+            return res;
         }
 
         template<typename ValueType, typename ConstantType>
@@ -87,7 +88,6 @@ namespace storm {
                     }
                 } else {
                     // We are interested in PrMin
-                    // TODO make sure I am not having a big miscalculation in my thoughts here
                     if (nrOfSuccs == 2) {
                         uint64_t bestSucc = orderedSuccs[1];
                         boost::optional<storm::RationalFunction> bestFunc;
@@ -135,7 +135,6 @@ namespace storm {
 
         }
 
-        // TODO Maybe a better name for this function?
         template<typename ValueType, typename ConstantType>
         bool OrderExtenderMdp<ValueType, ConstantType>::isFunctionGreaterEqual(storm::RationalFunction f1, storm::RationalFunction f2, storage::ParameterRegion<ValueType> region) {
             // We want to prove f1 >= f2, so we need UNSAT for f1 < f2
