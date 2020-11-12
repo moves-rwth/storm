@@ -378,8 +378,6 @@ namespace storm {
              * Restricts the automaton to the edges given by the indices. All other edges are deleted.
              */
             void restrictToEdges(storm::storage::FlatSet<uint_fast64_t> const& edgeIndices);
-
-            void reduceStateSpace();
             
         private:
             /// The name of the automaton.

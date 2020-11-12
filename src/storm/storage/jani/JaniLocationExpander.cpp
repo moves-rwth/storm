@@ -47,6 +47,14 @@ namespace storm {
                     variable = &var;
                     eliminatedExpressionVariable = var.getExpressionVariable();
 
+                    auto transientVar = BoundedIntegerVariable(var.getName(),
+                                                                   var.getExpressionVariable(),
+                                                                   var.getInitExpression(),
+                                                                   true,
+                                                                   var.asBoundedIntegerVariable().getLowerBound(),
+                                                                   var.asBoundedIntegerVariable().getLowerBound());
+                    newAutomaton.addVariable(transientVar);
+
                 } else {
                     // Other variables are just copied.
                     newAutomaton.addVariable(var);

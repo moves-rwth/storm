@@ -1022,15 +1022,6 @@ namespace storm {
             this->setSystemComposition(newComposition);
             
         }
-
-        void Model::reduceStateSpace() {
-            if (this->automata.size() != 1){
-                STORM_LOG_ERROR("State Space Reduction is only supported for Jani models with a single automaton.");
-                return;
-            }
-            auto automaton = this->automata[0];
-            automaton.reduceStateSpace();
-        }
         
         void Model::setSystemComposition(std::shared_ptr<Composition> const& composition) {
             this->composition = composition;
