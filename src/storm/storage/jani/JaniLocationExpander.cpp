@@ -53,7 +53,7 @@ namespace storm {
             variable = &var;
 
             containingSet.eraseVariable(var.getExpressionVariable());
-            var.setTransient(true);
+            var.setTransient(false);
             containingSet.addVariable(var);
 
             STORM_LOG_THROW(!automaton.getInitialStatesRestriction().containsVariable({eliminatedExpressionVariable}), storm::exceptions::NotSupportedException, "Elimination of variable that occurs in the initial state restriction is not allowed");
@@ -73,7 +73,7 @@ namespace storm {
                     OrderedAssignments newAssignments = loc.getAssignments().clone();
                     newAssignments.substitute(substitutionMap);
                     Location loc(newLocationName, newAssignments);
-                    loc.addTransientAssignment(Assignment(var, original.getExpressionManager().integer(i), 0)); // TODO: What is the level?
+                    // loc.addTransientAssignment(Assignment(var, original.getExpressionManager().integer(i), 0)); // TODO: What is the level?
 
                     uint64_t newLocationIndex = newAutomaton.addLocation(loc);
 
@@ -105,6 +105,7 @@ namespace storm {
                     for (auto const& destination : edge.getDestinations()) {
                         OrderedAssignments oa(destination.getOrderedAssignments().clone());
                         oa.substitute(substitutionMap);
+
                         int64_t value = currentValue;
                         for (auto const& assignment : oa) {
                             if (assignment.getVariable() == *variable) {
@@ -113,6 +114,9 @@ namespace storm {
                                 break;
                             }
                         }
+
+                        oa.add(Assignment(var, original.getExpressionManager().integer(value)));
+
                         TemplateEdgeDestination ted(oa);
                         templateEdge->addDestination(ted);
                         destinationLocationsAndProbabilities.emplace_back(locationVariableValueMap[destination.getLocationIndex()][value], substituteJaniExpression(destination.getProbability(), substitutionMap));
