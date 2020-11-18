@@ -21,6 +21,7 @@ namespace storm {
             void eliminate_all();
 
             void makeVariablesLocal(std::string const& automatonName);
+            void makeVariablesGlobal(const std::string &automatonName);
         };
     }
 }

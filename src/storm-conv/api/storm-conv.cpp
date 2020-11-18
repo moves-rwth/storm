@@ -61,6 +61,7 @@ namespace storm {
             if (options.reduceStateSpace) {
                 jani::JaniLocalEliminator eliminator = jani::JaniLocalEliminator(janiModel, properties);
                 eliminator.eliminate();
+                janiModel = eliminator.getResult();
             }
             
             if (options.flatten) {

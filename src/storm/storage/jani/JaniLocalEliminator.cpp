@@ -1,6 +1,7 @@
 #include "JaniLocalEliminator.h"
 #include "JaniLocationExpander.h"
 #include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/jani/AutomatonComposition.h"
 
 namespace storm {
     namespace jani {
@@ -14,12 +15,12 @@ namespace storm {
         }
 
         void JaniLocalEliminator::eliminate() {
-            newModel = original; // TODO: Make copy instead?
-            makeVariablesLocal("multiplex");
             if (original.getAutomata().size() != 1){
                 STORM_LOG_ERROR("State Space Reduction is only supported for Jani models with a single automaton.");
                 return;
             }
+            newModel = original; // TODO: Make copy instead?
+            // makeVariablesLocal("multiplex");
             unfold("s");
         }
 
@@ -46,15 +47,34 @@ namespace storm {
             Model localizedModel(newModel.getName() + "_localized", newModel.getModelType(), newModel.getJaniVersion(), newModel.getManager().shared_from_this());
 
             localizedModel.getModelFeatures() = newModel.getModelFeatures();
+            if (!newModel.getSystemComposition().isAutomatonComposition())
+            {
+                STORM_LOG_ERROR("Only automaton compositions are currently supported for state reduction");
+                return;
+            }
+            auto comp = newModel.getSystemComposition().asAutomatonComposition();
+            localizedModel.setSystemComposition(std::make_shared<AutomatonComposition>(comp)); //TODO: Is this shared_ptr counstruction correct?
 
             Automaton originalAutomaton = newModel.getAutomaton(automatonName);
             Automaton copyAutomaton = Automaton(originalAutomaton);
             for (auto const& var: newModel.getGlobalVariables()) {
                 copyAutomaton.addVariable(var);
+                // localizedModel.addVariable(var);
+            }
+
+            for (auto const& c : newModel.getConstants()){
+                localizedModel.addConstant(c);
             }
             localizedModel.addAutomaton(copyAutomaton);
 
             newModel = localizedModel;
+        }
+
+        void JaniLocalEliminator::makeVariablesGlobal(const std::string &automatonName) {
+            Automaton originalAutomaton = newModel.getAutomaton(automatonName);
+            for (auto const& var : originalAutomaton.getVariables()){
+                newModel.addVariable(var);
+            }
         }
     }
 }
