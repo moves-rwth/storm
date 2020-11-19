@@ -160,7 +160,9 @@ namespace storm {
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> rewardOperator;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> timeOperator;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> longRunAverageOperator;
-            
+
+            qi::rule<Iterator, storm::logic::Coalition(), qi::locals<std::vector<std::string>, std::vector<uint_fast32_t>>, Skipper> coalitionOperator;
+
             qi::rule<Iterator, storm::jani::Property(), Skipper> filterProperty;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> simpleFormula;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> stateFormula;
@@ -199,9 +201,13 @@ namespace storm {
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> multiFormula;
             qi::rule<Iterator, storm::expressions::Variable(), qi::locals<boost::optional<storm::solver::OptimizationDirection>>, Skipper> quantileBoundVariable;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> quantileFormula;
-            
+            qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> gameFormula;
+
             // Parser that is used to recognize doubles only (as opposed to Spirit's double_ parser).
             boost::spirit::qi::real_parser<double, boost::spirit::qi::strict_real_policies<double>> strict_double;
+
+            storm::logic::Coalition createCoalition(std::vector<std::string> const& playerIdentifier, std::vector<uint_fast32_t> const& playerIds) const;
+            std::shared_ptr<storm::logic::Formula const> createGameFormula(storm::logic::Coalition coalition, std::shared_ptr<storm::logic::Formula const> const& subformula) const;
 
             bool areConstantDefinitionsAllowed() const;
             void addConstant(std::string const& name, ConstantDataType type, boost::optional<storm::expressions::Expression> const& expression);
