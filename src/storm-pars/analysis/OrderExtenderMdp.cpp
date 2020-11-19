@@ -29,27 +29,32 @@ namespace storm {
         std::pair<uint_fast64_t, uint_fast64_t> OrderExtenderMdp<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState) {
             // Finding the best action for the current state
             // TODO this does not work in every case
+            STORM_PRINT("Looking for best action for state " << currentState << std::endl);
             uint64_t  bestAct = 0;
             if (order->isTopState(currentState)) {
                 // in this case the state should be absorbing so we just take action 0
                 order->addToMdpScheduler(currentState, bestAct);
                 order->addToNode(currentState, order->getTop());
+                STORM_PRINT("   State is top state + thus absorbing. Take action 0." << std::endl);
                 return {this->numberOfStates, this->numberOfStates};
             }
             if (order ->isBottomState(currentState)) {
                 // in this case the state should be absorbing so we just take action 0
                 order->addToMdpScheduler(currentState, bestAct);
                 order->addToNode(currentState, order->getBottom());
+                STORM_PRINT("   State is bottom state + thus absorbing. Take action 0." << std::endl);
                 return {this->numberOfStates, this->numberOfStates};
             }
-            if (this->tateMap[currentState].size() == 1){
+            if (this->stateMap[currentState].size() == 1){
                 // if we only have one possible action, we already know which one we take.
+                STORM_PRINT("   Only one Action available, take it." << std::endl);
                 order->addToMdpScheduler(currentState, bestAct);
             } else {
                 // note that succs in this function mean potential succs
                 auto orderedSuccs = order->sortStates(gatherPotentialSuccs(currentState));
                 auto nrOfSuccs = orderedSuccs.size();
                 if (prMax) {
+                    STORM_PRINT("Interested in PrMax." << std::endl);
                     if (nrOfSuccs == 2) {
                         uint64_t bestSucc = orderedSuccs[0];
                         boost::optional<storm::RationalFunction> bestFunc;
@@ -65,6 +70,7 @@ namespace storm {
                             }
                             ++index;
                         }
+                        STORM_PRINT("   Two potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
                     } else {
                         // more than 2 succs
                         std::map<uint64_t, uint64_t> weightMap;
@@ -84,10 +90,12 @@ namespace storm {
                             }
                             index++;
                         }
+                        STORM_PRINT("   More than 2 potential succs from 2 or more actions. Best action: " << bestAct << " with MaxCoeff " << bestCoeff << std::endl);
 
                     }
                 } else {
                     // We are interested in PrMin
+                    STORM_PRINT("Interested in PrMax." << std::endl);
                     if (nrOfSuccs == 2) {
                         uint64_t bestSucc = orderedSuccs[1];
                         boost::optional<storm::RationalFunction> bestFunc;
@@ -103,6 +111,8 @@ namespace storm {
                             }
                             index++;
                         }
+                        STORM_PRINT("   Two potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
+
                     } else {
                         // more than 2 succs
                         std::map<uint64_t, uint64_t> weightMap;
@@ -122,6 +132,7 @@ namespace storm {
                             }
                             index++;
                         }
+                        STORM_PRINT("   More than 2 potential succs from 2 or more actions. Best action: " << bestAct << " with MaxCoeff " << bestCoeff << std::endl);
 
                     }
                 }
