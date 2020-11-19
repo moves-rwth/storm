@@ -333,6 +333,14 @@ namespace storm {
             return dynamic_cast<EventuallyFormula const&>(*this);
         }
 
+        GameFormula& Formula::asGameFormula() {
+            return dynamic_cast<GameFormula&>(*this);
+        }
+
+        GameFormula const& Formula::asGameFormula() const {
+            return dynamic_cast<GameFormula const&>(*this);
+        }
+
         GloballyFormula& Formula::asGloballyFormula() {
             return dynamic_cast<GloballyFormula&>(*this);
         }

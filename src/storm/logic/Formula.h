@@ -154,7 +154,10 @@ namespace storm {
 
             EventuallyFormula& asReachabilityTimeFormula();
             EventuallyFormula const& asReachabilityTimeFormula() const;
-            
+
+            GameFormula& asGameFormula();
+            GameFormula const& asGameFormula() const;
+
             GloballyFormula& asGloballyFormula();
             GloballyFormula const& asGloballyFormula() const;
             
