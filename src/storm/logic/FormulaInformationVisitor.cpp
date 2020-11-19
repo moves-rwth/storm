@@ -60,36 +60,40 @@ namespace storm {
             }
             return result;
         }
-        
+
         boost::any FormulaInformationVisitor::visit(EventuallyFormula const& f, boost::any const& data) const {
             return f.getSubformula().accept(*this, data);
         }
-        
+
         boost::any FormulaInformationVisitor::visit(TimeOperatorFormula const& f, boost::any const& data) const {
             return f.getSubformula().accept(*this, data);
         }
-        
+
         boost::any FormulaInformationVisitor::visit(GloballyFormula const& f, boost::any const& data) const {
             return f.getSubformula().accept(*this, data);
         }
-        
+
+        boost::any FormulaInformationVisitor::visit(GameFormula const& f, boost::any const& data) const {
+            return f.getSubformula().accept(*this, data);
+        }
+
         boost::any FormulaInformationVisitor::visit(InstantaneousRewardFormula const&, boost::any const&) const {
             return FormulaInformation();
         }
-        
+
         boost::any FormulaInformationVisitor::visit(LongRunAverageOperatorFormula const& f, boost::any const& data) const {
             FormulaInformation result;
             result.setContainsLongRunFormula(true);
             result.join(boost::any_cast<FormulaInformation>(f.getSubformula().accept(*this, data)));
             return result;
         }
-        
+
         boost::any FormulaInformationVisitor::visit(LongRunAverageRewardFormula const&, boost::any const&) const {
             FormulaInformation result;
             result.setContainsLongRunFormula(true);
             return result;
         }
-        
+
         boost::any FormulaInformationVisitor::visit(MultiObjectiveFormula const& f, boost::any const& data) const {
             FormulaInformation result;
             for(auto const& subF : f.getSubformulas()){

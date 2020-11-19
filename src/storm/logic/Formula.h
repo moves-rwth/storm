@@ -78,10 +78,13 @@ namespace storm {
             virtual bool isReachabilityRewardFormula() const;
             virtual bool isLongRunAverageRewardFormula() const;
             virtual bool isTotalRewardFormula() const;
-            
+
             // Expected time formulas.
             virtual bool isReachabilityTimeFormula() const;
-            
+
+            // Game formulas.
+            virtual bool isGameFormula() const;
+
             // Type checks for abstract intermediate classes.
             virtual bool isBinaryPathFormula() const;
             virtual bool isBinaryStateFormula() const;
