@@ -41,21 +41,30 @@ namespace storm {
             pctl.setBoundedUntilFormulasAllowed(true);
             pctl.setStepBoundedUntilFormulasAllowed(true);
             pctl.setTimeBoundedUntilFormulasAllowed(true);
-            
+
             return pctl;
         }
-        
+
         FragmentSpecification flatPctl() {
             FragmentSpecification flatPctl = pctl();
-            
+
             flatPctl.setNestedOperatorsAllowed(false);
-            
+
             return flatPctl;
         }
-        
+
+        FragmentSpecification rpatl() {
+            FragmentSpecification rpatl = pctl();
+
+            // TODO disallow operator we currently do not support
+            rpatl.setCoalitionOperatorsAllowed(true);
+
+            return rpatl;
+        }
+
         FragmentSpecification prctl() {
             FragmentSpecification prctl = pctl();
-            
+
             prctl.setRewardOperatorsAllowed(true);
             prctl.setCumulativeRewardFormulasAllowed(true);
             prctl.setInstantaneousFormulasAllowed(true);
@@ -614,12 +623,21 @@ namespace storm {
         bool FragmentSpecification::isRewardAccumulationAllowed() const {
             return rewardAccumulation;
         }
-        
+
         FragmentSpecification& FragmentSpecification::setRewardAccumulationAllowed(bool newValue) {
             rewardAccumulation = newValue;
             return *this;
         }
 
-        
+        bool FragmentSpecification::areCoalitionOperatorsAllowed() const {
+            return coalitionOperator;
+        }
+
+        FragmentSpecification& FragmentSpecification::setCoalitionOperatorsAllowed(bool newValue) {
+            coalitionOperator = newValue;
+            return *this;
+        }
+
+
     }
 }
