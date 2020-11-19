@@ -170,9 +170,10 @@ namespace storm {
             }
         }
 
-       
 
 
+        template class OrderExtenderMdp<RationalFunction, double>;
+        template class OrderExtenderMdp<RationalFunction, RationalNumber>;
 
     }
 }

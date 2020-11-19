@@ -14,5 +14,8 @@ namespace storm {
             // intentionally left empty
         }
 
+        template class OrderExtenderDtmc<RationalFunction, double>;
+        template class OrderExtenderDtmc<RationalFunction, RationalNumber>;
+
     }
 }
