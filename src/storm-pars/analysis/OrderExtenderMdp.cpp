@@ -51,7 +51,8 @@ namespace storm {
                 order->addToMdpScheduler(currentState, bestAct);
             } else {
                 // note that succs in this function mean potential succs
-                auto orderedSuccs = order->sortStates(gatherPotentialSuccs(currentState));
+                auto potSuccs = gatherPotentialSuccs(currentState);
+                auto orderedSuccs = order->sortStates(&potSuccs);
                 auto nrOfSuccs = orderedSuccs.size();
                 if (prMax) {
                     STORM_PRINT("Interested in PrMax." << std::endl);
@@ -59,20 +60,42 @@ namespace storm {
                         uint64_t bestSucc = orderedSuccs[0];
                         boost::optional<storm::RationalFunction> bestFunc;
                         auto index = 0;
-                        for (auto & action : this->matrix.getRowGroup(currentState)) {
-                            auto itr = action.begin();
-                            while (itr != action.end() && itr->getColumn() != bestSucc) {
+                        auto numberOfOptionsForState = this->matrix.getRowGroupSize(currentState);
+                        while (index < numberOfOptionsForState) {
+                            auto row = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState]);
+                            auto itr = row.begin();
+                            while (itr != row.end() && itr->getColumn() != bestSucc) {
                                 itr++;
                             }
-                            if (!bestFunc || (itr != action.end() && itr->getEntry() > bestFunc.get())) {
-                                bestFunc = itr->getEntry();
+                            if (!bestFunc || (itr != row.end() && isFunctionGreaterEqual(itr->getValue(), bestFunc.get(), this->region))) {
+                                bestFunc = itr->getValue();
                                 bestAct = index;
                             }
-                            ++index;
+                            index++;
                         }
                         STORM_PRINT("   Two potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
                     } else {
                         // more than 2 succs
+
+                        // TODO CONSTRUCTION ZONE START
+                        // var für jeden succ erstellen (createRFVariable()) + map orderedSuccs -> vars (?)
+
+
+                        //for (each action (start at 1 bc bestAct is already 0))
+                        auto index = 0;
+                        storm::storage::BitVector bestActSuccs;
+                        auto numberOfOptionsForState = this->matrix.getRowGroupSize(currentState);
+                        while (index < numberOfOptionsForState) {
+                            auto row = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState]);
+
+                            //COMPARISON OF ACTIONS HERE
+                            //EASY CASES
+
+
+                            index++;
+                        }
+                        // TODO CONSTRUCTION ZONE END
+
                         std::map<uint64_t, uint64_t> weightMap;
                         for (uint64_t i = 0; i < nrOfSuccs; i++) {
                             weightMap.insert(orderedSuccs[i], nrOfSuccs - i);
@@ -84,8 +107,8 @@ namespace storm {
                             for (auto & entry : action) {
                                 currentCoeff += entry.getEntry() * weightMap[entry.getColumn()];
                             }
-                            if (!bestCoeff || !isFunctionGreaterEqual(bestCoeff, currentCoeff, this->region)) {
-                                bestCoeff = currentCoeff;
+                            if (!bestCoeff || !isFunctionGreaterEqual(bestCoeff.get(), currentCoeff, this->region)) {
+                                *bestCoeff = currentCoeff;
                                 bestAct = index;
                             }
                             index++;
@@ -100,13 +123,15 @@ namespace storm {
                         uint64_t bestSucc = orderedSuccs[1];
                         boost::optional<storm::RationalFunction> bestFunc;
                         auto index = 0;
-                        for (auto & action : this->matrix.getRowGroup(currentState)) {
-                            auto itr = action.begin();
-                            while (itr != action.end() && itr->getColumn != bestSucc) {
+                        auto numberOfOptionsForState = this->matrix.getRowGroupSize(currentState);
+                        while (index < numberOfOptionsForState) {
+                            auto row = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState]);
+                            auto itr = row.begin();
+                            while (itr != row.end() && itr->getColumn() != bestSucc) {
                                 itr++;
                             }
-                            if (!bestFunc || (itr != action.end() && itr->getEntry() < bestFunc)) {
-                                bestFunc = itr->getEntry();
+                            if (!bestFunc || (itr != row.end() && isFunctionGreaterEqual(bestFunc.get(), itr->getValue(), this->region))) {
+                                bestFunc = itr->getValue();
                                 bestAct = index;
                             }
                             index++;
@@ -126,8 +151,8 @@ namespace storm {
                             for (auto & entry : action) {
                                 currentCoeff += entry.getEntry() * weightMap[entry.getColumn()];
                             }
-                            if (!bestCoeff || !isFunctionGreaterEqual(currentCoeff, bestCoeff, this->region)) {
-                                bestCoeff = currentCoeff;
+                            if (!bestCoeff || !isFunctionGreaterEqual(currentCoeff, bestCoeff.get(), this->region)) {
+                                *bestCoeff = currentCoeff;
                                 bestAct = index;
                             }
                             index++;
@@ -142,7 +167,7 @@ namespace storm {
             // Actual extending of the order here
             std::vector<uint64_t> successors = this->stateMap[currentState][bestAct]; // Get actual succs
             successors = order->sortStates(&successors); // Order them
-            return this->extendByBackwardReasoning(order, currentState, successors); // Call Base Class function.
+            return OrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(order, currentState, successors, false); // Call Base Class function.
 
         }
 
@@ -153,8 +178,8 @@ namespace storm {
 
             // Transform functions into expressions
             auto valueTypeToExpression = expressions::RationalFunctionToExpression<ValueType>(manager);
-            auto exprF1 = valueTypeToExpression(f1);
-            auto exprF2 = valueTypeToExpression(f2);
+            auto exprF1 = valueTypeToExpression.toExpression(f1);
+            auto exprF2 = valueTypeToExpression.toExpression(f2);
 
             // Add bounds for parameters from region
             expressions::Expression exprBounds = manager->boolean(true);
@@ -181,7 +206,24 @@ namespace storm {
             }
         }
 
+        template<typename ValueType, typename ConstantType>
+        std::pair<uint64_t, uint64_t> rangeOfSuccsForAction(typename storage::SparseMatrix<ValueType>::rows* action, std::vector<uint64_t> orderedSuccs){
+            uint64_t start = orderedSuccs.size();
+            uint64_t end = 0;
+            for(auto entry : action){
+                auto succ = entry->getColumn();
+                for (uint64_t i = 0; i < orderedSuccs.size(); i++) {
+                    if (succ == orderedSuccs[i] && i < start) {
+                        start = i;
+                    }
+                    if (succ == orderedSuccs[i] && i > end) {
+                        end = i;
+                    }
+                }
+            }
 
+            return std::make_pair(start,end);
+        }
 
         template class OrderExtenderMdp<RationalFunction, double>;
         template class OrderExtenderMdp<RationalFunction, RationalNumber>;

@@ -27,7 +27,11 @@ namespace storm {
                  */
                 bool isFunctionGreaterEqual(storm::RationalFunction f1, storm::RationalFunction f2, storage::ParameterRegion<ValueType> region);
 
+                std::pair<uint64_t, uint64_t> rangeOfSuccsForAction(typename storage::SparseMatrix<ValueType>::rows* action, std::vector<uint64_t> orderedSuccs);
+
                 bool prMax;
+
+
         };
     }
 }

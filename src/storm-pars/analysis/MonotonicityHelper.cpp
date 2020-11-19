@@ -61,14 +61,14 @@ namespace storm {
             }
 
             // TODO Changing the constructor call leads to an undefined reference error
-            /*
+
             if (model->isOfType(models::ModelType::Dtmc)) {
                 this->extender = new analysis::OrderExtenderDtmc<ValueType, ConstantType>(model, formulas[0], region);
             } else if (model->isOfType(models::ModelType::Mdp)) {
                 this->extender = new analysis::OrderExtenderMdp<ValueType, ConstantType>(model, formulas[0], region);
             } else {
                 // TODO @Jip Warning that we can't do anything that isnt a dtmc or an mdp bc else we might have a null pointer exception at some point
-            }*/
+            }
 
             this->extender = new analysis::OrderExtender<ValueType, ConstantType>(model, formulas[0], region);
 
