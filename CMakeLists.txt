@@ -201,7 +201,7 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
 		message(WARNING "Disabling stack checks for AppleClang version 11.0.0 or higher.")
 		# Stack checks are known to produce errors with the following Clang versions:
 		# 11.0.0: Runtime errors (stack_not_16_byte_aligned_error) when invoking storm in release mode
-		# 11.0.3: Catching exceptions thrown within PRISM parser does not work (The exception just falls through)
+		# 11.0.3 and  12.0.0: Catching exceptions thrown within PRISM parser does not work (The exception just falls through)
 		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -fno-stack-check")
 	endif()
 
