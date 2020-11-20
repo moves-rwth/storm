@@ -606,8 +606,11 @@ namespace storm {
                     scheduler = std::make_unique<storm::storage::Scheduler<ValueType>>(transitionMatrix.getRowGroupCount());
                 }
                 
+                // Check if the values of the maybe states are relevant for the SolveGoal
+                bool maybeStatesNotRelevant = goal.hasRelevantValues() && goal.relevantValues().isDisjointFrom(qualitativeStateSets.maybeStates);
+                
                 // Check whether we need to compute exact probabilities for some states.
-                if (qualitative) {
+                if (qualitative || maybeStatesNotRelevant) {
                     // Set the values for all maybe-states to 0.5 to indicate that their probability values are neither 0 nor 1.
                     storm::utility::vector::setVectorValues<ValueType>(result, qualitativeStateSets.maybeStates, storm::utility::convertNumber<ValueType>(0.5));
                 } else {
@@ -1091,8 +1094,11 @@ namespace storm {
                     scheduler = std::make_unique<storm::storage::Scheduler<ValueType>>(transitionMatrix.getRowGroupCount());
                 }
                 
+                // Check if the values of the maybe states are relevant for the SolveGoal
+                bool maybeStatesNotRelevant = goal.hasRelevantValues() && goal.relevantValues().isDisjointFrom(qualitativeStateSets.maybeStates);
+                
                 // Check whether we need to compute exact rewards for some states.
-                if (qualitative) {
+                if (qualitative || maybeStatesNotRelevant) {
                     STORM_LOG_INFO("The rewards for the initial states were determined in a preprocessing step. No exact rewards were computed.");
                     // Set the values for all maybe-states to 1 to indicate that their reward values
                     // are neither 0 nor infinity.
