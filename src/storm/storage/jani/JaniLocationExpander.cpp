@@ -53,9 +53,9 @@ namespace storm {
 
             variable = &var;
 
-            // containingSet.eraseVariable(var.getExpressionVariable());
+            containingSet.eraseVariable(var.getExpressionVariable());
             var.setTransient(useTransientVariables);
-            // containingSet.addVariable(var);
+            containingSet.addVariable(var);
 
             STORM_LOG_THROW(!automaton.getInitialStatesRestriction().containsVariable({eliminatedExpressionVariable}), storm::exceptions::NotSupportedException, "Elimination of variable that occurs in the initial state restriction is not allowed");
             newAutomaton.setInitialStatesRestriction(automaton.getInitialStatesRestriction());
