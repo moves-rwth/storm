@@ -337,6 +337,12 @@ namespace storm {
             return std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation>();
         }
 
+        template <typename ParametricType>
+        bool RegionModelChecker<ParametricType>::checkExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision, ParametricType const& valueToCheck) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Checking extremal values is not supported for this region model checker.");
+            return false;
+        }
+
         
         template <typename ParametricType>
         bool RegionModelChecker<ParametricType>::isRegionSplitEstimateSupported() const {

@@ -452,21 +452,32 @@ namespace storm {
                                                                                      << "..." << std::endl);
                     }
                     storm::utility::Stopwatch watch(true);
-                    auto valueValuation = storm::api::computeExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(property.getRawFormula(), true), region, engine, direction, precision, useMonotonicity, generateSplitEstimates, useOnlyGlobal, useBounds, monotoneParameters);
-                    assert ((!region.getOptionalSplitThreshold()  && !generateSplitEstimates) || (region.getOptionalSplitThreshold() && generateSplitEstimates));
-                    watch.stop();
-                    std::stringstream valuationStr;
-                    bool first = true;
-                    for (auto const& v : valueValuation.second) {
-                        if (first) {
-                            first = false;
+                    // TODO: hier eventueel checkExtremalValue van maken
+                    if (regionSettings.isExtremumSuggestionSet()) {
+                        ValueType suggestion = storm::utility::convertNumber<ValueType>(regionSettings.getExtremumSuggestion());
+                        if (storm::api::checkExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(property.getRawFormula(), true), region, engine, direction, precision, suggestion, useMonotonicity, generateSplitEstimates, useOnlyGlobal, useBounds, monotoneParameters)) {
+                            STORM_PRINT_AND_LOG(suggestion << " is the extremum ");
                         } else {
-                            valuationStr << ", ";
+                            STORM_PRINT_AND_LOG(suggestion << " is NOT the extremum ");
                         }
-                        valuationStr << v.first << "=" << v.second;
+
+                    } else {
+                        auto valueValuation = storm::api::computeExtremalValue<ValueType>(model, storm::api::createTask<ValueType>(property.getRawFormula(), true), region, engine, direction, precision, useMonotonicity, generateSplitEstimates, useOnlyGlobal, useBounds, monotoneParameters);
+                        watch.stop();
+                        std::stringstream valuationStr;
+                        bool first = true;
+                        for (auto const& v : valueValuation.second) {
+                            if (first) {
+                                first = false;
+                            } else {
+                                valuationStr << ", ";
+                            }
+                            valuationStr << v.first << "=" << v.second;
+                        }
+                        STORM_PRINT_AND_LOG("Result at initial state: " << valueValuation.first << " ( approx. " << storm::utility::convertNumber<double>(valueValuation.first) << ") at [" << valuationStr.str() << "]." << std::endl)
+                        STORM_PRINT_AND_LOG("Time for model checking: " << watch << "." << std::endl);
                     }
-                    STORM_PRINT_AND_LOG("Result at initial state: " << valueValuation.first << " ( approx. " << storm::utility::convertNumber<double>(valueValuation.first) << ") at [" << valuationStr.str() << "]." << std::endl)
-                    STORM_PRINT_AND_LOG("Time for model checking: " << watch << "." << std::endl);
+
                 }
             }
         }

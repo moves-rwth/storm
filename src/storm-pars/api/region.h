@@ -234,6 +234,7 @@ namespace storm {
             return regionChecker->performRegionRefinement(env, region, coverageThreshold, refinementDepthThreshold, hypothesis, monThresh);
         }
 
+        // TODO: update documentation
         /*!
          * Finds the extremal value in the given region
          * @param engine The considered region checking engine
@@ -247,6 +248,22 @@ namespace storm {
             bool allowModelSimplification = !useMonotonicity;
             auto regionChecker = initializeRegionModelChecker(env, model, task, engine, generateSplitEstimates, allowModelSimplification, useMonotonicity, useOnlyGlobal, useBounds, monotoneParameters);
             return regionChecker->computeExtremalValue(env, region, dir, precision.is_initialized() ? precision.get() : storm::utility::zero<ValueType>());
+        }
+
+        // TODO: update documentation
+        /*!
+         * Checks if a given extremal value is indeed the extremal value in the given region
+         * @param engine The considered region checking engine
+         * @param coverageThreshold if given, the refinement stops as soon as the fraction of the area of the subregions with inconclusive result is less then this threshold
+         * @param refinementDepthThreshold if given, the refinement stops at the given depth. depth=0 means no refinement.
+         * @param hypothesis if not 'unknown', it is only checked whether the hypothesis holds (and NOT the complementary result).
+         */
+        template <typename ValueType>
+        bool checkExtremalValue(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::modelchecker::RegionCheckEngine engine, storm::solver::OptimizationDirection const& dir, boost::optional<ValueType> const& precision, ValueType const& suggestion, bool const useMonotonicity, bool generateSplitEstimates = false,  bool useOnlyGlobal = false, bool useBounds = false, boost::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>& monotoneParameters = boost::none) {
+            Environment env;
+            bool allowModelSimplification = !useMonotonicity;
+            auto regionChecker = initializeRegionModelChecker(env, model, task, engine, generateSplitEstimates, allowModelSimplification, useMonotonicity, useOnlyGlobal, useBounds, monotoneParameters);
+            return regionChecker->checkExtremalValue(env, region, dir, precision.is_initialized() ? precision.get() : storm::utility::zero<ValueType>(), suggestion);
         }
         
         template <typename ValueType>

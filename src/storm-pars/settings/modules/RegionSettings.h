@@ -86,6 +86,10 @@ namespace storm {
 				 */
 				double getExtremumValuePrecision() const;
 
+                bool isExtremumSuggestionSet() const;
+
+                double getExtremumSuggestion() const;
+
                 bool isSplittingThresholdSet() const;
 
                 int getSplittingThreshold() const;
@@ -118,6 +122,7 @@ namespace storm {
 				const static std::string refineOptionName;
 				const static std::string splittingThresholdName;
 				const static std::string extremumOptionName;
+				const static std::string extremumSuggestionOptionName;
 				const static std::string checkEngineOptionName;
 				const static std::string printNoIllustrationOptionName;
 				const static std::string printFullResultOptionName;

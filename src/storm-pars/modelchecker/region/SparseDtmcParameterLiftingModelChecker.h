@@ -87,7 +87,7 @@ namespace storm {
             std::map<VariableType, double> regionSplitEstimates;
 
             // Used for monotonicity
-
+            bool useRegionSplitEstimates;
             std::unique_ptr<storm::analysis::MonotonicityChecker<ValueType>> monotonicityChecker;
 
 

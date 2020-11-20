@@ -58,7 +58,11 @@ namespace storm {
                 STORM_LOG_THROW(lowerBoundaries.count(v) > 0, storm::exceptions::WrongFormatException, "Variable " << v << " was not defined in region string.");
                 STORM_LOG_ASSERT(upperBoundaries.count(v) > 0, "Variable " << v << " has a lower but not an upper bound.");
             }
-            return storm::storage::ParameterRegion<ParametricType>(std::move(lowerBoundaries), std::move(upperBoundaries), splittingThreshold);
+            auto res = storm::storage::ParameterRegion<ParametricType>(std::move(lowerBoundaries), std::move(upperBoundaries));
+            if (splittingThreshold) {
+                res.setSplitThreshold(splittingThreshold.get());
+            }
+            return res;
         }
 
         template<typename ParametricType>
@@ -72,7 +76,11 @@ namespace storm {
                 lowerBoundaries.emplace(std::make_pair(v, 0+bound));
                 upperBoundaries.emplace(std::make_pair(v, 1-bound));
             }
-            return storm::storage::ParameterRegion<ParametricType>(std::move(lowerBoundaries), std::move(upperBoundaries), splittingThreshold);
+            auto res = storm::storage::ParameterRegion<ParametricType>(std::move(lowerBoundaries), std::move(upperBoundaries));
+            if (splittingThreshold) {
+                res.setSplitThreshold(splittingThreshold.get());
+            }
+            return res;
         }
 
         template<typename ParametricType>
