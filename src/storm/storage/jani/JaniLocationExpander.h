@@ -16,7 +16,7 @@ namespace storm {
             Model const& original;
             Model newModel;
 
-            Automaton transformAutomaton(Automaton const& automaton, std::string const& variableName);
+            Automaton transformAutomaton(Automaton const& automaton, std::string const& variableName,bool useTransientVariables = true);
 
 
 

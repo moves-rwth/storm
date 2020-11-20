@@ -17,7 +17,7 @@ namespace storm {
             STORM_LOG_THROW(original.hasAutomaton(automatonName), storm::exceptions::IllegalArgumentException, "Model has no automaton with name " << automatonName << ". ");
             STORM_LOG_THROW(original.getAutomaton(automatonName).hasVariable(variableName) || original.hasGlobalVariable(variableName), storm::exceptions::IllegalArgumentException, "Automaton " << automatonName << " has no variable with name " << variableName << ". ");
             newModel = original;
-            newModel.replaceAutomaton(newModel.getAutomatonIndex(automatonName), transformAutomaton(original.getAutomaton(automatonName), variableName));
+            newModel.replaceAutomaton(newModel.getAutomatonIndex(automatonName), transformAutomaton(original.getAutomaton(automatonName), variableName, false));
         }
 
 
@@ -25,7 +25,7 @@ namespace storm {
             return newModel;
         }
 
-        Automaton JaniLocationExpander::transformAutomaton(Automaton const& automaton, std::string const& variableName) {
+        Automaton JaniLocationExpander::transformAutomaton(Automaton const& automaton, std::string const& variableName, bool useTransientVariables) {
 
             Automaton newAutomaton(automaton.getName(), automaton.getLocationExpressionVariable());
             int64_t initialVariableValue;
@@ -40,6 +40,7 @@ namespace storm {
             bool isGlobalVariable = !automaton.hasVariable(variableName);
             VariableSet& containingSet = isGlobalVariable ? newModel.getGlobalVariables() : newAutomaton.getVariables();
 
+            auto uncastVar = &containingSet.getVariable(variableName);
             auto var = containingSet.getVariable(variableName).asBoundedIntegerVariable();
             STORM_LOG_THROW(var.hasInitExpression(), storm::exceptions::IllegalArgumentException, "Variable to be eliminated has to have an initexpression.");
             STORM_LOG_THROW(var.isBoundedIntegerVariable(), storm::exceptions::IllegalArgumentException, "Variable to be eliminated has to be an bounded integer variable.");
@@ -52,9 +53,9 @@ namespace storm {
 
             variable = &var;
 
-            containingSet.eraseVariable(var.getExpressionVariable());
-            var.setTransient(false);
-            containingSet.addVariable(var);
+            // containingSet.eraseVariable(var.getExpressionVariable());
+            var.setTransient(useTransientVariables);
+            // containingSet.addVariable(var);
 
             STORM_LOG_THROW(!automaton.getInitialStatesRestriction().containsVariable({eliminatedExpressionVariable}), storm::exceptions::NotSupportedException, "Elimination of variable that occurs in the initial state restriction is not allowed");
             newAutomaton.setInitialStatesRestriction(automaton.getInitialStatesRestriction());
@@ -73,7 +74,9 @@ namespace storm {
                     OrderedAssignments newAssignments = loc.getAssignments().clone();
                     newAssignments.substitute(substitutionMap);
                     Location loc(newLocationName, newAssignments);
-                    // loc.addTransientAssignment(Assignment(var, original.getExpressionManager().integer(i), 0)); // TODO: What is the level?
+
+                    if (useTransientVariables)
+                        loc.addTransientAssignment(Assignment(var, original.getExpressionManager().integer(i), 0)); // TODO: What is the level?
 
                     uint64_t newLocationIndex = newAutomaton.addLocation(loc);
 
@@ -115,7 +118,8 @@ namespace storm {
                             }
                         }
 
-                        oa.add(Assignment(var, original.getExpressionManager().integer(value)));
+                        if (!useTransientVariables)
+                            oa.add(Assignment(*uncastVar, original.getExpressionManager().integer(value)));
 
                         TemplateEdgeDestination ted(oa);
                         templateEdge->addDestination(ted);
@@ -126,10 +130,6 @@ namespace storm {
                 }
             }
             return newAutomaton;
-
-
         }
-
-
     }
 }

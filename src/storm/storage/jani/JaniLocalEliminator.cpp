@@ -30,7 +30,7 @@ namespace storm {
 
         void JaniLocalEliminator::unfold(const std::string &variableName) {
             JaniLocationExpander expander = JaniLocationExpander(newModel);
-            expander.transform("multiplex", "s");
+            expander.transform("main", "x");
             newModel = expander.getResult();
         }
 
