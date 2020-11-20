@@ -334,8 +334,12 @@ namespace storm {
                     if (variable.hasInitExpression()) {
                         variable.setInitExpression(functionEliminationVisitor->eliminate(variable.getInitExpression()));
                     }
-                    variable.setLowerBound(functionEliminationVisitor->eliminate(variable.getLowerBound()));
-                    variable.setUpperBound(functionEliminationVisitor->eliminate(variable.getUpperBound()));
+                    if (variable.hasLowerBound()) {
+                        variable.setLowerBound(functionEliminationVisitor->eliminate(variable.getLowerBound()));
+                    }
+                    if (variable.hasUpperBound()) {
+                        variable.setUpperBound(functionEliminationVisitor->eliminate(variable.getUpperBound()));
+                    }
                 }
                 
                 void traverse(UnboundedIntegerVariable& variable, boost::any const& data) override {
