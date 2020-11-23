@@ -5,6 +5,7 @@
 #include <string>
 
 #include <boost/optional.hpp>
+#include <boost/variant.hpp>
 #include "storm/storage/BoostTypes.h"
 #include "storm/utility/OsDetection.h"
 
@@ -14,14 +15,13 @@ namespace storm {
         class Coalition {
         public:
             Coalition() = default;
-            Coalition(std::vector<std::string> const& playerNames, std::vector<uint_fast32_t> const& playerIds);
+            Coalition(std::vector<boost::variant<std::string, uint64_t>>);
             Coalition(Coalition const& other) = default;
 
             friend std::ostream& operator<<(std::ostream& stream, Coalition const& coalition);
 
         private:
-            std::vector<std::string> playerNames;
-            std::vector<uint_fast32_t> playerIds;
+            std::vector<boost::variant<std::string, uint64_t>> playerIds;
         };
     }
 }

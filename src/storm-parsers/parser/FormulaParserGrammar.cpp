@@ -136,9 +136,9 @@ namespace storm {
 
             coalitionOperator = (qi::lit("<<")
                     > *(    (identifier[phoenix::push_back(qi::_a, qi::_1)]
-                        |    qi::int_[phoenix::push_back(qi::_b, qi::_1)]) % ','
+                        |    qi::int_[phoenix::push_back(qi::_a, qi::_1)]) % ','
                         )
-                    > qi::lit(">>"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createCoalition, phoenix::ref(*this), qi::_a, qi::_b)];
+                    > qi::lit(">>"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createCoalition, phoenix::ref(*this), qi::_a)];
             coalitionOperator.name("coalition operator");
 
             // only LRA for now, need to adapt this (beware of cyclic gameFormula pass!)
@@ -483,8 +483,8 @@ namespace storm {
             }
         }
 
-        storm::logic::Coalition FormulaParserGrammar::createCoalition(std::vector<std::string> const& playerIdentifier, std::vector<uint_fast32_t> const& playerIds) const {
-            return storm::logic::Coalition(playerIdentifier, playerIds);
+        storm::logic::Coalition FormulaParserGrammar::createCoalition(std::vector<boost::variant<std::string, uint64_t>> const& playerIds) const {
+            return storm::logic::Coalition(playerIds);
         }
 
         std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createGameFormula(storm::logic::Coalition coalition, std::shared_ptr<storm::logic::Formula const> const& subformula) const {
