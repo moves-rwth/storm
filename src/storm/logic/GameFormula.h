@@ -9,7 +9,7 @@ namespace storm {
     namespace logic {
         class GameFormula : public Formula {
         public:
-            GameFormula(Coalition coalition, std::shared_ptr<Formula const> subFormula);
+            GameFormula(Coalition coalition, std::shared_ptr<Formula const> const& subFormula);
 
             ~GameFormula() {
                 // Intentionally left empty.

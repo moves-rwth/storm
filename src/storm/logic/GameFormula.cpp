@@ -4,8 +4,7 @@
 
 namespace storm {
     namespace logic {
-        GameFormula::GameFormula(Coalition coalition, std::shared_ptr<Formula const> subFormula) : coalition(coalition), subformula(subformula) {
-            STORM_PRINT_AND_LOG("CTOR subf usecount:" << subformula.use_count() << std::endl);
+        GameFormula::GameFormula(Coalition coalition, std::shared_ptr<Formula const> const& subformula) : coalition(coalition), subformula(subformula) {
             // Intentionally left empty.
         }
 
