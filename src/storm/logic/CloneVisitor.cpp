@@ -88,7 +88,6 @@ namespace storm {
         }
 
         boost::any CloneVisitor::visit(GameFormula const& f, boost::any const& data) const {
-            STORM_PRINT_AND_LOG("CloneVisitor called for GameFormula\n");
             std::shared_ptr<Formula> subformula = boost::any_cast<std::shared_ptr<Formula>>(f.getSubformula().accept(*this, data));
             return std::static_pointer_cast<Formula>(std::make_shared<GameFormula>(f.getCoalition(), subformula));
         }
