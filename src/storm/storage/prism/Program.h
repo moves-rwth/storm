@@ -757,17 +757,17 @@ namespace storm {
             // A mapping of formula names to their corresponding indices.
             std::map<std::string, uint_fast64_t> formulaToIndexMap;
 
-            // The modules associated with the program.
-            std::vector<Module> modules;
-
-            // A mapping of module names to their indices.
-            std::map<std::string, uint_fast64_t> moduleToIndexMap;
-
             // The players associated with the program.
             std::vector<Player> players;
 
             // A mapping of player names to their indices.
             std::map<std::string, uint_fast64_t> playerToIndexMap;
+
+            // The modules associated with the program.
+            std::vector<Module> modules;
+
+            // A mapping of module names to their indices.
+            std::map<std::string, uint_fast64_t> moduleToIndexMap;
 
             // The reward models associated with the program.
             std::vector<RewardModel> rewardModels;
