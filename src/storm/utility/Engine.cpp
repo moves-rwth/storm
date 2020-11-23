@@ -123,6 +123,7 @@ namespace storm {
                         case ModelType::MA:
                             return storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>>::canHandleStatic(checkTask);
                         case ModelType::POMDP:
+                        case ModelType::SMG:
                             return false;
                     }
                     break;
@@ -137,6 +138,7 @@ namespace storm {
                         case ModelType::MA:
                             return storm::modelchecker::HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<ddType, ValueType>>::canHandleStatic(checkTask);
                         case ModelType::POMDP:
+                        case ModelType::SMG:
                             return false;
                     }
                     break;
@@ -149,6 +151,7 @@ namespace storm {
                         case ModelType::CTMC:
                         case ModelType::MA:
                         case ModelType::POMDP:
+                        case ModelType::SMG:
                             return false;
                     }
                     break;
@@ -177,6 +180,7 @@ namespace storm {
                         case ModelType::MDP:
                         case ModelType::MA:
                         case ModelType::POMDP:
+                        case ModelType::SMG:
                             return false;
                     }
                     break;
@@ -189,6 +193,7 @@ namespace storm {
                         case ModelType::MDP:
                         case ModelType::MA:
                         case ModelType::POMDP:
+                        case ModelType::SMG:
                             return false;
                     }
                     break;
@@ -200,6 +205,7 @@ namespace storm {
                         case ModelType::CTMC:
                         case ModelType::MA:
                         case ModelType::POMDP:
+                        case ModelType::SMG:
                             return false;
                     }
                     break;
