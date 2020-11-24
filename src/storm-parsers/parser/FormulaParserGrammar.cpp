@@ -141,8 +141,7 @@ namespace storm {
                     > qi::lit(">>"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createCoalition, phoenix::ref(*this), qi::_a)];
             coalitionOperator.name("coalition operator");
 
-            // only LRA for now, need to adapt this (beware of cyclic gameFormula pass!)
-            gameFormula = (coalitionOperator > longRunAverageOperator)[qi::_val = phoenix::bind(&FormulaParserGrammar::createGameFormula, phoenix::ref(*this), storm::logic::Coalition({}, {1}), qi::_1)];
+            gameFormula = (coalitionOperator > operatorFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createGameFormula, phoenix::ref(*this), qi::_1, qi::_2)];
             gameFormula.name("game formula");
 
             stateFormula = (orStateFormula | multiFormula | quantileFormula | gameFormula);
