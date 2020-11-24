@@ -8,13 +8,14 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.6.x
 -------------
 
-## Version 1.6.3 (20xx/xx)
+## Version 1.6.3 (2020/11)
 - Added support for multi-objective model checking of long-run average objectives including mixtures with other kinds of objectives.
 - Added support for generating optimal schedulers for globally formulae
 - Simulator supports exact arithmetic
 - Added switch `--no-simplify` to disable simplification of PRISM programs (which sometimes costs a bit of time on extremely large inputs)
 - Fixed issues with JANI inputs concerning 
-    - transient variable expressions in properties and
+    - transient variable expressions in properties,
+    - constants in properties, and
     - integer variables with either only an upper or only a lower bound.
 - `storm-pomdp`: States can be labelled with values for observable predicates
 - `storm-pomdp`: (Only API) Track state estimates
