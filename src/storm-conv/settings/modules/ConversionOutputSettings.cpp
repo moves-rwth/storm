@@ -17,12 +17,15 @@ namespace storm {
             const std::string ConversionOutputSettings::stdoutOptionName = "stdout";
             const std::string ConversionOutputSettings::janiOutputOptionName = "tojani";
             const std::string ConversionOutputSettings::prismOutputOptionName = "toprism";
+            const std::string ConversionOutputSettings::aigerOutputOptionName = "toaiger";
 
             ConversionOutputSettings::ConversionOutputSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, stdoutOptionName, false, "If set, the output will be printed to stdout.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, janiOutputOptionName, false, "exports the model as Jani file.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the output file (if not empty).").setDefaultValueString("").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, prismOutputOptionName, false, "exports the model as Prism file.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the output file (if not empty).").setDefaultValueString("").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, aigerOutputOptionName, false, "exports the model as Aiger file.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the output file (if not empty).").setDefaultValueString("").build()).build());
             }
             
@@ -57,9 +60,25 @@ namespace storm {
                        && this->getOption(prismOutputOptionName).getArgumentByName("filename").getValueAsString() != "";
             }
 
+            bool ConversionOutputSettings::isAigerOutputSet() const {
+                return this->getOption(aigerOutputOptionName).getHasOptionBeenSet();
+            }
+
+            bool ConversionOutputSettings::isAigerOutputFilenameSet() const {
+                return isAigerOutputSet()
+                       && !this->getOption(aigerOutputOptionName).getArgumentByName("filename").wasSetFromDefaultValue()
+                       && this->getOption(aigerOutputOptionName).getArgumentByName("filename").getHasBeenSet()
+                       && this->getOption(aigerOutputOptionName).getArgumentByName("filename").getValueAsString() != "";
+            }
+
             std::string ConversionOutputSettings::getPrismOutputFilename() const {
                 STORM_LOG_THROW(isPrismOutputFilenameSet(), storm::exceptions::InvalidOperationException, "Tried to get the prism output name although none was specified.");
                 return this->getOption(prismOutputOptionName).getArgumentByName("filename").getValueAsString();
+            }
+
+            std::string ConversionOutputSettings::getAigerOutputFilename() const {
+                STORM_LOG_THROW(isAigerOutputFilenameSet(), storm::exceptions::InvalidOperationException, "Tried to get the aiger output name although none was specified.");
+                return this->getOption(aigerOutputOptionName).getArgumentByName("filename").getValueAsString();
             }
 
 			void ConversionOutputSettings::finalize() {

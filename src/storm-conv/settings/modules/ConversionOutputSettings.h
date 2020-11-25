@@ -41,9 +41,24 @@ namespace storm {
                 bool isPrismOutputFilenameSet() const;
 
                 /*!
+                 * Retrieves whether the output should be in the Aiger format
+                 */
+                bool isAigerOutputSet() const;
+                
+                /*!
+                 * Retrieves whether an output filename for the aiger file was specified
+                 */
+                bool isAigerOutputFilenameSet() const;
+
+                /*!
                  * Retrieves the name of the prism output (if specified)
                  */
                 std::string getPrismOutputFilename() const;
+
+                /*!
+                 * Retrieves the name of the aiger output (if specified)
+                 */
+                std::string getAigerOutputFilename() const;
                 
                 bool check() const override;
                 void finalize() override;
@@ -58,6 +73,8 @@ namespace storm {
                 static const std::string janiOutputOptionName;
                 // Define the string names of the options as constants.
                 static const std::string prismOutputOptionName;
+                // Define the string names of the options as constants.
+                static const std::string aigerOutputOptionName;
             };
             
                 

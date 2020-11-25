@@ -3,6 +3,7 @@
 
 #include "storm/settings/SettingsManager.h"
 #include "storm-conv/settings/ConvSettings.h"
+#include "storm-conv/settings/modules/AigerExportSettings.h"
 #include "storm-conv/settings/modules/ConversionGeneralSettings.h"
 #include "storm-conv/settings/modules/ConversionInputSettings.h"
 #include "storm-conv/settings/modules/ConversionOutputSettings.h"
@@ -164,6 +165,59 @@ namespace storm {
             }
             stopStopwatch(exportingTime);
         }
+
+        void processPrismInputAigerOutput(storm::prism::Program const& prismProg, std::vector<storm::jani::Property> const& properties) {
+            auto const& output = storm::settings::getModule<storm::settings::modules::ConversionOutputSettings>();
+            auto const& input = storm::settings::getModule<storm::settings::modules::ConversionInputSettings>();
+            auto const& prism = storm::settings::getModule<storm::settings::modules::PrismExportSettings>();
+            
+            auto conversionTime = startStopwatch("Processing Prism Program ... " );
+
+            // Get the name of the output file
+            std::string outputFilename = "";
+            if (output.isAigerOutputFilenameSet()) {
+                outputFilename = output.getAigerOutputFilename();
+            } else if (input.isPrismInputSet() && !output.isStdOutOutputEnabled()) {
+                outputFilename = input.getPrismInputFilename();
+                // Remove extension if present
+                auto dotPos = outputFilename.rfind('.');
+                if (dotPos != std::string::npos) {
+                    outputFilename.erase(dotPos);
+                }
+                std::string suffix = "";
+                if (input.isConstantsSet()) {
+                    suffix = input.getConstantDefinitionString();
+                    std::replace(suffix.begin(), suffix.end(), ',', '_');
+                    std::replace(suffix.begin(), suffix.end(), '=', '-');
+                }
+                suffix += "_converted.aag";
+                outputFilename += suffix;
+            }
+            
+            // prism-to-aiger transformation
+            std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(prismProg);
+            // obtain the qualitative transition matrix while removing
+            // non-determinism variables
+            storm::dd::Bdd<storm::dd::DdType::Sylvan> qualTrans = model->getQualitativeTransitionMatrix(false);
+            /*storm::prism::Program outputProgram = prismProg;
+            std::vector<storm::jani::Property> outputProperties = properties;
+            storm::api::transformPrism(outputProgram, outputProperties, prism.isSimplifySet(), prism.isExportFlattenedSet());
+            */
+            
+            // exporting of aiger file
+            stopStopwatch(conversionTime);
+            auto exportingTime = startStopwatch("Exporting Aiger program ... ");
+            
+            if (outputFilename != "") {
+                //storm::api::exportAigerToFile(outputProgram, outputProperties, outputFilename);
+                STORM_PRINT_AND_LOG("Stored to file '" << outputFilename << "'");
+            }
+            
+            if (output.isStdOutOutputEnabled()) {
+                //storm::api::printPrismToStream(outputProgram, outputProperties, std::cout);
+            }
+            stopStopwatch(exportingTime);
+        }
         
         void processPrismInput() {
             auto parsingTime = startStopwatch("Parsing PRISM input ... " );
@@ -195,6 +249,8 @@ namespace storm {
                 processPrismInputJaniOutput(prismProg.asPrismProgram(), properties);
             } else if (output.isPrismOutputSet()) {
                 processPrismInputPrismOutput(prismProg.asPrismProgram(), properties);
+            } else if (output.isAigerOutputSet()) {
+                processPrismInputAigerOutput(prismProg.asPrismProgram(), properties);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidSettingsException, "There is either no outputformat specified or the provided combination of input and output format is not compatible.");
             }

@@ -1,5 +1,6 @@
 #include "storm-conv/settings/ConvSettings.h"
 
+#include "storm-conv/settings/modules/AigerExportSettings.h"
 #include "storm-conv/settings/modules/ConversionGeneralSettings.h"
 #include "storm-conv/settings/modules/ConversionInputSettings.h"
 #include "storm-conv/settings/modules/ConversionOutputSettings.h"
@@ -15,6 +16,7 @@ namespace storm {
             storm::settings::mutableManager().setName(name, executableName);
         
             // Register relevant settings modules.
+            storm::settings::addModule<storm::settings::modules::AigerExportSettings>();
             storm::settings::addModule<storm::settings::modules::ConversionGeneralSettings>();
             storm::settings::addModule<storm::settings::modules::ConversionInputSettings>();
             storm::settings::addModule<storm::settings::modules::ConversionOutputSettings>();
