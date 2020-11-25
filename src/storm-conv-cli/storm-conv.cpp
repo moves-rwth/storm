@@ -1,4 +1,3 @@
-
 #include "storm-conv/api/storm-conv.h"
 
 #include "storm/settings/SettingsManager.h"
@@ -11,6 +10,7 @@
 #include "storm-conv/settings/modules/PrismExportSettings.h"
 
 #include "storm/api/storm.h"
+#include "storm/builder/DdPrismModelBuilder.h"
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm/utility/initialize.h"
 #include "storm/utility/macros.h"
@@ -195,7 +195,8 @@ namespace storm {
             }
             
             // prism-to-aiger transformation
-            std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(prismProg);
+            //std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(prismProg);
+            std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::api::buildSymbolicModel(prismProg, NULL);
             // obtain the qualitative transition matrix while removing
             // non-determinism variables
             storm::dd::Bdd<storm::dd::DdType::Sylvan> qualTrans = model->getQualitativeTransitionMatrix(false);
