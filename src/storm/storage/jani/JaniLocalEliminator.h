@@ -17,11 +17,8 @@ namespace storm {
             Property property;
 
             void unfold(std::string const& variableName);
-            void eliminate(std::string const& locationName);
+            void eliminate(const std::string &automatonName, std::string const& locationName);
             void eliminate_all();
-
-            void makeVariablesLocal(std::string const& automatonName);
-            void makeVariablesGlobal(const std::string &automatonName);
         };
     }
 }

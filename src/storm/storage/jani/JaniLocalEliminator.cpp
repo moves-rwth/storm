@@ -20,8 +20,8 @@ namespace storm {
                 return;
             }
             newModel = original; // TODO: Make copy instead?
-            // makeVariablesLocal("multiplex");
             unfold("s");
+            // eliminate()
         }
 
         Model const &JaniLocalEliminator::getResult() {
@@ -30,51 +30,28 @@ namespace storm {
 
         void JaniLocalEliminator::unfold(const std::string &variableName) {
             JaniLocationExpander expander = JaniLocationExpander(newModel);
-            expander.transform("main", "x");
+            expander.transform("multiplex", "s");
             newModel = expander.getResult();
         }
 
-        void JaniLocalEliminator::eliminate(const std::string &locationName) {
+        void JaniLocalEliminator::eliminate(const std::string &automatonName, const std::string &locationName) {
+            Automaton automaton = newModel.getAutomaton(automatonName);
+            uint64_t locIndex = automaton.getLocationIndex(locationName);
 
+            std::vector<std::tuple<Edge, EdgeDestination>> incomingEdges;
+            for (Edge edge : automaton.getEdges()){
+                for (const EdgeDestination dest : edge.getDestinations()){
+                    if (dest.getLocationIndex() == locIndex){
+                        incomingEdges.emplace_back(std::make_tuple(edge, dest));
+                    }
+                }
+            }
+
+            detail::Edges outgoingEdges = automaton.getEdgesFromLocation(locationName);
         }
 
         void JaniLocalEliminator::eliminate_all() {
 
-        }
-
-        void JaniLocalEliminator::makeVariablesLocal(const std::string &automatonName) {
-
-            Model localizedModel(newModel.getName() + "_localized", newModel.getModelType(), newModel.getJaniVersion(), newModel.getManager().shared_from_this());
-
-            localizedModel.getModelFeatures() = newModel.getModelFeatures();
-            if (!newModel.getSystemComposition().isAutomatonComposition())
-            {
-                STORM_LOG_ERROR("Only automaton compositions are currently supported for state reduction");
-                return;
-            }
-            auto comp = newModel.getSystemComposition().asAutomatonComposition();
-            localizedModel.setSystemComposition(std::make_shared<AutomatonComposition>(comp)); //TODO: Is this shared_ptr counstruction correct?
-
-            Automaton originalAutomaton = newModel.getAutomaton(automatonName);
-            Automaton copyAutomaton = Automaton(originalAutomaton);
-            for (auto const& var: newModel.getGlobalVariables()) {
-                copyAutomaton.addVariable(var);
-                // localizedModel.addVariable(var);
-            }
-
-            for (auto const& c : newModel.getConstants()){
-                localizedModel.addConstant(c);
-            }
-            localizedModel.addAutomaton(copyAutomaton);
-
-            newModel = localizedModel;
-        }
-
-        void JaniLocalEliminator::makeVariablesGlobal(const std::string &automatonName) {
-            Automaton originalAutomaton = newModel.getAutomaton(automatonName);
-            for (auto const& var : originalAutomaton.getVariables()){
-                newModel.addVariable(var);
-            }
         }
     }
 }

@@ -17,7 +17,7 @@ namespace storm {
             STORM_LOG_THROW(original.hasAutomaton(automatonName), storm::exceptions::IllegalArgumentException, "Model has no automaton with name " << automatonName << ". ");
             STORM_LOG_THROW(original.getAutomaton(automatonName).hasVariable(variableName) || original.hasGlobalVariable(variableName), storm::exceptions::IllegalArgumentException, "Automaton " << automatonName << " has no variable with name " << variableName << ". ");
             newModel = original;
-            newModel.replaceAutomaton(newModel.getAutomatonIndex(automatonName), transformAutomaton(original.getAutomaton(automatonName), variableName, false));
+            newModel.replaceAutomaton(newModel.getAutomatonIndex(automatonName), transformAutomaton(original.getAutomaton(automatonName), variableName, true));
         }
 
 
@@ -28,63 +28,58 @@ namespace storm {
         Automaton JaniLocationExpander::transformAutomaton(Automaton const& automaton, std::string const& variableName, bool useTransientVariables) {
 
             Automaton newAutomaton(automaton.getName(), automaton.getLocationExpressionVariable());
-            int64_t initialVariableValue;
-            int64_t variableLowerBound;
-            int64_t variableUpperBound;
-            storm::expressions::Variable eliminatedExpressionVariable;
-            const storm::jani::Variable* variable;
-
-            for (auto const& localVariable : automaton.getVariables()) // The expanded variable is also added, but will be set to transient later
-                newAutomaton.addVariable(localVariable);
+            for (auto const& localVariable : automaton.getVariables())
+                newAutomaton.addVariable(localVariable); // The expanded variable is also added, but will be set to transient later
 
             bool isGlobalVariable = !automaton.hasVariable(variableName);
             VariableSet& containingSet = isGlobalVariable ? newModel.getGlobalVariables() : newAutomaton.getVariables();
 
             auto uncastVar = &containingSet.getVariable(variableName);
             auto var = containingSet.getVariable(variableName).asBoundedIntegerVariable();
+            const storm::jani::Variable* variable = &var;
+
             STORM_LOG_THROW(var.hasInitExpression(), storm::exceptions::IllegalArgumentException, "Variable to be eliminated has to have an initexpression.");
             STORM_LOG_THROW(var.isBoundedIntegerVariable(), storm::exceptions::IllegalArgumentException, "Variable to be eliminated has to be an bounded integer variable.");
             STORM_LOG_THROW(!var.isTransient(), storm::exceptions::IllegalArgumentException, "Cannot eliminate transient variable");
 
-            variableUpperBound = var.getUpperBound().evaluateAsInt();
-            variableLowerBound  = var.getLowerBound().evaluateAsInt();
-            initialVariableValue = var.getInitExpression().evaluateAsInt();
-            eliminatedExpressionVariable = var.getExpressionVariable();
+            int64_t variableUpperBound = var.getUpperBound().evaluateAsInt();
+            int64_t variableLowerBound  = var.getLowerBound().evaluateAsInt();
+            int64_t initialVariableValue = var.getInitExpression().evaluateAsInt();
+            storm::expressions::Variable eliminatedExpressionVariable = var.getExpressionVariable();
 
-            variable = &var;
+            STORM_LOG_THROW(!automaton.getInitialStatesRestriction().containsVariable({eliminatedExpressionVariable}), storm::exceptions::NotSupportedException, "Elimination of variable that occurs in the initial state restriction is not allowed");
+            newAutomaton.setInitialStatesRestriction(automaton.getInitialStatesRestriction());
 
             containingSet.eraseVariable(var.getExpressionVariable());
             var.setTransient(useTransientVariables);
             containingSet.addVariable(var);
 
-            STORM_LOG_THROW(!automaton.getInitialStatesRestriction().containsVariable({eliminatedExpressionVariable}), storm::exceptions::NotSupportedException, "Elimination of variable that occurs in the initial state restriction is not allowed");
-            newAutomaton.setInitialStatesRestriction(automaton.getInitialStatesRestriction());
-
-
+            // This map will only ever contain a single entry: the variable to be eliminated. It is used during substitutions
             std::map<storm::expressions::Variable, storm::expressions::Expression> substitutionMap;
-            std::map<std::string, std::vector<std::string>> locationNames;
+
+            // Maps each old location index to a map that maps every variable value to the index of the (new) location that corresponds to the old location and variable value
             std::map<uint64_t, std::map<int64_t, uint64_t>> locationVariableValueMap;
+
             for (auto const& loc : automaton.getLocations()) {
-                locationNames[loc.getName()] = std::vector<std::string>();
                 uint64_t origIndex = automaton.getLocationIndex(loc.getName());
 
                 for (int64_t i = variableLowerBound; i <= variableUpperBound; i++) {
                     std::string newLocationName = loc.getName() + "_" + variableName + "_" + std::to_string(i);
                     substitutionMap[eliminatedExpressionVariable] = original.getExpressionManager().integer(i);
+
                     OrderedAssignments newAssignments = loc.getAssignments().clone();
                     newAssignments.substitute(substitutionMap);
+
                     Location loc(newLocationName, newAssignments);
 
                     if (useTransientVariables)
                         loc.addTransientAssignment(Assignment(var, original.getExpressionManager().integer(i), 0)); // TODO: What is the level?
 
-                    uint64_t newLocationIndex = newAutomaton.addLocation(loc);
-
                     if (i == initialVariableValue)
                         newAutomaton.addInitialLocation(newLocationName);
 
+                    uint64_t newLocationIndex = newAutomaton.addLocation(loc);
                     locationVariableValueMap[origIndex][i] = newLocationIndex;
-                    locationNames[loc.getName()].push_back(newLocationName);
                 }
             }
 
@@ -126,7 +121,6 @@ namespace storm {
                         destinationLocationsAndProbabilities.emplace_back(locationVariableValueMap[destination.getLocationIndex()][value], substituteJaniExpression(destination.getProbability(), substitutionMap));
                     }
                     newAutomaton.addEdge(storm::jani::Edge(newSourceIndex, edge.getActionIndex(), edge.hasRate() ? boost::optional<storm::expressions::Expression>(substituteJaniExpression(edge.getRate(), substitutionMap)) : boost::none, templateEdge, destinationLocationsAndProbabilities));
-
                 }
             }
             return newAutomaton;
