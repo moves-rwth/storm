@@ -521,10 +521,10 @@ namespace storm {
                             }
                             // Now split the region
                             if (useMonotonicity) {
-                                this->splitSmart(currRegion, newRegions, order, *(localMonotonicityResult->getGlobalMonotonicityResult()));
+                                this->splitSmart(currRegion, newRegions, order, *(localMonotonicityResult->getGlobalMonotonicityResult()), true);
                             } else if (this->isRegionSplitEstimateSupported()) {
                                 auto empty = storm::analysis::MonotonicityResult<VariableType>();
-                                this->splitSmart(currRegion, newRegions, order, empty);
+                                this->splitSmart(currRegion, newRegions, order, empty, true);
                             } else {
                                 currRegion.split(currRegion.getCenterPoint(), newRegions);
                             }

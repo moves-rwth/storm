@@ -609,47 +609,51 @@ namespace storm {
         template <typename SparseModelType, typename ConstantType>
         void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::splitSmart (
                 storm::storage::ParameterRegion<ValueType> &region, std::vector<storm::storage::ParameterRegion<ValueType>> &regionVector,
-                std::shared_ptr<storm::analysis::Order> order, storm::analysis::MonotonicityResult<VariableType> & monRes) const {
+                std::shared_ptr<storm::analysis::Order> order, storm::analysis::MonotonicityResult<VariableType> & monRes, bool splitForExtremum) const {
 
-            assert (regionVector.size() == 0);
-            std::multimap<double, VariableType> sortedOnValues;
-            std::set<VariableType> consideredVariables;
+            if (splitForExtremum) {
+                assert (regionVector.size() == 0);
+                std::multimap<double, VariableType> sortedOnValues;
+                std::set<VariableType> consideredVariables;
 //            if (false) {
-            if (regionSplitEstimationsEnabled && useRegionSplitEstimates) {
-                STORM_LOG_INFO("Splitting based on regionsplitestimates");
-                for (auto itr = sortedOnValues.begin();
-                     itr != sortedOnValues.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
-                    if (!this->isUseMonotonicitySet() || !monRes.isMonotone(itr->second)) {
-                        consideredVariables.insert(itr->second);
+                if (regionSplitEstimationsEnabled && useRegionSplitEstimates) {
+                    STORM_LOG_INFO("Splitting based on regionsplitestimates");
+                    for (auto itr = sortedOnValues.begin();
+                         itr != sortedOnValues.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
+                        if (!this->isUseMonotonicitySet() || !monRes.isMonotone(itr->second)) {
+                            consideredVariables.insert(itr->second);
+                        }
                     }
-                }
 
-                for (auto& entry : regionSplitEstimates) {
-                    if (!this->isUseMonotonicitySet() || !monRes.isMonotone(entry.first)) {
+                    for (auto &entry : regionSplitEstimates) {
+                        if (!this->isUseMonotonicitySet() || !monRes.isMonotone(entry.first)) {
 //                        sortedOnValues.insert({-(entry.second), entry.first});
 //                        sortedOnValues.insert({-(entry.second * storm::utility::convertNumber<double>(region.getDifference(entry.first))), entry.first});
-                        sortedOnValues.insert({-(entry.second * storm::utility::convertNumber<double>(region.getDifference(entry.first))* storm::utility::convertNumber<double>(region.getDifference(entry.first))* storm::utility::convertNumber<double>(region.getDifference(entry.first))), entry.first});
-                        STORM_LOG_INFO(entry.first << entry.second);
+                            sortedOnValues.insert({-(entry.second * storm::utility::convertNumber<double>(region.getDifference(entry.first)) * storm::utility::convertNumber<double>(region.getDifference(entry.first)) * storm::utility::convertNumber<double>(region.getDifference(entry.first))), entry.first});
+                            STORM_LOG_INFO(entry.first << entry.second);
+                        }
                     }
-                }
-                for (auto itr = sortedOnValues.begin(); itr != sortedOnValues.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
-                    consideredVariables.insert(itr->second);
-                    STORM_LOG_INFO("Splitting in: " << itr->second << " value is: " << itr->first);
-                }
-            } else {
-                STORM_LOG_INFO("Splitting based on sorting");
-
-                auto& sortedOnDifference = region.getVariablesSorted();
-                for (auto itr = sortedOnDifference.begin(); itr != sortedOnDifference.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
-                    if (!this->isUseMonotonicitySet() || !monRes.isMonotone(itr->second)) {
+                    for (auto itr = sortedOnValues.begin(); itr != sortedOnValues.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
                         consideredVariables.insert(itr->second);
-                        STORM_LOG_INFO("Splitting in: " << itr->second);
+                        STORM_LOG_INFO("Splitting in: " << itr->second << " value is: " << itr->first);
+                    }
+                } else {
+                    STORM_LOG_INFO("Splitting based on sorting");
+
+                    auto &sortedOnDifference = region.getVariablesSorted();
+                    for (auto itr = sortedOnDifference.begin(); itr != sortedOnDifference.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
+                        if (!this->isUseMonotonicitySet() || !monRes.isMonotone(itr->second)) {
+                            consideredVariables.insert(itr->second);
+                            STORM_LOG_INFO("Splitting in: " << itr->second);
+                        }
                     }
                 }
-            }
 
-            assert (consideredVariables.size() > 0 || (monRes.isDone() && monRes.isAllMonotonicity()));
-            region.split(region.getCenterPoint(), regionVector, std::move(consideredVariables));
+                assert (consideredVariables.size() > 0 || (monRes.isDone() && monRes.isAllMonotonicity()));
+                region.split(region.getCenterPoint(), regionVector, std::move(consideredVariables));
+            } else {
+                region.split(region.getCenterPoint(), regionVector);
+            }
         }
 
         template class SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
