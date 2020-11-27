@@ -65,6 +65,15 @@ namespace storm {
             
             virtual std::shared_ptr<storm::storage::sparse::ChoiceOrigins> generateChoiceOrigins(std::vector<boost::any>& dataForChoiceOrigins) const override;
             
+            /*!
+             * Sets the values of all transient variables in the current state to the given evaluator.
+             * @pre The values of non-transient variables have been set in the provided evaluator
+             * @param state The current state
+             * @param evaluator the evaluator to which the values will be set
+             * @post The values of all transient variables are set in the given evaluator (including the transient variables without an explicit assignment in the current locations).
+             */
+            virtual void unpackTransientVariableValuesIntoEvaluator(CompressedState const& state, storm::expressions::ExpressionEvaluator<ValueType>& evaluator) const override;
+            
         private:
             /*!
              * Retrieves the location index from the given state.
@@ -119,7 +128,13 @@ namespace storm {
              */
             virtual storm::storage::BitVector evaluateObservationLabels(CompressedState const& state) const override;
 
-            TransientVariableValuation<ValueType> getTransientVariableValuationAtLocations(std::vector<uint64_t> const& locations) const;
+            /*!
+             * Computes the values of the transient variables assigned in the given locations.
+             * @note Only the the transient variables with an explicit assignment in the provided locations are contained in the returned struct.
+             * @pre The values of non-transient variables have been set in the provided evaluator
+             * @return a struct containing the values of the transient variables within the given locations
+             */
+            TransientVariableValuation<ValueType> getTransientVariableValuationAtLocations(std::vector<uint64_t> const& locations, storm::expressions::ExpressionEvaluator<ValueType> const& evaluator) const;
             
             /*!
              * Retrieves all choices possible from the given state.

@@ -176,8 +176,11 @@ namespace storm {
                     storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability1, storm::utility::one<ValueType>());
                 }
                 
+                // Check if the values of the maybe states are relevant for the SolveGoal
+                bool maybeStatesNotRelevant = goal.hasRelevantValues() && goal.relevantValues().isDisjointFrom(maybeStates);
+                
                 // Check whether we need to compute exact probabilities for some states.
-                if (qualitative) {
+                if (qualitative || maybeStatesNotRelevant) {
                     // Set the values for all maybe-states to 0.5 to indicate that their probability values are neither 0 nor 1.
                     storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, storm::utility::convertNumber<ValueType>(0.5));
                 } else {
@@ -434,8 +437,11 @@ namespace storm {
                     storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::infinity<ValueType>());
                 }
                 
+                // Check if the values of the maybe states are relevant for the SolveGoal
+                bool maybeStatesNotRelevant = goal.hasRelevantValues() && goal.relevantValues().isDisjointFrom(maybeStates);
+                
                 // Check whether we need to compute exact rewards for some states.
-                if (qualitative) {
+                if (qualitative || maybeStatesNotRelevant) {
                     // Set the values for all maybe-states to 1 to indicate that their reward values
                     // are neither 0 nor infinity.
                     storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, storm::utility::one<ValueType>());
