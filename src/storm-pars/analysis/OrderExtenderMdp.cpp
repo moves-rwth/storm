@@ -78,23 +78,15 @@ namespace storm {
                         // more than 2 succs
 
                         // TODO CONSTRUCTION ZONE START
-                        // var für jeden succ erstellen (createRFVariable()) + map orderedSuccs -> vars (?)
 
+                        // Check for the simple case
+                        auto simpleCheckResult = simpleCaseCheck(currentState, orderedSuccs);
+                        if(simpleCheckResult.first == true) {
+                            bestAct = simpleCheckResult.second;
+                        } else {
 
-                        //for (each action (start at 1 bc bestAct is already 0))
-                        auto index = 0;
-                        storm::storage::BitVector bestActSuccs;
-                        auto numberOfOptionsForState = this->matrix.getRowGroupSize(currentState);
-                        while (index < numberOfOptionsForState) {
-                            auto row = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState]);
-
-                            //COMPARISON OF ACTIONS HERE
-                            //EASY CASES
-
-
-                            index++;
                         }
-                        // TODO CONSTRUCTION ZONE END
+
 
                         std::map<uint64_t, uint64_t> weightMap;
                         for (uint64_t i = 0; i < nrOfSuccs; i++) {
@@ -102,9 +94,9 @@ namespace storm {
                         }
                         boost::optional<storm::RationalFunction> bestCoeff;
                         auto index = 0;
-                        for (auto & action : this->matrix.getRowGroup(currentState)) {
+                        /*for (auto action : this->matrix.getRowGroup(currentState)) {
                             storm::RationalFunction currentCoeff;
-                            for (auto & entry : action) {
+                            for (auto entry : action) {
                                 currentCoeff += entry.getEntry() * weightMap[entry.getColumn()];
                             }
                             if (!bestCoeff || !isFunctionGreaterEqual(bestCoeff.get(), currentCoeff, this->region)) {
@@ -112,9 +104,9 @@ namespace storm {
                                 bestAct = index;
                             }
                             index++;
-                        }
+                        }*/
                         STORM_PRINT("   More than 2 potential succs from 2 or more actions. Best action: " << bestAct << " with MaxCoeff " << bestCoeff << std::endl);
-
+                        // TODO CONSTRUCTION ZONE END
                     }
                 } else {
                     // We are interested in PrMin
@@ -207,11 +199,11 @@ namespace storm {
         }
 
         template<typename ValueType, typename ConstantType>
-        std::pair<uint64_t, uint64_t> rangeOfSuccsForAction(typename storage::SparseMatrix<ValueType>::rows* action, std::vector<uint64_t> orderedSuccs){
+        std::pair<uint64_t, uint64_t> OrderExtenderMdp<ValueType, ConstantType>::rangeOfSuccsForAction(typename storage::SparseMatrix<ValueType>::rows* action, std::vector<uint64_t> orderedSuccs){
             uint64_t start = orderedSuccs.size();
             uint64_t end = 0;
-            for(auto entry : action){
-                auto succ = entry->getColumn();
+            for (auto entry : *action) {
+                auto succ = entry.getColumn();
                 for (uint64_t i = 0; i < orderedSuccs.size(); i++) {
                     if (succ == orderedSuccs[i] && i < start) {
                         start = i;
@@ -223,6 +215,112 @@ namespace storm {
             }
 
             return std::make_pair(start,end);
+        }
+
+        template<typename ValueType, typename ConstantType>
+        storage::BitVector OrderExtenderMdp<ValueType, ConstantType>::getHitSuccs(uint64_t state, uint64_t action, std::vector<uint64_t> orderedSuccs){
+            storage::BitVector res = storage::BitVector(orderedSuccs.size(), false);
+            for (auto succ : this->stateMap[state][action]) {
+                for (uint64_t i = 0; i < orderedSuccs.size(); i++) {
+                    if (succ == orderedSuccs[i]) {
+                        res.set(i, true);
+                    }
+                }
+            }
+
+            return res;
+        }
+
+        template<typename ValueType, typename ConstantType>
+        std::pair<bool, uint64_t> OrderExtenderMdp<ValueType, ConstantType>::simpleCaseCheck(uint64_t state, std::vector<uint64_t> orderedSuccs){
+            uint64_t noa = this->stateMap[state].size();
+            uint64_t bestAct;
+            std::vector<storage::BitVector> bitVecTable = std::vector<storage::BitVector>(noa);
+            bool foundOne = false;
+            for (auto i = 0; i < noa; i++) {
+                storage::BitVector hitSuccs = getHitSuccs(state, i, orderedSuccs);
+                if (hitSuccs[0]){
+                    if (foundOne) {
+                        return std::make_pair(false, 0);
+                    } else {
+                        bestAct = i;
+                        foundOne = true;
+                    }
+                }
+            }
+            storage::BitVector candidate = bitVecTable[bestAct];
+            storage::BitVector others = storage::BitVector(orderedSuccs.size(), false);
+            for (auto i = 0; i < noa; i++) {
+                if(i != bestAct) others |= bitVecTable[i];
+            }
+
+            if ((candidate & others).empty()) return std::make_pair(true, bestAct);
+            else return std::make_pair(false, 0);
+
+        }
+
+        template<typename ValueType, typename ConstantType>
+        typename OrderExtenderMdp<ValueType, ConstantType>::ActionComparison OrderExtenderMdp<ValueType, ConstantType>::actionSmtCompare(typename storage::SparseMatrix<ValueType>::rows* action1, typename storage::SparseMatrix<ValueType>::rows* action2, std::vector<uint64_t> orderedSuccs) {
+            std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
+
+            // Get ordered vector of the succs actually occurring in the two actions
+            std::vector<uint64_t> occSuccs = std::vector<uint64_t>();
+            std::set<uint64_t> occSuccSet = std::set<uint64_t>();
+            for (auto entry : *action1){
+                occSuccSet.insert(entry.getColumn());
+            }
+            for (auto entry : *action2){
+                occSuccSet.insert(entry.getColumn());
+            }
+            for (auto a : orderedSuccs) {
+                if (occSuccSet.find(a) != occSuccSet.end()) {
+                    occSuccs.push_back(a);
+                }
+            }
+            // Turn everything we know about our succs into expressions
+            expressions::Expression exprStateVars = manager->boolean(true);
+            std::set<std::string> stateVarNames;
+            for (auto i = 0; i < occSuccs.size(); i++) {
+                std::string varName = "s" + std::to_string(occSuccs[i]);
+                stateVarNames.insert(varName);
+                auto var = manager->declareRationalVariable(varName);
+                exprStateVars = exprStateVars && manager->rational(0) < var && var < manager->rational(1);
+                if(i > 0) {
+                    auto lesserVar = manager->getVariable("s" + std::to_string(occSuccs[i-1]));
+                    // TODO why does this not work? (aka why is "lesserVar < var" seen as bool?)
+                    // exprStateVars = exprStateVars && lesserVar < var;
+                }
+
+            }
+
+            // Turn rational functions into expressions
+            auto valueTypeToExpression = expressions::RationalFunctionToExpression<ValueType>(manager);
+            auto exprF1 = manager->rational(0);
+            for (auto entry : *action1) {
+                exprF1 = exprF1 + valueTypeToExpression.toExpression(entry.getValue()) * manager->getVariable("s" + entry.getColumn());
+            }
+            auto exprF2 = manager->rational(0);
+            for (auto entry : *action2) {
+                exprF2 = exprF2 + valueTypeToExpression.toExpression(entry.getValue()) * manager->getVariable("s" + entry.getColumn());
+            }
+
+            // Turn parameter bounds into expressions
+            expressions::Expression exprParamBounds = manager->boolean(true);
+            auto variables = manager->getVariables();
+            for (auto var : variables) {
+                std::string name = var.getName();
+                if (stateVarNames.find(name) == stateVarNames.end()) {
+                    auto lb = utility::convertNumber<RationalNumber>(this->region.getLowerBoundary(name));
+                    auto ub = utility::convertNumber<RationalNumber>(this->region.getUpperBoundary(name));
+                    exprParamBounds = exprParamBounds && manager->rational(lb) < var && var < manager->rational(ub);
+                }
+            }
+
+            // TODO Continue here
+            // Check if (action1 >= action2) -> check if (action2 > action1) is UNSAT. If yes --> GEQ. If no --> continue
+            // Check if (action2 >= action1) -> check if (action1 > action2) is UNSAT. If yes --> LEQ. If no --> UNKNOWN
+            
+
         }
 
         template class OrderExtenderMdp<RationalFunction, double>;
