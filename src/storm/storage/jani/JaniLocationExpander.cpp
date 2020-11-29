@@ -75,11 +75,11 @@ namespace storm {
                     if (useTransientVariables)
                         loc.addTransientAssignment(Assignment(var, original.getExpressionManager().integer(i), 0)); // TODO: What is the level?
 
-                    if (i == initialVariableValue)
-                        newAutomaton.addInitialLocation(newLocationName);
-
                     uint64_t newLocationIndex = newAutomaton.addLocation(loc);
                     locationVariableValueMap[origIndex][i] = newLocationIndex;
+
+                    if (i == initialVariableValue)
+                        newAutomaton.addInitialLocation(newLocationName);
                 }
             }
 
@@ -120,6 +120,7 @@ namespace storm {
                         templateEdge->addDestination(ted);
                         destinationLocationsAndProbabilities.emplace_back(locationVariableValueMap[destination.getLocationIndex()][value], substituteJaniExpression(destination.getProbability(), substitutionMap));
                     }
+
                     newAutomaton.addEdge(storm::jani::Edge(newSourceIndex, edge.getActionIndex(), edge.hasRate() ? boost::optional<storm::expressions::Expression>(substituteJaniExpression(edge.getRate(), substitutionMap)) : boost::none, templateEdge, destinationLocationsAndProbabilities));
                 }
             }

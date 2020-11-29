@@ -18,7 +18,14 @@ namespace storm {
 
             void unfold(std::string const& variableName);
             void eliminate(const std::string &automatonName, std::string const& locationName);
+            void eliminateDestination(Automaton &automaton, Edge &edge, const uint64_t destIndex, detail::Edges &outgoing);
             void eliminate_all();
+
+            expressions::Expression getNewGuard(const Edge& edge, const EdgeDestination& dest, const Edge& outgoing);
+            expressions::Expression getProbability(const EdgeDestination& first, const EdgeDestination& then);
+            OrderedAssignments executeInSequence(const EdgeDestination& first, const EdgeDestination& then);
+
+            bool hasLoops(const std::string &automatonName, std::string const& locationName);
         };
     }
 }
