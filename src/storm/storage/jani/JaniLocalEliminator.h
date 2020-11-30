@@ -26,6 +26,8 @@ namespace storm {
             OrderedAssignments executeInSequence(const EdgeDestination& first, const EdgeDestination& then);
 
             bool hasLoops(const std::string &automatonName, std::string const& locationName);
+
+            void cleanUpAutomaton(std::string const &automatonName);
         };
     }
 }

@@ -25,6 +25,7 @@ namespace storm {
             eliminate("multiplex", "l_s_2");
             eliminate("multiplex", "l_s_3");
             eliminate("multiplex", "l_s_1");
+            cleanUpAutomaton("multiplex");
             // eliminate()
         }
 
@@ -76,7 +77,7 @@ namespace storm {
                     continue;
                 for (const EdgeDestination dest : edge.getDestinations()) {
                     if (dest.getLocationIndex() == locIndex){
-                        // STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Could not eliminate location");
+                        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Could not eliminate location");
                     }
                 }
             }
@@ -129,7 +130,7 @@ namespace storm {
                 newEdges.emplace_back(Edge(sourceIndex, actionIndex, boost::none, templateEdge, destinationLocationsAndProbabilities));
             }
             for (const Edge& newEdge : newEdges){
-                // automaton.addEdge(newEdge);
+                automaton.addEdge(newEdge);
             }
 
             edge.setGuard(edge.getGuard().getManager().boolean(false)); // Instead of deleting the edge
@@ -174,6 +175,31 @@ namespace storm {
                 }
             }
             return false;
+        }
+
+        void JaniLocalEliminator::cleanUpAutomaton(std::string const &automatonName){
+            Automaton& oldAutomaton = newModel.getAutomaton(automatonName);
+            Automaton newAutomaton(oldAutomaton.getName(), oldAutomaton.getLocationExpressionVariable());
+            for (auto const& localVariable : oldAutomaton.getVariables())
+                newAutomaton.addVariable(localVariable);
+            newAutomaton.setInitialStatesRestriction(oldAutomaton.getInitialStatesRestriction());
+
+            for (const Location &loc : oldAutomaton.getLocations())
+                newAutomaton.addLocation(loc);
+            for (uint64_t initialLocationIndex : oldAutomaton.getInitialLocationIndices())
+                newAutomaton.addInitialLocation(initialLocationIndex);
+
+            int eliminated = 0;
+            for (const Edge &edge : oldAutomaton.getEdges()){
+                if (edge.getGuard().containsVariables() || edge.getGuard().evaluateAsBool()){
+                    newAutomaton.addEdge(edge);
+                }
+                else{
+                    eliminated++;
+                }
+            }
+
+            newModel.replaceAutomaton(0, newAutomaton);
         }
     }
 }
