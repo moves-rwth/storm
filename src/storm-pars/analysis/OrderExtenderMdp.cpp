@@ -287,8 +287,9 @@ namespace storm {
                 exprStateVars = exprStateVars && manager->rational(0) < var && var < manager->rational(1);
                 if(i > 0) {
                     auto lesserVar = manager->getVariable("s" + std::to_string(occSuccs[i-1]));
+                    expressions::Expression exprLesser = lesserVar.getExpression() < var.getExpression();
                     // TODO why does this not work? (aka why is "lesserVar < var" seen as bool?)
-                    // exprStateVars = exprStateVars && lesserVar < var;
+                     exprStateVars = exprStateVars && exprLesser;
                 }
 
             }
