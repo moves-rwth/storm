@@ -1183,6 +1183,8 @@ namespace storm {
                 uint64_t automatonIndex = 0;
                 for (auto const& composition : parallelComposition.getSubcompositions()) {
                     STORM_LOG_THROW(composition->isAutomatonComposition(), storm::exceptions::WrongFormatException, "Expected flat parallel composition.");
+                    STORM_LOG_THROW(composition->asAutomatonComposition().getInputEnabledActions().empty(), storm::exceptions::NotSupportedException, "Input-enabled actions are not supported right now.");
+
                     this->parallelAutomata.push_back(this->model.getAutomaton(composition->asAutomatonComposition().getAutomatonName()));
                 
                     // Add edges with silent action.

@@ -1573,7 +1573,13 @@ namespace storm {
         template <typename ValueType>
         std::shared_ptr<storm::jani::Composition> JaniParser<ValueType>::parseComposition(Json const &compositionStructure) {
             if(compositionStructure.count("automaton")) {
-                return std::shared_ptr<storm::jani::AutomatonComposition>(new storm::jani::AutomatonComposition(compositionStructure.at("automaton").template get<std::string>()));
+                std::set<std::string> inputEnabledActions;
+                if (compositionStructure.count("input-enable")) {
+                    for (auto const& actionDecl : compositionStructure.at("input-enable")) {
+                        inputEnabledActions.insert(actionDecl.template get<std::string>());
+                    }
+                }
+                return std::shared_ptr<storm::jani::AutomatonComposition>(new storm::jani::AutomatonComposition(compositionStructure.at("automaton").template get<std::string>(), inputEnabledActions));
             }
             
             STORM_LOG_THROW(compositionStructure.count("elements") == 1, storm::exceptions::InvalidJaniException, "Elements of a composition must be given, got " << compositionStructure.dump());
