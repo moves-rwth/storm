@@ -1564,7 +1564,12 @@ namespace storm {
                         inputs.push_back(syncInput);
                     }
                 }
-                std::string syncResult = syncEntry.at("result");
+                std::string syncResult;
+                if (syncEntry.count("result")) {
+                    syncResult = syncEntry.at("result");
+                } else {
+                    syncResult = storm::jani::Model::SILENT_ACTION_NAME;
+                }
                 syncVectors.emplace_back(inputs, syncResult);
             }
             return syncVectors;
