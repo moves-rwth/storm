@@ -194,7 +194,8 @@ namespace storm {
                 outputFilename += suffix;
             }
             
-            // prism-to-aiger transformation
+            // prism-to-aiger transformation, TODO: this should be done in
+            // storm::api::convertPrismToAiger in storm-conv...
             std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan, double>().build(prismProg);
             // obtain the qualitative transition matrix while removing
             // non-determinism variables
