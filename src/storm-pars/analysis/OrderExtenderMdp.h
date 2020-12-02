@@ -22,8 +22,7 @@ namespace storm {
                 storm::storage::BitVector gatherPotentialSuccs(uint64_t state);
 
 
-                // TODO can't really do override with different parameter signature (also this version doesnt need the successor param). How to do this?
-                std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState);
+                std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState) override;
 
                 /*!
                  * Compares two rational functions

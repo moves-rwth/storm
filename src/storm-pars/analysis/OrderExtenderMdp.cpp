@@ -28,7 +28,6 @@ namespace storm {
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t> OrderExtenderMdp<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState) {
             // Finding the best action for the current state
-            // TODO this does not work in every case
             STORM_PRINT("Looking for best action for state " << currentState << std::endl);
             uint64_t  bestAct = 0;
             if (order->isTopState(currentState)) {
@@ -62,7 +61,7 @@ namespace storm {
                         auto index = 0;
                         auto numberOfOptionsForState = this->matrix.getRowGroupSize(currentState);
                         while (index < numberOfOptionsForState) {
-                            auto row = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState]);
+                            auto row = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState] + index);
                             auto itr = row.begin();
                             while (itr != row.end() && itr->getColumn() != bestSucc) {
                                 itr++;
@@ -76,41 +75,44 @@ namespace storm {
                         STORM_PRINT("   Two potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
                     } else {
                         // more than 2 succs
-
-                        // TODO CONSTRUCTION ZONE START
-
                         // Check for the simple case
                         auto simpleCheckResult = simpleCaseCheck(currentState, orderedSuccs);
                         if(simpleCheckResult.first == true) {
                             bestAct = simpleCheckResult.second;
                         } else {
-
-                        }
-
-
-                        std::map<uint64_t, uint64_t> weightMap;
-                        for (uint64_t i = 0; i < nrOfSuccs; i++) {
-                            weightMap.insert(orderedSuccs[i], nrOfSuccs - i);
-                        }
-                        boost::optional<storm::RationalFunction> bestCoeff;
-                        auto index = 0;
-                        /*for (auto action : this->matrix.getRowGroup(currentState)) {
-                            storm::RationalFunction currentCoeff;
-                            for (auto entry : action) {
-                                currentCoeff += entry.getEntry() * weightMap[entry.getColumn()];
+                            // else use SMT solver
+                            std::vector<uint64_t> candidates;
+                            auto index = 0;
+                            auto numberOfOptionsForState = this->matrix.getRowGroupSize(currentState);
+                            while (index < numberOfOptionsForState) {
+                                auto rowA = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState] + index);
+                                bool in = true;
+                                for (auto i = 0; i < candidates.size(); i++){
+                                    auto rowB = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState] + candidates[i]);
+                                    auto compRes = actionSmtCompare(&rowA, &rowB, orderedSuccs);
+                                    if(compRes == GEQ){
+                                        candidates.erase(candidates.begin()+i);
+                                    } else if (compRes == LEQ) {
+                                        in = false;
+                                        // TODO put break; here?
+                                    }
+                                }
+                                if (in) {
+                                    candidates.push_back(index);
+                                }
+                                index++;
                             }
-                            if (!bestCoeff || !isFunctionGreaterEqual(bestCoeff.get(), currentCoeff, this->region)) {
-                                *bestCoeff = currentCoeff;
-                                bestAct = index;
+                            if (candidates.size() == 1) {
+                                bestAct = candidates [0];
+                                STORM_PRINT("   More than 2 potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
+                            } else {
+                                STORM_LOG_WARN("No best action found.");
                             }
-                            index++;
-                        }*/
-                        STORM_PRINT("   More than 2 potential succs from 2 or more actions. Best action: " << bestAct << " with MaxCoeff " << bestCoeff << std::endl);
-                        // TODO CONSTRUCTION ZONE END
+                        }
                     }
                 } else {
                     // We are interested in PrMin
-                    STORM_PRINT("Interested in PrMax." << std::endl);
+                    STORM_PRINT("Interested in PrMin." << std::endl);
                     if (nrOfSuccs == 2) {
                         uint64_t bestSucc = orderedSuccs[1];
                         boost::optional<storm::RationalFunction> bestFunc;
@@ -132,24 +134,43 @@ namespace storm {
 
                     } else {
                         // more than 2 succs
-                        std::map<uint64_t, uint64_t> weightMap;
-                        for (uint64_t i = 0; i < nrOfSuccs; i++) {
-                            weightMap.insert(orderedSuccs[i], nrOfSuccs - i);
-                        }
-                        boost::optional<storm::RationalFunction> bestCoeff;
-                        auto index = 0;
-                        for (auto & action : this->matrix.getRowGroup(currentState)) {
-                            storm::RationalFunction currentCoeff;
-                            for (auto & entry : action) {
-                                currentCoeff += entry.getEntry() * weightMap[entry.getColumn()];
+                        // Check for the simple case
+                        // TODO do we need an extra vector for the reversed succs?
+                        std::vector<uint64_t> revOrderedSuccs = std::vector<uint64_t>(orderedSuccs);
+                        std::reverse(orderedSuccs.begin(), orderedSuccs.end());
+                        auto simpleCheckResult = simpleCaseCheck(currentState, revOrderedSuccs);
+                        if(simpleCheckResult.first == true) {
+                            bestAct = simpleCheckResult.second;
+                        } else {
+                            // else use SMT solver
+                            std::vector<uint64_t> candidates;
+                            auto index = 0;
+                            auto numberOfOptionsForState = this->matrix.getRowGroupSize(currentState);
+                            while (index < numberOfOptionsForState) {
+                                auto rowA = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState] + index);
+                                bool in = true;
+                                for (auto i = 0; i < candidates.size(); i++){
+                                    auto rowB = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState] + candidates[i]);
+                                    auto compRes = actionSmtCompare(&rowA, &rowB, orderedSuccs);
+                                    if(compRes == LEQ){
+                                        candidates.erase(candidates.begin()+i);
+                                    } else if (compRes == GEQ) {
+                                        in = false;
+                                        // TODO put break; here?
+                                    }
+                                }
+                                if (in) {
+                                    candidates.push_back(index);
+                                }
+                                index++;
                             }
-                            if (!bestCoeff || !isFunctionGreaterEqual(currentCoeff, bestCoeff.get(), this->region)) {
-                                *bestCoeff = currentCoeff;
-                                bestAct = index;
+                            if (candidates.size() == 1) {
+                                bestAct = candidates [0];
+                                STORM_PRINT("   More than 2 potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
+                            } else {
+                                STORM_LOG_WARN("No best action found.");
                             }
-                            index++;
                         }
-                        STORM_PRINT("   More than 2 potential succs from 2 or more actions. Best action: " << bestAct << " with MaxCoeff " << bestCoeff << std::endl);
 
                     }
                 }
@@ -190,7 +211,6 @@ namespace storm {
             auto smtRes = s.check();
 
             // Evaluate Result
-            // TODO what happens if the function is neither always geq nor less than the other in the given regions?
             if (smtRes == solver::SmtSolver::CheckResult::Unsat) {
                 return true;
             } else {
@@ -277,6 +297,7 @@ namespace storm {
                     occSuccs.push_back(a);
                 }
             }
+
             // Turn everything we know about our succs into expressions
             expressions::Expression exprStateVars = manager->boolean(true);
             std::set<std::string> stateVarNames;
@@ -288,8 +309,7 @@ namespace storm {
                 if(i > 0) {
                     auto lesserVar = manager->getVariable("s" + std::to_string(occSuccs[i-1]));
                     expressions::Expression exprLesser = lesserVar.getExpression() < var.getExpression();
-                    // TODO why does this not work? (aka why is "lesserVar < var" seen as bool?)
-                     exprStateVars = exprStateVars && exprLesser;
+                    exprStateVars = exprStateVars && exprLesser;
                 }
 
             }
@@ -317,10 +337,29 @@ namespace storm {
                 }
             }
 
-            // TODO Continue here
             // Check if (action1 >= action2) -> check if (action2 > action1) is UNSAT. If yes --> GEQ. If no --> continue
+            auto exprToCheck = exprF1 < exprF2;
+            solver::Z3SmtSolver s1(*manager);
+            s1.add(exprToCheck);
+            s1.add(exprStateVars);
+            s1.add(exprParamBounds);
+            auto smtRes = s1.check();
+            if (smtRes == solver::SmtSolver::CheckResult::Unsat) {
+                return GEQ;
+            }
+
             // Check if (action2 >= action1) -> check if (action1 > action2) is UNSAT. If yes --> LEQ. If no --> UNKNOWN
-            
+            exprToCheck = exprF2 < exprF1;
+            solver::Z3SmtSolver s2(*manager);
+            s2.add(exprToCheck);
+            s2.add(exprStateVars);
+            s2.add(exprParamBounds);
+            smtRes = s2.check();
+            if (smtRes == solver::SmtSolver::CheckResult::Unsat) {
+                return LEQ;
+            } else {
+                return UNKNOWN;
+            }
 
         }
 
