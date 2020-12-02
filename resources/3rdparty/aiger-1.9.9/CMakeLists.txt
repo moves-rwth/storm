@@ -10,21 +10,15 @@ message(STATUS "CMake build configuration for Aiger ${PROJECT_VERSION}")
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
-ENDIF(NOT CMAKE_BUILD_TYPE)
-
 # Some info
 message(STATUS "OS: ${CMAKE_SYSTEM_NAME}")
 message(STATUS "Compiler: ${CMAKE_C_COMPILER_ID}")
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/")
-set(CMAKE_C_FLAGS "-O2 -Wextra -Wall -fno-strict-aliasing ${CMAKE_C_FLAGS}")
+set(CMAKE_C_FLAGS "-O3 -Wextra -Wall -fno-strict-aliasing ${CMAKE_C_FLAGS}")
 
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
-include_directories("${PROJECT_SOURCE_DIR}/../../../src")
-include_directories("${PROJECT_BINARY_DIR}/../../../include")
 include_directories(src)
 
 add_subdirectory(src)

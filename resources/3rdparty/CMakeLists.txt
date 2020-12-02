@@ -506,6 +506,41 @@ include(${STORM_3RDPARTY_SOURCE_DIR}/include_xerces.cmake)
 
 #############################################################
 ##
+##	Aiger
+##
+#############################################################
+
+ExternalProject_Add(
+        aiger
+        DOWNLOAD_COMMAND ""
+        PREFIX "aiger"
+        SOURCE_DIR ${STORM_3RDPARTY_SOURCE_DIR}/aiger-1.9.9
+        CMAKE_ARGS -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+        BINARY_DIR ${STORM_3RDPARTY_BINARY_DIR}/aiger-1.9.9
+        BUILD_IN_SOURCE 0
+        INSTALL_COMMAND ""
+        INSTALL_DIR ${STORM_3RDPARTY_BINARY_DIR}/aiger-1.9.9
+        LOG_CONFIGURE ON
+        LOG_BUILD ON
+        DEPENDS ${aiger_dep}
+        BUILD_BYPRODUCTS ${STORM_3RDPARTY_BINARY_DIR}/aiger-1.9.9/src/libaiger${STATIC_EXT}
+        BUILD_ALWAYS 1
+)
+# BUILD ALWAYS ON due to: https://stackoverflow.com/questions/46708124/cmake-doesnt-rebuild-externalproject-on-changes
+
+ExternalProject_Get_Property(aiger source_dir)
+ExternalProject_Get_Property(aiger binary_dir)
+set(Aiger_INCLUDE_DIR "${source_dir}/src")
+set(Aiger_LIBRARY "${binary_dir}/src/libaiger${STATIC_EXT}")
+message(STATUS "Storm - Using shipped version of aiger.")
+message(STATUS "Storm - Linking with aiger.")
+add_imported_library(aiger STATIC ${Aiger_LIBRARY} ${Aiger_INCLUDE_DIR})
+add_dependencies(aiger_STATIC aiger)
+
+list(APPEND STORM_DEP_TARGETS aiger_STATIC)
+
+#############################################################
+##
 ##	Sylvan
 ##
 #############################################################
