@@ -10,7 +10,7 @@
 #include "storm-conv/settings/modules/PrismExportSettings.h"
 
 #include "storm/api/storm.h"
-#include "storm/builder/DdPrismModelBuilder.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm/utility/initialize.h"
 #include "storm/utility/macros.h"
@@ -195,16 +195,17 @@ namespace storm {
             }
             
             // prism-to-aiger transformation
-            //std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan>().build(prismProg);
-            std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan>> model = storm::api::buildSymbolicModel(prismProg, NULL);
+            std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan, double>().build(prismProg);
             // obtain the qualitative transition matrix while removing
             // non-determinism variables
             storm::dd::Bdd<storm::dd::DdType::Sylvan> qualTrans = model->getQualitativeTransitionMatrix(false);
-            /*storm::prism::Program outputProgram = prismProg;
-            std::vector<storm::jani::Property> outputProperties = properties;
-            storm::api::transformPrism(outputProgram, outputProperties, prism.isSimplifySet(), prism.isExportFlattenedSet());
-            */
+            storm::dd::Bdd<storm::dd::DdType::Sylvan> initStates = model->getInitialStates();
+            std::vector<std::string> labels = model->getLabels();
+            // to get states with a label use:
+            // storm::dd::Bdd<storm::dd::DdType::Sylvan> states4label = model->getStates(label);
             
+            std::vector<storm::jani::Property> outputProperties = properties;
+
             // exporting of aiger file
             stopStopwatch(conversionTime);
             auto exportingTime = startStopwatch("Exporting Aiger program ... ");
@@ -215,7 +216,7 @@ namespace storm {
             }
             
             if (output.isStdOutOutputEnabled()) {
-                //storm::api::printPrismToStream(outputProgram, outputProperties, std::cout);
+                //storm::api::printAigerToStream(outputProgram, outputProperties, std::cout);
             }
             stopStopwatch(exportingTime);
         }
