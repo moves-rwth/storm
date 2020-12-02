@@ -288,7 +288,7 @@ namespace storm {
                 this->printModelInformationHeaderToStream(out);
                 out << "Choices: \t" << this->getNumberOfChoices() << std::endl;
                 out << "Markovian St.: \t" << this->getMarkovianStates().getNumberOfSetBits() << std::endl;
-                out << "Max. Rate.: \t";
+                out << "Max. Rate: \t";
                 if (this->getMarkovianStates().empty()) {
                     out << "None";
                 } else {

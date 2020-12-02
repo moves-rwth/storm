@@ -173,7 +173,7 @@ namespace storm {
             }
         }
         
-        storm::expressions::Expression ExpressionCreator::createIntegerLiteralExpression(int value, bool&) const {
+        storm::expressions::Expression ExpressionCreator::createIntegerLiteralExpression(int64_t value, bool&) const {
             if (this->createExpressions) {
                 return manager.integer(value);
             } else {

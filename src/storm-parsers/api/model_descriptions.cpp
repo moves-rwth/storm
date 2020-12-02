@@ -3,6 +3,8 @@
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm-parsers/parser/JaniParser.h"
 
+#include "storm/api/properties.h"
+
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
 
@@ -47,13 +49,17 @@ namespace storm {
         std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseJaniModel(std::string const& filename, boost::optional<std::vector<std::string>> const& propertyFilter) {
             bool parseProperties = !propertyFilter.is_initialized() || !propertyFilter.get().empty();
             auto modelAndFormulae = storm::parser::JaniParser<storm::RationalNumber>::parse(filename, parseProperties);
-            return filterProperties(modelAndFormulae, propertyFilter);
+            filterProperties(modelAndFormulae, propertyFilter);
+            modelAndFormulae.second = storm::api::substituteConstantsInProperties(modelAndFormulae.second, modelAndFormulae.first.getConstantsSubstitution());
+            return modelAndFormulae;
         }
         
         std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseJaniModelFromString(std::string const& jsonstring, boost::optional<std::vector<std::string>> const& propertyFilter) {
             bool parseProperties = !propertyFilter.is_initialized() || !propertyFilter.get().empty();
             auto modelAndFormulae = storm::parser::JaniParser<storm::RationalNumber>::parseFromString(jsonstring, parseProperties);
-            return filterProperties(modelAndFormulae, propertyFilter);
+            filterProperties(modelAndFormulae, propertyFilter);
+            modelAndFormulae.second = storm::api::substituteConstantsInProperties(modelAndFormulae.second, modelAndFormulae.first.getConstantsSubstitution());
+            return modelAndFormulae;
         }
 
         std::pair<storm::jani::Model, std::vector<storm::jani::Property>> parseJaniModel(std::string const& filename, storm::jani::ModelFeatures const& supportedFeatures, boost::optional<std::vector<std::string>> const& propertyFilter) {
