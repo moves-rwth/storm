@@ -41,8 +41,7 @@ cd storm
 git checkout stable
 mkdir build
 cd build
-../resources/examples/download_qvbs.sh qcomp
-cmake .. -DSTORM_QVBS_ROOT=$(realpath qcomp/benchmarks)
+cmake .. -DSTORM_LOAD_QVBS=ON
 make binaries
 echo "export PATH=\$PATH:$(realpath bin)" >> ~/.bashrc
 source ~/.bashrc
