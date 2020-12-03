@@ -616,18 +616,15 @@ namespace storm {
             std::set<VariableType> consideredVariables;
             if (splitForExtremum) {
                 if (regionSplitEstimationsEnabled && useRegionSplitEstimates) {
-                    STORM_LOG_INFO("Splitting based on regionsplitestimates");
+                    STORM_LOG_INFO("Splitting based on region split estimates");
                     for (auto &entry : regionSplitEstimates) {
                         if (!this->isUseMonotonicitySet() || !monRes.isMonotone(entry.first)) {
-                            sortedOnValues.insert({-(entry.second * storm::utility::convertNumber<double>(region.getDifference(entry.first))), entry.first});
-                            STORM_LOG_INFO(entry.first << entry.second);
+                            sortedOnValues.insert({-(entry.second * storm::utility::convertNumber<double>(region.getDifference(entry.first))* storm::utility::convertNumber<double>(region.getDifference(entry.first))), entry.first});
                         }
                     }
 
                     for (auto itr = sortedOnValues.begin(); itr != sortedOnValues.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
                         consideredVariables.insert(itr->second);
-                        STORM_LOG_INFO("Splitting in: " << itr->second << " value is: " << itr->first);
-
                     }
                     assert (consideredVariables.size() > 0);
                     region.split(region.getCenterPoint(), regionVector, std::move(consideredVariables));
@@ -638,7 +635,6 @@ namespace storm {
                     for (auto itr = sortedOnDifference.begin(); itr != sortedOnDifference.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
                         if (!this->isUseMonotonicitySet() || !monRes.isMonotone(itr->second)) {
                             consideredVariables.insert(itr->second);
-                            STORM_LOG_INFO("Splitting in: " << itr->second);
                         }
                     }
                     assert (consideredVariables.size() > 0 || (monRes.isDone() && monRes.isAllMonotonicity()));
@@ -647,18 +643,16 @@ namespace storm {
             } else {
                 // split for pla
                 if (regionSplitEstimationsEnabled && useRegionSplitEstimates) {
-                    STORM_LOG_INFO("Splitting based on regionsplitestimates");
+                    STORM_LOG_INFO("Splitting based on region split estimates");
                     ConstantType diff = this->lastValue - (this->currentCheckTask->getFormula().asOperatorFormula().template getThresholdAs<ConstantType>());
                     for (auto &entry : regionSplitEstimates) {
                         if ((!this->isUseMonotonicitySet() || !monRes.isMonotone(entry.first)) && entry.second > diff) {
-                            sortedOnValues.insert({-(entry.second * storm::utility::convertNumber<double>(region.getDifference(entry.first))), entry.first});
-                            STORM_LOG_INFO(entry.first << entry.second);
+                            sortedOnValues.insert({-(entry.second * storm::utility::convertNumber<double>(region.getDifference(entry.first)) * storm::utility::convertNumber<double>(region.getDifference(entry.first))), entry.first});
                         }
                     }
 
                     for (auto itr = sortedOnValues.begin(); itr != sortedOnValues.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
                         consideredVariables.insert(itr->second);
-                        STORM_LOG_INFO("Splitting in: " << itr->second << " value is: " << itr->first);
                     }
                 }
                 if (consideredVariables.size() == 0) {
