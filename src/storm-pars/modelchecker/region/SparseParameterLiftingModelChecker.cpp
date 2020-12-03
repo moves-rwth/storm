@@ -316,7 +316,7 @@ namespace storm {
                 valuationLower[var] = region.getLowerBoundary(var);
                 valuationUpper[var] = region.getLowerBoundary(var);
                 // TODO: make cmdline argument
-                int numberOfSamples = 10;
+                int numberOfSamples = 4;
                 auto stepSize = (region.getUpperBoundary(var) - region.getLowerBoundary(var)) / (numberOfSamples - 1);
 
                 while (valuationCenter[var] <= region.getUpperBoundary(var)) {
@@ -423,6 +423,7 @@ namespace storm {
 
             initialWatch.stop();
             STORM_PRINT(std::endl << "Total time for initial points: " << initialWatch << "." << std::endl << std::endl);
+            STORM_LOG_INFO("Initial Value: " << value.get());
 
 
             // Doing the extremal computation
@@ -439,6 +440,9 @@ namespace storm {
             std::ofstream myfile;
             myfile.open ("example.txt");
             myfile << "Count;initialBound;newBound;currentValue;region;" << std::endl;
+
+            storm::utility::Stopwatch boundsWatch(false);
+
             while (!regionQueue.empty()) {
                 auto currRegion = regionQueue.top().region;
                 auto order = regionQueue.top().order;
@@ -504,6 +508,7 @@ namespace storm {
                             || (!minimize && currBound > value.get() + storm::utility::convertNumber<ConstantType>(precision))) {
                             // We will split the region in this case, but first try to extend the order
                             if (useMonotonicity && this->isUseBoundsSet() && !order->getDoneBuilding()) {
+                                boundsWatch.start();
                                 numberOfPLACallsBounds++;
                                 if (minimize) {
                                     orderExtender->setMinValues(order, bounds);
@@ -512,6 +517,7 @@ namespace storm {
                                     orderExtender->setMaxValues(order, bounds);
                                     orderExtender->setMinValues(order, getBound(env, currRegion, storm::solver::OptimizationDirection::Minimize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
                                 }
+                                boundsWatch.stop();
                                 // We try to extend the order again based on minMaxValues
                                 auto i = order->getNumberOfDoneStates();
                                 this->extendOrder(env, order, currRegion);
@@ -603,6 +609,7 @@ namespace storm {
                                                                                         << std::endl);
             }
             STORM_PRINT(std::endl << "Total time for region refinement: " << loopWatch << "." << std::endl << std::endl);
+            STORM_PRINT(std::endl << "Total time for additional bounds: " << boundsWatch << "." << std::endl << std::endl);
             myfile.close();
 
             return std::make_pair(storm::utility::convertNumber<typename SparseModelType::ValueType>(value.get()), valuation);
@@ -615,16 +622,21 @@ namespace storm {
             ConstantType value = storm::solver::minimize(dir) ? 1 : 0;
             Valuation valuation;
             std::set<VariableType> monIncr, monDecr, notMon, notMonFirst;
+            STORM_LOG_INFO("Number of parameters: " << region.getVariables().size() << std::endl;);
+
             if (localMonRes != nullptr) {
                 localMonRes->getGlobalMonotonicityResult()->splitBasedOnMonotonicity(region.getVariables(), monIncr, monDecr, notMonFirst);
             } else {
                 notMonFirst = region.getVariables();
             }
+            auto numMon = monIncr.size() + monDecr.size();
+            STORM_LOG_INFO("Number of monotone parameters: " << numMon << std::endl;);
 
             checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, notMonFirst, dir);
 
-            std::size_t const numOfVariables = notMon.size();
-            STORM_LOG_THROW(numOfVariables <= std::numeric_limits<std::size_t>::digits, storm::exceptions::OutOfRangeException, "Number of variables " << numOfVariables << " is too high.");
+            STORM_LOG_INFO("Number of possible monotone parameters: " << (monIncr.size() + monDecr.size() - numMon) << std::endl;);
+
+            STORM_LOG_INFO("Number of definitely not monotone parameters: " << notMon.size() << std::endl;);
             std::size_t const numOfSamples = 50;
             std::vector<Valuation> resultingVector(numOfSamples);
             std::map<VariableType, CoefficientType> stepSize;
@@ -652,7 +664,7 @@ namespace storm {
                 }
             }
 
-            for (auto& point : resultingVector) {
+            for (auto &point : resultingVector) {
                 auto currValue = getInstantiationChecker().check(env, point)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
                 if (storm::solver::minimize(dir) ? currValue <= value : currValue >= value) {
                     value = currValue;
