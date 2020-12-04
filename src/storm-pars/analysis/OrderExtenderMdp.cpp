@@ -52,9 +52,13 @@ namespace storm {
                 // note that succs in this function mean potential succs
                 auto potSuccs = gatherPotentialSuccs(currentState);
                 auto orderedSuccs = order->sortStates(&potSuccs);
+                // TODO We need assumptions if states could not be ordered
+                if (orderedSuccs.back() == this->numberOfStates){
+                    STORM_LOG_WARN("Could not order potential Successors. Assumptions needed here, but not yet implemented.");
+                }
                 auto nrOfSuccs = orderedSuccs.size();
                 if (prMax) {
-                    STORM_PRINT("Interested in PrMax." << std::endl);
+                    STORM_PRINT("   Interested in PrMax." << std::endl);
                     if (nrOfSuccs == 2) {
                         uint64_t bestSucc = orderedSuccs[0];
                         boost::optional<storm::RationalFunction> bestFunc;
@@ -112,7 +116,7 @@ namespace storm {
                     }
                 } else {
                     // We are interested in PrMin
-                    STORM_PRINT("Interested in PrMin." << std::endl);
+                    STORM_PRINT("   Interested in PrMin." << std::endl);
                     if (nrOfSuccs == 2) {
                         uint64_t bestSucc = orderedSuccs[1];
                         boost::optional<storm::RationalFunction> bestFunc;
@@ -318,11 +322,15 @@ namespace storm {
             auto valueTypeToExpression = expressions::RationalFunctionToExpression<ValueType>(manager);
             auto exprF1 = manager->rational(0);
             for (auto entry : *action1) {
-                exprF1 = exprF1 + valueTypeToExpression.toExpression(entry.getValue()) * manager->getVariable("s" + entry.getColumn());
+                uint64_t column = entry.getColumn();
+                std::string name = "s" + std::to_string(column);
+                exprF1 = exprF1 + valueTypeToExpression.toExpression(entry.getValue()) * manager->getVariable(name);
             }
             auto exprF2 = manager->rational(0);
             for (auto entry : *action2) {
-                exprF2 = exprF2 + valueTypeToExpression.toExpression(entry.getValue()) * manager->getVariable("s" + entry.getColumn());
+                uint64_t column = entry.getColumn();
+                std::string name = "s" + std::to_string(column);
+                exprF2 = exprF2 + valueTypeToExpression.toExpression(entry.getValue()) * manager->getVariable(name);
             }
 
             // Turn parameter bounds into expressions

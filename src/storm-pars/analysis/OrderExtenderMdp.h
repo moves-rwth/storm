@@ -41,7 +41,7 @@ namespace storm {
 
                 OrderExtenderMdp::ActionComparison actionSmtCompare(typename storage::SparseMatrix<ValueType>::rows* action1, typename storage::SparseMatrix<ValueType>::rows* action2, std::vector<uint64_t> orderedSuccs);
 
-                bool prMax;
+                bool prMax{};
 
 
         };

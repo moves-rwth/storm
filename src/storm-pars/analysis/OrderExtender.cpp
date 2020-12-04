@@ -60,39 +60,31 @@ namespace storm {
             this->bottomTopOrder = std::shared_ptr<Order>(new Order(topStates, bottomStates, numberOfStates, std::move(decomposition), std::move(statesSorted)));
 
             // Build stateMap
+            auto rowCount = 0;
+            auto currentOption = 0;
+            auto numberOfOptionsForState = 0;
             for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
-                auto const& row = matrix.getRow(state);
                 stateMap[state] = std::vector<std::vector<uint_fast64_t>>();
                 std::set<VariableType> occurringVariables;
-
-                auto rowCount = 0;
-                auto currentOption = 0;
-                auto numberOfOptionsForState = 0;
-                for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
-                    numberOfOptionsForState = matrix.getRowGroupSize(state);
-                    while (currentOption < numberOfOptionsForState) {
-                        auto row = matrix.getRow(rowCount);
-
-                        for (auto& entry : row) {
-                            // ignore self-loops when there are more transitions
-                            if (state != entry.getColumn() || row.getNumberOfEntries() == 1) {
-                                if (!subStates[entry.getColumn()] && !bottomTopOrder->contains(state)) {
-                                    bottomTopOrder->add(state);
-                                }
-                                stateMap[state][currentOption].push_back(entry.getColumn());
+                numberOfOptionsForState = matrix.getRowGroupSize(state);
+                while (currentOption < numberOfOptionsForState) {
+                    auto row = matrix.getRow(rowCount);
+                    stateMap[state].push_back(std::vector<uint64_t>());
+                    for (auto& entry : row) {
+                        // ignore self-loops when there are more transitions
+                        if (state != entry.getColumn() || row.getNumberOfEntries() == 1) {
+                            if (!subStates[entry.getColumn()] && !bottomTopOrder->contains(state)) {
+                                bottomTopOrder->add(state);
                             }
-                            storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
-
+                            stateMap[state][currentOption].push_back(entry.getColumn());
                         }
+                        storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
 
-                        currentOption++;
-                        rowCount++;
                     }
-                    currentOption = 0;
+
+                    currentOption++;
+                    rowCount++;
                 }
-
-
-
 
                 if (occurringVariables.empty()) {
                     nonParametricStates.insert(state);
@@ -102,7 +94,15 @@ namespace storm {
                     occuringStatesAtVariable[var].push_back(state);
                 }
                 occuringVariablesAtState.push_back(std::move(occurringVariables));
+
+                currentOption = 0;
             }
+
+
+
+
+
+
 
             this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(matrix);
 
@@ -112,7 +112,7 @@ namespace storm {
         std::shared_ptr<Order> OrderExtender<ValueType, ConstantType>::getBottomTopOrder() {
             if (bottomTopOrder == nullptr) {
                 assert (model != nullptr);
-                STORM_LOG_THROW(matrix.getRowCount() == matrix.getColumnCount(), exceptions::NotSupportedException,"Creating order not supported for non-square matrix");
+                //STORM_LOG_THROW(matrix.getRowCount() == matrix.getColumnCount(), exceptions::NotSupportedException,"Creating order not supported for non-square matrix");
                 modelchecker::SparsePropositionalModelChecker<models::sparse::Model<ValueType>> propositionalChecker(*model);
                 storage::BitVector phiStates;
                 storage::BitVector psiStates;
@@ -154,42 +154,39 @@ namespace storm {
                     options.forceTopologicalSort();
                     decomposition = storm::storage::StronglyConnectedComponentDecomposition<ValueType>(matrix, options);
                 }
-                auto statesSorted = storm::utility::graph::getTopologicalSort(matrix.transpose(), firstStates);
+                auto statesSorted = storm::utility::graph::getTopologicalSort(matrix.transpose(true), firstStates);
                 bottomTopOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, numberOfStates, std::move(decomposition), std::move(statesSorted)));
 
                 // Build stateMap
+
+
+
+
+                auto rowCount = 0;
+                auto currentOption = 0;
+                auto numberOfOptionsForState = 0;
                 for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
-                    auto const& row = matrix.getRow(state);
                     stateMap[state] = std::vector<std::vector<uint_fast64_t>>();
                     std::set<VariableType> occurringVariables;
-
-
-                    auto rowCount = 0;
-                    auto currentOption = 0;
-                    auto numberOfOptionsForState = 0;
-                    for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
-                        numberOfOptionsForState = matrix.getRowGroupSize(state);
-                        while (currentOption < numberOfOptionsForState) {
-                            auto row = matrix.getRow(rowCount);
-                            for (auto& entry : row) {
-
-                                // ignore self-loops when there are more transitions
-                                if (state != entry.getColumn() || row.getNumberOfEntries() == 1) {
-                                    if (!subStates[entry.getColumn()] && !bottomTopOrder->contains(state)) {
-                                        bottomTopOrder->add(state);
-                                    }
-                                    stateMap[state][currentOption].push_back(entry.getColumn());
+                    numberOfOptionsForState = matrix.getRowGroupSize(state);
+                    while (currentOption < numberOfOptionsForState) {
+                        auto row = matrix.getRow(rowCount);
+                        stateMap[state].push_back(std::vector<uint64_t>());
+                        for (auto& entry : row) {
+                            // ignore self-loops when there are more transitions
+                            if (state != entry.getColumn() || row.getNumberOfEntries() == 1) {
+                                if (!subStates[entry.getColumn()] && !bottomTopOrder->contains(state)) {
+                                    bottomTopOrder->add(state);
                                 }
-                                storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
-
+                                stateMap[state][currentOption].push_back(entry.getColumn());
                             }
+                            storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
 
-                            currentOption++;
-                            rowCount++;
                         }
-                        currentOption = 0;
-                    }
 
+                        currentOption++;
+                        rowCount++;
+                    }
 
                     if (occurringVariables.empty()) {
                         nonParametricStates.insert(state);
@@ -199,7 +196,13 @@ namespace storm {
                         occuringStatesAtVariable[var].push_back(state);
                     }
                     occuringVariablesAtState.push_back(std::move(occurringVariables));
+
+                    currentOption = 0;
                 }
+
+
+
+
 
             }
 
@@ -276,7 +279,7 @@ namespace storm {
             while (currentStateMode.first != numberOfStates) {
                 assert (currentStateMode.first < numberOfStates);
                 auto& currentState = currentStateMode.first;
-                // TODO changed to action 0 (maybe move to OEdtmc)
+                // TODO changed to action 0 to account for changed stateMap (maybe move to OEdtmc?)
                 auto& successors = stateMap[currentState][0];
                 std::pair<uint_fast64_t, uint_fast64_t> result =  {numberOfStates, numberOfStates};
 
@@ -362,7 +365,7 @@ namespace storm {
             } else {
                 assert (order->isTrivial(currentState) || !order->contains(currentState));
                 // Do backward reasoning, all successor states must be in the order
-                return  extendByBackwardReasoning(order, currentState, successors, allowMerge);
+                return  extendByBackwardReasoning(order, currentState);
             }
         }
 
@@ -378,7 +381,11 @@ namespace storm {
             }
         }
 
-        // TODO: remove successors from arguments
+        template <typename ValueType, typename ConstantType>
+        std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState){
+            STORM_PRINT("Only implemented in subclasses.");
+        }
+
         template <typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) {
              assert (!order->isOnlyBottomTopOrder());
