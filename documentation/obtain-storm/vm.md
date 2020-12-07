@@ -64,6 +64,17 @@ make check
 {:.alert .alert-danger}
 If any problems occurr during this process (in particular when using a standard Ubuntu version) please [let us know](troubleshooting.html#file-an-issue){:.alert-link}.
 
+## Storm 1.6.3 (2020/12)
+
+A VM running Ubuntu 20.04 and Storm 1.6.3 can be found at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4304439.svg)](https://doi.org/10.5281/zenodo.4304439). The root password is *storm*.
+
+Storm is located at `/home/storm/storm` and the binaries can be found in `/home/storm/storm/build/bin`. For your convenience, the path containing the binaries is added to the `PATH`, meaning that you can run the Storm binaries from any location in the terminal. Moreover, the benchmarks from the [Quantitative Verification Benchmark Set](http://qcomp.org/benchmarks/) are included such that you can run, for example,
+```console
+storm --qvbs crowds
+```
+to check an instance of the [Crowds protocol](http://qcomp.org/benchmarks/index.html#crowds){:target="_blank"}.
+
+
 ## Storm 1.4.1 (2019/12)
 
 A VM running Ubuntu 19.10 and Storm 1.4.1 can be found at [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3585795.svg)](https://doi.org/10.5281/zenodo.3585795). The root password is *storm*.
