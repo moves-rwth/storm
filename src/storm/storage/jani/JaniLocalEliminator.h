@@ -1,7 +1,9 @@
 #pragma once
 
+#include <queue>
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
+#include "boost/variant.hpp"
 
 namespace storm {
     namespace jani {
@@ -16,18 +18,76 @@ namespace storm {
             Model newModel;
             Property property;
 
-            void unfold(std::string const& variableName);
-            void eliminate(const std::string &automatonName, std::string const& locationName);
-            void eliminateDestination(Automaton &automaton, Edge &edge, const uint64_t destIndex, detail::Edges &outgoing);
-            void eliminate_all();
+            // void unfold(std::string const& variableName);
+            // void eliminate(const std::string &automatonName, std::string const& locationName);
+            // void eliminateDestination(Automaton &automaton, Edge &edge, const uint64_t destIndex, detail::Edges &outgoing);
+            // void eliminate_all();
 
-            expressions::Expression getNewGuard(const Edge& edge, const EdgeDestination& dest, const Edge& outgoing);
-            expressions::Expression getProbability(const EdgeDestination& first, const EdgeDestination& then);
-            OrderedAssignments executeInSequence(const EdgeDestination& first, const EdgeDestination& then);
-
-            bool hasLoops(const std::string &automatonName, std::string const& locationName);
+//            expressions::Expression getNewGuard(const Edge& edge, const EdgeDestination& dest, const Edge& outgoing);
+//            expressions::Expression getProbability(const EdgeDestination& first, const EdgeDestination& then);
+//            OrderedAssignments executeInSequence(const EdgeDestination& first, const EdgeDestination& then);
 
             void cleanUpAutomaton(std::string const &automatonName);
+
+            class Session {
+            public:
+                explicit Session(Model model);
+                Model &getModel();
+                void setModel(const Model &model);
+                bool getFinished();
+                void setFinished(bool finished);
+
+                expressions::Expression getNewGuard(const Edge& edge, const EdgeDestination& dest, const Edge& outgoing);
+                expressions::Expression getProbability(const EdgeDestination& first, const EdgeDestination& then);
+                OrderedAssignments executeInSequence(const EdgeDestination& first, const EdgeDestination& then);
+                bool hasLoops(const std::string &automatonName, std::string const& locationName);
+            private:
+                Model model;
+                bool finished;
+            };
+
+            class Action {
+            public:
+                virtual std::string getDescription() = 0;
+                virtual void doAction(Session &session) = 0;
+            };
+
+            class UnfoldAction : public Action {
+            public:
+                explicit UnfoldAction(const std::string &variableName);
+
+                std::string getDescription() override;
+                void doAction(Session &session) override;
+
+                std::string variableName;
+            };
+
+            class EliminateAction : public Action {
+            public:
+                explicit EliminateAction(const std::string &locationName);
+
+                std::string getDescription() override;
+                void doAction(Session &session) override;
+            private:
+                void eliminateDestination(JaniLocalEliminator::Session &session, Automaton &automaton, Edge &edge, const uint64_t destIndex, detail::Edges &outgoing);
+
+                std::string locationName;
+            };
+
+            class FinishAction : public Action {
+            public:
+                explicit FinishAction();
+                std::string getDescription() override;
+                void doAction(Session &session) override;
+            };
+
+            class EliminationScheduler {
+            public:
+                EliminationScheduler();
+                std::unique_ptr<Action> getNextAction();
+            private:
+                std::queue<std::unique_ptr<Action>> actionQueue;
+            };
         };
     }
 }
