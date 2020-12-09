@@ -10,19 +10,24 @@
 #include "storm-conv/settings/modules/PrismExportSettings.h"
 
 #include "storm/api/storm.h"
-#include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm-parsers/api/storm-parsers.h"
 #include "storm/utility/initialize.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/Stopwatch.h"
 
-#include "storm/storage/SymbolicModelDescription.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
+#include "storm/storage/SymbolicModelDescription.h"
 
 
 #include "storm-cli-utilities/cli.h"
 #include "storm/exceptions/OptionParserException.h"
+
+#include <cstdio>
+
+extern "C" {
+#include "aiger.h"
+}
 
 namespace storm {
     namespace conv {
@@ -194,31 +199,25 @@ namespace storm {
                 outputFilename += suffix;
             }
             
-            // prism-to-aiger transformation, TODO: this should be done in
-            // storm::api::convertPrismToAiger in storm-conv...
-            std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan, double>().build(prismProg);
-            // obtain the qualitative transition matrix while removing
-            // non-determinism variables
-            storm::dd::Bdd<storm::dd::DdType::Sylvan> qualTrans = model->getQualitativeTransitionMatrix(false);
-            storm::dd::Bdd<storm::dd::DdType::Sylvan> initStates = model->getInitialStates();
-            std::vector<std::string> labels = model->getLabels();
-            // to get states with a label use:
-            // storm::dd::Bdd<storm::dd::DdType::Sylvan> states4label = model->getStates(label);
-            
             std::vector<storm::jani::Property> outputProperties = properties;
+            
+            // prism-to-aiger transformation, TODO: this should be done in
+            aiger* outputCircuit = storm::api::convertPrismToAiger(prismProg, outputProperties);
+            
 
             // exporting of aiger file
             stopStopwatch(conversionTime);
             auto exportingTime = startStopwatch("Exporting Aiger program ... ");
             
             if (outputFilename != "") {
-                //storm::api::exportAigerToFile(outputProgram, outputProperties, outputFilename);
+                aiger_open_and_write_to_file(outputCircuit, outputFilename.c_str());
                 STORM_PRINT_AND_LOG("Stored to file '" << outputFilename << "'");
             }
             
             if (output.isStdOutOutputEnabled()) {
-                //storm::api::printAigerToStream(outputProgram, outputProperties, std::cout);
+                aiger_write_to_file(outputCircuit, aiger_ascii_mode, stdout);
             }
+            aiger_reset(outputCircuit);
             stopStopwatch(exportingTime);
         }
         

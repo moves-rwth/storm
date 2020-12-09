@@ -6,12 +6,20 @@
 #include "storm/storage/jani/JaniLocationExpander.h"
 #include "storm/storage/jani/JaniScopeChanger.h"
 #include "storm/storage/jani/JSONExporter.h"
+#include "storm/storage/jani/Model.h"
+#include "storm/storage/SymbolicModelDescription.h"
 
-#include "storm/io/file.h"
+#include "storm/api/storm.h"
 #include "storm/api/properties.h"
+#include "storm/io/file.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/CoreSettings.h"
+
+extern "C" {
+#include "aiger.h"
+}
 
 namespace storm {
     namespace api {
@@ -103,6 +111,23 @@ namespace storm {
                }
             }
         }
+
+        aiger* convertPrismToAiger(storm::prism::Program const& program, std::vector<storm::jani::Property> const & properties, storm::converter::PrismToAigerConverterOptions options) {
+            // we recover BDD-style information from the prism program by
+            // building its symbolic representation
+            //std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan, double>().build(program);
+            // obtain the qualitative transition matrix while removing
+            // non-determinism variables
+            //storm::dd::Bdd<storm::dd::DdType::Sylvan> qualTrans = model->getQualitativeTransitionMatrix(false);
+            //storm::dd::Bdd<storm::dd::DdType::Sylvan> initStates = model->getInitialStates();
+            //std::vector<std::string> labels = model->getLabels();
+            // to get states with a label use:
+            // storm::dd::Bdd<storm::dd::DdType::Sylvan> states4label = model->getStates(label);
+            
+            // we can now start loading the aiger structure
+            aiger* aig = aiger_init();
+            return aig;
+        }
         
         std::pair<storm::jani::Model, std::vector<storm::jani::Property>> convertPrismToJani(storm::prism::Program const& program, std::vector<storm::jani::Property> const& properties, storm::converter::PrismToJaniConverterOptions options) {
         
@@ -121,7 +146,7 @@ namespace storm {
             
             return res;
         }
-        
+
         void exportJaniToFile(storm::jani::Model const& model, std::vector<storm::jani::Property> const& properties, std::string const& filename, bool compact) {
             storm::jani::JsonExporter::toFile(model, properties, filename, true, compact);
         }
