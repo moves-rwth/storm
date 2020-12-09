@@ -115,12 +115,12 @@ namespace storm {
         aiger* convertPrismToAiger(storm::prism::Program const& program, std::vector<storm::jani::Property> const & properties, storm::converter::PrismToAigerConverterOptions options) {
             // we recover BDD-style information from the prism program by
             // building its symbolic representation
-            //std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan, double>().build(program);
+            std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan, double>().build(program);
             // obtain the qualitative transition matrix while removing
             // non-determinism variables
-            //storm::dd::Bdd<storm::dd::DdType::Sylvan> qualTrans = model->getQualitativeTransitionMatrix(false);
-            //storm::dd::Bdd<storm::dd::DdType::Sylvan> initStates = model->getInitialStates();
-            //std::vector<std::string> labels = model->getLabels();
+            storm::dd::Bdd<storm::dd::DdType::Sylvan> qualTrans = model->getQualitativeTransitionMatrix(false);
+            storm::dd::Bdd<storm::dd::DdType::Sylvan> initStates = model->getInitialStates();
+            std::vector<std::string> labels = model->getLabels();
             // to get states with a label use:
             // storm::dd::Bdd<storm::dd::DdType::Sylvan> states4label = model->getStates(label);
             
