@@ -135,6 +135,12 @@ namespace storm {
             }
 				
             double RegionSettings::getExtremumValuePrecision() const {
+                auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+                if (!generalSettings.isPrecisionSet() && generalSettings.isSoundSet()) {
+                    double prec = this->getOption(extremumOptionName).getArgumentByName("precision").getValueAsDouble() / 10;
+                    generalSettings.setPrecision(std::to_string(prec));
+                    STORM_LOG_WARN("Reset precision for solver to " << prec << " this is sufficient for extremum value precision of " << (prec)*10 << std::endl);
+                }
                 return this->getOption(extremumOptionName).getArgumentByName("precision").getValueAsDouble();
             }
 
