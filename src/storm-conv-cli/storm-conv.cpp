@@ -2,7 +2,6 @@
 
 #include "storm/settings/SettingsManager.h"
 #include "storm-conv/settings/ConvSettings.h"
-#include "storm-conv/settings/modules/AigerExportSettings.h"
 #include "storm-conv/settings/modules/ConversionGeneralSettings.h"
 #include "storm-conv/settings/modules/ConversionInputSettings.h"
 #include "storm-conv/settings/modules/ConversionOutputSettings.h"
