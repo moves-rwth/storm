@@ -1,10 +1,11 @@
 #include <storm-pars/modelchecker/region/RegionResultHypothesis.h>
 #include "storm-pars/settings/modules/RegionSettings.h"
 
-#include "storm/settings/Option.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
+
 #include "storm/settings/OptionBuilder.h"
 #include "storm/settings/ArgumentBuilder.h"
-#include "storm/settings/Argument.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/IllegalArgumentValueException.h"
@@ -165,6 +166,10 @@ namespace storm {
             bool RegionSettings::check() const {
                 if (isRefineSet() && isExtremumSet()) {
                     STORM_LOG_ERROR("Can not compute extremum values AND perform region refinement.");
+                    return false;
+                }
+                if (getExtremumValuePrecision() < storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()) {
+                    STORM_LOG_ERROR("Computing extremum value for precision " << getExtremumValuePrecision() << " makes no sense when solver precision is set to " << storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
                     return false;
                 }
                 return true;
