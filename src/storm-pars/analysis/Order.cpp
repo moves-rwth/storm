@@ -790,5 +790,12 @@ namespace storm {
         uint_fast64_t Order::getNumberOfDoneStates() const {
             return doneStates.getNumberOfSetBits();
         }
+
+        bool Order::same(uint64_t state1, uint64_t state2) {
+            if(getNode(state1) == getNode(state2)) {
+                return true;
+            }
+            return false;
+        }
     }
 }

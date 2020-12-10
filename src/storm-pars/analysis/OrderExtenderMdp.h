@@ -39,7 +39,7 @@ namespace storm {
 
                 std::pair<bool, uint64_t> simpleCaseCheck(uint64_t state, std::vector<uint64_t> orderedSuccs);
 
-                OrderExtenderMdp::ActionComparison actionSmtCompare(typename storage::SparseMatrix<ValueType>::rows* action1, typename storage::SparseMatrix<ValueType>::rows* action2, std::vector<uint64_t> orderedSuccs);
+                OrderExtenderMdp::ActionComparison actionSmtCompare(typename storage::SparseMatrix<ValueType>::rows* action1, typename storage::SparseMatrix<ValueType>::rows* action2, std::vector<uint64_t> orderedSuccs, std::shared_ptr<Order> order);
 
                 bool prMax{};
 

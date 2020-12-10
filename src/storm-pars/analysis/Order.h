@@ -336,6 +336,8 @@ namespace storm {
                      */
                     uint64_t getActionAtState(uint64_t state);
 
+                    bool same(uint64_t state1, uint64_t state2);
+
                 protected:
                     storage::Decomposition<storage::StronglyConnectedComponent> getDecomposition() const;
 

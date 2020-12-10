@@ -54,7 +54,10 @@ namespace storm {
                 auto orderedSuccs = order->sortStates(&potSuccs);
                 // TODO We need assumptions if states could not be ordered
                 if (orderedSuccs.back() == this->numberOfStates){
-                    STORM_LOG_WARN("Could not order potential Successors. Assumptions needed here, but not yet implemented.");
+                    STORM_LOG_WARN("Could not order potential Successors. An error will occur.");
+                    // The following commands are only for debugging with a very specific example
+                    // order->mergeNodes(order->getNode(3), order->getNode(1));
+                    // orderedSuccs = order->sortStates(&potSuccs);
                 }
                 auto nrOfSuccs = orderedSuccs.size();
                 if (prMax) {
@@ -93,7 +96,7 @@ namespace storm {
                                 bool in = true;
                                 for (auto i = 0; i < candidates.size(); i++){
                                     auto rowB = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState] + candidates[i]);
-                                    auto compRes = actionSmtCompare(&rowA, &rowB, orderedSuccs);
+                                    auto compRes = actionSmtCompare(&rowA, &rowB, orderedSuccs, order);
                                     if(compRes == GEQ){
                                         candidates.erase(candidates.begin()+i);
                                     } else if (compRes == LEQ) {
@@ -107,10 +110,18 @@ namespace storm {
                                 index++;
                             }
                             if (candidates.size() == 1) {
-                                bestAct = candidates [0];
+
+                                /*auto bestRow = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState] + candidates[0]);
+                                std::cout << "Succs of best action " << candidates[0] << ": " << std::endl;
+                                for (auto x : bestRow){
+                                    std::cout << x.getColumn() << ", ";
+                                }
+                                std::cout << std::endl;*/
+
+                                bestAct = candidates[0];
                                 STORM_PRINT("   More than 2 potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
                             } else {
-                                STORM_LOG_WARN("No best action found.");
+                                STORM_LOG_WARN("No best action found. Take action 0 as default.");
                             }
                         }
                     }
@@ -155,7 +166,7 @@ namespace storm {
                                 bool in = true;
                                 for (auto i = 0; i < candidates.size(); i++){
                                     auto rowB = this->matrix.getRow(this->matrix.getRowGroupIndices()[currentState] + candidates[i]);
-                                    auto compRes = actionSmtCompare(&rowA, &rowB, orderedSuccs);
+                                    auto compRes = actionSmtCompare(&rowA, &rowB, orderedSuccs, order);
                                     if(compRes == LEQ){
                                         candidates.erase(candidates.begin()+i);
                                     } else if (compRes == GEQ) {
@@ -172,7 +183,7 @@ namespace storm {
                                 bestAct = candidates [0];
                                 STORM_PRINT("   More than 2 potential succs from 2 or more actions. Best action: " << bestAct << std::endl);
                             } else {
-                                STORM_LOG_WARN("No best action found.");
+                                STORM_LOG_WARN("No best action found. Take action 0 as default.");
                             }
                         }
 
@@ -271,6 +282,7 @@ namespace storm {
                         foundOne = true;
                     }
                 }
+                bitVecTable[i] = hitSuccs;
             }
             storage::BitVector candidate = bitVecTable[bestAct];
             storage::BitVector others = storage::BitVector(orderedSuccs.size(), false);
@@ -284,7 +296,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename ConstantType>
-        typename OrderExtenderMdp<ValueType, ConstantType>::ActionComparison OrderExtenderMdp<ValueType, ConstantType>::actionSmtCompare(typename storage::SparseMatrix<ValueType>::rows* action1, typename storage::SparseMatrix<ValueType>::rows* action2, std::vector<uint64_t> orderedSuccs) {
+        typename OrderExtenderMdp<ValueType, ConstantType>::ActionComparison OrderExtenderMdp<ValueType, ConstantType>::actionSmtCompare(typename storage::SparseMatrix<ValueType>::rows* action1, typename storage::SparseMatrix<ValueType>::rows* action2, std::vector<uint64_t> orderedSuccs, std::shared_ptr<Order> order) {
             std::shared_ptr<expressions::ExpressionManager> manager(new expressions::ExpressionManager());
 
             // Get ordered vector of the succs actually occurring in the two actions
@@ -311,9 +323,15 @@ namespace storm {
                 auto var = manager->declareRationalVariable(varName);
                 exprStateVars = exprStateVars && manager->rational(0) < var && var < manager->rational(1);
                 if(i > 0) {
-                    auto lesserVar = manager->getVariable("s" + std::to_string(occSuccs[i-1]));
-                    expressions::Expression exprLesser = lesserVar.getExpression() < var.getExpression();
-                    exprStateVars = exprStateVars && exprLesser;
+                    if (order->same(occSuccs[i], occSuccs[i - 1])){
+                        auto sameVar = manager->getVariable("s" + std::to_string(occSuccs[i-1]));
+                        expressions::Expression exprSame = sameVar.getExpression() = var.getExpression();
+                        exprStateVars = exprStateVars && exprSame;
+                    } else {
+                        auto biggerVar = manager->getVariable("s" + std::to_string(occSuccs[i-1]));
+                        expressions::Expression exprBigger = biggerVar.getExpression() > var.getExpression();
+                        exprStateVars = exprStateVars && exprBigger;
+                    }
                 }
 
             }
