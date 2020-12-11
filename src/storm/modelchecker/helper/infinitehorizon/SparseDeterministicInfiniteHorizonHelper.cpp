@@ -522,20 +522,24 @@ namespace storm {
                     storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
                     bool isEqSysFormat = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
                     auto eqSysMatrix = this->_transitionMatrix.getSubmatrix(false, statesNotInComponent, statesNotInComponent, isEqSysFormat);
-                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, eqSysMatrix);
-                    solver->setLowerBound(storm::utility::zero<ValueType>());
+                    boost::optional<std::vector<ValueType>> upperBounds;
                     // Check solver requirements
-                    auto requirements = solver->getRequirements(env);
+                    auto requirements = linearEquationSolverFactory.getRequirements(env);
                     requirements.clearLowerBounds();
                     if (requirements.upperBounds()) {
                         auto toBsccProbabilities = this->_transitionMatrix.getConstrainedRowSumVector(statesNotInComponent, ~statesNotInComponent);
-                        solver->setUpperBounds(computeUpperBoundsForExpectedVisitingTimes(eqSysMatrix, toBsccProbabilities));
+                        upperBounds = computeUpperBoundsForExpectedVisitingTimes(eqSysMatrix, toBsccProbabilities);
                         requirements.clearUpperBounds();
                     }
                     STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UnmetRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
-                    eqSysMatrix.transpose(false, true); // Transpose so that each row considers the predecessors
+                    eqSysMatrix = eqSysMatrix.transpose(false, true); // Transpose so that each row considers the predecessors
                     if (isEqSysFormat) {
                         eqSysMatrix.convertToEquationSystem();
+                    }
+                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, eqSysMatrix);
+                    solver->setLowerBound(storm::utility::zero<ValueType>());
+                    if (upperBounds) {
+                        solver->setUpperBounds(std::move(upperBounds.get()));
                     }
                     std::vector<ValueType> eqSysRhs;
                     eqSysRhs.reserve(eqSysMatrix.getRowCount());
