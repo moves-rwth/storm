@@ -105,6 +105,16 @@ namespace storm {
                  * Retrieves a filename to which an optimal scheduler will be exported.
                  */
                  std::string getExportSchedulerFilename() const;
+                
+                /*!
+                 * Retrieves whether the check result should be exported.
+                 */
+                bool isExportCheckResultSet() const;
+                
+                /*!
+                 * Retrieves a filename to which the check result should be exported.
+                 */
+                 std::string getExportCheckResultFilename() const;
 
                 /*!
                 * Retrieves whether an optimal scheduler is to be exported
@@ -360,6 +370,7 @@ namespace storm {
                 static const std::string exportCdfOptionName;
                 static const std::string exportCdfOptionShortName;
                 static const std::string exportSchedulerOptionName;
+                static const std::string exportCheckResultOptionName;
                 static const std::string exportMonotonicityName;
                 static const std::string explicitOptionName;
                 static const std::string explicitOptionShortName;

@@ -7,6 +7,10 @@
 #include "storm/io/file.h"
 #include "storm/utility/macros.h"
 #include "storm/storage/Scheduler.h"
+#include "storm/modelchecker/results/CheckResult.h"
+#include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
+#include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
+#include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
     
@@ -57,6 +61,24 @@ namespace storm {
                 scheduler.printToStream(stream, model);
             }
             storm::utility::closeFile(stream);
+        }
+        
+        template <typename ValueType>
+        void exportCheckResultToJson(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::unique_ptr<storm::modelchecker::CheckResult> const& checkResult, std::string const& filename) {
+            std::ofstream stream;
+            storm::utility::openFile(filename, stream);
+            if (checkResult->isExplicitQualitativeCheckResult()) {
+                stream << checkResult->asExplicitQualitativeCheckResult().toJson(model->getOptionalStateValuations()).dump(4);
+            } else {
+                STORM_LOG_THROW(checkResult->isExplicitQuantitativeCheckResult(), storm::exceptions::NotSupportedException, "Export of check results is only supported for explicit check results (e.g. in the sparse engine)");
+                stream << checkResult->template asExplicitQuantitativeCheckResult<ValueType>().toJson(model->getOptionalStateValuations()).dump(4);
+            }
+            storm::utility::closeFile(stream);
+        }
+        
+        template <>
+        void exportCheckResultToJson<storm::RationalFunction>(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const&, std::unique_ptr<storm::modelchecker::CheckResult> const&, std::string const&) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export of check results is not supported for rational functions. ");
         }
         
     }
