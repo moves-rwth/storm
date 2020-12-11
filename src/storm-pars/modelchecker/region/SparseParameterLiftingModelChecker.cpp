@@ -414,9 +414,14 @@ namespace storm {
             boost::optional<ConstantType> value;
             typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation valuation;
             if (!initialValue) {
-                auto init = checkOnSamples(env, region, dir, regionQueue.top().localMonRes);
-                value = storm::utility::convertNumber<ConstantType>(init.first);
-                valuation = std::move(init.second);
+                if (useMonotonicity) {
+                    auto init = checkOnSamples(env, region, dir, regionQueue.top().localMonRes);
+                    value = storm::utility::convertNumber<ConstantType>(init.first);
+                    valuation = std::move(init.second);
+                } else {
+                    valuation = region.getCenterPoint();
+                    value = getInstantiationChecker().check(env, valuation)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];;
+                }
             } else {
                 value = initialValue;
             }
