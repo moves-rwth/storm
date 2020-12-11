@@ -414,14 +414,9 @@ namespace storm {
             boost::optional<ConstantType> value;
             typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation valuation;
             if (!initialValue) {
-                if (useMonotonicity) {
-                    auto init = checkOnSamples(env, region, dir, regionQueue.top().localMonRes);
-                    value = storm::utility::convertNumber<ConstantType>(init.first);
-                    valuation = std::move(init.second);
-                } else {
-                    valuation = region.getCenterPoint();
-                    value = getInstantiationChecker().check(env, valuation)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];;
-                }
+                auto init = getGoodInitialPoint(env, region, dir, regionQueue.top().localMonRes);
+                value = storm::utility::convertNumber<ConstantType>(init.first);
+                valuation = std::move(init.second);
             } else {
                 value = initialValue;
             }
@@ -621,7 +616,7 @@ namespace storm {
         }
 
         template<typename SparseModelType, typename ConstantType>
-        std::pair<typename SparseModelType::ValueType, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::checkOnSamples(const Environment &env, const storage::ParameterRegion<typename SparseModelType::ValueType> &region, const OptimizationDirection &dir, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonRes) {
+        std::pair<typename SparseModelType::ValueType, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getGoodInitialPoint(const Environment &env, const storage::ParameterRegion<typename SparseModelType::ValueType> &region, const OptimizationDirection &dir, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonRes) {
             typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation Valuation;
             typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::CoefficientType CoefficientType;
             ConstantType value = storm::solver::minimize(dir) ? 1 : 0;
@@ -631,50 +626,52 @@ namespace storm {
 
             if (localMonRes != nullptr) {
                 localMonRes->getGlobalMonotonicityResult()->splitBasedOnMonotonicity(region.getVariables(), monIncr, monDecr, notMonFirst);
+
+                auto numMon = monIncr.size() + monDecr.size();
+                STORM_LOG_INFO("Number of monotone parameters: " << numMon << std::endl;);
+
+                checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, notMonFirst, dir);
+
+                STORM_LOG_INFO("Number of possible monotone parameters: " << (monIncr.size() + monDecr.size() - numMon) << std::endl;);
+
+                STORM_LOG_INFO("Number of definitely not monotone parameters: " << notMon.size() << std::endl;);
+                std::size_t const numOfSamples = 50;
+                std::vector<Valuation> resultingVector(numOfSamples);
+                std::map<VariableType, CoefficientType> stepSize;
+                for (auto variable: notMon) {
+                    stepSize[variable] = (region.getUpperBoundary(variable) - region.getLowerBoundary(variable)) / (numOfSamples - 1);
+                }
+
+                for (uint_fast64_t i = 0; i < numOfSamples; ++i) {
+                    for (auto variable : notMon) {
+                        resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, (region.getLowerBoundary(variable) + stepSize[variable] * i)));
+                    }
+                    for (auto variable: monIncr) {
+                        if (storm::solver::minimize(dir)) {
+                            resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, region.getLowerBoundary(variable)));
+                        } else {
+                            resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, region.getUpperBoundary(variable)));
+                        }
+                    }
+                    for (auto variable : monDecr) {
+                        if (!storm::solver::minimize(dir)) {
+                            resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, region.getLowerBoundary(variable)));
+                        } else {
+                            resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, region.getUpperBoundary(variable)));
+                        }
+                    }
+                }
+
+                for (auto &point : resultingVector) {
+                    auto currValue = getInstantiationChecker().check(env, point)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
+                    if (storm::solver::minimize(dir) ? currValue <= value : currValue >= value) {
+                        value = currValue;
+                        valuation = point;
+                    }
+                }
             } else {
-                notMonFirst = region.getVariables();
-            }
-            auto numMon = monIncr.size() + monDecr.size();
-            STORM_LOG_INFO("Number of monotone parameters: " << numMon << std::endl;);
-
-            checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, notMonFirst, dir);
-
-            STORM_LOG_INFO("Number of possible monotone parameters: " << (monIncr.size() + monDecr.size() - numMon) << std::endl;);
-
-            STORM_LOG_INFO("Number of definitely not monotone parameters: " << notMon.size() << std::endl;);
-            std::size_t const numOfSamples = 50;
-            std::vector<Valuation> resultingVector(numOfSamples);
-            std::map<VariableType, CoefficientType> stepSize;
-            for (auto variable: notMon) {
-                stepSize[variable] = (region.getUpperBoundary(variable) - region.getLowerBoundary(variable)) / (numOfSamples - 1);
-            }
-
-            for (uint_fast64_t i = 0; i < numOfSamples; ++i) {
-                for (auto variable : notMon) {
-                    resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, (region.getLowerBoundary(variable) + stepSize[variable] * i)));
-                }
-                for (auto variable: monIncr) {
-                    if (storm::solver::minimize(dir)) {
-                        resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, region.getLowerBoundary(variable)));
-                    } else {
-                        resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, region.getUpperBoundary(variable)));
-                    }
-                }
-                for (auto variable : monDecr) {
-                    if (!storm::solver::minimize(dir)) {
-                        resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, region.getLowerBoundary(variable)));
-                    } else {
-                        resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, region.getUpperBoundary(variable)));
-                    }
-                }
-            }
-
-            for (auto &point : resultingVector) {
-                auto currValue = getInstantiationChecker().check(env, point)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
-                if (storm::solver::minimize(dir) ? currValue <= value : currValue >= value) {
-                    value = currValue;
-                    valuation = point;
-                }
+                valuation = region.getCenterPoint();
+                value = getInstantiationChecker().check(env, valuation)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
             }
 
             return std::make_pair(storm::utility::convertNumber<typename SparseModelType::ValueType>(value), std::move(valuation));
