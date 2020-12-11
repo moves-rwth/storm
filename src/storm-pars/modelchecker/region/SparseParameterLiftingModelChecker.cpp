@@ -365,8 +365,10 @@ namespace storm {
                     valuationUpper[var] += stepSize;
                 }
                 if (monIncr) {
+                    possibleMonotoneParameters.insert(var);
                     possibleMonotoneIncrParameters.insert(var);
                 } else if (monDecr) {
+                    possibleMonotoneParameters.insert(var);
                     possibleMonotoneDecrParameters.insert(var);
                 } else {
                     possibleNotMonotoneParameters.insert(var);
