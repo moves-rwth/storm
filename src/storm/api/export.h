@@ -64,7 +64,7 @@ namespace storm {
         }
         
         template <typename ValueType>
-        void exportCheckResultToJson(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::unique_ptr<storm::modelchecker::CheckResult> const& checkResult, std::string const& filename) {
+        inline void exportCheckResultToJson(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, std::unique_ptr<storm::modelchecker::CheckResult> const& checkResult, std::string const& filename) {
             std::ofstream stream;
             storm::utility::openFile(filename, stream);
             if (checkResult->isExplicitQualitativeCheckResult()) {
@@ -77,7 +77,7 @@ namespace storm {
         }
         
         template <>
-        void exportCheckResultToJson<storm::RationalFunction>(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const&, std::unique_ptr<storm::modelchecker::CheckResult> const&, std::string const&) {
+        inline void exportCheckResultToJson<storm::RationalFunction>(std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> const&, std::unique_ptr<storm::modelchecker::CheckResult> const&, std::string const&) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Export of check results is not supported for rational functions. ");
         }
         
