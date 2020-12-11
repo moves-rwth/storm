@@ -462,10 +462,10 @@ namespace storm {
             regionSplitEstimates.clear();
             useRegionSplitEstimates = false;
             for (auto const& p : region.getVariables()) {
-                    if (deltaLower[p] > deltaUpper[p] && deltaUpper[p] >= 0.001) {
+                    if (deltaLower[p] > deltaUpper[p] && deltaUpper[p] >= 0.0001) {
                         regionSplitEstimates.insert(std::make_pair(p, deltaUpper[p]));
                         useRegionSplitEstimates = true;
-                    } else if (deltaLower[p] <= deltaUpper[p] && deltaLower[p] >= 0.001) { {
+                    } else if (deltaLower[p] <= deltaUpper[p] && deltaLower[p] >= 0.0001) { {
                         regionSplitEstimates.insert(std::make_pair(p, deltaLower[p]));
                         useRegionSplitEstimates = true;
                     }
