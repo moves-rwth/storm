@@ -323,7 +323,12 @@ namespace storm {
                  * @return The property filter.
                  */
                 std::string getPropertyFilter() const;
-
+                
+                /*!
+                 * Retrieves whether the steady-state distribution is to be computed.
+                 */
+                bool isComputeSteadyStateDistributionSet() const;
+                
                 /*!
                  * Retrieves whether the input model is to be read from the quantitative verification benchmark set (QVBS)
                  */
@@ -390,6 +395,7 @@ namespace storm {
                 static const std::string janiPropertyOptionShortName;
                 static const std::string propertyOptionName;
                 static const std::string propertyOptionShortName;
+                static const std::string steadyStateDistrOptionName;
                 static const std::string qvbsInputOptionName;
                 static const std::string qvbsInputOptionShortName;
                 static const std::string qvbsRootOptionName;

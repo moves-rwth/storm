@@ -16,7 +16,7 @@ namespace storm {
             public:
                 /*!
                  * Creates an object that can compute upper bounds on the *maximal* expected rewards for the provided MDP.
-                 *
+                 * @see http://doi.org/10.1007/978-3-319-63387-9_8
                  * @param transitionMatrix The matrix defining the transitions of the system without the transitions
                  * that lead directly to the goal state.
                  * @param rewards The rewards of each choice.

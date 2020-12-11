@@ -1043,6 +1043,18 @@ namespace storm {
                                             ++exportCount;
                                         };
             verifyProperties<ValueType>(input,verificationCallback, postprocessingCallback);
+            if (ioSettings.isComputeSteadyStateDistributionSet()) {
+                storm::utility::Stopwatch watch(true);
+                std::unique_ptr<storm::modelchecker::CheckResult> result;
+                try {
+                    result = storm::api::computeSteadyStateDistributionWithSparseEngine<ValueType>(mpi.env, sparseModel);
+                } catch (storm::exceptions::BaseException const& ex) {
+                    STORM_LOG_WARN("Cannot compute steady-state probabilities: " << ex.what());
+                }
+                watch.stop();
+                postprocessingCallback(result);
+                STORM_PRINT((storm::utility::resources::isTerminate() ? "Result till abort:" : "Result:") << *result);
+            }
         }
         
         template <storm::dd::DdType DdType, typename ValueType>

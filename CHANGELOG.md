@@ -9,6 +9,7 @@ Version 1.6.x
 -------------
 ## Version 1.6.4 (20xx/xx)
 - Added an export of  check results to json. Use `--exportresult` in the command line interface.
+- Added computation of steady state probabilities for DTMC/CTMC in the sparse engine. Use `--steadystate` in the command line interface.
 
 ## Version 1.6.3 (2020/11)
 - Added support for multi-objective model checking of long-run average objectives including mixtures with other kinds of objectives.

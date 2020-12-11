@@ -41,6 +41,13 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> computeLongRunAverageRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> computeReachabilityTimes(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::EventuallyFormula, ValueType> const& checkTask) override;
             virtual std::unique_ptr<CheckResult> checkQuantileFormula(Environment const& env, CheckTask<storm::logic::QuantileFormula, ValueType> const& checkTask) override;
+            
+            /*!
+             * Computes the long run average (or: steady state) distribution over all states
+             * Assumes a uniform distribution over initial states.
+             */
+            std::unique_ptr<CheckResult> computeSteadyStateDistribution(Environment const& env);
+            
         };
         
     } // namespace modelchecker
