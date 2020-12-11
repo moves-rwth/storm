@@ -635,40 +635,57 @@ namespace storm {
                 STORM_LOG_INFO("Number of possible monotone parameters: " << (monIncr.size() + monDecr.size() - numMon) << std::endl;);
 
                 STORM_LOG_INFO("Number of definitely not monotone parameters: " << notMon.size() << std::endl;);
-                std::size_t const numOfSamples = 50;
-                std::vector<Valuation> resultingVector(numOfSamples);
-                std::map<VariableType, CoefficientType> stepSize;
-                for (auto variable: notMon) {
-                    stepSize[variable] = (region.getUpperBoundary(variable) - region.getLowerBoundary(variable)) / (numOfSamples - 1);
-                }
 
-                for (uint_fast64_t i = 0; i < numOfSamples; ++i) {
-                    for (auto variable : notMon) {
-                        resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, (region.getLowerBoundary(variable) + stepSize[variable] * i)));
+                auto valuation = region.getCenterPoint();
+                for (auto variable: monIncr) {
+                    if (storm::solver::minimize(dir)) {
+                        valuation[variable] = region.getLowerBoundary(variable);
+                    } else {
+                        valuation[variable] = region.getUpperBoundary(variable);
                     }
-                    for (auto variable: monIncr) {
-                        if (storm::solver::minimize(dir)) {
-                            resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, region.getLowerBoundary(variable)));
-                        } else {
-                            resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, region.getUpperBoundary(variable)));
-                        }
-                    }
-                    for (auto variable : monDecr) {
-                        if (!storm::solver::minimize(dir)) {
-                            resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, region.getLowerBoundary(variable)));
-                        } else {
-                            resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, region.getUpperBoundary(variable)));
-                        }
+                }
+                for (auto variable : monDecr) {
+                    if (!storm::solver::minimize(dir)) {
+                        valuation[variable] = region.getLowerBoundary(variable);
+                    } else {
+                        valuation[variable] = region.getUpperBoundary(variable);
                     }
                 }
 
-                for (auto &point : resultingVector) {
-                    auto currValue = getInstantiationChecker().check(env, point)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
-                    if (storm::solver::minimize(dir) ? currValue <= value : currValue >= value) {
-                        value = currValue;
-                        valuation = point;
-                    }
-                }
+//                std::size_t const numOfSamples = 50;
+//                std::vector<Valuation> resultingVector(numOfSamples);
+//                std::map<VariableType, CoefficientType> stepSize;
+//                for (auto variable: notMon) {
+//                    stepSize[variable] = (region.getUpperBoundary(variable) - region.getLowerBoundary(variable)) / (numOfSamples - 1);
+//                }
+//
+//                for (uint_fast64_t i = 0; i < numOfSamples; ++i) {
+//                    for (auto variable : notMon) {
+//                        resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, (region.getLowerBoundary(variable) + stepSize[variable] * i)));
+//                    }
+//                    for (auto variable: monIncr) {
+//                        if (storm::solver::minimize(dir)) {
+//                            resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, region.getLowerBoundary(variable)));
+//                        } else {
+//                            resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, region.getUpperBoundary(variable)));
+//                        }
+//                    }
+//                    for (auto variable : monDecr) {
+//                        if (!storm::solver::minimize(dir)) {
+//                            resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, region.getLowerBoundary(variable)));
+//                        } else {
+//                            resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, region.getUpperBoundary(variable)));
+//                        }
+//                    }
+//                }
+//
+//                for (auto &point : resultingVector) {
+//                    auto currValue = getInstantiationChecker().check(env, point)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
+//                    if (storm::solver::minimize(dir) ? currValue <= value : currValue >= value) {
+//                        value = currValue;
+//                        valuation = point;
+//                    }
+//                }
             } else {
                 valuation = region.getCenterPoint();
                 value = getInstantiationChecker().check(env, valuation)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
