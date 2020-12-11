@@ -197,13 +197,14 @@ namespace storm {
                 }
             }
             
-            typename StateValuations::Json StateValuations::toJson(storm::storage::sparse::state_type const& stateIndex, boost::optional<std::set<storm::expressions::Variable>> const& selectedVariables) const {
+            template<typename JsonRationalType>
+            storm::json<JsonRationalType> StateValuations::toJson(storm::storage::sparse::state_type const& stateIndex, boost::optional<std::set<storm::expressions::Variable>> const& selectedVariables) const {
                 auto const& valueAssignment = at(stateIndex);
                 typename std::set<storm::expressions::Variable>::const_iterator setIt;
                 if (selectedVariables) {
                     setIt = selectedVariables->begin();
                 }
-                Json result;
+                storm::json<JsonRationalType> result;
                 for (auto valIt = valueAssignment.begin(); valIt != valueAssignment.end(); ++valIt) {
                     if (selectedVariables && (*setIt != valIt.getVariable())) {
                         continue;
@@ -215,7 +216,7 @@ namespace storm {
                         result[valIt.getName()] = valIt.getIntegerValue();
                     } else {
                         STORM_LOG_ASSERT(valIt.isRational(), "Unexpected variable type.");
-                        result[valIt.getName()] = valIt.getRationalValue();
+                        result[valIt.getName()] = storm::utility::convertNumber<JsonRationalType>(valIt.getRationalValue());
                     }
                 
                     if (selectedVariables) {
@@ -358,6 +359,10 @@ namespace storm {
                 rationalVarCount = 0;
                 labelCount = 0;
             }
+            
+            template storm::json<double> StateValuations::toJson<double>(storm::storage::sparse::state_type const& , boost::optional<std::set<storm::expressions::Variable>> const&) const;
+            template storm::json<storm::RationalNumber> StateValuations::toJson<storm::RationalNumber>(storm::storage::sparse::state_type const&, boost::optional<std::set<storm::expressions::Variable>> const&) const;
+
         }
     }
 }
