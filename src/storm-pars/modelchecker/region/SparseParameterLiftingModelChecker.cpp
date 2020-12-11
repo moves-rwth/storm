@@ -423,23 +423,25 @@ namespace storm {
 
             initialWatch.stop();
             STORM_PRINT(std::endl << "Total time for initial points: " << initialWatch << "." << std::endl << std::endl);
-            STORM_LOG_INFO("Initial Value: " << value.get());
+            if (!initialValue) {
+                STORM_LOG_INFO("Initial value: " << value.get() << " at " << valuation);
+            }
 
 
             // Doing the extremal computation
             bool changed = false;
             storm::utility::Stopwatch loopWatch(true);
             auto numberOfSplits = 0;
-            auto count = 0;
+//            auto count = 0;
             auto numberOfPLACalls = 0;
             auto numberOfPLACallsBounds = 0;
             auto numberOfOrderCopies = 0;
             auto numberOfMonResCopies = 0;
             auto totalArea = storm::utility::convertNumber<ConstantType>(region.area());
             auto coveredArea = storm::utility::zero<ConstantType>();
-            std::ofstream myfile;
-            myfile.open ("example.txt");
-            myfile << "Count;initialBound;newBound;currentValue;region;" << std::endl;
+//            std::ofstream myfile;
+//            myfile.open ("example.txt");
+//            myfile << "Count;initialBound;newBound;currentValue;region;" << std::endl;
 
             storm::utility::Stopwatch boundsWatch(false);
 
@@ -450,9 +452,10 @@ namespace storm {
                 auto currBound = regionQueue.top().bound;
                 STORM_LOG_INFO("Currently looking at region: " << currRegion);
 
-                myfile << count << ";" << currBound << ";";
+//                myfile << count << ";" << currBound << ";";
                 std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> newRegions;
 
+                // TODO: take into account precision of current bound
                 // Check whether this region needs further investigation based on the bound of the parent region
                 bool investigateBounds = !value
                                         || (minimize && currBound < value.get() - storm::utility::convertNumber<ConstantType>(precision))
@@ -547,16 +550,15 @@ namespace storm {
                     }
                 } else {
                     STORM_LOG_INFO("Splitting region " << currRegion << " into " << newRegions.size());
-
                     numberOfSplits++;
                 }
-                myfile << currBound << ";" << value.get() << ";" << currRegion ;
-                count++;
-                if (!newRegions.empty()) {
-                    myfile << "split;"<< std::endl;
-                } else {
-                    myfile << std::endl;
-                }
+//                myfile << currBound << ";" << value.get() << ";" << currRegion ;
+//                count++;
+//                if (!newRegions.empty()) {
+//                    myfile << "split;"<< std::endl;
+//                } else {
+//                    myfile << std::endl;
+//                }
 
                 regionQueue.pop();
 
@@ -580,21 +582,22 @@ namespace storm {
                     }
                 }
 
-                STORM_LOG_INFO("Current value : " << value.get() << ", current bound: " << regionQueue.top().bound << ".");
+                STORM_LOG_INFO("Current value : " << value.get() << ", current bound: " << currBound << ".");
                 STORM_LOG_INFO("Covered " << (coveredArea * storm::utility::convertNumber<ConstantType>(100.0) / totalArea) << "% of the region." << std::endl);
-                if (useMonotonicity && regionQueue.empty()) {
-                    loopWatch.stop();
-                    auto& variables = currRegion.getVariables();
-                    auto count = 0;
-                    for (auto i = 0; i < order->getNumberOfStates(); ++i) {
-                        for (auto& var : variables) {
-                            if (localMonotonicityResult->getMonotonicity(i, var) != storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Unknown && localMonotonicityResult->getMonotonicity(i, var) != storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Not) {
-                                count++;
-                            }
-                        }
-                    }
-                    STORM_PRINT("Total number of local monotonic states in last result (including =) and =( ): " << (count) << std::endl);
-                }
+//                if (useMonotonicity && regionQueue.empty()) {
+//                    // TODO: change
+//                    loopWatch.stop();
+//                    auto& variables = currRegion.getVariables();
+//                    auto count = 0;
+//                    for (auto i = 0; i < order->getNumberOfStates(); ++i) {
+//                        for (auto& var : variables) {
+//                            if (localMonotonicityResult->getMonotonicity(i, var) != storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Unknown && localMonotonicityResult->getMonotonicity(i, var) != storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Not) {
+//                                count++;
+//                            }
+//                        }
+//                    }
+//                    STORM_PRINT("Total number of local monotonic states in last result (including =) and =( ): " << (count) << std::endl);
+//                }
             }
             if (!useMonotonicity) {
                 loopWatch.stop();
@@ -610,7 +613,7 @@ namespace storm {
             }
             STORM_PRINT(std::endl << "Total time for region refinement: " << loopWatch << "." << std::endl << std::endl);
             STORM_PRINT(std::endl << "Total time for additional bounds: " << boundsWatch << "." << std::endl << std::endl);
-            myfile.close();
+//            myfile.close();
 
             return std::make_pair(storm::utility::convertNumber<typename SparseModelType::ValueType>(value.get()), valuation);
         }
