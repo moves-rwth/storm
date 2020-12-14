@@ -235,6 +235,7 @@ namespace storm {
                     subEnv.solver().setLinearEquationSolverType(subEnv.solver().topological().getUnderlyingEquationSolverType(), subEnv.solver().topological().isUnderlyingEquationSolverTypeSetFromDefault());
                 }
                 subEnv.solver().setLinearEquationSolverPrecision(env.solver().lra().getPrecision(), env.solver().lra().getRelativeTerminationCriterion());
+                STORM_LOG_WARN_COND(!subEnv.solver().isForceSoundness(), "Sound computations are not properly implemented for this computation. You might get incorrect results.");
                 
                 // Get a mapping from global state indices to local ones as well as a bitvector containing states within the BSCC.
                 std::unordered_map<uint64_t, uint64_t> toLocalIndexMap;
