@@ -394,9 +394,13 @@ namespace storm {
 
             // TODO: zero or one?
             if (useMonotonicity) {
+
                 auto order = this->extendOrder(env, nullptr, region);
                 auto monRes = std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(order->getNumberOfStates()));
+                storm::utility::Stopwatch monotonicityWatch(true);
                 this->extendLocalMonotonicityResult(region, order, monRes);
+                monotonicityWatch.stop();
+                STORM_PRINT(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl << std::endl);
 
                 if (minimize) {
                     regionQueue.emplace(region, order, monRes, storm::utility::zero<ConstantType>());
