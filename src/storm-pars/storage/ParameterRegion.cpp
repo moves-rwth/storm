@@ -253,13 +253,13 @@ namespace storm {
 
         template<typename ParametricType>
         typename ParameterRegion<ParametricType>::Valuation ParameterRegion<ParametricType>::getPoint(storm::solver::OptimizationDirection dir,
-                                                                             std::set<VariableType> const &possibleMonotoneIncrParameters,
-                                                                             std::set<VariableType> const &possibleMonotoneDecrParameters) const{
+                                                                             std::set<VariableType> const &monIncrParameters,
+                                                                             std::set<VariableType> const &monDecrParameters) const{
             auto val = this->getCenterPoint();
-            for (auto var : possibleMonotoneIncrParameters) {
+            for (auto var : monIncrParameters) {
                 val[var] = storm::solver::minimize(dir) ? getLowerBoundary(var) : getUpperBoundary(var);
             }
-            for (auto var : possibleMonotoneDecrParameters) {
+            for (auto var : monDecrParameters) {
                 val[var] = storm::solver::maximize(dir) ? getLowerBoundary(var) : getUpperBoundary(var);
             }
 
