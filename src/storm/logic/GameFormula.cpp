@@ -20,6 +20,10 @@ namespace storm {
             return coalition;
         }
 
+        void GameFormula::gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const {
+            this->getSubformula().gatherReferencedRewardModels(referencedRewardModels);
+        }
+
         boost::any GameFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }

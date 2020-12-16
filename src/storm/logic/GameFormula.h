@@ -20,6 +20,8 @@ namespace storm {
             Formula const& getSubformula() const;
             Coalition getCoalition() const;
 
+            virtual void gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const;
+
             boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const;
 
             std::ostream& writeToStream(std::ostream& out) const;
