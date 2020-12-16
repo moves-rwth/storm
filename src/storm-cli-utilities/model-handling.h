@@ -1053,7 +1053,7 @@ namespace storm {
                 }
                 watch.stop();
                 postprocessingCallback(result);
-                STORM_PRINT((storm::utility::resources::isTerminate() ? "Result till abort:" : "Result:") << *result << std::endl);
+                STORM_PRINT((storm::utility::resources::isTerminate() ? "Result till abort: " : "Result: ") << *result << std::endl);
                 STORM_PRINT("Time for model checking: " << watch << "." << std::endl);
             }
         }
