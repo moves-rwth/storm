@@ -3,9 +3,14 @@
 
 #include <vector>
 
+#include "storm/storage/jani/Property.h"
+
 #include "storm/storage/dd/DdType.h"
 #include "storm/storage/dd/Bdd.h"
 #include "storm/storage/dd/AddIterator.h"
+
+#include "storm-conv/api/storm-conv.h"
+
 
 namespace storm {
     namespace dd {
@@ -30,6 +35,8 @@ namespace storm {
 
             template <DdType LibraryTypePrime, typename ValueTypePrime>
             friend class AddIterator;
+
+            friend aiger* storm::api::convertPrismToAiger(storm::prism::Program const&, std::vector<storm::jani::Property> const&, storm::converter::PrismToAigerConverterOptions);
             
             /*!
              * Retrieves the name of the meta variable.

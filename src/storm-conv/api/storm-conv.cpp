@@ -1,5 +1,6 @@
 #include "storm-conv/api/storm-conv.h"
 
+#include "storm/storage/expressions/Variable.h"
 #include "storm/storage/prism/Program.h"
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/Constant.h"
@@ -112,20 +113,89 @@ namespace storm {
             }
         }
 
+        static inline unsigned var2lit(uint64_t var) {
+            unsigned lit = (unsigned) ((var + 1) * 2);
+            return lit;
+        }
+
+        static unsigned bdd2lit(sylvan::Bdd const& b, aiger* aig, unsigned& maxvar) {
+            if (b.isOne())
+                return 1;
+            if (b.isZero())
+                return 0;
+            // otherwise we need to use Shannon expansion and build
+            // subcircuits
+            uint32_t idx = b.TopVar();
+            sylvan::Bdd t = b.Then();
+            sylvan::Bdd e = b.Else();
+            unsigned tLit = bdd2lit(t, aig, maxvar);
+            unsigned eLit = bdd2lit(e, aig, maxvar);
+            // we have circuits for then, else, we need an and here
+            unsigned thenCoFactor = var2lit(maxvar++);
+            unsigned elseCoFactor = var2lit(maxvar++);
+            std::cout << "adding pos cofactor of " << idx << " with lit " << thenCoFactor << std::endl;
+            aiger_add_and(aig, thenCoFactor, var2lit(idx), tLit);
+            std::cout << "adding neg cofactor of " << idx << " with lit " << elseCoFactor << std::endl;
+            aiger_add_and(aig, elseCoFactor, aiger_not(var2lit(idx)), eLit);
+            unsigned res = var2lit(maxvar++);
+            std::cout << "adding shannon exp of " << idx << " with lit " << res << std::endl;
+            aiger_add_and(aig, res, aiger_not(thenCoFactor), aiger_not(elseCoFactor));
+            return aiger_not(res);
+        }
+
         aiger* convertPrismToAiger(storm::prism::Program const& program, std::vector<storm::jani::Property> const & properties, storm::converter::PrismToAigerConverterOptions options) {
             // we recover BDD-style information from the prism program by
             // building its symbolic representation
             std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan, double>().build(program);
-            // obtain the qualitative transition matrix while removing
-            // non-determinism variables
-            storm::dd::Bdd<storm::dd::DdType::Sylvan> qualTrans = model->getQualitativeTransitionMatrix(false);
-            storm::dd::Bdd<storm::dd::DdType::Sylvan> initStates = model->getInitialStates();
+            // we can now start loading the aiger structure
+            aiger* aig = aiger_init();
+            // STEP 1:
+            // the first thing we need is to add input variables, these come
+            // from the encoding of the nondeterminism, a.k.a. actions
+            for (auto const& var : model->getNondeterminismVariables()) {
+                auto const& ddMetaVar = model->getManagerAsSharedPointer()->getMetaVariable(var);
+                for (auto const& i : ddMetaVar.getIndices()) {
+                    std::string name = var.getName() + std::to_string(i);
+                    aiger_add_input(aig, var2lit(i), name.c_str());
+                }
+            }
+            // STEP 2:
+            // we need to create latches per state-encoding variable, and for
+            // that we need Boolean logic for the transition relation
+            unsigned maxvar = aig->maxvar;
+            for (auto const& inVar : model->getRowVariables())
+                for (unsigned const& i : model->getManagerAsSharedPointer()->getMetaVariable(inVar).getIndices())
+                    maxvar = std::max(maxvar, i);
+            std::cout << "maxvar before ands = " << maxvar << std::endl;
+            storm::dd::Bdd<storm::dd::DdType::Sylvan> qualTrans = model->getQualitativeTransitionMatrix();
+            for (auto const& varPair : model->getRowColumnMetaVariablePairs()) {
+                auto inVar = varPair.first;
+                auto outVar = varPair.second;
+                auto ddInMetaVar = model->getManagerAsSharedPointer()->getMetaVariable(inVar);
+                auto ddOutMetaVar = model->getManagerAsSharedPointer()->getMetaVariable(outVar);
+                auto outCube = ddOutMetaVar.getCube();
+                std::iterator<uint64_t> idxIt = ddInMetaVar.getIndices().begin();
+                for (auto const& encVar : ddOutMetaVar.getDdVariables()) {
+                    assert(idxIt != ddInMetaVar.getIndices().end());
+                    auto encVarFun = qualTrans.andExists(encVar, model->getColumnVariables());
+                    unsigned lit = bdd2lit(encVarFun.getInternalBdd().getSylvanBdd(), aig, maxvar);
+                    std::string name = inVar.getName() + std::to_string(*idxIt);
+                    std::cout << "adding latch " << (unsigned)(*idxIt) << " with lit " << var2lit(*idxIt) << std::endl;
+                    aiger_add_latch(aig, var2lit(*idxIt), lit, name.c_str());
+                    idxIt++;
+                }
+            }
+            // TODO: add labels as outputs as a function of state sets
             std::vector<std::string> labels = model->getLabels();
             // to get states with a label use:
             // storm::dd::Bdd<storm::dd::DdType::Sylvan> states4label = model->getStates(label);
-            
-            // we can now start loading the aiger structure
-            aiger* aig = aiger_init();
+
+            // TODO: how do we make the initial states explicit and not
+            // default to 0-values of the latches?
+            // for init states, use storm::dd::Bdd<storm::dd::DdType::Sylvan> initStates = model->getInitialStates();
+            const char* check = aiger_check(aig);
+            if (check != NULL)
+                std::cout << "aiger check result: " << check << std::endl;
             return aig;
         }
         
