@@ -15,6 +15,7 @@
 #include "storm/models/sparse/Ctmc.h"
 #include "storm/models/sparse/Mdp.h"
 #include "storm/models/sparse/Pomdp.h"
+#include "storm/models/sparse/Smg.h"
 #include "storm/models/symbolic/Dtmc.h"
 #include "storm/models/symbolic/Ctmc.h"
 #include "storm/models/symbolic/Mdp.h"
@@ -53,6 +54,8 @@ namespace storm {
                 return this->checkMultiObjectiveFormula(env, checkTask.substituteFormula(formula.asMultiObjectiveFormula()));
             } else if (formula.isQuantileFormula()){
                 return this->checkQuantileFormula(env, checkTask.substituteFormula(formula.asQuantileFormula()));
+            } else if(formula.isGameFormula()){
+                return this->checkGameFormula(env, checkTask.substituteFormula(formula.asGameFormula()));
             }
             STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << formula << "' is invalid.");
         }
@@ -321,6 +324,11 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
         }
 
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkGameFormula(Environment const& env, CheckTask<storm::logic::GameFormula, ValueType> const& checkTask) {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This model checker (" << getClassName() << ") does not support the formula: " << checkTask.getFormula() << ".");
+        }
+
         ///////////////////////////////////////////////
         // Explicitly instantiate the template class.
         ///////////////////////////////////////////////
@@ -331,9 +339,11 @@ namespace storm {
         template class AbstractModelChecker<storm::models::sparse::Mdp<double>>;
         template class AbstractModelChecker<storm::models::sparse::Pomdp<double>>;
         template class AbstractModelChecker<storm::models::sparse::MarkovAutomaton<double>>;
+        template class AbstractModelChecker<storm::models::sparse::Smg<double>>;
 
 #ifdef STORM_HAVE_CARL
         template class AbstractModelChecker<storm::models::sparse::Mdp<double, storm::models::sparse::StandardRewardModel<storm::Interval>>>;
+        template class AbstractModelChecker<storm::models::sparse::Smg<double, storm::models::sparse::StandardRewardModel<storm::Interval>>>;
 
         template class AbstractModelChecker<storm::models::sparse::Model<storm::RationalNumber>>;
         template class AbstractModelChecker<storm::models::sparse::Dtmc<storm::RationalNumber>>;
@@ -341,12 +351,14 @@ namespace storm {
         template class AbstractModelChecker<storm::models::sparse::Mdp<storm::RationalNumber>>;
         template class AbstractModelChecker<storm::models::sparse::Pomdp<storm::RationalNumber>>;
         template class AbstractModelChecker<storm::models::sparse::MarkovAutomaton<storm::RationalNumber>>;
+        template class AbstractModelChecker<storm::models::sparse::Smg<storm::RationalNumber>>;
 
         template class AbstractModelChecker<storm::models::sparse::Model<storm::RationalFunction>>;
         template class AbstractModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>>;
         template class AbstractModelChecker<storm::models::sparse::Ctmc<storm::RationalFunction>>;
         template class AbstractModelChecker<storm::models::sparse::Mdp<storm::RationalFunction>>;
         template class AbstractModelChecker<storm::models::sparse::MarkovAutomaton<storm::RationalFunction>>;
+        template class AbstractModelChecker<storm::models::sparse::Smg<storm::RationalFunction>>;
 #endif
         // DD
         template class AbstractModelChecker<storm::models::symbolic::Model<storm::dd::DdType::CUDD, double>>;
