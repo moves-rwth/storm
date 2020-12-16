@@ -54,7 +54,7 @@ namespace storm {
         }
 
         FragmentSpecification rpatl() {
-            FragmentSpecification rpatl = pctl();
+            FragmentSpecification rpatl = prctl();
 
             // TODO disallow operator we currently do not support
             rpatl.setCoalitionOperatorsAllowed(true);
