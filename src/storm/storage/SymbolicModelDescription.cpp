@@ -229,6 +229,9 @@ namespace storm {
                 case SymbolicModelDescription::ModelType::POMDP:
                     out << "pomdp";
                     break;
+                case SymbolicModelDescription::ModelType::SMG:
+                    out << "smg";
+                    break;
             }
             return out;
         }
