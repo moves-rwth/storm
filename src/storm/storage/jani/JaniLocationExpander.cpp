@@ -34,7 +34,6 @@ namespace storm {
             bool isGlobalVariable = !automaton.hasVariable(variableName);
             VariableSet& containingSet = isGlobalVariable ? newModel.getGlobalVariables() : newAutomaton.getVariables();
 
-            auto uncastVar = &containingSet.getVariable(variableName);
             auto var = containingSet.getVariable(variableName).asBoundedIntegerVariable();
             const storm::jani::Variable* variable = &var;
 
@@ -53,6 +52,7 @@ namespace storm {
             containingSet.eraseVariable(var.getExpressionVariable());
             var.setTransient(useTransientVariables);
             containingSet.addVariable(var);
+            const Variable &newVariablePointer = containingSet.getVariable(variableName);
 
             // This map will only ever contain a single entry: the variable to be eliminated. It is used during substitutions
             std::map<storm::expressions::Variable, storm::expressions::Expression> substitutionMap;
@@ -73,7 +73,7 @@ namespace storm {
                     Location loc(newLocationName, newAssignments);
 
                     if (useTransientVariables)
-                        loc.addTransientAssignment(Assignment(var, original.getExpressionManager().integer(i), 0)); // TODO: What is the level?
+                        loc.addTransientAssignment(Assignment(newVariablePointer, original.getExpressionManager().integer(i), 0));
 
                     uint64_t newLocationIndex = newAutomaton.addLocation(loc);
                     locationVariableValueMap[origIndex][i] = newLocationIndex;
@@ -114,7 +114,8 @@ namespace storm {
                         }
 
                         if (!useTransientVariables)
-                            oa.add(Assignment(*uncastVar, original.getExpressionManager().integer(value)));
+                            STORM_LOG_THROW(true, storm::exceptions::NotImplementedException, "Unfolding without transient variables is not implemented");
+                            //oa.add(Assignment(*uncastVar, original.getExpressionManager().integer(value)));
 
                         TemplateEdgeDestination ted(oa);
                         templateEdge->addDestination(ted);
