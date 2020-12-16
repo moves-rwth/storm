@@ -254,63 +254,26 @@ namespace storm {
         }
 
         OrderedAssignments JaniLocalEliminator::Session::executeInSequence(const EdgeDestination& first, const EdgeDestination& then) {
-
             STORM_LOG_THROW(!first.usesAssignmentLevels() && !then.usesAssignmentLevels(), storm::exceptions::NotImplementedException, "Assignment levels are currently not supported");
-
-//            OrderedAssignments oa(first.getOrderedAssignments().clone());
-//            uint64_t levelOffset = first.getOrderedAssignments().getHighestLevel() + 1;
-//            for (const auto& assignment : then.getOrderedAssignments()) {
-//                auto newAssignment = Assignment(assignment);
-//                newAssignment.setLevel(assignment.getLevel() + levelOffset);
-//                oa.add(newAssignment);
-//            }
 
             OrderedAssignments newOa;
 
+            // Collect variables that occur in the second set of assignments. This will be used to decide which first assignments to keep and which to discard.
             std::set<expressions::Variable> thenVariables;
             for (const auto &assignment : then.getOrderedAssignments()) {
                 thenVariables.emplace(assignment.getExpressionVariable());
             }
 
             for (const auto &assignment : first.getOrderedAssignments()) {
-
                 if (thenVariables.find(assignment.getExpressionVariable()) != thenVariables.end())
-                    continue;
-
-                const jani::Variable &variable = assignment.getVariable();
-                const jani::Variable &var2 = model.getGlobalVariable(variable.getName());
-
-                const expressions::Expression& assignedExpression = assignment.getAssignedExpression();
-                auto newAssignment = Assignment(var2, assignedExpression);
-                newOa.add(newAssignment);
+                    continue; // Skip variables for which a second assignment exists
+                newOa.add(assignment);
             }
 
             std::map<expressions::Variable, expressions::Expression> substitutionMap = first.getAsVariableToExpressionMap();
             for (const auto &assignment : then.getOrderedAssignments()){
-                const jani::Variable &variable = assignment.getVariable();
-                const jani::Variable &var2 = model.getGlobalVariable(variable.getName());
-
-                const expressions::Expression& assignedExpression = assignment.getAssignedExpression().substitute(substitutionMap);
-                auto newAssignment = Assignment(var2, assignedExpression);
-                newOa.add(newAssignment);
+                newOa.add(Assignment(assignment.getVariable(), assignment.getAssignedExpression().substitute(substitutionMap)));
             }
-//            for (const auto &assignment : first.getOrderedAssignments()) {
-//                const jani::Variable &variable = assignment.getVariable();
-//
-//                const expressions::Expression& assignedExpression = assignment.getAssignedExpression().substitute(assignmentMap);
-//                assignmentMap[variable.getExpressionVariable()] = assignedExpression;
-//                auto newAssignment = std::make_shared<Assignment>(variable, assignedExpression);
-//                currentAssignments[variable.getExpressionVariable()] = newAssignment;
-//            }
-//            for (const auto &assignment : then.getOrderedAssignments()){
-//                const jani::Variable &variable = assignment.getVariable();
-//
-//                const expressions::Expression& assignedExpression = assignment.getAssignedExpression().substitute(assignmentMap);
-//                assignmentMap[variable.getExpressionVariable()] = assignedExpression;
-//                auto newAssignment = std::make_shared<Assignment>(variable, assignedExpression);
-//                currentAssignments[variable.getExpressionVariable()] = newAssignment;
-//            }
-
             return newOa;
         }
     }
