@@ -3,6 +3,9 @@ name: Build Test
 # also deploys images to dockerhub
 
 on:
+  schedule:
+      # run daily
+      - cron: '0 6 * * *'
   # needed to trigger the workflow manually
   workflow_dispatch:
 
@@ -102,8 +105,8 @@ jobs:
         # dummy step for now
       - name: Deploy carl
         run: |
-          sudo docker commit storm movesrwth/carl:actions-${{ matrix.debugOrRelease }}
-          sudo docker push movesrwth/carl:actions-${{ matrix.debugOrRelease }}
+          sudo docker commit storm movesrwth/carl:ci-${{ matrix.debugOrRelease }}
+          sudo docker push movesrwth/carl:ci-${{ matrix.debugOrRelease }}
 
 
         #####
@@ -132,5 +135,5 @@ jobs:
         # dummy step for now
       - name: Deploy storm
         run: |
-          sudo docker commit storm movesrwth/storm:actions-${{ matrix.debugOrRelease }}
-          sudo docker push movesrwth/storm:actions-${{ matrix.debugOrRelease }}
+          sudo docker commit storm movesrwth/storm:ci-${{ matrix.debugOrRelease }}
+          sudo docker push movesrwth/storm:ci-${{ matrix.debugOrRelease }}
