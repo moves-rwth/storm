@@ -17,7 +17,7 @@ namespace storm {
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t> OrderExtenderDtmc<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState) {
             std::vector<uint64_t> successors = this->stateMap[currentState][0]; // Get succs
-            successors = order->sortStates(&successors); // Order them
+            //successors = order->sortStates(&successors); // Order them
             return OrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(order, currentState, successors, false); // Call Base Class function.
 
         }
