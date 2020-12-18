@@ -194,7 +194,6 @@ namespace storm {
 
             // Actual extending of the order here
             std::vector<uint64_t> successors = this->stateMap[currentState][bestAct]; // Get actual succs
-            // successors = order->sortStates(&successors); // Order them
             return OrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(order, currentState, successors, false); // Call Base Class function.
 
         }
