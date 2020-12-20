@@ -131,13 +131,13 @@ namespace storm {
             unsigned tLit = bdd2lit(t, aig, maxvar);
             unsigned eLit = bdd2lit(e, aig, maxvar);
             // we have circuits for then, else, we need an and here
-            unsigned thenCoFactor = var2lit(maxvar++);
-            unsigned elseCoFactor = var2lit(maxvar++);
+            unsigned thenCoFactor = var2lit(++maxvar);
+            unsigned elseCoFactor = var2lit(++maxvar);
             std::cout << "adding pos cofactor of " << idx << " with lit " << thenCoFactor << std::endl;
             aiger_add_and(aig, thenCoFactor, var2lit(idx), tLit);
             std::cout << "adding neg cofactor of " << idx << " with lit " << elseCoFactor << std::endl;
             aiger_add_and(aig, elseCoFactor, aiger_not(var2lit(idx)), eLit);
-            unsigned res = var2lit(maxvar++);
+            unsigned res = var2lit(++maxvar);
             std::cout << "adding shannon exp of " << idx << " with lit " << res << std::endl;
             aiger_add_and(aig, res, aiger_not(thenCoFactor), aiger_not(elseCoFactor));
             return aiger_not(res);
@@ -156,6 +156,7 @@ namespace storm {
                 auto const& ddMetaVar = model->getManagerAsSharedPointer()->getMetaVariable(var);
                 for (auto const& i : ddMetaVar.getIndices()) {
                     std::string name = var.getName() + std::to_string(i);
+                    std::cout << "adding input " << i << " with lit " << var2lit(i) << std::endl;
                     aiger_add_input(aig, var2lit(i), name.c_str());
                 }
             }
@@ -170,25 +171,31 @@ namespace storm {
             storm::dd::Bdd<storm::dd::DdType::Sylvan> qualTrans = model->getQualitativeTransitionMatrix();
             for (auto const& varPair : model->getRowColumnMetaVariablePairs()) {
                 auto inVar = varPair.first;
-                auto outVar = varPair.second;
                 auto ddInMetaVar = model->getManagerAsSharedPointer()->getMetaVariable(inVar);
-                auto ddOutMetaVar = model->getManagerAsSharedPointer()->getMetaVariable(outVar);
+                auto ddOutMetaVar = model->getManagerAsSharedPointer()->getMetaVariable(varPair.second);
                 auto outCube = ddOutMetaVar.getCube();
-                std::iterator<uint64_t> idxIt = ddInMetaVar.getIndices().begin();
+                auto inIndices = ddInMetaVar.getIndices();
+                auto idxIt = inIndices.begin();
                 for (auto const& encVar : ddOutMetaVar.getDdVariables()) {
-                    assert(idxIt != ddInMetaVar.getIndices().end());
+                    assert(idxIt != inIndices.end());
                     auto encVarFun = qualTrans.andExists(encVar, model->getColumnVariables());
                     unsigned lit = bdd2lit(encVarFun.getInternalBdd().getSylvanBdd(), aig, maxvar);
-                    std::string name = inVar.getName() + std::to_string(*idxIt);
-                    std::cout << "adding latch " << (unsigned)(*idxIt) << " with lit " << var2lit(*idxIt) << std::endl;
+                    unsigned idx = (unsigned)(*idxIt);
+                    std::string name = inVar.getName() + std::to_string(idx);
+                    std::cout << "adding latch " << idx << " with lit " << var2lit(idx) << std::endl;
                     aiger_add_latch(aig, var2lit(*idxIt), lit, name.c_str());
                     idxIt++;
                 }
             }
-            // TODO: add labels as outputs as a function of state sets
+            // STEP 3:
+            // add labels as outputs as a function of state sets
             std::vector<std::string> labels = model->getLabels();
-            // to get states with a label use:
-            // storm::dd::Bdd<storm::dd::DdType::Sylvan> states4label = model->getStates(label);
+            for (auto const& label : labels) {
+               storm::dd::Bdd<storm::dd::DdType::Sylvan> states4label = model->getStates(label);
+               unsigned lit = bdd2lit(states4label.getInternalBdd().getSylvanBdd(), aig, maxvar);
+               std::cout << "adding output " << label << " with lit " << lit << std::endl;
+               aiger_add_output(aig, lit, label.c_str());
+            }
 
             // TODO: how do we make the initial states explicit and not
             // default to 0-values of the latches?
