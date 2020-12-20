@@ -1,0 +1,1621 @@
+{
+    "actions": [],
+    "automata": [
+        {
+            "edges": [
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 1",
+                                    "ref": "s",
+                                    "value": 1
+                                },
+                                {
+                                    "comment": "default_reward_model <- ((((s = 0) & (c = N)) & (u = ((2 * K) + 1))) ? (z / N) : 0)",
+                                    "ref": "default_reward_model",
+                                    "value": {
+                                        "else": 0.0,
+                                        "if": {
+                                            "left": {
+                                                "left": {
+                                                    "left": "s",
+                                                    "op": "=",
+                                                    "right": 0
+                                                },
+                                                "op": "∧",
+                                                "right": {
+                                                    "left": "c",
+                                                    "op": "=",
+                                                    "right": "N"
+                                                }
+                                            },
+                                            "op": "∧",
+                                            "right": {
+                                                "left": "u",
+                                                "op": "=",
+                                                "right": {
+                                                    "left": {
+                                                        "left": 2,
+                                                        "op": "*",
+                                                        "right": "K"
+                                                    },
+                                                    "op": "+",
+                                                    "right": 1
+                                                }
+                                            }
+                                        },
+                                        "op": "ite",
+                                        "then": {
+                                            "left": "z",
+                                            "op": "/",
+                                            "right": "N"
+                                        }
+                                    }
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((s = 0) & (c < N))",
+                        "exp": {
+                            "left": {
+                                "left": "s",
+                                "op": "=",
+                                "right": 0
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "c",
+                                "op": "<",
+                                "right": "N"
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "u <- (u + 1)",
+                                    "ref": "u",
+                                    "value": {
+                                        "left": "u",
+                                        "op": "+",
+                                        "right": 1
+                                    }
+                                },
+                                {
+                                    "comment": "c <- 0",
+                                    "ref": "c",
+                                    "value": 0
+                                },
+                                {
+                                    "comment": "s <- 1",
+                                    "ref": "s",
+                                    "value": 1
+                                },
+                                {
+                                    "comment": "z <- 0",
+                                    "ref": "z",
+                                    "value": 0
+                                },
+                                {
+                                    "comment": "zx <- z",
+                                    "ref": "zx",
+                                    "value": "z"
+                                },
+                                {
+                                    "comment": "zy <- z",
+                                    "ref": "zy",
+                                    "value": "z"
+                                },
+                                {
+                                    "comment": "default_reward_model <- ((((s = 0) & (c = N)) & (u = ((2 * K) + 1))) ? (z / N) : 0)",
+                                    "ref": "default_reward_model",
+                                    "value": {
+                                        "else": 0.0,
+                                        "if": {
+                                            "left": {
+                                                "left": {
+                                                    "left": "s",
+                                                    "op": "=",
+                                                    "right": 0
+                                                },
+                                                "op": "∧",
+                                                "right": {
+                                                    "left": "c",
+                                                    "op": "=",
+                                                    "right": "N"
+                                                }
+                                            },
+                                            "op": "∧",
+                                            "right": {
+                                                "left": "u",
+                                                "op": "=",
+                                                "right": {
+                                                    "left": {
+                                                        "left": 2,
+                                                        "op": "*",
+                                                        "right": "K"
+                                                    },
+                                                    "op": "+",
+                                                    "right": 1
+                                                }
+                                            }
+                                        },
+                                        "op": "ite",
+                                        "then": {
+                                            "left": "z",
+                                            "op": "/",
+                                            "right": "N"
+                                        }
+                                    }
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(((s = 0) & (c = N)) & (u < ((2 * K) + 1)))",
+                        "exp": {
+                            "left": {
+                                "left": {
+                                    "left": "s",
+                                    "op": "=",
+                                    "right": 0
+                                },
+                                "op": "∧",
+                                "right": {
+                                    "left": "c",
+                                    "op": "=",
+                                    "right": "N"
+                                }
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "u",
+                                "op": "<",
+                                "right": {
+                                    "left": {
+                                        "left": 2,
+                                        "op": "*",
+                                        "right": "K"
+                                    },
+                                    "op": "+",
+                                    "right": 1
+                                }
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 4",
+                                    "ref": "s",
+                                    "value": 4
+                                },
+                                {
+                                    "comment": "zx <- 0",
+                                    "ref": "zx",
+                                    "value": 0
+                                },
+                                {
+                                    "comment": "zy <- 0",
+                                    "ref": "zy",
+                                    "value": 0
+                                },
+                                {
+                                    "comment": "x <- 0",
+                                    "ref": "x",
+                                    "value": 0
+                                },
+                                {
+                                    "comment": "y <- 0",
+                                    "ref": "y",
+                                    "value": 0
+                                },
+                                {
+                                    "comment": "default_reward_model <- ((((s = 0) & (c = N)) & (u = ((2 * K) + 1))) ? (z / N) : 0)",
+                                    "ref": "default_reward_model",
+                                    "value": {
+                                        "else": 0.0,
+                                        "if": {
+                                            "left": {
+                                                "left": {
+                                                    "left": "s",
+                                                    "op": "=",
+                                                    "right": 0
+                                                },
+                                                "op": "∧",
+                                                "right": {
+                                                    "left": "c",
+                                                    "op": "=",
+                                                    "right": "N"
+                                                }
+                                            },
+                                            "op": "∧",
+                                            "right": {
+                                                "left": "u",
+                                                "op": "=",
+                                                "right": {
+                                                    "left": {
+                                                        "left": 2,
+                                                        "op": "*",
+                                                        "right": "K"
+                                                    },
+                                                    "op": "+",
+                                                    "right": 1
+                                                }
+                                            }
+                                        },
+                                        "op": "ite",
+                                        "then": {
+                                            "left": "z",
+                                            "op": "/",
+                                            "right": "N"
+                                        }
+                                    }
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(((s = 0) & (c = N)) & (u = ((2 * K) + 1)))",
+                        "exp": {
+                            "left": {
+                                "left": {
+                                    "left": "s",
+                                    "op": "=",
+                                    "right": 0
+                                },
+                                "op": "∧",
+                                "right": {
+                                    "left": "c",
+                                    "op": "=",
+                                    "right": "N"
+                                }
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "u",
+                                "op": "=",
+                                "right": {
+                                    "left": {
+                                        "left": 2,
+                                        "op": "*",
+                                        "right": "K"
+                                    },
+                                    "op": "+",
+                                    "right": 1
+                                }
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 2",
+                                    "ref": "s",
+                                    "value": 2
+                                },
+                                {
+                                    "comment": "x <- 1",
+                                    "ref": "x",
+                                    "value": 1
+                                },
+                                {
+                                    "comment": "default_reward_model <- ((((s = 0) & (c = N)) & (u = ((2 * K) + 1))) ? (z / N) : 0)",
+                                    "ref": "default_reward_model",
+                                    "value": {
+                                        "else": 0.0,
+                                        "if": {
+                                            "left": {
+                                                "left": {
+                                                    "left": "s",
+                                                    "op": "=",
+                                                    "right": 0
+                                                },
+                                                "op": "∧",
+                                                "right": {
+                                                    "left": "c",
+                                                    "op": "=",
+                                                    "right": "N"
+                                                }
+                                            },
+                                            "op": "∧",
+                                            "right": {
+                                                "left": "u",
+                                                "op": "=",
+                                                "right": {
+                                                    "left": {
+                                                        "left": 2,
+                                                        "op": "*",
+                                                        "right": "K"
+                                                    },
+                                                    "op": "+",
+                                                    "right": 1
+                                                }
+                                            }
+                                        },
+                                        "op": "ite",
+                                        "then": {
+                                            "left": "z",
+                                            "op": "/",
+                                            "right": "N"
+                                        }
+                                    }
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "9/10",
+                                "exp": 0.9
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 2",
+                                    "ref": "s",
+                                    "value": 2
+                                },
+                                {
+                                    "comment": "x <- 0",
+                                    "ref": "x",
+                                    "value": 0
+                                },
+                                {
+                                    "comment": "default_reward_model <- ((((s = 0) & (c = N)) & (u = ((2 * K) + 1))) ? (z / N) : 0)",
+                                    "ref": "default_reward_model",
+                                    "value": {
+                                        "else": 0.0,
+                                        "if": {
+                                            "left": {
+                                                "left": {
+                                                    "left": "s",
+                                                    "op": "=",
+                                                    "right": 0
+                                                },
+                                                "op": "∧",
+                                                "right": {
+                                                    "left": "c",
+                                                    "op": "=",
+                                                    "right": "N"
+                                                }
+                                            },
+                                            "op": "∧",
+                                            "right": {
+                                                "left": "u",
+                                                "op": "=",
+                                                "right": {
+                                                    "left": {
+                                                        "left": 2,
+                                                        "op": "*",
+                                                        "right": "K"
+                                                    },
+                                                    "op": "+",
+                                                    "right": 1
+                                                }
+                                            }
+                                        },
+                                        "op": "ite",
+                                        "then": {
+                                            "left": "z",
+                                            "op": "/",
+                                            "right": "N"
+                                        }
+                                    }
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "(1 - 9/10)",
+                                "exp": 0.1
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((s = 1) & (u = 1))",
+                        "exp": {
+                            "left": {
+                                "left": "s",
+                                "op": "=",
+                                "right": 1
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "u",
+                                "op": "=",
+                                "right": 1
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 2",
+                                    "ref": "s",
+                                    "value": 2
+                                },
+                                {
+                                    "comment": "zx <- (zx - 1)",
+                                    "ref": "zx",
+                                    "value": {
+                                        "left": "zx",
+                                        "op": "-",
+                                        "right": 1
+                                    }
+                                },
+                                {
+                                    "comment": "x <- 1",
+                                    "ref": "x",
+                                    "value": 1
+                                },
+                                {
+                                    "comment": "default_reward_model <- ((((s = 0) & (c = N)) & (u = ((2 * K) + 1))) ? (z / N) : 0)",
+                                    "ref": "default_reward_model",
+                                    "value": {
+                                        "else": 0.0,
+                                        "if": {
+                                            "left": {
+                                                "left": {
+                                                    "left": "s",
+                                                    "op": "=",
+                                                    "right": 0
+                                                },
+                                                "op": "∧",
+                                                "right": {
+                                                    "left": "c",
+                                                    "op": "=",
+                                                    "right": "N"
+                                                }
+                                            },
+                                            "op": "∧",
+                                            "right": {
+                                                "left": "u",
+                                                "op": "=",
+                                                "right": {
+                                                    "left": {
+                                                        "left": 2,
+                                                        "op": "*",
+                                                        "right": "K"
+                                                    },
+                                                    "op": "+",
+                                                    "right": 1
+                                                }
+                                            }
+                                        },
+                                        "op": "ite",
+                                        "then": {
+                                            "left": "z",
+                                            "op": "/",
+                                            "right": "N"
+                                        }
+                                    }
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(((s = 1) & (u > 1)) & (zx > 0))",
+                        "exp": {
+                            "left": {
+                                "left": {
+                                    "left": "s",
+                                    "op": "=",
+                                    "right": 1
+                                },
+                                "op": "∧",
+                                "right": {
+                                    "left": "u",
+                                    "op": ">",
+                                    "right": 1
+                                }
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "zx",
+                                "op": ">",
+                                "right": 0
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 2",
+                                    "ref": "s",
+                                    "value": 2
+                                },
+                                {
+                                    "comment": "x <- 0",
+                                    "ref": "x",
+                                    "value": 0
+                                },
+                                {
+                                    "comment": "default_reward_model <- ((((s = 0) & (c = N)) & (u = ((2 * K) + 1))) ? (z / N) : 0)",
+                                    "ref": "default_reward_model",
+                                    "value": {
+                                        "else": 0.0,
+                                        "if": {
+                                            "left": {
+                                                "left": {
+                                                    "left": "s",
+                                                    "op": "=",
+                                                    "right": 0
+                                                },
+                                                "op": "∧",
+                                                "right": {
+                                                    "left": "c",
+                                                    "op": "=",
+                                                    "right": "N"
+                                                }
+                                            },
+                                            "op": "∧",
+                                            "right": {
+                                                "left": "u",
+                                                "op": "=",
+                                                "right": {
+                                                    "left": {
+                                                        "left": 2,
+                                                        "op": "*",
+                                                        "right": "K"
+                                                    },
+                                                    "op": "+",
+                                                    "right": 1
+                                                }
+                                            }
+                                        },
+                                        "op": "ite",
+                                        "then": {
+                                            "left": "z",
+                                            "op": "/",
+                                            "right": "N"
+                                        }
+                                    }
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(((s = 1) & (u > 1)) & (zx = 0))",
+                        "exp": {
+                            "left": {
+                                "left": {
+                                    "left": "s",
+                                    "op": "=",
+                                    "right": 1
+                                },
+                                "op": "∧",
+                                "right": {
+                                    "left": "u",
+                                    "op": ">",
+                                    "right": 1
+                                }
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "zx",
+                                "op": "=",
+                                "right": 0
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 3",
+                                    "ref": "s",
+                                    "value": 3
+                                },
+                                {
+                                    "comment": "y <- 1",
+                                    "ref": "y",
+                                    "value": 1
+                                },
+                                {
+                                    "comment": "default_reward_model <- ((((s = 0) & (c = N)) & (u = ((2 * K) + 1))) ? (z / N) : 0)",
+                                    "ref": "default_reward_model",
+                                    "value": {
+                                        "else": 0.0,
+                                        "if": {
+                                            "left": {
+                                                "left": {
+                                                    "left": "s",
+                                                    "op": "=",
+                                                    "right": 0
+                                                },
+                                                "op": "∧",
+                                                "right": {
+                                                    "left": "c",
+                                                    "op": "=",
+                                                    "right": "N"
+                                                }
+                                            },
+                                            "op": "∧",
+                                            "right": {
+                                                "left": "u",
+                                                "op": "=",
+                                                "right": {
+                                                    "left": {
+                                                        "left": 2,
+                                                        "op": "*",
+                                                        "right": "K"
+                                                    },
+                                                    "op": "+",
+                                                    "right": 1
+                                                }
+                                            }
+                                        },
+                                        "op": "ite",
+                                        "then": {
+                                            "left": "z",
+                                            "op": "/",
+                                            "right": "N"
+                                        }
+                                    }
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "9/10",
+                                "exp": 0.9
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 3",
+                                    "ref": "s",
+                                    "value": 3
+                                },
+                                {
+                                    "comment": "y <- 0",
+                                    "ref": "y",
+                                    "value": 0
+                                },
+                                {
+                                    "comment": "default_reward_model <- ((((s = 0) & (c = N)) & (u = ((2 * K) + 1))) ? (z / N) : 0)",
+                                    "ref": "default_reward_model",
+                                    "value": {
+                                        "else": 0.0,
+                                        "if": {
+                                            "left": {
+                                                "left": {
+                                                    "left": "s",
+                                                    "op": "=",
+                                                    "right": 0
+                                                },
+                                                "op": "∧",
+                                                "right": {
+                                                    "left": "c",
+                                                    "op": "=",
+                                                    "right": "N"
+                                                }
+                                            },
+                                            "op": "∧",
+                                            "right": {
+                                                "left": "u",
+                                                "op": "=",
+                                                "right": {
+                                                    "left": {
+                                                        "left": 2,
+                                                        "op": "*",
+                                                        "right": "K"
+                                                    },
+                                                    "op": "+",
+                                                    "right": 1
+                                                }
+                                            }
+                                        },
+                                        "op": "ite",
+                                        "then": {
+                                            "left": "z",
+                                            "op": "/",
+                                            "right": "N"
+                                        }
+                                    }
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "(1 - 9/10)",
+                                "exp": 0.1
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((s = 2) & (u = 1))",
+                        "exp": {
+                            "left": {
+                                "left": "s",
+                                "op": "=",
+                                "right": 2
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "u",
+                                "op": "=",
+                                "right": 1
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 3",
+                                    "ref": "s",
+                                    "value": 3
+                                },
+                                {
+                                    "comment": "zy <- (zy - 1)",
+                                    "ref": "zy",
+                                    "value": {
+                                        "left": "zy",
+                                        "op": "-",
+                                        "right": 1
+                                    }
+                                },
+                                {
+                                    "comment": "y <- 1",
+                                    "ref": "y",
+                                    "value": 1
+                                },
+                                {
+                                    "comment": "default_reward_model <- ((((s = 0) & (c = N)) & (u = ((2 * K) + 1))) ? (z / N) : 0)",
+                                    "ref": "default_reward_model",
+                                    "value": {
+                                        "else": 0.0,
+                                        "if": {
+                                            "left": {
+                                                "left": {
+                                                    "left": "s",
+                                                    "op": "=",
+                                                    "right": 0
+                                                },
+                                                "op": "∧",
+                                                "right": {
+                                                    "left": "c",
+                                                    "op": "=",
+                                                    "right": "N"
+                                                }
+                                            },
+                                            "op": "∧",
+                                            "right": {
+                                                "left": "u",
+                                                "op": "=",
+                                                "right": {
+                                                    "left": {
+                                                        "left": 2,
+                                                        "op": "*",
+                                                        "right": "K"
+                                                    },
+                                                    "op": "+",
+                                                    "right": 1
+                                                }
+                                            }
+                                        },
+                                        "op": "ite",
+                                        "then": {
+                                            "left": "z",
+                                            "op": "/",
+                                            "right": "N"
+                                        }
+                                    }
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "(zy / (N - c))",
+                                "exp": {
+                                    "left": "zy",
+                                    "op": "/",
+                                    "right": {
+                                        "left": "N",
+                                        "op": "-",
+                                        "right": "c"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 3",
+                                    "ref": "s",
+                                    "value": 3
+                                },
+                                {
+                                    "comment": "y <- 0",
+                                    "ref": "y",
+                                    "value": 0
+                                },
+                                {
+                                    "comment": "default_reward_model <- ((((s = 0) & (c = N)) & (u = ((2 * K) + 1))) ? (z / N) : 0)",
+                                    "ref": "default_reward_model",
+                                    "value": {
+                                        "else": 0.0,
+                                        "if": {
+                                            "left": {
+                                                "left": {
+                                                    "left": "s",
+                                                    "op": "=",
+                                                    "right": 0
+                                                },
+                                                "op": "∧",
+                                                "right": {
+                                                    "left": "c",
+                                                    "op": "=",
+                                                    "right": "N"
+                                                }
+                                            },
+                                            "op": "∧",
+                                            "right": {
+                                                "left": "u",
+                                                "op": "=",
+                                                "right": {
+                                                    "left": {
+                                                        "left": 2,
+                                                        "op": "*",
+                                                        "right": "K"
+                                                    },
+                                                    "op": "+",
+                                                    "right": 1
+                                                }
+                                            }
+                                        },
+                                        "op": "ite",
+                                        "then": {
+                                            "left": "z",
+                                            "op": "/",
+                                            "right": "N"
+                                        }
+                                    }
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "(1 - (zy / (N - c)))",
+                                "exp": {
+                                    "left": 1,
+                                    "op": "-",
+                                    "right": {
+                                        "left": "zy",
+                                        "op": "/",
+                                        "right": {
+                                            "left": "N",
+                                            "op": "-",
+                                            "right": "c"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((((s = 2) & (u > 1)) & (zy < (N - c))) & (zy > 0))",
+                        "exp": {
+                            "left": {
+                                "left": {
+                                    "left": "zy",
+                                    "op": ">",
+                                    "right": 0
+                                },
+                                "op": "∧",
+                                "right": {
+                                    "left": "u",
+                                    "op": ">",
+                                    "right": 1
+                                }
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": {
+                                    "left": "zy",
+                                    "op": "<",
+                                    "right": {
+                                        "left": "N",
+                                        "op": "-",
+                                        "right": "c"
+                                    }
+                                },
+                                "op": "∧",
+                                "right": {
+                                    "left": "s",
+                                    "op": "=",
+                                    "right": 2
+                                }
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 3",
+                                    "ref": "s",
+                                    "value": 3
+                                },
+                                {
+                                    "comment": "zy <- (zy - 1)",
+                                    "ref": "zy",
+                                    "value": {
+                                        "left": "zy",
+                                        "op": "-",
+                                        "right": 1
+                                    }
+                                },
+                                {
+                                    "comment": "y <- 1",
+                                    "ref": "y",
+                                    "value": 1
+                                },
+                                {
+                                    "comment": "default_reward_model <- ((((s = 0) & (c = N)) & (u = ((2 * K) + 1))) ? (z / N) : 0)",
+                                    "ref": "default_reward_model",
+                                    "value": {
+                                        "else": 0.0,
+                                        "if": {
+                                            "left": {
+                                                "left": {
+                                                    "left": "s",
+                                                    "op": "=",
+                                                    "right": 0
+                                                },
+                                                "op": "∧",
+                                                "right": {
+                                                    "left": "c",
+                                                    "op": "=",
+                                                    "right": "N"
+                                                }
+                                            },
+                                            "op": "∧",
+                                            "right": {
+                                                "left": "u",
+                                                "op": "=",
+                                                "right": {
+                                                    "left": {
+                                                        "left": 2,
+                                                        "op": "*",
+                                                        "right": "K"
+                                                    },
+                                                    "op": "+",
+                                                    "right": 1
+                                                }
+                                            }
+                                        },
+                                        "op": "ite",
+                                        "then": {
+                                            "left": "z",
+                                            "op": "/",
+                                            "right": "N"
+                                        }
+                                    }
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((((s = 2) & (u > 1)) & (zy = (N - c))) & (c < N))",
+                        "exp": {
+                            "left": {
+                                "left": {
+                                    "left": "c",
+                                    "op": "<",
+                                    "right": "N"
+                                },
+                                "op": "∧",
+                                "right": {
+                                    "left": "u",
+                                    "op": ">",
+                                    "right": 1
+                                }
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": {
+                                    "left": "zy",
+                                    "op": "=",
+                                    "right": {
+                                        "left": "N",
+                                        "op": "-",
+                                        "right": "c"
+                                    }
+                                },
+                                "op": "∧",
+                                "right": {
+                                    "left": "s",
+                                    "op": "=",
+                                    "right": 2
+                                }
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "s <- 3",
+                                    "ref": "s",
+                                    "value": 3
+                                },
+                                {
+                                    "comment": "y <- 0",
+                                    "ref": "y",
+                                    "value": 0
+                                },
+                                {
+                                    "comment": "default_reward_model <- ((((s = 0) & (c = N)) & (u = ((2 * K) + 1))) ? (z / N) : 0)",
+                                    "ref": "default_reward_model",
+                                    "value": {
+                                        "else": 0.0,
+                                        "if": {
+                                            "left": {
+                                                "left": {
+                                                    "left": "s",
+                                                    "op": "=",
+                                                    "right": 0
+                                                },
+                                                "op": "∧",
+                                                "right": {
+                                                    "left": "c",
+                                                    "op": "=",
+                                                    "right": "N"
+                                                }
+                                            },
+                                            "op": "∧",
+                                            "right": {
+                                                "left": "u",
+                                                "op": "=",
+                                                "right": {
+                                                    "left": {
+                                                        "left": 2,
+                                                        "op": "*",
+                                                        "right": "K"
+                                                    },
+                                                    "op": "+",
+                                                    "right": 1
+                                                }
+                                            }
+                                        },
+                                        "op": "ite",
+                                        "then": {
+                                            "left": "z",
+                                            "op": "/",
+                                            "right": "N"
+                                        }
+                                    }
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(((s = 2) & (u > 1)) & (zy = 0))",
+                        "exp": {
+                            "left": {
+                                "left": {
+                                    "left": "s",
+                                    "op": "=",
+                                    "right": 2
+                                },
+                                "op": "∧",
+                                "right": {
+                                    "left": "u",
+                                    "op": ">",
+                                    "right": 1
+                                }
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "zy",
+                                "op": "=",
+                                "right": 0
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "c <- (c + 1)",
+                                    "ref": "c",
+                                    "value": {
+                                        "left": "c",
+                                        "op": "+",
+                                        "right": 1
+                                    }
+                                },
+                                {
+                                    "comment": "s <- 0",
+                                    "ref": "s",
+                                    "value": 0
+                                },
+                                {
+                                    "comment": "z <- (z + (1 - (x * y)))",
+                                    "ref": "z",
+                                    "value": {
+                                        "left": "z",
+                                        "op": "+",
+                                        "right": {
+                                            "left": 1,
+                                            "op": "-",
+                                            "right": {
+                                                "left": "x",
+                                                "op": "*",
+                                                "right": "y"
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "comment": "x <- 0",
+                                    "ref": "x",
+                                    "value": 0
+                                },
+                                {
+                                    "comment": "y <- 0",
+                                    "ref": "y",
+                                    "value": 0
+                                },
+                                {
+                                    "comment": "default_reward_model <- ((((s = 0) & (c = N)) & (u = ((2 * K) + 1))) ? (z / N) : 0)",
+                                    "ref": "default_reward_model",
+                                    "value": {
+                                        "else": 0.0,
+                                        "if": {
+                                            "left": {
+                                                "left": {
+                                                    "left": "s",
+                                                    "op": "=",
+                                                    "right": 0
+                                                },
+                                                "op": "∧",
+                                                "right": {
+                                                    "left": "c",
+                                                    "op": "=",
+                                                    "right": "N"
+                                                }
+                                            },
+                                            "op": "∧",
+                                            "right": {
+                                                "left": "u",
+                                                "op": "=",
+                                                "right": {
+                                                    "left": {
+                                                        "left": 2,
+                                                        "op": "*",
+                                                        "right": "K"
+                                                    },
+                                                    "op": "+",
+                                                    "right": 1
+                                                }
+                                            }
+                                        },
+                                        "op": "ite",
+                                        "then": {
+                                            "left": "z",
+                                            "op": "/",
+                                            "right": "N"
+                                        }
+                                    }
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "(1 - 1/50)",
+                                "exp": 0.98
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "c <- (c + 1)",
+                                    "ref": "c",
+                                    "value": {
+                                        "left": "c",
+                                        "op": "+",
+                                        "right": 1
+                                    }
+                                },
+                                {
+                                    "comment": "s <- 0",
+                                    "ref": "s",
+                                    "value": 0
+                                },
+                                {
+                                    "comment": "z <- (z + (x * y))",
+                                    "ref": "z",
+                                    "value": {
+                                        "left": "z",
+                                        "op": "+",
+                                        "right": {
+                                            "left": "x",
+                                            "op": "*",
+                                            "right": "y"
+                                        }
+                                    }
+                                },
+                                {
+                                    "comment": "x <- 0",
+                                    "ref": "x",
+                                    "value": 0
+                                },
+                                {
+                                    "comment": "y <- 0",
+                                    "ref": "y",
+                                    "value": 0
+                                },
+                                {
+                                    "comment": "default_reward_model <- ((((s = 0) & (c = N)) & (u = ((2 * K) + 1))) ? (z / N) : 0)",
+                                    "ref": "default_reward_model",
+                                    "value": {
+                                        "else": 0.0,
+                                        "if": {
+                                            "left": {
+                                                "left": {
+                                                    "left": "s",
+                                                    "op": "=",
+                                                    "right": 0
+                                                },
+                                                "op": "∧",
+                                                "right": {
+                                                    "left": "c",
+                                                    "op": "=",
+                                                    "right": "N"
+                                                }
+                                            },
+                                            "op": "∧",
+                                            "right": {
+                                                "left": "u",
+                                                "op": "=",
+                                                "right": {
+                                                    "left": {
+                                                        "left": 2,
+                                                        "op": "*",
+                                                        "right": "K"
+                                                    },
+                                                    "op": "+",
+                                                    "right": 1
+                                                }
+                                            }
+                                        },
+                                        "op": "ite",
+                                        "then": {
+                                            "left": "z",
+                                            "op": "/",
+                                            "right": "N"
+                                        }
+                                    }
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/50",
+                                "exp": 0.02
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(((s = 3) & (z < N)) & (c < N))",
+                        "exp": {
+                            "left": {
+                                "left": {
+                                    "left": "s",
+                                    "op": "=",
+                                    "right": 3
+                                },
+                                "op": "∧",
+                                "right": {
+                                    "left": "z",
+                                    "op": "<",
+                                    "right": "N"
+                                }
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "c",
+                                "op": "<",
+                                "right": "N"
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "default_reward_model <- ((((s = 0) & (c = N)) & (u = ((2 * K) + 1))) ? (z / N) : 0)",
+                                    "ref": "default_reward_model",
+                                    "value": {
+                                        "else": 0.0,
+                                        "if": {
+                                            "left": {
+                                                "left": {
+                                                    "left": "s",
+                                                    "op": "=",
+                                                    "right": 0
+                                                },
+                                                "op": "∧",
+                                                "right": {
+                                                    "left": "c",
+                                                    "op": "=",
+                                                    "right": "N"
+                                                }
+                                            },
+                                            "op": "∧",
+                                            "right": {
+                                                "left": "u",
+                                                "op": "=",
+                                                "right": {
+                                                    "left": {
+                                                        "left": 2,
+                                                        "op": "*",
+                                                        "right": "K"
+                                                    },
+                                                    "op": "+",
+                                                    "right": 1
+                                                }
+                                            }
+                                        },
+                                        "op": "ite",
+                                        "then": {
+                                            "left": "z",
+                                            "op": "/",
+                                            "right": "N"
+                                        }
+                                    }
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(s = 4)",
+                        "exp": {
+                            "left": "s",
+                            "op": "=",
+                            "right": 4
+                        }
+                    },
+                    "location": "l"
+                }
+            ],
+            "initial-locations": [
+                "l"
+            ],
+            "locations": [
+                {
+                    "name": "l"
+                }
+            ],
+            "name": "multiplex",
+            "variables": []
+        }
+    ],
+    "constants": [
+        {
+            "name": "N",
+            "type": "int"
+        },
+        {
+            "name": "K",
+            "type": "int"
+        },
+        {
+            "name": "M",
+            "type": "int",
+            "value": {
+                "left": {
+                    "left": 2,
+                    "op": "*",
+                    "right": "K"
+                },
+                "op": "+",
+                "right": 1
+            }
+        },
+        {
+            "name": "perr",
+            "type": "real",
+            "value": 0.02
+        },
+        {
+            "name": "prob1",
+            "type": "real",
+            "value": 0.9
+        }
+    ],
+    "features": [
+        "derived-operators"
+    ],
+    "jani-version": 1,
+    "name": "nand",
+    "properties": [
+        {
+            "expression": {
+                "fun": "values",
+                "op": "filter",
+                "states": {
+                    "op": "initial"
+                },
+                "values": {
+                    "exp": {
+                        "left": true,
+                        "op": "U",
+                        "right": {
+                            "left": {
+                                "left": "s",
+                                "op": "=",
+                                "right": 4
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": {
+                                    "left": "z",
+                                    "op": "/",
+                                    "right": "N"
+                                },
+                                "op": "<",
+                                "right": 0.1
+                            }
+                        }
+                    },
+                    "op": "Pmin"
+                }
+            },
+            "name": "reliable"
+        }
+    ],
+    "restrict-initial": {
+        "exp": true
+    },
+    "system": {
+        "elements": [
+            {
+                "automaton": "multiplex"
+            }
+        ]
+    },
+    "type": "dtmc",
+    "variables": [
+        {
+            "initial-value": 0.0,
+            "name": "default_reward_model",
+            "transient": true,
+            "type": "real"
+        },
+        {
+            "initial-value": 1,
+            "name": "u",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 1,
+                "upper-bound": {
+                    "left": {
+                        "left": 2,
+                        "op": "*",
+                        "right": "K"
+                    },
+                    "op": "+",
+                    "right": 1
+                }
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "c",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": "N"
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "s",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 4
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "z",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": "N"
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "zx",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": "N"
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "zy",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": "N"
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "x",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 1
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "y",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 1
+            }
+        }
+    ]
+}

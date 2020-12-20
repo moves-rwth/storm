@@ -26,7 +26,7 @@ endfunction()
 
 foreach(testsuite ${NON_SPLIT_TESTS})
 	file(GLOB_RECURSE TEST_${testsuite}_FILES ${STORM_TESTS_BASE_PATH}/${testsuite}/*.h ${STORM_TESTS_BASE_PATH}/${testsuite}/*.cpp)
-	add_executable(test-${testsuite} ${TEST_${testsuite}_FILES} ${STORM_TESTS_BASE_PATH}/storm-test.cpp)
+	add_executable(test-${testsuite} ${TEST_${testsuite}_FILES} ${STORM_TESTS_BASE_PATH}/storm-test.cpp storage/JaniLocalEliminatorTests.cpp storage/JaniLocalEliminatorTests.h)
 	configure_testsuite_target(${testsuite})
 endforeach()
 

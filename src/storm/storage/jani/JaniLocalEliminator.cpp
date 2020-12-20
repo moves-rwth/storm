@@ -256,6 +256,19 @@ namespace storm {
         OrderedAssignments JaniLocalEliminator::Session::executeInSequence(const EdgeDestination& first, const EdgeDestination& then) {
             STORM_LOG_THROW(!first.usesAssignmentLevels() && !then.usesAssignmentLevels(), storm::exceptions::NotImplementedException, "Assignment levels are currently not supported");
 
+            /*
+             * x = 2
+             * y = 1
+             *
+             * x = x + y
+             *
+             * =>
+             *
+             * thenVariables = [x]
+             * y = 1
+             * x = 2 + 1
+             */
+
             OrderedAssignments newOa;
 
             // Collect variables that occur in the second set of assignments. This will be used to decide which first assignments to keep and which to discard.
@@ -272,7 +285,7 @@ namespace storm {
 
             std::map<expressions::Variable, expressions::Expression> substitutionMap = first.getAsVariableToExpressionMap();
             for (const auto &assignment : then.getOrderedAssignments()){
-                newOa.add(Assignment(assignment.getVariable(), assignment.getAssignedExpression().substitute(substitutionMap)));
+                newOa.add(Assignment(assignment.getVariable(), assignment.getAssignedExpression().substitute(substitutionMap).simplify()));
             }
             return newOa;
         }
