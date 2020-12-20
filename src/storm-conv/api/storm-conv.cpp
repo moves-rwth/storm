@@ -151,43 +151,58 @@ namespace storm {
             aiger* aig = aiger_init();
             // STEP 1:
             // the first thing we need is to add input variables, these come
-            // from the encoding of the nondeterminism, a.k.a. actions
+            // from the encoding of the nondeterminism, a.k.a. actions, and
+            // the encoding of successors (because of the probabilistic
+            // transition function)
             for (auto const& var : model->getNondeterminismVariables()) {
                 auto const& ddMetaVar = model->getManagerAsSharedPointer()->getMetaVariable(var);
                 for (auto const& i : ddMetaVar.getIndices()) {
                     std::string name = var.getName() + std::to_string(i);
-                    std::cout << "adding input " << i << " with lit " << var2lit(i) << std::endl;
+                    std::cout << "adding action input " << i << " with lit " << var2lit(i) << std::endl;
+                    aiger_add_input(aig, var2lit(i), name.c_str());
+                }
+            }
+            for (auto const& var : model->getColumnVariables()) {
+                auto const& ddMetaVar = model->getManagerAsSharedPointer()->getMetaVariable(var);
+                for (auto const& i : ddMetaVar.getIndices()) {
+                    std::string name = var.getName() + std::to_string(i);
+                    std::cout << "adding successor input " << i << " with lit " << var2lit(i) << std::endl;
                     aiger_add_input(aig, var2lit(i), name.c_str());
                 }
             }
             // STEP 2:
-            // we need to create latches per state-encoding variable, and for
-            // that we need Boolean logic for the transition relation
+            // we need to create latches per state-encoding variable
             unsigned maxvar = aig->maxvar;
             for (auto const& inVar : model->getRowVariables())
                 for (unsigned const& i : model->getManagerAsSharedPointer()->getMetaVariable(inVar).getIndices())
                     maxvar = std::max(maxvar, i);
-            std::cout << "maxvar before ands = " << maxvar << std::endl;
+            std::cout << "maxvar before and gates = " << maxvar << std::endl;
+            // we will need Boolean logic for the transition relation
             storm::dd::Bdd<storm::dd::DdType::Sylvan> qualTrans = model->getQualitativeTransitionMatrix();
             for (auto const& varPair : model->getRowColumnMetaVariablePairs()) {
                 auto inVar = varPair.first;
                 auto ddInMetaVar = model->getManagerAsSharedPointer()->getMetaVariable(inVar);
                 auto ddOutMetaVar = model->getManagerAsSharedPointer()->getMetaVariable(varPair.second);
-                auto outCube = ddOutMetaVar.getCube();
                 auto inIndices = ddInMetaVar.getIndices();
                 auto idxIt = inIndices.begin();
                 for (auto const& encVar : ddOutMetaVar.getDdVariables()) {
                     assert(idxIt != inIndices.end());
-                    auto encVarFun = qualTrans.andExists(encVar, model->getColumnVariables());
+                    auto encVarFun = qualTrans && encVar;
                     unsigned lit = bdd2lit(encVarFun.getInternalBdd().getSylvanBdd(), aig, maxvar);
                     unsigned idx = (unsigned)(*idxIt);
                     std::string name = inVar.getName() + std::to_string(idx);
                     std::cout << "adding latch " << idx << " with lit " << var2lit(idx) << std::endl;
-                    aiger_add_latch(aig, var2lit(*idxIt), lit, name.c_str());
+                    aiger_add_latch(aig, var2lit(idx), lit, name.c_str());
                     idxIt++;
                 }
             }
             // STEP 3:
+            // we add a "bad" output representing when the transition is
+            // invalid
+            aiger_add_output(aig,
+                             aiger_not(bdd2lit(qualTrans.getInternalBdd().getSylvanBdd(), aig, maxvar)),
+                             "invalid_transition");
+            // STEP 4:
             // add labels as outputs as a function of state sets
             std::vector<std::string> labels = model->getLabels();
             for (auto const& label : labels) {
