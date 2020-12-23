@@ -133,12 +133,9 @@ namespace storm {
             // we have circuits for then, else, we need an and here
             unsigned thenCoFactor = var2lit(++maxvar);
             unsigned elseCoFactor = var2lit(++maxvar);
-            std::cout << "adding pos cofactor of " << idx << " with lit " << thenCoFactor << std::endl;
             aiger_add_and(aig, thenCoFactor, var2lit(idx), tLit);
-            std::cout << "adding neg cofactor of " << idx << " with lit " << elseCoFactor << std::endl;
             aiger_add_and(aig, elseCoFactor, aiger_not(var2lit(idx)), eLit);
             unsigned res = var2lit(++maxvar);
-            std::cout << "adding shannon exp of " << idx << " with lit " << res << std::endl;
             aiger_add_and(aig, res, aiger_not(thenCoFactor), aiger_not(elseCoFactor));
             return aiger_not(res);
         }
@@ -158,7 +155,6 @@ namespace storm {
                 auto const& ddMetaVar = model->getManagerAsSharedPointer()->getMetaVariable(var);
                 for (auto const& i : ddMetaVar.getIndices()) {
                     std::string name = var.getName() + std::to_string(i);
-                    std::cout << "adding action input " << i << " with lit " << var2lit(i) << std::endl;
                     aiger_add_input(aig, var2lit(i), name.c_str());
                 }
             }
@@ -166,7 +162,6 @@ namespace storm {
                 auto const& ddMetaVar = model->getManagerAsSharedPointer()->getMetaVariable(var);
                 for (auto const& i : ddMetaVar.getIndices()) {
                     std::string name = var.getName() + std::to_string(i);
-                    std::cout << "adding successor input " << i << " with lit " << var2lit(i) << std::endl;
                     aiger_add_input(aig, var2lit(i), name.c_str());
                 }
             }
@@ -176,7 +171,6 @@ namespace storm {
             for (auto const& inVar : model->getRowVariables())
                 for (unsigned const& i : model->getManagerAsSharedPointer()->getMetaVariable(inVar).getIndices())
                     maxvar = std::max(maxvar, i);
-            std::cout << "maxvar before and gates = " << maxvar << std::endl;
             // we will need Boolean logic for the transition relation
             storm::dd::Bdd<storm::dd::DdType::Sylvan> qualTrans = model->getQualitativeTransitionMatrix();
             for (auto const& varPair : model->getRowColumnMetaVariablePairs()) {
@@ -191,7 +185,6 @@ namespace storm {
                     unsigned lit = bdd2lit(encVarFun.getInternalBdd().getSylvanBdd(), aig, maxvar);
                     unsigned idx = (unsigned)(*idxIt);
                     std::string name = inVar.getName() + std::to_string(idx);
-                    std::cout << "adding latch " << idx << " with lit " << var2lit(idx) << std::endl;
                     aiger_add_latch(aig, var2lit(idx), lit, name.c_str());
                     idxIt++;
                 }
@@ -208,7 +201,6 @@ namespace storm {
             for (auto const& label : labels) {
                storm::dd::Bdd<storm::dd::DdType::Sylvan> states4label = model->getStates(label);
                unsigned lit = bdd2lit(states4label.getInternalBdd().getSylvanBdd(), aig, maxvar);
-               std::cout << "adding output " << label << " with lit " << lit << std::endl;
                aiger_add_output(aig, lit, label.c_str());
             }
 
@@ -216,8 +208,7 @@ namespace storm {
             // default to 0-values of the latches?
             // for init states, use storm::dd::Bdd<storm::dd::DdType::Sylvan> initStates = model->getInitialStates();
             const char* check = aiger_check(aig);
-            if (check != NULL)
-                std::cout << "aiger check result: " << check << std::endl;
+            STORM_LOG_ASSERT(check == NULL, check);
             return aig;
         }
         
