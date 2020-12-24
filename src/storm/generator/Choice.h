@@ -28,6 +28,17 @@ namespace storm {
              * Adds the given choice to the current one.
              */
             void add(Choice const& other);
+
+            /**
+             * Given a value q, find the event in the ordered distribution that corresponds to this prob.
+             * Example: Given a (sub)distribution { x -> 0.4, y -> 0.3, z -> 0.2 },
+             * A value q in [0,0.4] yields x, q in [0.4, 0.7] yields y, and q in [0.7, 0.9] yields z.
+             * Any other value for q yields undefined behavior.
+             *
+             * @param quantile q, a value in the CDF.
+             * @return A state
+             */
+            StateType sampleFromDistribution(ValueType const& quantile) const;
             
             /*!
              * Returns an iterator to the distribution associated with this choice.

@@ -176,6 +176,20 @@ namespace storm {
                 entry.second /= sum;
             }
         }
+
+        template<typename ValueType, typename StateType>
+        StateType Distribution<ValueType, StateType>::sampleFromDistribution(const ValueType &quantile) const {
+            ValueType sum = storm::utility::zero<ValueType>();
+            storm::utility::ConstantsComparator<ValueType> comp;
+            for (auto const& entry: distribution) {
+                sum += entry.second;
+                if (comp.isLess(quantile,sum)) {
+                    return entry.first;
+                }
+            }
+            STORM_LOG_ASSERT(false,"This point should not be reached.");
+            return 0;
+        }
     
         
         template class Distribution<double>;
