@@ -110,12 +110,17 @@ namespace storm {
             storm::storage::BitVector const& Model<ValueType, RewardModelType>::getInitialStates() const {
                 return this->getStates("init");
             }
+
+            template<typename ValueType, typename RewardModelType>
+            void Model<ValueType, RewardModelType>::setInitialStates(storm::storage::BitVector const& states) {
+                return this->getStateLabeling().setStates("init", states);
+            }
             
             template<typename ValueType, typename RewardModelType>
             storm::storage::BitVector const& Model<ValueType, RewardModelType>::getStates(std::string const& label) const {
                 return stateLabeling.getStates(label);
             }
-            
+
             template<typename ValueType, typename RewardModelType>
             bool Model<ValueType, RewardModelType>::hasLabel(std::string const& label) const {
                 return stateLabeling.containsLabel(label);
@@ -144,6 +149,23 @@ namespace storm {
 
             template<typename ValueType, typename RewardModelType>
             RewardModelType const& Model<ValueType, RewardModelType>::getRewardModel(std::string const& rewardModelName) const {
+                auto it = this->rewardModels.find(rewardModelName);
+                if (it == this->rewardModels.end()) {
+                    if (rewardModelName.empty()) {
+                        if (this->hasUniqueRewardModel()) {
+                            return this->getUniqueRewardModel();
+                        } else {
+                            STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Unable to refer to default reward model, because there is no default model or it is not unique.");
+                        }
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "The requested reward model '" << rewardModelName << "' does not exist.");
+                    }
+                }
+                return it->second;
+            }
+
+            template<typename ValueType, typename RewardModelType>
+            RewardModelType& Model<ValueType, RewardModelType>::getRewardModel(std::string const& rewardModelName) {
                 auto it = this->rewardModels.find(rewardModelName);
                 if (it == this->rewardModels.end()) {
                     if (rewardModelName.empty()) {
