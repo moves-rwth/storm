@@ -2,13 +2,10 @@ extern "C" {
 #include "aiger.h"
 }
 
+#include "storm-conv/converter/aiger/bddutils.h"
 
-static inline unsigned var2lit(uint64_t var) {
-    unsigned lit = (unsigned) ((var + 1) * 2);
-    return lit;
-}
 
-static unsigned bdd2lit(sylvan::Bdd const& b, aiger* aig, unsigned& maxvar) {
+unsigned bdd2lit(sylvan::Bdd const& b, aiger* aig, unsigned& maxvar) {
     if (b.isOne())
         return 1;
     if (b.isZero())
