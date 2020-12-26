@@ -177,10 +177,23 @@ namespace storm {
                unsigned lit = bdd2lit(states4label.getInternalBdd().getSylvanBdd(), aig, maxvar);
                aiger_add_output(aig, lit, label.c_str());
             }
+            // STEP 5:
+            // add coin outputs
+            storm::dd::Add<storm::dd::DdType::Sylvan> trans = model->getTransitionMatrix();
+            for (auto const& prob : trans.toVector()) {
+                auto lteq = trans.lessOrEqual(prob);
+                auto gteq = trans.greaterOrEqual(prob);
+                auto eq = lteq && gteq;
+                unsigned lit = bdd2lit(eq.getInternalBdd().getSylvanBdd(), aig, maxvar);
+                std::string name = "coin_" + std::to_string(prob);
+                aiger_add_output(aig, lit, name.c_str());
+            }
+
 
             // TODO: how do we make the initial states explicit and not
             // default to 0-values of the latches?
             // for init states, use storm::dd::Bdd<storm::dd::DdType::Sylvan> initStates = model->getInitialStates();
+            
             const char* check = aiger_check(aig);
             STORM_LOG_ASSERT(check == NULL, check);
             return aig;

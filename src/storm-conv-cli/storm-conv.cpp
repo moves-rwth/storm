@@ -200,7 +200,7 @@ namespace storm {
             
             std::vector<storm::jani::Property> outputProperties = properties;
             
-            // prism-to-aiger transformation, TODO: this should be done in
+            // prism-to-aiger transformation
             aiger* outputCircuit = storm::api::convertPrismToAiger(prismProg, outputProperties);
             
 
