@@ -137,7 +137,7 @@ namespace storm {
         ValueType maximum(std::map<K, ValueType> const& values);
         
         template<typename ValueType>
-        ValueType pow(ValueType const& value, uint_fast64_t exponent);
+        ValueType pow(ValueType const& value, int_fast64_t exponent);
 
         template<typename ValueType>
         ValueType max(ValueType const& first, ValueType const& second);

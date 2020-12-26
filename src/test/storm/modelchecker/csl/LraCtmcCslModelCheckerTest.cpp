@@ -124,7 +124,7 @@ namespace {
         }
     };
     
-    class GBSparseEigenRationalLUEnvironment {
+    class GBSparseEigenDoubleLUEnvironment {
     public:
         static const storm::dd::DdType ddType = storm::dd::DdType::Sylvan; // unused for sparse models
         static const CtmcEngine engine = CtmcEngine::PrismSparse;
@@ -327,7 +327,7 @@ namespace {
             GBJaniHybridCuddGmmxxGmresEnvironment,
             GBJaniHybridSylvanGmmxxGmresEnvironment,
             GBSparseEigenDGmresEnvironment,
-            GBSparseEigenRationalLUEnvironment,
+            GBSparseEigenDoubleLUEnvironment,
             GBSparseNativeSorEnvironment,
             DistrSparseGmmxxGmresIluEnvironment,
             DistrSparseEigenDoubleLUEnvironment,
