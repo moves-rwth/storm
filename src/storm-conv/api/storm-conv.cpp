@@ -154,7 +154,6 @@ namespace storm {
                 auto inIndices = ddInMetaVar.getIndices();
                 auto idxIt = inIndices.begin();
                 for (auto const& encVar : ddOutMetaVar.getDdVariables()) {
-                    assert(idxIt != inIndices.end());
                     auto encVarFun = qualTrans && encVar;
                     unsigned lit = bdd2lit(encVarFun.getInternalBdd().getSylvanBdd(), aig, maxvar);
                     unsigned idx = (unsigned)(*idxIt);
@@ -192,11 +191,21 @@ namespace storm {
                 std::string name = "coin_" + std::to_string(prob);
                 aiger_add_output(aig, lit, name.c_str());
             }
-
-
-            // TODO: how do we make the initial states explicit and not
-            // default to 0-values of the latches?
-            // for init states, use storm::dd::Bdd<storm::dd::DdType::Sylvan> initStates = model->getInitialStates();
+            // STEP 6:
+            // we set the initial values for all latches
+            storm::dd::Bdd<storm::dd::DdType::Sylvan> initStates = model->getInitialStates();
+            STORM_LOG_ASSERT(initStates.getNonZeroCount() == 1, "Expected a single initial state");
+            for (auto const& inVar : model->getRowVariables()) {
+                auto ddInMetaVar = model->getManagerAsSharedPointer()->getMetaVariable(inVar);
+                auto inIndices = ddInMetaVar.getIndices();
+                auto idxIt = inIndices.begin();
+                for (auto const& encInVar : ddInMetaVar.getDdVariables()) {
+                    unsigned idx = (unsigned)(*idxIt);
+                    unsigned init = ((encInVar && initStates) == initStates) ? 1 : 0;
+                    aiger_add_reset(aig, var2lit(idx), init);
+                    idxIt++;
+                }
+            }
             
             const char* check = aiger_check(aig);
             STORM_LOG_ASSERT(check == NULL, check);
