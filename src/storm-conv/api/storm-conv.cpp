@@ -179,8 +179,13 @@ namespace storm {
             }
             // STEP 5:
             // add coin outputs
+            std::set<double> nonzeroLeaves;
             storm::dd::Add<storm::dd::DdType::Sylvan> trans = model->getTransitionMatrix();
-            for (auto const& prob : trans.toVector()) {
+            for (auto addit = trans.begin(); addit != trans.end(); ++addit) {
+                std::cout << "found leaf value " << (*addit).second << std::endl;
+                nonzeroLeaves.insert((*addit).second);
+            }
+            for (auto const& prob : nonzeroLeaves) {
                 auto lteq = trans.lessOrEqual(prob);
                 auto gteq = trans.greaterOrEqual(prob);
                 auto eq = lteq && gteq;
