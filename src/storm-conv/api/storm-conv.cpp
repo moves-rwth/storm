@@ -182,7 +182,6 @@ namespace storm {
             std::set<double> nonzeroLeaves;
             storm::dd::Add<storm::dd::DdType::Sylvan> trans = model->getTransitionMatrix();
             for (auto addit = trans.begin(); addit != trans.end(); ++addit) {
-                std::cout << "found leaf value " << (*addit).second << std::endl;
                 nonzeroLeaves.insert((*addit).second);
             }
             for (auto const& prob : nonzeroLeaves) {
