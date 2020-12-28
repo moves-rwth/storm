@@ -5,7 +5,6 @@
 #include "storm/generator/PrismNextStateGenerator.h"
 #include "storm/utility/random.h"
 
-
 namespace storm {
     namespace simulator {
 
@@ -41,7 +40,10 @@ namespace storm {
              *
              * @return A list of choices that encode the possibilities in the current state.
              */
-            std::vector<generator::Choice<ValueType, uint32_t>> const& getChoices();
+            std::vector<generator::Choice<ValueType, uint32_t>> const& getChoices() const;
+
+            bool isSinkState() const;
+
             /**
              * Make a step and randomly select the successor. The action is given as an argument, the index reflects the index of the getChoices vector that can be accessed.
              *
@@ -56,6 +58,10 @@ namespace storm {
             std::vector<ValueType> const& getLastRewards() const;
             generator::CompressedState const& getCurrentState() const;
             expressions::SimpleValuation getCurrentStateAsValuation() const;
+
+            storm::json<ValueType> getStateAsJson() const;
+
+            storm::json<ValueType> getObservationAsJson() const;
 
             std::string getCurrentStateString() const;
             /**
@@ -78,7 +84,7 @@ namespace storm {
             generator::CompressedState currentState;
             /// Generator for the next states
             std::shared_ptr<storm::generator::PrismNextStateGenerator<ValueType, uint32_t>> stateGenerator;
-            bool explored = false;
+            /// Obtained behavior of a state
             generator::StateBehavior<ValueType> behavior;
             /// Helper for last action reward construction
             std::vector<ValueType> zeroRewards;

@@ -38,7 +38,8 @@ namespace storm {
         bool DiscreteTimePrismProgramSimulator<ValueType>::explore() {
             // Load the current state into the next state generator.
             stateGenerator->load(currentState);
-            // TODO: This low-level code currently expands all actions, while this may not be necessary.
+            // TODO: This low-level code currently expands all actions, while this is not necessary.
+            // However, using the next state generator ensures compatibliity with the model generator.
             behavior = stateGenerator->expand(stateToIdCallback);
             if (behavior.getStateRewards().size() > 0) {
                 STORM_LOG_ASSERT(behavior.getStateRewards().size() == lastActionRewards.size(), "Reward vectors should have same length.");
@@ -47,7 +48,27 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::vector<generator::Choice<ValueType, uint32_t>> const& DiscreteTimePrismProgramSimulator<ValueType>::getChoices() {
+        bool DiscreteTimePrismProgramSimulator<ValueType>::isSinkState() const {
+            if(behavior.empty()) {
+                return true;
+            }
+            std::set<uint32_t> successorIds;
+            for (Choice<ValueType,uint32_t> const& choice : behavior.getChoices()) {
+                for (auto it = choice.begin(); it != choice.end(); ++it) {
+                    successorIds.insert(it->first);
+                    if (successorIds.size() > 1) {
+                        return false;
+                    }
+                }
+            }
+            if (idToState.at(*(successorIds.begin())) == currentState) {
+                return true;
+            }
+            return false;
+        }
+
+        template<typename ValueType>
+        std::vector<generator::Choice<ValueType, uint32_t>> const& DiscreteTimePrismProgramSimulator<ValueType>::getChoices() const {
             return behavior.getChoices();
         }
 
@@ -69,6 +90,16 @@ namespace storm {
         template<typename ValueType>
         std::string DiscreteTimePrismProgramSimulator<ValueType>::getCurrentStateString() const {
             return stateGenerator->stateToString(currentState);
+        }
+
+        template<typename ValueType>
+        storm::json<ValueType> DiscreteTimePrismProgramSimulator<ValueType>::getStateAsJson() const {
+            return stateGenerator->currentStateToJson(false);
+        }
+
+        template<typename ValueType>
+        storm::json<ValueType> DiscreteTimePrismProgramSimulator<ValueType>::getObservationAsJson() const {
+            return stateGenerator->currentStateToJson(true);
         }
 
         template<typename ValueType>

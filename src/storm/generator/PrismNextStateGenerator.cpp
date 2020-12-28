@@ -727,13 +727,24 @@ namespace storm {
         template<typename ValueType, typename StateType>
         storm::storage::BitVector PrismNextStateGenerator<ValueType, StateType>::evaluateObservationLabels(CompressedState const& state) const {
             // TODO consider to avoid reloading by computing these bitvectors in an earlier build stage
-            unpackStateIntoEvaluator(state, this->variableInformation, *this->evaluator);
-
             storm::storage::BitVector result(program.getNumberOfObservationLabels() * 64);
+
+            if (program.getNumberOfObservationLabels() == 0) {
+                return result;
+            }
+            unpackStateIntoEvaluator(state, this->variableInformation, *this->evaluator);
             for (uint64_t i = 0; i < program.getNumberOfObservationLabels(); ++i) {
                 result.setFromInt(64*i,64,this->evaluator->asInt(program.getObservationLabels()[i].getStatePredicateExpression()));
             }
             return result;
+        }
+
+        template<typename ValueType, typename StateType>
+        void PrismNextStateGenerator<ValueType, StateType>::extendStateInformation(storm::json<ValueType>& result, bool onlyObservable) const {
+
+            for (uint64_t i = 0; i < program.getNumberOfObservationLabels(); ++i) {
+                result[program.getObservationLabels()[i].getName()] = this->evaluator->asInt(program.getObservationLabels()[i].getStatePredicateExpression());
+            }
         }
 
 

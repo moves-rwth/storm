@@ -1,3 +1,5 @@
+#pragma once
+
 #include <random>
 #include "storm/adapters/RationalNumberAdapter.h"
 

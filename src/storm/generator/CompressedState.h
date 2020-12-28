@@ -2,6 +2,7 @@
 #define STORM_GENERATOR_COMPRESSEDSTATE_H_
 
 #include "storm/storage/BitVector.h"
+#include "storm/adapters/JsonAdapter.h"
 #include <map>
 #include <unordered_map>
 
@@ -40,6 +41,17 @@ namespace storm {
          * @return A valuation that corresponds to the compressed state.
          */
         storm::expressions::SimpleValuation unpackStateIntoValuation(CompressedState const& state, VariableInformation const& variableInformation, storm::expressions::ExpressionManager const& manager);
+
+        /**
+         *
+         * @tparam ValueType  (The ValueType does not matter for the string representation.)
+         * @param state The state to export
+         * @param variableInformation Variable information to extract from the state
+         * @param onlyObservable Should we only export the observable information
+         * @return
+         */
+        template<typename ValueType>
+        storm::json<ValueType> unpackStateIntoJson(CompressedState const& state, VariableInformation const& variableInformation, bool onlyObservable);
 
         /*!
          * Appends the values of the given variables in the given state to the corresponding result vectors.

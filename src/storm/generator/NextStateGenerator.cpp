@@ -257,12 +257,25 @@ namespace storm {
                 }
             }
         }
-        
+
         template<typename ValueType, typename StateType>
         std::string NextStateGenerator<ValueType, StateType>::stateToString(CompressedState const& state) const {
             return toString(state, variableInformation);
         }
-        
+
+        template<typename ValueType, typename StateType>
+        storm::json<ValueType> NextStateGenerator<ValueType, StateType>::currentStateToJson(bool onlyObservable) const {
+            storm::json<ValueType> result = unpackStateIntoJson<ValueType>(*state, variableInformation, onlyObservable);
+            extendStateInformation(result,onlyObservable);
+            return result;
+        }
+
+        template<typename ValueType, typename StateType>
+        void NextStateGenerator<ValueType, StateType>::extendStateInformation(storm::json<ValueType>&, bool) const {
+            // Intentionally left empty.
+        }
+
+
         template<typename ValueType, typename StateType>
         std::shared_ptr<storm::storage::sparse::ChoiceOrigins> NextStateGenerator<ValueType, StateType>::generateChoiceOrigins(std::vector<boost::any>& dataForChoiceOrigins) const {
             STORM_LOG_ERROR_COND(!options.isBuildChoiceOriginsSet(), "Generating choice origins is not supported for the considered model format.");

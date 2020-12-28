@@ -72,6 +72,8 @@ namespace storm {
             
             std::string stateToString(CompressedState const& state) const;
 
+            storm::json<ValueType> currentStateToJson(bool onlyObservable = false) const;
+
             uint32_t observabilityClass(CompressedState const& state) const;
 
             virtual storm::models::sparse::StateLabeling label(storm::storage::sparse::StateStorage<StateType> const& stateStorage, std::vector<StateType> const& initialStateIndices = {}, std::vector<StateType> const& deadlockStateIndices = {}) = 0;
@@ -105,6 +107,8 @@ namespace storm {
             virtual void unpackTransientVariableValuesIntoEvaluator(CompressedState const& state, storm::expressions::ExpressionEvaluator<ValueType>& evaluator) const;
             
             virtual storm::storage::BitVector evaluateObservationLabels(CompressedState const& state) const =0;
+
+            virtual void extendStateInformation(storm::json<ValueType>& stateInfo, bool onlyObservable = false) const;
 
             virtual storm::storage::sparse::StateValuationsBuilder initializeObservationValuationsBuilder() const;
 
