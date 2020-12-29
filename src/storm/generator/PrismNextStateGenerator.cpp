@@ -22,12 +22,12 @@ namespace storm {
     namespace generator {
         
         template<typename ValueType, typename StateType>
-        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options) : PrismNextStateGenerator<ValueType, StateType>(program.substituteConstantsFormulas(), options, false) {
+        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options, std::shared_ptr<ActionMask<ValueType,StateType>> const& mask) : PrismNextStateGenerator<ValueType, StateType>(program.substituteConstantsFormulas(), options, mask, false) {
             // Intentionally left empty.
         }
         
         template<typename ValueType, typename StateType>
-        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options, bool) : NextStateGenerator<ValueType, StateType>(program.getManager(), options), program(program), rewardModels(), hasStateActionRewards(false) {
+        PrismNextStateGenerator<ValueType, StateType>::PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options,  std::shared_ptr<ActionMask<ValueType,StateType>> const& mask, bool) : NextStateGenerator<ValueType, StateType>(program.getManager(), options, mask), program(program), rewardModels(), hasStateActionRewards(false) {
             STORM_LOG_TRACE("Creating next-state generator for PRISM program: " << program);
             STORM_LOG_THROW(!this->program.specifiesSystemComposition(), storm::exceptions::WrongFormatException, "The explicit next-state generator currently does not support custom system compositions.");
                         
@@ -536,6 +536,11 @@ namespace storm {
                             continue;
                         }
                     }
+                    if (this->actionMask != nullptr) {
+                        if (!this->actionMask->query(*this, command.getActionIndex())) {
+                            continue;
+                        }
+                    }
 
                     // Skip the command, if it is not enabled.
                     if (!this->evaluator->asBool(command.getGuardExpression())) {
@@ -616,6 +621,11 @@ namespace storm {
         void PrismNextStateGenerator<ValueType, StateType>::addLabeledChoices(std::vector<Choice<ValueType>>& choices, CompressedState const& state, StateToIdCallback stateToIdCallback, CommandFilter const& commandFilter) {
 
             for (uint_fast64_t actionIndex : program.getSynchronizingActionIndices()) {
+                if (this->actionMask != nullptr) {
+                    if (!this->actionMask->query(*this, actionIndex)) {
+                        continue;
+                    }
+                }
                 boost::optional<std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>>> optionalActiveCommandLists = getActiveCommandsByActionIndex(actionIndex, commandFilter);
 
                 // Only process this action label, if there is at least one feasible solution.

@@ -16,9 +16,23 @@
 
 namespace storm {
     namespace generator {
-                    
+
         template<typename ValueType, typename StateType>
-        NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, VariableInformation const& variableInformation, NextStateGeneratorOptions const& options) : options(options), expressionManager(expressionManager.getSharedPointer()), variableInformation(variableInformation), evaluator(nullptr), state(nullptr) {
+        StateValuationFunctionMask<ValueType,StateType>::StateValuationFunctionMask(std::function<bool(storm::expressions::SimpleValuation const&, uint64_t)> const& f)
+        : func(f)
+        {
+            // Intentionally left empty
+        }
+
+        template<typename ValueType, typename StateType>
+        bool StateValuationFunctionMask<ValueType,StateType>::query(storm::generator::NextStateGenerator<ValueType,StateType> const& generator, uint64_t actionIndex) {
+            auto val = generator.currentStateToSimpleValuation();
+            bool res =  func(val, actionIndex);
+            return res;
+        }
+
+        template<typename ValueType, typename StateType>
+        NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, VariableInformation const& variableInformation, NextStateGeneratorOptions const& options, std::shared_ptr<ActionMask<ValueType,StateType>> const& mask) : options(options), expressionManager(expressionManager.getSharedPointer()), variableInformation(variableInformation), evaluator(nullptr), state(nullptr), actionMask(mask) {
             if(variableInformation.hasOutOfBoundsBit()) {
                 outOfBoundsState = createOutOfBoundsState(variableInformation);
             }
@@ -28,7 +42,7 @@ namespace storm {
         }
         
         template<typename ValueType, typename StateType>
-        NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, NextStateGeneratorOptions const& options) : options(options), expressionManager(expressionManager.getSharedPointer()), variableInformation(), evaluator(nullptr), state(nullptr) {
+        NextStateGenerator<ValueType, StateType>::NextStateGenerator(storm::expressions::ExpressionManager const& expressionManager, NextStateGeneratorOptions const& options, std::shared_ptr<ActionMask<ValueType,StateType>> const& mask) : options(options), expressionManager(expressionManager.getSharedPointer()), variableInformation(), evaluator(nullptr), state(nullptr), actionMask(mask)  {
             if(variableInformation.hasOutOfBoundsBit()) {
                 outOfBoundsState = createOutOfBoundsState(variableInformation);
             }
@@ -271,6 +285,12 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
+        storm::expressions::SimpleValuation NextStateGenerator<ValueType, StateType>::currentStateToSimpleValuation() const {
+            return unpackStateIntoValuation(*state, variableInformation, *expressionManager);
+        }
+
+
+        template<typename ValueType, typename StateType>
         void NextStateGenerator<ValueType, StateType>::extendStateInformation(storm::json<ValueType>&, bool) const {
             // Intentionally left empty.
         }
@@ -301,7 +321,15 @@ namespace storm {
 
         template class NextStateGenerator<double>;
 
+        template class ActionMask<double>;
+        template class StateValuationFunctionMask<double>;
+
 #ifdef STORM_HAVE_CARL
+        template class ActionMask<storm::RationalNumber>;
+        template class StateValuationFunctionMask<storm::RationalNumber>;
+        template class ActionMask<storm::RationalFunction>;
+        template class StateValuationFunctionMask<storm::RationalFunction>;
+
         template class NextStateGenerator<storm::RationalNumber>;
         template class NextStateGenerator<storm::RationalFunction>;
 #endif

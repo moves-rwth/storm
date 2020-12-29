@@ -23,7 +23,7 @@ namespace storm {
             typedef storm::storage::FlatSet<uint_fast64_t> CommandSet;
             enum class CommandFilter {All, Markovian, Probabilistic};
 
-            PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options = NextStateGeneratorOptions());
+            PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options = NextStateGeneratorOptions(), std::shared_ptr<ActionMask<ValueType,StateType>> const& = nullptr);
             
             /*!
              * A quick check to detect whether the given model is not supported.
@@ -55,7 +55,7 @@ namespace storm {
              * being called. The last argument is only present to distinguish the signature of this constructor from the
              * public one.
              */
-            PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options, bool flag);
+            PrismNextStateGenerator(storm::prism::Program const& program, NextStateGeneratorOptions const& options, std::shared_ptr<ActionMask<ValueType,StateType>> const&, bool flag);
             
             /*!
              * Applies an update to the state currently loaded into the evaluator and applies the resulting values to
