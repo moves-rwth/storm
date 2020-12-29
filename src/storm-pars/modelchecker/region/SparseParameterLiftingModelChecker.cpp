@@ -444,7 +444,7 @@ namespace storm {
             storm::utility::Stopwatch loopWatch(true);
             storm::utility::Stopwatch boundsWatch(false);
 
-            if (!(useMonotonicity && regionQueue.top().localMonRes->getGlobalMonotonicityResult()->isAllMonotonicity())) {
+            if (!(useMonotonicity && regionQueue.top().localMonRes->getGlobalMonotonicityResult()->isDone() && regionQueue.top().localMonRes->getGlobalMonotonicityResult()->isAllMonotonicity())) {
                 // Doing the extremal computation
                 bool changed = false;
 
