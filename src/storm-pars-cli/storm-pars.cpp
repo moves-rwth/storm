@@ -666,7 +666,6 @@ namespace storm {
                         STORM_PRINT_AND_LOG("Result at initial state: " << valueValuation.first << " ( approx. " << storm::utility::convertNumber<double>(valueValuation.first) << ") at [" << valuationStr.str() << "]." << std::endl)
                         STORM_PRINT_AND_LOG("Time for model checking: " << watch << "." << std::endl);
                     }
-
                 }
             }
         }

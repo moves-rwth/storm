@@ -304,65 +304,65 @@ namespace storm {
             Valuation valuation;
             for (auto& var : consideredVariables) {
                 ConstantType previousCenter = -1;
-                ConstantType previousUpper = -1;
-                ConstantType previousLower = -1;
+//                ConstantType previousUpper = -1;
+//                ConstantType previousLower = -1;
                 bool monDecr = true;
                 bool monIncr = true;
                 auto valuationCenter = region.getCenterPoint();
-                auto valuationLower = region.getLowerBoundaries();
-                auto valuationUpper = region.getUpperBoundaries();
+//                auto valuationLower = region.getLowerBoundaries();
+//                auto valuationUpper = region.getUpperBoundaries();
 
                 valuationCenter[var] = region.getLowerBoundary(var);
-                valuationLower[var] = region.getLowerBoundary(var);
-                valuationUpper[var] = region.getLowerBoundary(var);
-                // TODO: make cmdline argument
-                int numberOfSamples = 4;
+//                valuationLower[var] = region.getLowerBoundary(var);
+//                valuationUpper[var] = region.getLowerBoundary(var);
+                // TODO: make cmdline argument or 1/precision
+                int numberOfSamples = 50;
                 auto stepSize = (region.getUpperBoundary(var) - region.getLowerBoundary(var)) / (numberOfSamples - 1);
 
                 while (valuationCenter[var] <= region.getUpperBoundary(var)) {
                     // Create valuation
-                    assert (valuationLower[var] <= region.getUpperBoundary(var));
-                    assert (valuationUpper[var] <= region.getUpperBoundary(var));
-
-                    ConstantType valueLower = getInstantiationChecker().check(env, valuationLower)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
+//                    assert (valuationLower[var] <= region.getUpperBoundary(var));
+//                    assert (valuationUpper[var] <= region.getUpperBoundary(var));
+//
+//                    ConstantType valueLower = getInstantiationChecker().check(env, valuationLower)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
                     ConstantType valueCenter = getInstantiationChecker().check(env, valuationCenter)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
-                    ConstantType valueUpper = getInstantiationChecker().check(env, valuationUpper)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
-                    if (storm::solver::minimize(dir) ? valueLower <= value : valueLower >= value) {
-                        value = valueLower;
-                        valuation = valuationLower;
-                    }
+//                    ConstantType valueUpper = getInstantiationChecker().check(env, valuationUpper)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
+//                    if (storm::solver::minimize(dir) ? valueLower <= value : valueLower >= value) {
+//                        value = valueLower;
+//                        valuation = valuationLower;
+//                    }
                     if (storm::solver::minimize(dir) ? valueCenter <= value : valueCenter >= value) {
                         value = valueCenter;
                         valuation = valuationCenter;
                     }
-                    if (storm::solver::minimize(dir) ? valueUpper <= value : valueUpper >= value) {
-                        value = valueUpper;
-                        valuation = valuationUpper;
-                    }
+//                    if (storm::solver::minimize(dir) ? valueUpper <= value : valueUpper >= value) {
+//                        value = valueUpper;
+//                        valuation = valuationUpper;
+//                    }
                     // Calculate difference with result for previous valuation
                     ConstantType diffCenter = previousCenter - valueCenter;
-                    ConstantType diffLower = previousLower - valueLower;
-                    ConstantType diffUpper = previousUpper - valueUpper;
+//                    ConstantType diffLower = previousLower - valueLower;
+//                    ConstantType diffUpper = previousUpper - valueUpper;
                     assert (previousCenter == -1 || (diffCenter >= -1 && diffCenter <= 1));
-                    assert (previousUpper == -1 || (diffUpper >= -1 && diffUpper <= 1));
-                    assert (previousLower == -1 || (diffLower >= -1 && diffLower <= 1));
-
-                    if (previousLower != -1) {
-                        assert (previousUpper != -1 && previousCenter != -1);
-                        monDecr &= diffCenter > 0 && diffLower > 0 && diffUpper > 0; // then previous value is larger than the current value from the initial states
-                        monIncr &= diffCenter < 0 && diffLower < 0 && diffUpper < 0;
-                    } else {
-                        assert (previousUpper == -1 && previousCenter == -1);
+//                    assert (previousUpper == -1 || (diffUpper >= -1 && diffUpper <= 1));
+//                    assert (previousLower == -1 || (diffLower >= -1 && diffLower <= 1));
+//
+                    if (previousCenter != -1) {
+                        assert (previousCenter != -1 && previousCenter != -1);
+                        monDecr &= diffCenter > 0 && diffCenter > 0 && diffCenter > 0; // then previous value is larger than the current value from the initial states
+                        monIncr &= diffCenter < 0 && diffCenter < 0 && diffCenter < 0;
+//                    } else {
+//                        assert (previousUpper == -1 && previousLower == -1);
                     }
                     previousCenter = valueCenter;
-                    previousLower = valueLower;
-                    previousUpper = valueUpper;
+//                    previousLower = valueLower;
+//                    previousUpper = valueUpper;
                     if (!monDecr && ! monIncr) {
                         break;
                     }
                     valuationCenter[var] += stepSize;
-                    valuationLower[var] += stepSize;
-                    valuationUpper[var] += stepSize;
+//                    valuationLower[var] += stepSize;
+//                    valuationUpper[var] += stepSize;
                 }
                 if (monIncr) {
                     possibleMonotoneParameters.insert(var);
@@ -426,8 +426,6 @@ namespace storm {
             } else {
                 value = initialValue;
             }
-
-
 
             initialWatch.stop();
             STORM_PRINT(std::endl << "Total time for initial points: " << initialWatch << "." << std::endl << std::endl);
