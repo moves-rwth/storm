@@ -392,27 +392,11 @@ namespace storm {
             std::priority_queue<RegionBound<SparseModelType, ConstantType>, std::vector<RegionBound<SparseModelType, ConstantType>>, decltype(cmp)> regionQueue(cmp);
             storm::utility::Stopwatch initialWatch(true);
 
-            // TODO: zero or one?
-            if (useMonotonicity) {
-
-                auto order = this->extendOrder(env, nullptr, region);
-                auto monRes = std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(order->getNumberOfStates()));
-                storm::utility::Stopwatch monotonicityWatch(true);
-                this->extendLocalMonotonicityResult(region, order, monRes);
-                monotonicityWatch.stop();
-                STORM_PRINT(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl << std::endl);
-
-                if (minimize) {
-                    regionQueue.emplace(region, order, monRes, storm::utility::zero<ConstantType>());
-                } else {
-                    regionQueue.emplace(region, order, monRes, storm::utility::one<ConstantType>());
-                }
+//            // TODO: zero or one?
+            if (minimize) {
+                regionQueue.emplace(region, nullptr, nullptr, storm::utility::zero<ConstantType>());
             } else {
-                if (minimize) {
-                    regionQueue.emplace(region, nullptr, nullptr, storm::utility::zero<ConstantType>());
-                } else {
-                    regionQueue.emplace(region, nullptr, nullptr, storm::utility::one<ConstantType>());
-                }
+                regionQueue.emplace(region, nullptr, nullptr, storm::utility::one<ConstantType>());
             }
 
 
@@ -420,7 +404,7 @@ namespace storm {
             boost::optional<ConstantType> value;
             typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation valuation;
             if (!initialValue) {
-                auto init = getGoodInitialPoint(env, region, dir, regionQueue.top().localMonRes);
+                auto init = getGoodInitialPoint(env, region, dir, useMonotonicity);
                 value = storm::utility::convertNumber<ConstantType>(init.first);
                 valuation = std::move(init.second);
             } else {
@@ -434,7 +418,6 @@ namespace storm {
             }
 
             auto numberOfSplits = 0;
-//            auto count = 0;
             auto numberOfPLACalls = 0;
             auto numberOfPLACallsBounds = 0;
             auto numberOfOrderCopies = 0;
@@ -442,156 +425,164 @@ namespace storm {
             storm::utility::Stopwatch loopWatch(true);
             storm::utility::Stopwatch boundsWatch(false);
 
-            if (!(useMonotonicity && regionQueue.top().localMonRes->getGlobalMonotonicityResult()->isDone() && regionQueue.top().localMonRes->getGlobalMonotonicityResult()->isAllMonotonicity())) {
-                // Doing the extremal computation
-                bool changed = false;
+            // Doing the extremal computation
+            bool changed = false;
+            auto totalArea = storm::utility::convertNumber<ConstantType>(region.area());
+            auto coveredArea = storm::utility::zero<ConstantType>();
 
-                auto totalArea = storm::utility::convertNumber<ConstantType>(region.area());
-                auto coveredArea = storm::utility::zero<ConstantType>();
-//            std::ofstream myfile;
-//            myfile.open ("example.txt");
-//            myfile << "Count;initialBound;newBound;currentValue;region;" << std::endl;
+            while (!regionQueue.empty()) {
+                auto currRegion = regionQueue.top().region;
+                auto order = regionQueue.top().order;
+                auto localMonotonicityResult = regionQueue.top().localMonRes;
+                auto currBound = regionQueue.top().bound;
+                STORM_LOG_INFO("Currently looking at region: " << currRegion);
 
+                std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> newRegions;
 
-                while (!regionQueue.empty()) {
-                    auto currRegion = regionQueue.top().region;
-                    auto order = regionQueue.top().order;
-                    auto localMonotonicityResult = regionQueue.top().localMonRes;
-                    auto currBound = regionQueue.top().bound;
-                    STORM_LOG_INFO("Currently looking at region: " << currRegion);
+                // TODO: take into account precision of current bound
+                // Check whether this region needs further investigation based on the bound of the parent region
+                bool investigateBounds = !value
+                                         || (minimize && currBound < value.get() - storm::utility::convertNumber<ConstantType>(precision))
+                                         || (!minimize && currBound > value.get() + storm::utility::convertNumber<ConstantType>(precision));
 
-//                myfile << count << ";" << currBound << ";";
-                    std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> newRegions;
-
-                    // TODO: take into account precision of current bound
-                    // Check whether this region needs further investigation based on the bound of the parent region
-                    bool investigateBounds = !value
-                                             || (minimize && currBound < value.get() - storm::utility::convertNumber<ConstantType>(precision))
-                                             || (!minimize && currBound > value.get() + storm::utility::convertNumber<ConstantType>(precision));
-
-                    if (investigateBounds) {
-                        numberOfPLACalls++;
-                        auto bounds = getBound(env, currRegion, dir, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-                        currBound = bounds[*this->parametricModel->getInitialStates().begin()];
-                        // Check whether this region needs further investigation based on the bound of this region
-                        bool lookAtRegion = !value
-                                            || (minimize && currBound < value.get() - storm::utility::convertNumber<ConstantType>(precision))
-                                            || (!minimize && currBound > value.get() + storm::utility::convertNumber<ConstantType>(precision));
-                        if (lookAtRegion) {
-                            if (useMonotonicity) {
-                                // Continue extending order/monotonicity result
-                                bool changedOrder = false;
-                                if (!order->getDoneBuilding() && orderExtender->isHope(order, currRegion)) {
-                                    if (numberOfCopiesOrder[order] != 1) {
-                                        numberOfCopiesOrder[order]--;
-                                        order = copyOrder(order);
-                                        numberOfOrderCopies++;
-                                    } else {
-                                        assert (numberOfCopiesOrder[order] == 1);
-                                    }
-                                    this->extendOrder(env, order, currRegion);
-                                    changedOrder = true;
+                if (investigateBounds) {
+                    numberOfPLACalls++;
+                    auto bounds = getBound(env, currRegion, dir, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                    currBound = bounds[*this->parametricModel->getInitialStates().begin()];
+                    // Check whether this region needs further investigation based on the bound of this region
+                    bool lookAtRegion = !value
+                                        || (minimize && currBound < value.get() - storm::utility::convertNumber<ConstantType>(precision))
+                                        || (!minimize && currBound > value.get() + storm::utility::convertNumber<ConstantType>(precision));
+                    if (lookAtRegion) {
+                        if (useMonotonicity && localMonotonicityResult != nullptr) {
+                            // Continue extending order/monotonicity result
+                            bool changedOrder = false;
+                            if (!order->getDoneBuilding() && orderExtender->isHope(order, currRegion)) {
+                                if (numberOfCopiesOrder[order] != 1) {
+                                    numberOfCopiesOrder[order]--;
+                                    order = copyOrder(order);
+                                    numberOfOrderCopies++;
+                                } else {
+                                    assert (numberOfCopiesOrder[order] == 1);
                                 }
-                                if (changedOrder) {
-                                    assert(!localMonotonicityResult->isDone());
+                                this->extendOrder(env, order, currRegion);
+                                changedOrder = true;
+                            }
+                            if (changedOrder) {
+                                assert(!localMonotonicityResult->isDone());
 
-                                    if (numberOfCopiesMonRes[localMonotonicityResult] != 1) {
-                                        numberOfCopiesMonRes[localMonotonicityResult]--;
-                                        localMonotonicityResult = localMonotonicityResult->copy();
-                                        numberOfMonResCopies++;
+                                if (numberOfCopiesMonRes[localMonotonicityResult] != 1) {
+                                    numberOfCopiesMonRes[localMonotonicityResult]--;
+                                    localMonotonicityResult = localMonotonicityResult->copy();
+                                    numberOfMonResCopies++;
+                                } else {
+                                    assert (numberOfCopiesMonRes[localMonotonicityResult] == 1);
+                                }
+                                this->extendLocalMonotonicityResult(currRegion, order, localMonotonicityResult);
+                            }
+                        }
+
+                        // Check whether this region contains a new 'good' value and set this value
+                        auto point = localMonotonicityResult != nullptr ? currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult())) : currRegion.getCenterPoint();
+                        auto currValue = getInstantiationChecker().check(env, point)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
+                        if (!value || (minimize ? currValue <= value.get() : currValue >= value.get())) {
+                            changed = true;
+                            value = currValue;
+                            valuation = point;
+                        }
+
+                        if ((minimize && currBound < value.get() - storm::utility::convertNumber<ConstantType>(precision))
+                            || (!minimize && currBound > value.get() + storm::utility::convertNumber<ConstantType>(precision))) {
+                            // We will split the region in this case, but first try to extend the order
+                            if (order == nullptr) {
+                                // create the order and monotonicity result
+                                if (this->isUseBoundsSet()) {
+                                    boundsWatch.start();
+                                    numberOfPLACallsBounds++;
+                                    if (minimize) {
+                                        orderExtender->setMinValuesOnce(bounds);
+                                        orderExtender->setMaxValuesOnce(getBound(env, currRegion, storm::solver::OptimizationDirection::Maximize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
                                     } else {
-                                        assert (numberOfCopiesMonRes[localMonotonicityResult] == 1);
+                                        orderExtender->setMaxValuesOnce(bounds);
+                                        orderExtender->setMinValuesOnce(getBound(env, currRegion, storm::solver::OptimizationDirection::Minimize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
                                     }
+                                    boundsWatch.stop();
+                                }
+
+                                order = this->extendOrder(env, nullptr, region);
+                                localMonotonicityResult = std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(order->getNumberOfStates()));
+                                storm::utility::Stopwatch monotonicityWatch(true);
+                                this->extendLocalMonotonicityResult(region, order, localMonotonicityResult);
+                                monotonicityWatch.stop();
+                                STORM_PRINT(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl << std::endl);
+                            } else if (useMonotonicity && this->isUseBoundsSet() && !order->getDoneBuilding()) {
+                                boundsWatch.start();
+                                numberOfPLACallsBounds++;
+                                if (minimize) {
+                                    orderExtender->setMinValues(order, bounds);
+                                    orderExtender->setMaxValues(order, getBound(env, currRegion, storm::solver::OptimizationDirection::Maximize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
+                                } else {
+                                    orderExtender->setMaxValues(order, bounds);
+                                    orderExtender->setMinValues(order, getBound(env, currRegion, storm::solver::OptimizationDirection::Minimize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
+                                }
+                                boundsWatch.stop();
+                                // We try to extend the order again based on minMaxValues
+                                auto i = order->getNumberOfDoneStates();
+                                this->extendOrder(env, order, currRegion);
+                                if (i < order->getNumberOfDoneStates()) {
                                     this->extendLocalMonotonicityResult(currRegion, order, localMonotonicityResult);
                                 }
                             }
 
-                            // Check whether this region contains a new 'good' value and set this value
-                            auto point = useMonotonicity ? currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult())) : currRegion.getCenterPoint();
-                            auto currValue = getInstantiationChecker().check(env, point)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
-                            if (!value || (minimize ? currValue <= value.get() : currValue >= value.get())) {
-                                changed = true;
-                                value = currValue;
-                                valuation = point;
-                            }
-
-                            if ((minimize && currBound < value.get() - storm::utility::convertNumber<ConstantType>(precision))
-                                || (!minimize && currBound > value.get() + storm::utility::convertNumber<ConstantType>(precision))) {
-                                // We will split the region in this case, but first try to extend the order
-                                if (useMonotonicity && this->isUseBoundsSet() && !order->getDoneBuilding()) {
-                                    boundsWatch.start();
-                                    numberOfPLACallsBounds++;
-                                    if (minimize) {
-                                        orderExtender->setMinValues(order, bounds);
-                                        orderExtender->setMaxValues(order, getBound(env, currRegion, storm::solver::OptimizationDirection::Maximize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
-                                    } else {
-                                        orderExtender->setMaxValues(order, bounds);
-                                        orderExtender->setMinValues(order, getBound(env, currRegion, storm::solver::OptimizationDirection::Minimize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
-                                    }
-                                    boundsWatch.stop();
-                                    // We try to extend the order again based on minMaxValues
-                                    auto i = order->getNumberOfDoneStates();
-                                    this->extendOrder(env, order, currRegion);
-                                    if (i < order->getNumberOfDoneStates()) {
-                                        this->extendLocalMonotonicityResult(currRegion, order, localMonotonicityResult);
-                                    }
-                                }
-                                // Now split the region
-                                if (useMonotonicity) {
-                                    this->splitSmart(currRegion, newRegions, order, *(localMonotonicityResult->getGlobalMonotonicityResult()), true);
-                                } else if (this->isRegionSplitEstimateSupported()) {
-                                    auto empty = storm::analysis::MonotonicityResult<VariableType>();
-                                    this->splitSmart(currRegion, newRegions, order, empty, true);
-                                } else {
-                                    currRegion.split(currRegion.getCenterPoint(), newRegions);
-                                }
+                            // Now split the region
+                            if (useMonotonicity) {
+                                this->splitSmart(currRegion, newRegions, order, *(localMonotonicityResult->getGlobalMonotonicityResult()), true);
+                            } else if (this->isRegionSplitEstimateSupported()) {
+                                auto empty = storm::analysis::MonotonicityResult<VariableType>();
+                                this->splitSmart(currRegion, newRegions, order, empty, true);
+                            } else {
+                                currRegion.split(currRegion.getCenterPoint(), newRegions);
                             }
                         }
                     }
+                }
 
-                    // When the newRegions is empty we are done with the current region
-                    if (newRegions.empty()) {
-                        coveredArea += storm::utility::convertNumber<ConstantType>(currRegion.area());
-                        if (order != nullptr) {
-                            numberOfCopiesOrder[order]--;
-                            numberOfCopiesMonRes[localMonotonicityResult]--;
-                        }
-                    } else {
-                        STORM_LOG_INFO("Splitting region " << currRegion << " into " << newRegions.size());
-                        numberOfSplits++;
+                // When the newRegions is empty we are done with the current region
+                if (newRegions.empty()) {
+                    coveredArea += storm::utility::convertNumber<ConstantType>(currRegion.area());
+                    if (order != nullptr) {
+                        numberOfCopiesOrder[order]--;
+                        numberOfCopiesMonRes[localMonotonicityResult]--;
                     }
-//                myfile << currBound << ";" << value.get() << ";" << currRegion ;
-//                count++;
-//                if (!newRegions.empty()) {
-//                    myfile << "split;"<< std::endl;
-//                } else {
-//                    myfile << std::endl;
-//                }
+                } else {
+                    STORM_LOG_INFO("Splitting region " << currRegion << " into " << newRegions.size());
+                    numberOfSplits++;
+                }
 
-                    regionQueue.pop();
+                regionQueue.pop();
 
-                    // Add the new regions to the queue
-                    if (useMonotonicity) {
-                        for (auto &r : newRegions) {
-                            r.setBoundParent(storm::utility::convertNumber<CoefficientType>(currBound));
-                            regionQueue.emplace(r, order, localMonotonicityResult, currBound);
-                        }
-                        if (numberOfCopiesOrder.find(order) != numberOfCopiesOrder.end()) {
-                            numberOfCopiesOrder[order] += newRegions.size();
-                            numberOfCopiesMonRes[localMonotonicityResult] += newRegions.size();
-                        } else {
-                            numberOfCopiesOrder[order] = newRegions.size();
-                            numberOfCopiesMonRes[localMonotonicityResult] = newRegions.size();
-                        }
-                    } else {
-                        for (auto &r : newRegions) {
-                            r.setBoundParent(storm::utility::convertNumber<CoefficientType>(currBound));
-                            regionQueue.emplace(r, nullptr, nullptr, currBound);
-                        }
+                // Add the new regions to the queue
+                if (useMonotonicity) {
+                    for (auto &r : newRegions) {
+                        r.setBoundParent(storm::utility::convertNumber<CoefficientType>(currBound));
+                        regionQueue.emplace(r, order, localMonotonicityResult, currBound);
                     }
+                    if (numberOfCopiesOrder.find(order) != numberOfCopiesOrder.end()) {
+                        numberOfCopiesOrder[order] += newRegions.size();
+                        numberOfCopiesMonRes[localMonotonicityResult] += newRegions.size();
+                    } else {
+                        numberOfCopiesOrder[order] = newRegions.size();
+                        numberOfCopiesMonRes[localMonotonicityResult] = newRegions.size();
+                    }
+                } else {
+                    for (auto &r : newRegions) {
+                        r.setBoundParent(storm::utility::convertNumber<CoefficientType>(currBound));
+                        regionQueue.emplace(r, nullptr, nullptr, currBound);
+                    }
+                }
 
-                    STORM_LOG_INFO("Current value : " << value.get() << ", current bound: " << currBound << ".");
-                    STORM_LOG_INFO("Covered " << (coveredArea * storm::utility::convertNumber<ConstantType>(100.0) / totalArea) << "% of the region." << std::endl);
+                STORM_LOG_INFO("Current value : " << value.get() << ", current bound: " << currBound << ".");
+                STORM_LOG_INFO("Covered " << (coveredArea * storm::utility::convertNumber<ConstantType>(100.0) / totalArea) << "% of the region." << std::endl);
 //                if (useMonotonicity && regionQueue.empty()) {
 //                    // TODO: change
 //                    loopWatch.stop();
@@ -606,11 +597,8 @@ namespace storm {
 //                    }
 //                    STORM_PRINT("Total number of local monotonic states in last result (including =) and =( ): " << (count) << std::endl);
 //                }
-                }
-                if (!useMonotonicity) {
-                    loopWatch.stop();
-                }
             }
+            loopWatch.stop();
 
             STORM_PRINT("Total number of splits: " << numberOfSplits << std::endl);
             STORM_PRINT("Total number of plaCalls: " << numberOfPLACalls << std::endl);
@@ -628,7 +616,7 @@ namespace storm {
         }
 
         template<typename SparseModelType, typename ConstantType>
-        std::pair<typename SparseModelType::ValueType, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getGoodInitialPoint(const Environment &env, const storage::ParameterRegion<typename SparseModelType::ValueType> &region, const OptimizationDirection &dir, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonRes) {
+        std::pair<typename SparseModelType::ValueType, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation> SparseParameterLiftingModelChecker<SparseModelType, ConstantType>::getGoodInitialPoint(const Environment &env, const storage::ParameterRegion<typename SparseModelType::ValueType> &region, const OptimizationDirection &dir, bool useMonotonicity) {
             typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation Valuation;
             typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::CoefficientType CoefficientType;
             ConstantType value = storm::solver::minimize(dir) ? 1 : 0;
@@ -636,17 +624,17 @@ namespace storm {
             std::set<VariableType> monIncr, monDecr, notMon, notMonFirst;
             STORM_LOG_INFO("Number of parameters: " << region.getVariables().size() << std::endl;);
 
-            if (localMonRes != nullptr) {
-                localMonRes->getGlobalMonotonicityResult()->splitBasedOnMonotonicity(region.getVariables(), monIncr, monDecr, notMonFirst);
+            if (useMonotonicity) {
+//                localMonRes->getGlobalMonotonicityResult()->splitBasedOnMonotonicity(region.getVariables(), monIncr, monDecr, notMonFirst);
 
-                auto numMon = monIncr.size() + monDecr.size();
-                STORM_LOG_INFO("Number of monotone parameters: " << numMon << std::endl;);
+//                auto numMon = monIncr.size() + monDecr.size();
+//                STORM_LOG_INFO("Number of monotone parameters: " << numMon << std::endl;);
 
-                if (numMon < region.getVariables().size()) {
-                    checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, notMonFirst, dir);
-                    STORM_LOG_INFO("Number of possible monotone parameters: " << (monIncr.size() + monDecr.size() - numMon) << std::endl;);
+//                if (numMon < region.getVariables().size()) {
+                    checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, region.getVariables(), dir);
+                    STORM_LOG_INFO("Number of possible monotone parameters: " << (monIncr.size() + monDecr.size()) << std::endl;);
                     STORM_LOG_INFO("Number of definitely not monotone parameters: " << notMon.size() << std::endl;);
-                }
+//                }
 
                 valuation = region.getPoint(dir, monIncr, monDecr);
 //                std::size_t const numOfSamples = 50;

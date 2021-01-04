@@ -170,6 +170,11 @@ namespace storm {
 
             }
 
+            if (minValuesOnce && maxValuesOnce) {
+                continueExtending[bottomTopOrder] = true;
+                minValues[bottomTopOrder] = std::move(minValuesOnce.get());
+                maxValues[bottomTopOrder] = std::move(maxValuesOnce.get());
+            }
             return bottomTopOrder;
         }
 
@@ -305,19 +310,7 @@ namespace storm {
             }
             return std::make_tuple(order, numberOfStates, numberOfStates);
         }
-//
-//        template<typename ValueType, typename ConstantType>
-//        std::pair<uint_fast64_t, uint_fast64_t>
-//        OrderExtender<ValueType, ConstantType>::extendStateToHandle(std::shared_ptr<Order> order, uint_fast64_t currentState, const vector<uint_fast64_t> &successors, bool allowMerge)  {
-//            std::pair<uint_fast64_t, uint_fast64_t> result;
-//            if (cyclic && !order->isTrivial(currentState)) {
-//                assert (order->contains(currentState));
-//                result = extendByForwardReasoning(order, currentState, successors, allowMerge);
-//            } else {
-//                result = extendByBackwardReasoning(order, currentState, successors, allowMerge);
-//            }
-//            return result;
-//        }
+
 
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t> OrderExtender<ValueType, ConstantType>::extendNormal(std::shared_ptr<Order> order, uint_fast64_t currentState, const vector<uint_fast64_t> &successors, bool allowMerge)  {
@@ -624,8 +617,6 @@ namespace storm {
         void OrderExtender<ValueType, ConstantType>::setMinMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType>& minValues, std::vector<ConstantType>& maxValues) {
             assert (minValues.size() == numberOfStates);
             assert (maxValues.size() == numberOfStates);
-            this->minValues[order] = std::move(minValues);//minCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-            this->maxValues[order] = std::move(maxValues);//maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
             usePLA[order] = true;
             if (unknownStatesMap.find(order) != unknownStatesMap.end()) {
                 if (unknownStatesMap[order].first != numberOfStates) {
@@ -638,6 +629,8 @@ namespace storm {
             } else {
                 continueExtending[order] = true;
             }
+            this->minValues[order] = std::move(minValues);//minCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+            this->maxValues[order] = std::move(maxValues);//maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
         }
 
         template <typename ValueType, typename ConstantType>
@@ -688,6 +681,17 @@ namespace storm {
             }
             this->maxValues[order] = std::move(maxValues);//maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
 
+        }
+        template <typename ValueType, typename ConstantType>
+        void OrderExtender<ValueType, ConstantType>::setMinValuesOnce(std::vector<ConstantType>& minValues) {
+            assert (minValues.size() == numberOfStates);
+            this->minValuesOnce = std::move(minValues);
+        }
+
+        template <typename ValueType, typename ConstantType>
+        void OrderExtender<ValueType, ConstantType>::setMaxValuesOnce(std::vector<ConstantType>& maxValues) {
+            assert (maxValues.size() == numberOfStates);
+            this->maxValuesOnce = std::move(maxValues);//maxCheck->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
         }
 
         template <typename ValueType, typename ConstantType>

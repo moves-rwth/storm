@@ -304,7 +304,7 @@ namespace storm {
                 }
                 solver->setTrackScheduler(true);
 
-                if (!this->isOnlyGlobalSet() && this->isUseMonotonicitySet()) {
+                if (localMonotonicityResult != nullptr && !this->isOnlyGlobalSet() && this->isUseMonotonicitySet()) {
                     assert (localMonotonicityResult != nullptr);
                     storm::storage::BitVector fixedStates(parameterLifter->getRowGroupCount(), false);
 
@@ -538,7 +538,7 @@ namespace storm {
         template<typename SparseModelType, typename ConstantType>
         std::shared_ptr<storm::analysis::Order> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::extendOrder(Environment const& env, std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ValueType> region) {
             if (this->orderExtender) {
-                auto res = this->orderExtender.get().extendOrder(order, region);
+                auto res = this->orderExtender->extendOrder(order, region);
                 order = std::get<0>(res);
                 if (std::get<1>(res) != order->getNumberOfStates()) {
                     this->orderExtender.get().setUnknownStates(order, std::get<1>(res), std::get<2>(res));
