@@ -172,6 +172,7 @@ namespace storm {
 
             if (minValuesOnce && maxValuesOnce) {
                 continueExtending[bottomTopOrder] = true;
+                usePLA[bottomTopOrder] = true;
                 minValues[bottomTopOrder] = std::move(minValuesOnce.get());
                 maxValues[bottomTopOrder] = std::move(maxValuesOnce.get());
             }
@@ -230,6 +231,83 @@ namespace storm {
                 this->region = region;
                 if (order == nullptr) {
                     order = getBottomTopOrder();
+                    if (usePLA[order]) {
+                        auto& min = minValues[order];
+                        auto& max = maxValues[order];
+                        // Try to make the order as complete as possible based on pla results
+                        for (auto state=0; state < numberOfStates; state++) {
+                            auto& successors = stateMap[state];
+                            bool all = true;
+                            for (auto i = 0; i < successors.size(); ++i) {
+                                if (min[i] > max[state]) {
+                                    if (!order->contains(i)) {
+                                        order->add(i);
+                                    }
+                                    if (!order->contains(state)) {
+                                        order->add(state);
+                                    }
+                                    order->addRelation(i, state, false);
+                                } else if (min[state] > max[i]) {
+                                    if (!order->contains(i)) {
+                                        order->add(i);
+                                    }
+                                    if (!order->contains(state)) {
+                                        order->add(state);
+                                    }
+                                    order->addRelation(state, i, false);
+                                } else if (min[i] == max[state] && max[i] == min[state]) {
+                                    if (!order->contains(i) && !order->contains(state)) {
+                                        order->add(i);
+                                        order->addToNode(state, order->getNode(i));
+                                    } else if (!order->contains(i)) {
+                                        order->addToNode(i, order->getNode(state));
+                                    } else if (!order->contains(state)) {
+                                        order->addToNode(state, order->getNode(i));
+                                    } else {
+                                        order->merge(i, state);
+                                    }
+                                }
+                                for (auto j = i+1; j < successors.size(); ++j) {
+                                    if (min[i] > max[j]) {
+                                        if (!order->contains(i)) {
+                                            order->add(i);
+                                        }
+                                        if (!order->contains(j)) {
+                                            order->add(j);
+                                        }
+                                        order->addRelation(i, j, false);
+                                    } else if (min[j] > max[i]) {
+                                        if (!order->contains(i)) {
+                                            order->add(i);
+                                        }
+                                        if (!order->contains(j)) {
+                                            order->add(j);
+                                        }
+                                        order->addRelation(j, i, false);
+                                    } else if (min[i] == max[j] && max[i] == min[j]) {
+                                        if (!order->contains(i) && !order->contains(j)) {
+                                            order->add(i);
+                                            order->addToNode(j, order->getNode(i));
+                                        } else if (!order->contains(i)) {
+                                            order->addToNode(i, order->getNode(j));
+                                        } else if (!order->contains(j)) {
+                                            order->addToNode(j, order->getNode(i));
+                                        } else {
+                                            order->merge(i, j);
+                                        }
+                                    } else {
+                                        all = false;
+                                    }
+                                }
+                            }
+                            if (all) {
+                                STORM_LOG_INFO("All successors of state " << state << " sorted based on min max values");
+                                order->setAddedState(state);
+                            }  else {
+                                STORM_LOG_INFO("Not all successors of state " << state << " could be sorted based on min max values");
+                            }
+                        }
+                    }
                 }
                 return extendOrder(order, monRes, assumption);
             } else {

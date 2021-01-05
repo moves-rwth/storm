@@ -540,6 +540,7 @@ namespace storm {
             if (this->orderExtender) {
                 auto res = this->orderExtender->extendOrder(order, region);
                 order = std::get<0>(res);
+                STORM_PRINT("Number of done states in reachability order (used for monotonicity checking): " << order->getNumberOfDoneStates() << std::endl);
                 if (std::get<1>(res) != order->getNumberOfStates()) {
                     this->orderExtender.get().setUnknownStates(order, std::get<1>(res), std::get<2>(res));
                 }
