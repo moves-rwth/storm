@@ -309,7 +309,7 @@ namespace storm {
                 bool monIncr = true;
 
                 valuation[var] = region.getLowerBoundary(var);
-                int numberOfSamples = 20;
+                int numberOfSamples = 30;
                 auto stepSize = (region.getUpperBoundary(var) - region.getLowerBoundary(var)) / (numberOfSamples - 1);
 
                 while (valuation[var] <= region.getUpperBoundary(var)) {
@@ -368,7 +368,26 @@ namespace storm {
 
 
             std::shared_ptr<storm::analysis::Order> reachabilityOrder = nullptr;
-            if (!this->isUseBoundsSet() && useMonotonicity) {
+            auto numberOfPLACallsBounds = 0;
+
+            storm::utility::Stopwatch boundsWatch(false);
+
+            if (useMonotonicity) {
+                    // create the order and monotonicity result
+                    if (this->isUseBoundsSet()) {
+                        boundsWatch.start();
+                        numberOfPLACallsBounds++;
+                        numberOfPLACallsBounds++;
+                        if (minimize) {
+                            orderExtender->setMinValuesOnce(getBound(env, region, storm::solver::OptimizationDirection::Minimize, nullptr)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
+                            orderExtender->setMaxValuesOnce(getBound(env, region, storm::solver::OptimizationDirection::Maximize, nullptr)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
+                        } else {
+                            orderExtender->setMaxValuesOnce(getBound(env, region, storm::solver::OptimizationDirection::Maximize, nullptr)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
+                            orderExtender->setMinValuesOnce(getBound(env, region, storm::solver::OptimizationDirection::Minimize, nullptr)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
+                        }
+                        boundsWatch.stop();
+                    }
+
                 storm::utility::Stopwatch monotonicityWatch(true);
                 reachabilityOrder = this->extendOrder(env, reachabilityOrder, region);
                 currentLocalMonRes = std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(reachabilityOrder->getNumberOfStates()));
@@ -402,11 +421,9 @@ namespace storm {
 
             auto numberOfSplits = 0;
             auto numberOfPLACalls = 0;
-            auto numberOfPLACallsBounds = 0;
             auto numberOfOrderCopies = 0;
             auto numberOfMonResCopies = 0;
             storm::utility::Stopwatch loopWatch(true);
-            storm::utility::Stopwatch boundsWatch(false);
 
             // Doing the extremal computation
             bool changed = false;
@@ -477,28 +494,7 @@ namespace storm {
                         if ((minimize && currBound < value.get() - storm::utility::convertNumber<ConstantType>(precision))
                             || (!minimize && currBound > value.get() + storm::utility::convertNumber<ConstantType>(precision))) {
                             // We will split the region in this case, but first try to extend the order
-                            if (order == nullptr) {
-                                // create the order and monotonicity result
-                                if (this->isUseBoundsSet()) {
-                                    boundsWatch.start();
-                                    numberOfPLACallsBounds++;
-                                    if (minimize) {
-                                        orderExtender->setMinValuesOnce(bounds);
-                                        orderExtender->setMaxValuesOnce(getBound(env, currRegion, storm::solver::OptimizationDirection::Maximize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
-                                    } else {
-                                        orderExtender->setMaxValuesOnce(bounds);
-                                        orderExtender->setMinValuesOnce(getBound(env, currRegion, storm::solver::OptimizationDirection::Minimize, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
-                                    }
-                                    boundsWatch.stop();
-                                }
-
-                                storm::utility::Stopwatch monotonicityWatch(true);
-                                order = this->extendOrder(env, nullptr, region);
-                                localMonotonicityResult = std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(order->getNumberOfStates()));
-                                this->extendLocalMonotonicityResult(region, order, localMonotonicityResult);
-                                monotonicityWatch.stop();
-                                STORM_PRINT(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl << std::endl);
-                            } else if (useMonotonicity && this->isUseBoundsSet() && !order->getDoneBuilding()) {
+                           if (useMonotonicity && this->isUseBoundsSet() && !order->getDoneBuilding()) {
                                 boundsWatch.start();
                                 numberOfPLACallsBounds++;
                                 if (minimize) {
@@ -598,7 +594,7 @@ namespace storm {
 
                     auto numMon = monIncr.size() + monDecr.size();
                     STORM_LOG_INFO("Number of monotone parameters: " << numMon << std::endl;);
-//
+
                     if (numMon < region.getVariables().size()) {
                         valuation = checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, notMonFirst, dir).second;
                         STORM_LOG_INFO("Number of possible monotone parameters: " << (monIncr.size() + monDecr.size()) << std::endl;);
