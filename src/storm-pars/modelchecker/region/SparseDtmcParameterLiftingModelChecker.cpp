@@ -463,15 +463,12 @@ namespace storm {
             useRegionSplitEstimates = false;
             for (auto const& p : region.getVariables()) {
                 if (this->possibleMonotoneParameters.find(p) != this->possibleMonotoneParameters.end()) {
-                    auto diff = storm::utility::convertNumber<double>(region.getDifference(p));
-                    if (deltaLower[p] > deltaUpper[p] && deltaUpper[p] * diff*diff >= 0.0001) {
-                        regionSplitEstimates.insert(std::make_pair(p, deltaUpper[p]* diff*diff));
+                    if (deltaLower[p] > deltaUpper[p] && deltaUpper[p] >= 0.0001) {
+                        regionSplitEstimates.insert(std::make_pair(p, deltaUpper[p]));
                         useRegionSplitEstimates = true;
-                    } else if (deltaLower[p] <= deltaUpper[p] && deltaLower[p]*diff * diff>= 0.0001) {
-                        {
-                            regionSplitEstimates.insert(std::make_pair(p, deltaLower[p]* diff* diff));
-                            useRegionSplitEstimates = true;
-                        }
+                    } else if (deltaLower[p] <= deltaUpper[p] && deltaLower[p]>= 0.0001) {
+                        regionSplitEstimates.insert(std::make_pair(p, deltaLower[p]));
+                        useRegionSplitEstimates = true;
                     }
                 }
             }
@@ -624,8 +621,8 @@ namespace storm {
                     STORM_LOG_INFO("Splitting based on region split estimates");
                     for (auto &entry : regionSplitEstimates) {
                         assert (!this->isUseMonotonicitySet() || (!monRes.isMonotone(entry.first) && this->possibleMonotoneParameters.find(entry.first) != this->possibleMonotoneParameters.end()));
-//                            sortedOnValues.insert({-(entry.second * storm::utility::convertNumber<double>(region.getDifference(entry.first))* storm::utility::convertNumber<double>(region.getDifference(entry.first))), entry.first});
-                            sortedOnValues.insert({-(entry.second ), entry.first});
+                        auto diff = storm::utility::convertNumber<double>(region.getDifference(entry.first));
+                        sortedOnValues.insert({-(entry.second)*diff*diff, entry.first});
                     }
 
                     for (auto itr = sortedOnValues.begin(); itr != sortedOnValues.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {

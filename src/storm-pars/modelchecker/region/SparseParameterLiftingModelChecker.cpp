@@ -379,20 +379,20 @@ namespace storm {
             storm::utility::Stopwatch boundsWatch(false);
 
             if (useMonotonicity) {
-                    // create the order and monotonicity result
-                    if (this->isUseBoundsSet()) {
-                        boundsWatch.start();
-                        numberOfPLACallsBounds++;
-                        numberOfPLACallsBounds++;
-                        if (minimize) {
-                            orderExtender->setMinValuesOnce(getBound(env, region, storm::solver::OptimizationDirection::Minimize, nullptr)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
-                            orderExtender->setMaxValuesOnce(getBound(env, region, storm::solver::OptimizationDirection::Maximize, nullptr)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
-                        } else {
-                            orderExtender->setMaxValuesOnce(getBound(env, region, storm::solver::OptimizationDirection::Maximize, nullptr)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
-                            orderExtender->setMinValuesOnce(getBound(env, region, storm::solver::OptimizationDirection::Minimize, nullptr)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
-                        }
-                        boundsWatch.stop();
+                // create the order and monotonicity result
+                if (this->isUseBoundsSet()) {
+                    boundsWatch.start();
+                    numberOfPLACallsBounds++;
+                    numberOfPLACallsBounds++;
+                    if (minimize) {
+                        orderExtender->setMinValuesOnce(getBound(env, region, storm::solver::OptimizationDirection::Minimize, nullptr)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
+                        orderExtender->setMaxValuesOnce(getBound(env, region, storm::solver::OptimizationDirection::Maximize, nullptr)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
+                    } else {
+                        orderExtender->setMaxValuesOnce(getBound(env, region, storm::solver::OptimizationDirection::Maximize, nullptr)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
+                        orderExtender->setMinValuesOnce(getBound(env, region, storm::solver::OptimizationDirection::Minimize, nullptr)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
                     }
+                    boundsWatch.stop();
+                }
 
                 storm::utility::Stopwatch monotonicityWatch(true);
                 reachabilityOrder = this->extendOrder(env, reachabilityOrder, region);
@@ -496,7 +496,7 @@ namespace storm {
                         }
 
                         // Check whether this region contains a new 'good' value and set this value
-                        auto point = localMonotonicityResult != nullptr ? currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult())) : currRegion.getCenterPoint();
+                        auto point = useMonotonicity ? currRegion.getPoint(dir, *(localMonotonicityResult->getGlobalMonotonicityResult())) : currRegion.getCenterPoint();
                         auto currValue = getInstantiationChecker().check(env, point)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
                         if (!value || (minimize ? currValue <= value.get() : currValue >= value.get())) {
                             changed = true;
