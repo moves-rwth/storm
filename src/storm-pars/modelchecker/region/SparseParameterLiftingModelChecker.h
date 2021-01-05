@@ -89,7 +89,7 @@ namespace storm {
             boost::optional<storm::analysis::OrderExtender<typename SparseModelType::ValueType, ConstantType>> orderExtender;
 
             std::pair<typename SparseModelType::ValueType, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation> checkForPossibleMonotonicity(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::set<VariableType>& possibleMonotoneIncrParameters, std::set<VariableType>& possibleMonotoneDecrParameters, std::set<VariableType>& possibleNotMonotoneParameters, std::set<VariableType>const& consideredVariables, storm::solver::OptimizationDirection const& dir);
-            std::pair<typename SparseModelType::ValueType, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation> getGoodInitialPoint(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dir, bool useMonootnicity);
+            std::pair<typename SparseModelType::ValueType, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation> getGoodInitialPoint(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dir, bool useMonotonicity);
             std::set<VariableType> possibleMonotoneParameters;
 
         private:
@@ -98,6 +98,7 @@ namespace storm {
             std::shared_ptr<storm::analysis::Order> copyOrder(std::shared_ptr<storm::analysis::Order> order);
             std::map<std::shared_ptr<storm::analysis::Order>, uint_fast64_t> numberOfCopiesOrder;
             std::map<std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>, uint_fast64_t> numberOfCopiesMonRes;
+            std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> currentLocalMonRes;
             std::pair<typename SparseModelType::ValueType, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation> computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, typename SparseModelType::ValueType const& precision, boost::optional<ConstantType> const& initialValue);
         };
     }

@@ -300,82 +300,56 @@ namespace storm {
             bool minimize = storm::solver::minimize(dir);
             typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation Valuation;
             typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::CoefficientType CoefficientType;
-            ConstantType value = storm::solver::minimize(dir) ? 1 : 0;
-            Valuation valuation;
+            ConstantType value;
+            Valuation valuation = region.getPoint(dir, possibleMonotoneIncrParameters, possibleMonotoneDecrParameters);
+
             for (auto& var : consideredVariables) {
                 ConstantType previousCenter = -1;
-//                ConstantType previousUpper = -1;
-//                ConstantType previousLower = -1;
                 bool monDecr = true;
                 bool monIncr = true;
-                auto valuationCenter = region.getCenterPoint();
-//                auto valuationLower = region.getLowerBoundaries();
-//                auto valuationUpper = region.getUpperBoundaries();
 
-                valuationCenter[var] = region.getLowerBoundary(var);
-//                valuationLower[var] = region.getLowerBoundary(var);
-//                valuationUpper[var] = region.getLowerBoundary(var);
-                // TODO: make cmdline argument or 1/precision
-                int numberOfSamples = 50;
+                valuation[var] = region.getLowerBoundary(var);
+                int numberOfSamples = 20;
                 auto stepSize = (region.getUpperBoundary(var) - region.getLowerBoundary(var)) / (numberOfSamples - 1);
 
-                while (valuationCenter[var] <= region.getUpperBoundary(var)) {
-                    // Create valuation
-//                    assert (valuationLower[var] <= region.getUpperBoundary(var));
-//                    assert (valuationUpper[var] <= region.getUpperBoundary(var));
-//
-//                    ConstantType valueLower = getInstantiationChecker().check(env, valuationLower)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
-                    ConstantType valueCenter = getInstantiationChecker().check(env, valuationCenter)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
-//                    ConstantType valueUpper = getInstantiationChecker().check(env, valuationUpper)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
-//                    if (storm::solver::minimize(dir) ? valueLower <= value : valueLower >= value) {
-//                        value = valueLower;
-//                        valuation = valuationLower;
-//                    }
-                    if (storm::solver::minimize(dir) ? valueCenter <= value : valueCenter >= value) {
-                        value = valueCenter;
-                        valuation = valuationCenter;
-                    }
-//                    if (storm::solver::minimize(dir) ? valueUpper <= value : valueUpper >= value) {
-//                        value = valueUpper;
-//                        valuation = valuationUpper;
-//                    }
+                while (valuation[var] <= region.getUpperBoundary(var)) {
+                    value = getInstantiationChecker().check(env, valuation)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
                     // Calculate difference with result for previous valuation
-                    ConstantType diffCenter = previousCenter - valueCenter;
-//                    ConstantType diffLower = previousLower - valueLower;
-//                    ConstantType diffUpper = previousUpper - valueUpper;
+                    ConstantType diffCenter = previousCenter - value;
                     assert (previousCenter == -1 || (diffCenter >= -1 && diffCenter <= 1));
-//                    assert (previousUpper == -1 || (diffUpper >= -1 && diffUpper <= 1));
-//                    assert (previousLower == -1 || (diffLower >= -1 && diffLower <= 1));
-//
                     if (previousCenter != -1) {
                         assert (previousCenter != -1 && previousCenter != -1);
                         monDecr &= diffCenter > 0 && diffCenter > 0 && diffCenter > 0; // then previous value is larger than the current value from the initial states
                         monIncr &= diffCenter < 0 && diffCenter < 0 && diffCenter < 0;
-//                    } else {
-//                        assert (previousUpper == -1 && previousLower == -1);
                     }
-                    previousCenter = valueCenter;
-//                    previousLower = valueLower;
-//                    previousUpper = valueUpper;
+                    previousCenter = value;
                     if (!monDecr && ! monIncr) {
                         break;
                     }
-                    valuationCenter[var] += stepSize;
-//                    valuationLower[var] += stepSize;
-//                    valuationUpper[var] += stepSize;
+                    valuation[var] += stepSize;
                 }
                 if (monIncr) {
-                    possibleMonotoneParameters.insert(var);
+                    if (minimize) {
+                        valuation[var] =  region.getLowerBoundary(var);
+                    } else {
+                        valuation[var] =  region.getUpperBoundary(var);
+                    }
+//                    possibleMonotoneParameters.insert(var);
                     possibleMonotoneIncrParameters.insert(var);
                 } else if (monDecr) {
-                    possibleMonotoneParameters.insert(var);
+//                    possibleMonotoneParameters.insert(var);
                     possibleMonotoneDecrParameters.insert(var);
+                    if (!minimize) {
+                        valuation[var] =  region.getLowerBoundary(var);
+                    } else {
+                        valuation[var] =  region.getUpperBoundary(var);
+                    }
                 } else {
                     possibleNotMonotoneParameters.insert(var);
+                    valuation[var] = (region.getUpperBoundary(var) - region.getLowerBoundary(var)) / 2;
                 }
             }
             return std::make_pair(storm::utility::convertNumber<typename SparseModelType::ValueType>(value), std::move(valuation));
-
         }
 
         template<typename SparseModelType, typename ConstantType>
@@ -392,13 +366,22 @@ namespace storm {
             std::priority_queue<RegionBound<SparseModelType, ConstantType>, std::vector<RegionBound<SparseModelType, ConstantType>>, decltype(cmp)> regionQueue(cmp);
             storm::utility::Stopwatch initialWatch(true);
 
-//            // TODO: zero or one?
-            if (minimize) {
-                regionQueue.emplace(region, nullptr, nullptr, storm::utility::zero<ConstantType>());
-            } else {
-                regionQueue.emplace(region, nullptr, nullptr, storm::utility::one<ConstantType>());
+
+            std::shared_ptr<storm::analysis::Order> reachabilityOrder = nullptr;
+            if (!this->isUseBoundsSet() && useMonotonicity) {
+                storm::utility::Stopwatch monotonicityWatch(true);
+                reachabilityOrder = this->extendOrder(env, reachabilityOrder, region);
+                currentLocalMonRes = std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(reachabilityOrder->getNumberOfStates()));
+                this->extendLocalMonotonicityResult(region, reachabilityOrder, currentLocalMonRes);
+                monotonicityWatch.stop();
+                STORM_PRINT(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl << std::endl);
             }
 
+            if (minimize) {
+                regionQueue.emplace(region, reachabilityOrder, currentLocalMonRes, storm::utility::zero<ConstantType>());
+            } else {
+                regionQueue.emplace(region, reachabilityOrder, currentLocalMonRes, storm::utility::one<ConstantType>());
+            }
 
             // The results
             boost::optional<ConstantType> value;
@@ -509,9 +492,9 @@ namespace storm {
                                     boundsWatch.stop();
                                 }
 
+                                storm::utility::Stopwatch monotonicityWatch(true);
                                 order = this->extendOrder(env, nullptr, region);
                                 localMonotonicityResult = std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(order->getNumberOfStates()));
-                                storm::utility::Stopwatch monotonicityWatch(true);
                                 this->extendLocalMonotonicityResult(region, order, localMonotonicityResult);
                                 monotonicityWatch.stop();
                                 STORM_PRINT(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl << std::endl);
@@ -583,20 +566,6 @@ namespace storm {
 
                 STORM_LOG_INFO("Current value : " << value.get() << ", current bound: " << currBound << ".");
                 STORM_LOG_INFO("Covered " << (coveredArea * storm::utility::convertNumber<ConstantType>(100.0) / totalArea) << "% of the region." << std::endl);
-//                if (useMonotonicity && regionQueue.empty()) {
-//                    // TODO: change
-//                    loopWatch.stop();
-//                    auto& variables = currRegion.getVariables();
-//                    auto count = 0;
-//                    for (auto i = 0; i < order->getNumberOfStates(); ++i) {
-//                        for (auto& var : variables) {
-//                            if (localMonotonicityResult->getMonotonicity(i, var) != storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Unknown && localMonotonicityResult->getMonotonicity(i, var) != storm::analysis::LocalMonotonicityResult<VariableType>::Monotonicity::Not) {
-//                                count++;
-//                            }
-//                        }
-//                    }
-//                    STORM_PRINT("Total number of local monotonic states in last result (including =) and =( ): " << (count) << std::endl);
-//                }
             }
             loopWatch.stop();
 
@@ -610,7 +579,6 @@ namespace storm {
             }
             STORM_PRINT(std::endl << "Total time for region refinement: " << loopWatch << "." << std::endl << std::endl);
             STORM_PRINT(std::endl << "Total time for additional bounds: " << boundsWatch << "." << std::endl << std::endl);
-//            myfile.close();
 
             return std::make_pair(storm::utility::convertNumber<typename SparseModelType::ValueType>(value.get()), valuation);
         }
@@ -625,52 +593,23 @@ namespace storm {
             STORM_LOG_INFO("Number of parameters: " << region.getVariables().size() << std::endl;);
 
             if (useMonotonicity) {
-//                localMonRes->getGlobalMonotonicityResult()->splitBasedOnMonotonicity(region.getVariables(), monIncr, monDecr, notMonFirst);
+                if (currentLocalMonRes != nullptr) {
+                    currentLocalMonRes->getGlobalMonotonicityResult()->splitBasedOnMonotonicity(region.getVariables(), monIncr, monDecr, notMonFirst);
 
-//                auto numMon = monIncr.size() + monDecr.size();
-//                STORM_LOG_INFO("Number of monotone parameters: " << numMon << std::endl;);
-
-//                if (numMon < region.getVariables().size()) {
-                    checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, region.getVariables(), dir);
+                    auto numMon = monIncr.size() + monDecr.size();
+                    STORM_LOG_INFO("Number of monotone parameters: " << numMon << std::endl;);
+//
+                    if (numMon < region.getVariables().size()) {
+                        valuation = checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, notMonFirst, dir).second;
+                        STORM_LOG_INFO("Number of possible monotone parameters: " << (monIncr.size() + monDecr.size()) << std::endl;);
+                        STORM_LOG_INFO("Number of definitely not monotone parameters: " << notMon.size() << std::endl;);
+                    }
+                } else {
+                    valuation = checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, region.getVariables(), dir).second;
                     STORM_LOG_INFO("Number of possible monotone parameters: " << (monIncr.size() + monDecr.size()) << std::endl;);
                     STORM_LOG_INFO("Number of definitely not monotone parameters: " << notMon.size() << std::endl;);
-//                }
+                }
 
-                valuation = region.getPoint(dir, monIncr, monDecr);
-//                std::size_t const numOfSamples = 50;
-//                std::vector<Valuation> resultingVector(numOfSamples);
-//                std::map<VariableType, CoefficientType> stepSize;
-//                for (auto variable: notMon) {
-//                    stepSize[variable] = (region.getUpperBoundary(variable) - region.getLowerBoundary(variable)) / (numOfSamples - 1);
-//                }
-//
-//                for (uint_fast64_t i = 0; i < numOfSamples; ++i) {
-//                    for (auto variable : notMon) {
-//                        resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, (region.getLowerBoundary(variable) + stepSize[variable] * i)));
-//                    }
-//                    for (auto variable: monIncr) {
-//                        if (storm::solver::minimize(dir)) {
-//                            resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, region.getLowerBoundary(variable)));
-//                        } else {
-//                            resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, region.getUpperBoundary(variable)));
-//                        }
-//                    }
-//                    for (auto variable : monDecr) {
-//                        if (!storm::solver::minimize(dir)) {
-//                            resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, region.getLowerBoundary(variable)));
-//                        } else {
-//                            resultingVector[i].insert(std::pair<VariableType, CoefficientType>(variable, region.getUpperBoundary(variable)));
-//                        }
-//                    }
-//                }
-//
-//                for (auto &point : resultingVector) {
-//                    auto currValue = getInstantiationChecker().check(env, point)->template asExplicitQuantitativeCheckResult<ConstantType>()[*this->parametricModel->getInitialStates().begin()];
-//                    if (storm::solver::minimize(dir) ? currValue <= value : currValue >= value) {
-//                        value = currValue;
-//                        valuation = point;
-//                    }
-//                }
             } else {
                 valuation = region.getCenterPoint();
             }
