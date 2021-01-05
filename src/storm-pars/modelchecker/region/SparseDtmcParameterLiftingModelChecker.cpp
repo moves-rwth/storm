@@ -304,8 +304,7 @@ namespace storm {
                 }
                 solver->setTrackScheduler(true);
 
-                if (localMonotonicityResult != nullptr && !this->isOnlyGlobalSet() && this->isUseMonotonicitySet()) {
-                    assert (localMonotonicityResult != nullptr);
+                if (localMonotonicityResult != nullptr && !this->isOnlyGlobalSet()) {
                     storm::storage::BitVector fixedStates(parameterLifter->getRowGroupCount(), false);
 
                     bool useMinimize = storm::solver::minimize(dirForParameters);
@@ -466,9 +465,11 @@ namespace storm {
                     if (deltaLower[p] > deltaUpper[p] && deltaUpper[p] >= 0.0001) {
                         regionSplitEstimates.insert(std::make_pair(p, deltaUpper[p]));
                         useRegionSplitEstimates = true;
-                    } else if (deltaLower[p] <= deltaUpper[p] && deltaLower[p]>= 0.0001) {
-                        regionSplitEstimates.insert(std::make_pair(p, deltaLower[p]));
-                        useRegionSplitEstimates = true;
+                    } else if (deltaLower[p] <= deltaUpper[p] && deltaLower[p] >= 0.0001) {
+                        {
+                            regionSplitEstimates.insert(std::make_pair(p, deltaLower[p]));
+                            useRegionSplitEstimates = true;
+                        }
                     }
                 }
             }
@@ -536,9 +537,8 @@ namespace storm {
         template<typename SparseModelType, typename ConstantType>
         std::shared_ptr<storm::analysis::Order> SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::extendOrder(Environment const& env, std::shared_ptr<storm::analysis::Order> order, storm::storage::ParameterRegion<ValueType> region) {
             if (this->orderExtender) {
-                auto res = this->orderExtender->extendOrder(order, region);
+                auto res = this->orderExtender.get().extendOrder(order, region);
                 order = std::get<0>(res);
-                STORM_PRINT("Number of done states in reachability order (used for monotonicity checking): " << order->getNumberOfDoneStates() << std::endl);
                 if (std::get<1>(res) != order->getNumberOfStates()) {
                     this->orderExtender.get().setUnknownStates(order, std::get<1>(res), std::get<2>(res));
                 }
@@ -621,8 +621,8 @@ namespace storm {
                     STORM_LOG_INFO("Splitting based on region split estimates");
                     for (auto &entry : regionSplitEstimates) {
                         assert (!this->isUseMonotonicitySet() || (!monRes.isMonotone(entry.first) && this->possibleMonotoneParameters.find(entry.first) != this->possibleMonotoneParameters.end()));
-                        auto diff = storm::utility::convertNumber<double>(region.getDifference(entry.first));
-                        sortedOnValues.insert({-(entry.second)*diff*diff, entry.first});
+//                            sortedOnValues.insert({-(entry.second * storm::utility::convertNumber<double>(region.getDifference(entry.first))* storm::utility::convertNumber<double>(region.getDifference(entry.first))), entry.first});
+                            sortedOnValues.insert({-(entry.second ), entry.first});
                     }
 
                     for (auto itr = sortedOnValues.begin(); itr != sortedOnValues.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
