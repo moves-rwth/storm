@@ -606,18 +606,18 @@ namespace storm {
             ConstantType value = storm::solver::minimize(dir) ? 1 : 0;
             Valuation valuation;
             std::set<VariableType> monIncr, monDecr, notMon, notMonFirst;
-            STORM_LOG_INFO("Number of parameters: " << region.getVariables().size() << std::endl;);
+            STORM_PRINT("Number of parameters: " << region.getVariables().size() << std::endl;);
 
             if (localMonRes != nullptr) {
                 localMonRes->getGlobalMonotonicityResult()->splitBasedOnMonotonicity(region.getVariables(), monIncr, monDecr, notMonFirst);
 
                 auto numMon = monIncr.size() + monDecr.size();
-                STORM_LOG_INFO("Number of monotone parameters: " << numMon << std::endl;);
+                STORM_PRINT("Number of monotone parameters: " << numMon << std::endl;);
 
                 if (numMon < region.getVariables().size()) {
                     checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, notMonFirst, dir);
-                    STORM_LOG_INFO("Number of possible monotone parameters: " << (monIncr.size() + monDecr.size() - numMon) << std::endl;);
-                    STORM_LOG_INFO("Number of definitely not monotone parameters: " << notMon.size() << std::endl;);
+                    STORM_PRINT("Number of possible monotone parameters: " << (monIncr.size() + monDecr.size() - numMon) << std::endl;);
+                    STORM_PRINT("Number of definitely not monotone parameters: " << notMon.size() << std::endl;);
                 }
 
                 valuation = region.getPoint(dir, monIncr, monDecr);
