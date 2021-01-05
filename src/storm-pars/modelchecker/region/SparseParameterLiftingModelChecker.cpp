@@ -301,9 +301,14 @@ namespace storm {
             typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation Valuation;
             typedef typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::CoefficientType CoefficientType;
             ConstantType value;
-            Valuation valuation = region.getPoint(dir, possibleMonotoneIncrParameters, possibleMonotoneDecrParameters);
+            Valuation valuation;// = region.getPoint(dir, possibleMonotoneIncrParameters, possibleMonotoneDecrParameters);
 
+            auto initial = possibleMonotoneIncrParameters.size() + possibleMonotoneDecrParameters.size();
+            auto valuationInit = region.getPoint(dir, possibleMonotoneIncrParameters, possibleMonotoneDecrParameters);
             for (auto& var : consideredVariables) {
+                valuation = valuationInit;
+
+
                 ConstantType previousCenter = -1;
                 bool monDecr = true;
                 bool monIncr = true;
@@ -329,26 +334,27 @@ namespace storm {
                     valuation[var] += stepSize;
                 }
                 if (monIncr) {
-                    if (minimize) {
-                        valuation[var] =  region.getLowerBoundary(var);
-                    } else {
-                        valuation[var] =  region.getUpperBoundary(var);
-                    }
+//                    if (minimize) {
+//                        valuation[var] =  region.getLowerBoundary(var);
+//                    } else {
+//                        valuation[var] =  region.getUpperBoundary(var);
+//                    }
 //                    possibleMonotoneParameters.insert(var);
                     possibleMonotoneIncrParameters.insert(var);
                 } else if (monDecr) {
 //                    possibleMonotoneParameters.insert(var);
                     possibleMonotoneDecrParameters.insert(var);
-                    if (!minimize) {
-                        valuation[var] =  region.getLowerBoundary(var);
-                    } else {
-                        valuation[var] =  region.getUpperBoundary(var);
-                    }
+//                    if (!minimize) {
+//                        valuation[var] =  region.getLowerBoundary(var);
+//                    } else {
+//                        valuation[var] =  region.getUpperBoundary(var);
+//                    }
                 } else {
                     possibleNotMonotoneParameters.insert(var);
-                    valuation[var] = (region.getUpperBoundary(var) - region.getLowerBoundary(var)) / 2;
+//                    valuation[var] = (region.getUpperBoundary(var) - region.getLowerBoundary(var)) / 2;
                 }
             }
+            assert (consideredVariables.size() + initial == possibleMonotoneDecrParameters.size() + possibleMonotoneIncrParameters.size() + possibleNotMonotoneParameters.size());
             return std::make_pair(storm::utility::convertNumber<typename SparseModelType::ValueType>(value), std::move(valuation));
         }
 
@@ -391,6 +397,13 @@ namespace storm {
                 storm::utility::Stopwatch monotonicityWatch(true);
                 reachabilityOrder = this->extendOrder(env, reachabilityOrder, region);
                 currentLocalMonRes = std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>(new storm::analysis::LocalMonotonicityResult<VariableType>(reachabilityOrder->getNumberOfStates()));
+                auto inModel = storm::models::sparse::getProbabilityParameters(getConsideredParametricModel());
+                for (auto var : region.getVariables()) {
+                    if (std::find(inModel.begin(), inModel.end(), var) == inModel.end()) {
+                        currentLocalMonRes->getGlobalMonotonicityResult()->addMonotonicityResult(var, Monotonicity::Constant);
+                        currentLocalMonRes->getGlobalMonotonicityResult()->setDoneForVar(var);
+                    }
+                }
                 this->extendLocalMonotonicityResult(region, reachabilityOrder, currentLocalMonRes);
                 monotonicityWatch.stop();
                 STORM_PRINT(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl << std::endl);
@@ -586,26 +599,27 @@ namespace storm {
             ConstantType value = storm::solver::minimize(dir) ? 1 : 0;
             Valuation valuation;
             std::set<VariableType> monIncr, monDecr, notMon, notMonFirst;
-            STORM_LOG_INFO("Number of parameters: " << region.getVariables().size() << std::endl;);
+            STORM_PRINT("Number of parameters: " << region.getVariables().size() << std::endl;);
 
             if (useMonotonicity) {
                 if (currentLocalMonRes != nullptr) {
                     currentLocalMonRes->getGlobalMonotonicityResult()->splitBasedOnMonotonicity(region.getVariables(), monIncr, monDecr, notMonFirst);
 
                     auto numMon = monIncr.size() + monDecr.size();
-                    STORM_LOG_INFO("Number of monotone parameters: " << numMon << std::endl;);
+                    STORM_PRINT("Number of definitely monotone parameters: " << numMon << std::endl;);
 
-                    if (numMon < region.getVariables().size()) {
-                        valuation = checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, notMonFirst, dir).second;
-                        STORM_LOG_INFO("Number of possible monotone parameters: " << (monIncr.size() + monDecr.size()) << std::endl;);
-                        STORM_LOG_INFO("Number of definitely not monotone parameters: " << notMon.size() << std::endl;);
+                    if (notMonFirst.size() > 0) {
+                        checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, notMonFirst, dir);
+                        STORM_PRINT("Number of possible monotone parameters: " << (monIncr.size() + monDecr.size() - numMon) << std::endl;);
+                        STORM_PRINT("Number of definitely not monotone parameters: " << notMon.size() << std::endl;);
                     }
+                    assert (monIncr.size() + monDecr.size() + notMon.size() == region.getVariables().size());
                 } else {
-                    valuation = checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, region.getVariables(), dir).second;
-                    STORM_LOG_INFO("Number of possible monotone parameters: " << (monIncr.size() + monDecr.size()) << std::endl;);
-                    STORM_LOG_INFO("Number of definitely not monotone parameters: " << notMon.size() << std::endl;);
+                    checkForPossibleMonotonicity(env, region, monIncr, monDecr, notMon, region.getVariables(), dir);
+                    STORM_PRINT("Number of possible monotone parameters: " << (monIncr.size() + monDecr.size()) << std::endl;);
+                    STORM_PRINT("Number of definitely not monotone parameters: " << notMon.size() << std::endl;);
                 }
-
+                valuation = region.getPoint(dir, monIncr, monDecr);
             } else {
                 valuation = region.getCenterPoint();
             }

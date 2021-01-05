@@ -463,12 +463,13 @@ namespace storm {
             useRegionSplitEstimates = false;
             for (auto const& p : region.getVariables()) {
                 if (this->possibleMonotoneParameters.find(p) != this->possibleMonotoneParameters.end()) {
-                    if (deltaLower[p] > deltaUpper[p] && deltaUpper[p] >= 0.0001) {
-                        regionSplitEstimates.insert(std::make_pair(p, deltaUpper[p]));
+                    auto diff = storm::utility::convertNumber<double>(region.getDifference(p));
+                    if (deltaLower[p] > deltaUpper[p] && deltaUpper[p] * diff*diff >= 0.0001) {
+                        regionSplitEstimates.insert(std::make_pair(p, deltaUpper[p]* diff*diff));
                         useRegionSplitEstimates = true;
-                    } else if (deltaLower[p] <= deltaUpper[p] && deltaLower[p] >= 0.0001) {
+                    } else if (deltaLower[p] <= deltaUpper[p] && deltaLower[p]*diff * diff>= 0.0001) {
                         {
-                            regionSplitEstimates.insert(std::make_pair(p, deltaLower[p]));
+                            regionSplitEstimates.insert(std::make_pair(p, deltaLower[p]* diff* diff));
                             useRegionSplitEstimates = true;
                         }
                     }
