@@ -15,8 +15,9 @@ TEST(OrderTest, Simple) {
     matrixBuilder.addNextValue(1,1,storm::RationalFunction(1));
     storm::storage::StronglyConnectedComponentDecompositionOptions options;
     options.forceTopologicalSort();
-    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrixBuilder.build(), options);
-    auto statesSorted = storm::utility::graph::getTopologicalSort(matrixBuilder.build());
+    auto matrix= matrixBuilder.build();
+    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrix, options);
+    auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
     auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted);
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order.compare(0,1));
     EXPECT_EQ(storm::analysis::Order::NodeComparison::BELOW, order.compare(1,0));
@@ -86,8 +87,9 @@ TEST(OrderTest, copy_order) {
     matrixBuilder.addNextValue(1,1,storm::RationalFunction(1));
     storm::storage::StronglyConnectedComponentDecompositionOptions options;
     options.forceTopologicalSort();
-    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrixBuilder.build(), options);
-    auto statesSorted = storm::utility::graph::getTopologicalSort(matrixBuilder.build());
+    auto matrix= matrixBuilder.build();
+    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrix, options);
+    auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
     auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted);
     order.add(2);
     order.add(3);
@@ -156,8 +158,9 @@ TEST(OrderTest, merge_nodes) {
     matrixBuilder.addNextValue(1,1,storm::RationalFunction(1));
     storm::storage::StronglyConnectedComponentDecompositionOptions options;
     options.forceTopologicalSort();
-    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrixBuilder.build(), options);
-    auto statesSorted = storm::utility::graph::getTopologicalSort(matrixBuilder.build());
+    auto matrix= matrixBuilder.build();
+    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrix, options);
+    auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
     auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted);
     order.add(2);
     order.add(3);
@@ -195,8 +198,9 @@ TEST(OrderTest, sort_states) {
     matrixBuilder.addNextValue(1,1,storm::RationalFunction(1));
     storm::storage::StronglyConnectedComponentDecompositionOptions options;
     options.forceTopologicalSort();
-    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrixBuilder.build(), options);
-    auto statesSorted = storm::utility::graph::getTopologicalSort(matrixBuilder.build());
+    auto matrix= matrixBuilder.build();
+    auto decomposition = storm::storage::StronglyConnectedComponentDecomposition<storm::RationalFunction>(matrix, options);
+    auto statesSorted = storm::utility::graph::getTopologicalSort(matrix);
     auto order = storm::analysis::Order(&above, &below, numberOfStates, decomposition, statesSorted);
     order.add(2);
     order.add(3);

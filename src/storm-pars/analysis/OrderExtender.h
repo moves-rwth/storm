@@ -67,6 +67,8 @@ namespace storm {
             void setMinMaxValues(std::shared_ptr<Order> order, std::vector<ConstantType> &minValues, std::vector<ConstantType> &maxValues);
             void setMinValues(std::shared_ptr<Order> order, std::vector<ConstantType> &minValues);
             void setMaxValues(std::shared_ptr<Order> order,std::vector<ConstantType> &maxValues);
+            void setMinValuesOnce(std::vector<ConstantType> &minValues);
+            void setMaxValuesOnce(std::vector<ConstantType> &minValues);
 
             void setUnknownStates(std::shared_ptr<Order> order, uint_fast64_t state1, uint_fast64_t state2);
 

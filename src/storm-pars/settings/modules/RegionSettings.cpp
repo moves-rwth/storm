@@ -1,10 +1,11 @@
 #include <storm-pars/modelchecker/region/RegionResultHypothesis.h>
 #include "storm-pars/settings/modules/RegionSettings.h"
 
-#include "storm/settings/Option.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
+
 #include "storm/settings/OptionBuilder.h"
 #include "storm/settings/ArgumentBuilder.h"
-#include "storm/settings/Argument.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/IllegalArgumentValueException.h"
@@ -22,6 +23,7 @@ namespace storm {
             const std::string RegionSettings::hypothesisShortOptionName = "hyp";
             const std::string RegionSettings::refineOptionName = "refine";
             const std::string RegionSettings::extremumOptionName = "extremum";
+            const std::string RegionSettings::extremumSuggestionOptionName = "extremum-init";
             const std::string RegionSettings::splittingThresholdName = "splitting-threshold";
             const std::string RegionSettings::checkEngineOptionName = "engine";
             const std::string RegionSettings::printNoIllustrationOptionName = "noillustration";
@@ -46,6 +48,9 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, extremumOptionName, false, "Computes the extremum within the region.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("direction", "The optimization direction").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator(directions)).build())
                                 .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("precision", "The desired precision").setDefaultValueDouble(0.05).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0.0,1.0)).build()).build());
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, extremumSuggestionOptionName, false, "Checks whether the provided value is indeed the extremum")
+                                        .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("extremum-suggestion", "The provided value for the extremum").addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0.0,1.0)).build()).build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, splittingThresholdName, false, "Sets the splittingThresholds for splitting regions.")
                                         .addArgument(storm::settings::ArgumentBuilder::createIntegerArgument("splitting-threshold", "The threshold for splitting, should be an integer > 0").build()).build());
@@ -130,7 +135,21 @@ namespace storm {
             }
 				
             double RegionSettings::getExtremumValuePrecision() const {
+                auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+                if (!generalSettings.isPrecisionSet() && generalSettings.isSoundSet()) {
+                    double prec = this->getOption(extremumOptionName).getArgumentByName("precision").getValueAsDouble() / 10;
+                    generalSettings.setPrecision(std::to_string(prec));
+                    STORM_LOG_WARN("Reset precision for solver to " << prec << " this is sufficient for extremum value precision of " << (prec)*10 << std::endl);
+                }
                 return this->getOption(extremumOptionName).getArgumentByName("precision").getValueAsDouble();
+            }
+
+            bool RegionSettings::isExtremumSuggestionSet() const {
+                return this->getOption(extremumSuggestionOptionName).getHasOptionBeenSet();
+            }
+
+            double RegionSettings::getExtremumSuggestion() const {
+                return this->getOption(extremumSuggestionOptionName).getArgumentByName("extremum-suggestion").getValueAsDouble();
             }
 
             storm::modelchecker::RegionCheckEngine RegionSettings::getRegionCheckEngine() const {
@@ -153,6 +172,10 @@ namespace storm {
             bool RegionSettings::check() const {
                 if (isRefineSet() && isExtremumSet()) {
                     STORM_LOG_ERROR("Can not compute extremum values AND perform region refinement.");
+                    return false;
+                }
+                if (getExtremumValuePrecision() < storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()) {
+                    STORM_LOG_ERROR("Computing extremum value for precision " << getExtremumValuePrecision() << " makes no sense when solver precision is set to " << storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
                     return false;
                 }
                 return true;

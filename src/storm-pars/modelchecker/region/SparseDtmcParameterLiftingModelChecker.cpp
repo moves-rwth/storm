@@ -313,8 +313,7 @@ namespace storm {
                 }
                 solver->setTrackScheduler(true);
 
-                if (!this->isOnlyGlobalSet() && this->isUseMonotonicitySet()) {
-                    assert (localMonotonicityResult != nullptr);
+                if (localMonotonicityResult != nullptr && !this->isOnlyGlobalSet()) {
                     storm::storage::BitVector fixedStates(parameterLifter->getRowGroupCount(), false);
 
                     bool useMinimize = storm::solver::minimize(dirForParameters);
@@ -419,7 +418,11 @@ namespace storm {
             auto const& choiceValuations = parameterLifter->getRowLabels();
             auto const& matrix = parameterLifter->getMatrix();
             auto const& vector = parameterLifter->getVector();
-            
+
+            auto i = 0;
+            for (auto & x : vector) {
+                ++i;
+            }
             std::vector<ConstantType> stateResults;
             for (uint64_t state = 0; state < schedulerChoices.size(); ++state) {
                 uint64_t rowOffset = matrix.getRowGroupIndices()[state];
@@ -430,12 +433,13 @@ namespace storm {
                 for (uint64_t row = rowOffset; row < matrix.getRowGroupIndices()[state + 1]; ++row) {
                     stateResults.push_back(matrix.multiplyRowWithVector(row, quantitativeResult) + vector[row]);
                 }
+                // Do this twice, once for upperbound once for lowerbound
                 bool checkUpperParameters = false;
                 do {
                     auto const& consideredParameters = checkUpperParameters ? optimalChoiceVal.getUpperParameters() : optimalChoiceVal.getLowerParameters();
                     for (auto const& p : consideredParameters) {
                         // Find the 'best' choice that assigns the parameter to the other bound
-                        ConstantType bestValue;
+                        ConstantType bestValue = 0;
                         bool foundBestValue = false;
                         for (uint64_t choice = 0; choice < stateResults.size(); ++choice) {
                             if (choice != optimalChoice) {
@@ -449,26 +453,36 @@ namespace storm {
                                 }
                             }
                         }
-                        if (checkUpperParameters) {
-                            deltaLower[p] += storm::utility::convertNumber<double>(bestValue);
-                        } else {
-                            deltaUpper[p] += storm::utility::convertNumber<double>(bestValue);
+                        auto optimal = storm::utility::convertNumber<double>(stateResults[optimalChoice]);
+                        auto diff = optimal - storm::utility::convertNumber<double>(bestValue);
+                        if (foundBestValue) {
+                            if (checkUpperParameters) {
+                                deltaLower[p] += std::abs(diff);
+                            } else {
+                                deltaUpper[p] += std::abs(diff);
+                            }
                         }
-
                     }
                     checkUpperParameters = !checkUpperParameters;
                 } while (checkUpperParameters);
             }
             
             regionSplitEstimates.clear();
+            useRegionSplitEstimates = false;
             for (auto const& p : region.getVariables()) {
-                if (deltaLower[p] > deltaUpper[p]) {
-                    regionSplitEstimates.insert(std::make_pair(p, deltaUpper[p]));
-                } else {
-                    regionSplitEstimates.insert(std::make_pair(p, deltaLower[p]));
+                if (this->possibleMonotoneParameters.find(p) != this->possibleMonotoneParameters.end()) {
+                    if (deltaLower[p] > deltaUpper[p] && deltaUpper[p] >= 0.0001) {
+                        regionSplitEstimates.insert(std::make_pair(p, deltaUpper[p]));
+                        useRegionSplitEstimates = true;
+                    } else if (deltaLower[p] <= deltaUpper[p] && deltaLower[p] >= 0.0001) {
+                        {
+                            regionSplitEstimates.insert(std::make_pair(p, deltaLower[p]));
+                            useRegionSplitEstimates = true;
+                        }
+                    }
                 }
             }
-            
+            // large regionsplitestimate implies that parameter p occurs as p and 1-p at least once
         }
         
         template <typename SparseModelType, typename ConstantType>
@@ -605,76 +619,65 @@ namespace storm {
 
         template <typename SparseModelType, typename ConstantType>
         void SparseDtmcParameterLiftingModelChecker<SparseModelType, ConstantType>::splitSmart (
-                storm::storage::ParameterRegion<ValueType> &region,
-                std::vector<storm::storage::ParameterRegion<ValueType>> &regionVector,
-                std::shared_ptr<storm::analysis::Order> order,
-                storm::analysis::MonotonicityResult<VariableType> & monRes) const {
-//            if (order != nullptr && !order->getDoneBuilding() && this->orderExtender) {
-//                STORM_LOG_INFO("Trying to split in variables which occur in both unknown states of the reachability order");
-//                auto states = this->orderExtender.get().getUnknownStates((order));
-//                if (states.first != states.second) {
-//                    auto& variablesAtStates = parameterLifter->getOccurringVariablesAtState();
-//                    std::set<VariableType> variables = variablesAtStates[states.first];
-//                    bool sameVariables = false;
-//
-//                    for (auto var : variablesAtStates[states.second]) {
-//                        sameVariables = variables.find(var) != variables.end();
-//                        if (sameVariables) {
-//                            break;
-//                        }
-//                        variables.insert(var);
-//                    }
-//                    if (sameVariables) {
-//                        STORM_LOG_INFO("Splitting in 2^" << variables.size() << " variables where original implementation would have splitted in 2^" << region.getVariables().size());
-//                        region.split(region.getCenterPoint(), regionVector, variables);
-//
-//                    }
-//                }
-//            }
-            if (regionVector.size() == 0) {
-                std::multimap<double, VariableType> sortedOnValues;
-                std::multimap<CoefficientType, VariableType> sortedOnDifference; // Difference between lower and upper boundary of parameter
-                std::set<VariableType> consideredVariables;
-                if (regionSplitEstimationsEnabled) {
-                    assert (region.getOptionalSplitThreshold());
-                    for (auto itr = sortedOnValues.begin();
-                         itr != sortedOnValues.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
+                storm::storage::ParameterRegion<ValueType> &region, std::vector<storm::storage::ParameterRegion<ValueType>> &regionVector,
+                std::shared_ptr<storm::analysis::Order> order, storm::analysis::MonotonicityResult<VariableType> & monRes, bool splitForExtremum) const {
+            assert (regionVector.size() == 0);
+
+            std::multimap<double, VariableType> sortedOnValues;
+            std::set<VariableType> consideredVariables;
+            if (splitForExtremum) {
+                if (regionSplitEstimationsEnabled && useRegionSplitEstimates) {
+                    STORM_LOG_INFO("Splitting based on region split estimates");
+                    for (auto &entry : regionSplitEstimates) {
+                        assert (!this->isUseMonotonicitySet() || (!monRes.isMonotone(entry.first) && this->possibleMonotoneParameters.find(entry.first) != this->possibleMonotoneParameters.end()));
+//                            sortedOnValues.insert({-(entry.second * storm::utility::convertNumber<double>(region.getDifference(entry.first))* storm::utility::convertNumber<double>(region.getDifference(entry.first))), entry.first});
+                            sortedOnValues.insert({-(entry.second ), entry.first});
+                    }
+
+                    for (auto itr = sortedOnValues.begin(); itr != sortedOnValues.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
+                        consideredVariables.insert(itr->second);
+                    }
+                    assert (consideredVariables.size() > 0);
+                    region.split(region.getCenterPoint(), regionVector, std::move(consideredVariables));
+                } else {
+                    STORM_LOG_INFO("Splitting based on sorting");
+
+                    auto &sortedOnDifference = region.getVariablesSorted();
+                    for (auto itr = sortedOnDifference.begin(); itr != sortedOnDifference.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
                         if (!this->isUseMonotonicitySet() || !monRes.isMonotone(itr->second)) {
                             consideredVariables.insert(itr->second);
                         }
                     }
+                    assert (consideredVariables.size() > 0 || (monRes.isDone() && monRes.isAllMonotonicity()));
+                    region.split(region.getCenterPoint(), regionVector, std::move(consideredVariables));
+                }
+            } else {
+                // split for pla
+                if (regionSplitEstimationsEnabled && useRegionSplitEstimates) {
+                    STORM_LOG_INFO("Splitting based on region split estimates");
+                    ConstantType diff = this->lastValue - (this->currentCheckTask->getFormula().asOperatorFormula().template getThresholdAs<ConstantType>());
+                    for (auto &entry : regionSplitEstimates) {
+                        if ((!this->isUseMonotonicitySet() || !monRes.isMonotone(entry.first)) && entry.second > diff) {
+                            sortedOnValues.insert({-(entry.second * storm::utility::convertNumber<double>(region.getDifference(entry.first)) * storm::utility::convertNumber<double>(region.getDifference(entry.first))), entry.first});
+                        }
+                    }
 
-                    bool allZero = true;
-                    for (auto& entry : regionSplitEstimates) {
-                        allZero &= entry.second == 0;
-                        sortedOnValues.insert({-entry.second, entry.first});
-                        sortedOnDifference.insert({-region.getDifference(entry.first), entry.first});
-                    }
-                    if (consideredVariables.size() == 0) {
-                        // Take the five not monotone parameters with the largerest parameter space
-                        for (auto itr = sortedOnDifference.begin(); itr != sortedOnDifference.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
-                            if (!this->isUseMonotonicitySet() || !monRes.isMonotone(itr->second)) {
-                                consideredVariables.insert(itr->second);
-                            }
-                        }
-                    }
-                } else {
-                    for (auto & var : region.getVariables()) {
-                        if (!this->isUseMonotonicitySet() || !monRes.isMonotone(var)) {
-                            consideredVariables.insert(var);
-                        }
+                    for (auto itr = sortedOnValues.begin(); itr != sortedOnValues.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
+                        consideredVariables.insert(itr->second);
                     }
                 }
-
-                assert (consideredVariables.size() > 0 || (monRes.isDone() && monRes.isAllMonotonicity()));
-
-                STORM_LOG_INFO("Splitting in 2^" << consideredVariables.size() << " variables where original implementation would have splitted in 2^" << region.getVariables().size());
+                if (consideredVariables.size() == 0) {
+                    auto &sortedOnDifference = region.getVariablesSorted();
+                    for (auto itr = sortedOnDifference.begin(); itr != sortedOnDifference.end() && consideredVariables.size() < region.getSplitThreshold(); ++itr) {
+                        consideredVariables.insert(itr->second);
+                    }
+                }
+                assert (consideredVariables.size() > 0);
                 region.split(region.getCenterPoint(), regionVector, std::move(consideredVariables));
             }
         }
 
         template class SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, double>;
         template class SparseDtmcParameterLiftingModelChecker<storm::models::sparse::Dtmc<storm::RationalFunction>, storm::RationalNumber>;
-
     }
 }

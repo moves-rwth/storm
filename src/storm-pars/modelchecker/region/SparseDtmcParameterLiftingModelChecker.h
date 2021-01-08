@@ -60,7 +60,7 @@ namespace storm {
             
             virtual void reset() override;
 
-            virtual void splitSmart(storm::storage::ParameterRegion<ValueType> & region, std::vector<storm::storage::ParameterRegion<ValueType>> &regionVector,  std::shared_ptr<storm::analysis::Order> order, storm::analysis::MonotonicityResult<VariableType> & monRes) const override;
+            virtual void splitSmart(storm::storage::ParameterRegion<ValueType> & region, std::vector<storm::storage::ParameterRegion<ValueType>> &regionVector,  std::shared_ptr<storm::analysis::Order> order, storm::analysis::MonotonicityResult<VariableType> & monRes, bool splitForExtremum) const override;
 
 
         private:
@@ -87,7 +87,7 @@ namespace storm {
             std::map<VariableType, double> regionSplitEstimates;
 
             // Used for monotonicity
-
+            bool useRegionSplitEstimates;
             std::unique_ptr<storm::analysis::MonotonicityChecker<ValueType>> monotonicityChecker;
 
 

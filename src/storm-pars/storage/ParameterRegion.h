@@ -17,8 +17,8 @@ namespace storm {
             typedef typename storm::utility::parametric::Valuation<ParametricType> Valuation;
             
             ParameterRegion();
-            ParameterRegion(Valuation const& lowerBoundaries, Valuation const& upperBoundaries, boost::optional<int> splittingThreshold= boost::none);
-            ParameterRegion(Valuation&& lowerBoundaries, Valuation&& upperBoundaries, boost::optional<int> splittingThreshold= boost::none);
+            ParameterRegion(Valuation const& lowerBoundaries, Valuation const& upperBoundaries);
+            ParameterRegion(Valuation&& lowerBoundaries, Valuation&& upperBoundaries);
             ParameterRegion(ParameterRegion<ParametricType> const& other) = default;
             ParameterRegion(ParameterRegion<ParametricType>&& other) = default;
             ParameterRegion<ParametricType>& operator=(ParameterRegion<ParametricType> const& other) = default;
@@ -26,6 +26,7 @@ namespace storm {
             virtual ~ParameterRegion() = default;
 
             std::set<VariableType> const& getVariables() const;
+            std::multimap<CoefficientType, VariableType> const& getVariablesSorted() const;
             CoefficientType const& getLowerBoundary(VariableType const& variable) const;
             CoefficientType const& getLowerBoundary(const std::string varName) const;
             CoefficientType const& getUpperBoundary(VariableType const& variable) const;
@@ -55,8 +56,9 @@ namespace storm {
              * Returns the center point of this region
              */
             Valuation getCenterPoint() const;
+
+            void setSplitThreshold(int splitThreshold);
             int getSplitThreshold() const;
-            boost::optional<int> getOptionalSplitThreshold() const;
 
             /*!
              * Returns the area of this region
@@ -71,33 +73,29 @@ namespace storm {
             void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector) const;
             void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector, std::set<VariableType> const& consideredVariables) const;
 
-//            void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector, storm::analysis::MonotonicityResult<VariableType> & monRes, bool onlyMonotoneVars, double parameterThreshold);
             Valuation getPoint(storm::solver::OptimizationDirection dir, storm::analysis::MonotonicityResult<VariableType> & monRes) const;
-            Valuation getPoint(storm::solver::OptimizationDirection dir, std::set<VariableType> const& possibleMonotoneIncrParameters, std::set<VariableType>const & possibleMonotoneDecrParameters) const;
+            Valuation getPoint(storm::solver::OptimizationDirection dir, std::set<VariableType> const& possibleMonotoneIncrParameters, std::set<VariableType>const & monDecrParameters) const;
 
             //returns the region as string in the format 0.3<=p<=0.4,0.2<=q<=0.5;
             std::string toString(bool boundariesAsDouble = false) const;
 
             bool isSubRegion(ParameterRegion<ParametricType> region);
 
-            void setNextVariableRangMon(int val);
-            void setNextVariableRangNonMon(int val);
-            void setLastSplitMonotone(bool lastSplitMonotone);
+            CoefficientType getBoundParent();
+            void setBoundParent(CoefficientType bound);
 
         private:
 
-            void init(boost::optional<int> splittingThreshold = boost::none);
+            void init();
 
             bool lastSplitMonotone = false;
+            int splitThreshold;
             
             Valuation lowerBoundaries;
             Valuation upperBoundaries;
             std::set<VariableType> variables;
-
-            int splitIndexMon;
-            int splitIndexNonMon;
-            int splitIndex;
-            boost::optional<int> splitThreshold;
+            std::multimap<CoefficientType, VariableType> sortedOnDifference;
+            CoefficientType parentBound;
         };
 
         template<typename ParametricType>

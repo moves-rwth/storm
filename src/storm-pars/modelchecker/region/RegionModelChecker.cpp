@@ -231,7 +231,7 @@ namespace storm {
 
                                 std::vector<storm::storage::ParameterRegion<ParametricType>> newKnownRegions;
                                 // Only split in (non)monotone vars
-                                splitSmart(currentRegion, newRegions, order, *(localMonotonicityResult->getGlobalMonotonicityResult()));
+                                splitSmart(currentRegion, newRegions, order, *(localMonotonicityResult->getGlobalMonotonicityResult()), false);
                                 assert (newRegions.size() != 0);
 
                                 initResForNewRegions = (res == RegionResult::CenterSat) ? RegionResult::ExistsSat :
@@ -337,6 +337,12 @@ namespace storm {
             return std::pair<ParametricType, typename storm::storage::ParameterRegion<ParametricType>::Valuation>();
         }
 
+        template <typename ParametricType>
+        bool RegionModelChecker<ParametricType>::checkExtremalValue(Environment const& env, storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dir, ParametricType const& precision, ParametricType const& valueToCheck) {
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Checking extremal values is not supported for this region model checker.");
+            return false;
+        }
+
         
         template <typename ParametricType>
         bool RegionModelChecker<ParametricType>::isRegionSplitEstimateSupported() const {
@@ -395,7 +401,7 @@ namespace storm {
         }
 
         template <typename ParametricType>
-        void RegionModelChecker<ParametricType>::splitSmart(storm::storage::ParameterRegion<ParametricType> & currentRegion, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector, std::shared_ptr<storm::analysis::Order> order, storm::analysis::MonotonicityResult<VariableType> & monRes) const {
+        void RegionModelChecker<ParametricType>::splitSmart(storm::storage::ParameterRegion<ParametricType> & currentRegion, std::vector<storm::storage::ParameterRegion<ParametricType>> &regionVector, std::shared_ptr<storm::analysis::Order> order, storm::analysis::MonotonicityResult<VariableType> & monRes, bool splitForExtremum) const {
             STORM_LOG_WARN("Smart splitting for this model checker not implemented");
             currentRegion.split(currentRegion.getCenterPoint(), regionVector);
         }
