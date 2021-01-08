@@ -1,4 +1,5 @@
 #include <storm/storage/StronglyConnectedComponentDecomposition.h>
+#include <storm-pars/analysis/OrderExtenderDtmc.h>
 #include "storm-config.h"
 #include "test/storm_gtest.h"
 
@@ -37,7 +38,7 @@ TEST(AssumptionMakerTest, Brp_without_bisimulation) {
     ASSERT_EQ(model->getNumberOfStates(), 193);
     ASSERT_EQ(model->getNumberOfTransitions(), 383);
 
-    auto *extender = new storm::analysis::OrderExtender<storm::RationalFunction, double>(model, formulas[0], region);
+    auto *extender = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, double>(model, formulas[0], region);
     auto criticalTuple = extender->toOrder(region, nullptr);
     ASSERT_EQ(183, std::get<1>(criticalTuple));
     ASSERT_EQ(186, std::get<2>(criticalTuple));
