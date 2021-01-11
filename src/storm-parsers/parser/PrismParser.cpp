@@ -23,7 +23,7 @@ namespace storm {
             std::ifstream inputFileStream;
             storm::utility::openFile(filename, inputFileStream);
             storm::prism::Program result;
-            
+
             // Now try to parse the contents of the file.
             try {
                 std::string fileContent((std::istreambuf_iterator<char>(inputFileStream)), (std::istreambuf_iterator<char>()));
@@ -37,15 +37,15 @@ namespace storm {
                 storm::utility::closeFile(inputFileStream);
                 throw e;
             }
-            
+
             // Close the stream in case everything went smoothly and return result.
             storm::utility::closeFile(inputFileStream);
             return result;
         }
-        
+
         storm::prism::Program PrismParser::parseFromString(std::string const& input, std::string const& filename, bool prismCompatibility) {
             bool hasByteOrderMark = input.size() >= 3 && input[0] == '\xEF' && input[1] == '\xBB' && input[2] == '\xBF';
-            
+
             PositionIteratorType first(hasByteOrderMark ? input.begin() + 3 : input.begin());
             PositionIteratorType iter = first;
             PositionIteratorType last(input.end());
@@ -53,7 +53,7 @@ namespace storm {
 
             // Create empty result;
             storm::prism::Program result;
-            
+
             // Create grammar.
             storm::parser::PrismParser grammar(filename, first, prismCompatibility);
             try {
@@ -62,7 +62,7 @@ namespace storm {
                 bool succeeded = qi::phrase_parse(iter, last, grammar, space | qi::lit("//") >> *(qi::char_ - (qi::eol | qi::eoi)) >> (qi::eol | qi::eoi), result);
                 STORM_LOG_THROW(succeeded,  storm::exceptions::WrongFormatException, "Parsing failed in first pass.");
                 STORM_LOG_DEBUG("First pass of parsing PRISM input finished.");
-                
+
                 // Start second run.
                 first = PositionIteratorType(input.begin());
                 iter = first;
@@ -73,98 +73,98 @@ namespace storm {
             } catch (qi::expectation_failure<PositionIteratorType> const& e) {
                 // If the parser expected content different than the one provided, display information about the location of the error.
                 std::size_t lineNumber = boost::spirit::get_line(e.first);
-                
+
                 // Now propagate exception.
                 STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in line " << lineNumber << " of file " << filename << ".");
             }
-            
+
             STORM_LOG_TRACE("Parsed PRISM input: " << result);
-            
+
             return result;
         }
-        
+
         PrismParser::PrismParser(std::string const& filename, Iterator first, bool prismCompatibility) : PrismParser::base_type(start), secondRun(false), prismCompatibility(prismCompatibility), filename(filename), annotate(first), manager(new storm::expressions::ExpressionManager()), expressionParser(new ExpressionParser(*manager, keywords_, false, false)) {
-            
+
             ExpressionParser& expression_ = *expressionParser;
             boolExpression = (expression_[qi::_val = qi::_1])[qi::_pass = phoenix::bind(&PrismParser::isOfBoolType, phoenix::ref(*this), qi::_val)];
             boolExpression.name("boolean expression");
-            
+
             intExpression = (expression_[qi::_val = qi::_1])[qi::_pass = phoenix::bind(&PrismParser::isOfIntType, phoenix::ref(*this), qi::_val)];
             intExpression.name("integer expression");
-            
+
             numericalExpression = (expression_[qi::_val = qi::_1])[qi::_pass = phoenix::bind(&PrismParser::isOfNumericalType, phoenix::ref(*this), qi::_val)];
             numericalExpression.name("numerical expression");
-            
+
             // Parse simple identifier.
             identifier %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_')) >> *(qi::alnum | qi::char_('_')))]]][qi::_pass = phoenix::bind(&PrismParser::isValidIdentifier, phoenix::ref(*this), qi::_1)];
             identifier.name("identifier");
-            
+
             // Fail if the identifier has been used before
             freshIdentifier = (identifier[qi::_val = qi::_1])[qi::_pass = phoenix::bind(&PrismParser::isFreshIdentifier, phoenix::ref(*this), qi::_1)];
             freshIdentifier.name("fresh identifier");
-            
+
             modelTypeDefinition %= modelType_;
             modelTypeDefinition.name("model type");
-            
+
             // Defined constants. Will be checked before undefined constants.
             // ">>" before literal '=' because we can still parse an undefined constant afterwards.
             definedBooleanConstantDefinition = (((qi::lit("const") >> qi::lit("bool")) > freshIdentifier)
                     >> (qi::lit("=") > boolExpression > qi::lit(";"))
                     )[qi::_val = phoenix::bind(&PrismParser::createDefinedBooleanConstant, phoenix::ref(*this), qi::_1, qi::_2)];
             definedBooleanConstantDefinition.name("defined boolean constant declaration");
-            
+
             definedIntegerConstantDefinition = (((qi::lit("const") >> -qi::lit("int")) >> freshIdentifier)
                     >> (qi::lit("=") > intExpression > qi::lit(";"))
                     )[qi::_val = phoenix::bind(&PrismParser::createDefinedIntegerConstant, phoenix::ref(*this), qi::_1, qi::_2)]; // '>>' before freshIdentifier because of the optional 'int'.  Otherwise, undefined constant 'const bool b;' would not parse.
             definedIntegerConstantDefinition.name("defined integer constant declaration");
-            
+
             definedDoubleConstantDefinition = (((qi::lit("const") >> qi::lit("double")) > freshIdentifier)
                     >> (qi::lit("=") > numericalExpression > qi::lit(";"))
                     )[qi::_val = phoenix::bind(&PrismParser::createDefinedDoubleConstant, phoenix::ref(*this), qi::_1, qi::_2)];
             definedDoubleConstantDefinition.name("defined double constant declaration");
-            
+
             definedConstantDefinition %= (definedBooleanConstantDefinition | definedDoubleConstantDefinition | definedIntegerConstantDefinition);
             definedConstantDefinition.name("defined constant definition");
-            
+
             // Undefined constants. At this point we already checked for a defined constant, therefore a ";" is required after the identifier;
             undefinedBooleanConstantDefinition = (((qi::lit("const") >> qi::lit("bool")) > freshIdentifier) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createUndefinedBooleanConstant, phoenix::ref(*this), qi::_1)];
             undefinedBooleanConstantDefinition.name("undefined boolean constant declaration");
-            
+
             undefinedIntegerConstantDefinition = (((qi::lit("const") >> -qi::lit("int")) > freshIdentifier) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createUndefinedIntegerConstant, phoenix::ref(*this), qi::_1)];
             undefinedIntegerConstantDefinition.name("undefined integer constant declaration");
-            
+
             undefinedDoubleConstantDefinition = (((qi::lit("const") >> qi::lit("double")) > freshIdentifier) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createUndefinedDoubleConstant, phoenix::ref(*this), qi::_1)];
             undefinedDoubleConstantDefinition.name("undefined double constant definition");
-            
+
             undefinedConstantDefinition = (undefinedBooleanConstantDefinition | undefinedDoubleConstantDefinition | undefinedIntegerConstantDefinition); // Due to the 'const N;' syntax, it is important to have integer constants last
 
             undefinedConstantDefinition.name("undefined constant definition");
-            
+
             // formula definitions. This will be changed for the second run.
             formulaDefinitionRhs = (qi::lit("=") > qi::as_string[(+(qi::char_ - (qi::lit(";") | qi::lit("endmodule"))))][qi::_val = qi::_1] > qi::lit(";"));
             formulaDefinitionRhs.name("formula defining expression");
-            
+
             formulaDefinition = (qi::lit("formula") > freshIdentifier > formulaDefinitionRhs )[qi::_val = phoenix::bind(&PrismParser::createFormulaFirstRun, phoenix::ref(*this), qi::_1, qi::_2)];
             formulaDefinition.name("formula definition");
-            
+
             booleanVariableDefinition = (((freshIdentifier > qi::lit(":")) >> qi::lit("bool")) > -((qi::lit("init") > boolExpression[qi::_a = qi::_1]) | qi::attr(manager->boolean(false))) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createBooleanVariable, phoenix::ref(*this), qi::_1, qi::_a)];
             booleanVariableDefinition.name("boolean variable definition");
-            
+
             integerVariableDefinition = (((freshIdentifier > qi::lit(":")) >> qi::lit("[")) > intExpression > qi::lit("..") > intExpression > qi::lit("]") > -(qi::lit("init") > intExpression[qi::_a = qi::_1]) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createIntegerVariable, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_a)];
             integerVariableDefinition.name("integer variable definition");
-            
+
             clockVariableDefinition = (((freshIdentifier > qi::lit(":")) >> qi::lit("clock")) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createClockVariable, phoenix::ref(*this), qi::_1)];
             clockVariableDefinition.name("clock variable definition");
-            
+
             variableDefinition = (booleanVariableDefinition[phoenix::push_back(qi::_r1, qi::_1)] | integerVariableDefinition[phoenix::push_back(qi::_r2, qi::_1)] | clockVariableDefinition[phoenix::push_back(qi::_r3, qi::_1)]);
             variableDefinition.name("variable declaration");
-            
+
             globalVariableDefinition = (qi::lit("global") > (booleanVariableDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::globalBooleanVariables, qi::_r1), qi::_1)] | integerVariableDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::globalIntegerVariables, qi::_r1), qi::_1)]));
             globalVariableDefinition.name("global variable declaration list");
-                        
+
             stateRewardDefinition = (boolExpression > qi::lit(":") > numericalExpression > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createStateReward, phoenix::ref(*this), qi::_1, qi::_2)];
             stateRewardDefinition.name("state reward definition");
-            
+
             stateActionRewardDefinition = (qi::lit("[") > -identifier > qi::lit("]") > boolExpression > qi::lit(":") > numericalExpression > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createStateActionReward, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_r1)];
             stateActionRewardDefinition.name("state action reward definition");
 
@@ -181,28 +181,28 @@ namespace storm {
                                          )
                                      > qi::lit("endrewards"))[qi::_val = phoenix::bind(&PrismParser::createRewardModel, phoenix::ref(*this), qi::_a, qi::_b, qi::_c, qi::_d)];
             rewardModelDefinition.name("reward model definition");
-            
+
             initialStatesConstruct = (qi::lit("init") > boolExpression > qi::lit("endinit"))[qi::_pass = phoenix::bind(&PrismParser::addInitialStatesConstruct, phoenix::ref(*this), qi::_1, qi::_r1)];
             initialStatesConstruct.name("initial construct");
 
             observablesConstruct = (qi::lit("observables") > (identifier % qi::lit(",") )> qi::lit("endobservables"))[phoenix::bind(&PrismParser::createObservablesList, phoenix::ref(*this), qi::_1)];
             observablesConstruct.name("observables construct");
-            
+
             invariantConstruct = (qi::lit("invariant") > boolExpression > qi::lit("endinvariant"))[qi::_val = qi::_1];
             invariantConstruct.name("invariant construct");
 
             knownModuleName = (identifier[qi::_val = qi::_1])[qi::_pass = phoenix::bind(&PrismParser::isKnownModuleName, phoenix::ref(*this), qi::_1)];
             knownModuleName.name("existing module name");
-            
+
             freshModuleName = (identifier[qi::_val = qi::_1])[qi::_pass = phoenix::bind(&PrismParser::isFreshModuleName, phoenix::ref(*this), qi::_1)];
             freshModuleName.name("fresh module name");
 
             systemCompositionConstruct = (qi::lit("system") > parallelComposition > qi::lit("endsystem"))[phoenix::bind(&PrismParser::addSystemCompositionConstruct, phoenix::ref(*this), qi::_1, qi::_r1)];
             systemCompositionConstruct.name("system composition construct");
-            
+
             actionNameList %= identifier[phoenix::insert(qi::_val, qi::_1)] >> *("," >> identifier[phoenix::insert(qi::_val, qi::_1)]);
             actionNameList.name("action list");
-            
+
             parallelComposition = hidingOrRenamingComposition[qi::_val = qi::_1] >> *((interleavingParallelComposition > hidingOrRenamingComposition)[qi::_val = phoenix::bind(&PrismParser::createInterleavingParallelComposition, phoenix::ref(*this), qi::_val, qi::_1)] |
                                                                                       (synchronizingParallelComposition > hidingOrRenamingComposition)[qi::_val = phoenix::bind(&PrismParser::createSynchronizingParallelComposition, phoenix::ref(*this), qi::_val, qi::_1)] |
                                                                                       (restrictedParallelComposition > hidingOrRenamingComposition)[qi::_val = phoenix::bind(&PrismParser::createRestrictedParallelComposition, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)]
@@ -211,31 +211,31 @@ namespace storm {
 
             synchronizingParallelComposition = qi::lit("||");
             synchronizingParallelComposition.name("synchronizing parallel composition");
-            
+
             interleavingParallelComposition = qi::lit("|||");
             interleavingParallelComposition.name("interleaving parallel composition");
 
             restrictedParallelComposition = qi::lit("|[") > actionNameList > qi::lit("]|");
             restrictedParallelComposition.name("restricted parallel composition");
-            
+
             hidingOrRenamingComposition = hidingComposition | renamingComposition | atomicComposition;
             hidingOrRenamingComposition.name("hiding/renaming composition");
-            
+
             hidingComposition = (atomicComposition >> (qi::lit("/") > (qi::lit("{") > actionNameList > qi::lit("}"))))[qi::_val = phoenix::bind(&PrismParser::createHidingComposition, phoenix::ref(*this), qi::_1, qi::_2)];
             hidingComposition.name("hiding composition");
-            
+
             actionRenamingList = +(identifier >> (qi::lit("<-") >> identifier))[phoenix::insert(qi::_val, phoenix::construct<std::pair<std::string, std::string>>(qi::_1, qi::_2))];
             actionRenamingList.name("action renaming list");
-            
+
             renamingComposition = (atomicComposition >> (qi::lit("{") > (actionRenamingList > qi::lit("}"))))[qi::_val = phoenix::bind(&PrismParser::createRenamingComposition, phoenix::ref(*this), qi::_1, qi::_2)];
             renamingComposition.name("renaming composition");
-            
+
             atomicComposition = (qi::lit("(") > parallelComposition > qi::lit(")")) | moduleComposition;
             atomicComposition.name("atomic composition");
-            
+
             moduleComposition = identifier[qi::_val = phoenix::bind(&PrismParser::createModuleComposition, phoenix::ref(*this), qi::_1)];
             moduleComposition.name("module composition");
-            
+
             freshLabelName = (identifier[qi::_val = qi::_1])[qi::_pass = phoenix::bind(&PrismParser::isFreshLabelName, phoenix::ref(*this), qi::_1)];
             freshLabelName.name("fresh label name");
 
@@ -247,20 +247,20 @@ namespace storm {
 
             observableDefinition = (qi::lit("observable") > -qi::lit("\"") > freshObservationLabelName > -qi::lit("\"") > qi::lit("=") > (intExpression | boolExpression) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createObservationLabel, phoenix::ref(*this), qi::_1, qi::_2)];
             observableDefinition.name("observable definition");
-            
+
             assignmentDefinition = ((qi::lit("(") >> identifier >> qi::lit("'")) > qi::lit("=") > expression_ > qi::lit(")"))[qi::_val = phoenix::bind(&PrismParser::createAssignment, phoenix::ref(*this), qi::_1, qi::_2)];
             assignmentDefinition.name("assignment");
-            
+
             assignmentDefinitionList = (assignmentDefinition % "&")[qi::_val = qi::_1] | (qi::lit("true"))[qi::_val = phoenix::construct<std::vector<storm::prism::Assignment>>()];
             assignmentDefinitionList.name("assignment list");
-            
+
             updateDefinition = (assignmentDefinitionList[qi::_val = phoenix::bind(&PrismParser::createUpdate, phoenix::ref(*this), manager->rational(1), qi::_1, qi::_r1)]
                     | ((numericalExpression > qi::lit(":") > assignmentDefinitionList)[qi::_val = phoenix::bind(&PrismParser::createUpdate, phoenix::ref(*this), qi::_1, qi::_2, qi::_r1)]));
             updateDefinition.name("update");
-            
+
             updateListDefinition %= +updateDefinition(qi::_r1) % "+";
             updateListDefinition.name("update list");
-            
+
             // This is a dummy command-definition (it ignores the actual contents of the command) that is overwritten when the parser is moved to the second run.
             commandDefinition = (((qi::lit("[") > -identifier > qi::lit("]"))
                                   |
@@ -272,20 +272,37 @@ namespace storm {
             // We first check for a module renaming, i.e., for this rule we certainly have to see a module definition
             moduleDefinition = ((qi::lit("module") > freshModuleName > *(variableDefinition(qi::_a, qi::_b, qi::_c))) > -invariantConstruct > (*commandDefinition(qi::_r1)) > qi::lit("endmodule"))[qi::_val = phoenix::bind(&PrismParser::createModule, phoenix::ref(*this), qi::_1, qi::_a, qi::_b, qi::_c, qi::_2, qi::_3, qi::_r1)];
             moduleDefinition.name("module definition");
-            
+
+            freshPlayerName = (identifier[qi::_val = qi::_1])[qi::_pass = phoenix::bind(&PrismParser::isFreshPlayerName, phoenix::ref(*this), qi::_1)];
+            freshPlayerName.name("fresh player name");
+
+            commandName = (qi::lit("[") >> identifier >> qi::lit("]"))[qi::_val = qi::_1];
+            commandName.name("command name");
+
+            moduleName = identifier[qi::_val = qi::_1];
+            moduleName.name("module name");
+
+            playerDefinition = (qi::lit("player") > freshPlayerName[qi::_a = qi::_1]
+                    > +(   (commandName[phoenix::push_back(qi::_c, qi::_1)]
+                        |   moduleName[phoenix::push_back(qi::_b, qi::_1)]) % ','
+                        )
+                    > qi::lit("endplayer"))[qi::_val = phoenix::bind(&PrismParser::createPlayer, phoenix::ref(*this), qi::_a, qi::_b, qi::_c)];
+            playerDefinition.name("player definition");
+
             moduleRenaming = (qi::lit("[") > ((identifier > qi::lit("=") > identifier)[phoenix::insert(qi::_a, phoenix::construct<std::pair<std::string,std::string>>(qi::_1, qi::_2))] % ",") > qi::lit("]"))[qi::_val = phoenix::bind(&PrismParser::createModuleRenaming, phoenix::ref(*this), qi::_a)];
             moduleRenaming.name("Module renaming list");
-            
+
             renamedModule = (((qi::lit("module") > freshModuleName) >> qi::lit("="))
                               > knownModuleName[qi::_a = qi::_1]
                               > (moduleRenaming[qi::_b = qi::_1])[qi::_pass = phoenix::bind(&PrismParser::isValidModuleRenaming, phoenix::ref(*this), qi::_a, qi::_b, qi::_r1)]
                               > qi::lit("endmodule"))[qi::_val = phoenix::bind(&PrismParser::createRenamedModule, phoenix::ref(*this), qi::_1, qi::_a, qi::_b, qi::_r1)];
             renamedModule.name("module definition via renaming");
-            
+
             start = (qi::eps[phoenix::bind(&PrismParser::removeInitialConstruct, phoenix::ref(*this), phoenix::ref(globalProgramInformation))]
                      > modelTypeDefinition[phoenix::bind(&PrismParser::setModelType, phoenix::ref(*this), phoenix::ref(globalProgramInformation), qi::_1)]
                      > -observablesConstruct
                      >  *( definedConstantDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::constants, phoenix::ref(globalProgramInformation)), qi::_1)]
+                         | playerDefinition(phoenix::ref(globalProgramInformation))[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::players, phoenix::ref(globalProgramInformation)), qi::_1)]
                          | undefinedConstantDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::constants, phoenix::ref(globalProgramInformation)), qi::_1)]
                          | formulaDefinition[phoenix::push_back(phoenix::bind(&GlobalProgramInformation::formulas, phoenix::ref(globalProgramInformation)), qi::_1)]
                          | globalVariableDefinition(phoenix::ref(globalProgramInformation))
@@ -298,7 +315,7 @@ namespace storm {
                      )
                      > -(systemCompositionConstruct(phoenix::ref(globalProgramInformation))) > qi::eoi)[qi::_val = phoenix::bind(&PrismParser::createProgram, phoenix::ref(*this), phoenix::ref(globalProgramInformation))];
             start.name("probabilistic program");
-            
+
             // Enable location tracking for important entities.
             auto setLocationInfoFunction = this->annotate(qi::_val, qi::_1, qi::_3);
             qi::on_success(undefinedBooleanConstantDefinition, setLocationInfoFunction);
@@ -320,16 +337,16 @@ namespace storm {
             qi::on_success(commandDefinition, setLocationInfoFunction);
             qi::on_success(updateDefinition, setLocationInfoFunction);
             qi::on_success(assignmentDefinition, setLocationInfoFunction);
-            
+
             // Enable error reporting.
             qi::on_error<qi::fail>(start, handler(qi::_1, qi::_2, qi::_3, qi::_4));
         }
-        
+
         void PrismParser::moveToSecondRun() {
             // In the second run, we actually need to parse the commands instead of just skipping them,
             // so we adapt the rule for parsing commands.
             STORM_LOG_THROW(observables.empty(), storm::exceptions::WrongFormatException, "Some variables marked as observable, but never declared, e.g. " <<  *observables.begin());
-            
+
             commandDefinition = (((qi::lit("[") > -identifier > qi::lit("]"))
                                  |
                                   (qi::lit("<") > -identifier > qi::lit(">")[qi::_a = true]))
@@ -350,10 +367,10 @@ namespace storm {
             // * in the first run, the type of the formula (int, bool, clock) is not known
             // * in the second run, formulas might be used before they are declared
             createFormulaIdentifiers(this->globalProgramInformation.formulas);
-            
+
             this->globalProgramInformation.moveToSecondRun();
         }
-        
+
         void PrismParser::createFormulaIdentifiers(std::vector<storm::prism::Formula> const& formulas) {
             STORM_LOG_THROW(formulas.size() == this->formulaExpressions.size(), storm::exceptions::UnexpectedException, "Unexpected number of formulas and formula expressions");
             this->formulaOrder.clear();
@@ -397,22 +414,22 @@ namespace storm {
                 STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Unable to parse expression for formula '" << formulas[unprocessed.getNextSetIndex(0)].getName() << "'.");
             }
         }
-        
+
         void PrismParser::allowDoubleLiterals(bool flag) {
             this->expressionParser->setAcceptDoubleLiterals(flag);
         }
-        
+
         std::string const& PrismParser::getFilename() const {
             return this->filename;
         }
-        
+
         bool PrismParser::isValidIdentifier(std::string const& identifier) {
             if (this->keywords_.find(identifier) != nullptr) {
                 return false;
             }
             return true;
         }
-        
+
         bool PrismParser::isKnownModuleName(std::string const& moduleName) {
             if (!this->secondRun && this->globalProgramInformation.moduleToIndexMap.count(moduleName) == 0) {
                 STORM_LOG_ERROR("Parsing error in " << this->getFilename() << ": Unknown module '" << moduleName << "'.");
@@ -420,7 +437,7 @@ namespace storm {
             }
             return true;
         }
-        
+
         bool PrismParser::isFreshModuleName(std::string const& moduleName) {
             if (!this->secondRun && this->globalProgramInformation.moduleToIndexMap.count(moduleName) != 0) {
                 STORM_LOG_ERROR("Parsing error in " << this->getFilename() << ": Duplicate module name '" << moduleName << "'.");
@@ -428,7 +445,7 @@ namespace storm {
             }
             return true;
         }
-        
+
         bool PrismParser::isFreshIdentifier(std::string const& identifier) {
             if (!this->secondRun && this->manager->hasVariable(identifier)) {
                 STORM_LOG_ERROR("Parsing error in " << this->getFilename() << ": Duplicate identifier '" << identifier << "'.");
@@ -436,7 +453,7 @@ namespace storm {
             }
             return true;
         }
-        
+
         bool PrismParser::isFreshLabelName(std::string const& labelName) {
             if (!this->secondRun) {
                 for (auto const& existingLabel : this->globalProgramInformation.labels) {
@@ -460,7 +477,7 @@ namespace storm {
             }
             return true;
         }
-        
+
         bool PrismParser::isFreshRewardModelName(std::string const& rewardModelName) {
             if (!this->secondRun) {
                 for (auto const& existingRewardModel : this->globalProgramInformation.rewardModels) {
@@ -472,19 +489,23 @@ namespace storm {
             }
             return true;
         }
-        
+
+        bool PrismParser::isFreshPlayerName(std::string const& playerName) {
+            return true;
+        }
+
         bool PrismParser::isOfBoolType(storm::expressions::Expression const& expression) {
             return !this->secondRun || expression.hasBooleanType();
         }
-        
+
         bool PrismParser::isOfIntType(storm::expressions::Expression const& expression) {
             return !this->secondRun || expression.hasIntegerType();
         }
-        
+
         bool PrismParser::isOfNumericalType(storm::expressions::Expression const& expression) {
             return !this->secondRun || expression.hasNumericalType();
         }
-        
+
         bool PrismParser::addInitialStatesConstruct(storm::expressions::Expression const& initialStatesExpression, GlobalProgramInformation& globalProgramInformation) {
             STORM_LOG_THROW(!globalProgramInformation.hasInitialConstruct, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ": Program must not define two initial constructs.");
             if (globalProgramInformation.hasInitialConstruct) {
@@ -494,12 +515,12 @@ namespace storm {
             globalProgramInformation.initialConstruct = storm::prism::InitialConstruct(initialStatesExpression, this->getFilename(), get_line(qi::_3));
             return true;
         }
-        
+
         bool PrismParser::addSystemCompositionConstruct(std::shared_ptr<storm::prism::Composition> const& composition, GlobalProgramInformation& globalProgramInformation) {
             globalProgramInformation.systemCompositionConstruct = storm::prism::SystemCompositionConstruct(composition, this->getFilename(), get_line(qi::_3));
             return true;
         }
-        
+
         void PrismParser::setModelType(GlobalProgramInformation& globalProgramInformation, storm::prism::Program::ModelType const& modelType) {
             STORM_LOG_THROW(globalProgramInformation.modelType == storm::prism::Program::ModelType::UNDEFINED, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ": Program must not set model type multiple times.");
             globalProgramInformation.modelType = modelType;
@@ -508,27 +529,27 @@ namespace storm {
         std::shared_ptr<storm::prism::Composition> PrismParser::createModuleComposition(std::string const& moduleName) const {
             return std::make_shared<storm::prism::ModuleComposition>(moduleName);
         }
-        
+
         std::shared_ptr<storm::prism::Composition> PrismParser::createRenamingComposition(std::shared_ptr<storm::prism::Composition> const& subcomposition, std::map<std::string, std::string> const& renaming) const {
             return std::make_shared<storm::prism::RenamingComposition>(subcomposition, renaming);
         }
-        
+
         std::shared_ptr<storm::prism::Composition> PrismParser::createHidingComposition(std::shared_ptr<storm::prism::Composition> const& subcomposition, std::set<std::string> const& actionsToHide) const {
             return std::make_shared<storm::prism::HidingComposition>(subcomposition, actionsToHide);
         }
-        
+
         std::shared_ptr<storm::prism::Composition> PrismParser::createSynchronizingParallelComposition(std::shared_ptr<storm::prism::Composition> const& left, std::shared_ptr<storm::prism::Composition> const& right) const {
             return std::make_shared<storm::prism::SynchronizingParallelComposition>(left, right);
         }
-        
+
         std::shared_ptr<storm::prism::Composition> PrismParser::createInterleavingParallelComposition(std::shared_ptr<storm::prism::Composition> const& left, std::shared_ptr<storm::prism::Composition> const& right) const {
             return std::make_shared<storm::prism::InterleavingParallelComposition>(left, right);
         }
-        
+
         std::shared_ptr<storm::prism::Composition> PrismParser::createRestrictedParallelComposition(std::shared_ptr<storm::prism::Composition> const& left, std::set<std::string> const& synchronizingActions, std::shared_ptr<storm::prism::Composition> const& right) const {
             return std::make_shared<storm::prism::RestrictedParallelComposition>(left, synchronizingActions, right);
         }
-        
+
         storm::prism::Constant PrismParser::createUndefinedBooleanConstant(std::string const& newConstant) const {
             if (!this->secondRun) {
                 try {
@@ -540,7 +561,7 @@ namespace storm {
             }
             return storm::prism::Constant(manager->getVariable(newConstant), this->getFilename());
         }
-        
+
         storm::prism::Constant PrismParser::createUndefinedIntegerConstant(std::string const& newConstant) const {
             if (!this->secondRun) {
                 try {
@@ -552,7 +573,7 @@ namespace storm {
             }
             return storm::prism::Constant(manager->getVariable(newConstant), this->getFilename());
         }
-        
+
         storm::prism::Constant PrismParser::createUndefinedDoubleConstant(std::string const& newConstant) const {
             if (!this->secondRun) {
                 try {
@@ -564,7 +585,7 @@ namespace storm {
             }
             return storm::prism::Constant(manager->getVariable(newConstant), this->getFilename());
         }
-        
+
         storm::prism::Constant PrismParser::createDefinedBooleanConstant(std::string const& newConstant, storm::expressions::Expression expression) const {
             if (!this->secondRun) {
                 try {
@@ -576,7 +597,7 @@ namespace storm {
             }
             return storm::prism::Constant(manager->getVariable(newConstant), expression, this->getFilename());
         }
-        
+
         storm::prism::Constant PrismParser::createDefinedIntegerConstant(std::string const& newConstant, storm::expressions::Expression expression) const {
             if (!this->secondRun) {
                 try {
@@ -588,7 +609,7 @@ namespace storm {
             }
             return storm::prism::Constant(manager->getVariable(newConstant), expression, this->getFilename());
         }
-        
+
         storm::prism::Constant PrismParser::createDefinedDoubleConstant(std::string const& newConstant, storm::expressions::Expression expression) const {
             if (!this->secondRun) {
                 try {
@@ -600,7 +621,7 @@ namespace storm {
             }
             return storm::prism::Constant(manager->getVariable(newConstant), expression, this->getFilename());
         }
-        
+
         storm::prism::Formula PrismParser::createFormulaFirstRun(std::string const& formulaName, std::string const& expression) {
             // Only store the expression as a string. It will be parsed between first and second run
             // This is necessary because the resulting type of the formula is only known after the first run.
@@ -608,14 +629,14 @@ namespace storm {
             formulaExpressions.push_back(expression);
             return storm::prism::Formula(formulaName, this->getFilename());
         }
-        
+
         storm::prism::Formula PrismParser::createFormulaSecondRun(std::string const& formulaName, storm::expressions::Expression const& expression) {
             // This is necessary because the resulting type of the formula is only known after the first run.
             STORM_LOG_ASSERT(this->secondRun, "This constructor should have only been called during the second run.");
             storm::expressions::Expression lhsExpression = *this->identifiers_.find(formulaName);
             return storm::prism::Formula(lhsExpression.getBaseExpression().asVariableExpression().getVariable(), expression, this->getFilename());
         }
-        
+
         storm::prism::Label PrismParser::createLabel(std::string const& labelName, storm::expressions::Expression expression) const {
             return storm::prism::Label(labelName, expression, this->getFilename());
         }
@@ -623,11 +644,11 @@ namespace storm {
         storm::prism::ObservationLabel PrismParser::createObservationLabel(std::string const& labelName, storm::expressions::Expression expression) const {
             return storm::prism::ObservationLabel(labelName, expression, this->getFilename());
         }
-        
+
         storm::prism::RewardModel PrismParser::createRewardModel(std::string const& rewardModelName, std::vector<storm::prism::StateReward> const& stateRewards, std::vector<storm::prism::StateActionReward> const& stateActionRewards, std::vector<storm::prism::TransitionReward> const& transitionRewards) const {
             return storm::prism::RewardModel(rewardModelName, stateRewards, stateActionRewards, transitionRewards, this->getFilename());
         }
-        
+
         storm::prism::StateReward PrismParser::createStateReward(storm::expressions::Expression statePredicateExpression, storm::expressions::Expression rewardValueExpression) const {
             if (this->secondRun) {
                 return storm::prism::StateReward(statePredicateExpression, rewardValueExpression, this->getFilename());
@@ -635,11 +656,11 @@ namespace storm {
                 return storm::prism::StateReward();
             }
         }
-        
+
         storm::prism::StateActionReward PrismParser::createStateActionReward(boost::optional<std::string> const& actionName, storm::expressions::Expression statePredicateExpression, storm::expressions::Expression rewardValueExpression, GlobalProgramInformation& globalProgramInformation) const {
             if (this->secondRun) {
                 std::string realActionName = actionName ? actionName.get() : "";
-                
+
                 auto const& nameIndexPair = globalProgramInformation.actionIndices.find(realActionName);
                 STORM_LOG_THROW(nameIndexPair != globalProgramInformation.actionIndices.end(), storm::exceptions::WrongFormatException, "Action reward refers to illegal action '" << realActionName << "'.");
                 return storm::prism::StateActionReward(nameIndexPair->second, realActionName, statePredicateExpression, rewardValueExpression, this->getFilename());
@@ -647,11 +668,11 @@ namespace storm {
                 return storm::prism::StateActionReward();
             }
         }
-        
+
         storm::prism::TransitionReward PrismParser::createTransitionReward(boost::optional<std::string> const& actionName, storm::expressions::Expression sourceStatePredicateExpression, storm::expressions::Expression targetStatePredicateExpression, storm::expressions::Expression rewardValueExpression, GlobalProgramInformation& globalProgramInformation) const {
             if (this->secondRun) {
                 std::string realActionName = actionName ? actionName.get() : "";
-    
+
                 auto const& nameIndexPair = globalProgramInformation.actionIndices.find(realActionName);
                 STORM_LOG_THROW(nameIndexPair != globalProgramInformation.actionIndices.end(), storm::exceptions::WrongFormatException, "Transition reward refers to illegal action '" << realActionName << "'.");
                 return storm::prism::TransitionReward(nameIndexPair->second, realActionName, sourceStatePredicateExpression, targetStatePredicateExpression, rewardValueExpression, this->getFilename());
@@ -659,22 +680,22 @@ namespace storm {
                 return storm::prism::TransitionReward();
             }
         }
-        
+
         storm::prism::Assignment PrismParser::createAssignment(std::string const& variableName, storm::expressions::Expression assignedExpression) const {
             return storm::prism::Assignment(manager->getVariable(variableName), assignedExpression, this->getFilename());
         }
-        
+
         storm::prism::Update PrismParser::createUpdate(storm::expressions::Expression likelihoodExpression, std::vector<storm::prism::Assignment> const& assignments, GlobalProgramInformation& globalProgramInformation) const {
             ++globalProgramInformation.currentUpdateIndex;
             return storm::prism::Update(globalProgramInformation.currentUpdateIndex - 1, likelihoodExpression, assignments, this->getFilename());
         }
-        
+
         storm::prism::Command PrismParser::createCommand(bool markovian, boost::optional<std::string> const& actionName, storm::expressions::Expression guardExpression, std::vector<storm::prism::Update> const& updates, GlobalProgramInformation& globalProgramInformation) const {
             ++globalProgramInformation.currentCommandIndex;
             std::string realActionName = actionName ? actionName.get() : "";
 
             uint_fast64_t actionIndex = 0;
-            
+
             // If the action name was not yet seen, record it.
             auto nameIndexPair = globalProgramInformation.actionIndices.find(realActionName);
             if (nameIndexPair == globalProgramInformation.actionIndices.end()) {
@@ -686,7 +707,7 @@ namespace storm {
             }
             return storm::prism::Command(globalProgramInformation.currentCommandIndex - 1, markovian, actionIndex, realActionName, guardExpression, updates, this->getFilename());
         }
-        
+
         storm::prism::Command PrismParser::createDummyCommand(boost::optional<std::string> const& actionName, GlobalProgramInformation& globalProgramInformation) const {
             STORM_LOG_ASSERT(!this->secondRun, "Dummy procedure must not be called in second run.");
             std::string realActionName = actionName ? actionName.get() : "";
@@ -697,10 +718,10 @@ namespace storm {
                 std::size_t nextIndex = globalProgramInformation.actionIndices.size();
                 globalProgramInformation.actionIndices.emplace(realActionName, nextIndex);
             }
-            
+
             return storm::prism::Command();
         }
-        
+
         storm::prism::BooleanVariable PrismParser::createBooleanVariable(std::string const& variableName, storm::expressions::Expression initialValueExpression) const {
             if (!this->secondRun) {
                 try {
@@ -716,7 +737,7 @@ namespace storm {
             }
             return storm::prism::BooleanVariable(manager->getVariable(variableName), initialValueExpression, observable, this->getFilename());
         }
-        
+
         storm::prism::IntegerVariable PrismParser::createIntegerVariable(std::string const& variableName, storm::expressions::Expression lowerBoundExpression, storm::expressions::Expression upperBoundExpression, storm::expressions::Expression initialValueExpression) const {
             if (!this->secondRun) {
                 try {
@@ -733,7 +754,7 @@ namespace storm {
 
             return storm::prism::IntegerVariable(manager->getVariable(variableName), lowerBoundExpression, upperBoundExpression, initialValueExpression, observable, this->getFilename());
         }
-        
+
         storm::prism::ClockVariable PrismParser::createClockVariable(std::string const& variableName) const {
             if (!this->secondRun) {
                 try {
@@ -755,12 +776,53 @@ namespace storm {
             this->observables.insert(observables.begin(), observables.end());
             // We need this list to be filled in both runs.
         }
-        
+
         storm::prism::Module PrismParser::createModule(std::string const& moduleName, std::vector<storm::prism::BooleanVariable> const& booleanVariables, std::vector<storm::prism::IntegerVariable> const& integerVariables, std::vector<storm::prism::ClockVariable> const& clockVariables, boost::optional<storm::expressions::Expression> const& invariant, std::vector<storm::prism::Command> const& commands, GlobalProgramInformation& globalProgramInformation) const {
-            globalProgramInformation.moduleToIndexMap[moduleName] = globalProgramInformation.modules.size();
+            if (!this->secondRun) {
+                globalProgramInformation.moduleToIndexMap[moduleName] = globalProgramInformation.modules.size();
+            } else {
+                STORM_LOG_THROW(globalProgramInformation.moduleToIndexMap[moduleName] == globalProgramInformation.modules.size(), storm::exceptions::WrongFormatException, "Internal error while parsing: the index for module " << moduleName << " does not match the on in the first run.");
+            }
             return storm::prism::Module(moduleName, booleanVariables, integerVariables, clockVariables, invariant.is_initialized()? invariant.get() : storm::expressions::Expression(), commands, this->getFilename());
         }
-        
+
+        storm::prism::Player PrismParser::createPlayer(std::string const& playerName, std::vector<std::string> const& moduleNames, std::vector<std::string> const & actionNames) {
+            if (this->secondRun) {
+                std::map<std::string, uint_fast64_t> controlledModuleIndices;
+                std::map<std::string, uint_fast64_t> controlledActionIndices;
+                for(std::string moduleName : moduleNames) {
+                    auto const& moduleIndexPair = globalProgramInformation.moduleToIndexMap.find(moduleName);
+                    if (moduleIndexPair != globalProgramInformation.moduleToIndexMap.end()) {
+                        controlledModuleIndices.insert(std::pair<std::string, uint_fast64_t>(moduleIndexPair->first, moduleIndexPair->second));
+                        if (std::find(globalProgramInformation.playerControlledModules.begin(), globalProgramInformation.playerControlledModules.end(), moduleName) != globalProgramInformation.playerControlledModules.end()) {
+                            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << " for player " << playerName << ": Module '" << moduleName << "' already controlled by another player.");
+                        } else {
+                            globalProgramInformation.playerControlledModules.push_back(moduleName);
+                        }
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << " for player " << playerName << ": No module named '" << moduleName << "' present.");
+                    }
+                }
+                for(std::string actionName : actionNames) {
+                    auto const& actionIndexPair = globalProgramInformation.actionIndices.find(actionName);
+                    if (actionIndexPair != globalProgramInformation.actionIndices.end()) {
+                        controlledActionIndices.insert(std::pair<std::string, uint_fast64_t>(actionIndexPair->first, actionIndexPair->second));
+                        if (std::find(globalProgramInformation.playerControlledCommands.begin(), globalProgramInformation.playerControlledCommands.end(), actionName) != globalProgramInformation.playerControlledCommands.end()) {
+                            STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << " for player " << playerName << ": Command '" << actionName << "' already controlled by another player.");
+                        } else {
+                            globalProgramInformation.playerControlledCommands.push_back(actionName);
+                        }
+                    } else {
+                        STORM_LOG_THROW(false, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << " for player " << playerName << ": No action named '" << actionName << "' present.");
+                    }
+                }
+                STORM_LOG_DEBUG("PLAYER created:" << playerName);
+                return storm::prism::Player(playerName, controlledModuleIndices, controlledActionIndices);
+            } else {
+                return storm::prism::Player();
+            }
+        }
+
         bool PrismParser::isValidModuleRenaming(std::string const& oldModuleName, storm::prism::ModuleRenaming const& moduleRenaming, GlobalProgramInformation const& globalProgramInformation) const {
             if (!this->secondRun) {
                 auto const& renaming = moduleRenaming.getRenaming();
@@ -795,18 +857,18 @@ namespace storm {
             }
             return true;
         }
-        
+
         storm::prism::ModuleRenaming PrismParser::createModuleRenaming(std::map<std::string,std::string> const& renaming) const {
             return storm::prism::ModuleRenaming(renaming);
         }
-        
+
         storm::prism::Module PrismParser::createRenamedModule(std::string const& newModuleName, std::string const& oldModuleName, storm::prism::ModuleRenaming const& moduleRenaming, GlobalProgramInformation& globalProgramInformation) const {
             // Check whether the module to rename actually exists.
             auto const& moduleIndexPair = globalProgramInformation.moduleToIndexMap.find(oldModuleName);
             STORM_LOG_THROW(moduleIndexPair != globalProgramInformation.moduleToIndexMap.end(), storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << ": No module named '" << oldModuleName << "' to rename.");
             storm::prism::Module const& moduleToRename = globalProgramInformation.modules[moduleIndexPair->second];
             auto const& renaming = moduleRenaming.getRenaming();
-            
+
             if (!this->secondRun) {
                 // Register all (renamed) variables for later use.
                 // We already checked before, whether the renaiming is valid.
@@ -837,7 +899,7 @@ namespace storm {
                         this->observables.erase(renamingPair->second);
                     }
                 }
-                
+
                 for (auto const& command : moduleToRename.getCommands()) {
                     std::string newActionName = command.getActionName();
                     auto const& renamingPair = renaming.find(command.getActionName());
@@ -852,13 +914,13 @@ namespace storm {
                         globalProgramInformation.actionIndices.emplace(newActionName, nextIndex);
                     }
                 }
-                
+
                 // Return a dummy module in the first pass.
                 return storm::prism::Module();
             } else {
                 // Add a mapping from the new module name to its (future) index.
                 globalProgramInformation.moduleToIndexMap[newModuleName] = globalProgramInformation.modules.size();
-                
+
                 // Create a mapping from identifiers to the expressions they need to be replaced with.
                 std::map<storm::expressions::Variable, storm::expressions::Expression> expressionRenaming;
                 for (auto const& namePair : renaming) {
@@ -868,7 +930,7 @@ namespace storm {
                         expressionRenaming.emplace(manager->getVariable(namePair.first), *substitutedExpression);
                     }
                 }
-                
+
                 // Rename the boolean variables.
                 std::vector<storm::prism::BooleanVariable> booleanVariables;
                 for (auto const& variable : moduleToRename.getBooleanVariables()) {
@@ -880,7 +942,7 @@ namespace storm {
                     }
                     booleanVariables.push_back(storm::prism::BooleanVariable(manager->getVariable(renamingPair->second), variable.hasInitialValue() ? variable.getInitialValueExpression().substitute(expressionRenaming) : variable.getInitialValueExpression(), observable, this->getFilename(), moduleRenaming.getLineNumber()));
                 }
-                
+
                 // Rename the integer variables.
                 std::vector<storm::prism::IntegerVariable> integerVariables;
                 for (auto const& variable : moduleToRename.getIntegerVariables()) {
@@ -904,13 +966,13 @@ namespace storm {
                     }
                     clockVariables.push_back(storm::prism::ClockVariable(manager->getVariable(renamingPair->second), observable, this->getFilename(), moduleRenaming.getLineNumber()));
                 }
-                
+
                 // Rename invariant (if present)
                 storm::expressions::Expression invariant;
                 if (moduleToRename.hasInvariant()) {
                     invariant = moduleToRename.getInvariant().substitute(expressionRenaming);
                 }
-                
+
                 // Rename commands.
                 std::vector<storm::prism::Command> commands;
                 for (auto const& command : moduleToRename.getCommands()) {
@@ -928,13 +990,13 @@ namespace storm {
                         updates.emplace_back(globalProgramInformation.currentUpdateIndex, update.getLikelihoodExpression().substitute(expressionRenaming), assignments, this->getFilename(), moduleRenaming.getLineNumber());
                         ++globalProgramInformation.currentUpdateIndex;
                     }
-                    
+
                     std::string newActionName = command.getActionName();
                     auto const& renamingPair = renaming.find(command.getActionName());
                     if (renamingPair != renaming.end()) {
                         newActionName = renamingPair->second;
                     }
-                    
+
                     uint_fast64_t actionIndex = 0;
                     auto nameIndexPair = globalProgramInformation.actionIndices.find(newActionName);
                     if (nameIndexPair == globalProgramInformation.actionIndices.end()) {
@@ -944,22 +1006,22 @@ namespace storm {
                     } else {
                         actionIndex = nameIndexPair->second;
                     }
-                    
+
                     commands.emplace_back(globalProgramInformation.currentCommandIndex, command.isMarkovian(), actionIndex, newActionName, command.getGuardExpression().substitute(expressionRenaming), updates, this->getFilename(), moduleRenaming.getLineNumber());
                     ++globalProgramInformation.currentCommandIndex;
                 }
-                
+
                 return storm::prism::Module(newModuleName, booleanVariables, integerVariables, clockVariables, invariant, commands, oldModuleName, renaming);
             }
         }
-        
+
         storm::prism::Program PrismParser::createProgram(GlobalProgramInformation const& globalProgramInformation) const {
             storm::prism::Program::ModelType finalModelType = globalProgramInformation.modelType;
             if (globalProgramInformation.modelType == storm::prism::Program::ModelType::UNDEFINED) {
                 STORM_LOG_WARN("Program does not specify model type. Implicitly assuming 'mdp'.");
                 finalModelType = storm::prism::Program::ModelType::MDP;
             }
-            
+
             // make sure formulas are stored in a proper order.
             std::vector<storm::prism::Formula> orderedFormulas;
             if (this->secondRun) {
@@ -969,9 +1031,9 @@ namespace storm {
                 }
             }
 
-            return storm::prism::Program(manager, finalModelType, globalProgramInformation.constants, globalProgramInformation.globalBooleanVariables, globalProgramInformation.globalIntegerVariables, orderedFormulas, globalProgramInformation.modules, globalProgramInformation.actionIndices, globalProgramInformation.rewardModels, globalProgramInformation.labels, globalProgramInformation.observationLabels, secondRun && !globalProgramInformation.hasInitialConstruct ? boost::none : boost::make_optional(globalProgramInformation.initialConstruct), globalProgramInformation.systemCompositionConstruct, prismCompatibility, this->getFilename(), 1, this->secondRun);
+            return storm::prism::Program(manager, finalModelType, globalProgramInformation.constants, globalProgramInformation.globalBooleanVariables, globalProgramInformation.globalIntegerVariables, orderedFormulas, globalProgramInformation.players, globalProgramInformation.modules, globalProgramInformation.actionIndices, globalProgramInformation.rewardModels, globalProgramInformation.labels, globalProgramInformation.observationLabels, secondRun && !globalProgramInformation.hasInitialConstruct ? boost::none : boost::make_optional(globalProgramInformation.initialConstruct), globalProgramInformation.systemCompositionConstruct, prismCompatibility, this->getFilename(), 1, this->secondRun);
         }
-        
+
         void PrismParser::removeInitialConstruct(GlobalProgramInformation& globalProgramInformation) const {
             globalProgramInformation.hasInitialConstruct = false;
         }
