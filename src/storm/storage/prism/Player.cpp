@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace prism {
-        Player::Player(std::string const& playerName, std::map<std::string, uint_fast32_t> const& controlledModules, std::map<std::string, uint_fast32_t> const& controlledCommands, std::string const& filename, uint_fast32_t lineNumber) : LocatedInformation(filename, lineNumber), playerName(playerName), controlledModules(controlledModules), controlledCommands(controlledCommands) {
+        Player::Player(std::string const& playerName, std::map<std::string, uint_fast64_t> const& controlledModules, std::map<std::string, uint_fast64_t> const& controlledActions, std::string const& filename, uint_fast32_t lineNumber) : LocatedInformation(filename, lineNumber), playerName(playerName), controlledModules(controlledModules), controlledActions(controlledActions) {
             // Nothing to do here.
         }
 
@@ -10,12 +10,12 @@ namespace storm {
             return this->playerName;
         }
 
-        std::map<std::string, uint_fast32_t> const& Player::getModules() const {
+        std::map<std::string, uint_fast64_t> const& Player::getModules() const {
             return this->controlledModules;
         }
 
-        std::map<std::string, uint_fast32_t> const& Player::getCommands() const {
-            return this->controlledCommands;
+        std::map<std::string, uint_fast64_t> const& Player::getActions() const {
+            return this->controlledActions;
         }
 
         std::ostream& operator<<(std::ostream& stream, Player const& player) {
@@ -27,7 +27,7 @@ namespace storm {
             for (auto const& module : player.getModules()) {
                 stream << "\t" << module.first << std::endl;
             }
-            for (auto const& command : player.getCommands()) {
+            for (auto const& command : player.getActions()) {
                 stream << "\t[" << command.first << "]" << std::endl;
             }
             stream << "endplayer" << std::endl;

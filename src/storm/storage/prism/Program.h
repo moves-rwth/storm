@@ -338,8 +338,13 @@ namespace storm {
              *
              * @return The index of the player in the program.
              */
-            uint_fast32_t const& getIndexOfPlayer(std::string playerName) const;
+            PlayerIndex const& getIndexOfPlayer(std::string const& playerName) const;
 
+            /*!
+             * @return Retrieves the mapping of player names to their indices.
+             */
+            std::map<std::string, PlayerIndex> const& getPlayerNameToIndexMapping() const;
+            
             /*!
              * Retrieves the mapping of action names to their indices.
              *
@@ -761,7 +766,7 @@ namespace storm {
             std::vector<Player> players;
 
             // A mapping of player names to their indices.
-            std::map<std::string, uint_fast64_t> playerToIndexMap;
+            std::map<std::string, PlayerIndex> playerToIndexMap;
 
             // The modules associated with the program.
             std::vector<Module> modules;

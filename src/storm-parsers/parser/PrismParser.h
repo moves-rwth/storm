@@ -39,7 +39,7 @@ namespace storm {
                 globalIntegerVariables.clear();
                 players.clear();
                 playerControlledModules.clear();
-                playerControlledCommands.clear();
+                playerControlledActions.clear();
                 modules.clear();
                 rewardModels.clear();
                 labels.clear();
@@ -65,9 +65,8 @@ namespace storm {
             std::vector<storm::prism::Label> labels;
             std::vector<storm::prism::ObservationLabel> observationLabels;
             std::vector<storm::prism::Player> players;
-
-            std::vector<std::string> playerControlledModules;
-            std::vector<std::string> playerControlledCommands;
+            std::set<uint_fast64_t> playerControlledModules;
+            std::set<uint_fast64_t> playerControlledActions;
 
             bool hasInitialConstruct;
             storm::prism::InitialConstruct initialConstruct;
@@ -123,25 +122,26 @@ namespace storm {
                     ("ma", 5)
                     ("pomdp", 6)
                     ("pta", 7)
-                    ("const", 8)
-                    ("int", 9)
-                    ("bool", 10)
-                    ("module", 11)
-                    ("endmodule", 12)
-                    ("rewards", 13)
-                    ("endrewards", 14)
-                    ("true", 15)
-                    ("false", 16)
-                    ("min", 17)
-                    ("max", 18)
-                    ("floor", 19)
-                    ("ceil", 20)
-                    ("init", 21)
-                    ("endinit", 22)
-                    ("invariant", 23)
-                    ("endinvariant", 24)
-                    ("smg", 25)
-                    ("endplayer", 26);
+                    ("smg", 8)
+                    ("const", 9)
+                    ("int", 10)
+                    ("bool", 11)
+                    ("module", 12)
+                    ("endmodule", 13)
+                    ("rewards", 14)
+                    ("endrewards", 15)
+                    ("true", 16)
+                    ("false", 17)
+                    ("min", 18)
+                    ("max", 19)
+                    ("floor", 20)
+                    ("ceil", 21)
+                    ("init", 22)
+                    ("endinit", 23)
+                    ("invariant", 24)
+                    ("endinvariant", 25)
+                    ("player", 26)
+                    ("endplayer", 27);
                 }
             };
 
@@ -262,6 +262,7 @@ namespace storm {
             qi::rule<Iterator, storm::prism::Update(GlobalProgramInformation&), Skipper> updateDefinition;
             qi::rule<Iterator, std::vector<storm::prism::Assignment>(), Skipper> assignmentDefinitionList;
             qi::rule<Iterator, storm::prism::Assignment(), Skipper> assignmentDefinition;
+            qi::rule<Iterator, std::string(), Skipper> knownActionName;
 
             // Rules for reward definitions.
             qi::rule<Iterator, std::string(), Skipper> freshRewardModelName;
@@ -272,9 +273,9 @@ namespace storm {
 
             // Rules for player definitions
             qi::rule<Iterator, std::string(), Skipper> freshPlayerName;
-            qi::rule<Iterator, std::string(), qi::locals<std::string>, Skipper> commandName;
-            qi::rule<Iterator, std::string(), qi::locals<std::string>, Skipper> moduleName;
-            qi::rule<Iterator, storm::prism::Player(GlobalProgramInformation&), qi::locals<std::string, std::vector<std::string>, std::vector<std::string>>, Skipper> playerDefinition;
+            qi::rule<Iterator, std::string(), qi::locals<std::string>, Skipper> playerControlledActionName;
+            qi::rule<Iterator, std::string(), qi::locals<std::string>, Skipper> playerControlledModuleName;
+            qi::rule<Iterator, storm::prism::Player(GlobalProgramInformation&), qi::locals<std::string, std::vector<std::string>, std::vector<std::string>>, Skipper> playerConstruct;
 
             // Rules for initial states expression.
             qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> initialStatesConstruct;
@@ -327,8 +328,9 @@ namespace storm {
             // Helper methods used in the grammar.
             bool isValidIdentifier(std::string const& identifier);
             bool isFreshIdentifier(std::string const& identifier);
-            bool isKnownModuleName(std::string const& moduleName);
+            bool isKnownModuleName(std::string const& moduleName, bool inSecondRun);
             bool isFreshModuleName(std::string const& moduleName);
+            bool isKnownActionName(std::string const& actionName, bool inSecondRun);
             bool isFreshLabelName(std::string const& moduleName);
             bool isFreshObservationLabelName(std::string const& labelName);
             bool isFreshRewardModelName(std::string const& moduleName);

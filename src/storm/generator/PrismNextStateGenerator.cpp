@@ -87,7 +87,7 @@ namespace storm {
                     for (auto const& moduleIndexPair : player.getModules()) {
                         moduleIndexToPlayerIndexMap[moduleIndexPair.second] = playerIndex;
                     }
-                    for (auto const& commandIndexPair : player.getCommands()) {
+                    for (auto const& commandIndexPair : player.getActions()) {
                         commandIndexToPlayerIndexMap[commandIndexPair.second] = playerIndex;
                     }
                 }
