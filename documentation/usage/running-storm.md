@@ -249,7 +249,7 @@ $ storm --qvbsroot QCOMP_DIR/benchmarks --qvbs jobs
 ```
 {% include includes/show_output.html class="qvbs_jobs" path="qvbs/jobs.out" %}
 
-Here, we assume that the [QComp git repository](https://github.com/ahartmanns/qcomp){:target="_blank"} has been cloned into the directory `QCOMP_DIR`. If you built Storm from [source]({ site.github.url }}/documentation/obtaion-storm/build.html), you can also set the [cmake option]({{ site.github.url }}/documentation/obtain-storm/manual-configuration) `-DSTORM_QVBS_ROOT=QCOMP_DIR/benchmarks` which allows you to omit the `--qvbsroot QCOMP_DIR/benchmarks` command line option. Make sure to replace `QCOMP_DIR` by the actual location of the QComp repository.
+Here, we assume that the [QComp git repository](https://github.com/ahartmanns/qcomp){:target="_blank"} has been cloned into the directory `QCOMP_DIR`. If you built Storm from [source]({ site.github.url }}/documentation/obtaion-storm/build.html), you can also set the [cmake option]({{ site.github.url }}/documentation/obtain-storm/manual-configuration) `-DSTORM_LOAD_QVBS=ON` which will automatically download the complete benchmark set during the build step, allowing you to omit the `--qvbsroot QCOMP_DIR/benchmarks` command line option.
 
 The above command checks all available properties for the first instance of the model [jobs](http://qcomp/org/benchmarks/index.html#jobs){:target="_blank"}.
 The model checking call is equivalent to invoking Storm on the respective JANI file.
