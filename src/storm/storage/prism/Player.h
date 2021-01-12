@@ -3,18 +3,10 @@
 #include <string>
 #include <unordered_set>
 
-#include "storm/storage/prism/Module.h"
-#include "storm/storage/prism/Command.h"
-
-// needed?
-#include "storm/storage/BoostTypes.h"
-#include "storm/utility/OsDetection.h"
+#include "storm/storage/prism/LocatedInformation.h"
 
 namespace storm {
     namespace prism {
-        
-        typedef uint_fast64_t PlayerIndex;
-        PlayerIndex const INVALID_PLAYER_INDEX = std::numeric_limits<PlayerIndex>::max();
         
         class Player : public LocatedInformation {
         public:

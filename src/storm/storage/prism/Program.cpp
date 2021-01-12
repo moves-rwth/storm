@@ -488,17 +488,17 @@ namespace storm {
             return this->getPlayers().size();
         }
 
-        PlayerIndex const& Program::getIndexOfPlayer(std::string const& playerName) const {
+        storm::storage::PlayerIndex const& Program::getIndexOfPlayer(std::string const& playerName) const {
             return this->playerToIndexMap.at(playerName);
         }
 
-        std::map<std::string, PlayerIndex> const& Program::getPlayerNameToIndexMapping() const {
+        std::map<std::string, storm::storage::PlayerIndex> const& Program::getPlayerNameToIndexMapping() const {
             return playerToIndexMap;
         }
         
-        std::vector<PlayerIndex> Program::buildModuleIndexToPlayerIndexMap() const {
-            std::vector<PlayerIndex> result(this->getModules().size(), INVALID_PLAYER_INDEX);
-            for (PlayerIndex i = 0; i < this->getPlayers().size(); ++i) {
+        std::vector<storm::storage::PlayerIndex> Program::buildModuleIndexToPlayerIndexMap() const {
+            std::vector<storm::storage::PlayerIndex> result(this->getModules().size(), storm::storage::INVALID_PLAYER_INDEX);
+            for (storm::storage::PlayerIndex i = 0; i < this->getPlayers().size(); ++i) {
                 for (auto const& module : this->getPlayers()[i].getModules()) {
                     STORM_LOG_ASSERT(hasModule(module), "Module " << module << " not found.");
                     STORM_LOG_ASSERT(moduleToIndexMap.at(module) < this->getModules().size(), "module index " << moduleToIndexMap.at(module) << " out of range.");
@@ -508,15 +508,15 @@ namespace storm {
             return result;
         }
         
-        std::map<uint64_t, PlayerIndex> Program::buildActionIndexToPlayerIndexMap() const {
-            std::map<uint64_t, PlayerIndex> result;
+        std::map<uint64_t, storm::storage::PlayerIndex> Program::buildActionIndexToPlayerIndexMap() const {
+            std::map<uint64_t, storm::storage::PlayerIndex> result;
             // First insert an invalid player index for all available actions
             for (auto const& action : indexToActionMap) {
-                result.emplace_hint(result.end(), action.first, INVALID_PLAYER_INDEX);
+                result.emplace_hint(result.end(), action.first, storm::storage::INVALID_PLAYER_INDEX);
             }
             // Now set the actual player indices.
             // Note that actions that are not assigned to a player will still have INVALID_PLAYER_INDEX afterwards
-            for (PlayerIndex i = 0; i < this->getPlayers().size(); ++i) {
+            for (storm::storage::PlayerIndex i = 0; i < this->getPlayers().size(); ++i) {
                 for (auto const& act : this->getPlayers()[i].getActions()) {
                     STORM_LOG_ASSERT(hasAction(act), "Action " << act << " not found.");
                     result.emplace(actionToIndexMap.at(act), i);
@@ -847,7 +847,7 @@ namespace storm {
             for (uint_fast64_t moduleIndex = 0; moduleIndex < this->getNumberOfModules(); ++moduleIndex) {
                 this->moduleToIndexMap[this->getModules()[moduleIndex].getName()] = moduleIndex;
             }
-            for (PlayerIndex playerIndex = 0; playerIndex < this->getNumberOfPlayers(); ++playerIndex) {
+            for (storm::storage::PlayerIndex playerIndex = 0; playerIndex < this->getNumberOfPlayers(); ++playerIndex) {
                 this->playerToIndexMap[this->getPlayers()[playerIndex].getName()] = playerIndex;
             }
             for (uint_fast64_t rewardModelIndex = 0; rewardModelIndex < this->getNumberOfRewardModels(); ++rewardModelIndex) {

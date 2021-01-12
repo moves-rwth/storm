@@ -17,6 +17,7 @@
 #include "storm/storage/prism/Composition.h"
 #include "storm/storage/prism/Player.h"
 #include "storm/storage/BoostTypes.h"
+#include "storm/storage/PlayerIndex.h"
 #include "storm/utility/solver.h"
 #include "storm/utility/OsDetection.h"
 
@@ -338,24 +339,24 @@ namespace storm {
              *
              * @return The index of the player in the program.
              */
-            PlayerIndex const& getIndexOfPlayer(std::string const& playerName) const;
+            storm::storage::PlayerIndex const& getIndexOfPlayer(std::string const& playerName) const;
 
             /*!
              * @return Retrieves the mapping of player names to their indices.
              */
-            std::map<std::string, PlayerIndex> const& getPlayerNameToIndexMapping() const;
+            std::map<std::string, storm::storage::PlayerIndex> const& getPlayerNameToIndexMapping() const;
             
             /*!
              * Retrieves a vector whose i'th entry corresponds to the player controlling module i.
              * Modules that are not controlled by any player will get assigned INVALID_PLAYER_INDEX
              */
-            std::vector<PlayerIndex> buildModuleIndexToPlayerIndexMap() const;
+            std::vector<storm::storage::PlayerIndex> buildModuleIndexToPlayerIndexMap() const;
             
             /*!
              * Retrieves a vector whose i'th entry corresponds to the player controlling action with index i.
              * Actions that are not controlled by any player (in particular the silent action) will get assigned INVALID_PLAYER_INDEX.
              */
-            std::map<uint_fast64_t, PlayerIndex> buildActionIndexToPlayerIndexMap() const;
+            std::map<uint_fast64_t, storm::storage::PlayerIndex> buildActionIndexToPlayerIndexMap() const;
             
             /*!
              * Retrieves the mapping of action names to their indices.
@@ -778,7 +779,7 @@ namespace storm {
             std::vector<Player> players;
 
             // A mapping of player names to their indices.
-            std::map<std::string, PlayerIndex> playerToIndexMap;
+            std::map<std::string, storm::storage::PlayerIndex> playerToIndexMap;
 
             // The modules associated with the program.
             std::vector<Module> modules;

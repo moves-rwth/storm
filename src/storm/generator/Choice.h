@@ -9,6 +9,7 @@
 #include <boost/any.hpp>
 
 #include "storm/storage/Distribution.h"
+#include "storm/storage/PlayerIndex.h"
 
 namespace storm {
     namespace generator {
@@ -96,7 +97,7 @@ namespace storm {
              *
              * @param The player index associated with this choice.
              */
-            void setPlayerIndex(uint_fast32_t playerIndex);
+            void setPlayerIndex(storm::storage::PlayerIndex playerIndex);
 
             /*!
              * Returns whether there is an index for the player defined for this choice.
@@ -108,7 +109,7 @@ namespace storm {
              *
              * @return The player index associated with this choice.
              */
-            uint_fast32_t const& getPlayerIndex() const;
+            storm::storage::PlayerIndex const& getPlayerIndex() const;
 
             /*!
              * Adds the given data that specifies the origin of this choice w.r.t. the model specification
@@ -197,7 +198,7 @@ namespace storm {
             boost::optional<std::set<std::string>> labels;
 
             // The playerIndex of this choice
-            boost::optional<uint_fast32_t> playerIndex = boost::none;
+            boost::optional<storm::storage::PlayerIndex> playerIndex;
         };
 
         template<typename ValueType, typename StateType>

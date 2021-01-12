@@ -93,7 +93,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        void Choice<ValueType, StateType>::setPlayerIndex(uint_fast32_t playerIndex) {
+        void Choice<ValueType, StateType>::setPlayerIndex(storm::storage::PlayerIndex playerIndex) {
             this->playerIndex = playerIndex;
         }
 
@@ -103,7 +103,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        uint_fast32_t const& Choice<ValueType, StateType>::getPlayerIndex() const {
+        storm::storage::PlayerIndex const& Choice<ValueType, StateType>::getPlayerIndex() const {
             return playerIndex.get();
         }
 

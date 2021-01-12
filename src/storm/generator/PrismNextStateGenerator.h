@@ -4,6 +4,7 @@
 #include "storm/generator/NextStateGenerator.h"
 
 #include "storm/storage/prism/Program.h"
+#include "storm/storage/PlayerIndex.h"
 #include "storm/storage/BoostTypes.h"
 
 namespace storm {
@@ -121,9 +122,9 @@ namespace storm {
             // A flag that stores whether at least one of the selected reward models has state-action rewards.
             bool hasStateActionRewards;
 
-            // A mapping from modules/commands to the programs players
-            std::vector<storm::prism::PlayerIndex> moduleIndexToPlayerIndexMap;
-            std::map<uint_fast64_t, storm::prism::PlayerIndex> actionIndexToPlayerIndexMap;
+            // Mappings from module/action indices to the programs players
+            std::vector<storm::storage::PlayerIndex> moduleIndexToPlayerIndexMap;
+            std::map<uint_fast64_t, storm::storage::PlayerIndex> actionIndexToPlayerIndexMap;
         };
 
     }

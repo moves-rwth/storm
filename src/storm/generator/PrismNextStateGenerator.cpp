@@ -374,16 +374,16 @@ namespace storm {
                 allChoices.push_back(std::move(globalChoice));
             }
 
-            if (program.getModelType() == storm::prism::Program::ModelType::SMG) {
-                uint_fast32_t statePlayerIndex = allChoices.at(0).getPlayerIndex();
-                for(auto& choice : allChoices) {
-                    if (allChoices.size() == 1) break;
-                    // getPlayerIndex().is_initialized()?
-                    if (choice.hasPlayerIndex()) {
-                        STORM_LOG_ASSERT(choice.getPlayerIndex() == statePlayerIndex, "State '" << this->stateToString(*this->state) << "' comprises choices for different players.");
-                    } else {
-                        STORM_LOG_WARN("State '" << this->stateToString(*this->state) << "' features a choice without player index.");
-                    }
+            // For SMG we check whether the state has a unique player
+            if (program.getModelType() == storm::prism::Program::ModelType::SMG && allChoices.size() > 1) {
+                auto choiceIt = allChoices.begin();
+                STORM_LOG_ASSERT(choiceIt->hasPlayerIndex(), "State '" << this->stateToString(*this->state) << "' features a choice without player index."); // This should have been catched while creating the choice already
+                storm::storage::PlayerIndex statePlayerIndex = choiceIt->getPlayerIndex();
+                STORM_LOG_ASSERT(statePlayerIndex != storm::storage::INVALID_PLAYER_INDEX, "State '" << this->stateToString(*this->state) << "' features a choice with invalid player index."); // This should have been catched while creating the choice already
+                for (++choiceIt; choiceIt != allChoices.end(); ++choiceIt) {
+                    STORM_LOG_ASSERT(choiceIt->hasPlayerIndex(), "State '" << this->stateToString(*this->state) << "' features a choice without player index."); // This should have been catched while creating the choice already
+                    STORM_LOG_ASSERT(choiceIt->getPlayerIndex() != storm::storage::INVALID_PLAYER_INDEX, "State '" << this->stateToString(*this->state) << "' features a choice with invalid player index."); // This should have been catched while creating the choice already
+                    STORM_LOG_THROW(statePlayerIndex == choiceIt->getPlayerIndex(), storm::exceptions::WrongFormatException, "The player for state '" << this->stateToString(*this->state) << "' is not unique. At least one choice is owned by player '" << statePlayerIndex << "' while another is owned by player '" << choiceIt->getPlayerIndex() << "'.");
                 }
             }
 
@@ -603,7 +603,9 @@ namespace storm {
                     }
 
                     if (program.getModelType() == storm::prism::Program::ModelType::SMG) {
-                        choice.setPlayerIndex(moduleIndexToPlayerIndexMap[i]);
+                        storm::storage::PlayerIndex const& playerOfModule = moduleIndexToPlayerIndexMap.at(i);
+                        STORM_LOG_THROW(playerOfModule != storm::storage::INVALID_PLAYER_INDEX, storm::exceptions::WrongFormatException, "Module " << module.getName() << " is not owned by any player but has at least one enabled, unlabeled command.");
+                        choice.setPlayerIndex(playerOfModule);
                     }
 
                     if (this->options.isExplorationChecksSet()) {
@@ -669,7 +671,9 @@ namespace storm {
                         Choice<ValueType>& choice = choices.back();
 
                         if (program.getModelType() == storm::prism::Program::ModelType::SMG) {
-                            choice.setPlayerIndex(actionIndexToPlayerIndexMap[actionIndex]);
+                            storm::storage::PlayerIndex const& playerOfAction = actionIndexToPlayerIndexMap.at(actionIndex);
+                            STORM_LOG_THROW(playerOfAction != storm::storage::INVALID_PLAYER_INDEX, storm::exceptions::WrongFormatException, "Action " << program.getActionName(actionIndex) << " is not owned by any player but has at least one enabled, unlabeled (synchronized) command.");
+                            choice.setPlayerIndex(playerOfAction);
                         }
 
                         // Remember the choice label and origins only if we were asked to.
