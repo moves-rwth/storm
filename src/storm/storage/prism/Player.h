@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <vector>
+#include <unordered_set>
 
 #include "storm/storage/prism/Module.h"
 #include "storm/storage/prism/Command.h"
@@ -14,6 +14,7 @@ namespace storm {
     namespace prism {
         
         typedef uint_fast64_t PlayerIndex;
+        PlayerIndex const INVALID_PLAYER_INDEX = std::numeric_limits<PlayerIndex>::max();
         
         class Player : public LocatedInformation {
         public:
@@ -26,7 +27,7 @@ namespace storm {
              * @param filename The filename in which the player is defined.
              * @param lineNumber The line number in which the player is defined.
              */
-            Player(std::string const& playerName, std::map<std::string, uint_fast64_t> const& controlledModules, std::map<std::string, uint_fast64_t> const& controlledActions, std::string const& filename = "", uint_fast32_t lineNumber = 0);
+            Player(std::string const& playerName, std::unordered_set<std::string> const& controlledModules, std::unordered_set<std::string> const& controlledActions, std::string const& filename = "", uint_fast32_t lineNumber = 0);
 
             // Create default implementations of constructors/assignment.
             Player() = default;
@@ -47,14 +48,14 @@ namespace storm {
              *
              * @return The modules controlled by the player.
              */
-            std::map<std::string, uint_fast64_t> const& getModules() const; // TODO
+            std::unordered_set<std::string> const& getModules() const;
 
             /*!
              * Retrieves all controlled Actions of the player.
              *
              * @return The Actions controlled by the player.
              */
-            std::map<std::string, uint_fast64_t> const& getActions() const;
+            std::unordered_set<std::string> const& getActions() const;
 
             friend std::ostream& operator<<(std::ostream& stream, Player const& player);
         private:
@@ -62,10 +63,10 @@ namespace storm {
             std::string playerName;
 
             // The modules associated with this player.
-            std::map<std::string, uint_fast64_t> controlledModules;
+            std::unordered_set<std::string> controlledModules;
 
             // The Actions associated with this player.
-            std::map<std::string, uint_fast64_t> controlledActions;
+            std::unordered_set<std::string>  controlledActions;
         };
 
     } // namespace prism

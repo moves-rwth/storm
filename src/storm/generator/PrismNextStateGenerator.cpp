@@ -82,15 +82,8 @@ namespace storm {
             }
 
             if (program.getModelType() == storm::prism::Program::ModelType::SMG) {
-                for (auto const& player : program.getPlayers()) {
-                    uint_fast32_t playerIndex = program.getIndexOfPlayer(player.getName());
-                    for (auto const& moduleIndexPair : player.getModules()) {
-                        moduleIndexToPlayerIndexMap[moduleIndexPair.second] = playerIndex;
-                    }
-                    for (auto const& commandIndexPair : player.getActions()) {
-                        commandIndexToPlayerIndexMap[commandIndexPair.second] = playerIndex;
-                    }
-                }
+                moduleIndexToPlayerIndexMap = program.buildModuleIndexToPlayerIndexMap();
+                actionIndexToPlayerIndexMap = program.buildActionIndexToPlayerIndexMap();
             }
         }
 
@@ -610,8 +603,6 @@ namespace storm {
                     }
 
                     if (program.getModelType() == storm::prism::Program::ModelType::SMG) {
-                        // Can we trust the model ordering here?
-                        // I.e. is i the correct moduleIndex set in Program.cpp:805? TODO
                         choice.setPlayerIndex(moduleIndexToPlayerIndexMap[i]);
                     }
 
@@ -678,7 +669,7 @@ namespace storm {
                         Choice<ValueType>& choice = choices.back();
 
                         if (program.getModelType() == storm::prism::Program::ModelType::SMG) {
-                            choice.setPlayerIndex(commandIndexToPlayerIndexMap[actionIndex]);
+                            choice.setPlayerIndex(actionIndexToPlayerIndexMap[actionIndex]);
                         }
 
                         // Remember the choice label and origins only if we were asked to.

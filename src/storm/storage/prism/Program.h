@@ -346,6 +346,18 @@ namespace storm {
             std::map<std::string, PlayerIndex> const& getPlayerNameToIndexMapping() const;
             
             /*!
+             * Retrieves a vector whose i'th entry corresponds to the player controlling module i.
+             * Modules that are not controlled by any player will get assigned INVALID_PLAYER_INDEX
+             */
+            std::vector<PlayerIndex> buildModuleIndexToPlayerIndexMap() const;
+            
+            /*!
+             * Retrieves a vector whose i'th entry corresponds to the player controlling action with index i.
+             * Actions that are not controlled by any player (in particular the silent action) will get assigned INVALID_PLAYER_INDEX.
+             */
+            std::map<uint_fast64_t, PlayerIndex> buildActionIndexToPlayerIndexMap() const;
+            
+            /*!
              * Retrieves the mapping of action names to their indices.
              *
              * @return The mapping of action names to their indices.

@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace prism {
-        Player::Player(std::string const& playerName, std::map<std::string, uint_fast64_t> const& controlledModules, std::map<std::string, uint_fast64_t> const& controlledActions, std::string const& filename, uint_fast32_t lineNumber) : LocatedInformation(filename, lineNumber), playerName(playerName), controlledModules(controlledModules), controlledActions(controlledActions) {
+        Player::Player(std::string const& playerName, std::unordered_set<std::string> const& controlledModules, std::unordered_set<std::string> const& controlledActions, std::string const& filename, uint_fast32_t lineNumber) : LocatedInformation(filename, lineNumber), playerName(playerName), controlledModules(controlledModules), controlledActions(controlledActions) {
             // Nothing to do here.
         }
 
@@ -10,11 +10,11 @@ namespace storm {
             return this->playerName;
         }
 
-        std::map<std::string, uint_fast64_t> const& Player::getModules() const {
+        std::unordered_set<std::string> const& Player::getModules() const {
             return this->controlledModules;
         }
 
-        std::map<std::string, uint_fast64_t> const& Player::getActions() const {
+        std::unordered_set<std::string> const& Player::getActions() const {
             return this->controlledActions;
         }
 
@@ -25,10 +25,10 @@ namespace storm {
             }
             stream << std::endl;
             for (auto const& module : player.getModules()) {
-                stream << "\t" << module.first << std::endl;
+                stream << "\t" << module << std::endl;
             }
-            for (auto const& command : player.getActions()) {
-                stream << "\t[" << command.first << "]" << std::endl;
+            for (auto const& action : player.getActions()) {
+                stream << "\t[" << action << "]" << std::endl;
             }
             stream << "endplayer" << std::endl;
             return stream;

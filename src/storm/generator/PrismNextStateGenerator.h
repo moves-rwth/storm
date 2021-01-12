@@ -122,8 +122,8 @@ namespace storm {
             bool hasStateActionRewards;
 
             // A mapping from modules/commands to the programs players
-            std::map<uint_fast32_t, uint_fast32_t> moduleIndexToPlayerIndexMap;
-            std::map<uint_fast32_t, uint_fast32_t> commandIndexToPlayerIndexMap;
+            std::vector<storm::prism::PlayerIndex> moduleIndexToPlayerIndexMap;
+            std::map<uint_fast64_t, storm::prism::PlayerIndex> actionIndexToPlayerIndexMap;
         };
 
     }

@@ -1,5 +1,6 @@
 #include "storm-parsers/parser/PrismParser.h"
 
+#include <unordered_set>
 #include "storm/storage/prism/Compositions.h"
 
 
@@ -787,23 +788,23 @@ namespace storm {
 
         storm::prism::Player PrismParser::createPlayer(std::string const& playerName, std::vector<std::string> const& moduleNames, std::vector<std::string> const & actionNames) {
             if (this->secondRun) {
-                std::map<std::string, uint_fast64_t> controlledModuleIndices;
-                std::map<std::string, uint_fast64_t> controlledActionIndices;
+                std::unordered_set<std::string> controlledModules;
+                std::unordered_set<std::string> controlledActions;
                 for(auto const& moduleName : moduleNames) {
                     auto moduleIndexPair = globalProgramInformation.moduleToIndexMap.find(moduleName);
                     STORM_LOG_ASSERT(moduleIndexPair != globalProgramInformation.moduleToIndexMap.end(),  "Parsing error in " << this->getFilename() << " for player " << playerName << ": No module named '" << moduleName << "' present.");
-                    controlledModuleIndices.insert(*moduleIndexPair);
+                    controlledModules.insert(moduleIndexPair->first);
                     bool moduleNotYetControlled = globalProgramInformation.playerControlledModules.insert(moduleIndexPair->second).second;
                     STORM_LOG_THROW(moduleNotYetControlled, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << " for player " << playerName << ": Module '" << moduleName << "' already controlled by another player.");
                 }
                 for(std::string actionName : actionNames) {
                     auto actionIndexPair = globalProgramInformation.actionIndices.find(actionName);
                     STORM_LOG_ASSERT(actionIndexPair != globalProgramInformation.actionIndices.end(),  "Parsing error in " << this->getFilename() << " for player " << playerName << ": No action named '" << actionName << "' present.");
-                    controlledActionIndices.insert(*actionIndexPair);
+                    controlledActions.insert(actionIndexPair->first);
                     bool actionNotYetControlled = globalProgramInformation.playerControlledActions.insert(actionIndexPair->second).second;
                     STORM_LOG_THROW(actionNotYetControlled, storm::exceptions::WrongFormatException, "Parsing error in " << this->getFilename() << " for player " << playerName << ": Command '" << actionName << "' already controlled by another player.");
                 }
-                return storm::prism::Player(playerName, controlledModuleIndices, controlledActionIndices);
+                return storm::prism::Player(playerName, controlledModules, controlledActions);
             } else {
                 return storm::prism::Player();
             }
