@@ -2,6 +2,9 @@ name: Doxygen
 # Builds and deploys storms doxygen documentation
 
 on:
+  push:
+    branches:
+      - master
   # needed to trigger the workflow manually
   workflow_dispatch:
 
@@ -45,3 +48,4 @@ jobs:
           publish_dir: ./html
           external_repository: moves-rwth/storm-doc
           publish_branch: master
+          force_orphan: true
