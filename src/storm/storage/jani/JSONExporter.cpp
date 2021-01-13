@@ -324,18 +324,22 @@ namespace storm {
             }
             return opDecl;
         }
-        
+
         boost::any FormulaToJaniJson::visit(storm::logic::GloballyFormula const& f, boost::any const& data) const {
             ExportJsonType opDecl;
             opDecl["op"] = "G";
             opDecl["exp"] = anyToJson(f.getSubformula().accept(*this, data));
             return opDecl;
         }
-        
+
+        boost::any FormulaToJaniJson::visit(storm::logic::GameFormula const& f, boost::any const& data) const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Conversion of game formulas to Jani is not supported.");
+        }
+
         boost::any FormulaToJaniJson::visit(storm::logic::InstantaneousRewardFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Jani currently does not support conversion of an instanteneous reward formula");
         }
-        
+
         boost::any FormulaToJaniJson::visit(storm::logic::LongRunAverageOperatorFormula const& f, boost::any const& data) const {
             ExportJsonType opDecl;
             if(f.hasBound()) {

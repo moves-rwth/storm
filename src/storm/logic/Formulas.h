@@ -8,6 +8,7 @@
 #include "storm/logic/BoundedUntilFormula.h"
 #include "storm/logic/CumulativeRewardFormula.h"
 #include "storm/logic/EventuallyFormula.h"
+#include "storm/logic/GameFormula.h"
 #include "storm/logic/GloballyFormula.h"
 #include "storm/logic/InstantaneousRewardFormula.h"
 #include "storm/logic/NextFormula.h"

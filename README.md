@@ -57,5 +57,6 @@ Storm has been developed at RWTH Aachen University.
 * Jan Karuc
 * Gereon Kremer
 * Sascha Vincent Kurowski
+* Stefan Pranger
 * Manuel Sascha Weiand
 * Lukas Westhofen
