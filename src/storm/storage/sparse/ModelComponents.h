@@ -13,6 +13,7 @@
 #include "storm/storage/sparse/ChoiceOrigins.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/BitVector.h"
+#include "storm/storage/PlayerIndex.h"
 #include "storm/models/sparse/StandardRewardModel.h"
 
 #include "storm/utility/macros.h"
@@ -30,9 +31,8 @@ namespace storm {
                                 std::unordered_map<std::string, RewardModelType> const& rewardModels =  std::unordered_map<std::string, RewardModelType>(),
                                 bool rateTransitions = false,
                                 boost::optional<storm::storage::BitVector> const& markovianStates = boost::none,
-                                boost::optional<storm::storage::SparseMatrix<storm::storage::sparse::state_type>> const& player1Matrix = boost::none,
-                                boost::optional<std::vector<uint_fast32_t>> const& playerActionIndices = boost::none)
-                        : transitionMatrix(transitionMatrix), stateLabeling(stateLabeling), rewardModels(rewardModels), rateTransitions(rateTransitions), markovianStates(markovianStates), player1Matrix(player1Matrix), playerActionIndices(playerActionIndices) {
+                                boost::optional<storm::storage::SparseMatrix<storm::storage::sparse::state_type>> const& player1Matrix = boost::none)
+                        : transitionMatrix(transitionMatrix), stateLabeling(stateLabeling), rewardModels(rewardModels), rateTransitions(rateTransitions), markovianStates(markovianStates), player1Matrix(player1Matrix) {
                     // Intentionally left empty
                 }
 
@@ -41,13 +41,10 @@ namespace storm {
                                 std::unordered_map<std::string, RewardModelType>&& rewardModels =  std::unordered_map<std::string, RewardModelType>(),
                                 bool rateTransitions = false,
                                 boost::optional<storm::storage::BitVector>&& markovianStates = boost::none,
-                                boost::optional<storm::storage::SparseMatrix<storm::storage::sparse::state_type>>&& player1Matrix = boost::none,
-                                boost::optional<std::vector<uint_fast32_t>>&& playerActionIndices = boost::none)
-                        : transitionMatrix(std::move(transitionMatrix)), stateLabeling(std::move(stateLabeling)), rewardModels(std::move(rewardModels)), rateTransitions(rateTransitions), markovianStates(std::move(markovianStates)), player1Matrix(std::move(player1Matrix)), playerActionIndices(std::move(playerActionIndices)) {
+                                boost::optional<storm::storage::SparseMatrix<storm::storage::sparse::state_type>>&& player1Matrix = boost::none)
+                        : transitionMatrix(std::move(transitionMatrix)), stateLabeling(std::move(stateLabeling)), rewardModels(std::move(rewardModels)), rateTransitions(rateTransitions), markovianStates(std::move(markovianStates)), player1Matrix(std::move(player1Matrix)) {
                     // Intentionally left empty
                 }
-
-
 
 
                 // General components (applicable for all model types):
@@ -68,7 +65,6 @@ namespace storm {
                 // POMDP specific components
                 // The POMDP observations
                 boost::optional<std::vector<uint32_t>> observabilityClasses;
-
                 boost::optional<storm::storage::sparse::StateValuations> observationValuations;
 
                 // Continuous time specific components (CTMCs, Markov Automata):
@@ -84,8 +80,10 @@ namespace storm {
                 boost::optional<storm::storage::SparseMatrix<storm::storage::sparse::state_type>> player1Matrix;
 
                 // Stochastic multiplayer game specific components:
-                // The vector mapping state choices to players
-                boost::optional<std::vector<uint_fast32_t>> playerActionIndices;
+                // The vector mapping states to player indices.
+                boost::optional<std::vector<storm::storage::PlayerIndex>> statePlayerIndications;
+                // A mapping of player names to player indices.
+                boost::optional<std::map<std::string, storm::storage::PlayerIndex>> playerNameToIndexMap;
             };
         }
     }

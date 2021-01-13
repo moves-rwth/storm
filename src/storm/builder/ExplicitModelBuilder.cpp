@@ -4,7 +4,7 @@
 
 
 #include "storm/builder/RewardModelBuilder.h"
-#include "storm/builder/ChoiceInformationBuilder.h"
+#include "storm/builder/StateAndChoiceInformationBuilder.h"
 
 #include "storm/exceptions/AbortException.h"
 #include "storm/exceptions/WrongFormatException.h"
@@ -120,18 +120,11 @@ namespace storm {
         }
 
         template <typename ValueType, typename RewardModelType, typename StateType>
-        void ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders, ChoiceInformationBuilder& choiceInformationBuilder, boost::optional<storm::storage::BitVector>& markovianStates, boost::optional<std::vector<uint_fast32_t>> playerActionIndices, boost::optional<storm::storage::sparse::StateValuationsBuilder>& stateValuationsBuilder) {
+        void ExplicitModelBuilder<ValueType, RewardModelType, StateType>::buildMatrices(storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders, StateAndChoiceInformationBuilder& stateAndChoiceInformationBuilder) {
 
-            // Create markovian states bit vector, if required.
-            if (generator->getModelType() == storm::generator::ModelType::MA) {
-                // The bit vector will be resized when the correct size is known.
-                markovianStates = storm::storage::BitVector(1000);
-            }
-
-            // Create the player indices vector, if required.
-            if (generator->getModelType() == storm::generator::ModelType::SMG) {
-                playerActionIndices = std::vector<uint_fast32_t>{};
-                playerActionIndices.get().reserve(1000);
+            // Initialize building state valuations (if necessary)
+            if (stateAndChoiceInformationBuilder.isBuildStateValuations()) {
+                stateAndChoiceInformationBuilder.stateValuationsBuilder() = generator->initializeStateValuationsBuilder();
             }
 
             // Create a callback for the next-state generator to enable it to request the index of states.
@@ -175,8 +168,8 @@ namespace storm {
                 }
 
                 generator->load(currentState);
-                if (stateValuationsBuilder) {
-                    generator->addStateValuation(currentIndex, stateValuationsBuilder.get());
+                if (stateAndChoiceInformationBuilder.isBuildStateValuations()) {
+                    generator->addStateValuation(currentIndex, stateAndChoiceInformationBuilder.stateValuationsBuilder());
                 }
                 storm::generator::StateBehavior<ValueType, StateType> behavior = generator->expand(stateToIdCallback);
 
@@ -186,11 +179,6 @@ namespace storm {
                         // If the behavior was actually expanded and yet there are no transitions, then we have a deadlock state.
                         if (behavior.wasExpanded()) {
                             this->stateStorage.deadlockStateIndices.push_back(currentIndex);
-                        }
-
-                        if (markovianStates) {
-                            markovianStates.get().grow(currentRowGroup + 1, false);
-                            markovianStates.get().set(currentRowGroup);
                         }
 
                         if (!generator->isDeterministicModel()) {
@@ -208,11 +196,14 @@ namespace storm {
                                 rewardModelBuilder.addStateActionReward(storm::utility::zero<ValueType>());
                             }
                         }
-
-                        if (playerActionIndices) {
-                            // TODO change this to storm::utility::infinity<ValueType>() ?
-                            playerActionIndices.get().push_back(-1);
+                        
+                        // This state shall be Markovian (to not introduce Zeno behavior)
+                        if (stateAndChoiceInformationBuilder.isBuildMarkovianStates()) {
+                            stateAndChoiceInformationBuilder.addMarkovianState(currentRowGroup);
                         }
+                        // Other state-based information does not need to be treated, in particular:
+                        // * StateValuations have already been set above
+                        // * The associated player shall be the "default" player, i.e. INVALID_PLAYER_INDEX
 
                         ++currentRow;
                         ++currentRowGroup;
@@ -235,22 +226,26 @@ namespace storm {
                     }
 
                     // Now add all choices.
+                    bool firstChoiceOfState = true;
                     for (auto const& choice : behavior) {
 
                         // add the generated choice information
-                        if (choice.hasLabels()) {
+                        if (stateAndChoiceInformationBuilder.isBuildChoiceLabels() && choice.hasLabels()) {
                             for (auto const& label : choice.getLabels()) {
-                                choiceInformationBuilder.addLabel(label, currentRow);
+                                stateAndChoiceInformationBuilder.addChoiceLabel(label, currentRow);
                             }
                         }
-                        if (choice.hasOriginData()) {
-                            choiceInformationBuilder.addOriginData(choice.getOriginData(), currentRow);
+                        if (stateAndChoiceInformationBuilder.isBuildChoiceOrigins() && choice.hasOriginData()) {
+                            stateAndChoiceInformationBuilder.addChoiceOriginData(choice.getOriginData(), currentRow);
                         }
-
-                        // If we keep track of the Markovian choices, store whether the current one is Markovian.
-                        if (markovianStates && choice.isMarkovian()) {
-                            markovianStates.get().grow(currentRowGroup + 1, false);
-                            markovianStates.get().set(currentRowGroup);
+                        if (stateAndChoiceInformationBuilder.isBuildStatePlayerIndications() && choice.hasPlayerIndex()) {
+                            STORM_LOG_ASSERT(firstChoiceOfState || stateAndChoiceInformationBuilder.hasStatePlayerIndicationBeenSet(choice.getPlayerIndex(), currentRowGroup), "There is a state where different players have an enabled choice."); // Should have been detected in generator, already
+                            if (firstChoiceOfState) {
+                                stateAndChoiceInformationBuilder.addStatePlayerIndication(choice.getPlayerIndex(), currentRowGroup);
+                            }
+                        }
+                        if (stateAndChoiceInformationBuilder.isBuildMarkovianStates() &&  choice.isMarkovian()) {
+                            stateAndChoiceInformationBuilder.addMarkovianState(currentRowGroup);
                         }
 
                         // Add the probabilistic behavior to the matrix.
@@ -267,11 +262,9 @@ namespace storm {
                             ++choiceRewardIt;
                         }
                         ++currentRow;
+                        firstChoiceOfState = false;
                     }
 
-                    if (playerActionIndices) {
-                        playerActionIndices.get().push_back(behavior.getChoices().at(0).getPlayerIndex());
-                    }
                     ++currentRowGroup;
                 }
 
@@ -296,15 +289,6 @@ namespace storm {
                     STORM_LOG_THROW(false, storm::exceptions::AbortException, "Aborted in state space exploration.");
                     break;
                 }
-            }
-
-            if (markovianStates) {
-                // Since we now know the correct size, cut the bit vector to the correct length.
-                markovianStates->resize(currentRowGroup, false);
-            }
-
-            if (playerActionIndices) {
-                playerActionIndices.get().shrink_to_fit();
             }
 
             // If the exploration order was not breadth-first, we need to fix the entries in the matrix according to
@@ -348,39 +332,48 @@ namespace storm {
             for (uint64_t i = 0; i < generator->getNumberOfRewardModels(); ++i) {
                 rewardModelBuilders.emplace_back(generator->getRewardModelInformation(i));
             }
-            ChoiceInformationBuilder choiceInformationBuilder;
-            boost::optional<storm::storage::BitVector> markovianStates;
-            boost::optional<std::vector<uint_fast32_t>> playerActionIndices;
+            StateAndChoiceInformationBuilder stateAndChoiceInformationBuilder;
+            stateAndChoiceInformationBuilder.setBuildChoiceLabels(generator->getOptions().isBuildChoiceLabelsSet());
+            stateAndChoiceInformationBuilder.setBuildChoiceOrigins(generator->getOptions().isBuildChoiceOriginsSet());
+            stateAndChoiceInformationBuilder.setBuildStatePlayerIndications(generator->getModelType() == storm::generator::ModelType::SMG);
+            stateAndChoiceInformationBuilder.setBuildMarkovianStates(generator->getModelType() == storm::generator::ModelType::MA);
+            stateAndChoiceInformationBuilder.setBuildStateValuations(generator->getOptions().isBuildStateValuationsSet());
 
-            // If we need to build state valuations, initialize them now.
-            boost::optional<storm::storage::sparse::StateValuationsBuilder> stateValuationsBuilder;
-            if (generator->getOptions().isBuildStateValuationsSet()) {
-                stateValuationsBuilder = generator->initializeStateValuationsBuilder();
-            }
-
-            buildMatrices(transitionMatrixBuilder, rewardModelBuilders, choiceInformationBuilder, markovianStates, playerActionIndices, stateValuationsBuilder);
-
+            buildMatrices(transitionMatrixBuilder, rewardModelBuilders, stateAndChoiceInformationBuilder);
+            
             // Initialize the model components with the obtained information.
-            storm::storage::sparse::ModelComponents<ValueType, RewardModelType> modelComponents(transitionMatrixBuilder.build(0, transitionMatrixBuilder.getCurrentRowGroupCount()), buildStateLabeling(), std::unordered_map<std::string, RewardModelType>(), !generator->isDiscreteTimeModel(), std::move(markovianStates), /* player1Matrix = */ boost::none, std::move(playerActionIndices));
+            storm::storage::sparse::ModelComponents<ValueType, RewardModelType> modelComponents(transitionMatrixBuilder.build(0, transitionMatrixBuilder.getCurrentRowGroupCount()), buildStateLabeling(), std::unordered_map<std::string, RewardModelType>(), !generator->isDiscreteTimeModel());
+
+            uint_fast64_t numStates = modelComponents.transitionMatrix.getColumnCount();
+            uint_fast64_t numChoices = modelComponents.transitionMatrix.getRowCount();
 
             // Now finalize all reward models.
             for (auto& rewardModelBuilder : rewardModelBuilders) {
-                modelComponents.rewardModels.emplace(rewardModelBuilder.getName(), rewardModelBuilder.build(modelComponents.transitionMatrix.getRowCount(), modelComponents.transitionMatrix.getColumnCount(), modelComponents.transitionMatrix.getRowGroupCount()));
+                modelComponents.rewardModels.emplace(rewardModelBuilder.getName(), rewardModelBuilder.build(numChoices, modelComponents.transitionMatrix.getColumnCount(), numStates));
+            }
+            // Build the player assignment
+            if (stateAndChoiceInformationBuilder.isBuildStatePlayerIndications()) {
+                modelComponents.statePlayerIndications = stateAndChoiceInformationBuilder.buildStatePlayerIndications(numStates);
+                modelComponents.playerNameToIndexMap = generator->getPlayerNameToIndexMap();
+            }
+            // Build Markovian states
+            if (stateAndChoiceInformationBuilder.isBuildMarkovianStates()) {
+                modelComponents.markovianStates = stateAndChoiceInformationBuilder.buildMarkovianStates(numStates);
             }
             // Build the choice labeling
-            modelComponents.choiceLabeling = choiceInformationBuilder.buildChoiceLabeling(modelComponents.transitionMatrix.getRowCount());
-
-            // If requested, build the state valuations and choice origins
-            if (stateValuationsBuilder) {
-                modelComponents.stateValuations = stateValuationsBuilder->build(modelComponents.transitionMatrix.getRowGroupCount());
+            if (stateAndChoiceInformationBuilder.isBuildChoiceLabels()) {
+                modelComponents.choiceLabeling = stateAndChoiceInformationBuilder.buildChoiceLabeling(numChoices);
             }
-            if (generator->getOptions().isBuildChoiceOriginsSet()) {
-                auto originData = choiceInformationBuilder.buildDataOfChoiceOrigins(modelComponents.transitionMatrix.getRowCount());
+            // If requested, build the state valuations and choice origins
+            if (stateAndChoiceInformationBuilder.isBuildStateValuations()) {
+                modelComponents.stateValuations = stateAndChoiceInformationBuilder.stateValuationsBuilder().build(numStates);
+            }
+            if (stateAndChoiceInformationBuilder.isBuildChoiceOrigins()) {
+                auto originData = stateAndChoiceInformationBuilder.buildDataOfChoiceOrigins(numChoices);
                 modelComponents.choiceOrigins = generator->generateChoiceOrigins(originData);
             }
             if (generator->isPartiallyObservable()) {
-                std::vector<uint32_t> classes;
-                classes.resize(stateStorage.getNumberOfStates());
+                std::vector<uint32_t> classes(stateStorage.getNumberOfStates());
                 std::unordered_map<uint32_t, std::vector<std::pair<std::vector<std::string>, uint32_t>>> observationActions;
                 for (auto const& bitVectorIndexPair : stateStorage.stateToId) {
                     uint32_t varObservation = generator->observabilityClass(bitVectorIndexPair.first);

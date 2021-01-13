@@ -11,6 +11,7 @@
 #include "storm/storage/expressions/ExpressionEvaluator.h"
 #include "storm/storage/sparse/ChoiceOrigins.h"
 #include "storm/storage/sparse/StateValuations.h"
+#include "storm/storage/PlayerIndex.h"
 
 #include "storm/builder/BuilderOptions.h"
 #include "storm/builder/RewardModelInformation.h"
@@ -74,6 +75,8 @@ namespace storm {
             std::string stateToString(CompressedState const& state) const;
 
             uint32_t observabilityClass(CompressedState const& state) const;
+            
+            virtual std::map<std::string, storm::storage::PlayerIndex> getPlayerNameToIndexMap() const;
 
             virtual storm::models::sparse::StateLabeling label(storm::storage::sparse::StateStorage<StateType> const& stateStorage, std::vector<StateType> const& initialStateIndices = {}, std::vector<StateType> const& deadlockStateIndices = {}) = 0;
 

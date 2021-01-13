@@ -43,7 +43,7 @@ namespace storm {
         
         // Forward-declare classes.
         template <typename ValueType> class RewardModelBuilder;
-        class ChoiceInformationBuilder;
+        class StateAndChoiceInformationBuilder;
 
         template<typename StateType>
         class ExplicitStateLookup {
@@ -127,11 +127,9 @@ namespace storm {
              *
              * @param transitionMatrixBuilder The builder of the transition matrix.
              * @param rewardModelBuilders The builders for the selected reward models.
-             * @param choiceInformationBuilder The builder for the requested information of the choices
-             * @param markovianChoices is set to a bit vector storing whether a choice is Markovian (is only set if the model type requires this information).
-             * @param stateValuationsBuilder if not boost::none, we insert valuations for the corresponding states
+             * @param stateAndChoiceInformationBuilder The builder for the requested information of the individual states and choices
              */
-            void buildMatrices(storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders, ChoiceInformationBuilder& choiceInformationBuilder, boost::optional<storm::storage::BitVector>& markovianChoices, boost::optional<std::vector<uint_fast32_t>> playerActionIndices, boost::optional<storm::storage::sparse::StateValuationsBuilder>& stateValuationsBuilder);
+            void buildMatrices(storm::storage::SparseMatrixBuilder<ValueType>& transitionMatrixBuilder, std::vector<RewardModelBuilder<typename RewardModelType::ValueType>>& rewardModelBuilders, StateAndChoiceInformationBuilder& stateAndChoiceInformationBuilder);
 
             /*!
              * Explores the state space of the given program and returns the components of the model as a result.

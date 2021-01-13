@@ -3,7 +3,6 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/utility/constants.h"
-#include "storm/builder/ChoiceInformationBuilder.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidOperationException.h"

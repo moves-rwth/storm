@@ -735,6 +735,11 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
+        std::map<std::string, storm::storage::PlayerIndex> PrismNextStateGenerator<ValueType, StateType>::getPlayerNameToIndexMap() const {
+            return program.getPlayerNameToIndexMapping();
+        }
+
+        template<typename ValueType, typename StateType>
         storm::models::sparse::StateLabeling PrismNextStateGenerator<ValueType, StateType>::label(storm::storage::sparse::StateStorage<StateType> const& stateStorage, std::vector<StateType> const& initialStateIndices, std::vector<StateType> const& deadlockStateIndices) {
             // Gather a vector of labels and their expressions.
             std::vector<std::pair<std::string, storm::expressions::Expression>> labels;
