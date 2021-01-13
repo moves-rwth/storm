@@ -254,7 +254,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        typename std::enable_if<std::is_same<ValueType, double>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithSparseEngine(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Smg<ValueType>> const& smg, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
+        typename std::enable_if<!std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithSparseEngine(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Smg<ValueType>> const& smg, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
             std::unique_ptr<storm::modelchecker::CheckResult> result;
             storm::modelchecker::SparseSmgRpatlModelChecker<storm::models::sparse::Smg<ValueType>> modelchecker(*smg);
             if (modelchecker.canHandle(task)) {
@@ -264,7 +264,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        typename std::enable_if<!std::is_same<ValueType, double>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithSparseEngine(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Smg<ValueType>> const& mdp, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
+        typename std::enable_if<std::is_same<ValueType, storm::RationalFunction>::value, std::unique_ptr<storm::modelchecker::CheckResult>>::type verifyWithSparseEngine(storm::Environment const& env, std::shared_ptr<storm::models::sparse::Smg<ValueType>> const& mdp, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Sparse engine cannot verify SMGs with this data type.");
         }
 
