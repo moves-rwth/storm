@@ -519,7 +519,7 @@ namespace storm {
             for (storm::storage::PlayerIndex i = 0; i < this->getPlayers().size(); ++i) {
                 for (auto const& act : this->getPlayers()[i].getActions()) {
                     STORM_LOG_ASSERT(hasAction(act), "Action " << act << " not found.");
-                    result.emplace(actionToIndexMap.at(act), i);
+                    result[actionToIndexMap.at(act)] = i;
                 }
             }
             return result;
