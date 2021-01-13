@@ -54,13 +54,15 @@ namespace storm {
         }
 
         FragmentSpecification rpatl() {
-            FragmentSpecification rpatl = prctl();
+            FragmentSpecification rpatl = propositional();
 
-            // TODO: disallow formulas we currently do not support
             // TODO: Only allow OperatorFormulas when they are inside of a GameFormula?
             // TODO: Require that operator formulas are required at the top level of a GameFormula?
             rpatl.setGameFormulasAllowed(true);
-            
+            rpatl.setRewardOperatorsAllowed(true);
+            rpatl.setLongRunAverageRewardFormulasAllowed(true);
+            rpatl.setLongRunAverageOperatorsAllowed(true);
+
             return rpatl;
         }
 
