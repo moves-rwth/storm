@@ -134,14 +134,10 @@ namespace storm {
             quantileFormula = (qi::lit("quantile") > qi::lit("(") >> *(quantileBoundVariable) >> stateFormula > qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createQuantileFormula, phoenix::ref(*this), qi::_1, qi::_2)];
             quantileFormula.name("Quantile formula");
 
-            coalitionOperator = (qi::lit("<<")
-                    > *(    (identifier[phoenix::push_back(qi::_a, qi::_1)]
-                        |    qi::int_[phoenix::push_back(qi::_a, qi::_1)]) % ','
-                        )
-                    > qi::lit(">>"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createCoalition, phoenix::ref(*this), qi::_a)];
-            coalitionOperator.name("coalition operator");
+            coalition = (-((identifier[phoenix::push_back(qi::_a, qi::_1)] | qi::uint_[phoenix::push_back(qi::_a, qi::_1)]) % ','))[qi::_val = phoenix::bind(&FormulaParserGrammar::createCoalition, phoenix::ref(*this), qi::_a)];
+            coalition.name("coalition");
 
-            gameFormula = (coalitionOperator > operatorFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createGameFormula, phoenix::ref(*this), qi::_1, qi::_2)];
+            gameFormula = (qi::lit("<<") > coalition > qi::lit(">>") > operatorFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createGameFormula, phoenix::ref(*this), qi::_1, qi::_2)];
             gameFormula.name("game formula");
 
             stateFormula = (orStateFormula | multiFormula | quantileFormula | gameFormula);
@@ -482,11 +478,11 @@ namespace storm {
             }
         }
 
-        storm::logic::Coalition FormulaParserGrammar::createCoalition(std::vector<boost::variant<std::string, uint64_t>> const& playerIds) const {
+        storm::logic::Coalition FormulaParserGrammar::createCoalition(std::vector<boost::variant<std::string, storm::storage::PlayerIndex>> const& playerIds) const {
             return storm::logic::Coalition(playerIds);
         }
 
-        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createGameFormula(storm::logic::Coalition coalition, std::shared_ptr<storm::logic::Formula const> const& subformula) const {
+        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createGameFormula(storm::logic::Coalition const& coalition, std::shared_ptr<storm::logic::Formula const> const& subformula) const {
             return std::shared_ptr<storm::logic::Formula const>(new storm::logic::GameFormula(coalition, subformula));
         }
     }

@@ -191,7 +191,7 @@ namespace storm {
 
         boost::any FragmentChecker::visit(GameFormula const& f, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
-            bool result = inherited.getSpecification().areCoalitionOperatorsAllowed();
+            bool result = inherited.getSpecification().areGameFormulasAllowed();
             return result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
         }
 

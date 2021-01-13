@@ -333,7 +333,7 @@ namespace storm {
         }
 
         boost::any FormulaToJaniJson::visit(storm::logic::GameFormula const& f, boost::any const& data) const {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "We currently do not support conversion of game formulas to Jani. (Does jani support games?)");
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Conversion of game formulas to Jani is not supported.");
         }
 
         boost::any FormulaToJaniJson::visit(storm::logic::InstantaneousRewardFormula const&, boost::any const&) const {

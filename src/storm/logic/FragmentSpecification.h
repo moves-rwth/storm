@@ -154,10 +154,9 @@ namespace storm {
             bool isRewardAccumulationAllowed() const;
             FragmentSpecification& setRewardAccumulationAllowed(bool newValue);
 
-            bool areCoalitionOperatorsAllowed() const;
-            FragmentSpecification& setCoalitionOperatorsAllowed(bool newValue);
-
-
+            bool areGameFormulasAllowed() const;
+            FragmentSpecification& setGameFormulasAllowed(bool newValue);
+            
             FragmentSpecification& setOperatorsAllowed(bool newValue);
             FragmentSpecification& setTimeAllowed(bool newValue);
             FragmentSpecification& setLongRunAverageProbabilitiesAllowed(bool newValue);
@@ -195,7 +194,7 @@ namespace storm {
 
             bool reachabilityTimeFormula;
 
-            bool coalitionOperator;
+            bool gameFormula;
 
             // Members that indicate certain restrictions.
             bool nestedOperators;

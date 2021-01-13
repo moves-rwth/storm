@@ -76,7 +76,9 @@ namespace storm {
         }
 
         boost::any LiftableTransitionRewardsVisitor::visit(GameFormula const& f, boost::any const& data) const {
-            return true;
+            STORM_LOG_WARN("Transitionbranch-based rewards might be reduced to action-based rewards. Be sure that this is correct for your property.");
+            // TODO: Check if this is correct
+            return f.getSubformula().accept(*this, data);
         }
 
         boost::any LiftableTransitionRewardsVisitor::visit(InstantaneousRewardFormula const&, boost::any const&) const {

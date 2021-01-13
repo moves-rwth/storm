@@ -56,9 +56,11 @@ namespace storm {
         FragmentSpecification rpatl() {
             FragmentSpecification rpatl = prctl();
 
-            // TODO disallow operator we currently do not support
-            rpatl.setCoalitionOperatorsAllowed(true);
-
+            // TODO: disallow formulas we currently do not support
+            // TODO: Only allow OperatorFormulas when they are inside of a GameFormula?
+            // TODO: Require that operator formulas are required at the top level of a GameFormula?
+            rpatl.setGameFormulasAllowed(true);
+            
             return rpatl;
         }
 
@@ -174,6 +176,8 @@ namespace storm {
             conditionalRewardFormula = false;
             
             reachabilityTimeFormula = false;
+            
+            gameFormula = false;
             
             nestedOperators = true;
             nestedPathFormulas = false;
@@ -629,15 +633,14 @@ namespace storm {
             return *this;
         }
 
-        bool FragmentSpecification::areCoalitionOperatorsAllowed() const {
-            return coalitionOperator;
+        bool FragmentSpecification::areGameFormulasAllowed() const {
+            return gameFormula;
         }
 
-        FragmentSpecification& FragmentSpecification::setCoalitionOperatorsAllowed(bool newValue) {
-            coalitionOperator = newValue;
+        FragmentSpecification& FragmentSpecification::setGameFormulasAllowed(bool newValue) {
+            gameFormula = newValue;
             return *this;
         }
-
 
     }
 }
