@@ -66,7 +66,8 @@ namespace storm {
                 // Now create the actual result
                 storm::storage::BitVector result(this->getNumberOfStates(), false);
                 for (uint64_t state = 0; state < this->getNumberOfStates(); ++state) {
-                    if (coalitionAsBitVector.get(statePlayerIndications[state])) {
+                    auto const& pi = statePlayerIndications[state];
+                    if (pi < coalitionAsBitVector.size() && coalitionAsBitVector.get(pi)) {
                         result.set(state, true);
                     }
                 }
