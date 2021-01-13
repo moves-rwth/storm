@@ -24,14 +24,24 @@ namespace storm {
             if (player.getName() != "") {
                 stream << " " << player.getName();
             }
-            stream << std::endl;
+            bool firstElement = true;
             for (auto const& module : player.getModules()) {
-                stream << "\t" << module << std::endl;
+                if (firstElement) {
+                    firstElement = false;
+                } else {
+                    stream << ",";
+                }
+                stream << std::endl << "\t" << module;
             }
             for (auto const& action : player.getActions()) {
-                stream << "\t[" << action << "]" << std::endl;
+                if (firstElement) {
+                    firstElement = false;
+                } else {
+                    stream << ",";
+                }
+                stream << std::endl <<  "\t[" << action << "]";
             }
-            stream << "endplayer" << std::endl;
+            stream << std::endl << "endplayer" << std::endl;
             return stream;
         }
     } // namespace prism
