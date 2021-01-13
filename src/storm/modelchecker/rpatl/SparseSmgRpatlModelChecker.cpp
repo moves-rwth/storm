@@ -8,9 +8,7 @@
 
 #include "storm/modelchecker/results/ExplicitQualitativeCheckResult.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
-#include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 
-#include "storm/modelchecker/helper/infinitehorizon/SparseNondeterministicGameInfiniteHorizonHelper.h"
 #include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
 
 #include "storm/logic/FragmentSpecification.h"
@@ -19,9 +17,8 @@
 
 #include "storm/settings/modules/GeneralSettings.h"
 
-#include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
-#include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/NotImplementedException.h"
 
 namespace storm {
     namespace modelchecker {
@@ -69,7 +66,6 @@ namespace storm {
             auto coalitionStates = this->getModel().computeStatesOfCoalition(checkTask.getPlayerCoalition());
             std::cout << "Found " << coalitionStates.getNumberOfSetBits() << " states in coalition." << std::endl;
             STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not implemented.");
-            
         }
 
         template class SparseSmgRpatlModelChecker<storm::models::sparse::Smg<double>>;
