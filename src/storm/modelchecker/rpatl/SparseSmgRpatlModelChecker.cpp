@@ -34,11 +34,7 @@ namespace storm {
         bool SparseSmgRpatlModelChecker<SparseSmgModelType>::canHandleStatic(CheckTask<storm::logic::Formula, ValueType> const& checkTask, bool* requiresSingleInitialState) {
             storm::logic::Formula const& formula = checkTask.getFormula();
 
-            if (formula.isInFragment(storm::logic::rpatl().setCoalitionOperatorsAllowed(true).setRewardOperatorsAllowed(true).setLongRunAverageRewardFormulasAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setLongRunAverageOperatorsAllowed(true))) {
-                return true;
-            } else {
-                return false;
-            }
+            return formula.isInFragment(storm::logic::rpatl());
         }
 
         template<typename SparseSmgModelType>
@@ -53,69 +49,32 @@ namespace storm {
 
         template<typename SparseSmgModelType>
         std::unique_ptr<CheckResult> SparseSmgRpatlModelChecker<SparseSmgModelType>::checkGameFormula(Environment const& env, CheckTask<storm::logic::GameFormula, ValueType> const& checkTask) {
-            STORM_LOG_DEBUG("checkGameFormula matrix: " << this->getModel().getTransitionMatrix().getDimensionsAsString());
-            STORM_LOG_DEBUG("checkGameFormula playerindices:");
-            STORM_LOG_DEBUG("checkGameFormula matrix:  \n" << this->getModel().getTransitionMatrix());
-            // TODO set min max row groups w.r.t. coalition
             storm::logic::GameFormula const& gameFormula = checkTask.getFormula();
             storm::logic::Formula const& subFormula = gameFormula.getSubformula();
-            STORM_LOG_DEBUG(gameFormula);
-            if (subFormula.isRewardOperatorFormula()) {
-                return this->checkRewardOperatorFormula(env, checkTask.substituteFormula(subFormula.asRewardOperatorFormula()));
-            } else if (subFormula.isLongRunAverageOperatorFormula()) {
-                return this->checkLongRunAverageOperatorFormula(env, checkTask.substituteFormula(subFormula.asLongRunAverageOperatorFormula()));
+            if (subFormula.isOperatorFormula()) {
+                return this->checkStateFormula(env, checkTask.substituteFormula(subFormula.asStateFormula()).setPlayerCoalition(gameFormula.getCoalition()));
             }
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "checkGameFormula NYI");
-        }
-
-        template<typename ModelType>
-        std::unique_ptr<CheckResult> SparseSmgRpatlModelChecker<ModelType>::checkRewardOperatorFormula(Environment const& env, CheckTask<storm::logic::RewardOperatorFormula, ValueType> const& checkTask) {
-            storm::logic::RewardOperatorFormula const& formula = checkTask.getFormula();
-            std::unique_ptr<CheckResult> result = this->computeRewards(env, formula.getMeasureType(), checkTask.substituteFormula(formula.getSubformula()));
-
-            return nullptr;
-        }
-
-        template<typename ModelType>
-        std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::computeRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
-            storm::logic::Formula const& rewardFormula = checkTask.getFormula();
-            if (rewardFormula.isLongRunAverageRewardFormula()) {
-                return this->computeLongRunAverageRewards(env, rewardMeasureType, checkTask.substituteFormula(rewardFormula.asLongRunAverageRewardFormula()));
-            }
-            STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "The given formula '" << rewardFormula << "' is invalid.");
-        }
-
-        template<typename ModelType>
-		std::unique_ptr<CheckResult> AbstractModelChecker<ModelType>::checkLongRunAverageOperatorFormula(Environment const& env, CheckTask<storm::logic::LongRunAverageOperatorFormula, ValueType> const& checkTask) {
-            storm::logic::LongRunAverageOperatorFormula const& formula = checkTask.getFormula();
-			//STORM_LOG_THROW(formula.getSubformula().isStateFormula(), storm::exceptions::InvalidArgumentException, "The given formula is invalid.");
-
-            std::unique_ptr<CheckResult> result = this->computeLongRunAverageProbabilities(env, checkTask.substituteFormula(formula.getSubformula().asStateFormula()));
-
-            return result; //TODO check bounds.
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Only game formulas with Operatorformulas as subformula are supported.");
         }
 
         template<typename SparseSmgModelType>
         std::unique_ptr<CheckResult> SparseSmgRpatlModelChecker<SparseSmgModelType>::computeLongRunAverageProbabilities(Environment const& env, CheckTask<storm::logic::StateFormula, ValueType> const& checkTask) {
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "NYI");
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not implemented.");
         }
 
         template<typename SparseSmgModelType>
         std::unique_ptr<CheckResult> SparseSmgRpatlModelChecker<SparseSmgModelType>::computeLongRunAverageRewards(Environment const& env, storm::logic::RewardMeasureType rewardMeasureType, CheckTask<storm::logic::LongRunAverageRewardFormula, ValueType> const& checkTask) {
             auto rewardModel = storm::utility::createFilteredRewardModel(this->getModel(), checkTask);
-            storm::modelchecker::helper::SparseNondeterministicGameInfiniteHorizonHelper<ValueType> helper(this->getModel().getTransitionMatrix(), this->getModel().getPlayerActionIndices());
-            storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, checkTask, this->getModel());
-			auto values = helper.computeLongRunAverageRewards(env, rewardModel.get());
-
-            //std::unique_ptr<CheckResult> result(new ExplicitQuantitativeCheckResult<ValueType>(std::move(values));
-            //return result;
-            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "NYI");
+            STORM_LOG_THROW(checkTask.isPlayerCoalitionSet(), storm::exceptions::InvalidPropertyException, "No player coalition was set.");
+            auto coalitionStates = this->getModel().computeStatesOfCoalition(checkTask.getPlayerCoalition());
+            std::cout << "Found " << coalitionStates.getNumberOfSetBits() << " states in coalition." << std::endl;
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Not implemented.");
+            
         }
 
         template class SparseSmgRpatlModelChecker<storm::models::sparse::Smg<double>>;
 #ifdef STORM_HAVE_CARL
         template class SparseSmgRpatlModelChecker<storm::models::sparse::Smg<storm::RationalNumber>>;
-        //template class SparseSmgRpatlModelChecker<storm::models::sparse::Smg<storm::RationalFunction>>; TODO are we going to need this?
 #endif
     }
 }
