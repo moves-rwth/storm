@@ -15,6 +15,8 @@ namespace storm {
             PlayerCoalition(std::vector<boost::variant<std::string, storm::storage::PlayerIndex>> playerIds);
             PlayerCoalition(PlayerCoalition const& other) = default;
 
+            std::vector<boost::variant<std::string, storm::storage::PlayerIndex>> const& getPlayers() const;
+            
             friend std::ostream& operator<<(std::ostream& stream, PlayerCoalition const& playerCoalition);
 
         private:

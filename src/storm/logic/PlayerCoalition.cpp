@@ -6,6 +6,10 @@ namespace storm {
         PlayerCoalition::PlayerCoalition(std::vector<boost::variant<std::string, storm::storage::PlayerIndex>> playerIds) : _playerIds(playerIds) {
             // Intentionally left empty.
         }
+        
+        std::vector<boost::variant<std::string, storm::storage::PlayerIndex>> const& PlayerCoalition::getPlayers() const {
+            return _playerIds;
+        }
 
         std::ostream& operator<<(std::ostream& stream, PlayerCoalition const& coalition) {
             bool firstItem = true;
