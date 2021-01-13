@@ -4,7 +4,7 @@
 
 namespace storm {
     namespace logic {
-        GameFormula::GameFormula(Coalition const& coalition, std::shared_ptr<Formula const> subformula) : UnaryStateFormula(subformula), coalition(coalition) {
+        GameFormula::GameFormula(PlayerCoalition const& coalition, std::shared_ptr<Formula const> subformula) : UnaryStateFormula(subformula), coalition(coalition) {
             // Intentionally left empty.
         }
 
@@ -20,7 +20,7 @@ namespace storm {
             return this->getSubformula().hasQuantitativeResult();
         }
 
-        Coalition const& GameFormula::getCoalition() const {
+        PlayerCoalition const& GameFormula::getCoalition() const {
             return coalition;
         }
         

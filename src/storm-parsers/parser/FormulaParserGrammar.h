@@ -163,7 +163,7 @@ namespace storm {
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> timeOperator;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> longRunAverageOperator;
 
-            qi::rule<Iterator, storm::logic::Coalition(), qi::locals<std::vector<boost::variant<std::string, storm::storage::PlayerIndex>>>, Skipper> coalition;
+            qi::rule<Iterator, storm::logic::PlayerCoalition(), qi::locals<std::vector<boost::variant<std::string, storm::storage::PlayerIndex>>>, Skipper> playerCoalition;
 
             qi::rule<Iterator, storm::jani::Property(), Skipper> filterProperty;
             qi::rule<Iterator, std::shared_ptr<storm::logic::Formula const>(), Skipper> simpleFormula;
@@ -208,8 +208,8 @@ namespace storm {
             // Parser that is used to recognize doubles only (as opposed to Spirit's double_ parser).
             boost::spirit::qi::real_parser<double, boost::spirit::qi::strict_real_policies<double>> strict_double;
 
-            storm::logic::Coalition createCoalition(std::vector<boost::variant<std::string, storm::storage::PlayerIndex>> const& playerIds) const;
-            std::shared_ptr<storm::logic::Formula const> createGameFormula(storm::logic::Coalition const& coalition, std::shared_ptr<storm::logic::Formula const> const& subformula) const;
+            storm::logic::PlayerCoalition createPlayerCoalition(std::vector<boost::variant<std::string, storm::storage::PlayerIndex>> const& playerIds) const;
+            std::shared_ptr<storm::logic::Formula const> createGameFormula(storm::logic::PlayerCoalition const& coalition, std::shared_ptr<storm::logic::Formula const> const& subformula) const;
 
             bool areConstantDefinitionsAllowed() const;
             void addConstant(std::string const& name, ConstantDataType type, boost::optional<storm::expressions::Expression> const& expression);
