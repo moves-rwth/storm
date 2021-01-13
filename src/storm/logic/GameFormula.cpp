@@ -4,7 +4,7 @@
 
 namespace storm {
     namespace logic {
-        GameFormula::GameFormula(Coalition coalition, std::shared_ptr<Formula const> const& subformula) : coalition(coalition), subformula(subformula) {
+        GameFormula::GameFormula(Coalition const& coalition, std::shared_ptr<Formula const> subformula) : UnaryStateFormula(subformula), coalition(coalition) {
             // Intentionally left empty.
         }
 
@@ -12,24 +12,24 @@ namespace storm {
             return true;
         }
 
-        Formula const& GameFormula::getSubformula() const {
-            return *subformula;
+        bool GameFormula::hasQualitativeResult() const {
+            return this->getSubformula().hasQualitativeResult();
         }
 
-        Coalition GameFormula::getCoalition() const {
+        bool GameFormula::hasQuantitativeResult() const {
+            return this->getSubformula().hasQuantitativeResult();
+        }
+
+        Coalition const& GameFormula::getCoalition() const {
             return coalition;
         }
-
-        void GameFormula::gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const {
-            this->getSubformula().gatherReferencedRewardModels(referencedRewardModels);
-        }
-
+        
         boost::any GameFormula::accept(FormulaVisitor const& visitor, boost::any const& data) const {
             return visitor.visit(*this, data);
         }
 
         std::ostream& GameFormula::writeToStream(std::ostream& out) const {
-            out << coalition;
+            out << "<<" << coalition << ">> ";
             this->getSubformula().writeToStream(out);
             return out;
         }

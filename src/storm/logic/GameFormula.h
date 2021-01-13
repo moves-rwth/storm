@@ -1,35 +1,31 @@
 #ifndef STORM_LOGIC_GAMEFORMULA_H_
 #define STORM_LOGIC_GAMEFORMULA_H_
 
-#include "storm/logic/Formula.h"
+#include "storm/logic/UnaryStateFormula.h"
 #include "storm/logic/Coalition.h"
 #include <memory>
 
 namespace storm {
     namespace logic {
-        class GameFormula : public Formula {
+        class GameFormula : public UnaryStateFormula {
         public:
-            GameFormula(Coalition coalition, std::shared_ptr<Formula const> const& subFormula);
+            GameFormula(Coalition const& coalition, std::shared_ptr<Formula const> subFormula);
 
-            ~GameFormula() {
+            virtual ~GameFormula() {
                 // Intentionally left empty.
             }
 
-            bool isGameFormula() const;
+            Coalition const& getCoalition() const;
+            virtual bool isGameFormula() const override;
+            virtual bool hasQualitativeResult() const override;
+            virtual bool hasQuantitativeResult() const override;
+            
+            virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
 
-            Formula const& getSubformula() const;
-            Coalition getCoalition() const;
-
-            virtual void gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const;
-
-            boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const;
-
-            std::ostream& writeToStream(std::ostream& out) const;
+            virtual std::ostream& writeToStream(std::ostream& out) const override;
 
         private:
             Coalition coalition;
-            std::shared_ptr<Formula const> subformula;
-
         };
     }
 }

@@ -3,18 +3,16 @@
 namespace storm {
     namespace logic {
 
-        Coalition::Coalition(std::vector<boost::variant<std::string, uint64_t>> playerIds) : playerIds(playerIds) {
+        Coalition::Coalition(std::vector<boost::variant<std::string, storm::storage::PlayerIndex>> playerIds) : _playerIds(playerIds) {
             // Intentionally left empty.
         }
 
         std::ostream& operator<<(std::ostream& stream, Coalition const& coalition) {
             bool firstItem = true;
-            stream << "<<";
-            for (auto const& id : coalition.playerIds) {
-                if(firstItem) { firstItem = false; } else { stream << ","; }
+            for (auto const& id : coalition._playerIds) {
+                if (firstItem) { firstItem = false; } else { stream << ","; }
                 stream << id;
             }
-            stream << ">> ";
             return stream;
         }
     }

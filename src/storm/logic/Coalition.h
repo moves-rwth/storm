@@ -1,13 +1,10 @@
-#ifndef STORM_LOGIC_COALITION_H_
-#define STORM_LOGIC_COALITION_H_
+#pragma once
 
 #include <vector>
 #include <string>
 
-#include <boost/optional.hpp>
 #include <boost/variant.hpp>
-#include "storm/storage/BoostTypes.h"
-#include "storm/utility/OsDetection.h"
+#include "storm/storage/PlayerIndex.h"
 
 namespace storm {
     namespace logic {
@@ -15,16 +12,13 @@ namespace storm {
         class Coalition {
         public:
             Coalition() = default;
-            Coalition(std::vector<boost::variant<std::string, uint64_t>>);
+            Coalition(std::vector<boost::variant<std::string, storm::storage::PlayerIndex>> playerIds);
             Coalition(Coalition const& other) = default;
 
             friend std::ostream& operator<<(std::ostream& stream, Coalition const& coalition);
 
         private:
-            std::vector<boost::variant<std::string, uint64_t>> playerIds;
+            std::vector<boost::variant<std::string, storm::storage::PlayerIndex>> _playerIds;
         };
     }
 }
-
-
-#endif /* STORM_LOGIC_COALITION_H_ */
