@@ -2,6 +2,9 @@
 #define STORM_MODELS_SPARSE_SMG_H_
 
 #include "storm/models/sparse/NondeterministicModel.h"
+#include "storm/storage/PlayerIndex.h"
+#include "storm/storage/BitVector.h"
+#include "storm/logic/PlayerCoalition.h"
 
 namespace storm {
     namespace models {
@@ -16,38 +19,28 @@ namespace storm {
                 /*!
                  * Constructs a model from the given data.
                  *
-                 * @param transitionMatrix The matrix representing the transitions in the model.
-                 * @param stateLabeling The labeling of the states.
-                 * @param rewardModels A mapping of reward model names to reward models.
-                 */
-                Smg(storm::storage::SparseMatrix<ValueType> const& transitionMatrix,
-                    storm::models::sparse::StateLabeling const& stateLabeling,
-                    std::unordered_map<std::string, RewardModelType> const& rewardModels = std::unordered_map<std::string, RewardModelType>(), ModelType type = ModelType::Smg);
-
-                /*!
-                 * Constructs a model by moving the given data.
-                 *
-                 * @param transitionMatrix The matrix representing the transitions in the model.
-                 * @param stateLabeling The labeling of the states.
-                 * @param rewardModels A mapping of reward model names to reward models.
-                 */
-                Smg(storm::storage::SparseMatrix<ValueType>&& transitionMatrix,
-                    storm::models::sparse::StateLabeling&& stateLabeling,
-                    std::unordered_map<std::string, RewardModelType>&& rewardModels = std::unordered_map<std::string, RewardModelType>(), ModelType type = ModelType::Smg);
-
-                /*!
-                 * Constructs a model from the given data.
-                 *
                  * @param components The components for this model.
                  */
-                Smg(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components, ModelType type = ModelType::Smg);
-                Smg(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components, ModelType type = ModelType::Smg);
+                Smg(storm::storage::sparse::ModelComponents<ValueType, RewardModelType> const& components);
+                Smg(storm::storage::sparse::ModelComponents<ValueType, RewardModelType>&& components);
 
                 Smg(Smg<ValueType, RewardModelType> const& other) = default;
                 Smg& operator=(Smg<ValueType, RewardModelType> const& other) = default;
 
                 Smg(Smg<ValueType, RewardModelType>&& other) = default;
                 Smg& operator=(Smg<ValueType, RewardModelType>&& other) = default;
+
+                std::vector<storm::storage::PlayerIndex> const& getStatePlayerIndications() const;
+                storm::storage::PlayerIndex getPlayerOfState(uint64_t stateIndex) const;
+                storm::storage::PlayerIndex getPlayerIndex(std::string const& playerName) const;
+                storm::storage::BitVector computeStatesOfCoalition(storm::logic::PlayerCoalition const& coalition) const;
+                
+            private:
+                // Assigns the controlling player to each state.
+                // If a state has storm::storage::INVALID_PLAYER_INDEX, it shall be the case that the choice at that state is unique
+                std::vector<storm::storage::PlayerIndex> statePlayerIndications;
+                // A mapping of player names to player indices.
+                std::map<std::string, storm::storage::PlayerIndex> playerNameToIndexMap;
             };
 
         } // namespace sparse
