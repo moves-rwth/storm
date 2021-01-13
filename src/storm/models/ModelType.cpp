@@ -47,7 +47,7 @@ namespace storm {
                     os << "POMDP";
                     break;
                 case ModelType::Smg:
-                    os << "Smg";
+                    os << "SMG";
                     break;
                 default:
                     STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Unknown model type.");
