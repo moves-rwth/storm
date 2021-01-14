@@ -77,13 +77,20 @@ namespace storm {
             std::vector<std::pair<BeliefId, ValueType>>
             expandAndTriangulate(BeliefId const &beliefId, uint64_t actionIndex, std::vector<BeliefValueType> const &observationResolutions);
 
+            std::vector<std::pair<BeliefId, ValueType>>
+            expandAndCull(BeliefId const &beliefId, uint64_t actionIndex, std::vector<uint64_t> const &observationResolutions);
+
             std::vector<std::pair<BeliefId, ValueType>> expand(BeliefId const &beliefId, uint64_t actionIndex);
 
             BeliefCulling cullBelief(BeliefId const &beliefId, ValueType threshold = storm::utility::one<ValueType>(), boost::optional<std::vector<BeliefId>> const &targets = boost::none);
 
             ValueType computeDifference1norm(BeliefId const &belief1, BeliefId const &belief2);
 
+            BeliefCulling cullBeliefToGrid(BeliefId const &beliefId, uint64_t resolution);
+
         private:
+
+            BeliefCulling cullBeliefToGrid(BeliefType const &belief, uint64_t resolution);
 
             template<typename DistributionType>
             void adjustDistribution(DistributionType &distr);
@@ -127,7 +134,8 @@ namespace storm {
             Triangulation triangulateBelief(BeliefType const &belief, BeliefValueType const &resolution);
 
             std::vector<std::pair<BeliefId, ValueType>>
-            expandInternal(BeliefId const &beliefId, uint64_t actionIndex, boost::optional<std::vector<BeliefValueType>> const &observationTriangulationResolutions = boost::none);
+            expandInternal(BeliefId const &beliefId, uint64_t actionIndex, boost::optional<std::vector<BeliefValueType>> const &observationTriangulationResolutions = boost::none,
+                           boost::optional<std::vector<uint64_t>> const &observationGridCullingResolutions = boost::none);
 
             BeliefId computeInitialBelief();
 

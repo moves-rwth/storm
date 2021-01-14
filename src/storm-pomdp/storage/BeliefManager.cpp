@@ -45,7 +45,7 @@ namespace storm {
             auto rhIt = rhBelief.begin();
             while(lhIt != lhBelief.end() || rhIt != rhBelief.end()){
                 // Iterate over the entries simultaneously, beliefs not equal if they contain either different states or different values for the same state
-                if(lhIt->first != rhIt->first || std::fabs(lhIt->second - rhIt->second) > std::numeric_limits<double>::epsilon()){
+                if(lhIt->first != rhIt->first || std::fabs(lhIt->second - rhIt->second) > 1e-15/*std::numeric_limits<double>::epsilon()*/){
                     return false;
                 }
                 ++lhIt;
@@ -213,6 +213,13 @@ namespace storm {
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
         std::vector<std::pair<typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefId, typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType>>
+        BeliefManager<PomdpType, BeliefValueType, StateType>::expandAndCull(BeliefId const &beliefId, uint64_t actionIndex,
+                                                                                   std::vector<uint64_t> const &observationResolutions) {
+            return expandInternal(beliefId, actionIndex, boost::none, observationResolutions);
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        std::vector<std::pair<typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefId, typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType>>
         BeliefManager<PomdpType, BeliefValueType, StateType>::expand(BeliefId const &beliefId, uint64_t actionIndex) {
             return expandInternal(beliefId, actionIndex);
         }
@@ -235,6 +242,7 @@ namespace storm {
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
         std::string BeliefManager<PomdpType, BeliefValueType, StateType>::toString(BeliefType const &belief) const {
+            std::setprecision(std::numeric_limits<double>::max_digits10);
             std::stringstream str;
             str << "{ ";
             bool first = true;
@@ -483,7 +491,8 @@ namespace storm {
         template<typename PomdpType, typename BeliefValueType, typename StateType>
         std::vector<std::pair<typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefId, typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType>>
         BeliefManager<PomdpType, BeliefValueType, StateType>::expandInternal(BeliefId const &beliefId, uint64_t actionIndex,
-                                                                             boost::optional<std::vector<BeliefValueType>> const &observationTriangulationResolutions) {
+                                                                             boost::optional<std::vector<BeliefValueType>> const &observationTriangulationResolutions,
+                                                                             boost::optional<std::vector<uint64_t>> const &observationGridCullingResolutions) {
             std::vector<std::pair<BeliefId, ValueType>> destinations;
 
             BeliefType belief = getBelief(beliefId);
@@ -516,12 +525,20 @@ namespace storm {
                 adjustDistribution(successorBelief);
                 STORM_LOG_ASSERT(assertBelief(successorBelief), "Invalid successor belief.");
 
-                // Insert the destination. We know that destinations have to be disjoined since they have different observations
+                // Insert the destination. We know that destinations have to be disjoint since they have different observations
                 if (observationTriangulationResolutions) {
                     Triangulation triangulation = triangulateBelief(successorBelief, observationTriangulationResolutions.get()[successor.first]);
                     for (size_t j = 0; j < triangulation.size(); ++j) {
                         // Here we additionally assume that triangulation.gridPoints does not contain the same point multiple times
                         destinations.emplace_back(triangulation.gridPoints[j], triangulation.weights[j] * successor.second);
+                    }
+                } else if(observationGridCullingResolutions){
+                    BeliefCulling culling = cullBeliefToGrid(successorBelief, observationGridCullingResolutions.get()[successor.first]);
+                    if(culling.isCullable) {
+                        destinations.emplace_back(culling.targetBelief, (storm::utility::one<ValueType>() - culling.delta) * successor.second);
+                    } else {
+                        // Belief on Grid
+                        destinations.emplace_back(getOrAddBeliefId(successorBelief), successor.second);
                     }
                 } else {
                     destinations.emplace_back(getOrAddBeliefId(successorBelief), successor.second);
@@ -529,8 +546,8 @@ namespace storm {
             }
 
             return destinations;
-
         }
+
         template<typename PomdpType, typename BeliefValueType, typename StateType>
         typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType BeliefManager<PomdpType, BeliefValueType, StateType>::computeDifference1norm(BeliefId const &belief1, BeliefId const &belief2){
             return computeDifference1normInternal(getBelief(belief1), getBelief(belief2));
@@ -570,6 +587,159 @@ namespace storm {
                 }
             }
             return sum;
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefCulling
+        BeliefManager<PomdpType, BeliefValueType, StateType>::cullBeliefToGrid(BeliefId const &beliefId, uint64_t resolution){
+            auto res = cullBeliefToGrid(getBelief(beliefId), resolution);
+            res.startingBelief = beliefId;
+            return res;
+        }
+
+        template<typename PomdpType, typename BeliefValueType, typename StateType>
+        typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefCulling
+        BeliefManager<PomdpType, BeliefValueType, StateType>::cullBeliefToGrid(BeliefType const &belief, uint64_t resolution){
+            //STORM_PRINT("Grid cull " << toString(belief) << std::endl)
+            uint32_t obs = getBeliefObservation(belief);
+            STORM_LOG_ASSERT(obs < beliefToIdMap.size(), "Belief has unknown observation.");
+            if(!lpSolver){
+                auto lpSolverFactory = storm::utility::solver::LpSolverFactory<ValueType>();
+                lpSolver = lpSolverFactory.create("POMDP LP Solver");
+            } else {
+                lpSolver->pop();
+            }
+            lpSolver->push();
+
+            std::vector<ValueType> helper(belief.size(), ValueType(0));
+            helper[0] = storm::utility::convertNumber<ValueType>(resolution);
+            bool done = false;
+            std::vector<storm::expressions::Expression> decisionVariables;
+
+            std::vector<BeliefType> gridCandidates;
+            while (!done) {
+                BeliefType candidate;
+                auto belIter = belief.begin();
+                for (size_t i = 0; i < belief.size() - 1; ++i) {
+                    if(!cc.isEqual(helper[i] - helper[i + 1], storm::utility::zero<ValueType>())) {
+                        candidate[belIter->first] = (helper[i] - helper[i + 1]) / storm::utility::convertNumber<ValueType>(resolution);
+                    }
+                    belIter++;
+                }
+                if(!cc.isEqual(helper[belief.size() - 1], storm::utility::zero<ValueType>())){
+                    candidate[belIter->first] = helper[belief.size() - 1] / storm::utility::convertNumber<ValueType>(resolution);
+                }
+                if(isEqual(candidate, belief)){
+                    // TODO Do something for successors which are already on the grid
+                    //STORM_PRINT("Belief on grid" << std::endl)
+                    return BeliefCulling{false, noId(), noId(), storm::utility::zero<BeliefValueType>()};
+                } else {
+                    //STORM_PRINT("Add candidate " << toString(candidate) << std::endl)
+                    gridCandidates.push_back(candidate);
+
+                    // Add variables a_j, D_j
+                    auto decisionVar = lpSolver->addBinaryVariable("a_" + std::to_string(gridCandidates.size() - 1));
+                    decisionVariables.push_back(storm::expressions::Expression(decisionVar));
+                    // Add variables for the DELTA values, their overall sum is to be minimized
+                    auto bigDelta = lpSolver->addBoundedContinuousVariable("D_" + std::to_string(gridCandidates.size() - 1), storm::utility::zero<ValueType>(), storm::utility::one<ValueType>(),
+                                                                           storm::utility::one<ValueType>());
+                    std::vector<storm::expressions::Expression> deltas;
+                    uint64_t i = 0;
+                    for (auto const &state : belief) {
+                        auto localDelta = lpSolver->addBoundedContinuousVariable("d_" + std::to_string(i) + "_" + std::to_string(gridCandidates.size() - 1),
+                                                                                 storm::utility::zero<ValueType>(),
+                                                                                 storm::utility::one<ValueType>());
+                        deltas.push_back(storm::expressions::Expression(localDelta));
+                        lpSolver->update();
+                        // Add the constraint to describe the transformation between the state values in the beliefs
+                        // b(s_i) - d_i_j
+                        storm::expressions::Expression leftSide = lpSolver->getConstant(state.second) - localDelta;
+                        storm::expressions::Expression targetValue = lpSolver->getConstant(candidate[i]);
+                        if (candidate.find(state.first) != candidate.end()) {
+                            targetValue = lpSolver->getConstant(candidate.at(state.first));
+                        } else {
+                            targetValue = lpSolver->getConstant(storm::utility::zero<ValueType>());
+                        }
+
+                        // b_j(s_i) * (1 - D_j) + (1-a_j) * (b(s_i) - b_j(s_i))
+                        storm::expressions::Expression rightSide =
+                                targetValue * (lpSolver->getConstant(storm::utility::one<ValueType>()) - storm::expressions::Expression(bigDelta))
+                                + (lpSolver->getConstant(storm::utility::one<ValueType>()) - storm::expressions::Expression(decisionVar)) *
+                                  (lpSolver->getConstant(state.second) - targetValue);
+                        // Add equality
+                        lpSolver->addConstraint("state_eq_" + std::to_string(i) + "_" + std::to_string(gridCandidates.size() - 1), leftSide == rightSide);
+                        ++i;
+                    }
+                    // Link decision and D_j
+                    lpSolver->addConstraint("dec_" + std::to_string(gridCandidates.size() - 1),
+                                            storm::expressions::Expression(bigDelta) <= storm::expressions::Expression(decisionVar));
+                    // Link D_j and d_i_j
+                    lpSolver->addConstraint("delta_" + std::to_string(gridCandidates.size() - 1), storm::expressions::Expression(bigDelta) == storm::expressions::sum(deltas));
+                    // Exclude D_j = 0 (self-loop)
+                    lpSolver->addConstraint("not_zero_" + std::to_string(gridCandidates.size() - 1), storm::expressions::Expression(bigDelta) > lpSolver->getConstant(storm::utility::zero<ValueType>()));
+                    // Exclude D_j = 1. We do not include this constraint as we minimize and can later check if the optimal value is one
+                    // lpSolver->addConstraint("not_one_" + std::to_string(gridCandidates.size()-1), storm::expressions::Expression(bigDelta) < lpSolver->getConstant(storm::utility::one<ValueType>()));
+                }
+                if (helper.back() == storm::utility::convertNumber<ValueType>(resolution)) {
+                    // If the last entry of helper is the gridResolution, we have enumerated all necessary distributions
+                    done = true;
+                } else {
+                    // Update helper by finding the index to increment
+                    auto helperIt = helper.end()-1;
+                    while (*helperIt == *(helperIt-1)) {
+                        --helperIt;
+                    }
+                    STORM_LOG_ASSERT(helperIt != helper.begin(), "Error in grid culling - index wrong");
+                    // Increment the value at the index
+                    *helperIt += 1;
+                    // Reset all indices greater than the changed one to 0
+                    ++helperIt;
+                    while (helperIt != helper.end()) {
+                        *helperIt = 0;
+                        ++helperIt;
+                    }
+
+                }
+            }
+            // At this point we added constraints for all possible gridpoints
+           /* if(decisionVariables.empty()){
+                STORM_LOG_DEBUG("Belief " << belief << " cannot be culled - no candidate with valid support");
+                return BeliefCulling{false, belief, noId(), storm::utility::zero<BeliefValueType>()};
+            }*/
+
+            // Only one target belief should be chosen
+            lpSolver->addConstraint("choice", storm::expressions::sum(decisionVariables) == lpSolver->getConstant(storm::utility::one<ValueType>()));
+
+            lpSolver->optimize();
+            // Get the optimal belief fo culling
+            BeliefId targetBelief = noId();
+            auto optDelta = storm::utility::zero<BeliefValueType>();
+            if(lpSolver->isOptimal()){
+                optDelta = lpSolver->getObjectiveValue();
+                if(optDelta == storm::utility::one<ValueType>()){
+                    STORM_LOG_WARN("Huh!!!!!" << std::endl);
+                    // If we get an optimal value of 1, we cannot cull the belief as by definition this would correspond to a division by 0.
+                    return BeliefCulling{false, noId(), noId(), storm::utility::zero<BeliefValueType>()};
+                }
+                for(uint64_t dist = 0; dist < gridCandidates.size(); ++dist){
+                    if(lpSolver->getBinaryValue(lpSolver->getManager().getVariable("a_" + std::to_string(dist)))){
+                        targetBelief = getOrAddBeliefId(gridCandidates[dist]);
+                        //STORM_PRINT("Culling Target " << toString(gridCandidates[dist]) << std::endl)
+                        break;
+                    }
+                }
+
+                if(optDelta == storm::utility::zero<ValueType>()){
+                    // If we get an optimal value of 0, the LP solver considers two beliefs to be equal, possibly due to numerical instability
+                    // For a sound result, we consider the state to be uncullable
+                    STORM_LOG_WARN("LP solver returned an optimal value of 0. This should definitely not happen when using a grid");
+                    STORM_LOG_WARN("Origin" << toString(belief));
+                    STORM_LOG_WARN("Target [Bel " << targetBelief << "] " << toString(targetBelief));
+                    return BeliefCulling{false, noId(), noId(), storm::utility::zero<BeliefValueType>()};
+                }
+                STORM_LOG_ASSERT(cc.isEqual(optDelta, lpSolver->getContinuousValue(lpSolver->getManager().getVariable("D_" + std::to_string(targetBelief)))), "Objective values is not equal to the Delta for the target state");
+            }
+            return BeliefCulling{lpSolver->isOptimal(), noId(), targetBelief, optDelta};
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
@@ -622,8 +792,6 @@ namespace storm {
                         if (std::accumulate(compHelper.begin(), compHelper.end(), storm::utility::zero<ValueType>(),
                                             [](const ValueType acc, const std::pair<StateType, BeliefValueType> belief) { return acc + belief.second; }) > threshold) {
                             STORM_LOG_DEBUG("Belief with ID " << candidate.second << " exceeds culling threshold");
-                            STORM_PRINT("DEBUG ---- Belief with ID " << candidate.second << " exceeds culling threshold" << std::endl)
-                            STORM_PRINT("DEBUG ---- Belief (" << toString(beliefId) << ")" << std::endl << "Candidate (" << toString(candidate.second) << ")" << std::endl)
                         } else {
                             STORM_LOG_DEBUG("Add constraints for Belief with ID " << candidate.second << " " << toString(candidate.second));
                             consideredCandidates.push_back(candidate.second);
@@ -665,7 +833,7 @@ namespace storm {
                             // Link D_j and d_i_j
                             lpSolver->addConstraint("delta_" + std::to_string(candidate.second), storm::expressions::Expression(bigDelta) == storm::expressions::sum(deltas));
                             // Exclude D_j = 0. This can only occur due to duplicate beliefs or numerical inaccuracy
-                            //lpSolver->addConstraint("not_zero_" + std::to_string(candidate.second), storm::expressions::Expression(bigDelta) > lpSolver->getConstant(storm::utility::zero<ValueType>()));
+                            lpSolver->addConstraint("not_zero_" + std::to_string(candidate.second), storm::expressions::Expression(bigDelta) > lpSolver->getConstant(storm::utility::zero<ValueType>()));
                             // Exclude D_j = 1. We do not include this constraint as we minimize and can later check if the optimal value is one
                             // lpSolver->addConstraint("not_one_" + std::to_string(candidate.second), storm::expressions::Expression(bigDelta) < lpSolver->getConstant(storm::utility::one<ValueType>()));
                         }

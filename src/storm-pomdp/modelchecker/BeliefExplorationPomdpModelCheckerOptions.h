@@ -10,12 +10,14 @@ namespace storm {
         namespace modelchecker {
             template<typename ValueType>
             struct BeliefExplorationPomdpModelCheckerOptions {
-                BeliefExplorationPomdpModelCheckerOptions(bool discretize, bool unfold) : discretize(discretize), unfold(unfold) {
+                BeliefExplorationPomdpModelCheckerOptions(bool discretize, bool unfold, bool gridCulling = false) : discretize(discretize), unfold(unfold), gridCulling(gridCulling) {
                     // Intentionally left empty
                 }
                 
                 bool discretize;
                 bool unfold;
+                bool gridCulling;
+                bool hybridCulling;
                 bool refine = false;
                 boost::optional<uint64_t> refineStepLimit;
                 ValueType refinePrecision = storm::utility::zero<ValueType>();
@@ -39,6 +41,8 @@ namespace storm {
                 ValueType obsThresholdIncrementFactor = storm::utility::convertNumber<ValueType>(0.1);
                 // Controls the delta value up to which culling will be applied.
                 ValueType cullingThresholdInit = storm::utility::zero<ValueType>();
+
+                uint64_t culllingGridRes = 2;
                 
                 ValueType numericPrecision = storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(1e-9); /// Used to decide whether two beliefs are equal
                 bool dynamicTriangulation = true; // Sets whether the triangulation is done in a dynamic way (yielding more precise triangulations)

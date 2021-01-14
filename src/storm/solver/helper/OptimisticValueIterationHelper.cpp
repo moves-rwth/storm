@@ -315,10 +315,10 @@ namespace storm {
                         // The following case below covers that both vectors (old and new) are equal.
                         // Theoretically, this means that the precise fixpoint has been reached. However, numerical instabilities can be tricky and this detection might be incorrect (see the haddad-monmege model).
                         // We therefore disable it. It is very unlikely that we guessed the right fixpoint anyway.
-                        //} else if (upperBoundIterResult == oviinternal::IterationHelper<ValueType>::IterateResult::Equal) {
+                        } else if (upperBoundIterResult == oviinternal::IterationHelper<ValueType>::IterateResult::Equal) {
                             // In this case, the guessed upper bound is the precise fixpoint
-                        //    status = SolverStatus::Converged;
-                        //    break;
+                           status = SolverStatus::Converged;
+                           break;
                         }
 
                         // Check whether we tried this guess for too long

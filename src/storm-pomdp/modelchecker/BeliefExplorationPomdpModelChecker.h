@@ -93,6 +93,12 @@ namespace storm {
                  */
                 bool buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation);
 
+                /**
+                * Builds and checks a grid-based MDP that under-approximates the POMDP behavior, i.e. provides a lower bound for maximizing and an upper bound for minimizing properties
+                * Returns true if a fixpoint for the refinement has been detected (i.e. if further refinement steps would not change the mdp)
+                */
+                bool buildGridUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation, std::vector<uint64_t>& observationResolutionVector);
+
                 BeliefValueType rateObservation(typename ExplorerType::SuccessorObservationInformation const& info, BeliefValueType const& observationResolution, BeliefValueType const& maxResolution);
                 
                 std::vector<BeliefValueType> getObservationRatings(std::shared_ptr<ExplorerType> const& overApproximation, std::vector<BeliefValueType> const& observationResolutionVector);

@@ -39,6 +39,10 @@ namespace storm {
                 /// Discretization Resolution
                 uint64_t getResolutionInit() const;
                 double getResolutionFactor() const;
+
+                /// Culling Grid Resolution
+                uint64_t getCullingGridResolution() const;
+
                 /// The maximal number of newly expanded MDP states in a refinement step
                 uint64_t getSizeThresholdInit() const;
                 double getSizeThresholdFactor() const;
@@ -64,6 +68,9 @@ namespace storm {
                 
                 bool isDynamicTriangulationModeSet() const;
                 bool isStaticTriangulationModeSet() const;
+
+                bool isClassicCullingModeSet() const;
+                bool isGridCullingModeSet() const;
 
                 storm::builder::ExplorationHeuristic getExplorationHeuristic() const;
     

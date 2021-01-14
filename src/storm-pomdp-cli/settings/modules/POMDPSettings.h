@@ -30,6 +30,7 @@ namespace storm {
                 bool isBeliefExplorationSet() const;
                 bool isBeliefExplorationDiscretizeSet() const;
                 bool isBeliefExplorationUnfoldSet() const;
+                bool isBeliefExplorationCulGridSet() const;
                 bool isAnalyzeUniqueObservationsSet() const;
                 bool isSelfloopReductionSet() const;
                 bool isCheckFullyObservableSet() const;

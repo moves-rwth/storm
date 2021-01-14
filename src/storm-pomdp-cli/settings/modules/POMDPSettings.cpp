@@ -16,7 +16,7 @@ namespace storm {
             const std::string noCanonicOption = "nocanonic";
             const std::string exportAsParametricModelOption = "parametric-drn";
             const std::string beliefExplorationOption = "belief-exploration";
-            std::vector<std::string> beliefExplorationModes = {"both", "discretize", "unfold"};
+            std::vector<std::string> beliefExplorationModes = {"both", "discretize", "unfold", "cul-grid"};
             const std::string qualitativeReductionOption = "qualitativereduction";
             const std::string analyzeUniqueObservationsOption = "uniqueobservations";
             const std::string selfloopReductionOption = "selfloopreduction";
@@ -75,6 +75,11 @@ namespace storm {
             bool POMDPSettings::isBeliefExplorationUnfoldSet() const {
                 std::string arg = this->getOption(beliefExplorationOption).getArgumentByName("mode").getValueAsString();
                 return isBeliefExplorationSet() && (arg == "unfold" || arg == "both");
+            }
+
+            bool POMDPSettings::isBeliefExplorationCulGridSet() const {
+                std::string arg = this->getOption(beliefExplorationOption).getArgumentByName("mode").getValueAsString();
+                return isBeliefExplorationSet() && (arg == "cul-grid");
             }
 
             bool POMDPSettings::isCheckFullyObservableSet() const {

@@ -22,6 +22,7 @@ namespace storm {
             const std::string refineOption = "refine";
             const std::string explorationTimeLimitOption = "exploration-time";
             const std::string resolutionOption = "resolution";
+            const std::string culGridResolutionOption = "cul-resolution";
             const std::string sizeThresholdOption = "size-threshold";
             const std::string gapThresholdOption = "gap-threshold";
             const std::string schedulerThresholdOption = "scheduler-threshold";
@@ -30,6 +31,7 @@ namespace storm {
             const std::string numericPrecisionOption = "numeric-precision";
             const std::string triangulationModeOption = "triangulationmode";
             const std::string explHeuristicOption = "expl-heuristic";
+            const std::string cullingModeOption = "culling-mode";
 
             BeliefExplorationSettings::BeliefExplorationSettings() : ModuleSettings(moduleName) {
                 
@@ -38,7 +40,9 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, explorationTimeLimitOption, false, "Sets after which time no further states shall be explored.").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("time","In seconds.").build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, resolutionOption, false,"Sets the resolution of the discretization and how it is increased in case of refinement").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("init","the initial resolution (higher means more precise)").setDefaultValueUnsignedInteger(3).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor","Multiplied to the resolution of refined observations (higher means more precise).").setDefaultValueDouble(2).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterValidator(1)).build()).build());
-                
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, culGridResolutionOption, false,"Sets the resolution of the culling grid").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("resolution","the resolution (higher means more precise)").setDefaultValueUnsignedInteger(3).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterValidator(0)).build()).build());
+
                 this->addOption(storm::settings::OptionBuilder(moduleName, observationThresholdOption, false,"Only observations whose score is below this threshold will be refined.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("init","initial threshold (higher means more precise").setDefaultValueDouble(0.1).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0,1)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor","Controlls how fast the threshold is increased in each refinement step (higher means more precise).").setDefaultValueDouble(0.1).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0,1)).build()).build());
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, sizeThresholdOption, false,"Sets how many new states are explored or rewired in a refinement step and how this value is increased in case of refinement.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("init","initial limit (higher means more precise, 0 means automatic choice)").setDefaultValueUnsignedInteger(0).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor","Before each step the new threshold is set to the current state count times this number (higher means more precise).").setDefaultValueDouble(4).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(1)).build()).build());
@@ -54,6 +58,8 @@ namespace storm {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, triangulationModeOption, false,"Sets how to triangulate beliefs when discretizing.").setIsAdvanced().addArgument(
                         storm::settings::ArgumentBuilder::createStringArgument("value","the triangulation mode").setDefaultValueString("dynamic").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"dynamic", "static"})).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, cullingModeOption, false,"Sets how to cull beliefs after the size-threshold was reached").setIsAdvanced().addArgument(
+                        storm::settings::ArgumentBuilder::createStringArgument("value","the culling mode").setDefaultValueString("classic").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"classic", "grid"})).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, explHeuristicOption, false,"Sets how to sort the states into the exploration queue.").setIsAdvanced().addArgument(
                         storm::settings::ArgumentBuilder::createStringArgument("value","the exploration heuristic").setDefaultValueString("bfs").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"bfs", "lowerBound", "upperBound", "gap", "prob"})).build()).build());
             }
@@ -86,7 +92,11 @@ namespace storm {
             uint64_t BeliefExplorationSettings::getResolutionInit() const {
                 return this->getOption(resolutionOption).getArgumentByName("init").getValueAsUnsignedInteger();
             }
-            
+
+            uint64_t BeliefExplorationSettings::getCullingGridResolution() const {
+                return this->getOption(culGridResolutionOption).getArgumentByName("resolution").getValueAsUnsignedInteger();
+            }
+
             double BeliefExplorationSettings::getResolutionFactor() const {
                 return this->getOption(resolutionOption).getArgumentByName("factor").getValueAsDouble();
             }
@@ -143,6 +153,14 @@ namespace storm {
                 return this->getOption(triangulationModeOption).getArgumentByName("value").getValueAsString() == "static";
             }
 
+            bool BeliefExplorationSettings::isClassicCullingModeSet() const {
+                return this->getOption(cullingModeOption).getArgumentByName("value").getValueAsString() == "classic";
+            }
+
+            bool BeliefExplorationSettings::isGridCullingModeSet() const {
+                return this->getOption(cullingModeOption).getArgumentByName("value").getValueAsString() == "grid";
+            }
+
             storm::builder::ExplorationHeuristic BeliefExplorationSettings::getExplorationHeuristic() const {
                 if(this->getOption(explHeuristicOption).getArgumentByName("value").getValueAsString() == "bfs") {
                     return storm::builder::ExplorationHeuristic::BreadthFirst;
@@ -176,6 +194,7 @@ namespace storm {
                 } else {
                     options.explorationTimeLimit = boost::none;
                 }
+                options.culllingGridRes = getCullingGridResolution();
                 options.resolutionInit = getResolutionInit();
                 options.resolutionFactor = storm::utility::convertNumber<ValueType>(getResolutionFactor());
                 options.sizeThresholdInit = getSizeThresholdInit();
@@ -186,6 +205,7 @@ namespace storm {
                 options.optimalChoiceValueThresholdFactor = storm::utility::convertNumber<ValueType>(getOptimalChoiceValueThresholdFactor());
                 options.obsThresholdInit = storm::utility::convertNumber<ValueType>(getObservationScoreThresholdInit());
                 options.obsThresholdIncrementFactor = storm::utility::convertNumber<ValueType>(getObservationScoreThresholdFactor());
+                options.hybridCulling = isGridCullingModeSet();
 
                 options.cullingThresholdInit = storm::utility::convertNumber<ValueType>(getCullingThresholdInit());
                 
@@ -202,7 +222,7 @@ namespace storm {
 
                 options.explorationHeuristic = getExplorationHeuristic();
             }
-            
+
             template void BeliefExplorationSettings::setValuesInOptionsStruct<double>(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<double>& options) const;
             template void BeliefExplorationSettings::setValuesInOptionsStruct<storm::RationalNumber>(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<storm::RationalNumber>& options) const;
 
