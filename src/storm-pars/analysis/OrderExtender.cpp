@@ -716,6 +716,7 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         void OrderExtender<ValueType, ConstantType>::initializeMinMaxValues() {
+            // TODO @Jip fix for qualitative properties
             if (model != nullptr) {
                 this->usePLAOnce = true;
                 // Use parameter lifting modelchecker to get initial min/max values for order creation

@@ -500,7 +500,7 @@ namespace {
         // Reachability order, as it is already done building we don't need to recreate the order for each region
         auto monHelper = new storm::analysis::MonotonicityHelper<storm::RationalFunction, ValueType>(model, formulas, regions);
         // TODO @Jip set usePLA to true or to false?
-        auto order = monHelper->checkMonotonicityInBuild(std::cout, true).begin()->first;
+        auto order = monHelper->checkMonotonicityInBuild(std::cout, false).begin()->first;
         ASSERT_EQ(order->getNumberOfAddedStates(), model->getTransitionMatrix().getColumnCount());
         ASSERT_TRUE(order->getDoneBuilding());
 
@@ -632,7 +632,7 @@ namespace {
         // Reachability order, as it is already done building we don't need to recreate the order for each region
         auto monHelper = new storm::analysis::MonotonicityHelper<storm::RationalFunction, ValueType>(model, formulas, regions);
         // TODO @Jip set usePLA to true or to false?
-        auto order = monHelper->checkMonotonicityInBuild(std::cout, true).begin()->first;
+        auto order = monHelper->checkMonotonicityInBuild(std::cout, false).begin()->first;
         ASSERT_EQ(order->getNumberOfAddedStates(), model->getTransitionMatrix().getColumnCount());
         ASSERT_TRUE(order->getDoneBuilding());
 
