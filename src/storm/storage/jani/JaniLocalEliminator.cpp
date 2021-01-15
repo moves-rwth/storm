@@ -3,6 +3,7 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/expressions/Expression.h"
+#include <boost/format.hpp>
 
 namespace storm {
     namespace jani {
@@ -75,38 +76,37 @@ namespace storm {
         }
 
 
-        JaniLocalEliminator::UnfoldAction::UnfoldAction(const std::string &variableName) {
+        JaniLocalEliminator::UnfoldAction::UnfoldAction(const std::string &automatonName, const std::string &variableName) {
+            this->automatonName = automatonName;
             this->variableName = variableName;
         }
 
         std::string JaniLocalEliminator::UnfoldAction::getDescription() {
-            return "UnfoldAction (Variable " + this->variableName  + ")";
+            return (boost::format("UnfoldAction (Automaton %s, Variable %s)") % automatonName % variableName).str();
         }
 
         void JaniLocalEliminator::UnfoldAction::doAction(JaniLocalEliminator::Session &session) {
             JaniLocationExpander expander = JaniLocationExpander(session.getModel());
-            expander.transform("multiplex", "s");
+            expander.transform(automatonName, variableName);
             session.setModel(expander.getResult());
         }
 
 
-        JaniLocalEliminator::EliminateAction::EliminateAction(const std::string &locationName) {
+        JaniLocalEliminator::EliminateAction::EliminateAction(const std::string &automatonName, const std::string &locationName) {
+            this->automatonName = automatonName;
             this->locationName = locationName;
         }
 
         std::string JaniLocalEliminator::EliminateAction::getDescription() {
-            return "UnfoldAction (Variable " + this->locationName  + ")";
+            return (boost::format("EliminateAction (Automaton %s, Location %s)") % automatonName % locationName).str();
         }
 
         void JaniLocalEliminator::EliminateAction::doAction(JaniLocalEliminator::Session &session) {
-            std::string automatonName = "multiplex";
             STORM_LOG_THROW(!session.hasLoops(automatonName, locationName), storm::exceptions::InvalidArgumentException, "Locations with loops cannot be eliminated");
 
             Automaton& automaton = session.getModel().getAutomaton(automatonName);
             uint64_t locIndex = automaton.getLocationIndex(locationName);
 
-
-            // std::vector<std::tuple<Edge, EdgeDestination>> incomingEdges;
             bool changed = true;
             while (changed) {
                 changed = false;

@@ -35,23 +35,25 @@ namespace storm {
 
             class UnfoldAction : public Action {
             public:
-                explicit UnfoldAction(const std::string &variableName);
+                explicit UnfoldAction(const std::string &automatonName, const std::string &variableName);
 
                 std::string getDescription() override;
                 void doAction(Session &session) override;
 
+                std::string automatonName;
                 std::string variableName;
             };
 
             class EliminateAction : public Action {
             public:
-                explicit EliminateAction(const std::string &locationName);
+                explicit EliminateAction(const std::string &automatonName, const std::string &locationName);
 
                 std::string getDescription() override;
                 void doAction(Session &session) override;
             private:
                 void eliminateDestination(JaniLocalEliminator::Session &session, Automaton &automaton, Edge &edge, uint64_t destIndex, detail::Edges &outgoing);
 
+                std::string automatonName;
                 std::string locationName;
             };
 

@@ -61,10 +61,10 @@ TEST(JaniLocalEliminator, ExampleTest) {
 
     JaniLocalEliminator eliminator = JaniLocalEliminator(model, props);
 
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("s"));
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAction>("l_s_2"));
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAction>("l_s_3"));
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAction>("l_s_1"));
+    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("multiplex", "s"));
+    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAction>("multiplex", "l_s_2"));
+    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAction>("multiplex", "l_s_3"));
+    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAction>("multiplex", "l_s_1"));
     eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::FinishAction>());
 
     eliminator.eliminate();
