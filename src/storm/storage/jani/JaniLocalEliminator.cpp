@@ -12,11 +12,11 @@ namespace storm {
                 STORM_LOG_ERROR("Local elimination only works with exactly one property");
             } else {
                 property = properties[0];
+                scheduler = EliminationScheduler();
             }
         }
 
         void JaniLocalEliminator::eliminate() {
-            EliminationScheduler scheduler = EliminationScheduler();
 
             if (original.getAutomata().size() != 1) {
                 STORM_LOG_ERROR("State Space Reduction is only supported for Jani models with a single automaton.");
@@ -207,11 +207,6 @@ namespace storm {
 
 
         JaniLocalEliminator::EliminationScheduler::EliminationScheduler() {
-            actionQueue.push(std::make_unique<JaniLocalEliminator::UnfoldAction>("s"));
-            actionQueue.push(std::make_unique<JaniLocalEliminator::EliminateAction>("l_s_2"));
-            actionQueue.push(std::make_unique<JaniLocalEliminator::EliminateAction>("l_s_3"));
-            actionQueue.push(std::make_unique<JaniLocalEliminator::EliminateAction>("l_s_1"));
-            actionQueue.push(std::make_unique<JaniLocalEliminator::FinishAction>());
         }
 
         std::unique_ptr<JaniLocalEliminator::Action> JaniLocalEliminator::EliminationScheduler::getNextAction() {
@@ -221,6 +216,10 @@ namespace storm {
             std::unique_ptr<JaniLocalEliminator::Action> val = std::move(actionQueue.front());
             actionQueue.pop();
             return val;
+        }
+
+        void JaniLocalEliminator::EliminationScheduler::addAction(std::unique_ptr<JaniLocalEliminator::Action> action) {
+            actionQueue.push(std::move(action));
         }
 
         JaniLocalEliminator::Session::Session(Model model) : model(model), finished(false){
