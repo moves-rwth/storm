@@ -628,6 +628,7 @@ namespace storm {
             ValueType precision = storm::utility::convertNumber<ValueType>(regionSettings.getExtremumValuePrecision());
             bool generateSplitEstimates = regionSettings.isSplittingThresholdSet();
             for (auto const& property : input.properties) {
+                STORM_LOG_THROW(property.getRawFormula()->hasQuantitativeResult(), storm::exceptions::NotSupportedException, "Extremum cannot be computed for this type of property.");
                 for (auto const& region : regions) {
                     if (monotonicitySettings.useMonotonicity) {
                         STORM_PRINT_AND_LOG("Computing extremal value for property " << property.getName() << ": "
