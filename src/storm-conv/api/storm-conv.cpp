@@ -115,9 +115,11 @@ namespace storm {
         }
 
         aiger* convertPrismToAiger(storm::prism::Program const& program, std::vector<storm::jani::Property> const & properties, storm::converter::PrismToAigerConverterOptions options) {
+            // we start by replacing constants and formulas by their values
+            storm::prism::Program replaced = program.substituteConstantsFormulas();
             // we recover BDD-style information from the prism program by
             // building its symbolic representation
-            std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan, double>().build(program);
+            std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan, double>().build(replaced);
             // we can now start loading the aiger structure
             aiger* aig = aiger_init();
             // STEP 1:
