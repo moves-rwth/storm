@@ -48,6 +48,17 @@ namespace storm {
              */
             StateBehavior<ValueType, StateType> createMergeFailedState(StateToIdCallback const& stateToIdCallback);
 
+            /*!
+             * Create successor state from given state by letting the given BE fail next.
+             * 
+             * @param state Current state.
+             * @param failedBE BE which fails next.
+             * @param triggeringDependency Dependency which triggered the failure (or nullptr if BE failed on its own).
+             * 
+             * @return Successor state.
+             */
+            DFTStatePointer createSuccessorState(DFTStatePointer const state, std::shared_ptr<storm::storage::DFTBE<ValueType> const> &failedBE, std::shared_ptr<storm::storage::DFTDependency<ValueType> const> &triggeringDependency);
+
             /**
              * Propagate the failures in a given state if the given BE fails
              *
