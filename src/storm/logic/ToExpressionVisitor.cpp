@@ -46,67 +46,71 @@ namespace storm {
             }
             return result;
         }
-        
+
         boost::any ToExpressionVisitor::visit(BoundedUntilFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
         }
-        
+
         boost::any ToExpressionVisitor::visit(ConditionalFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
         }
-        
+
         boost::any ToExpressionVisitor::visit(CumulativeRewardFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
         }
-        
+
         boost::any ToExpressionVisitor::visit(EventuallyFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
         }
-        
+
         boost::any ToExpressionVisitor::visit(TimeOperatorFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
         }
-        
+
         boost::any ToExpressionVisitor::visit(GloballyFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
         }
-        
+
+        boost::any ToExpressionVisitor::visit(GameFormula const&, boost::any const&) const {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
+        }
+
         boost::any ToExpressionVisitor::visit(InstantaneousRewardFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
         }
-        
+
         boost::any ToExpressionVisitor::visit(LongRunAverageOperatorFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
         }
-        
+
         boost::any ToExpressionVisitor::visit(LongRunAverageRewardFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
         }
-        
+
         boost::any ToExpressionVisitor::visit(MultiObjectiveFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
         }
-        
+
         boost::any ToExpressionVisitor::visit(QuantileFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
         }
-        
+
         boost::any ToExpressionVisitor::visit(NextFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
         }
-        
+
         boost::any ToExpressionVisitor::visit(ProbabilityOperatorFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
         }
-        
+
         boost::any ToExpressionVisitor::visit(RewardOperatorFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
         }
-        
+
         boost::any ToExpressionVisitor::visit(TotalRewardFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Cannot assemble expression from formula that contains illegal elements.");
         }
-        
+
         boost::any ToExpressionVisitor::visit(UnaryBooleanStateFormula const& f, boost::any const& data) const {
             storm::expressions::Expression subexpression = boost::any_cast<storm::expressions::Expression>(f.getSubformula().accept(*this, data));
             switch (f.getOperator()) {

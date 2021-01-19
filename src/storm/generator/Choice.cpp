@@ -3,7 +3,6 @@
 #include "storm/adapters/RationalFunctionAdapter.h"
 
 #include "storm/utility/constants.h"
-#include "storm/builder/ChoiceInformationBuilder.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidOperationException.h"
@@ -81,17 +80,32 @@ namespace storm {
                 labels = newLabels;
             }
         }
-            
+
         template<typename ValueType, typename StateType>
         bool Choice<ValueType, StateType>::hasLabels() const {
             return labels.is_initialized();
         }
-            
+
         template<typename ValueType, typename StateType>
         std::set<std::string> const& Choice<ValueType, StateType>::getLabels() const {
             return labels.get();
         }
-            
+
+        template<typename ValueType, typename StateType>
+        void Choice<ValueType, StateType>::setPlayerIndex(storm::storage::PlayerIndex playerIndex) {
+            this->playerIndex = playerIndex;
+        }
+
+        template<typename ValueType, typename StateType>
+        bool Choice<ValueType, StateType>::hasPlayerIndex() const {
+            return playerIndex.is_initialized();
+        }
+
+        template<typename ValueType, typename StateType>
+        storm::storage::PlayerIndex const& Choice<ValueType, StateType>::getPlayerIndex() const {
+            return playerIndex.get();
+        }
+
         template<typename ValueType, typename StateType>
         void Choice<ValueType, StateType>::addOriginData(boost::any const& data) {
             if (!this->originData || this->originData->empty()) {
