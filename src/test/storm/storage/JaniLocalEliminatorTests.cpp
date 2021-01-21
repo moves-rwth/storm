@@ -25,12 +25,6 @@ typedef storm::modelchecker::SparseDtmcPrctlModelChecker<Dtmc> DtmcModelChecker;
 
 using storm::jani::JaniLocalEliminator;
 
-std::pair<storm::jani::Model, std::vector<storm::jani::Property>> saveAndReload(storm::jani::Model model, std::vector<storm::jani::Property> props){
-    storm::jani::JsonExporter::toFile(model, props, STORM_TEST_RESOURCES_DIR "/dtmc/_temp_model.jani", true, false);
-    auto minModelProps = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/_temp_model.jani", storm::jani::getAllKnownModelFeatures(), boost::none);
-    return minModelProps;
-}
-
 void checkModel(storm::jani::Model model, std::vector<storm::jani::Property> properties, std::map<storm::expressions::Variable, storm::expressions::Expression> consts, int states, int transitions, double expectedValue){
     model = model.defineUndefinedConstants(consts);
     properties[0] = properties[0].substitute(consts);
@@ -65,17 +59,14 @@ TEST(JaniLocalEliminator, NandNoActionTest) {
     eliminator.eliminate();
     model = eliminator.getResult();
     model.checkValid();
-
-    auto minModelProps = saveAndReload(model, props);
-    auto modelMin = minModelProps.first;
-    auto propsMin = minModelProps.second;
+    model.finalize();
 
     std::map<storm::expressions::Variable, storm::expressions::Expression> consts = {
-            {modelMin.getConstant("N").getExpressionVariable(), modelMin.getExpressionManager().integer(20)},
-            {modelMin.getConstant("K").getExpressionVariable(), modelMin.getExpressionManager().integer(1)}
+            {model.getConstant("N").getExpressionVariable(), model.getExpressionManager().integer(20)},
+            {model.getConstant("K").getExpressionVariable(), model.getExpressionManager().integer(1)}
     };
 
-    checkModel(modelMin, propsMin, consts, 78332, 121512, 0.28641904638485044);
+    checkModel(model, props, consts, 78332, 121512, 0.28641904638485044);
 }
 
 TEST(JaniLocalEliminator, NandUnfoldOnlyTest) {
@@ -90,17 +81,14 @@ TEST(JaniLocalEliminator, NandUnfoldOnlyTest) {
     eliminator.eliminate();
     model = eliminator.getResult();
     model.checkValid();
-
-    auto minModelProps = saveAndReload(model, props);
-    auto modelMin = minModelProps.first;
-    auto propsMin = minModelProps.second;
+    model.finalize();
 
     std::map<storm::expressions::Variable, storm::expressions::Expression> consts = {
-            {modelMin.getConstant("N").getExpressionVariable(), modelMin.getExpressionManager().integer(20)},
-            {modelMin.getConstant("K").getExpressionVariable(), modelMin.getExpressionManager().integer(1)}
+            {model.getConstant("N").getExpressionVariable(), model.getExpressionManager().integer(20)},
+            {model.getConstant("K").getExpressionVariable(), model.getExpressionManager().integer(1)}
     };
 
-    checkModel(modelMin, propsMin, consts, 78332, 121512, 0.28641904638485044);
+    checkModel(model, props, consts, 78332, 121512, 0.28641904638485044);
 }
 
 TEST(JaniLocalEliminator, NandSingleElimination) {
@@ -119,17 +107,14 @@ TEST(JaniLocalEliminator, NandSingleElimination) {
     eliminator.eliminate();
     model = eliminator.getResult();
     model.checkValid();
-
-    auto minModelProps = saveAndReload(model, props);
-    auto modelMin = minModelProps.first;
-    auto propsMin = minModelProps.second;
+    model.finalize();
 
     std::map<storm::expressions::Variable, storm::expressions::Expression> consts = {
-            {modelMin.getConstant("N").getExpressionVariable(), modelMin.getExpressionManager().integer(20)},
-            {modelMin.getConstant("K").getExpressionVariable(), modelMin.getExpressionManager().integer(1)}
+            {model.getConstant("N").getExpressionVariable(), model.getExpressionManager().integer(20)},
+            {model.getConstant("K").getExpressionVariable(), model.getExpressionManager().integer(1)}
     };
 
-    checkModel(modelMin, propsMin, consts, 16182, 58102, 0.28641904638485044);
+    checkModel(model, props, consts, 16182, 58102, 0.28641904638485044);
 }
 
 //TEST(JaniLocalEliminator, BrpTest) {
