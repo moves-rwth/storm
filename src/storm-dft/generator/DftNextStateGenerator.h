@@ -49,6 +49,13 @@ namespace storm {
             StateBehavior<ValueType, StateType> createMergeFailedState(StateToIdCallback const& stateToIdCallback);
 
             /*!
+             * Create initial state.
+             * 
+             * @return Initial state.
+             */
+            DFTStatePointer createInitialState() const;
+
+            /*!
              * Create successor state from given state by letting the given BE fail next.
              * 
              * @param state Current state.
@@ -57,7 +64,7 @@ namespace storm {
              * 
              * @return Successor state.
              */
-            DFTStatePointer createSuccessorState(DFTStatePointer const state, std::shared_ptr<storm::storage::DFTBE<ValueType> const> &failedBE, std::shared_ptr<storm::storage::DFTDependency<ValueType> const> &triggeringDependency);
+            DFTStatePointer createSuccessorState(DFTStatePointer const state, std::shared_ptr<storm::storage::DFTBE<ValueType> const> &failedBE, std::shared_ptr<storm::storage::DFTDependency<ValueType> const> &triggeringDependency) const;
 
             /**
              * Propagate the failures in a given state if the given BE fails
@@ -67,7 +74,7 @@ namespace storm {
              */
             void
             propagateFailure(DFTStatePointer newState, std::shared_ptr<storm::storage::DFTBE<ValueType> const> &nextBE,
-                             storm::storage::DFTStateSpaceGenerationQueues<ValueType> &queues);
+                             storm::storage::DFTStateSpaceGenerationQueues<ValueType> &queues) const;
 
             /**
              * Propagate the failsafe state in a given state if the given BE fails
@@ -77,7 +84,7 @@ namespace storm {
              */
             void
             propagateFailsafe(DFTStatePointer newState, std::shared_ptr<storm::storage::DFTBE<ValueType> const> &nextBE,
-                              storm::storage::DFTStateSpaceGenerationQueues<ValueType> &queues);
+                              storm::storage::DFTStateSpaceGenerationQueues<ValueType> &queues) const;
 
         private:
 

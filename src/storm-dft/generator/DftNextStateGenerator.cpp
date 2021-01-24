@@ -21,8 +21,15 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
+        typename DftNextStateGenerator<ValueType, StateType>::DFTStatePointer DftNextStateGenerator<ValueType, StateType>::createInitialState() const {
+            return std::make_shared<storm::storage::DFTState<ValueType>>(mDft, mStateGenerationInfo, 0);
+        }
+
+        template<typename ValueType, typename StateType>
         std::vector<StateType> DftNextStateGenerator<ValueType, StateType>::getInitialStates(StateToIdCallback const& stateToIdCallback) {
-            DFTStatePointer initialState = std::make_shared<storm::storage::DFTState<ValueType>>(mDft, mStateGenerationInfo, 0);
+            DFTStatePointer initialState = createInitialState();
+
+            // Check whether constant failed BEs are present
             size_t constFailedBeCounter = 0;
             std::shared_ptr<storm::storage::DFTBE<ValueType> const> constFailedBE = nullptr;
             for (auto &be : mDft.getBasicElements()) {
@@ -214,7 +221,7 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        typename DftNextStateGenerator<ValueType, StateType>::DFTStatePointer DftNextStateGenerator<ValueType, StateType>::createSuccessorState(DFTStatePointer const state, std::shared_ptr<storm::storage::DFTBE<ValueType> const>& failedBE, std::shared_ptr<storm::storage::DFTDependency<ValueType> const>& triggeringDependency) {
+        typename DftNextStateGenerator<ValueType, StateType>::DFTStatePointer DftNextStateGenerator<ValueType, StateType>::createSuccessorState(DFTStatePointer const state, std::shared_ptr<storm::storage::DFTBE<ValueType> const>& failedBE, std::shared_ptr<storm::storage::DFTDependency<ValueType> const>& triggeringDependency) const {
             // Construct new state as copy from original one
             DFTStatePointer newState = state->copy();
             STORM_LOG_TRACE("With the failure of: " << failedBE->name() << " [" << failedBE->id() << "]" << (triggeringDependency != nullptr ? " (through dependency " + triggeringDependency->name() + " [" + std::to_string(triggeringDependency->id()) + ")]" : "") << " in " << mDft.getStateString(state));
@@ -254,9 +261,8 @@ namespace storm {
 
 
         template<typename ValueType, typename StateType>
-        void DftNextStateGenerator<ValueType, StateType>::propagateFailure(DFTStatePointer newState,
-                                                                           std::shared_ptr<storm::storage::DFTBE<ValueType> const> &nextBE,
-                                                                           storm::storage::DFTStateSpaceGenerationQueues<ValueType> &queues) {
+        void DftNextStateGenerator<ValueType, StateType>::propagateFailure(DFTStatePointer newState, std::shared_ptr<storm::storage::DFTBE<ValueType> const> &nextBE,
+                                                                           storm::storage::DFTStateSpaceGenerationQueues<ValueType> &queues) const {
             // Propagate failure
             for (DFTGatePointer parent : nextBE->parents()) {
                 if (newState->isOperational(parent->id())) {
@@ -285,9 +291,8 @@ namespace storm {
         }
 
         template<typename ValueType, typename StateType>
-        void DftNextStateGenerator<ValueType, StateType>::propagateFailsafe(DFTStatePointer newState,
-                                                                            std::shared_ptr<storm::storage::DFTBE<ValueType> const> &nextBE,
-                                                                            storm::storage::DFTStateSpaceGenerationQueues<ValueType> &queues) {
+        void DftNextStateGenerator<ValueType, StateType>::propagateFailsafe(DFTStatePointer newState, std::shared_ptr<storm::storage::DFTBE<ValueType> const> &nextBE,
+                                                                            storm::storage::DFTStateSpaceGenerationQueues<ValueType> &queues) const {
             // Propagate failsafe
             while (!queues.failsafePropagationDone()) {
                 DFTGatePointer next = queues.nextFailsafePropagation();
