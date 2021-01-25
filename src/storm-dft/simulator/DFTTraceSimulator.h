@@ -83,7 +83,7 @@ namespace storm {
                 storm::storage::DFTStateGenerationInfo const& stateGenerationInfo;
 
                 // Generator for creating next state in DFT
-                storm::generator::DftNextStateGenerator<double> generator;
+                storm::generator::DftNextStateGenerator<ValueType> generator;
 
                 // Current state
                 DFTStatePointer state;

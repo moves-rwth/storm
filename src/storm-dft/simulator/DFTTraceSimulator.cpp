@@ -67,11 +67,17 @@ namespace storm {
                             smallestTimebound = timebound;
                         }
                     }
-                    STORM_LOG_TRACE("Let BE " << *nextFail.getFailBE(dft).first << "fail after time " << smallestTimebound);
+                    STORM_LOG_TRACE("Let BE " << *nextFail.getFailBE(dft).first << " fail after time " << smallestTimebound);
                     bool res = step(nextFail);
                     return res ? smallestTimebound : -1;
                 }
             }
+
+            template<>
+            double DFTTraceSimulator<storm::RationalFunction>::randomStep() {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Simulation not support for parametric DFTs.");
+            }
+
 
             template<typename ValueType>
             bool DFTTraceSimulator<ValueType>::step(storm::dft::storage::FailableElements::const_iterator nextFailElement) {
@@ -116,9 +122,15 @@ namespace storm {
                 }
                 // Time is up
                 return false;
+            }
+
+            template<>
+            bool DFTTraceSimulator<storm::RationalFunction>::simulateCompleteTrace(double timebound) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Simulation not support for parametric DFTs.");
             } 
 
             template class DFTTraceSimulator<double>;
+            template class DFTTraceSimulator<storm::RationalFunction>;
         }
     }
 }
