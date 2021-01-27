@@ -11,7 +11,7 @@ namespace storm {
         private:
             class Session {
             public:
-                explicit Session(Model model);
+                explicit Session(Model model, Property property);
                 Model &getModel();
                 void setModel(const Model &model);
                 bool getFinished();
@@ -20,9 +20,13 @@ namespace storm {
                 expressions::Expression getNewGuard(const Edge& edge, const EdgeDestination& dest, const Edge& outgoing);
                 expressions::Expression getProbability(const EdgeDestination& first, const EdgeDestination& then);
                 OrderedAssignments executeInSequence(const EdgeDestination& first, const EdgeDestination& then);
+                bool isEliminable(const std::string &automatonName, std::string const& locationName);
                 bool hasLoops(const std::string &automatonName, std::string const& locationName);
+                bool isPossiblyInitial(const std::string &automatonName, std::string const &locationName);
+                bool isPartOfProp(const std::string &automatonName, std::string const &locationName);
             private:
                 Model model;
+                Property property;
                 bool finished;
             };
 
@@ -55,6 +59,22 @@ namespace storm {
 
                 std::string automatonName;
                 std::string locationName;
+            };
+
+            class EliminateAutomaticallyAction : public Action {
+            public:
+                enum EliminationOrder {
+                    Arbitrary,
+                    NewTransitionCount
+                };
+
+                explicit EliminateAutomaticallyAction(const std::string &automatonName, EliminationOrder eliminationOrder);
+                std::string getDescription() override;
+                void doAction(Session &session) override;
+            private:
+                std::string automatonName;
+                EliminationOrder eliminationOrder;
+                std::string find_next_location(Session &session);
             };
 
             class FinishAction : public Action {

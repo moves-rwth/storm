@@ -4,17 +4,17 @@
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/expressions/Expression.h"
 #include <boost/format.hpp>
+#include <storm/solver/Z3SmtSolver.h>
 
 namespace storm {
     namespace jani {
 
         JaniLocalEliminator::JaniLocalEliminator(const Model &original, std::vector<storm::jani::Property>& properties) : original(original) {
             if (properties.size() != 1){
-                STORM_LOG_ERROR("Local elimination only works with exactly one property");
-            } else {
-                property = properties[0];
-                scheduler = EliminationScheduler();
+                STORM_LOG_WARN("Local elimination only works with exactly one property");
             }
+            property = properties[0];
+            scheduler = EliminationScheduler();
         }
 
         void JaniLocalEliminator::eliminate() {
@@ -26,7 +26,7 @@ namespace storm {
 
             newModel = original; // TODO: Make copy instead?
 
-            Session session = Session(newModel);
+            Session session = Session(newModel, property);
             while (!session.getFinished()) {
                 std::unique_ptr<Action> action = scheduler.getNextAction();
                 action->doAction(session);
@@ -38,6 +38,9 @@ namespace storm {
             return newModel;
         }
 
+        bool JaniLocalEliminator::Session::isEliminable(const std::string &automatonName, std::string const& locationName) {
+            return !isPossiblyInitial(automatonName, locationName) && !hasLoops(automatonName, locationName) && isPartOfProp(automatonName, locationName);
+        }
         bool JaniLocalEliminator::Session::hasLoops(const std::string &automatonName, std::string const& locationName) {
             Automaton &automaton = model.getAutomaton(automatonName);
             uint64_t locationIndex = automaton.getLocationIndex(locationName);
@@ -48,6 +51,42 @@ namespace storm {
                 }
             }
             return false;
+        }
+
+        bool JaniLocalEliminator::Session::isPossiblyInitial(const std::string &automatonName, std::string const& locationName) {
+            Automaton &automaton = model.getAutomaton(automatonName);
+            auto location = automaton.getLocation(automaton.getLocationIndex(locationName));
+            for (auto asg : location.getAssignments()){
+                if (!asg.isTransient())
+                    continue;
+                if (asg.getAssignedExpression().containsVariables() || asg.getVariable().getInitExpression().containsVariables())
+                    continue;
+                int initValue = asg.getVariable().getInitExpression().evaluateAsInt();
+                int currentValue = asg.getAssignedExpression().evaluateAsInt();
+                if (initValue != currentValue)
+                    return false;
+            }
+
+            return true;
+        }
+
+        bool JaniLocalEliminator::Session::isPartOfProp(const std::string &automatonName, std::string const& locationName) {
+            Automaton &automaton = model.getAutomaton(automatonName);
+            auto location = automaton.getLocation(automaton.getLocationIndex(locationName));
+            std::map<expressions::Variable, expressions::Expression> substitutionMap;
+            for (auto asg : location.getAssignments()){
+                if (!asg.isTransient())
+                    continue;
+                substitutionMap.insert(std::pair<expressions::Variable, expressions::Expression>(asg.getExpressionVariable(), asg.getAssignedExpression()));
+            }
+
+            storm::solver::Z3SmtSolver solver(model.getExpressionManager());
+            auto propertyFormula = property.getRawFormula()->substitute(substitutionMap);
+            for (auto atomicFormula : propertyFormula->getAtomicExpressionFormulas()){
+                solver.add(atomicFormula->getExpression());
+            }
+            auto result = solver.check();
+            return result != storm::solver::SmtSolver::CheckResult::Unsat;
         }
 
         void JaniLocalEliminator::cleanUpAutomaton(std::string const &automatonName){
@@ -154,7 +193,7 @@ namespace storm {
                 if (!outEdge.getGuard().containsVariables() && !outEdge.getGuard().evaluateAsBool())
                     continue;
 
-                STORM_LOG_THROW(actionIndex == outEdge.getActionIndex(), storm::exceptions::NotImplementedException, "Elimination of edges with different action indices is not implemented");
+                // STORM_LOG_THROW(actionIndex == outEdge.getActionIndex(), storm::exceptions::NotImplementedException, "Elimination of edges with different action indices is not implemented");
 
                 expressions::Expression newGuard = session.getNewGuard(edge, dest, outEdge);
                 std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(newGuard);
@@ -194,6 +233,84 @@ namespace storm {
         }
 
 
+        JaniLocalEliminator::EliminateAutomaticallyAction::EliminateAutomaticallyAction(const std::string &automatonName, JaniLocalEliminator::EliminateAutomaticallyAction::EliminationOrder order)
+            : automatonName(automatonName),
+            eliminationOrder(order){
+        }
+
+        std::string JaniLocalEliminator::EliminateAutomaticallyAction::getDescription() {
+            return "EliminateAutomaticallyAction";
+        }
+
+        void JaniLocalEliminator::EliminateAutomaticallyAction::doAction(JaniLocalEliminator::Session &session) {
+            Automaton &automaton = session.getModel().getAutomaton(automatonName);
+            switch (eliminationOrder){
+                case EliminationOrder::Arbitrary: {
+                    for (auto loc : automaton.getLocations()) {
+                        if (session.isEliminable(automatonName, loc.getName())) {
+                            EliminateAction action = EliminateAction(automatonName, loc.getName());
+                            action.doAction(session);
+                        }
+                    }
+                    break;
+                }
+                case EliminationOrder::NewTransitionCount: {
+                    std::map<std::string, bool> isInitialOrPropMap;
+                    std::map<std::string, bool> alreadyEliminated;
+                    for (auto loc : automaton.getLocations()) {
+                        bool isInitialOrProp = (session.isPossiblyInitial(automatonName, loc.getName())
+                                                || session.isPartOfProp(automatonName, loc.getName()));
+                        isInitialOrPropMap.insert(std::pair<std::string, bool>(loc.getName(), isInitialOrProp));
+                        alreadyEliminated.insert(std::pair<std::string, bool>(loc.getName(), false));
+                    }
+
+                    bool done = false;
+                    int threshold = 1000;
+                    while (!done) {
+                        int minNewEdges = threshold;
+                        int bestLocIndex = -1;
+                        for (auto loc : automaton.getLocations()) {
+                            if (isInitialOrPropMap[loc.getName()] || alreadyEliminated[loc.getName()])
+                                continue;
+
+                            int locIndex = automaton.getLocationIndex(loc.getName());
+                            int outgoing = automaton.getEdgesFromLocation(locIndex).size();
+                            int incoming = 0;
+                            for (auto edge : automaton.getEdges())
+                                for (auto dest : edge.getDestinations())
+                                    if (dest.getLocationIndex() == locIndex)
+                                        incoming++;
+                            int newEdges = incoming * outgoing;
+                            if (newEdges <= minNewEdges){
+                                minNewEdges = newEdges;
+                                bestLocIndex = locIndex;
+                            }
+                        }
+
+                        if (bestLocIndex == -1){
+                            done = true;
+                        } else {
+                            std::string locName = automaton.getLocation(bestLocIndex).getName();
+                            EliminateAction action = EliminateAction(automatonName, locName);
+                            action.doAction(session);
+                            automaton = session.getModel().getAutomaton(automatonName);
+                            isInitialOrPropMap[locName] = true;
+                        }
+                    }
+
+                    break;
+                }
+                default: {
+                    STORM_LOG_THROW(true, storm::exceptions::NotImplementedException, "This elimination order is not yet implemented");
+                    break;
+                }
+            }
+        }
+
+        std::string JaniLocalEliminator::EliminateAutomaticallyAction::find_next_location(JaniLocalEliminator::Session &session) {
+            return "";
+        }
+
         JaniLocalEliminator::FinishAction::FinishAction() {
         }
 
@@ -222,7 +339,7 @@ namespace storm {
             actionQueue.push(std::move(action));
         }
 
-        JaniLocalEliminator::Session::Session(Model model) : model(model), finished(false){
+        JaniLocalEliminator::Session::Session(Model model, Property property) : model(model), property(property), finished(false){
 
         }
 
@@ -245,7 +362,7 @@ namespace storm {
 
         expressions::Expression JaniLocalEliminator::Session::getNewGuard(const Edge& edge, const EdgeDestination& dest, const Edge& outgoing) {
             expressions::Expression wp = outgoing.getGuard().substitute(dest.getAsVariableToExpressionMap()).simplify();
-            return edge.getGuard() && wp;
+            return (edge.getGuard() && wp).simplify();
         }
 
         expressions::Expression JaniLocalEliminator::Session::getProbability(const EdgeDestination &first, const EdgeDestination &then) {

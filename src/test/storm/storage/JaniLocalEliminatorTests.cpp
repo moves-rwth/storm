@@ -117,40 +117,107 @@ TEST(JaniLocalEliminator, NandSingleElimination) {
     checkModel(model, props, consts, 16182, 58102, 0.28641904638485044);
 }
 
-//TEST(JaniLocalEliminator, BrpTest) {
-//    auto janiModelProperties = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/brp.v1.jani", storm::jani::getAllKnownModelFeatures(), boost::none);
-//    auto model = janiModelProperties.first;
-//    model = model.flattenComposition();
-//    auto props = janiModelProperties.second;
-//
-//    JaniLocalEliminator eliminator = JaniLocalEliminator(model, props);
-//
-//    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("brp_flattened", "r"));
-//    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("brp_flattened", "s"));
-//    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAction>("brp_flattened", "l_r_2_s6"));
-//    // TODO: Unfold all
+TEST(JaniLocalEliminator, NandAutoElimination) {
+    auto janiModelProperties = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/nand.v1.jani", storm::jani::getAllKnownModelFeatures(), boost::none);
+    auto model = janiModelProperties.first;
+    auto props = janiModelProperties.second;
+
+    JaniLocalEliminator eliminator = JaniLocalEliminator(model, props);
+
+    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("multiplex", "s"));
+    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAutomaticallyAction>("multiplex", JaniLocalEliminator::EliminateAutomaticallyAction::EliminationOrder::NewTransitionCount));
+    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::FinishAction>());
+
+    eliminator.eliminate();
+    model = eliminator.getResult();
+    model.checkValid();
+    model.finalize();
+
+    std::map<storm::expressions::Variable, storm::expressions::Expression> consts = {
+            {model.getConstant("N").getExpressionVariable(), model.getExpressionManager().integer(20)},
+            {model.getConstant("K").getExpressionVariable(), model.getExpressionManager().integer(1)}
+    };
+
+    checkModel(model, props, consts, 16182, 58102, 0.28641904638485044);
+}
+
+TEST(JaniLocalEliminator, BrpTest) {
+    auto janiModelProperties = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/brp.v1.jani", storm::jani::getAllKnownModelFeatures(), boost::none);
+    auto model = janiModelProperties.first;
+    EXPECT_EQ(model.hasInitialStatesRestriction(), false);
+    model = model.flattenComposition();
+    EXPECT_EQ(model.hasInitialStatesRestriction(), false);
+    EXPECT_EQ(model.getAutomaton("brp_flattened").hasInitialStatesRestriction(), false);
+    auto props = janiModelProperties.second;
+
+    JaniLocalEliminator eliminator = JaniLocalEliminator(model, props);
+
+    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("brp_flattened", "r"));
+    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("brp_flattened", "s"));
+//    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAutomaticallyAction>("brp_flattened"));
 //    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("brp_flattened", "l"));
-//    // TODO: Unfold all
+//    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAutomaticallyAction>("brp_flattened"));
 //    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("brp_flattened", "k"));
-//    // TODO: Unfold all
+//    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAutomaticallyAction>("brp_flattened"));
 //    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("brp_flattened", "srep"));
-//    // TODO: Unfold all
+//    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAutomaticallyAction>("brp_flattened"));
 //    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("brp_flattened", "s_ab"));
-//    // TODO: Unfold all
-//    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::FinishAction>());
-//
-//    eliminator.eliminate();
-//    model = eliminator.getResult();
-//    model.checkValid();
-//
-//    auto minModelProps = saveAndReload(model, props);
-//    auto modelMin = minModelProps.first;
-//    auto propsMin = minModelProps.second;
-//
-//    std::map<storm::expressions::Variable, storm::expressions::Expression> consts = {
-//            {modelMin.getConstant("N").getExpressionVariable(), modelMin.getExpressionManager().integer(32)},
-//            {modelMin.getConstant("MAX").getExpressionVariable(), modelMin.getExpressionManager().integer(3)}
-//    };
-//
-//    checkModel(modelMin, propsMin, consts, 0, 0, 0.000025235372864445436);
-//}
+//    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAutomaticallyAction>("brp_flattened"));
+    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::FinishAction>());
+
+    eliminator.eliminate();
+    model = eliminator.getResult();
+    model.checkValid();
+
+    std::map<storm::expressions::Variable, storm::expressions::Expression> consts = {
+            {model.getConstant("N").getExpressionVariable(), model.getExpressionManager().integer(32)},
+            {model.getConstant("MAX").getExpressionVariable(), model.getExpressionManager().integer(3)}
+    };
+
+    checkModel(model, props, consts, 0, 0, 0.000025235372864445436);
+}
+
+TEST(JaniLocalEliminator, PerformanceTest){
+    double timeEliminationTotal = 0;
+    double timeCheckingTotal = 0;
+
+    int runs = 10;
+
+    for (int i = 0; i < runs; i++) {
+        auto janiModelProperties = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/nand.v1.jani", storm::jani::getAllKnownModelFeatures(), boost::none);
+        auto model = janiModelProperties.first;
+        auto props = janiModelProperties.second;
+
+        auto startElimination = clock();
+
+        JaniLocalEliminator eliminator = JaniLocalEliminator(model, props);
+
+        eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("multiplex", "s"));
+        eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAction>("multiplex", "l_s_2"));
+        eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAction>("multiplex", "l_s_3"));
+        eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAction>("multiplex", "l_s_1"));
+        eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::FinishAction>());
+
+        eliminator.eliminate();
+        model = eliminator.getResult();
+        model.checkValid();
+        model.finalize();
+
+        auto endElimination = clock();
+
+        std::map<storm::expressions::Variable, storm::expressions::Expression> consts = {
+                {model.getConstant("N").getExpressionVariable(), model.getExpressionManager().integer(20)},
+                {model.getConstant("K").getExpressionVariable(), model.getExpressionManager().integer(1)}
+        };
+
+        checkModel(model, props, consts, 16182, 58102, 0.28641904638485044);
+
+        auto endChecking = clock();
+
+        timeEliminationTotal += (double)(endElimination - startElimination) / CLOCKS_PER_SEC;
+        timeCheckingTotal += (double)(endChecking - endElimination) / CLOCKS_PER_SEC;
+    }
+
+    EXPECT_EQ(timeEliminationTotal / runs, 0);
+    EXPECT_EQ(timeCheckingTotal / runs, 0);
+}
