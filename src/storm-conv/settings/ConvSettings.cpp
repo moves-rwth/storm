@@ -7,6 +7,7 @@
 #include "storm-conv/settings/modules/PrismExportSettings.h"
 
 #include "storm/settings/modules/SylvanSettings.h"
+#include "storm/settings/modules/BuildSettings.h"
 #include "storm/settings/SettingsManager.h"
 
 
@@ -16,6 +17,7 @@ namespace storm {
             storm::settings::mutableManager().setName(name, executableName);
         
             // Register relevant settings modules.
+            storm::settings::addModule<storm::settings::modules::BuildSettings>();
             storm::settings::addModule<storm::settings::modules::ConversionGeneralSettings>();
             storm::settings::addModule<storm::settings::modules::ConversionInputSettings>();
             storm::settings::addModule<storm::settings::modules::ConversionOutputSettings>();
