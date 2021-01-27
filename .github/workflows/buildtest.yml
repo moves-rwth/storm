@@ -82,7 +82,7 @@ jobs:
           ([[ ${{ matrix.debugOrRelease }} == "debug" ]] && echo "CARL_CMAKE_ARGS=${CARL_CMAKE_DEBUG}" || echo "CARL_CMAKE_ARGS=${CARL_CMAKE_RELEASE}") >> $GITHUB_ENV
 
       - name: Login into docker
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | sudo docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+        run: echo "${{ secrets.STORM_CI_DOCKER_PASSWORD }}" | sudo docker login -u "${{ secrets.STORM_CI_DOCKER_USERNAME }}" --password-stdin
       - name: Init Docker
         run: sudo docker run -d -it --name storm --privileged movesrwth/storm-basesystem:${DISTRO}
 
