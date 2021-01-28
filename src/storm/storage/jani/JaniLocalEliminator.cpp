@@ -276,10 +276,14 @@ namespace storm {
                             int locIndex = automaton.getLocationIndex(loc.getName());
                             int outgoing = automaton.getEdgesFromLocation(locIndex).size();
                             int incoming = 0;
-                            for (auto edge : automaton.getEdges())
+                            for (auto edge : automaton.getEdges()) {
+                                int addedTransitions = 1;
                                 for (auto dest : edge.getDestinations())
                                     if (dest.getLocationIndex() == locIndex)
-                                        incoming++;
+                                        addedTransitions *= 2;
+                                addedTransitions /= 2;
+                                incoming += addedTransitions;
+                            }
                             int newEdges = incoming * outgoing;
                             if (newEdges <= minNewEdges){
                                 minNewEdges = newEdges;
