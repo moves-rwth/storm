@@ -51,7 +51,7 @@ class SftToBddTransformator {
     }
 
     /**
-     * Transform a sft into a BDDs
+     * Transform a sft into BDDs
      * representing the functions of the given Events
      * if they are reachable from the toplevel Event.
      *
