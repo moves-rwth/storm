@@ -6,6 +6,7 @@
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 #include "storm/modelchecker/csl/SparseCtmcCslModelChecker.h"
 #include "storm/modelchecker/csl/SparseMarkovAutomatonCslModelChecker.h"
+#include "storm/modelchecker/rpatl/SparseSmgRpatlModelChecker.h"
 
 #include "storm/modelchecker/prctl/HybridDtmcPrctlModelChecker.h"
 #include "storm/modelchecker/prctl/HybridMdpPrctlModelChecker.h"
@@ -124,6 +125,8 @@ namespace storm {
                             return storm::modelchecker::SparseMarkovAutomatonCslModelChecker<storm::models::sparse::MarkovAutomaton<ValueType>>::canHandleStatic(checkTask);
                         case ModelType::POMDP:
                             return false;
+                        case ModelType::SMG:
+                            return storm::modelchecker::SparseSmgRpatlModelChecker<storm::models::sparse::Smg<ValueType>>::canHandleStatic(checkTask);
                     }
                     break;
                 case Engine::Hybrid:
@@ -137,6 +140,7 @@ namespace storm {
                         case ModelType::MA:
                             return storm::modelchecker::HybridMarkovAutomatonCslModelChecker<storm::models::symbolic::MarkovAutomaton<ddType, ValueType>>::canHandleStatic(checkTask);
                         case ModelType::POMDP:
+                        case ModelType::SMG:
                             return false;
                     }
                     break;
@@ -149,6 +153,7 @@ namespace storm {
                         case ModelType::CTMC:
                         case ModelType::MA:
                         case ModelType::POMDP:
+                        case ModelType::SMG:
                             return false;
                     }
                     break;
@@ -177,6 +182,7 @@ namespace storm {
                         case ModelType::MDP:
                         case ModelType::MA:
                         case ModelType::POMDP:
+                        case ModelType::SMG:
                             return false;
                     }
                     break;
@@ -189,6 +195,7 @@ namespace storm {
                         case ModelType::MDP:
                         case ModelType::MA:
                         case ModelType::POMDP:
+                        case ModelType::SMG:
                             return false;
                     }
                     break;
@@ -200,6 +207,7 @@ namespace storm {
                         case ModelType::CTMC:
                         case ModelType::MA:
                         case ModelType::POMDP:
+                        case ModelType::SMG:
                             return false;
                     }
                     break;

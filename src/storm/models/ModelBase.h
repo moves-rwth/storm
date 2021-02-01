@@ -140,7 +140,12 @@ namespace storm {
              * @return True iff the model is exact.
              */
             virtual bool isExact() const;
-            
+
+            /*
+             * Checks whether the model is partially observable
+             */
+            virtual bool isPartiallyObservable() const;
+
             /*!
              * Converts the transition rewards of all reward models to state-based rewards. For deterministic models,
              * this reduces the rewards to state rewards only. For nondeterminstic models, the reward models will

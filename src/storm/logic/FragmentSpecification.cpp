@@ -41,21 +41,34 @@ namespace storm {
             pctl.setBoundedUntilFormulasAllowed(true);
             pctl.setStepBoundedUntilFormulasAllowed(true);
             pctl.setTimeBoundedUntilFormulasAllowed(true);
-            
+
             return pctl;
         }
-        
+
         FragmentSpecification flatPctl() {
             FragmentSpecification flatPctl = pctl();
-            
+
             flatPctl.setNestedOperatorsAllowed(false);
-            
+
             return flatPctl;
         }
-        
+
+        FragmentSpecification rpatl() {
+            FragmentSpecification rpatl = propositional();
+
+            // TODO: Only allow OperatorFormulas when they are inside of a GameFormula?
+            // TODO: Require that operator formulas are required at the top level of a GameFormula?
+            rpatl.setGameFormulasAllowed(true);
+            rpatl.setRewardOperatorsAllowed(true);
+            rpatl.setLongRunAverageRewardFormulasAllowed(true);
+            rpatl.setLongRunAverageOperatorsAllowed(true);
+
+            return rpatl;
+        }
+
         FragmentSpecification prctl() {
             FragmentSpecification prctl = pctl();
-            
+
             prctl.setRewardOperatorsAllowed(true);
             prctl.setCumulativeRewardFormulasAllowed(true);
             prctl.setInstantaneousFormulasAllowed(true);
@@ -106,6 +119,9 @@ namespace storm {
             multiObjective.setBoundedUntilFormulasAllowed(true);
             multiObjective.setStepBoundedUntilFormulasAllowed(true);
             multiObjective.setTimeBoundedUntilFormulasAllowed(true);
+            multiObjective.setLongRunAverageOperatorsAllowed(true);
+            multiObjective.setLongRunAverageRewardFormulasAllowed(true);
+
 
             return multiObjective;
         }
@@ -162,6 +178,8 @@ namespace storm {
             conditionalRewardFormula = false;
             
             reachabilityTimeFormula = false;
+            
+            gameFormula = false;
             
             nestedOperators = true;
             nestedPathFormulas = false;
@@ -611,12 +629,20 @@ namespace storm {
         bool FragmentSpecification::isRewardAccumulationAllowed() const {
             return rewardAccumulation;
         }
-        
+
         FragmentSpecification& FragmentSpecification::setRewardAccumulationAllowed(bool newValue) {
             rewardAccumulation = newValue;
             return *this;
         }
 
-        
+        bool FragmentSpecification::areGameFormulasAllowed() const {
+            return gameFormula;
+        }
+
+        FragmentSpecification& FragmentSpecification::setGameFormulasAllowed(bool newValue) {
+            gameFormula = newValue;
+            return *this;
+        }
+
     }
 }

@@ -133,8 +133,14 @@ namespace storm {
             quantileBoundVariable.name("quantile bound variable");
             quantileFormula = (qi::lit("quantile") > qi::lit("(") >> *(quantileBoundVariable) >> stateFormula > qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createQuantileFormula, phoenix::ref(*this), qi::_1, qi::_2)];
             quantileFormula.name("Quantile formula");
-            
-            stateFormula = (orStateFormula | multiFormula | quantileFormula);
+
+            playerCoalition = (-((identifier[phoenix::push_back(qi::_a, qi::_1)] | qi::uint_[phoenix::push_back(qi::_a, qi::_1)]) % ','))[qi::_val = phoenix::bind(&FormulaParserGrammar::createPlayerCoalition, phoenix::ref(*this), qi::_a)];
+            playerCoalition.name("player coalition");
+
+            gameFormula = (qi::lit("<<") > playerCoalition > qi::lit(">>") > operatorFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createGameFormula, phoenix::ref(*this), qi::_1, qi::_2)];
+            gameFormula.name("game formula");
+
+            stateFormula = (orStateFormula | multiFormula | quantileFormula | gameFormula);
             stateFormula.name("state formula");
             
             formulaName = qi::lit("\"") >> identifier >> qi::lit("\"") >> qi::lit(":");
@@ -472,5 +478,12 @@ namespace storm {
             }
         }
 
+        storm::logic::PlayerCoalition FormulaParserGrammar::createPlayerCoalition(std::vector<boost::variant<std::string, storm::storage::PlayerIndex>> const& playerIds) const {
+            return storm::logic::PlayerCoalition(playerIds);
+        }
+
+        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createGameFormula(storm::logic::PlayerCoalition const& coalition, std::shared_ptr<storm::logic::Formula const> const& subformula) const {
+            return std::shared_ptr<storm::logic::Formula const>(new storm::logic::GameFormula(coalition, subformula));
+        }
     }
 }

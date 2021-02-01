@@ -8,15 +8,19 @@
 #include "storm/modelchecker/results/QualitativeCheckResult.h"
 #include "storm/storage/sparse/StateType.h"
 #include "storm/storage/BitVector.h"
+#include "storm/storage/sparse/StateValuations.h"
+
 #include "storm/utility/OsDetection.h"
+#include "storm/adapters/JsonAdapter.h"
 
 namespace storm {
+    
     namespace modelchecker {
         class ExplicitQualitativeCheckResult : public QualitativeCheckResult {
         public:
             typedef storm::storage::BitVector vector_type;
             typedef std::map<storm::storage::sparse::state_type, bool> map_type;
-            
+
             ExplicitQualitativeCheckResult();
             virtual ~ExplicitQualitativeCheckResult() = default;
             ExplicitQualitativeCheckResult(map_type const& map);
@@ -60,6 +64,9 @@ namespace storm {
             virtual std::ostream& writeToStream(std::ostream& out) const override;
             
             virtual void filter(QualitativeCheckResult const& filter) override;
+            
+            template<typename JsonRationalType = storm::RationalNumber>
+            storm::json<JsonRationalType> toJson(boost::optional<storm::storage::sparse::StateValuations> const& stateValuations = boost::none) const;
 
         private:
             static void performLogicalOperation(ExplicitQualitativeCheckResult& first, QualitativeCheckResult const& second, bool logicalAnd);

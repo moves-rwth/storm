@@ -22,6 +22,7 @@ namespace storm {
             virtual boost::any visit(EventuallyFormula const& f, boost::any const& data) const = 0;
             virtual boost::any visit(TimeOperatorFormula const& f, boost::any const& data) const = 0;
             virtual boost::any visit(GloballyFormula const& f, boost::any const& data) const = 0;
+            virtual boost::any visit(GameFormula const& f, boost::any const& data) const = 0;
             virtual boost::any visit(InstantaneousRewardFormula const& f, boost::any const& data) const = 0;
             virtual boost::any visit(LongRunAverageOperatorFormula const& f, boost::any const& data) const = 0;
             virtual boost::any visit(LongRunAverageRewardFormula const& f, boost::any const& data) const = 0;

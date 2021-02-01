@@ -69,6 +69,12 @@ namespace storm {
                 hint.setMaybeStates(std::move(maybeStates));
                 hint.setResultHint(std::move(qualitativeResult));
                 hint.setComputeOnlyMaybeStates(true);
+                
+                // Check if there can be end components within the maybestates
+                if (storm::solver::minimize(this->currentCheckTask->getOptimizationDirection()) ||
+                        storm::utility::graph::performProb1A(instantiatedModel.getTransitionMatrix(), instantiatedModel.getTransitionMatrix().getRowGroupIndices(), instantiatedModel.getBackwardTransitions(), hint.getMaybeStates(), ~hint.getMaybeStates()).full()) {
+                    hint.setNoEndComponentsInMaybeStates(true);
+                }
             }
             
             std::unique_ptr<CheckResult> result;
@@ -122,6 +128,12 @@ namespace storm {
                 hint.setMaybeStates(std::move(maybeStates));
                 hint.setResultHint(std::move(qualitativeResult));
                 hint.setComputeOnlyMaybeStates(true);
+                
+                // Check if there can be end components within the maybestates
+                if (storm::solver::maximize(this->currentCheckTask->getOptimizationDirection()) ||
+                        storm::utility::graph::performProb1A(instantiatedModel.getTransitionMatrix(), instantiatedModel.getTransitionMatrix().getRowGroupIndices(), instantiatedModel.getBackwardTransitions(), hint.getMaybeStates(), ~hint.getMaybeStates()).full()) {
+                    hint.setNoEndComponentsInMaybeStates(true);
+                }
             }
             
             std::unique_ptr<CheckResult> result;

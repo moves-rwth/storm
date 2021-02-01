@@ -20,7 +20,7 @@ namespace storm {
             public:
                 /*!
                  * Creates an object that can compute upper bounds on the expected rewards for the provided DTMC.
-                 *
+                 * @see http://doi.org/10.1145/1102351.1102423
                  * @param transitionMatrix The matrix defining the transitions of the system without the transitions
                  * that lead directly to the goal state.
                  * @param rewards The rewards of each state.
@@ -81,7 +81,7 @@ namespace storm {
             public:
                 /*!
                  * Creates an object that can compute upper bounds on the *minimal* expected rewards for the provided MDP.
-                 *
+                 * @see http://doi.org/10.1145/1102351.1102423
                  * @param transitionMatrix The matrix defining the transitions of the system without the transitions
                  * that lead directly to the goal state.
                  * @param rewards The rewards of each choice.

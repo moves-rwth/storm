@@ -18,7 +18,7 @@ namespace storm {
 
         template<typename ValueType, typename RewardModelType>
         void DiscreteTimeSparseModelSimulator<ValueType,RewardModelType>::setSeed(uint64_t seed) {
-            generator = storm::utility::RandomProbabilityGenerator<double>(seed);
+            generator = storm::utility::RandomProbabilityGenerator<ValueType>(seed);
         }
 
         template<typename ValueType, typename RewardModelType>
@@ -89,5 +89,7 @@ namespace storm {
         }
 
         template class DiscreteTimeSparseModelSimulator<double>;
+        template class DiscreteTimeSparseModelSimulator<storm::RationalNumber>;
+
     }
 }

@@ -606,8 +606,11 @@ namespace storm {
                     scheduler = std::make_unique<storm::storage::Scheduler<ValueType>>(transitionMatrix.getRowGroupCount());
                 }
                 
+                // Check if the values of the maybe states are relevant for the SolveGoal
+                bool maybeStatesNotRelevant = goal.hasRelevantValues() && goal.relevantValues().isDisjointFrom(qualitativeStateSets.maybeStates);
+                
                 // Check whether we need to compute exact probabilities for some states.
-                if (qualitative) {
+                if (qualitative || maybeStatesNotRelevant) {
                     // Set the values for all maybe-states to 0.5 to indicate that their probability values are neither 0 nor 1.
                     storm::utility::vector::setVectorValues<ValueType>(result, qualitativeStateSets.maybeStates, storm::utility::convertNumber<ValueType>(0.5));
                 } else {
@@ -665,8 +668,9 @@ namespace storm {
             }
 
             template<typename ValueType>
-            std::vector<ValueType> SparseMdpPrctlHelper<ValueType>::computeGloballyProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& psiStates, bool qualitative, bool useMecBasedTechnique) {
+            MDPSparseModelCheckingHelperReturnType<ValueType> SparseMdpPrctlHelper<ValueType>::computeGloballyProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& psiStates, bool qualitative, bool produceScheduler, bool useMecBasedTechnique) {
                 if (useMecBasedTechnique) {
+                    // TODO: does this really work for minimizing objectives?
                     storm::storage::MaximalEndComponentDecomposition<ValueType> mecDecomposition(transitionMatrix, backwardTransitions, psiStates);
                     storm::storage::BitVector statesInPsiMecs(transitionMatrix.getRowGroupCount());
                     for (auto const& mec : mecDecomposition) {
@@ -675,14 +679,14 @@ namespace storm {
                         }
                     }
                     
-                    return std::move(computeUntilProbabilities(env, std::move(goal), transitionMatrix, backwardTransitions, psiStates, statesInPsiMecs, qualitative, false).values);
+                    return computeUntilProbabilities(env, std::move(goal), transitionMatrix, backwardTransitions, psiStates, statesInPsiMecs, qualitative, produceScheduler);
                 } else {
                     goal.oneMinus();
-                    std::vector<ValueType> result = computeUntilProbabilities(env, std::move(goal), transitionMatrix, backwardTransitions, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), ~psiStates, qualitative, false).values;
-                    for (auto& element : result) {
+                    auto result = computeUntilProbabilities(env, std::move(goal), transitionMatrix, backwardTransitions, storm::storage::BitVector(transitionMatrix.getRowGroupCount(), true), ~psiStates, qualitative, produceScheduler);
+                    for (auto& element : result.values) {
                         element = storm::utility::one<ValueType>() - element;
                     }
-                    return std::move(result); // move() required by, e.g., clang 3.8
+                    return result;
                 }
             }
             
@@ -1090,8 +1094,11 @@ namespace storm {
                     scheduler = std::make_unique<storm::storage::Scheduler<ValueType>>(transitionMatrix.getRowGroupCount());
                 }
                 
+                // Check if the values of the maybe states are relevant for the SolveGoal
+                bool maybeStatesNotRelevant = goal.hasRelevantValues() && goal.relevantValues().isDisjointFrom(qualitativeStateSets.maybeStates);
+                
                 // Check whether we need to compute exact rewards for some states.
-                if (qualitative) {
+                if (qualitative || maybeStatesNotRelevant) {
                     STORM_LOG_INFO("The rewards for the initial states were determined in a preprocessing step. No exact rewards were computed.");
                     // Set the values for all maybe-states to 1 to indicate that their reward values
                     // are neither 0 nor infinity.

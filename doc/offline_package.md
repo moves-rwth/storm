@@ -16,28 +16,31 @@ The downloaded `*.deb` files have to be included in the installation package.
 
 Apart from that we will need to download the sources from _carl_ (recall to use the master14 branch) and, of course, the storm sources.
 
-We currently checkout the _l3pp_ git during the building process. You might need to adapt the l3pp section in `$STORMDIR/resources/3rdparty/CMakeLists.txt` by removing the `GIT_REPOSITORY ...` and `GIT_TAG ...` arguments.
-
-
-Assuming that the directory `dependencies` contains the `*.deb` files, and `carl` and `storm` contain the source files of carl and storm, respecteively, an installation script can look as follows:
+We currently checkout the _l3pp_ and _eigen_ git repositories during the building process. To make this possible in an offline fashion you might need to
+ 
+ * remove the `GIT_REPOSITORY ...` and `GIT_TAG ...` arguments in the the _l3pp_ section in `$STORMDIR/resources/3rdparty/CMakeLists.txt`,
+ * remove the `ExternalProject_Add(..)` statement in the the _eigen_ section in `$STORMDIR/resources/3rdparty/CMakeLists.txt`, and
+ * make sure that `$STORMDIR/build/include/resources/3rdparty/StormEigen` already exist and contains the Eigen sources before running `cmake`/`make`. You can take these files from a working Storm installation.
+ 
+Assuming that the directory `dependencies` contains the `*.deb` files, and `carl` and `storm` contain the source files of Carl and Storm, respecteively, an installation script can look as follows:
 
 ```console
 #!/bin/bash
 
 # Get the number of available threads for multithreaded compiling
-$THREADS=$(nproc)
+THREADS=$(nproc)
 
 # cd to the directory where the script lies in
 cd "$( dirname "${BASH_SOURCE[0]}" )"
 
-echo "Installing dependencies. You might need to enter the root password 'tacas20ae'"
+echo "Installing dependencies. You might need to enter the root password"
 cd dependencies
 sudo dpkg -i *.deb
 cd ..
 
 echo "Installing carl using $THREADS threads"
 cd carl
-mkdir build
+mkdir -p build
 cd build
 cmake .. -DUSE_CLN_NUMBERS=ON -DUSE_GINAC=ON
 make lib_carl -j$THREADS
@@ -45,7 +48,7 @@ cd ../../
 
 echo "Installing Storm using $THREADS threads"
 cd storm
-mkdir build
+mkdir -p build
 cd build
 cmake ..
 make storm-main -j$THREADS

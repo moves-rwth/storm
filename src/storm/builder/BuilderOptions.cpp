@@ -130,9 +130,13 @@ namespace storm {
         bool BuilderOptions::isBuildChoiceLabelsSet() const {
             return buildChoiceLabels;
         }
-        
-       bool BuilderOptions::isBuildStateValuationsSet() const {
+
+        bool BuilderOptions::isBuildStateValuationsSet() const {
             return buildStateValuations;
+        }
+
+        bool BuilderOptions::isBuildObservationValuationsSet() const {
+            return buildObservationValuations;
         }
         
         bool BuilderOptions::isBuildChoiceOriginsSet() const {
@@ -235,6 +239,11 @@ namespace storm {
         
         BuilderOptions& BuilderOptions::setBuildStateValuations(bool newValue) {
             buildStateValuations = newValue;
+            return *this;
+        }
+
+        BuilderOptions& BuilderOptions::setBuildObservationValuations(bool newValue) {
+            buildObservationValuations = newValue;
             return *this;
         }
  

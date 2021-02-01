@@ -80,7 +80,7 @@ namespace storm {
             std::shared_ptr<BaseExpression const> firstOperandSimplified = this->getFirstOperand()->simplify();
             std::shared_ptr<BaseExpression const> secondOperandSimplified = this->getSecondOperand()->simplify();
             
-            if (firstOperandSimplified->isLiteral() && secondOperandSimplified->isLiteral() && this->getOperatorType() != OperatorType::Divide) {
+            if (firstOperandSimplified->isLiteral() && secondOperandSimplified->isLiteral()) {
                 if (this->hasIntegerType()) {
                     int_fast64_t firstOperandEvaluation = firstOperandSimplified->evaluateAsInt();
                     int_fast64_t secondOperandEvaluation = secondOperandSimplified->evaluateAsInt();
@@ -91,9 +91,21 @@ namespace storm {
                         case OperatorType::Times: newValue = firstOperandEvaluation * secondOperandEvaluation; break;
                         case OperatorType::Min: newValue = std::min(firstOperandEvaluation, secondOperandEvaluation); break;
                         case OperatorType::Max: newValue = std::max(firstOperandEvaluation, secondOperandEvaluation); break;
-                        case OperatorType::Power: newValue = static_cast<int_fast64_t>(std::pow(firstOperandEvaluation, secondOperandEvaluation)); break;
+                        case OperatorType::Power:
+                            if (secondOperandEvaluation >= 0) {
+                                // Only simplify if this evaluates to an integer.
+                                // Otherwise, we note that the type of this expression could change due to simplifications (which might or might not be expected)
+                                newValue = static_cast<int_fast64_t>(std::pow(firstOperandEvaluation, secondOperandEvaluation));
+                            }
+                            break;
                         case OperatorType::Modulo: newValue = firstOperandEvaluation % secondOperandEvaluation; break;
-                        case OperatorType::Divide: break; // do not simplify division.
+                        case OperatorType::Divide:
+                            if (firstOperandEvaluation % secondOperandEvaluation == 0) {
+                                // Only simplify if there is no remainder, because otherwise it is not clear whether we want integer division or floating point division.
+                                // Otherwise, we note that the type of this expression could change due to simplifications (which might or might not be expected)
+                                newValue = firstOperandEvaluation / secondOperandEvaluation;
+                            }
+                            break;
                     }
                     if (newValue) {
                         return std::shared_ptr<BaseExpression>(new IntegerLiteralExpression(this->getManager(), newValue.get()));
@@ -111,8 +123,13 @@ namespace storm {
                         case OperatorType::Divide: newValue = firstOperandEvaluation / secondOperandEvaluation; break;
                         case OperatorType::Power: {
                             if (carl::isInteger(secondOperandEvaluation)) {
-                                std::size_t exponent = carl::toInt<carl::sint>(secondOperandEvaluation);
-                                newValue = carl::pow(firstOperandEvaluation, exponent);
+                                auto exponent = carl::toInt<carl::sint>(secondOperandEvaluation);
+                                if (exponent >= 0) {
+                                    newValue = carl::pow(firstOperandEvaluation, exponent);
+                                } else {
+                                    storm::RationalNumber power = carl::pow(firstOperandEvaluation, -exponent);
+                                    newValue = storm::utility::one<storm::RationalNumber>() / power;
+                                }
                             }
                             break;
                         }

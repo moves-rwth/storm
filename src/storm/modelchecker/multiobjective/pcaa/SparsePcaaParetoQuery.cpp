@@ -7,6 +7,7 @@
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 #include "storm/utility/constants.h"
 #include "storm/utility/vector.h"
+#include "storm/utility/SignalHandler.h"
 #include "storm/environment/modelchecker/MultiObjectiveModelCheckerEnvironment.h"
 #include "storm/modelchecker/multiobjective/MultiObjectivePostprocessing.h"
 
@@ -28,6 +29,8 @@ namespace storm {
                 typename SparseModelType::ValueType weightedPrecision = storm::utility::convertNumber<typename SparseModelType::ValueType>(env.modelchecker().multi().getPrecision());
                 weightedPrecision /= storm::utility::sqrt(storm::utility::convertNumber<typename SparseModelType::ValueType, uint_fast64_t>(this->objectives.size()));
                 // multiobjPrecision / sqrt(numObjectives) is the largest possible value for which termination is guaranteed.
+                // To see this, assume that for both weight vectors <1,0> and <0,1> we get the same point <a,b> for the under-approximation and <a+weightedPrecision,b> resp. <a,b+weightedPrecision>
+                // for the over-approximation. Then, the over-approx. point <a+weightedPrecision,b+weightedPrecision> has a distance to the under-approximation of weightedPrecision * sqrt(numObjectives).
                 // Lets be a little bit more precise to reduce the number of required iterations.
                 weightedPrecision *= storm::utility::convertNumber<typename SparseModelType::ValueType>(0.9);
                 this->weightVectorChecker->setWeightedPrecision(weightedPrecision);
@@ -59,9 +62,12 @@ namespace storm {
                     WeightVector direction(this->objectives.size(), storm::utility::zero<GeometryValueType>());
                     direction[objIndex] = storm::utility::one<GeometryValueType>();
                     this->performRefinementStep(env, std::move(direction));
+                    if (storm::utility::resources::isTerminate()) {
+                        break;
+                    }
                 }
                 
-                while(!this->maxStepsPerformed(env)) {
+                while(!this->maxStepsPerformed(env) && !storm::utility::resources::isTerminate()) {
                     // Get the halfspace of the underApproximation with maximal distance to a vertex of the overApproximation
                     std::vector<storm::storage::geometry::Halfspace<GeometryValueType>> underApproxHalfspaces = this->underApproximation->getHalfspaces();
                     std::vector<Point> overApproxVertices = this->overApproximation->getVertices();
@@ -84,11 +90,9 @@ namespace storm {
                     WeightVector direction = underApproxHalfspaces[farestHalfspaceIndex].normalVector();
                     this->performRefinementStep(env, std::move(direction));
                 }
-                STORM_LOG_ERROR("Could not reach the desired precision: Exceeded maximum number of refinement steps");
+                STORM_LOG_ERROR("Could not reach the desired precision: Termination requested or maximum number of refinement steps exceeded.");
             }
             
-            
-
             
 #ifdef STORM_HAVE_CARL
             template class SparsePcaaParetoQuery<storm::models::sparse::Mdp<double>, storm::RationalNumber>;

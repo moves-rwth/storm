@@ -25,6 +25,7 @@ namespace storm {
             const std::string IOSettings::exportCdfOptionName = "exportcdf";
             const std::string IOSettings::exportCdfOptionShortName = "cdf";
             const std::string IOSettings::exportSchedulerOptionName = "exportscheduler";
+            const std::string IOSettings::exportCheckResultOptionName = "exportresult";
             const std::string IOSettings::exportMonotonicityName = "exportmonotonicity";
             const std::string IOSettings::explicitOptionName = "explicit";
             const std::string IOSettings::explicitOptionShortName = "exp";
@@ -46,10 +47,12 @@ namespace storm {
             const std::string IOSettings::janiPropertyOptionShortName = "jprop";
             const std::string IOSettings::propertyOptionName = "prop";
             const std::string IOSettings::propertyOptionShortName = "prop";
+            const std::string IOSettings::steadyStateDistrOptionName = "steadystate";
             
             const std::string IOSettings::qvbsInputOptionName = "qvbs";
             const std::string IOSettings::qvbsInputOptionShortName = "qvbs";
             const std::string IOSettings::qvbsRootOptionName = "qvbsroot";
+            const std::string IOSettings::propertiesAsMultiOptionName = "propsasmulti";
 
             std::string preventDRNPlaceholderOptionName = "no-drn-placeholders";
             
@@ -62,6 +65,7 @@ namespace storm {
                                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The name of the file to which the model is to be written.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportCdfOptionName, false, "Exports the cumulative density function for reward bounded properties into a .csv file.").setIsAdvanced().setShortName(exportCdfOptionShortName).addArgument(storm::settings::ArgumentBuilder::createStringArgument("directory", "A path to an existing directory where the cdf files will be stored.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportSchedulerOptionName, false, "Exports the choices of an optimal scheduler to the given file (if supported by engine).").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The output file. Use file extension '.json' to export in json.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportCheckResultOptionName, false, "Exports the result to a given file (if supported by engine). The export will be in json.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The output file.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportMonotonicityName, false, "Exports the result of monotonicity checking to the given file.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The output file.").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportExplicitOptionName, "", "If given, the loaded model will be written to the specified file in the drn format.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "the name of the file to which the model is to be writen.").build()).build());
@@ -97,12 +101,16 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of constants and their value, e.g. a=1,b=2,c=3.").setDefaultValueString("").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, janiPropertyOptionName, false, "Specifies the properties from the jani model (given by --" + janiInputOptionName + ") to be checked.").setShortName(janiPropertyOptionShortName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("values", "A comma separated list of properties to be checked").setDefaultValueString("").makeOptional().build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName,  steadyStateDistrOptionName, false, "Computes the steady state distribution. Result can be exported using --" + exportCheckResultOptionName +".").setIsAdvanced().build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, qvbsInputOptionName, false, "Selects a model from the Quantitative Verification Benchmark Set.").setShortName(qvbsInputOptionShortName)
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("model", "The short model name as in the benchmark set.").build())
                         .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("instance-index", "The selected instance of this model.").setDefaultValueUnsignedInteger(0).makeOptional().build())
                         .addArgument(storm::settings::ArgumentBuilder::createStringArgument("filter", "The comma separated list of property names to check. Omit to check all, \"\" to check none.").setDefaultValueString("").makeOptional().build())
                         .build());
+                
+                this->addOption(storm::settings::OptionBuilder(moduleName, propertiesAsMultiOptionName, false, "If set, the selected properties are interpreted as a multi-objective formula.").setIsAdvanced().build());
+                
 #ifdef STORM_HAVE_QVBS
                 std::string qvbsRootDefault = STORM_QVBS_ROOT;
 #else
@@ -170,6 +178,14 @@ namespace storm {
             
             std::string IOSettings::getExportSchedulerFilename() const {
                 return this->getOption(exportSchedulerOptionName).getArgumentByName("filename").getValueAsString();
+            }
+            
+            bool IOSettings::isExportCheckResultSet() const {
+                return this->getOption(exportCheckResultOptionName).getHasOptionBeenSet();
+            }
+            
+            std::string IOSettings::getExportCheckResultFilename() const {
+                return this->getOption(exportCheckResultOptionName).getArgumentByName("filename").getValueAsString();
             }
 
             bool IOSettings::isExportMonotonicitySet() const {
@@ -288,6 +304,10 @@ namespace storm {
                 return this->getOption(propertyOptionName).getArgumentByName("filter").getValueAsString();
             }
             
+            bool IOSettings::isComputeSteadyStateDistributionSet() const {
+                return this->getOption(steadyStateDistrOptionName).getHasOptionBeenSet();
+            }
+            
             bool IOSettings::isQvbsInputSet() const {
                 return this->getOption(qvbsInputOptionName).getHasOptionBeenSet();
             }
@@ -319,6 +339,10 @@ namespace storm {
                 STORM_LOG_THROW(this->getOption(qvbsRootOptionName).getHasOptionBeenSet(), storm::exceptions::InvalidSettingsException, "QVBS Root is not specified. Either use the --" + qvbsRootOptionName + " option or specify it within CMAKE.");
 #endif
                 return path.getValueAsString();
+            }
+            
+            bool IOSettings::isPropertiesAsMultiSet() const {
+                return this->getOption(propertiesAsMultiOptionName).getHasOptionBeenSet();
             }
             
 			void IOSettings::finalize() {

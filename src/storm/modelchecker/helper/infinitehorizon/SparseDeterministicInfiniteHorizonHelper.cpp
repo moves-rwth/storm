@@ -2,15 +2,13 @@
 
 #include "storm/modelchecker/helper/infinitehorizon/internal/ComponentUtility.h"
 #include "storm/modelchecker/helper/infinitehorizon/internal/LraViHelper.h"
-
+#include "storm/modelchecker/prctl/helper/BaierUpperRewardBoundsComputer.h"
 
 #include "storm/storage/SparseMatrix.h"
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/storage/Scheduler.h"
 
 #include "storm/solver/LinearEquationSolver.h"
-#include "storm/solver/Multiplier.h"
-#include "storm/solver/LpSolver.h"
 
 #include "storm/utility/SignalHandler.h"
 #include "storm/utility/solver.h"
@@ -71,7 +69,7 @@ namespace storm {
                     return computeLraForBsccVi(env, stateValueGetter, actionValueGetter, component);
                 } else if (method == storm::solver::LraMethod::LraDistributionEquations) {
                     // We only need the first element of the pair as the lra distribution is not relevant at this point.
-                    return computeLraForBsccLraDistr(env, stateValueGetter, actionValueGetter, component).first;
+                    return computeLraForBsccSteadyStateDistr(env, stateValueGetter, actionValueGetter, component).first;
                 }
                 STORM_LOG_WARN_COND(method == storm::solver::LraMethod::GainBiasEquations, "Unsupported lra method selected. Defaulting to " << storm::solver::toString(storm::solver::LraMethod::GainBiasEquations) << ".");
                 // We don't need the bias values
@@ -124,6 +122,9 @@ namespace storm {
             
             template <typename ValueType>
             std::pair<ValueType, std::vector<ValueType>> SparseDeterministicInfiniteHorizonHelper<ValueType>::computeLraForBsccGainBias(Environment const& env, ValueGetter const& stateValuesGetter, ValueGetter const& actionValuesGetter, storm::storage::StronglyConnectedComponent const& bscc) {
+                // we want that the returned vector is sorted as the bscc. So let's assert that the bscc is sorted ascendingly.
+                STORM_LOG_ASSERT(std::is_sorted(bscc.begin(), bscc.end()), "Expected that bsccs are sorted.");
+
                 // We build the equation system as in Line 3 of Algorithm 3 from
                 // Kretinsky, Meggendorfer: Efficient Strategy Iteration for Mean Payoff in Markov Decision Processes (ATVA 2017)
                 // https://doi.org/10.1007/978-3-319-68167-2_25
@@ -212,17 +213,19 @@ namespace storm {
             }
             
             template <typename ValueType>
-            std::pair<ValueType, std::vector<ValueType>> SparseDeterministicInfiniteHorizonHelper<ValueType>::computeLraForBsccLraDistr(Environment const& env, ValueGetter const& stateValuesGetter, ValueGetter const& actionValuesGetter, storm::storage::StronglyConnectedComponent const& bscc) {
-
+            std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::computeSteadyStateDistrForBscc(Environment const& env, storm::storage::StronglyConnectedComponent const& bscc) {
+                // We want that the returned values are sorted properly. Let's assert that strongly connected components use a sorted container type
+                STORM_LOG_ASSERT(std::is_sorted(bscc.begin(), bscc.end()), "Expected that bsccs are sorted.");
+                
                 // Let A be ab auxiliary Matrix with A[s,s] =  R(s,s) - r(s) & A[s,s'] = R(s,s') for s,s' in BSCC and s!=s'.
                 // We build and solve the equation system for
                 // x*A=0 &  x_0+...+x_n=1  <=>  A^t*x=0=x-x & x_0+...+x_n=1  <=> (1+A^t)*x = x & 1-x_0-...-x_n-1=x_n
                 // Then, x[i] will be the fraction of the time we are in state i.
                 
-                // This method assumes that this BSCC consist of more than one state
+                // This method assumes that this BSCC consist of more than one state.
+                // We therefore catch the (easy) case where the BSCC is a singleton.
                 if (bscc.size() == 1) {
-                    ValueType lraValue = stateValuesGetter(*bscc.begin()) + (this->isContinuousTime() ? (*this->_exitRates)[*bscc.begin()] * actionValuesGetter(*bscc.begin()) : actionValuesGetter(*bscc.begin()));
-                    return { lraValue, {storm::utility::one<ValueType>()} };
+                    return { storm::utility::one<ValueType>() };
                 }
                 
                 // Prepare an environment for the underlying linear equation solver
@@ -232,6 +235,7 @@ namespace storm {
                     subEnv.solver().setLinearEquationSolverType(subEnv.solver().topological().getUnderlyingEquationSolverType(), subEnv.solver().topological().isUnderlyingEquationSolverTypeSetFromDefault());
                 }
                 subEnv.solver().setLinearEquationSolverPrecision(env.solver().lra().getPrecision(), env.solver().lra().getRelativeTerminationCriterion());
+                STORM_LOG_WARN_COND(!subEnv.solver().isForceSoundness(), "Sound computations are not properly implemented for this computation. You might get incorrect results.");
                 
                 // Get a mapping from global state indices to local ones as well as a bitvector containing states within the BSCC.
                 std::unordered_map<uint64_t, uint64_t> toLocalIndexMap;
@@ -318,12 +322,28 @@ namespace storm {
                 requirements.clearUpperBounds();
                 STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UnmetRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
                 
-                std::vector<ValueType> lraDistr(bscc.size(), storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType, uint64_t>(bscc.size()));
-                solver->solveEquations(subEnv, lraDistr, bsccEquationSystemRightSide);
+                std::vector<ValueType> steadyStateDistr(bscc.size(), storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType, uint64_t>(bscc.size()));
+                solver->solveEquations(subEnv, steadyStateDistr, bsccEquationSystemRightSide);
+                
+                // As a last step, we normalize these values to counter numerical inaccuracies a bit.
+                // This is only reasonable in non-exact mode.
+                if (!subEnv.solver().isForceExact()) {
+                    ValueType sum = std::accumulate(steadyStateDistr.begin(), steadyStateDistr.end(), storm::utility::zero<ValueType>());
+                    storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(steadyStateDistr, storm::utility::one<ValueType>() / sum);
+                }
+                
+                return steadyStateDistr;
+            }
+            
+            template <typename ValueType>
+            std::pair<ValueType, std::vector<ValueType>> SparseDeterministicInfiniteHorizonHelper<ValueType>::computeLraForBsccSteadyStateDistr(Environment const& env, ValueGetter const& stateValuesGetter, ValueGetter const& actionValuesGetter, storm::storage::StronglyConnectedComponent const& bscc) {
+
+                // Get the LRA distribution for the provided bscc.
+                auto steadyStateDistr = computeSteadyStateDistrForBscc(env, bscc);
                 
                 // Calculate final LRA Value
                 ValueType result = storm::utility::zero<ValueType>();
-                auto solIt = lraDistr.begin();
+                auto solIt = steadyStateDistr.begin();
                 for (auto const& globalState : bscc) {
                     if (this->isContinuousTime()) {
                         result += (*solIt) * (stateValuesGetter(globalState) + (*this->_exitRates)[globalState] * actionValuesGetter(globalState));
@@ -332,9 +352,9 @@ namespace storm {
                     }
                     ++solIt;
                 }
-                assert(solIt == lraDistr.end());
+                assert(solIt == steadyStateDistr.end());
 
-                return std::pair<ValueType, std::vector<ValueType>>(std::move(result), std::move(lraDistr));
+                return std::pair<ValueType, std::vector<ValueType>>(std::move(result), std::move(steadyStateDistr));
             }
 
             template <typename ValueType>
@@ -423,6 +443,135 @@ namespace storm {
                 }
                 return result;
             }
+
+            template <typename ValueType>
+            std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::computeLongRunAverageStateDistribution(Environment const& env) {
+                createDecomposition();
+                STORM_LOG_THROW(this->_longRunComponentDecomposition->size() <= 1, storm::exceptions::InvalidOperationException, "");
+                return computeLongRunAverageStateDistribution(env, [] (uint64_t) { return storm::utility::zero<ValueType>();} );
+            }
+            
+            template <typename ValueType>
+            std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::computeLongRunAverageStateDistribution(Environment const& env, uint64_t const& initialState) {
+                STORM_LOG_ASSERT(initialState < this->_transitionMatrix.getRowGroupCount(), "Invlid initial state index: " << initialState << ". Have only " << this->_transitionMatrix.getRowGroupCount() << " states.");
+                return computeLongRunAverageStateDistribution(env, [&initialState] (uint64_t stateIndex ) { return initialState == stateIndex ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>();} );
+            }
+            
+            template <typename ValueType>
+            std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::computeLongRunAverageStateDistribution(Environment const& env, ValueGetter const& initialDistributionGetter) {
+                createDecomposition();
+
+                // Compute for each BSCC get the probability with which we reach that BSCC
+                auto bsccReachProbs = computeBsccReachabilityProbabilities(env, initialDistributionGetter);
+                // We are now ready to compute the resulting lra distribution
+                std::vector<ValueType> steadyStateDistr(this->_transitionMatrix.getRowGroupCount(), storm::utility::zero<ValueType>());
+                for (uint64_t currentComponentIndex = 0; currentComponentIndex < this->_longRunComponentDecomposition->size(); ++currentComponentIndex) {
+                    auto const& component = (*this->_longRunComponentDecomposition)[currentComponentIndex];
+                    // Compute distribution for current bscc
+                    auto bsccDistr = this->computeSteadyStateDistrForBscc(env, component);
+                    // Scale with probability to reach that bscc
+                    auto const& scalingFactor = bsccReachProbs[currentComponentIndex];
+                    if (!storm::utility::isOne(scalingFactor)) {
+                        storm::utility::vector::scaleVectorInPlace(bsccDistr, scalingFactor);
+                    }
+                    // Set the values in the result vector
+                    auto bsccDistrIt = bsccDistr.begin();
+                    for (auto const& element : component) {
+                        uint64_t state = internal::getComponentElementState(element);
+                        steadyStateDistr[state] = *bsccDistrIt;
+                        ++bsccDistrIt;
+                    }
+                    STORM_LOG_ASSERT(bsccDistrIt == bsccDistr.end(), "Unexpected number of entries in bscc distribution");
+                }
+                return steadyStateDistr;
+            }
+            
+            template <typename ValueType>
+            std::vector<ValueType> computeUpperBoundsForExpectedVisitingTimes(storm::storage::SparseMatrix<ValueType> const& nonBsccMatrix, std::vector<ValueType> const& toBsccProbabilities) {
+                return storm::modelchecker::helper::BaierUpperRewardBoundsComputer<ValueType>::computeUpperBoundOnExpectedVisitingTimes(nonBsccMatrix, toBsccProbabilities);
+            }
+            
+            template <>
+            std::vector<storm::RationalFunction> computeUpperBoundsForExpectedVisitingTimes(storm::storage::SparseMatrix<storm::RationalFunction> const& nonBsccMatrix, std::vector<storm::RationalFunction> const& toBsccProbabilities) {
+                STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Computing upper bounds for expected visiting times over rational functions is not supported.");
+            }
+            
+            template <typename ValueType>
+            std::vector<ValueType> SparseDeterministicInfiniteHorizonHelper<ValueType>::computeBsccReachabilityProbabilities(Environment const& env, ValueGetter const& initialDistributionGetter) {
+                STORM_LOG_ASSERT(this->_longRunComponentDecomposition != nullptr, "Decomposition not computed, yet.");
+                uint64_t numBSCCs = this->_longRunComponentDecomposition->size();
+                STORM_LOG_ASSERT(numBSCCs > 0, "Found 0 BSCCs in a Markov chain. This should not be possible.");
+                
+                // Compute for each BSCC get the probability with which we reach that BSCC
+                std::vector<ValueType> bsccReachProbs(numBSCCs, storm::utility::zero<ValueType>());
+                if (numBSCCs == 1) {
+                    bsccReachProbs.front() = storm::utility::one<ValueType>();
+                } else {
+                    // Compute mapping from state indices to their BSCC and
+                    // the set of states that do not lie in a BSCC
+                    std::vector<uint64_t> stateToBsccMap(this->_transitionMatrix.getRowGroupCount(), std::numeric_limits<uint64_t>::max());
+                    storm::storage::BitVector statesNotInComponent(this->_transitionMatrix.getRowGroupCount(), true);
+                    for (uint64_t currentComponentIndex = 0; currentComponentIndex < this->_longRunComponentDecomposition->size(); ++currentComponentIndex) {
+                        for (auto const& element : (*this->_longRunComponentDecomposition)[currentComponentIndex]) {
+                            uint64_t state = internal::getComponentElementState(element);
+                            statesNotInComponent.set(state, false);
+                            stateToBsccMap[state] = currentComponentIndex;
+                        }
+                    }
+                    // For each non-BSCC state, compute the expected number of times we visit that state by solving an equation system
+                    // The equation system basically considers an equation `init(s) + sum_s' P(s',s) * x_s' = x_s` for each state s.
+                    storm::solver::GeneralLinearEquationSolverFactory<ValueType> linearEquationSolverFactory;
+                    bool isEqSysFormat = linearEquationSolverFactory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+                    auto eqSysMatrix = this->_transitionMatrix.getSubmatrix(false, statesNotInComponent, statesNotInComponent, isEqSysFormat);
+                    boost::optional<std::vector<ValueType>> upperBounds;
+                    // Check solver requirements
+                    auto requirements = linearEquationSolverFactory.getRequirements(env);
+                    requirements.clearLowerBounds();
+                    if (requirements.upperBounds()) {
+                        auto toBsccProbabilities = this->_transitionMatrix.getConstrainedRowSumVector(statesNotInComponent, ~statesNotInComponent);
+                        upperBounds = computeUpperBoundsForExpectedVisitingTimes(eqSysMatrix, toBsccProbabilities);
+                        requirements.clearUpperBounds();
+                    }
+                    STORM_LOG_THROW(!requirements.hasEnabledCriticalRequirement(), storm::exceptions::UnmetRequirementException, "Solver requirements " + requirements.getEnabledRequirementsAsString() + " not checked.");
+                    eqSysMatrix = eqSysMatrix.transpose(false, true); // Transpose so that each row considers the predecessors
+                    if (isEqSysFormat) {
+                        eqSysMatrix.convertToEquationSystem();
+                    }
+                    std::unique_ptr<storm::solver::LinearEquationSolver<ValueType>> solver = linearEquationSolverFactory.create(env, eqSysMatrix);
+                    solver->setLowerBound(storm::utility::zero<ValueType>());
+                    if (upperBounds) {
+                        solver->setUpperBounds(std::move(upperBounds.get()));
+                    }
+                    std::vector<ValueType> eqSysRhs;
+                    eqSysRhs.reserve(eqSysMatrix.getRowCount());
+                    for (auto state : statesNotInComponent) {
+                        eqSysRhs.push_back(initialDistributionGetter(state));
+                    }
+                    std::vector<ValueType> eqSysValues(eqSysMatrix.getRowCount());
+                    solver->solveEquations(env, eqSysValues, eqSysRhs);
+                    
+                    // Now that we have the expected number of times we visit each non-BSCC state, we can compute the probabilities to reach each bscc.
+                    // Run over all transitions that enter a BSCC
+                    uint64_t eqSysStateIndex = 0;
+                    for (auto state : statesNotInComponent) {
+                        for (auto const& entry : this->_transitionMatrix.getRow(state)) {
+                            if (!statesNotInComponent.get(entry.getColumn())) {
+                                // Add the probability that the BSCC is reached from this state.
+                                bsccReachProbs[stateToBsccMap[entry.getColumn()]] += entry.getValue() * eqSysValues[eqSysStateIndex];
+                            }
+                        }
+                        ++eqSysStateIndex;
+                    }
+                }
+                // As a last step, we normalize these values to counter numerical inaccuracies a bit.
+                // This is only reasonable in non-exact mode.
+                if (!env.solver().isForceExact()) {
+                    ValueType sum = std::accumulate(bsccReachProbs.begin(), bsccReachProbs.end(), storm::utility::zero<ValueType>());
+                    storm::utility::vector::scaleVectorInPlace<ValueType, ValueType>(bsccReachProbs, storm::utility::one<ValueType>() / sum);
+                }
+                return bsccReachProbs;
+            }
+
             
             template class SparseDeterministicInfiniteHorizonHelper<double>;
             template class SparseDeterministicInfiniteHorizonHelper<storm::RationalNumber>;

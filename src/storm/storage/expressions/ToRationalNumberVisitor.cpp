@@ -48,38 +48,32 @@ namespace storm {
             RationalNumberType firstOperandAsRationalNumber = boost::any_cast<RationalNumberType>(expression.getFirstOperand()->accept(*this, data));
             RationalNumberType secondOperandAsRationalNumber = boost::any_cast<RationalNumberType>(expression.getSecondOperand()->accept(*this, data));
             RationalNumberType result;
-            uint_fast64_t exponentAsInteger;
             switch(expression.getOperatorType()) {
                 case BinaryNumericalFunctionExpression::OperatorType::Plus:
                     result = firstOperandAsRationalNumber + secondOperandAsRationalNumber;
                     return result;
-                    break;
                 case BinaryNumericalFunctionExpression::OperatorType::Minus:
                     result = firstOperandAsRationalNumber - secondOperandAsRationalNumber;
                     return result;
-                    break;
                 case BinaryNumericalFunctionExpression::OperatorType::Times:
                     result = firstOperandAsRationalNumber * secondOperandAsRationalNumber;
                     return result;
-                    break;
                 case BinaryNumericalFunctionExpression::OperatorType::Divide:
                     result = firstOperandAsRationalNumber / secondOperandAsRationalNumber;
                     return result;
-                    break;
                 case BinaryNumericalFunctionExpression::OperatorType::Min:
                     result = std::min(firstOperandAsRationalNumber, secondOperandAsRationalNumber);
                     return result;
-                    break;
                 case BinaryNumericalFunctionExpression::OperatorType::Max:
                     result = std::max(firstOperandAsRationalNumber, secondOperandAsRationalNumber);
                     return result;
-                    break;
                 case BinaryNumericalFunctionExpression::OperatorType::Power:
-                    STORM_LOG_THROW(storm::utility::isInteger(secondOperandAsRationalNumber), storm::exceptions::InvalidArgumentException, "Exponent of power operator must be a positive integer.");
-                    exponentAsInteger = storm::utility::convertNumber<carl::sint>(secondOperandAsRationalNumber);
-                    result = storm::utility::pow(firstOperandAsRationalNumber, exponentAsInteger);
-                    return result;
-                    break;
+                    {
+                        STORM_LOG_THROW(storm::utility::isInteger(secondOperandAsRationalNumber), storm::exceptions::InvalidArgumentException, "Exponent of power operator must be an integer.");
+                        auto exponentAsInteger = storm::utility::convertNumber<int_fast64_t>(secondOperandAsRationalNumber);
+                        result = storm::utility::pow(firstOperandAsRationalNumber, exponentAsInteger);
+                        return result;
+                    }
                 default:
                     STORM_LOG_ASSERT(false, "Illegal operator type.");
             }

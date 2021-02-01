@@ -136,6 +136,10 @@ namespace storm {
             }
         }
         
+        std::vector<TimeBound> const& CumulativeRewardFormula::getBounds() const {
+            return bounds;
+        }
+        
         void CumulativeRewardFormula::checkNoVariablesInBound(storm::expressions::Expression const& bound) {
             STORM_LOG_THROW(!bound.containsVariables(), storm::exceptions::InvalidOperationException, "Cannot evaluate time-bound '" << bound << "' as it contains undefined constants.");
         }
@@ -149,8 +153,12 @@ namespace storm {
         }
         
         
+        std::shared_ptr<CumulativeRewardFormula const> CumulativeRewardFormula::stripRewardAccumulation() const {
+            return std::make_shared<CumulativeRewardFormula const>(bounds, timeBoundReferences);
+        }
+        
         std::shared_ptr<CumulativeRewardFormula const> CumulativeRewardFormula::restrictToDimension(unsigned i) const {
-            return std::make_shared<CumulativeRewardFormula const>(bounds.at(i), getTimeBoundReference(i));
+            return std::make_shared<CumulativeRewardFormula const>(bounds.at(i), getTimeBoundReference(i), rewardAccumulation);
         }
         
         std::ostream& CumulativeRewardFormula::writeToStream(std::ostream& out) const {

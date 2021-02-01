@@ -84,7 +84,13 @@ namespace storm {
         }
 
         template <typename ValueType>
-        JaniParser<ValueType>::JaniParser(std::string const& jsonstring) {
+        std::pair<storm::jani::Model, std::vector<storm::jani::Property>> JaniParser<ValueType>::parseFromString(std::string const& jsonstring, bool parseProperties) {
+            JaniParser parser(jsonstring);
+            return parser.parseModel(parseProperties);
+        }
+
+        template <typename ValueType>
+        JaniParser<ValueType>::JaniParser(std::string const& jsonstring) : expressionManager(new storm::expressions::ExpressionManager()) {
             parsedStructure = Json::parse(jsonstring);
         }
 
@@ -804,7 +810,7 @@ namespace storm {
             storm::expressions::Expression functionBody;
             if (!firstPass) {
                 functionBody = parseExpression(functionDefinitionStructure.at("body"), scope.refine("body of function definition " + functionName), false, parameterNameToVariableMap);
-                STORM_LOG_WARN_COND(functionBody.getType() == type.expressionType, "Type of body of function " + functionName + "' (scope: " + scope.description + ") has type " << functionBody.getType() << " although the function type is given as " << type.expressionType);
+                STORM_LOG_WARN_COND(functionBody.getType() == type.expressionType || (functionBody.getType().isIntegerType() && type.expressionType.isRationalType()), "Type of body of function " + functionName + "' (scope: " + scope.description + ") has type " << functionBody.getType() << " although the function type is given as " << type.expressionType);
             }
             return storm::jani::FunctionDefinition(functionName, type.expressionType, parameters, functionBody);
         }
@@ -1500,7 +1506,7 @@ namespace storm {
                 std::vector<std::pair<uint64_t, storm::expressions::Expression>> destinationLocationsAndProbabilities;
                 for(auto const& destEntry : edgeEntry.at("destinations")) {
                     // target location
-                    STORM_LOG_THROW(edgeEntry.count("location") == 1, storm::exceptions::InvalidJaniException, "Each destination in edge from '" << sourceLoc << "' in automaton '" << name << "' must have a target location");
+                    STORM_LOG_THROW(destEntry.count("location") == 1, storm::exceptions::InvalidJaniException, "Each destination in edge from '" << sourceLoc << "' in automaton '" << name << "' must have a target location");
                     std::string targetLoc = getString<ValueType>(destEntry.at("location"), "target location for edge from '" + sourceLoc + "' in automaton '" + name + "'");
                     STORM_LOG_THROW(locIds.count(targetLoc) == 1, storm::exceptions::InvalidJaniException, "Target of edge has unknown location '" << targetLoc << "' in automaton '" << name << "'.");
                     // probability
@@ -1558,7 +1564,12 @@ namespace storm {
                         inputs.push_back(syncInput);
                     }
                 }
-                std::string syncResult = syncEntry.at("result");
+                std::string syncResult;
+                if (syncEntry.count("result")) {
+                    syncResult = syncEntry.at("result");
+                } else {
+                    syncResult = storm::jani::Model::SILENT_ACTION_NAME;
+                }
                 syncVectors.emplace_back(inputs, syncResult);
             }
             return syncVectors;
@@ -1567,7 +1578,13 @@ namespace storm {
         template <typename ValueType>
         std::shared_ptr<storm::jani::Composition> JaniParser<ValueType>::parseComposition(Json const &compositionStructure) {
             if(compositionStructure.count("automaton")) {
-                return std::shared_ptr<storm::jani::AutomatonComposition>(new storm::jani::AutomatonComposition(compositionStructure.at("automaton").template get<std::string>()));
+                std::set<std::string> inputEnabledActions;
+                if (compositionStructure.count("input-enable")) {
+                    for (auto const& actionDecl : compositionStructure.at("input-enable")) {
+                        inputEnabledActions.insert(actionDecl.template get<std::string>());
+                    }
+                }
+                return std::shared_ptr<storm::jani::AutomatonComposition>(new storm::jani::AutomatonComposition(compositionStructure.at("automaton").template get<std::string>(), inputEnabledActions));
             }
             
             STORM_LOG_THROW(compositionStructure.count("elements") == 1, storm::exceptions::InvalidJaniException, "Elements of a composition must be given, got " << compositionStructure.dump());

@@ -105,6 +105,16 @@ namespace storm {
                  * Retrieves a filename to which an optimal scheduler will be exported.
                  */
                  std::string getExportSchedulerFilename() const;
+                
+                /*!
+                 * Retrieves whether the check result should be exported.
+                 */
+                bool isExportCheckResultSet() const;
+                
+                /*!
+                 * Retrieves a filename to which the check result should be exported.
+                 */
+                 std::string getExportCheckResultFilename() const;
 
                 /*!
                 * Retrieves whether an optimal scheduler is to be exported
@@ -313,7 +323,12 @@ namespace storm {
                  * @return The property filter.
                  */
                 std::string getPropertyFilter() const;
-
+                
+                /*!
+                 * Retrieves whether the steady-state distribution is to be computed.
+                 */
+                bool isComputeSteadyStateDistributionSet() const;
+                
                 /*!
                  * Retrieves whether the input model is to be read from the quantitative verification benchmark set (QVBS)
                  */
@@ -339,6 +354,11 @@ namespace storm {
                  */
                 std::string getQvbsRoot() const;
                 
+                /*!
+                 * Retrieves whether the input properties are to be interpreted as a single multi-objective formula
+                 */
+                bool isPropertiesAsMultiSet() const;
+                
                 bool check() const override;
                 void finalize() override;
 
@@ -355,6 +375,7 @@ namespace storm {
                 static const std::string exportCdfOptionName;
                 static const std::string exportCdfOptionShortName;
                 static const std::string exportSchedulerOptionName;
+                static const std::string exportCheckResultOptionName;
                 static const std::string exportMonotonicityName;
                 static const std::string explicitOptionName;
                 static const std::string explicitOptionShortName;
@@ -374,9 +395,11 @@ namespace storm {
                 static const std::string janiPropertyOptionShortName;
                 static const std::string propertyOptionName;
                 static const std::string propertyOptionShortName;
+                static const std::string steadyStateDistrOptionName;
                 static const std::string qvbsInputOptionName;
                 static const std::string qvbsInputOptionShortName;
                 static const std::string qvbsRootOptionName;
+                static const std::string propertiesAsMultiOptionName;
 
             };
 
