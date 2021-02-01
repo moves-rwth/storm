@@ -18,6 +18,12 @@ namespace storm {
             
             template<typename ValueType>
             struct TrivialPomdpValueBounds;
+
+            template<typename ValueType>
+            struct POMDPValueBounds{
+                storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> trivialPomdpValueBounds;
+                storm::pomdp::modelchecker::ExtremePOMDPValueBound<ValueType> extremePomdpValueBound;
+            };
             
             template<typename PomdpModelType, typename BeliefValueType = typename PomdpModelType::ValueType>
             class BeliefExplorationPomdpModelChecker {
@@ -61,7 +67,7 @@ namespace storm {
                  * @param maxUaModelSize the maximum size of the underapproximation model to be generated
                  * @return A struct containing the overapproximation (overApproxValue) and underapproximation (underApproxValue) values
                  */
-                void computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const& pomdpValueBounds, Result& result);
+                void computeReachabilityOTF(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& pomdpValueBounds, Result& result);
                 
                 
                 /**
@@ -71,7 +77,7 @@ namespace storm {
                  * @param min true if minimum probability is to be computed
                  * @return A struct containing the final overapproximation (overApproxValue) and underapproximation (underApproxValue) values
                  */
-                void refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> const& pomdpValueBounds, Result& result);
+                void refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const& pomdpValueBounds, Result& result);
                 
                 struct HeuristicParameters {
                     ValueType gapThreshold;

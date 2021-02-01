@@ -39,12 +39,23 @@ namespace storm {
                     return result;
                 }
             };
-            
+
+            template<typename ValueType>
+            struct ExtremePOMDPValueBound{
+                bool min;
+                std::vector<ValueType> values;
+                ValueType getValueForState(uint64_t const& state) {
+                    STORM_LOG_ASSERT(!values.empty(), "requested an upper bound but none were available");
+                    return values[state];
+                }
+            };
+
             template <typename PomdpType>
             class TrivialPomdpValueBoundsModelChecker {
             public:
                 typedef typename PomdpType::ValueType ValueType;
                 typedef TrivialPomdpValueBounds<ValueType> ValueBounds;
+                typedef ExtremePOMDPValueBound<ValueType> ExtremeValueBound;
                 TrivialPomdpValueBoundsModelChecker(PomdpType const& pomdp) : pomdp(pomdp) {
                     // Intentionally left empty
                 }
@@ -198,7 +209,35 @@ namespace storm {
                     STORM_LOG_WARN_COND_DEBUG(storm::utility::vector::compareElementWise(result.lower.front(), result.upper.front(), std::less_equal<ValueType>()), "Lower bound is larger than upper bound");
                     return result;
                 }
-    
+
+                ExtremeValueBound getExtremeValueBound(storm::logic::Formula const& formula, storm::pomdp::analysis::FormulaInformation const& info) {
+                    STORM_LOG_THROW(info.isNonNestedExpectedRewardFormula(), storm::exceptions::NotSupportedException, "The property type is not supported for this analysis.");
+
+                    // Compute the values for the opposite direction on the fully observable MDP
+                    // We need an actual MDP so that we can apply schedulers below.
+                    // Also, the api call in the next line will require a copy anyway.
+                    storm::logic::RewardOperatorFormula newFormula(formula.asRewardOperatorFormula());
+                    if(formula.asOperatorFormula().getOptimalityType() == storm::solver::OptimizationDirection::Maximize){
+                        newFormula.setOptimalityType(storm::solver::OptimizationDirection::Minimize);
+                    } else {
+                        newFormula.setOptimalityType(storm::solver::OptimizationDirection::Maximize);
+                    }
+                    auto formulaPtr = std::make_shared<storm::logic::RewardOperatorFormula>(newFormula);
+                    auto underlyingMdp = std::make_shared<storm::models::sparse::Mdp<ValueType>>(pomdp.getTransitionMatrix(), pomdp.getStateLabeling(), pomdp.getRewardModels());
+                    auto resultPtr = storm::api::verifyWithSparseEngine<ValueType>(underlyingMdp, storm::api::createTask<ValueType>(formulaPtr, false));
+                    STORM_LOG_THROW(resultPtr, storm::exceptions::UnexpectedException, "No check result obtained.");
+                    STORM_LOG_THROW(resultPtr->isExplicitQuantitativeCheckResult(), storm::exceptions::UnexpectedException, "Unexpected Check result Type");
+                    std::vector<ValueType> resultVec = std::move(resultPtr->template asExplicitQuantitativeCheckResult<ValueType>().getValueVector());
+                    ExtremeValueBound res;
+                    if(info.minimize()){
+                        res.min = false;
+                    } else {
+                        res.min = true;
+                    }
+                    res.values = std::move(resultVec);
+                    return res;
+                }
+
             private:
                 PomdpType const& pomdp;
             };

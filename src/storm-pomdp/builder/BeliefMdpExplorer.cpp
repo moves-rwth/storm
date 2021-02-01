@@ -158,6 +158,16 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
+        std::vector<uint64_t> BeliefMdpExplorer<PomdpType, BeliefValueType>::getUnexploredStates() {
+            STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
+            std::vector<uint64_t> res;
+            for(auto const &entry : mdpStatesToExploreStatePrio){
+                res.push_back(entry.first);
+            }
+            return res;
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
         typename BeliefMdpExplorer<PomdpType, BeliefValueType>::BeliefId BeliefMdpExplorer<PomdpType, BeliefValueType>::exploreNextState() {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
             // Mark the end of the previously explored row group.
@@ -855,6 +865,11 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
+        bool BeliefMdpExplorer<PomdpType, BeliefValueType>::beliefHasMdpState(BeliefId const &beliefId)  const {
+            return getExploredMdpState(beliefId) != noState();
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
         typename BeliefMdpExplorer<PomdpType, BeliefValueType>::MdpStateType BeliefMdpExplorer<PomdpType, BeliefValueType>::noState() const {
             return std::numeric_limits<MdpStateType>::max();
         }
@@ -1048,6 +1063,25 @@ namespace storm {
             return res;
         }
 
+        template<typename PomdpType, typename BeliefValueType>
+        typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType BeliefMdpExplorer<PomdpType, BeliefValueType>::getTrivialUpperBoundAtPOMDPState(uint64_t const &pomdpState){
+            return pomdpValueBounds.getSmallestUpperBound(pomdpState);
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType BeliefMdpExplorer<PomdpType, BeliefValueType>::getTrivialLowerBoundAtPOMDPState(uint64_t const &pomdpState){
+            return pomdpValueBounds.getHighestLowerBound(pomdpState);
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::setExtremeValueBound(storm::pomdp::modelchecker::ExtremePOMDPValueBound<ValueType> valueBound){
+            extremeValueBound = valueBound;
+        }
+
+        template<typename PomdpType, typename BeliefValueType>
+        typename BeliefMdpExplorer<PomdpType, BeliefValueType>::ValueType BeliefMdpExplorer<PomdpType, BeliefValueType>::getExtremeValueBoundAtPOMDPState(const uint64_t &pomdpState){
+            return extremeValueBound.getValueForState(pomdpState);
+        }
         template
         class BeliefMdpExplorer<storm::models::sparse::Pomdp<double>>;
 

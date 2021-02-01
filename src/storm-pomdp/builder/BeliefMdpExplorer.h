@@ -65,6 +65,8 @@ namespace storm {
 
             bool hasUnexploredState() const;
 
+            std::vector<uint64_t> getUnexploredStates();
+
             BeliefId exploreNextState();
 
             void addTransitionsToExtraStates(uint64_t const &localActionIndex, ValueType const &targetStateValue = storm::utility::zero<ValueType>(),
@@ -195,6 +197,18 @@ namespace storm {
 
             void addCullingRewardToCurrentState(uint64 const &localActionIndex, ValueType rewardValue);
 
+            ValueType getTrivialUpperBoundAtPOMDPState(uint64_t const &pomdpState);
+
+            ValueType getTrivialLowerBoundAtPOMDPState(uint64_t const &pomdpState);
+
+            void setExtremeValueBound(storm::pomdp::modelchecker::ExtremePOMDPValueBound<ValueType> valueBound);
+
+            ValueType getExtremeValueBoundAtPOMDPState(uint64_t const &pomdpState);
+
+            MdpStateType getExploredMdpState(BeliefId const &beliefId) const;
+
+            bool beliefHasMdpState(BeliefId const &beliefId) const;
+
         private:
             MdpStateType noState() const;
 
@@ -209,8 +223,6 @@ namespace storm {
             void internalAddTransition(uint64_t const &row, MdpStateType const &column, ValueType const &value);
 
             void internalAddRowGroupIndex();
-
-            MdpStateType getExploredMdpState(BeliefId const &beliefId) const;
 
             void insertValueHints(ValueType const &lowerBound, ValueType const &upperBound);
 
@@ -250,6 +262,7 @@ namespace storm {
             
             // Value and scheduler related information
             storm::pomdp::modelchecker::TrivialPomdpValueBounds<ValueType> pomdpValueBounds;
+            storm::pomdp::modelchecker::ExtremePOMDPValueBound<ValueType> extremeValueBound;
             std::vector<ValueType> lowerValueBounds;
             std::vector<ValueType> upperValueBounds;
             std::vector<ValueType> values; // Contains an estimate during building and the actual result after a check has performed

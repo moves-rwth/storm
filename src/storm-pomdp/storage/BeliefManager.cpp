@@ -632,7 +632,7 @@ namespace storm {
                 if(isEqual(candidate, belief)){
                     // TODO Do something for successors which are already on the grid
                     //STORM_PRINT("Belief on grid" << std::endl)
-                    return BeliefCulling{false, noId(), noId(), storm::utility::zero<BeliefValueType>()};
+                    return BeliefCulling{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}};
                 } else {
                     //STORM_PRINT("Add candidate " << toString(candidate) << std::endl)
                     gridCandidates.push_back(candidate);
@@ -713,33 +713,44 @@ namespace storm {
             lpSolver->optimize();
             // Get the optimal belief fo culling
             BeliefId targetBelief = noId();
+            // Not a belief but has the same type
+            BeliefType deltaValues;
             auto optDelta = storm::utility::zero<BeliefValueType>();
             if(lpSolver->isOptimal()){
                 optDelta = lpSolver->getObjectiveValue();
                 if(optDelta == storm::utility::one<ValueType>()){
                     STORM_LOG_WARN("Huh!!!!!" << std::endl);
                     // If we get an optimal value of 1, we cannot cull the belief as by definition this would correspond to a division by 0.
-                    return BeliefCulling{false, noId(), noId(), storm::utility::zero<BeliefValueType>()};
+                    return BeliefCulling{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}};
                 }
                 for(uint64_t dist = 0; dist < gridCandidates.size(); ++dist){
                     if(lpSolver->getBinaryValue(lpSolver->getManager().getVariable("a_" + std::to_string(dist)))){
                         targetBelief = getOrAddBeliefId(gridCandidates[dist]);
                         //STORM_PRINT("Culling Target " << toString(gridCandidates[dist]) << std::endl)
+                        //Collect delta values
+                        uint64_t i = 0;
+                        for (auto const &state : belief) {
+                            auto val = lpSolver->getContinuousValue(lpSolver->getManager().getVariable("d_" + std::to_string(i) + "_" + std::to_string(dist)));
+                            if(cc.isLess(storm::utility::zero<ValueType>(),val)){
+                                deltaValues.emplace(state.first, val);
+                            }
+                            ++i;
+                        }
                         break;
                     }
                 }
 
-                if(optDelta == storm::utility::zero<ValueType>()){
+                if(cc.isEqual(optDelta, storm::utility::zero<ValueType>())){
                     // If we get an optimal value of 0, the LP solver considers two beliefs to be equal, possibly due to numerical instability
                     // For a sound result, we consider the state to be uncullable
                     STORM_LOG_WARN("LP solver returned an optimal value of 0. This should definitely not happen when using a grid");
                     STORM_LOG_WARN("Origin" << toString(belief));
                     STORM_LOG_WARN("Target [Bel " << targetBelief << "] " << toString(targetBelief));
-                    return BeliefCulling{false, noId(), noId(), storm::utility::zero<BeliefValueType>()};
+                    return BeliefCulling{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}};
                 }
-                STORM_LOG_ASSERT(cc.isEqual(optDelta, lpSolver->getContinuousValue(lpSolver->getManager().getVariable("D_" + std::to_string(targetBelief)))), "Objective values is not equal to the Delta for the target state");
+                //STORM_LOG_ASSERT(cc.isEqual(optDelta, lpSolver->getContinuousValue(lpSolver->getManager().getVariable("D_" + std::to_string(targetBelief)))), "Objective value " << optDelta << " is not equal to the Delta " << lpSolver->getContinuousValue(lpSolver->getManager().getVariable("D_" + std::to_string(targetBelief))) << " for the target state");
             }
-            return BeliefCulling{lpSolver->isOptimal(), noId(), targetBelief, optDelta};
+            return BeliefCulling{lpSolver->isOptimal(), noId(), targetBelief, optDelta, deltaValues};
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
@@ -843,7 +854,7 @@ namespace storm {
             // If no valid candidate was found, we cannot cull the belief
             if(decisionVariables.empty()){
                 STORM_LOG_DEBUG("Belief " << beliefId << " cannot be culled - no candidate with valid support");
-                return BeliefCulling{false, beliefId, noId(), storm::utility::zero<BeliefValueType>()};
+                return BeliefCulling{false, beliefId, noId(), storm::utility::zero<BeliefValueType>(),{}};
             }
             // Only one target belief should be chosen
             lpSolver->addConstraint("choice", storm::expressions::sum(decisionVariables) == lpSolver->getConstant(storm::utility::one<ValueType>()));
@@ -852,15 +863,25 @@ namespace storm {
             // Get the optimal belief fo culling
             BeliefId targetBelief = noId();
             auto optDelta = storm::utility::zero<BeliefValueType>();
+            // Not a belief but has the same type
+            BeliefType deltaValues;
             if(lpSolver->isOptimal()){
                 optDelta = lpSolver->getObjectiveValue();
                 if(optDelta == storm::utility::one<ValueType>()){
                     // If we get an optimal value of 1, we cannot cull the belief as by definition this would correspond to a division by 0.
-                    return BeliefCulling{false, beliefId, noId(), storm::utility::zero<BeliefValueType>()};
+                    return BeliefCulling{false, beliefId, noId(), storm::utility::zero<BeliefValueType>(),{}};
                 }
                 for(auto const &candidate : consideredCandidates) {
                     if(lpSolver->getBinaryValue(lpSolver->getManager().getVariable("a_" + std::to_string(candidate)))){
                         targetBelief = candidate;
+                        uint64_t stateIndex = 0;
+                        for (auto const &state : getBelief(beliefId)) {
+                            auto val = lpSolver->getContinuousValue(lpSolver->getManager().getVariable("d_" + std::to_string(stateIndex) + "_" + std::to_string(candidate)));
+                            if(cc.isLess(storm::utility::zero<ValueType>(),val)){
+                                deltaValues.emplace(state.first, val);
+                            }
+                            ++stateIndex;
+                        }
                         break;
                     }
                 }
@@ -870,11 +891,11 @@ namespace storm {
                     STORM_LOG_WARN("LP solver returned an optimal value of 0. Consider increasing the solver's precision");
                     STORM_LOG_WARN("Origin [Bel " << beliefId << "] " << toString(beliefId));
                     STORM_LOG_WARN("Target [Bel " << targetBelief << "] " << toString(targetBelief));
-                    return BeliefCulling{false, beliefId, noId(), storm::utility::zero<BeliefValueType>()};
+                    return BeliefCulling{false, beliefId, noId(), storm::utility::zero<BeliefValueType>(),{}};
                 }
-                STORM_LOG_ASSERT(cc.isEqual(optDelta, lpSolver->getContinuousValue(lpSolver->getManager().getVariable("D_" + std::to_string(targetBelief)))), "Objective values is not equal to the Delta for the target state");
+                STORM_LOG_ASSERT(cc.isEqual(optDelta, lpSolver->getContinuousValue(lpSolver->getManager().getVariable("D_" + std::to_string(targetBelief)))), "Objective value " << optDelta << " is not equal to the Delta " << lpSolver->getContinuousValue(lpSolver->getManager().getVariable("D_" + std::to_string(targetBelief))) << " for the target state");
             }
-            return BeliefCulling{lpSolver->isOptimal(), beliefId, targetBelief, optDelta};
+            return BeliefCulling{lpSolver->isOptimal(), beliefId, targetBelief, optDelta, deltaValues};
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>

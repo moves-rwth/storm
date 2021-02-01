@@ -44,6 +44,7 @@ namespace storm {
                 BeliefId startingBelief;
                 BeliefId targetBelief;
                 BeliefValueType delta;
+                BeliefType deltaValues;
             };
 
             BeliefId noId() const;
