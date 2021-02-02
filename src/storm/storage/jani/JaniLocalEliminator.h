@@ -68,18 +68,26 @@ namespace storm {
                     NewTransitionCount
                 };
 
-                explicit EliminateAutomaticallyAction(const std::string &automatonName, EliminationOrder eliminationOrder);
+                explicit EliminateAutomaticallyAction(const std::string &automatonName, EliminationOrder eliminationOrder, uint32_t transitionCountThreshold = 1000);
                 std::string getDescription() override;
                 void doAction(Session &session) override;
             private:
                 std::string automatonName;
                 EliminationOrder eliminationOrder;
                 std::string find_next_location(Session &session);
+                uint32_t transitionCountThreshold;
             };
 
             class FinishAction : public Action {
             public:
                 explicit FinishAction();
+                std::string getDescription() override;
+                void doAction(Session &session) override;
+            };
+
+            class RebuildWithoutUnreachableAction : public Action {
+            public:
+                explicit RebuildWithoutUnreachableAction();
                 std::string getDescription() override;
                 void doAction(Session &session) override;
             };

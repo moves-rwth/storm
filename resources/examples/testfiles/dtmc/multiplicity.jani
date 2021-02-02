@@ -1,0 +1,495 @@
+{
+    "actions": [],
+    "automata": [
+        {
+            "edges": [
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "x <- 1",
+                                    "ref": "x",
+                                    "value": 1
+                                },
+                                {
+                                    "comment": "y <- 0",
+                                    "ref": "y",
+                                    "value": 0
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/5",
+                                "exp": 0.2
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "x <- 1",
+                                    "ref": "x",
+                                    "value": 1
+                                },
+                                {
+                                    "comment": "y <- 1",
+                                    "ref": "y",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/5",
+                                "exp": 0.2
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "x <- 1",
+                                    "ref": "x",
+                                    "value": 1
+                                },
+                                {
+                                    "comment": "y <- 2",
+                                    "ref": "y",
+                                    "value": 2
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/5",
+                                "exp": 0.2
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "x <- 1",
+                                    "ref": "x",
+                                    "value": 1
+                                },
+                                {
+                                    "comment": "y <- 3",
+                                    "ref": "y",
+                                    "value": 3
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/5",
+                                "exp": 0.2
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "x <- 1",
+                                    "ref": "x",
+                                    "value": 1
+                                },
+                                {
+                                    "comment": "y <- 4",
+                                    "ref": "y",
+                                    "value": 4
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/5",
+                                "exp": 0.2
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(x = 0)",
+                        "exp": {
+                            "left": "x",
+                            "op": "=",
+                            "right": 0
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "x <- 2",
+                                    "ref": "x",
+                                    "value": 2
+                                },
+                                {
+                                    "comment": "z <- 0",
+                                    "ref": "z",
+                                    "value": 0
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/5",
+                                "exp": 0.2
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "x <- 2",
+                                    "ref": "x",
+                                    "value": 2
+                                },
+                                {
+                                    "comment": "z <- 1",
+                                    "ref": "z",
+                                    "value": 1
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/5",
+                                "exp": 0.2
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "x <- 2",
+                                    "ref": "x",
+                                    "value": 2
+                                },
+                                {
+                                    "comment": "z <- 2",
+                                    "ref": "z",
+                                    "value": 2
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/5",
+                                "exp": 0.2
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "x <- 2",
+                                    "ref": "x",
+                                    "value": 2
+                                },
+                                {
+                                    "comment": "z <- 3",
+                                    "ref": "z",
+                                    "value": 3
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/5",
+                                "exp": 0.2
+                            }
+                        },
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "x <- 2",
+                                    "ref": "x",
+                                    "value": 2
+                                },
+                                {
+                                    "comment": "z <- 4",
+                                    "ref": "z",
+                                    "value": 4
+                                }
+                            ],
+                            "location": "l",
+                            "probability": {
+                                "comment": "1/5",
+                                "exp": 0.2
+                            }
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(x = 1)",
+                        "exp": {
+                            "left": "x",
+                            "op": "=",
+                            "right": 1
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "x <- 3",
+                                    "ref": "x",
+                                    "value": 3
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((x = 2) & (y = 0))",
+                        "exp": {
+                            "left": {
+                                "left": "x",
+                                "op": "=",
+                                "right": 2
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "y",
+                                "op": "=",
+                                "right": 0
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "x <- 3",
+                                    "ref": "x",
+                                    "value": 3
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((x = 2) & (y = 1))",
+                        "exp": {
+                            "left": {
+                                "left": "x",
+                                "op": "=",
+                                "right": 2
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "y",
+                                "op": "=",
+                                "right": 1
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "x <- 3",
+                                    "ref": "x",
+                                    "value": 3
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((x = 2) & (y = 2))",
+                        "exp": {
+                            "left": {
+                                "left": "x",
+                                "op": "=",
+                                "right": 2
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "y",
+                                "op": "=",
+                                "right": 2
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "x <- 3",
+                                    "ref": "x",
+                                    "value": 3
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((x = 2) & (y = 3))",
+                        "exp": {
+                            "left": {
+                                "left": "x",
+                                "op": "=",
+                                "right": 2
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "y",
+                                "op": "=",
+                                "right": 3
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "assignments": [
+                                {
+                                    "comment": "x <- 3",
+                                    "ref": "x",
+                                    "value": 3
+                                }
+                            ],
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "((x = 2) & (y = 4))",
+                        "exp": {
+                            "left": {
+                                "left": "x",
+                                "op": "=",
+                                "right": 2
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "y",
+                                "op": "=",
+                                "right": 4
+                            }
+                        }
+                    },
+                    "location": "l"
+                },
+                {
+                    "destinations": [
+                        {
+                            "location": "l"
+                        }
+                    ],
+                    "guard": {
+                        "comment": "(x = 3)",
+                        "exp": {
+                            "left": "x",
+                            "op": "=",
+                            "right": 3
+                        }
+                    },
+                    "location": "l"
+                }
+            ],
+            "initial-locations": [
+                "l"
+            ],
+            "locations": [
+                {
+                    "name": "l"
+                }
+            ],
+            "name": "main",
+            "variables": []
+        }
+    ],
+    "constants": [],
+    "features": [
+        "derived-operators"
+    ],
+    "jani-version": 1,
+    "name": "multiplicity",
+    "properties": [
+        {
+            "expression": {
+                "fun": "values",
+                "op": "filter",
+                "states": {
+                    "op": "initial"
+                },
+                "values": {
+                    "exp": {
+                        "left": true,
+                        "op": "U",
+                        "right": {
+                            "left": {
+                                "left": {
+                                    "left": "x",
+                                    "op": "=",
+                                    "right": 3
+                                },
+                                "op": "∧",
+                                "right": {
+                                    "left": "y",
+                                    "op": "=",
+                                    "right": 0
+                                }
+                            },
+                            "op": "∧",
+                            "right": {
+                                "left": "z",
+                                "op": "=",
+                                "right": 0
+                            }
+                        }
+                    },
+                    "op": "Pmin"
+                }
+            },
+            "name": "1"
+        }
+    ],
+    "restrict-initial": {
+        "exp": true
+    },
+    "system": {
+        "elements": [
+            {
+                "automaton": "main"
+            }
+        ]
+    },
+    "type": "dtmc",
+    "variables": [
+        {
+            "initial-value": 0,
+            "name": "x",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 3
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "y",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 4
+            }
+        },
+        {
+            "initial-value": 0,
+            "name": "z",
+            "type": {
+                "base": "int",
+                "kind": "bounded",
+                "lower-bound": 0,
+                "upper-bound": 4
+            }
+        }
+    ]
+}
