@@ -826,8 +826,8 @@ namespace storm {
                 if (!refine) {
                     // Build a new under approximation
                     if (computeRewards) {
-                        if(options.hybridCulling){
-                            // If we clip to a grid, use the sink state for infinite correction values
+                        if(useBeliefCulling){
+                            // If we clip, use the sink state for infinite correction values
                             underApproximation->startNewExploration(storm::utility::zero<ValueType>(), storm::utility::infinity<ValueType>());
                         } else {
                             underApproximation->startNewExploration(storm::utility::zero<ValueType>());
@@ -973,16 +973,21 @@ namespace storm {
                                         auto rewardBound = storm::utility::zero<ValueType>();
                                         for (auto const &deltaValue : cullingResult.deltaValues) {
                                             if(cc.isEqual(underApproximation->getExtremeValueBoundAtPOMDPState(deltaValue.first), storm::utility::infinity<ValueType>())){
-                                                rewardBound += deltaValue.second * 1000;
+                                                rewardBound = storm::utility::infinity<ValueType>();
+                                                break;
                                             } else {
                                                 rewardBound += deltaValue.second * (underApproximation->getExtremeValueBoundAtPOMDPState(deltaValue.first));
                                             }
                                         }
-                                        rewardBound /= cullingResult.delta;
+                                        if(cc.isEqual(rewardBound, storm::utility::infinity<ValueType>())){
+                                            underApproximation->addTransitionsToExtraStates(0, storm::utility::zero<ValueType>(), cullingResult.delta);
+                                        } else {
+                                            rewardBound /= cullingResult.delta;
 
-                                        underApproximation->addTransitionsToExtraStates(0, cullingResult.delta);
+                                            underApproximation->addTransitionsToExtraStates(0, cullingResult.delta);
+                                            underApproximation->addCullingRewardToCurrentState(0, rewardBound);
+                                        }
                                         underApproximation->addRewardToCurrentState(0, storm::utility::zero<ValueType>());
-                                        underApproximation->addCullingRewardToCurrentState(0, rewardBound);
                                     } else {
                                         underApproximation->addTransitionsToExtraStates(0, storm::utility::zero<ValueType>(), cullingResult.delta);
                                     }
