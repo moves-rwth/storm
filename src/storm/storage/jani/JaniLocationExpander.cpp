@@ -78,10 +78,11 @@ namespace storm {
 
                     uint64_t newLocationIndex = newAutomaton.addLocation(loc);
                     locationVariableValueMap[origIndex][i] = newLocationIndex;
-
-                    if (i == initialVariableValue)
-                        newAutomaton.addInitialLocation(newLocationName);
                 }
+            }
+
+            for (uint64_t const& initialLoc : automaton.getInitialLocationIndices()){
+                newAutomaton.addInitialLocation(locationVariableValueMap[initialLoc][initialVariableValue]);
             }
 
 
