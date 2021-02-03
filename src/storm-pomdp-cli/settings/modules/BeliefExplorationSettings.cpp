@@ -32,6 +32,7 @@ namespace storm {
             const std::string triangulationModeOption = "triangulationmode";
             const std::string explHeuristicOption = "expl-heuristic";
             const std::string cullingModeOption = "culling-mode";
+            const std::string disableClippingReductionOption = "disable-clipping-reduction";
 
             BeliefExplorationSettings::BeliefExplorationSettings() : ModuleSettings(moduleName) {
                 
@@ -62,6 +63,7 @@ namespace storm {
                         storm::settings::ArgumentBuilder::createStringArgument("value","the culling mode").setDefaultValueString("classic").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"classic", "grid"})).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, explHeuristicOption, false,"Sets how to sort the states into the exploration queue.").setIsAdvanced().addArgument(
                         storm::settings::ArgumentBuilder::createStringArgument("value","the exploration heuristic").setDefaultValueString("bfs").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"bfs", "lowerBound", "upperBound", "gap", "prob"})).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, disableClippingReductionOption, false, "Disable the reduction of clipping candidate sets by difference 1-norm heuristic").build());
             }
 
             bool BeliefExplorationSettings::isRefineSet() const {
@@ -179,6 +181,10 @@ namespace storm {
                 }
                 return storm::builder::ExplorationHeuristic::BreadthFirst;
             }
+
+            bool BeliefExplorationSettings::isDisableClippingReductionSet() const {
+                return this->getOption(disableClippingReductionOption).getHasOptionBeenSet();
+            }
             
             template<typename ValueType>
             void BeliefExplorationSettings::setValuesInOptionsStruct(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) const {
@@ -206,6 +212,8 @@ namespace storm {
                 options.obsThresholdInit = storm::utility::convertNumber<ValueType>(getObservationScoreThresholdInit());
                 options.obsThresholdIncrementFactor = storm::utility::convertNumber<ValueType>(getObservationScoreThresholdFactor());
                 options.hybridCulling = isGridCullingModeSet();
+
+                options.disableClippingReduction = isDisableClippingReductionSet();
 
                 options.cullingThresholdInit = storm::utility::convertNumber<ValueType>(getCullingThresholdInit());
                 

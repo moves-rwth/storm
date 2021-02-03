@@ -43,6 +43,8 @@ namespace storm {
                 ValueType cullingThresholdInit = storm::utility::zero<ValueType>();
 
                 uint64_t culllingGridRes = 2;
+
+                bool disableClippingReduction = false;
                 
                 ValueType numericPrecision = storm::NumberTraits<ValueType>::IsExact ? storm::utility::zero<ValueType>() : storm::utility::convertNumber<ValueType>(1e-9); /// Used to decide whether two beliefs are equal
                 bool dynamicTriangulation = true; // Sets whether the triangulation is done in a dynamic way (yielding more precise triangulations)

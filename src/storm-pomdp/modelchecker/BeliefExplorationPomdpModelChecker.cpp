@@ -810,11 +810,14 @@ namespace storm {
             template<typename PomdpModelType, typename BeliefValueType>
             bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation) {
                 bool useBeliefCulling = heuristicParameters.cullingThreshold > storm::utility::zero<ValueType>() || options.hybridCulling;
-                STORM_LOG_INFO_COND(!useBeliefCulling, "Use Belief Culling with threshold " << storm::utility::to_string(heuristicParameters.cullingThreshold));
                 statistics.underApproximationBuildTime.start();
                 if(useBeliefCulling){
+                    STORM_PRINT_AND_LOG("Use Belief Culling with threshold " << storm::utility::to_string(heuristicParameters.cullingThreshold) << std::endl);
                     statistics.nrCullingAttempts = 0;
                     statistics.nrCulledStates = 0;
+                    if(options.disableClippingReduction){
+                        STORM_PRINT_AND_LOG("Disable clipping candidate set reduction" << std::endl);
+                    }
                 }
                 bool fixPoint = true;
                 if (heuristicParameters.sizeThreshold != std::numeric_limits<uint64_t>::max()) {
@@ -931,32 +934,34 @@ namespace storm {
                                 // Preprocess suitable candidate beliefs
                                 std::priority_queue<std::pair<ValueType, uint64_t>, std::vector<std::pair<ValueType, uint64_t>>, std::less<>> restrictedCandidates;
                                 uint64_t nrCandidates = 10;
+                                std::vector<uint64_t> candidates(nrCandidates);
                                 statistics.cullingPreTime.start();
-                                for (auto const &candidateBelief : underApproximation->getBeliefsWithObservationInMdp(currObservation)) {
-                                    if (!beliefManager->isEqual(candidateBelief, currId)) {
-                                        if (restrictedCandidates.size() < nrCandidates) {
-                                            restrictedCandidates.push(std::make_pair(beliefManager->computeDifference1norm(candidateBelief, currId), candidateBelief));
-                                        } else {
-                                            auto currentWorst = restrictedCandidates.top().first;
-                                            if (currentWorst > beliefManager->computeDifference1norm(candidateBelief, currId)) {
-                                                restrictedCandidates.pop();
+                                if(!options.disableClippingReduction) {
+                                    for (auto const &candidateBelief : underApproximation->getBeliefsWithObservationInMdp(currObservation)) {
+                                        if (!beliefManager->isEqual(candidateBelief, currId)) {
+                                            if (restrictedCandidates.size() < nrCandidates) {
                                                 restrictedCandidates.push(std::make_pair(beliefManager->computeDifference1norm(candidateBelief, currId), candidateBelief));
+                                            } else {
+                                                auto currentWorst = restrictedCandidates.top().first;
+                                                if (currentWorst > beliefManager->computeDifference1norm(candidateBelief, currId)) {
+                                                    restrictedCandidates.pop();
+                                                    restrictedCandidates.push(std::make_pair(beliefManager->computeDifference1norm(candidateBelief, currId), candidateBelief));
+                                                }
                                             }
                                         }
                                     }
-                                }
-                                std::vector<uint64_t> candidates(nrCandidates);
-                                while (!restrictedCandidates.empty()) {
-                                    candidates.push_back(restrictedCandidates.top().second);
-                                    //STORM_PRINT(beliefManager->toString(restrictedCandidates.top().second) << std::endl)
-                                    restrictedCandidates.pop();
+
+                                    while (!restrictedCandidates.empty()) {
+                                        candidates.push_back(restrictedCandidates.top().second);
+                                        //STORM_PRINT(beliefManager->toString(restrictedCandidates.top().second) << std::endl)
+                                        restrictedCandidates.pop();
+                                    }
                                 }
                                 statistics.cullingPreTime.stop();
-
                                 // Belief is to be culled, find the best candidate from the restricted list
                                 statistics.nrCullingAttempts = statistics.nrCullingAttempts.get() + 1;
                                 statistics.cullWatch.start();
-                                auto cullingResult = beliefManager->cullBelief(currId, heuristicParameters.cullingThreshold, candidates /*underApproximation->getBeliefsInMdp()*/);
+                                auto cullingResult = beliefManager->cullBelief(currId, heuristicParameters.cullingThreshold, options.disableClippingReduction ? underApproximation->getBeliefsInMdp() : candidates);
                                 statistics.cullWatch.stop();
                                 if (cullingResult.isCullable) {
                                     underApproximation->setCurrentStateIsCulled();

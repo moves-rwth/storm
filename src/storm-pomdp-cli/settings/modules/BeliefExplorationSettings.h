@@ -53,6 +53,9 @@ namespace storm {
 
                 /// Controls how large the delta is allowed to be for culling
                 double getCullingThresholdInit() const;
+
+                /// Controls if the clipping set reduction heuristic is usec
+                bool isDisableClippingReductionSet() const;
                 
                 /// Controls whether "almost optimal" choices will be considered optimal
                 double getOptimalChoiceValueThresholdInit() const;
