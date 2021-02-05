@@ -387,8 +387,13 @@ namespace storm {
                                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BE type '" << be->type() << "' is not supported.");
                         }
                     }
-                } else if (mDft.getElement(elem)->isSpareGate() && !isActive(uses(elem))) {
-                    propagateActivation(uses(elem));
+                } else if (mDft.getElement(elem)->isSpareGate()){
+                    if (isOperational(elem)) {
+                        // We do not activate children if the SPARE is already failed
+                        if (!isActive(uses(elem))) {
+                            propagateActivation(uses(elem));
+                        }
+                    }
                 }
             }
         }
