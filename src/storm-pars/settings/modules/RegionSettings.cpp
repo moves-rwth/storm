@@ -1,10 +1,11 @@
 #include <storm-pars/modelchecker/region/RegionResultHypothesis.h>
 #include "storm-pars/settings/modules/RegionSettings.h"
 
-#include "storm/settings/Option.h"
+#include "storm/settings/SettingsManager.h"
+#include "storm/settings/modules/GeneralSettings.h"
+
 #include "storm/settings/OptionBuilder.h"
 #include "storm/settings/ArgumentBuilder.h"
-#include "storm/settings/Argument.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/IllegalArgumentValueException.h"
@@ -17,10 +18,13 @@ namespace storm {
             const std::string RegionSettings::moduleName = "region";
             const std::string RegionSettings::regionOptionName = "region";
             const std::string RegionSettings::regionShortOptionName = "reg";
+            const std::string RegionSettings::regionBoundOptionName = "regionbound";
             const std::string RegionSettings::hypothesisOptionName = "hypothesis";
             const std::string RegionSettings::hypothesisShortOptionName = "hyp";
             const std::string RegionSettings::refineOptionName = "refine";
             const std::string RegionSettings::extremumOptionName = "extremum";
+            const std::string RegionSettings::extremumSuggestionOptionName = "extremum-init";
+            const std::string RegionSettings::splittingThresholdName = "splitting-threshold";
             const std::string RegionSettings::checkEngineOptionName = "engine";
             const std::string RegionSettings::printNoIllustrationOptionName = "noillustration";
             const std::string RegionSettings::printFullResultOptionName = "printfullresult";
@@ -28,7 +32,10 @@ namespace storm {
             RegionSettings::RegionSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, regionOptionName, false, "Sets the region(s) considered for analysis.").setShortName(regionShortOptionName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("regioninput", "The region(s) given in format a<=x<=b,c<=y<=d seperated by ';'. Can also be a file.").build()).build());
-                
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, regionBoundOptionName, false, "Sets the region bound considered for analysis.")
+                                .addArgument(storm::settings::ArgumentBuilder::createStringArgument("regionbound", "The bound for the region result for all variables: 0+bound <= var <=1-bound").build()).build());
+
                 std::vector<std::string> hypotheses = {"unknown", "allsat", "allviolated"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, hypothesisOptionName, false, "Sets a hypothesis for region analysis. If given, the region(s) are only analyzed w.r.t. that hypothesis.").setShortName(hypothesisShortOptionName)
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("hypothesis", "The hypothesis.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(hypotheses)).setDefaultValueString("unknown").build()).build());
@@ -41,7 +48,13 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, extremumOptionName, false, "Computes the extremum within the region.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("direction", "The optimization direction").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator(directions)).build())
                                 .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("precision", "The desired precision").setDefaultValueDouble(0.05).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0.0,1.0)).build()).build());
-                
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, extremumSuggestionOptionName, false, "Checks whether the provided value is indeed the extremum")
+                                        .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("extremum-suggestion", "The provided value for the extremum").addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0.0,1.0)).build()).build());
+
+                this->addOption(storm::settings::OptionBuilder(moduleName, splittingThresholdName, false, "Sets the threshold for number of parameters in which to split regions.")
+                                        .addArgument(storm::settings::ArgumentBuilder::createIntegerArgument("splitting-threshold", "The threshold for splitting, should be an integer > 0").build()).build());
+
                 std::vector<std::string> engines = {"pl", "exactpl", "validatingpl"};
                 this->addOption(storm::settings::OptionBuilder(moduleName, checkEngineOptionName, true, "Sets which engine is used for analyzing regions.")
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("name", "The name of the engine to use.").addValidatorString(ArgumentValidatorFactory::createMultipleChoiceValidator(engines)).setDefaultValueString("pl").build()).build());
@@ -57,6 +70,14 @@ namespace storm {
             
             std::string RegionSettings::getRegionString() const {
                 return this->getOption(regionOptionName).getArgumentByName("regioninput").getValueAsString();
+            }
+
+            bool RegionSettings::isRegionBoundSet() const {
+                return this->getOption(regionBoundOptionName).getHasOptionBeenSet();
+            }
+
+            std::string RegionSettings::getRegionBoundString() const {
+                return this->getOption(regionBoundOptionName).getArgumentByName("regionbound").getValueAsString();
             }
             
             bool RegionSettings::isHypothesisSet() const {
@@ -114,7 +135,21 @@ namespace storm {
             }
 				
             double RegionSettings::getExtremumValuePrecision() const {
+                auto generalSettings = storm::settings::getModule<storm::settings::modules::GeneralSettings>();
+                if (!generalSettings.isPrecisionSet() && generalSettings.isSoundSet()) {
+                    double prec = this->getOption(extremumOptionName).getArgumentByName("precision").getValueAsDouble() / 10;
+                    generalSettings.setPrecision(std::to_string(prec));
+                    STORM_LOG_WARN("Reset precision for solver to " << prec << " this is sufficient for extremum value precision of " << (prec)*10 << std::endl);
+                }
                 return this->getOption(extremumOptionName).getArgumentByName("precision").getValueAsDouble();
+            }
+
+            bool RegionSettings::isExtremumSuggestionSet() const {
+                return this->getOption(extremumSuggestionOptionName).getHasOptionBeenSet();
+            }
+
+            double RegionSettings::getExtremumSuggestion() const {
+                return this->getOption(extremumSuggestionOptionName).getArgumentByName("extremum-suggestion").getValueAsDouble();
             }
 
             storm::modelchecker::RegionCheckEngine RegionSettings::getRegionCheckEngine() const {
@@ -139,6 +174,10 @@ namespace storm {
                     STORM_LOG_ERROR("Can not compute extremum values AND perform region refinement.");
                     return false;
                 }
+                if (getExtremumValuePrecision() < storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()) {
+                    STORM_LOG_ERROR("Computing extremum value for precision " << getExtremumValuePrecision() << " makes no sense when solver precision is set to " << storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+                    return false;
+                }
                 return true;
             }
 
@@ -149,7 +188,15 @@ namespace storm {
             bool RegionSettings::isPrintFullResultSet() const {
                 return this->getOption(printFullResultOptionName).getHasOptionBeenSet();
             }
-            
+
+            int RegionSettings::getSplittingThreshold() const {
+                return this->getOption(splittingThresholdName).getArgumentByName("splitting-threshold").getValueAsInteger();
+            }
+
+            bool RegionSettings::isSplittingThresholdSet() const {
+                return this->getOption(splittingThresholdName).getHasOptionBeenSet();
+            }
+
 
         } // namespace modules
     } // namespace settings

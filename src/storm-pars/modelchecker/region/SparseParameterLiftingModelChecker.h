@@ -22,14 +22,17 @@ namespace storm {
         template <typename SparseModelType, typename ConstantType>
         class SparseParameterLiftingModelChecker : public RegionModelChecker<typename SparseModelType::ValueType> {
         public:
+            typedef typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType VariableType;
+            typedef typename storm::analysis::MonotonicityResult<VariableType>::Monotonicity Monotonicity;
+
             SparseParameterLiftingModelChecker();
             virtual ~SparseParameterLiftingModelChecker() = default;
-            
+
 
             /*!
              * Analyzes the given region by means of parameter lifting.
              */
-            virtual RegionResult analyzeRegion(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown, RegionResult const& initialResult = RegionResult::Unknown, bool sampleVerticesOfRegion = false) override;
+            virtual RegionResult analyzeRegion(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResultHypothesis const& hypothesis = RegionResultHypothesis::Unknown, RegionResult const& initialResult = RegionResult::Unknown, bool sampleVerticesOfRegion = false, std::shared_ptr<storm::analysis::Order> reachabilityOrder = nullptr, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult = nullptr) override;
 
             /*!
              * Analyzes the 2^#parameters corner points of the given region.
@@ -43,9 +46,9 @@ namespace storm {
              * @param region the region on which parameter lifting is applied
              * @param dirForParameters  The optimization direction for the parameter choices. If this is, e.g., minimize, then the returned result will be a lower bound for all results induced by the parameter evaluations inside the region.
              */
-            std::unique_ptr<CheckResult> check(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
+            std::unique_ptr<CheckResult> check(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::Order> reachabilityOrder = nullptr, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult = nullptr);
             
-            std::unique_ptr<QuantitativeCheckResult<ConstantType>> getBound(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
+            std::unique_ptr<QuantitativeCheckResult<ConstantType>> getBound(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult = nullptr);
             virtual typename SparseModelType::ValueType getBoundAtInitState(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) override;
 
             
@@ -55,7 +58,8 @@ namespace storm {
              * The actual maximum (minimum) lies in the interval [v, v+precision] ([v-precision, v])
              */
             virtual std::pair<typename SparseModelType::ValueType, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation> computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, typename SparseModelType::ValueType const& precision) override;
-            
+            virtual bool checkExtremalValue(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, typename SparseModelType::ValueType const& precision, typename SparseModelType::ValueType const& valueToCheck) override;
+
             SparseModelType const& getConsideredParametricModel() const;
             CheckTask<storm::logic::Formula, ConstantType> const& getCurrentCheckTask() const;
             
@@ -73,17 +77,28 @@ namespace storm {
 
             
             virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationChecker() = 0;
-            
-            virtual std::unique_ptr<CheckResult> computeQuantitativeValues(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) = 0;
-            
-            
+            virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationCheckerSAT();
+            virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationCheckerVIO();
+
+            virtual std::unique_ptr<CheckResult> computeQuantitativeValues(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult = nullptr) = 0;
+
+
             std::shared_ptr<SparseModelType> parametricModel;
             std::unique_ptr<CheckTask<storm::logic::Formula, ConstantType>> currentCheckTask;
+            ConstantType lastValue;
+            boost::optional<storm::analysis::OrderExtender<typename SparseModelType::ValueType, ConstantType>> orderExtender;
+
+            std::pair<typename SparseModelType::ValueType, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation> checkForPossibleMonotonicity(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::set<VariableType>& possibleMonotoneIncrParameters, std::set<VariableType>& possibleMonotoneDecrParameters, std::set<VariableType>& possibleNotMonotoneParameters, std::set<VariableType>const& consideredVariables, storm::solver::OptimizationDirection const& dir);
+            std::pair<typename SparseModelType::ValueType, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation> getGoodInitialPoint(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dir, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonRes);
+            std::set<VariableType> possibleMonotoneParameters;
 
         private:
             // store the current formula. Note that currentCheckTask only stores a reference to the formula.
             std::shared_ptr<storm::logic::Formula const> currentFormula;
-            
+            std::shared_ptr<storm::analysis::Order> copyOrder(std::shared_ptr<storm::analysis::Order> order);
+            std::map<std::shared_ptr<storm::analysis::Order>, uint_fast64_t> numberOfCopiesOrder;
+            std::map<std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>>, uint_fast64_t> numberOfCopiesMonRes;
+            std::pair<typename SparseModelType::ValueType, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation> computeExtremalValue(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, typename SparseModelType::ValueType const& precision, boost::optional<ConstantType> const& initialValue);
         };
     }
 }

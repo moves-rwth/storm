@@ -21,6 +21,8 @@ namespace storm {
             const std::string ParametricSettings::samplesOptionName = "samples";
             const std::string ParametricSettings::samplesGraphPreservingOptionName = "samples-graph-preserving";
             const std::string ParametricSettings::sampleExactOptionName = "sample-exact";
+            const std::string ParametricSettings::useMonotonicityName = "use-monotonicity";
+//            const std::string ParametricSettings::onlyGlobalName = "onlyGlobal";
 
             ParametricSettings::ParametricSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportResultOptionName, false, "A path to a file where the parametric result should be saved.")
@@ -32,6 +34,8 @@ namespace storm {
                                 .addArgument(storm::settings::ArgumentBuilder::createStringArgument("samples", "The samples are semicolon-separated entries of the form 'Var1=Val1:Val2:...:Valk,Var2=... that span the sample spaces.").setDefaultValueString("").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, samplesGraphPreservingOptionName, false, "Sets whether it can be assumed that the samples are graph-preserving.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, sampleExactOptionName, false, "Sets whether to sample using exact arithmetic.").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, useMonotonicityName, false, "If set, monotonicity will be used.").build());
+//                this->addOption(storm::settings::OptionBuilder(moduleName, onlyGlobalName, false, "If set, only global monotonicity will be used.").build());
             }
             
             bool ParametricSettings::exportResultToFile() const {
@@ -65,6 +69,13 @@ namespace storm {
             bool ParametricSettings::isSampleExactSet() const {
                 return this->getOption(sampleExactOptionName).getHasOptionBeenSet();
             }
+
+            bool ParametricSettings::isUseMonotonicitySet() const {
+                return this->getOption(useMonotonicityName).getHasOptionBeenSet();
+            }
+//            bool ParametricSettings::isOnlyGlobalSet() const {
+//                return this->getOption(onlyGlobalName).getHasOptionBeenSet();
+//            }
 
         } // namespace modules
     } // namespace settings

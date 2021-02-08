@@ -3,6 +3,9 @@
 #include <map>
 
 #include "storm-pars/utility/parametric.h"
+#include "storm-pars/analysis/MonotonicityResult.h"
+#include "storm-pars/modelchecker/region/RegionResult.h"
+#include "storm/solver/OptimizationDirection.h"
 
 namespace storm {
     namespace storage {
@@ -23,10 +26,13 @@ namespace storm {
             virtual ~ParameterRegion() = default;
 
             std::set<VariableType> const& getVariables() const;
+            std::multimap<CoefficientType, VariableType> const& getVariablesSorted() const;
             CoefficientType const& getLowerBoundary(VariableType const& variable) const;
             CoefficientType const& getLowerBoundary(const std::string varName) const;
             CoefficientType const& getUpperBoundary(VariableType const& variable) const;
             CoefficientType const& getUpperBoundary(const std::string varName) const;
+            CoefficientType getDifference(const std::string varName) const;
+            CoefficientType getDifference(VariableType const& variable) const;
             Valuation const& getLowerBoundaries() const;
             Valuation const& getUpperBoundaries() const;
 
@@ -50,7 +56,10 @@ namespace storm {
              * Returns the center point of this region
              */
             Valuation getCenterPoint() const;
-                
+
+            void setSplitThreshold(int splitThreshold);
+            int getSplitThreshold() const;
+
             /*!
              * Returns the area of this region
              */
@@ -62,17 +71,31 @@ namespace storm {
              * Subregions with area()==0 are not inserted in the vector.
              */
             void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector) const;
+            void split(Valuation const& splittingPoint, std::vector<ParameterRegion<ParametricType>>& regionVector, std::set<VariableType> const& consideredVariables) const;
+
+            Valuation getPoint(storm::solver::OptimizationDirection dir, storm::analysis::MonotonicityResult<VariableType> & monRes) const;
+            Valuation getPoint(storm::solver::OptimizationDirection dir, std::set<VariableType> const& possibleMonotoneIncrParameters, std::set<VariableType>const & monDecrParameters) const;
 
             //returns the region as string in the format 0.3<=p<=0.4,0.2<=q<=0.5;
             std::string toString(bool boundariesAsDouble = false) const;
 
+            bool isSubRegion(ParameterRegion<ParametricType> region);
+
+            CoefficientType getBoundParent();
+            void setBoundParent(CoefficientType bound);
+
         private:
 
             void init();
+
+            bool lastSplitMonotone = false;
+            int splitThreshold;
             
             Valuation lowerBoundaries;
             Valuation upperBoundaries;
             std::set<VariableType> variables;
+            std::multimap<CoefficientType, VariableType> sortedOnDifference;
+            CoefficientType parentBound;
         };
 
         template<typename ParametricType>

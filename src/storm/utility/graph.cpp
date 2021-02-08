@@ -1666,6 +1666,40 @@ namespace storm {
             }
 
             template <typename T>
+            std::vector<uint_fast64_t> getBFSSort(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint_fast64_t> const& firstStates) {
+                storm::storage::BitVector seenStates(matrix.getRowGroupCount());
+
+                std::vector<uint_fast64_t> stateQueue;
+                stateQueue.reserve(matrix.getRowGroupCount());
+                std::vector<uint_fast64_t> result;
+                result.reserve(matrix.getRowGroupCount());
+
+                storm::storage::sparse::state_type currentPosition = 0;
+                auto count = matrix.getRowGroupCount() - 1;
+                for (auto const& state : firstStates) {
+                    stateQueue.push_back(state);
+                    result[count] = state;
+                    count--;
+                }
+
+                // Perform a BFS.
+                while (!stateQueue.empty()) {
+                    auto state = stateQueue.back();
+                    stateQueue.pop_back();
+                    seenStates.set(state);
+                    for (auto const& successorEntry : matrix.getRowGroup(state)) {
+                        auto succ = successorEntry.geColumn();
+                        if (!seenStates[succ]) {
+                            result[count] = succ;
+                            count--;
+                            stateQueue.insert(stateQueue.begin(), succ);
+                        }
+                    }
+                }
+                return result;
+            }
+
+            template <typename T>
             std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint64_t> const& firstStates) {
                 if (matrix.getRowCount() != matrix.getColumnCount()) {
                     STORM_LOG_ERROR("Provided matrix is required to be square.");
@@ -1673,7 +1707,7 @@ namespace storm {
                 }
                 
                 uint_fast64_t numberOfStates = matrix.getRowCount();
-                
+
                 // Prepare the result. This relies on the matrix being square.
                 std::vector<uint_fast64_t> topologicalSort;
                 topologicalSort.reserve(numberOfStates);
@@ -1695,7 +1729,6 @@ namespace storm {
                 
                 return topologicalSort;
             }
-
 
             template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps, boost::optional<storm::storage::BitVector> const& choiceFilter);
             
@@ -1774,7 +1807,7 @@ namespace storm {
             template ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint64_t> const& player1RowGrouping, storm::storage::SparseMatrix<double> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair, boost::optional<storm::storage::BitVector> const& player1Candidates);
             
             template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<double> const& matrix,  std::vector<uint64_t> const& firstStates) ;
-            
+
             // Instantiations for storm::RationalNumber.
 #ifdef STORM_HAVE_CARL
             template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps, boost::optional<storm::storage::BitVector> const& choiceFilter);
@@ -1888,7 +1921,6 @@ namespace storm {
             
             
             template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<storm::RationalFunction> const& matrix,  std::vector<uint64_t> const& firstStates);
-            
 #endif
             
             // Instantiations for CUDD.
