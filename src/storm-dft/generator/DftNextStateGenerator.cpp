@@ -227,13 +227,13 @@ namespace storm {
             if (!dependencySuccessful) {
                 // Dependency was unsuccessful -> no BE fails
                 STORM_LOG_ASSERT(triggeringDependency != nullptr, "Dependency is not given");
-                STORM_LOG_TRACE("With the unsuccessful triggering of PDEP: " << triggeringDependency->name() << " [" << triggeringDependency->id() << "]" << " in " << mDft.getStateString(state));
+                STORM_LOG_TRACE("With the unsuccessful triggering of PDEP " << triggeringDependency->name() << " [" << triggeringDependency->id() << "]" << " in " << mDft.getStateString(state));
                 newState->letDependencyBeUnsuccessful(triggeringDependency);
                 return newState;
             }
 
 
-            STORM_LOG_TRACE("With the failure of: " << failedBE->name() << " [" << failedBE->id() << "]" << (triggeringDependency != nullptr ? " (through dependency " + triggeringDependency->name() + " [" + std::to_string(triggeringDependency->id()) + ")]" : "") << " in " << mDft.getStateString(state));
+            STORM_LOG_TRACE("With the failure of " << failedBE->name() << " [" << failedBE->id() << "]" << (triggeringDependency != nullptr ? " (through dependency " + triggeringDependency->name() + " [" + std::to_string(triggeringDependency->id()) + ")]" : "") << " in " << mDft.getStateString(state));
 
             newState->letBEFail(failedBE, triggeringDependency);
 

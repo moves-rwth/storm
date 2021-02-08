@@ -40,7 +40,7 @@ namespace storm {
                 // Get all failable elements
                 if (iterFailable.isFailureDueToDependency()) {
                     if (iterFailable.isConflictingDependency()) {
-                        // We take the first dependeny to resolve the non-determinism
+                        // We take the first dependency to resolve the non-determinism
                         STORM_LOG_WARN("Non-determinism present! We take the dependency with the lowest id");
                     }
 
