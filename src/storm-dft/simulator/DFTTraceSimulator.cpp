@@ -26,7 +26,7 @@ namespace storm {
             }
 
             template<typename ValueType>
-            double DFTTraceSimulator<ValueType>::randomStep() {
+            std::tuple<storm::dft::storage::FailableElements::const_iterator, double, bool> DFTTraceSimulator<ValueType>::randomNextFailure() {
                 auto iterFailable = state->getFailableElements().begin();
 
                 // Check for absorbing state:
@@ -34,7 +34,7 @@ namespace storm {
                 // - no BE can fail
                 if (!state->hasOperationalRelevantEvent() || iterFailable == state->getFailableElements().end()) {
                     STORM_LOG_TRACE("No sucessor states available for " << state->getId());
-                    return -1;
+                    return std::make_tuple(iterFailable, -1, true);
                 }
 
                 // Get all failable elements
@@ -43,9 +43,16 @@ namespace storm {
                         // We take the first dependeny to resolve the non-determinism
                         STORM_LOG_WARN("Non-determinism present! We take the dependency with the lowest id");
                     }
-                    STORM_LOG_TRACE("Let dependency " << *iterFailable.getFailBE(dft).second << " fail");
-                    bool res = step(iterFailable);
-                    return res ? 0 : -1;
+
+                    auto dependency = iterFailable.getFailBE(dft).second;
+                    if (!dependency->isFDEP()) {
+                        // Flip a coin whether the PDEP is successful
+                        storm::utility::BernoulliDistributionGenerator probGenerator(dependency->probability());
+                        bool successful = probGenerator.random(randomGenerator);
+                        return std::make_tuple(iterFailable, 0, successful);
+                    }
+                    STORM_LOG_TRACE("Let dependency " << *dependency << " fail");
+                    return std::make_tuple(iterFailable, 0, true);
                 } else {
                     // Consider all "normal" BE failures
                     // Initialize with first BE
@@ -68,27 +75,39 @@ namespace storm {
                         }
                     }
                     STORM_LOG_TRACE("Let BE " << *nextFail.getFailBE(dft).first << " fail after time " << smallestTimebound);
-                    bool res = step(nextFail);
-                    return res ? smallestTimebound : -1;
+                    return std::make_tuple(nextFail, smallestTimebound, true);
                 }
             }
 
             template<>
-            double DFTTraceSimulator<storm::RationalFunction>::randomStep() {
+            std::tuple<storm::dft::storage::FailableElements::const_iterator, double, bool> DFTTraceSimulator<storm::RationalFunction>::randomNextFailure() {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Simulation not support for parametric DFTs.");
             }
 
+            template<typename ValueType>
+            double DFTTraceSimulator<ValueType>::randomStep() {
+                auto retTuple = this->randomNextFailure();
+                storm::dft::storage::FailableElements::const_iterator nextFailable = std::get<0>(retTuple);
+                double time = std::get<1>(retTuple);
+                bool successful = std::get<2>(retTuple);
+                //double time = pairNextFailure.second;
+                if (time < 0) {
+                    return -1;
+                } else {
+                    // Apply next failure
+                    bool res = step(nextFailable, successful);
+                    return res ? time : -1;
+                }
+            }
 
             template<typename ValueType>
-            bool DFTTraceSimulator<ValueType>::step(storm::dft::storage::FailableElements::const_iterator nextFailElement) {
+            bool DFTTraceSimulator<ValueType>::step(storm::dft::storage::FailableElements::const_iterator nextFailElement, bool dependencySuccessful) {
                 if (nextFailElement == state->getFailableElements().end()) {
                     return false;
                 }
 
                 auto nextBEPair = nextFailElement.getFailBE(dft);
-                auto newState = generator.createSuccessorState(state, nextBEPair.first, nextBEPair.second);
-
-                // TODO handle PDEP
+                auto newState = generator.createSuccessorState(state, nextBEPair.first, nextBEPair.second, dependencySuccessful);
                 
                 if(newState->isInvalid() || newState->isTransient()) {
                     STORM_LOG_TRACE("Step is invalid because new state " << (newState->isInvalid() ? "it is invalid" : "the transient fault is ignored"));

@@ -52,9 +52,20 @@ namespace storm {
                  * Perform one simulation step by letting the next element fail.
                  * 
                  * @param nextFailElement Iterator giving the next element which should fail.
+                 * @param dependencySuccessful Whether the triggering dependency was successful.
+                 *              If the dependency is unsuccessful, no BE fails and only the depedendy is marked as failed.
                  * @return True iff step could be performed successfully.
                  */
-                bool step(storm::dft::storage::FailableElements::const_iterator nextFailElement);
+                bool step(storm::dft::storage::FailableElements::const_iterator nextFailElement, bool dependencySuccessful = true);
+
+                /*!
+                 * Randomly pick an element which fails next (either a BE or a dependency which triggers a BE) and the time after which it fails.
+                 * The time is 0 for a dependency and -1 if no failure can take place.
+                 * In the latter case, the next failable element is not defined.
+                 *
+                 * @return Tuple of next failable element, time after which is fails and whether a possible failure through the dependency is successful.
+                 */
+                std::tuple<storm::dft::storage::FailableElements::const_iterator, double, bool> randomNextFailure();
 
                 /*!
                  * Perform a random step by using the random number generator.

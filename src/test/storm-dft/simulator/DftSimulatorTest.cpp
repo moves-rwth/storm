@@ -87,6 +87,18 @@ namespace {
         EXPECT_NEAR(result, 0.9985116987, 0.01);
     }
 
+    TEST(DftSimulatorTest, PdepUnreliability) {
+        double result = simulateDft(STORM_TEST_RESOURCES_DIR "/dft/pdep.dft", 1, 10000);
+        EXPECT_NEAR(result, 0.2017690905, 0.01);
+        result = simulateDft(STORM_TEST_RESOURCES_DIR "/dft/pdep2.dft", 1, 10000);
+        EXPECT_NEAR(result, 0.2401091405, 0.01);
+        result = simulateDft(STORM_TEST_RESOURCES_DIR "/dft/pdep3.dft", 1, 10000);
+        EXPECT_NEAR(result, 0.2259856274, 0.01);
+        // Examle pdep4 contains non-determinism which is not handled in simulation
+        //result = simulateDft(STORM_TEST_RESOURCES_DIR "/dft/pdep4.dft", 1, 10000);
+        //EXPECT_NEAR(result, 0.008122157897, 0.01);
+    }
+
     TEST(DftSimulatorTest, SpareUnreliability) {
         double result = simulateDft(STORM_TEST_RESOURCES_DIR "/dft/spare.dft", 1, 10000);
         EXPECT_NEAR(result, 0.1118530638, 0.01);
