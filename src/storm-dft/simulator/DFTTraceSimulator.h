@@ -11,6 +11,12 @@ namespace storm {
         namespace simulator {
 
             /*!
+             * Simulation result.
+             *
+             */
+            enum class SimulationResult { SUCCESSFUL, UNSUCCESSFUL, INVALID };
+
+            /*!
              * Simulator for DFTs.
              * A step in the simulation corresponds to the failure of one BE (either on its own or triggered by a dependency)
              * and the failure propagation through the DFT.
@@ -19,6 +25,7 @@ namespace storm {
             template<typename ValueType>
             class DFTTraceSimulator {
                 using DFTStatePointer = std::shared_ptr<storm::storage::DFTState<ValueType>>;
+
             public:
                 /*!
                  * Constructor.
@@ -54,9 +61,9 @@ namespace storm {
                  * @param nextFailElement Iterator giving the next element which should fail.
                  * @param dependencySuccessful Whether the triggering dependency was successful.
                  *              If the dependency is unsuccessful, no BE fails and only the depedendy is marked as failed.
-                 * @return True iff step could be performed successfully.
+                 * @return Successful if step could be performed, unsuccesful if no element can fail or invalid if the next state is invalid (due to a restrictor).
                  */
-                bool step(storm::dft::storage::FailableElements::const_iterator nextFailElement, bool dependencySuccessful = true);
+                SimulationResult step(storm::dft::storage::FailableElements::const_iterator nextFailElement, bool dependencySuccessful = true);
 
                 /*!
                  * Randomly pick an element which fails next (either a BE or a dependency which triggers a BE) and the time after which it fails.
@@ -70,20 +77,22 @@ namespace storm {
                 /*!
                  * Perform a random step by using the random number generator.
                  * 
-                 * @return double The time which progessed between the last step and this step.
-                 *      Returns -1 if no next step could be created.
+                 * @return Pair of the simulation result (successful, unsuccesful, invalid) and the time which progessed between the last step and this step.
                  */
-                double randomStep();
+                std::pair<SimulationResult, double> randomStep();
 
                 /*!
                  * Perform a complete simulation of a failure trace by using the random number generator.
                  * The simulation starts in the initial state and tries to reach a state where the top-level event of the DFT has failed.
                  * If this target state can be reached within the given timebound, the simulation was successful.
+                 * If an invalid state (due to a restrictor) was reached, the simulated trace is invalid.
                  * 
                  * @param timebound Time bound in which the system failure should occur.
-                 * @return True iff a system failure occurred for the generated trace within the time bound.
+                 * @return Simulation result is (1) successful if a system failure occurred for the generated trace within the time bound,
+                 *                              (2) unsuccesfull, if no system failure occurred within the time bound, or
+                 *                              (3) invalid, if an invalid state (due to a restrictor) was reached during the trace generation.
                  */
-                bool simulateCompleteTrace(double timebound);
+                SimulationResult simulateCompleteTrace(double timebound);
 
             protected:
 

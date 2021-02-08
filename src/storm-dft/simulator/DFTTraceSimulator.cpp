@@ -85,25 +85,24 @@ namespace storm {
             }
 
             template<typename ValueType>
-            double DFTTraceSimulator<ValueType>::randomStep() {
+            std::pair<SimulationResult, double> DFTTraceSimulator<ValueType>::randomStep() {
                 auto retTuple = this->randomNextFailure();
                 storm::dft::storage::FailableElements::const_iterator nextFailable = std::get<0>(retTuple);
                 double time = std::get<1>(retTuple);
                 bool successful = std::get<2>(retTuple);
-                //double time = pairNextFailure.second;
                 if (time < 0) {
-                    return -1;
+                    return std::make_pair(SimulationResult::UNSUCCESSFUL, -1);
                 } else {
                     // Apply next failure
-                    bool res = step(nextFailable, successful);
-                    return res ? time : -1;
+                    return std::make_pair(step(nextFailable, successful), time);
                 }
             }
 
             template<typename ValueType>
-            bool DFTTraceSimulator<ValueType>::step(storm::dft::storage::FailableElements::const_iterator nextFailElement, bool dependencySuccessful) {
+            SimulationResult DFTTraceSimulator<ValueType>::step(storm::dft::storage::FailableElements::const_iterator nextFailElement, bool dependencySuccessful) {
                 if (nextFailElement == state->getFailableElements().end()) {
-                    return false;
+                    // No next failure possible
+                    return SimulationResult::UNSUCCESSFUL;
                 }
 
                 auto nextBEPair = nextFailElement.getFailBE(dft);
@@ -111,40 +110,73 @@ namespace storm {
                 
                 if(newState->isInvalid() || newState->isTransient()) {
                     STORM_LOG_TRACE("Step is invalid because new state " << (newState->isInvalid() ? "it is invalid" : "the transient fault is ignored"));
-                    return false;
+                    return SimulationResult::INVALID;
                 }
 
                 state = newState;
-                return true;
+                return SimulationResult::SUCCESSFUL;
             }
 
             template<typename ValueType>
-            bool DFTTraceSimulator<ValueType>::simulateCompleteTrace(double timebound) {
+            SimulationResult DFTTraceSimulator<ValueType>::simulateCompleteTrace(double timebound) {
                 resetToInitial();
+
+                // Check whether DFT is initially already failed.
+                if (state->hasFailed(dft.getTopLevelIndex())) {
+                    STORM_LOG_TRACE("DFT is initially failed");
+                    return SimulationResult::SUCCESSFUL;
+                }
+
                 double time = 0;
                 while (time <= timebound) {
-                    // Check whether DFT failed within timebound
-                    if (state->hasFailed(dft.getTopLevelIndex())) {
-                        STORM_LOG_TRACE("DFT has failed after " << time);
-                        return true;
+                    // Generate next failure
+                    auto retTuple = randomNextFailure();
+                    storm::dft::storage::FailableElements::const_iterator nextFailable = std::get<0>(retTuple);
+                    double addTime = std::get<1>(retTuple);
+                    bool successfulDependency = std::get<2>(retTuple);
+                    if (addTime < 0) {
+                        // No next state can be reached, because no element can fail anymore.
+                        STORM_LOG_TRACE("No next state possible in state " << dft.getStateString(state) << " because no element can fail anymore");
+                        return SimulationResult::UNSUCCESSFUL;
                     }
 
-                    // Generate next state
-                    double res = randomStep();
+                    // TODO: exit if time would be up after this failure
+                    // This is only correct if no invalid states are possible! (no restrictors and no transient failures)
+
+                    // Apply next failure
+                    auto stepResult = step(nextFailable, successfulDependency);
                     STORM_LOG_TRACE("Current state: " << dft.getStateString(state));
-                    if (res < 0) {
-                        // No next state can be reached
-                        STORM_LOG_TRACE("No next state possible in state " << dft.getStateString(state));
-                        return false;
+
+                    // Check whether state is invalid
+                    if (stepResult != SimulationResult::SUCCESSFUL) {
+                        STORM_LOG_ASSERT(stepResult == SimulationResult::INVALID, "Result of simulation step should be invalid.");
+                        // No next state can be reached, because the state is invalid.
+                        STORM_LOG_TRACE("No next state possible in state " << dft.getStateString(state) << " because simulation was invalid");
+                        STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Handling of invalid states is not supported for simulation");
+                        return SimulationResult::INVALID;
                     }
-                    time += res;
+
+                    // Check whether time is up
+                    // Checking whether the time is up must be performed after checking if a state is invalid.
+                    // Otherwise we would erroneously mark invalid traces as unsucessful.
+                    time += addTime;
+                    if (time > timebound) {
+                        STORM_LOG_TRACE("Time limit" << timebound << " exceeded: " << time);
+                        return SimulationResult::UNSUCCESSFUL;
+                    }
+
+                    // Check whether DFT is failed
+                    if (state->hasFailed(dft.getTopLevelIndex())) {
+                        STORM_LOG_TRACE("DFT has failed after " << time);
+                        return SimulationResult::SUCCESSFUL;
+                    }
                 }
-                // Time is up
-                return false;
+                STORM_LOG_ASSERT(false, "Should not be reachable");
+                return SimulationResult::UNSUCCESSFUL;
             }
 
             template<>
-            bool DFTTraceSimulator<storm::RationalFunction>::simulateCompleteTrace(double timebound) {
+            SimulationResult DFTTraceSimulator<storm::RationalFunction>::simulateCompleteTrace(double timebound) {
                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Simulation not support for parametric DFTs.");
             } 
 
