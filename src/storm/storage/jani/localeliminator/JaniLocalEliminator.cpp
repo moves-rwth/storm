@@ -1,5 +1,5 @@
 #include "JaniLocalEliminator.h"
-#include "JaniLocationExpander.h"
+#include "storm/storage/jani/JaniLocationExpander.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/expressions/Expression.h"
@@ -234,9 +234,9 @@ namespace storm {
 
 
         JaniLocalEliminator::EliminateAutomaticallyAction::EliminateAutomaticallyAction(const std::string &automatonName, JaniLocalEliminator::EliminateAutomaticallyAction::EliminationOrder order, uint32_t transitionCountThreshold)
-            : automatonName(automatonName),
-            eliminationOrder(order),
-            transitionCountThreshold(transitionCountThreshold){
+                : automatonName(automatonName),
+                  eliminationOrder(order),
+                  transitionCountThreshold(transitionCountThreshold){
         }
 
         std::string JaniLocalEliminator::EliminateAutomaticallyAction::getDescription() {
@@ -454,6 +454,10 @@ namespace storm {
             this->model = model;
         }
 
+        Property &JaniLocalEliminator::Session::getProperty() {
+            return property;
+        }
+
         bool JaniLocalEliminator::Session::getFinished() {
             return finished;
         }
@@ -507,6 +511,38 @@ namespace storm {
                 newOa.add(Assignment(assignment.getVariable(), assignment.getAssignedExpression().substitute(substitutionMap).simplify()));
             }
             return newOa;
+        }
+
+        JaniLocalEliminator::AutomaticAction::AutomaticAction() {
+
+        }
+
+        std::string JaniLocalEliminator::AutomaticAction::getDescription() {
+            return "AutomaticAction";
+        }
+
+        void JaniLocalEliminator::AutomaticAction::doAction(JaniLocalEliminator::Session &session) {
+            if (session.getModel().getAutomata().size() > 1){
+                session.setModel(session.getModel().flattenComposition());
+            }
+            std::string autName = session.getModel().getAutomata()[0].getName();
+
+            auto variables = session.getProperty().getUsedVariablesAndConstants();
+            std::vector<std::string> variablesToUnfold;
+            for (const expressions::Variable &variable : variables){
+                bool isGlobalVar = session.getModel().getGlobalVariables().hasVariable(variable.getName());
+                bool isLocalVar = session.getModel().getAutomaton(autName).getVariables().hasVariable(variable.getName());
+                if (isGlobalVar || isLocalVar){
+                    variablesToUnfold.push_back(variable.getName());
+                }
+            }
+
+            for (std::string &varName : variablesToUnfold){
+                UnfoldAction unfoldAction(autName, varName);
+                unfoldAction.doAction(session);
+            }
+            EliminateAutomaticallyAction eliminateAction(autName, EliminateAutomaticallyAction::EliminationOrder::NewTransitionCount);
+            eliminateAction.doAction(session);
         }
     }
 }

@@ -14,6 +14,7 @@ namespace storm {
                 explicit Session(Model model, Property property);
                 Model &getModel();
                 void setModel(const Model &model);
+                Property &getProperty();
                 bool getFinished();
                 void setFinished(bool finished);
 
@@ -88,6 +89,13 @@ namespace storm {
             class RebuildWithoutUnreachableAction : public Action {
             public:
                 explicit RebuildWithoutUnreachableAction();
+                std::string getDescription() override;
+                void doAction(Session &session) override;
+            };
+
+            class AutomaticAction : public Action {
+            public:
+                explicit AutomaticAction();
                 std::string getDescription() override;
                 void doAction(Session &session) override;
             };

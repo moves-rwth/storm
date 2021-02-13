@@ -2,21 +2,16 @@
 #include "test/storm_gtest.h"
 
 #include <storm/api/storm.h>
-#include "storm/models/sparse/Model.h"
 #include "storm-parsers/api/model_descriptions.h"
 #include "storm/storage/jani/ModelFeatures.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
-#include "storm/storage/jani/JaniLocalEliminator.h"
-#include "storm/storage/jani/JSONExporter.h"
-#include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
-#include <storm/storage/jani/Property.h>
 #include <storm/modelchecker/results/CheckResult.h>
 #include <storm/modelchecker/results/ExplicitQuantitativeCheckResult.h>
 #include "storm/environment/Environment.h"
-#include <boost/variant/variant.hpp>
 #include <storm/settings/modules/GeneralSettings.h>
 
 
@@ -125,7 +120,30 @@ TEST(JaniLocalEliminator, NandAutoElimination) {
     JaniLocalEliminator eliminator = JaniLocalEliminator(model, props);
 
     eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("multiplex", "s"));
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAutomaticallyAction>("multiplex", JaniLocalEliminator::EliminateAutomaticallyAction::EliminationOrder::NewTransitionCount));
+    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAutomaticallyAction>("multiplex", JaniLocalEliminator::EliminateAutomaticallyAction::EliminationOrder::NewTransitionCount, 5000));
+    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::FinishAction>());
+
+    eliminator.eliminate();
+    model = eliminator.getResult();
+    model.checkValid();
+    model.finalize();
+
+    std::map<storm::expressions::Variable, storm::expressions::Expression> consts = {
+            {model.getConstant("N").getExpressionVariable(), model.getExpressionManager().integer(20)},
+            {model.getConstant("K").getExpressionVariable(), model.getExpressionManager().integer(1)}
+    };
+
+    checkModel(model, props, consts, 16182, 58102, 0.28641904638485044);
+}
+
+TEST(JaniLocalEliminator, NandAutomatic) {
+    auto janiModelProperties = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/nand.v1.jani", storm::jani::getAllKnownModelFeatures(), boost::none);
+    auto model = janiModelProperties.first;
+    auto props = janiModelProperties.second;
+
+    JaniLocalEliminator eliminator = JaniLocalEliminator(model, props);
+
+    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::AutomaticAction>());
     eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::FinishAction>());
 
     eliminator.eliminate();
@@ -167,11 +185,8 @@ TEST(JaniLocalEliminator, MultiplicityTest) {
 
 TEST(JaniLocalEliminator, BrpTest) {
     auto janiModelProperties = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/brp.v1.jani", storm::jani::getAllKnownModelFeatures(), boost::none);
-    auto model = janiModelProperties.first;
-    EXPECT_EQ(model.hasInitialStatesRestriction(), false);
+    storm::jani::Model model = janiModelProperties.first;
     model = model.flattenComposition();
-    EXPECT_EQ(model.hasInitialStatesRestriction(), false);
-    EXPECT_EQ(model.getAutomaton("brp_flattened").hasInitialStatesRestriction(), false);
     auto props = janiModelProperties.second;
 
     JaniLocalEliminator eliminator = JaniLocalEliminator(model, props);
@@ -192,14 +207,63 @@ TEST(JaniLocalEliminator, BrpTest) {
     eliminator.eliminate();
     model = eliminator.getResult();
     model.checkValid();
+    model.finalize();
 
     std::map<storm::expressions::Variable, storm::expressions::Expression> consts = {
             {model.getConstant("N").getExpressionVariable(), model.getExpressionManager().integer(32)},
             {model.getConstant("MAX").getExpressionVariable(), model.getExpressionManager().integer(3)}
     };
 
-    checkModel(model, props, consts, 0, 0, 0.000025235372864445436);
+    checkModel(model, props, consts, 1766, 2307, 0.000025235372864445436);
 }
+
+TEST(JaniLocalEliminator, BluetoothTest) {
+    // Doesn't work, even without our unfolding or performing any model checking
+    auto janiModelProperties = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/bluetooth.v1.jani", storm::jani::getAllKnownModelFeatures(), boost::none);
+    storm::jani::Model model = janiModelProperties.first;
+    model = model.flattenComposition();
+    auto props = janiModelProperties.second;
+
+    // JaniLocalEliminator eliminator = JaniLocalEliminator(model, props);
+
+//    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("bluetooth_flattened", "?"));
+//
+//    eliminator.eliminate();
+//    model = eliminator.getResult();
+//    model.checkValid();
+//    model.finalize();
+
+//    std::map<storm::expressions::Variable, storm::expressions::Expression> consts = {
+//            {model.getConstant("N").getExpressionVariable(), model.getExpressionManager().integer(32)},
+//            {model.getConstant("MAX").getExpressionVariable(), model.getExpressionManager().integer(3)}
+//    };
+
+    // checkModel(model, props, consts, 1766, 2307, 0.000025235372864445436);
+}
+
+TEST(JaniLocalEliminator, CouponTest) {
+    auto janiModelProperties = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/coupon.9-4.v1.jani", storm::jani::getAllKnownModelFeatures(), boost::none);
+    auto model = janiModelProperties.first;
+    auto props = janiModelProperties.second;
+
+    JaniLocalEliminator eliminator = JaniLocalEliminator(model, props);
+
+    // eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("main", "draw0"));
+    // eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAutomaticallyAction>("main", JaniLocalEliminator::EliminateAutomaticallyAction::EliminationOrder::NewTransitionCount));
+    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::FinishAction>());
+
+    eliminator.eliminate();
+    model = eliminator.getResult();
+    model.checkValid();
+    model.finalize();
+
+    std::map<storm::expressions::Variable, storm::expressions::Expression> consts = {
+            {model.getConstant("B").getExpressionVariable(), model.getExpressionManager().integer(5)},
+    };
+
+    checkModel(model, props, consts, 16182, 58102, 0.28641904638485044);
+}
+
 
 TEST(JaniLocalEliminator, PerformanceTest){
     double timeEliminationTotal = 0;
