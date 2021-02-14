@@ -7,6 +7,12 @@
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/localeliminator/JaniLocalEliminator.h"
+#include "storm/storage/jani/localeliminator/AutomaticAction.h"
+#include "storm/storage/jani/localeliminator/EliminateAction.h"
+#include "storm/storage/jani/localeliminator/EliminateAutomaticallyAction.h"
+#include "storm/storage/jani/localeliminator/FinishAction.h"
+#include "storm/storage/jani/localeliminator/RebuildWithoutUnreachableAction.h"
+#include "storm/storage/jani/localeliminator/UnfoldAction.h"
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
 #include <storm/modelchecker/results/CheckResult.h>
@@ -19,6 +25,7 @@ typedef storm::models::sparse::Dtmc<double> Dtmc;
 typedef storm::modelchecker::SparseDtmcPrctlModelChecker<Dtmc> DtmcModelChecker;
 
 using storm::jani::JaniLocalEliminator;
+using namespace storm::jani::elimination_actions    ;
 
 void checkModel(storm::jani::Model model, std::vector<storm::jani::Property> properties, std::map<storm::expressions::Variable, storm::expressions::Expression> consts, int states, int transitions, double expectedValue){
     model = model.defineUndefinedConstants(consts);
@@ -49,7 +56,7 @@ TEST(JaniLocalEliminator, NandNoActionTest) {
     auto props = janiModelProperties.second;
 
     JaniLocalEliminator eliminator = JaniLocalEliminator(model, props);
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::FinishAction>());
+    eliminator.scheduler.addAction(std::make_unique<FinishAction>());
 
     eliminator.eliminate();
     model = eliminator.getResult();
@@ -70,8 +77,8 @@ TEST(JaniLocalEliminator, NandUnfoldOnlyTest) {
     auto props = janiModelProperties.second;
 
     JaniLocalEliminator eliminator = JaniLocalEliminator(model, props);
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("multiplex", "s"));
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::FinishAction>());
+    eliminator.scheduler.addAction(std::make_unique<UnfoldAction>("multiplex", "s"));
+    eliminator.scheduler.addAction(std::make_unique<FinishAction>());
 
     eliminator.eliminate();
     model = eliminator.getResult();
@@ -93,11 +100,11 @@ TEST(JaniLocalEliminator, NandSingleElimination) {
 
     JaniLocalEliminator eliminator = JaniLocalEliminator(model, props);
 
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("multiplex", "s"));
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAction>("multiplex", "l_s_2"));
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAction>("multiplex", "l_s_3"));
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAction>("multiplex", "l_s_1"));
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::FinishAction>());
+    eliminator.scheduler.addAction(std::make_unique<UnfoldAction>("multiplex", "s"));
+    eliminator.scheduler.addAction(std::make_unique<EliminateAction>("multiplex", "l_s_2"));
+    eliminator.scheduler.addAction(std::make_unique<EliminateAction>("multiplex", "l_s_3"));
+    eliminator.scheduler.addAction(std::make_unique<EliminateAction>("multiplex", "l_s_1"));
+    eliminator.scheduler.addAction(std::make_unique<FinishAction>());
 
     eliminator.eliminate();
     model = eliminator.getResult();
@@ -119,9 +126,9 @@ TEST(JaniLocalEliminator, NandAutoElimination) {
 
     JaniLocalEliminator eliminator = JaniLocalEliminator(model, props);
 
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("multiplex", "s"));
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAutomaticallyAction>("multiplex", JaniLocalEliminator::EliminateAutomaticallyAction::EliminationOrder::NewTransitionCount, 5000));
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::FinishAction>());
+    eliminator.scheduler.addAction(std::make_unique<UnfoldAction>("multiplex", "s"));
+    eliminator.scheduler.addAction(std::make_unique<EliminateAutomaticallyAction>("multiplex", EliminateAutomaticallyAction::EliminationOrder::NewTransitionCount, 5000));
+    eliminator.scheduler.addAction(std::make_unique<FinishAction>());
 
     eliminator.eliminate();
     model = eliminator.getResult();
@@ -143,8 +150,8 @@ TEST(JaniLocalEliminator, NandAutomatic) {
 
     JaniLocalEliminator eliminator = JaniLocalEliminator(model, props);
 
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::AutomaticAction>());
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::FinishAction>());
+    eliminator.scheduler.addAction(std::make_unique<AutomaticAction>());
+    eliminator.scheduler.addAction(std::make_unique<FinishAction>());
 
     eliminator.eliminate();
     model = eliminator.getResult();
@@ -166,10 +173,10 @@ TEST(JaniLocalEliminator, MultiplicityTest) {
 
     JaniLocalEliminator eliminator = JaniLocalEliminator(model, props);
 
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("main", "x"));
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAction>("main", "l_x_2"));
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::RebuildWithoutUnreachableAction>());
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::FinishAction>());
+    eliminator.scheduler.addAction(std::make_unique<UnfoldAction>("main", "x"));
+    eliminator.scheduler.addAction(std::make_unique<EliminateAction>("main", "l_x_2"));
+    eliminator.scheduler.addAction(std::make_unique<RebuildWithoutUnreachableAction>());
+    eliminator.scheduler.addAction(std::make_unique<FinishAction>());
 
     eliminator.eliminate();
     model = eliminator.getResult();
@@ -191,8 +198,8 @@ TEST(JaniLocalEliminator, BrpTest) {
 
     JaniLocalEliminator eliminator = JaniLocalEliminator(model, props);
 
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("brp_flattened", "r"));
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("brp_flattened", "s"));
+    eliminator.scheduler.addAction(std::make_unique<UnfoldAction>("brp_flattened", "r"));
+    eliminator.scheduler.addAction(std::make_unique<UnfoldAction>("brp_flattened", "s"));
 //    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAutomaticallyAction>("brp_flattened"));
 //    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("brp_flattened", "l"));
 //    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAutomaticallyAction>("brp_flattened"));
@@ -202,7 +209,7 @@ TEST(JaniLocalEliminator, BrpTest) {
 //    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAutomaticallyAction>("brp_flattened"));
 //    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("brp_flattened", "s_ab"));
 //    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAutomaticallyAction>("brp_flattened"));
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::FinishAction>());
+    eliminator.scheduler.addAction(std::make_unique<FinishAction>());
 
     eliminator.eliminate();
     model = eliminator.getResult();
@@ -250,7 +257,7 @@ TEST(JaniLocalEliminator, CouponTest) {
 
     // eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("main", "draw0"));
     // eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAutomaticallyAction>("main", JaniLocalEliminator::EliminateAutomaticallyAction::EliminationOrder::NewTransitionCount));
-    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::FinishAction>());
+    eliminator.scheduler.addAction(std::make_unique<FinishAction>());
 
     eliminator.eliminate();
     model = eliminator.getResult();
@@ -284,7 +291,7 @@ TEST(JaniLocalEliminator, PerformanceTest){
 //        eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAction>("multiplex", "l_s_2"));
 //        eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAction>("multiplex", "l_s_3"));
 //        eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAction>("multiplex", "l_s_1"));
-        eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::FinishAction>());
+        eliminator.scheduler.addAction(std::make_unique<FinishAction>());
 
         eliminator.eliminate();
         model = eliminator.getResult();
