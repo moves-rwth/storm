@@ -19,12 +19,7 @@ namespace storm {
             virtual void traverse(FunctionDefinition& functionDefinition, boost::any const& data);
             virtual void traverse(VariableSet& variableSet, boost::any const& data);
             virtual void traverse(Location& location, boost::any const& data);
-            virtual void traverse(BooleanVariable& variable, boost::any const& data);
-            virtual void traverse(BoundedIntegerVariable& variable, boost::any const& data);
-            virtual void traverse(UnboundedIntegerVariable& variable, boost::any const& data);
-            virtual void traverse(RealVariable& variable, boost::any const& data);
-            virtual void traverse(ArrayVariable& variable, boost::any const& data);
-            virtual void traverse(ClockVariable& variable, boost::any const& data);
+            virtual void traverse(Variable& variable, boost::any const& data);
             virtual void traverse(EdgeContainer& edgeContainer, boost::any const& data);
             virtual void traverse(TemplateEdge& templateEdge, boost::any const& data);
             virtual void traverse(TemplateEdgeDestination& templateEdgeDestination, boost::any const& data);
@@ -48,12 +43,7 @@ namespace storm {
             virtual void traverse(FunctionDefinition const& functionDefinition, boost::any const& data);
             virtual void traverse(VariableSet const& variableSet, boost::any const& data);
             virtual void traverse(Location const& location, boost::any const& data);
-            virtual void traverse(BooleanVariable const& variable, boost::any const& data);
-            virtual void traverse(BoundedIntegerVariable const& variable, boost::any const& data);
-            virtual void traverse(UnboundedIntegerVariable const& variable, boost::any const& data);
-            virtual void traverse(RealVariable const& variable, boost::any const& data);
-            virtual void traverse(ArrayVariable const& variable, boost::any const& data);
-            virtual void traverse(ClockVariable const& variable, boost::any const& data);
+            virtual void traverse(Variable const& variable, boost::any const& data);
             virtual void traverse(EdgeContainer const& edgeContainer, boost::any const& data);
             virtual void traverse(TemplateEdge const& templateEdge, boost::any const& data);
             virtual void traverse(TemplateEdgeDestination const& templateEdgeDestination, boost::any const& data);

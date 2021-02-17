@@ -322,60 +322,19 @@ namespace storm {
                     }
                 }
                 
-                void traverse(BooleanVariable& variable, boost::any const& data) override {
-                    if (variable.hasInitExpression()) {
-                        FunctionEliminationExpressionVisitor* functionEliminationVisitor = boost::any_cast<FunctionEliminationExpressionVisitor*>(data);
-                        variable.setInitExpression(functionEliminationVisitor->eliminate(variable.getInitExpression()));
-                    }
-                }
-                
-                void traverse(BoundedIntegerVariable& variable, boost::any const& data) override {
+                void traverse(Variable& variable, boost::any const& data) override {
                     FunctionEliminationExpressionVisitor* functionEliminationVisitor = boost::any_cast<FunctionEliminationExpressionVisitor*>(data);
                     if (variable.hasInitExpression()) {
                         variable.setInitExpression(functionEliminationVisitor->eliminate(variable.getInitExpression()));
                     }
-                    if (variable.hasLowerBound()) {
+                    if (variable.isBoundedVariable() && variable.hasLowerBound()) {
                         variable.setLowerBound(functionEliminationVisitor->eliminate(variable.getLowerBound()));
                     }
-                    if (variable.hasUpperBound()) {
+                    if (variable.isBoundedVariable() && variable.hasUpperBound()) {
                         variable.setUpperBound(functionEliminationVisitor->eliminate(variable.getUpperBound()));
                     }
                 }
-                
-                void traverse(UnboundedIntegerVariable& variable, boost::any const& data) override {
-                    if (variable.hasInitExpression()) {
-                        FunctionEliminationExpressionVisitor* functionEliminationVisitor = boost::any_cast<FunctionEliminationExpressionVisitor*>(data);
-                        variable.setInitExpression(functionEliminationVisitor->eliminate(variable.getInitExpression()));
-                    }
-                }
-                
-                void traverse(RealVariable& variable, boost::any const& data) override {
-                     if (variable.hasInitExpression()) {
-                        FunctionEliminationExpressionVisitor* functionEliminationVisitor = boost::any_cast<FunctionEliminationExpressionVisitor*>(data);
-                        variable.setInitExpression(functionEliminationVisitor->eliminate(variable.getInitExpression()));
-                    }
-                }
-                
-                void traverse(ArrayVariable& variable, boost::any const& data) override {
-                    FunctionEliminationExpressionVisitor* functionEliminationVisitor = boost::any_cast<FunctionEliminationExpressionVisitor*>(data);
-                    if (variable.hasInitExpression()) {
-                        variable.setInitExpression(functionEliminationVisitor->eliminate(variable.getInitExpression()));
-                    }
-                    if (variable.hasLowerElementTypeBound()) {
-                        variable.setLowerElementTypeBound(functionEliminationVisitor->eliminate(variable.getLowerElementTypeBound()));
-                    }
-                    if (variable.hasUpperElementTypeBound()) {
-                        variable.setUpperElementTypeBound(functionEliminationVisitor->eliminate(variable.getUpperElementTypeBound()));
-                    }
-                }
-                
-                void traverse(ClockVariable& variable, boost::any const& data) override {
-                    FunctionEliminationExpressionVisitor* functionEliminationVisitor = boost::any_cast<FunctionEliminationExpressionVisitor*>(data);
-                    if (variable.hasInitExpression()) {
-                        variable.setInitExpression(functionEliminationVisitor->eliminate(variable.getInitExpression()));
-                    }
-                }
-                
+
                 void traverse(TemplateEdge& templateEdge, boost::any const& data) override {
                     FunctionEliminationExpressionVisitor* functionEliminationVisitor = boost::any_cast<FunctionEliminationExpressionVisitor*>(data);
                     templateEdge.setGuard(functionEliminationVisitor->eliminate(templateEdge.getGuard()));

@@ -58,6 +58,8 @@ namespace storm {
                 }
                 
                 virtual boost::any visit(storm::expressions::VariableExpression const& expression, boost::any const& data) override {
+                    // TODO: @Jip fix this
+                    assert (false);
                     std::unordered_map<storm::expressions::Variable, std::size_t> const* arrayVariableSizeMap = boost::any_cast<std::unordered_map<storm::expressions::Variable, std::size_t> const*>(data);
                     if (expression.getType().isArrayType()) {
                         auto varIt = arrayVariableSizeMap->find(expression.getVariable());
@@ -387,7 +389,7 @@ namespace storm {
                     }
                 }
                 
-                virtual void traverse(ArrayVariable const& variable, boost::any const& data) override {
+                virtual void traverse(Variable const& variable, boost::any const& data) override {
                     if (variable.hasInitExpression()) {
                         auto& map = *boost::any_cast<MapPtr>(data);
                         std::size_t newSize = MaxArraySizeExpressionVisitor().getMaxSize(variable.getInitExpression(), map);
@@ -424,7 +426,7 @@ namespace storm {
                     
                     // Insert fresh basic variables for global array variables
                     auto& replacements = boost::any_cast<ResultType*>(data)->replacements;
-                    for (storm::jani::ArrayVariable const& arrayVariable : model.getGlobalVariables().getArrayVariables()) {
+                    for (storm::jani::Variable const& arrayVariable : model.getGlobalVariables().getArrayVariables()) {
                         std::vector<storm::jani::Variable const*>& basicVars = replacements.at(arrayVariable.getExpressionVariable());
                         for (uint64_t index = 0; index < basicVars.size(); ++index) {
                             basicVars[index] = &model.addVariable(*getBasicVariable(arrayVariable, index));
@@ -456,7 +458,7 @@ namespace storm {
                     
                     // Insert fresh basic variables for local array variables
                     auto& replacements = boost::any_cast<ResultType*>(data)->replacements;
-                    for (storm::jani::ArrayVariable const& arrayVariable : automaton.getVariables().getArrayVariables()) {
+                    for (storm::jani::Variable const& arrayVariable : automaton.getVariables().getArrayVariables()) {
                         std::vector<storm::jani::Variable const*>& basicVars = replacements.at(arrayVariable.getExpressionVariable());
                         for (uint64_t index = 0; index < basicVars.size(); ++index) {
                             basicVars[index] = &automaton.addVariable(*getBasicVariable(arrayVariable, index));
@@ -573,43 +575,45 @@ namespace storm {
                 
             private:
                 
-                std::shared_ptr<Variable> getBasicVariable(ArrayVariable const& arrayVariable, uint64_t index) const {
+                std::shared_ptr<Variable> getBasicVariable(Variable const& arrayVariable, uint64_t index) const {
                     std::string name = arrayVariable.getExpressionVariable().getName() + "_at_" + std::to_string(index);
                     storm::expressions::Expression initValue;
                     if (arrayVariable.hasInitExpression()) {
                         initValue = arrayExprEliminator->eliminate(std::make_shared<storm::expressions::ArrayAccessExpression>(expressionManager, arrayVariable.getExpressionVariable().getType().getElementType(), arrayVariable.getInitExpression().getBaseExpressionPointer(), expressionManager.integer(index).getBaseExpressionPointer())->toExpression());
                     }
-                    if (arrayVariable.getElementType() == ArrayVariable::ElementType::Int) {
-                        storm::expressions::Variable exprVariable = expressionManager.declareIntegerVariable(name);
-                        if (arrayVariable.hasElementTypeBound()) {
-                            if (initValue.isInitialized()) {
-                                return std::make_shared<BoundedIntegerVariable>(name, exprVariable, initValue, arrayVariable.isTransient(), arrayVariable.getLowerElementTypeBound(), arrayVariable.getUpperElementTypeBound());
-                            } else {
-                                return std::make_shared<BoundedIntegerVariable>(name, exprVariable, arrayVariable.getLowerElementTypeBound(), arrayVariable.getUpperElementTypeBound());
-                            }
-                        } else {
-                            if (initValue.isInitialized()) {
-                                return std::make_shared<UnboundedIntegerVariable>(name, exprVariable, initValue, arrayVariable.isTransient());
-                            } else {
-                                return std::make_shared<UnboundedIntegerVariable>(name, exprVariable);
-                            }
-                        }
-                    } else if (arrayVariable.getElementType() == ArrayVariable::ElementType::Real) {
-                        storm::expressions::Variable exprVariable = expressionManager.declareRationalVariable(name);
-                        if (initValue.isInitialized()) {
-                            return std::make_shared<RealVariable>(name, exprVariable, initValue, arrayVariable.isTransient());
-                        } else {
-                            return std::make_shared<RealVariable>(name, exprVariable);
-                        }
-                    } else if (arrayVariable.getElementType() == ArrayVariable::ElementType::Bool) {
-                        storm::expressions::Variable exprVariable = expressionManager.declareBooleanVariable(name);
-                        if (initValue.isInitialized()) {
-                            return std::make_shared<BooleanVariable>(name, exprVariable, initValue, arrayVariable.isTransient());
-                        } else {
-                            return std::make_shared<BooleanVariable>(name, exprVariable);
-                        }
-                    }
-                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unhandled array base type.");
+                    // TODO: @Jip fix this
+                    assert (false);
+//                    if (arrayVariable.getElementType() == ArrayVariable::ElementType::Int) {
+//                        storm::expressions::Variable exprVariable = expressionManager.declareIntegerVariable(name);
+//                        if (arrayVariable.hasElementTypeBound()) {
+//                            if (initValue.isInitialized()) {
+//                                return std::make_shared<BoundedIntegerVariable>(name, exprVariable, initValue, arrayVariable.isTransient(), arrayVariable.getLowerElementTypeBound(), arrayVariable.getUpperElementTypeBound());
+//                            } else {
+//                                return std::make_shared<BoundedIntegerVariable>(name, exprVariable, arrayVariable.getLowerElementTypeBound(), arrayVariable.getUpperElementTypeBound());
+//                            }
+//                        } else {
+//                            if (initValue.isInitialized()) {
+//                                return std::make_shared<UnboundedIntegerVariable>(name, exprVariable, initValue, arrayVariable.isTransient());
+//                            } else {
+//                                return std::make_shared<UnboundedIntegerVariable>(name, exprVariable);
+//                            }
+//                        }
+//                    } else if (arrayVariable.getElementType() == ArrayVariable::ElementType::Real) {
+//                        storm::expressions::Variable exprVariable = expressionManager.declareRationalVariable(name);
+//                        if (initValue.isInitialized()) {
+//                            return std::make_shared<RealVariable>(name, exprVariable, initValue, arrayVariable.isTransient());
+//                        } else {
+//                            return std::make_shared<RealVariable>(name, exprVariable);
+//                        }
+//                    } else if (arrayVariable.getElementType() == ArrayVariable::ElementType::Bool) {
+//                        storm::expressions::Variable exprVariable = expressionManager.declareBooleanVariable(name);
+//                        if (initValue.isInitialized()) {
+//                            return std::make_shared<BooleanVariable>(name, exprVariable, initValue, arrayVariable.isTransient());
+//                        } else {
+//                            return std::make_shared<BooleanVariable>(name, exprVariable);
+//                        }
+//                    }
+//                    STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unhandled array base type.");
                     return nullptr;
                 }
                 
@@ -645,10 +649,10 @@ namespace storm {
                     if (var.isBooleanVariable()) {
                         return expressionManager.boolean(false);
                     }
-                    if (var.isBoundedIntegerVariable()) {
-                        return var.asBoundedIntegerVariable().getLowerBound();
+                    if (var.isBoundedVariable() && var.isIntegerVariable()) {
+                        return var.getLowerBound();
                     }
-                    if (var.isUnboundedIntegerVariable()) {
+                    if (!var.isBoundedVariable() && var.isIntegerVariable()) {
                         return expressionManager.integer(0);
                     }
                     if (var.isRealVariable()) {

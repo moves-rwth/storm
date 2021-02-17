@@ -13,151 +13,95 @@ namespace storm {
             // Intentionally left empty.
         }
         
-        detail::Variables<BooleanVariable> VariableSet::getBooleanVariables() {
-            return detail::Variables<BooleanVariable>(booleanVariables.begin(), booleanVariables.end());
+        detail::Variables<Variable> VariableSet::getBooleanVariables() {
+            return detail::Variables<Variable>(booleanVariables.begin(), booleanVariables.end());
         }
         
-        detail::ConstVariables<BooleanVariable> VariableSet::getBooleanVariables() const {
-            return detail::ConstVariables<BooleanVariable>(booleanVariables.begin(), booleanVariables.end());
+        detail::ConstVariables<Variable> VariableSet::getBooleanVariables() const {
+            return detail::ConstVariables<Variable>(booleanVariables.begin(), booleanVariables.end());
         }
 
-        detail::Variables<BoundedIntegerVariable> VariableSet::getBoundedIntegerVariables() {
-            return detail::Variables<BoundedIntegerVariable>(boundedIntegerVariables.begin(), boundedIntegerVariables.end());
+        detail::Variables<Variable> VariableSet::getBoundedIntegerVariables() {
+            return detail::Variables<Variable>(boundedIntegerVariables.begin(), boundedIntegerVariables.end());
         }
 
-        detail::ConstVariables<BoundedIntegerVariable> VariableSet::getBoundedIntegerVariables() const {
-            return detail::ConstVariables<BoundedIntegerVariable>(boundedIntegerVariables.begin(), boundedIntegerVariables.end());
+        detail::ConstVariables<Variable> VariableSet::getBoundedIntegerVariables() const {
+            return detail::ConstVariables<Variable>(boundedIntegerVariables.begin(), boundedIntegerVariables.end());
         }
 
-        detail::Variables<UnboundedIntegerVariable> VariableSet::getUnboundedIntegerVariables() {
-            return detail::Variables<UnboundedIntegerVariable>(unboundedIntegerVariables.begin(), unboundedIntegerVariables.end());
+        detail::Variables<Variable> VariableSet::getUnboundedIntegerVariables() {
+            return detail::Variables<Variable>(unboundedIntegerVariables.begin(), unboundedIntegerVariables.end());
         }
 
-        detail::ConstVariables<UnboundedIntegerVariable> VariableSet::getUnboundedIntegerVariables() const {
-            return detail::ConstVariables<UnboundedIntegerVariable>(unboundedIntegerVariables.begin(), unboundedIntegerVariables.end());
+        detail::ConstVariables<Variable> VariableSet::getUnboundedIntegerVariables() const {
+            return detail::ConstVariables<Variable>(unboundedIntegerVariables.begin(), unboundedIntegerVariables.end());
         }
 
-        detail::Variables<RealVariable> VariableSet::getRealVariables() {
-            return detail::Variables<RealVariable>(realVariables.begin(), realVariables.end());
+        detail::Variables<Variable> VariableSet::getRealVariables() {
+            return detail::Variables<Variable>(realVariables.begin(), realVariables.end());
         }
         
-        detail::ConstVariables<RealVariable> VariableSet::getRealVariables() const {
-            return detail::ConstVariables<RealVariable>(realVariables.begin(), realVariables.end());
+        detail::ConstVariables<Variable> VariableSet::getRealVariables() const {
+            return detail::ConstVariables<Variable>(realVariables.begin(), realVariables.end());
         }
         
-        detail::Variables<ArrayVariable> VariableSet::getArrayVariables() {
-            return detail::Variables<ArrayVariable>(arrayVariables.begin(), arrayVariables.end());
+        detail::Variables<Variable> VariableSet::getArrayVariables() {
+            return detail::Variables<Variable>(arrayVariables.begin(), arrayVariables.end());
         }
         
-        detail::ConstVariables<ArrayVariable> VariableSet::getArrayVariables() const {
-            return detail::ConstVariables<ArrayVariable>(arrayVariables.begin(), arrayVariables.end());
+        detail::ConstVariables<Variable> VariableSet::getArrayVariables() const {
+            return detail::ConstVariables<Variable>(arrayVariables.begin(), arrayVariables.end());
         }
         
-        detail::Variables<ClockVariable> VariableSet::getClockVariables() {
-            return detail::Variables<ClockVariable>(clockVariables.begin(), clockVariables.end());
+        detail::Variables<Variable> VariableSet::getClockVariables() {
+            return detail::Variables<Variable>(clockVariables.begin(), clockVariables.end());
         }
         
-        detail::ConstVariables<ClockVariable> VariableSet::getClockVariables() const {
-            return detail::ConstVariables<ClockVariable>(clockVariables.begin(), clockVariables.end());
+        detail::ConstVariables<Variable> VariableSet::getClockVariables() const {
+            return detail::ConstVariables<Variable>(clockVariables.begin(), clockVariables.end());
+        }
+
+        detail::Variables<Variable> VariableSet::getContinuousVariables() {
+            return detail::Variables<Variable>(continuousVariables.begin(), continuousVariables.end());
+        }
+
+        detail::ConstVariables<Variable> VariableSet::getContinuousVariables() const {
+            return detail::ConstVariables<Variable>(continuousVariables.begin(), continuousVariables.end());
         }
         
         Variable const& VariableSet::addVariable(Variable const& variable) {
+            STORM_LOG_THROW(!this->hasVariable(variable.getName()), storm::exceptions::WrongFormatException, "Cannot add variable with name '" << variable.getName() << "', because a variable with that name already exists.");
+            std::shared_ptr<Variable> newVariable = std::make_shared<Variable>(variable);
+            variables.push_back(newVariable);
+            if (variable.isTransient()) {
+                transientVariables.push_back(newVariable);
+            }
+            nameToVariable.emplace(variable.getName(), variable.getExpressionVariable());
+            variableToVariable.emplace(variable.getExpressionVariable(), newVariable);
+
             if (variable.isBooleanVariable()) {
-                return addVariable(variable.asBooleanVariable());
-            } else if (variable.isBoundedIntegerVariable()) {
-                return addVariable(variable.asBoundedIntegerVariable());
-            } else if (variable.isUnboundedIntegerVariable()) {
-                return addVariable(variable.asUnboundedIntegerVariable());
+                booleanVariables.push_back(newVariable);
+            } else if (variable.isBoundedVariable() && variable.isIntegerVariable()) {
+                boundedIntegerVariables.push_back(newVariable);
+            } else if (!variable.isBoundedVariable() && variable.isIntegerVariable()) {
+                unboundedIntegerVariables.push_back(newVariable);
             } else if (variable.isRealVariable()) {
-                return addVariable(variable.asRealVariable());
+                realVariables.push_back(newVariable);
             } else if (variable.isArrayVariable()) {
-                return addVariable(variable.asArrayVariable());
+                arrayVariables.push_back(newVariable);
             } else if (variable.isClockVariable()) {
-                return addVariable(variable.asClockVariable());
+                clockVariables.push_back(newVariable);
+            } else if (variable.isContinuousVariable()) {
+                continuousVariables.push_back(newVariable);
+            } else {
+                STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Cannot add variable of unknown type.");
             }
-            STORM_LOG_THROW(false, storm::exceptions::InvalidTypeException, "Cannot add variable of unknown type.");
+            return *newVariable;
         }
 
+        
 
-        BooleanVariable const& VariableSet::addVariable(BooleanVariable const& variable) {
-            STORM_LOG_THROW(!this->hasVariable(variable.getName()), storm::exceptions::WrongFormatException, "Cannot add variable with name '" << variable.getName() << "', because a variable with that name already exists.");
-            std::shared_ptr<BooleanVariable> newVariable = std::make_shared<BooleanVariable>(variable);
-            variables.push_back(newVariable);
-            booleanVariables.push_back(newVariable);
-            if (variable.isTransient()) {
-                transientVariables.push_back(newVariable);
-            }
-            nameToVariable.emplace(variable.getName(), variable.getExpressionVariable());
-            variableToVariable.emplace(variable.getExpressionVariable(), newVariable);
-            return *newVariable;
-        }
-        
-        BoundedIntegerVariable const& VariableSet::addVariable(BoundedIntegerVariable const& variable) {
-            STORM_LOG_THROW(!this->hasVariable(variable.getName()), storm::exceptions::WrongFormatException, "Cannot add variable with name '" << variable.getName() << "', because a variable with that name already exists.");
-            std::shared_ptr<BoundedIntegerVariable> newVariable = std::make_shared<BoundedIntegerVariable>(variable);
-            variables.push_back(newVariable);
-            boundedIntegerVariables.push_back(newVariable);
-            if (variable.isTransient()) {
-                transientVariables.push_back(newVariable);
-            }
-            nameToVariable.emplace(variable.getName(), variable.getExpressionVariable());
-            variableToVariable.emplace(variable.getExpressionVariable(), newVariable);
-            return *newVariable;
-        }
-        
-        UnboundedIntegerVariable const& VariableSet::addVariable(UnboundedIntegerVariable const& variable) {
-            STORM_LOG_THROW(!this->hasVariable(variable.getName()), storm::exceptions::WrongFormatException, "Cannot add variable with name '" << variable.getName() << "', because a variable with that name already exists.");
-            std::shared_ptr<UnboundedIntegerVariable> newVariable = std::make_shared<UnboundedIntegerVariable>(variable);
-            variables.push_back(newVariable);
-            unboundedIntegerVariables.push_back(newVariable);
-            if (variable.isTransient()) {
-                transientVariables.push_back(newVariable);
-            }
-            nameToVariable.emplace(variable.getName(), variable.getExpressionVariable());
-            variableToVariable.emplace(variable.getExpressionVariable(), newVariable);
-            return *newVariable;
-        }
-        
-        RealVariable const& VariableSet::addVariable(RealVariable const& variable) {
-            STORM_LOG_THROW(!this->hasVariable(variable.getName()), storm::exceptions::WrongFormatException, "Cannot add variable with name '" << variable.getName() << "', because a variable with that name already exists.");
-            std::shared_ptr<RealVariable> newVariable = std::make_shared<RealVariable>(variable);
-            variables.push_back(newVariable);
-            realVariables.push_back(newVariable);
-            if (variable.isTransient()) {
-                transientVariables.push_back(newVariable);
-            }
-            nameToVariable.emplace(variable.getName(), variable.getExpressionVariable());
-            variableToVariable.emplace(variable.getExpressionVariable(), newVariable);
-            return *newVariable;
-        }
-        
-        ArrayVariable const& VariableSet::addVariable(ArrayVariable const& variable) {
-            STORM_LOG_THROW(!this->hasVariable(variable.getName()), storm::exceptions::WrongFormatException, "Cannot add variable with name '" << variable.getName() << "', because a variable with that name already exists.");
-            std::shared_ptr<ArrayVariable> newVariable = std::make_shared<ArrayVariable>(variable);
-            variables.push_back(newVariable);
-            arrayVariables.push_back(newVariable);
-            if (variable.isTransient()) {
-                transientVariables.push_back(newVariable);
-            }
-            nameToVariable.emplace(variable.getName(), variable.getExpressionVariable());
-            variableToVariable.emplace(variable.getExpressionVariable(), newVariable);
-            return *newVariable;
-        }
-        
-        ClockVariable const& VariableSet::addVariable(ClockVariable const& variable) {
-            STORM_LOG_THROW(!this->hasVariable(variable.getName()), storm::exceptions::WrongFormatException, "Cannot add variable with name '" << variable.getName() << "', because a variable with that name already exists.");
-            std::shared_ptr<ClockVariable> newVariable = std::make_shared<ClockVariable>(variable);
-            variables.push_back(newVariable);
-            clockVariables.push_back(newVariable);
-            if (variable.isTransient()) {
-                transientVariables.push_back(newVariable);
-            }
-            nameToVariable.emplace(variable.getName(), variable.getExpressionVariable());
-            variableToVariable.emplace(variable.getExpressionVariable(), newVariable);
-            return *newVariable;
-        }
-        
-        std::vector<std::shared_ptr<ArrayVariable>> VariableSet::dropAllArrayVariables() {
+        std::vector<std::shared_ptr<Variable>> VariableSet::dropAllArrayVariables() {
             if (!arrayVariables.empty()) {
                 for (auto const& arrVar : arrayVariables) {
                     nameToVariable.erase(arrVar->getName());
@@ -179,7 +123,7 @@ namespace storm {
                 transientVariables = std::move(newVariables);
             }
             
-            std::vector<std::shared_ptr<ArrayVariable>> result = std::move(arrayVariables);
+            std::vector<std::shared_ptr<Variable>> result = std::move(arrayVariables);
             arrayVariables.clear();
             return result;
         }
@@ -222,10 +166,10 @@ namespace storm {
             if (janiVar->isBooleanVariable()) {
                 eraseFromVariableVector(booleanVariables, variable);
             }
-            if (janiVar->isBoundedIntegerVariable()) {
+            if (janiVar->isIntegerVariable() && janiVar->isBoundedVariable()) {
                 eraseFromVariableVector(boundedIntegerVariables, variable);
             }
-            if (janiVar->isUnboundedIntegerVariable()) {
+            if (janiVar->isIntegerVariable() && !janiVar->isBoundedVariable()) {
                 eraseFromVariableVector(unboundedIntegerVariables, variable);
             }
             if (janiVar->isRealVariable()) {
@@ -235,6 +179,9 @@ namespace storm {
                 eraseFromVariableVector(arrayVariables, variable);
             }
             if (janiVar->isClockVariable()) {
+                eraseFromVariableVector(clockVariables, variable);
+            }
+            if (janiVar->isContinuousVariable()) {
                 eraseFromVariableVector(clockVariables, variable);
             }
             if (janiVar->isTransient()) {
@@ -301,6 +248,10 @@ namespace storm {
         bool VariableSet::containsClockVariables() const {
             return !clockVariables.empty();
         }
+
+        bool VariableSet::containsContinuousVariables() const {
+            return !continuousVariables.empty();
+        }
         
         bool VariableSet::containsNonTransientRealVariables() const {
             for (auto const& variable : realVariables) {
@@ -327,7 +278,6 @@ namespace storm {
         uint64_t VariableSet::getNumberOfVariables() const {
             return variables.size();
         }
-
 
         uint64_t VariableSet::getNumberOfNontransientVariables() const {
             return getNumberOfVariables() - getNumberOfTransientVariables();
@@ -356,7 +306,7 @@ namespace storm {
         uint_fast64_t VariableSet::getNumberOfUnboundedIntegerTransientVariables() const {
             uint_fast64_t result = 0;
             for (auto const& variable : variables) {
-                if (variable->isTransient() && variable->isUnboundedIntegerVariable()) {
+                if (variable->isTransient() && variable->isIntegerVariable() && !variable->isBoundedVariable()) {
                     ++result;
                 }
             }
@@ -366,7 +316,7 @@ namespace storm {
         uint_fast64_t VariableSet::getNumberOfNumericalTransientVariables() const {
             uint_fast64_t result = 0;
             for (auto const& variable : transientVariables) {
-                if (variable->isRealVariable() || variable->isUnboundedIntegerVariable() || variable->isBoundedIntegerVariable()) {
+                if (variable->isRealVariable() || variable->isIntegerVariable()) {
                     ++result;
                 }
             }
@@ -404,13 +354,13 @@ namespace storm {
                         return true;
                     }
                 }
-                if (arrayVariable.hasLowerElementTypeBound()) {
-                    if (arrayVariable.getLowerElementTypeBound().containsVariable(variables)) {
+                if (arrayVariable.hasLowerBound()) {
+                    if (arrayVariable.getLowerBound().containsVariable(variables)) {
                         return true;
                     }
                 }
-                if (arrayVariable.hasUpperElementTypeBound()) {
-                    if (arrayVariable.getUpperElementTypeBound().containsVariable(variables)) {
+                if (arrayVariable.hasUpperBound()) {
+                    if (arrayVariable.getUpperBound().containsVariable(variables)) {
                         return true;
                     }
                 }

@@ -45,55 +45,23 @@ namespace storm {
                     info.nrVariables += variableSet.getNumberOfNontransientVariables();
                     ConstJaniTraverser::traverse(variableSet, data);
                 }
-                
-                virtual void traverse(BooleanVariable const& variable, boost::any const& data) override {
+
+                virtual void traverse(Variable const& variable, boost::any const& data) override {
                     if (!variable.isTransient()) {
-                        domainSizesProduct *= storm::utility::convertNumber<storm::RationalNumber, uint64_t>(2u);
-                        domainSizesSum += 2;
-                    }
-                    ConstJaniTraverser::traverse(variable, data);
-                }
-                
-                virtual void traverse(BoundedIntegerVariable const& variable, boost::any const& data) override {
-                    if (!variable.isTransient()) {
-                        if (variable.hasLowerBound() && variable.hasUpperBound() && !variable.getLowerBound().containsVariables() && !variable.getUpperBound().containsVariables()) {
+                        if (variable.isBooleanVariable()) {
+                            domainSizesProduct *= storm::utility::convertNumber<storm::RationalNumber, uint64_t>(2u);
+                            domainSizesSum += 2;
+                        } else if (variable.isIntegerVariable() && variable.isBoundedVariable() && variable.hasLowerBound() && variable.hasUpperBound() && !variable.getLowerBound().containsVariables() && !variable.getUpperBound().containsVariables()) {
                             domainSizesProduct *= storm::utility::convertNumber<storm::RationalNumber, uint64_t>((variable.getUpperBound().evaluateAsInt() - variable.getLowerBound().evaluateAsInt()));
                             domainSizesSum += (variable.getUpperBound().evaluateAsInt() - variable.getLowerBound().evaluateAsInt());
-                        } else {
+                        }else {
                             domainSizesProduct = storm::utility::zero<storm::RationalNumber>(); // i.e. unknown
+
                         }
                     }
                     ConstJaniTraverser::traverse(variable, data);
                 }
-                
-                virtual void traverse(UnboundedIntegerVariable const& variable, boost::any const& data) override {
-                    if (!variable.isTransient()) {
-                        domainSizesProduct = storm::utility::zero<storm::RationalNumber>(); // i.e. unknown
-                    }
-                    
-                    ConstJaniTraverser::traverse(variable, data);
-                }
-                
-                virtual void traverse(RealVariable const& variable, boost::any const& data) override {
-                    if (!variable.isTransient()) {
-                        domainSizesProduct = storm::utility::zero<storm::RationalNumber>(); // i.e. unknown
-                    }
-                    ConstJaniTraverser::traverse(variable, data);
-                }
-                
-                virtual void traverse(ArrayVariable const& variable, boost::any const& data) override {
-                    if (!variable.isTransient()) {
-                        domainSizesProduct = storm::utility::zero<storm::RationalNumber>(); // i.e. unknown
-                    }
-                    ConstJaniTraverser::traverse(variable, data);
-                }
-                
-                virtual void traverse(ClockVariable const& variable, boost::any const& data) override {
-                    if (!variable.isTransient()) {
-                        domainSizesProduct = storm::utility::zero<storm::RationalNumber>(); // i.e. unknown
-                    }
-                    ConstJaniTraverser::traverse(variable, data);
-                }
+
                 
             private:
                 InformationObject info;

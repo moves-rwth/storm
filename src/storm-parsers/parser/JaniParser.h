@@ -79,12 +79,13 @@ namespace storm {
                 enum class BasicType {Bool, Int, Real};
                 boost::optional<BasicType> basicType;
                 boost::optional<std::pair<storm::expressions::Expression, storm::expressions::Expression>> bounds;
-                std::unique_ptr<ParsedType> arrayBase;
+                std::shared_ptr<ParsedType> arrayBase;
                 storm::expressions::Type expressionType;
             };
             void parseType(ParsedType& result, storm::json<ValueType> const& typeStructure, std::string variableName, Scope const& scope);
             storm::jani::LValue parseLValue(storm::json<ValueType> const& lValueStructure, Scope const& scope);
             std::shared_ptr<storm::jani::Variable>  parseVariable(storm::json<ValueType> const& variableStructure, bool requireInitialValues, Scope const& scope, std::string const& namePrefix = "");
+            storm::jani::JaniType * const parseArrayVariable(std::shared_ptr<ParsedType> type);
             storm::expressions::Expression parseExpression(storm::json<ValueType> const& expressionStructure, Scope const& scope, bool returnNoneOnUnknownOpString = false, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables = {});
             
         private:

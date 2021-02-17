@@ -104,10 +104,10 @@ namespace storm {
                 cpptempl::data_map generateModelData();
 
                 void generateVariables(cpptempl::data_map& modelData);
-                cpptempl::data_map generateBooleanVariable(storm::jani::BooleanVariable const& variable);
-                cpptempl::data_map generateBoundedIntegerVariable(storm::jani::BoundedIntegerVariable const& variable);
-                cpptempl::data_map generateUnboundedIntegerVariable(storm::jani::UnboundedIntegerVariable const& variable);
-                cpptempl::data_map generateRealVariable(storm::jani::RealVariable const& variable);
+                cpptempl::data_map generateBooleanVariable(storm::jani::Variable const& variable);
+                cpptempl::data_map generateBoundedIntegerVariable(storm::jani::Variable const& variable);
+                cpptempl::data_map generateUnboundedIntegerVariable(storm::jani::Variable const& variable);
+                cpptempl::data_map generateRealVariable(storm::jani::Variable const& variable);
                 cpptempl::data_map generateLocationVariable(storm::jani::Automaton const& automaton);
 
                 void generateInitialStates(cpptempl::data_map& modelData);

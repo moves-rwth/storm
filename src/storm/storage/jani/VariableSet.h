@@ -5,12 +5,7 @@
 
 #include "storm/adapters/DereferenceIteratorAdapter.h"
 
-#include "storm/storage/jani/BooleanVariable.h"
-#include "storm/storage/jani/UnboundedIntegerVariable.h"
-#include "storm/storage/jani/BoundedIntegerVariable.h"
-#include "storm/storage/jani/RealVariable.h"
-#include "storm/storage/jani/ArrayVariable.h"
-#include "storm/storage/jani/ClockVariable.h"
+#include "storm/storage/jani/Variable.h"
 
 namespace storm {
     namespace jani {
@@ -33,62 +28,72 @@ namespace storm {
             /*!
              * Retrieves the boolean variables in this set.
              */
-            detail::Variables<BooleanVariable> getBooleanVariables();
+            detail::Variables<Variable> getBooleanVariables();
 
             /*!
              * Retrieves the boolean variables in this set.
              */
-            detail::ConstVariables<BooleanVariable> getBooleanVariables() const;
+            detail::ConstVariables<Variable> getBooleanVariables() const;
 
             /*!
              * Retrieves the bounded integer variables in this set.
              */
-            detail::Variables<BoundedIntegerVariable> getBoundedIntegerVariables();
+            detail::Variables<Variable> getBoundedIntegerVariables();
 
             /*!
              * Retrieves the bounded integer variables in this set.
              */
-            detail::ConstVariables<BoundedIntegerVariable> getBoundedIntegerVariables() const;
+            detail::ConstVariables<Variable> getBoundedIntegerVariables() const;
 
             /*!
              * Retrieves the unbounded integer variables in this set.
              */
-            detail::Variables<UnboundedIntegerVariable> getUnboundedIntegerVariables();
+            detail::Variables<Variable> getUnboundedIntegerVariables();
 
             /*!
              * Retrieves the unbounded integer variables in this set.
              */
-            detail::ConstVariables<UnboundedIntegerVariable> getUnboundedIntegerVariables() const;
+            detail::ConstVariables<Variable> getUnboundedIntegerVariables() const;
             
             /*!
              * Retrieves the real variables in this set.
              */
-            detail::Variables<RealVariable> getRealVariables();
+            detail::Variables<Variable> getRealVariables();
             
             /*!
              * Retrieves the real variables in this set.
              */
-            detail::ConstVariables<RealVariable> getRealVariables() const;
+            detail::ConstVariables<Variable> getRealVariables() const;
             
             /*!
              * Retrieves the Array variables in this set.
              */
-            detail::Variables<ArrayVariable> getArrayVariables();
+            detail::Variables<Variable> getArrayVariables();
             
             /*!
              * Retrieves the Array variables in this set.
              */
-            detail::ConstVariables<ArrayVariable> getArrayVariables() const;
+            detail::ConstVariables<Variable> getArrayVariables() const;
             
             /*!
              * Retrieves the clock variables in this set.
              */
-            detail::Variables<ClockVariable> getClockVariables();
+            detail::Variables<Variable> getClockVariables();
             
             /*!
              * Retrieves the clock variables in this set.
              */
-            detail::ConstVariables<ClockVariable> getClockVariables() const;
+            detail::ConstVariables<Variable> getClockVariables() const;
+
+            /*!
+             * Retrieves the continous variables in this set.
+             */
+            detail::Variables<Variable> getContinuousVariables();
+
+            /*!
+             * Retrieves the continous variables in this set.
+             */
+            detail::ConstVariables<Variable> getContinuousVariables() const;
 
             /*!
              * Adds the given variable to this set.
@@ -96,39 +101,10 @@ namespace storm {
             Variable const& addVariable(Variable const& variable);
 
             /*!
-             * Adds the given boolean variable to this set.
-             */
-            BooleanVariable const& addVariable(BooleanVariable const& variable);
-
-            /*!
-             * Adds the given bounded integer variable to this set.
-             */
-            BoundedIntegerVariable const& addVariable(BoundedIntegerVariable const& variable);
-
-            /*!
-             * Adds the given unbounded integer variable to this set.
-             */
-            UnboundedIntegerVariable const& addVariable(UnboundedIntegerVariable const& variable);
-            
-            /*!
-             * Adds the given real variable to this set.
-             */
-            RealVariable const& addVariable(RealVariable const& variable);
-
-            /*!
-             * Adds the given array variable to this set.
-             */
-            ArrayVariable const& addVariable(ArrayVariable const& variable);
-
-            /*!
              * Removes all array variables in this set
              */
-            std::vector<std::shared_ptr<ArrayVariable>> dropAllArrayVariables();
- 
-            /*!
-             * Adds the given clock variable to this set.
-             */
-            ClockVariable const& addVariable(ClockVariable const& variable);
+            std::vector<std::shared_ptr<Variable>> dropAllArrayVariables();
+
             
             /*!
              * Retrieves whether this variable set contains a variable with the given name.
@@ -144,6 +120,7 @@ namespace storm {
              * Retrieves whether this variable set contains a given variable.
              */
             bool hasVariable(storm::jani::Variable const& variable) const;
+
             /*!
              * Retrieves whether this variable set contains a variable with the expression variable.
              */
@@ -213,6 +190,11 @@ namespace storm {
              * Retrieves whether the set of variables contains a clock variable.
              */
             bool containsClockVariables() const;
+
+            /*!
+             * Retrieves whether the set of variables contains a clock variable.
+             */
+            bool containsContinuousVariables() const;
 
             /*!
              * Retrieves whether the set of variables contains a non-transient real variable.
@@ -295,22 +277,25 @@ namespace storm {
             std::vector<std::shared_ptr<Variable>> variables;
             
             /// The boolean variables in this set.
-            std::vector<std::shared_ptr<BooleanVariable>> booleanVariables;
+            std::vector<std::shared_ptr<Variable>> booleanVariables;
 
             /// The bounded integer variables in this set.
-            std::vector<std::shared_ptr<BoundedIntegerVariable>> boundedIntegerVariables;
+            std::vector<std::shared_ptr<Variable>> boundedIntegerVariables;
 
             /// The unbounded integer variables in this set.
-            std::vector<std::shared_ptr<UnboundedIntegerVariable>> unboundedIntegerVariables;
+            std::vector<std::shared_ptr<Variable>> unboundedIntegerVariables;
             
             /// The real variables in this set.
-            std::vector<std::shared_ptr<RealVariable>> realVariables;
+            std::vector<std::shared_ptr<Variable>> realVariables;
             
             /// The array variables in this set.
-            std::vector<std::shared_ptr<ArrayVariable>> arrayVariables;
+            std::vector<std::shared_ptr<Variable>> arrayVariables;
             
             /// The clock variables in this set.
-            std::vector<std::shared_ptr<ClockVariable>> clockVariables;
+            std::vector<std::shared_ptr<Variable>> clockVariables;
+
+            /// The continous variables in this set.
+            std::vector<std::shared_ptr<Variable>> continuousVariables;
             
             /// The transient variables in this set.
             std::vector<std::shared_ptr<Variable>> transientVariables;

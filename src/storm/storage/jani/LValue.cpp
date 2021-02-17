@@ -28,10 +28,10 @@ namespace storm {
             return arrayIndex.isInitialized();
         }
         
-        storm::jani::ArrayVariable const&  LValue::getArray() const {
+        storm::jani::Variable const&  LValue::getArray() const {
             STORM_LOG_ASSERT(isArrayAccess(), "Tried to get the array variable of an LValue that is not an array access.");
             STORM_LOG_ASSERT(variable->isArrayVariable(), "Tried to get the array variable of an array access LValue, but the variable is not of type array.");
-            return variable->asArrayVariable();
+            return *variable;
         }
         
         storm::expressions::Expression const& LValue::getArrayIndex() const {

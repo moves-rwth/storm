@@ -35,6 +35,7 @@
 #include "storm/storage/jani/expressions/JaniReduceNestingExpressionVisitor.h"
 #include "storm/storage/jani/FunctionEliminator.h"
 #include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/jani/types/ArrayType.h"
 
 namespace storm {
     namespace jani {
@@ -833,7 +834,32 @@ namespace storm {
             }
             return ExportJsonType(constantDeclarations);
         }
-        
+
+        ExportJsonType buildArray(storm::jani::Variable variable, storm::jani::JaniType type, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables = VariableSet()) {
+            ExportJsonType typeDesc ;
+            if(type.isBooleanType()) {
+                typeDesc = "bool";
+            } else if (type.isRealType()) {
+                typeDesc = "real";
+            } else if (type.isIntegerType() && !type.isBoundedType()) {
+                typeDesc = "int";
+            } else if (type.isIntegerType() && type.isBoundedType()) {
+                typeDesc["kind"] = "bounded";
+                typeDesc["base"] = "int";
+                typeDesc["lower-bound"] = buildExpression(variable.getLowerBound(), constants, globalVariables, localVariables);
+                typeDesc["upper-bound"] = buildExpression(variable.getUpperBound(), constants, globalVariables, localVariables);
+            } else if (type.isArrayType()) {
+                typeDesc["kind"] = "array";
+                typeDesc["base"] = buildArray(variable, variable.getType()->getChildType(), constants, globalVariables, localVariables);
+            } else if (type.isClockType()) {
+                typeDesc = "clock";
+            } else if (type.isContinuousType()) {
+                typeDesc = "continuous";
+            } else {
+                assert (false);
+            }
+            return typeDesc;
+        }
         
         ExportJsonType buildVariablesArray(storm::jani::VariableSet const& varSet, std::vector<storm::jani::Constant> const& constants, VariableSet const& globalVariables, VariableSet const& localVariables = VariableSet()) {
             ExportJsonType variableDeclarations = std::vector<ExportJsonType>();
@@ -843,47 +869,28 @@ namespace storm {
                 if (variable.isTransient()) {
                     varEntry["transient"] = variable.isTransient();
                 }
-                ExportJsonType typeDesc;
+                ExportJsonType typeDesc ;
                 if(variable.isBooleanVariable()) {
                     typeDesc = "bool";
                 } else if (variable.isRealVariable()) {
                     typeDesc = "real";
-                } else if (variable.isUnboundedIntegerVariable()) {
+                } else if (variable.isIntegerVariable() && !variable.isBoundedVariable()) {
                     typeDesc = "int";
-                } else if (variable.isBoundedIntegerVariable()) {
+                } else if (variable.isIntegerVariable() && variable.isBoundedVariable()) {
                     typeDesc["kind"] = "bounded";
                     typeDesc["base"] = "int";
-                    typeDesc["lower-bound"] = buildExpression(variable.asBoundedIntegerVariable().getLowerBound(), constants, globalVariables, localVariables);
-                    typeDesc["upper-bound"] = buildExpression(variable.asBoundedIntegerVariable().getUpperBound(), constants, globalVariables, localVariables);
+                    typeDesc["lower-bound"] = buildExpression(variable.getLowerBound(), constants, globalVariables, localVariables);
+                    typeDesc["upper-bound"] = buildExpression(variable.getUpperBound(), constants, globalVariables, localVariables);
                 } else if (variable.isArrayVariable()) {
                     typeDesc["kind"] = "array";
-                    switch (variable.asArrayVariable().getElementType()) {
-                        case storm::jani::ArrayVariable::ElementType::Bool:
-                            typeDesc["base"] = "bool";
-                            break;
-                        case storm::jani::ArrayVariable::ElementType::Real:
-                            typeDesc["base"] = "real";
-                            break;
-                        case storm::jani::ArrayVariable::ElementType::Int:
-                            if (variable.asArrayVariable().hasElementTypeBound()) {
-                                ExportJsonType baseTypeDescr;
-                                baseTypeDescr["kind"] = "bounded";
-                                baseTypeDescr["base "] = "int";
-                                if (variable.asArrayVariable().hasLowerElementTypeBound()) {
-                                    baseTypeDescr["lower-bound"] = buildExpression(variable.asArrayVariable().getLowerElementTypeBound(), constants, globalVariables, localVariables);
-                                }
-                                if (variable.asArrayVariable().hasUpperElementTypeBound()) {
-                                    baseTypeDescr["upper-bound"] = buildExpression(variable.asArrayVariable().getUpperElementTypeBound(), constants, globalVariables, localVariables);
-                                }
-                                typeDesc["base"] = baseTypeDescr;
-                            } else {
-                                typeDesc["base"] = "int";
-                            }
-                            break;
-                    }
-                } else {
-                    assert(variable.isClockVariable());
+                    // TODO: check if brackets are correct
+                    typeDesc["base"] = buildArray(variable, variable.getType()->getChildType(), constants, globalVariables, localVariables);
+                } else if (variable.isClockVariable()) {
                     typeDesc = "clock";
+                } else if (variable.isContinuousVariable()) {
+                    typeDesc = "continuous";
+                } else {
+                    assert (false);
                 }
                 varEntry["type"] = typeDesc;
                 if (variable.hasInitExpression()) {

@@ -624,7 +624,8 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
-            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateBooleanVariable(storm::jani::BooleanVariable const& variable) {
+            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateBooleanVariable(storm::jani::Variable const& variable) {
+                STORM_LOG_ASSERT(variable.isBooleanVariable(), "Cannot generate BooleanVariable for non BooleanVariable");
                 cpptempl::data_map result;
                 result["name"] = registerVariable(variable.getExpressionVariable(), variable.isTransient());
                 if (variable.hasInitExpression()) {
@@ -634,7 +635,8 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
-            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateBoundedIntegerVariable(storm::jani::BoundedIntegerVariable const& variable) {
+            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateBoundedIntegerVariable(storm::jani::Variable const& variable) {
+                STORM_LOG_ASSERT(variable.isBoundedVariable() && variable.isIntegerVariable(), "Cannot generate BoundedIntegerVariable for non BoundedIntegerVariable");
                 cpptempl::data_map result;
                 
                 int_fast64_t lowerBound = variable.getLowerBound().evaluateAsInt();
@@ -661,7 +663,9 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
-            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateUnboundedIntegerVariable(storm::jani::UnboundedIntegerVariable const& variable) {
+            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateUnboundedIntegerVariable(storm::jani::Variable const& variable) {
+                STORM_LOG_ASSERT(!variable.isBoundedVariable() && variable.isIntegerVariable(), "Cannot generate UnboundedIntegerVariable for non UnboundedIntegerVariable");
+
                 cpptempl::data_map result;
                 
                 result["name"] = registerVariable(variable.getExpressionVariable(), variable.isTransient());
@@ -673,7 +677,9 @@ namespace storm {
             }
             
             template <typename ValueType, typename RewardModelType>
-            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateRealVariable(storm::jani::RealVariable const& variable) {
+            cpptempl::data_map ExplicitJitJaniModelBuilder<ValueType, RewardModelType>::generateRealVariable(storm::jani::Variable const& variable) {
+                STORM_LOG_ASSERT(variable.isRealVariable(), "Cannot generate RealVariable for non RealVariable");
+
                 cpptempl::data_map result;
                 
                 result["name"] = registerVariable(variable.getExpressionVariable(), variable.isTransient());
@@ -714,7 +720,7 @@ namespace storm {
                 cpptempl::data_list locationVariables;
                 
                 for (auto const& variable : model.getGlobalVariables().getBooleanVariables()) {
-                    cpptempl::data_map newBooleanVariable = generateBooleanVariable(variable.asBooleanVariable());
+                    cpptempl::data_map newBooleanVariable = generateBooleanVariable(variable);
                     if (variable.isTransient()) {
                         transientBooleanVariables.push_back(newBooleanVariable);
                     } else {
@@ -722,7 +728,7 @@ namespace storm {
                     }
                 }
                 for (auto const& variable : model.getGlobalVariables().getBoundedIntegerVariables()) {
-                    cpptempl::data_map newBoundedIntegerVariable = generateBoundedIntegerVariable(variable.asBoundedIntegerVariable());
+                    cpptempl::data_map newBoundedIntegerVariable = generateBoundedIntegerVariable(variable);
                     if (variable.isTransient()) {
                         transientBoundedIntegerVariables.push_back(newBoundedIntegerVariable);
                     } else {
@@ -730,7 +736,7 @@ namespace storm {
                     }
                 }
                 for (auto const& variable : model.getGlobalVariables().getUnboundedIntegerVariables()) {
-                    cpptempl::data_map newUnboundedIntegerVariable = generateUnboundedIntegerVariable(variable.asUnboundedIntegerVariable());
+                    cpptempl::data_map newUnboundedIntegerVariable = generateUnboundedIntegerVariable(variable);
                     if (variable.isTransient()) {
                         transientUnboundedIntegerVariables.push_back(newUnboundedIntegerVariable);
                     } else {
@@ -738,7 +744,7 @@ namespace storm {
                     }
                 }
                 for (auto const& variable : model.getGlobalVariables().getRealVariables()) {
-                    cpptempl::data_map newRealVariable = generateRealVariable(variable.asRealVariable());
+                    cpptempl::data_map newRealVariable = generateRealVariable(variable);
                     if (variable.isTransient()) {
                         transientRealVariables.push_back(newRealVariable);
                     } else {
@@ -748,7 +754,7 @@ namespace storm {
                 for (auto const& automatonRef : parallelAutomata) {
                     storm::jani::Automaton const& automaton = automatonRef.get();
                     for (auto const& variable : automaton.getVariables().getBooleanVariables()) {
-                        cpptempl::data_map newBooleanVariable = generateBooleanVariable(variable.asBooleanVariable());
+                        cpptempl::data_map newBooleanVariable = generateBooleanVariable(variable);
                         if (variable.isTransient()) {
                             transientBooleanVariables.push_back(newBooleanVariable);
                         } else {
@@ -756,7 +762,7 @@ namespace storm {
                         }
                     }
                     for (auto const& variable : automaton.getVariables().getBoundedIntegerVariables()) {
-                        cpptempl::data_map newBoundedIntegerVariable = generateBoundedIntegerVariable(variable.asBoundedIntegerVariable());
+                        cpptempl::data_map newBoundedIntegerVariable = generateBoundedIntegerVariable(variable);
                         if (variable.isTransient()) {
                             transientBoundedIntegerVariables.push_back(newBoundedIntegerVariable);
                         } else {
@@ -764,7 +770,7 @@ namespace storm {
                         }
                     }
                     for (auto const& variable : automaton.getVariables().getUnboundedIntegerVariables()) {
-                        cpptempl::data_map newUnboundedIntegerVariable = generateUnboundedIntegerVariable(variable.asUnboundedIntegerVariable());
+                        cpptempl::data_map newUnboundedIntegerVariable = generateUnboundedIntegerVariable(variable);
                         if (variable.isTransient()) {
                             transientUnboundedIntegerVariables.push_back(newUnboundedIntegerVariable);
                         } else {
@@ -772,7 +778,7 @@ namespace storm {
                         }
                     }
                     for (auto const& variable : automaton.getVariables().getRealVariables()) {
-                        cpptempl::data_map newRealVariable = generateRealVariable(variable.asRealVariable());
+                        cpptempl::data_map newRealVariable = generateRealVariable(variable);
                         if (variable.isTransient()) {
                             transientRealVariables.push_back(newRealVariable);
                         } else {
@@ -1601,7 +1607,7 @@ namespace storm {
                         if (this->options.isBuildAllLabelsSet() || this->options.getLabelNames().find(variable.getName()) != this->options.getLabelNames().end()) {
                             cpptempl::data_map label;
                             label["name"] = variable.getName();
-                            label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(model.getLabelExpression(variable.asBooleanVariable(), parallelAutomata)), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastDouble));
+                            label["predicate"] = expressionTranslator.translate(shiftVariablesWrtLowerBound(model.getLabelExpression(variable, parallelAutomata)), storm::expressions::ToCppTranslationOptions(variablePrefixes, variableToName, storm::expressions::ToCppTranslationMode::CastDouble));
                             labels.push_back(label);
                         }
                     }
@@ -1635,7 +1641,7 @@ namespace storm {
                         auto const& variable = variables.getVariable(labelOrExpression.getLabel());
                         STORM_LOG_THROW(variable.isBooleanVariable(), storm::exceptions::WrongFormatException, "Terminal label refers to non-boolean variable '" << variable.getName() << ".");
                         STORM_LOG_THROW(variable.isTransient(), storm::exceptions::WrongFormatException, "Terminal label refers to non-transient variable '" << variable.getName() << ".");
-                        auto labelExpression = model.getLabelExpression(variable.asBooleanVariable(), parallelAutomata);
+                        auto labelExpression = model.getLabelExpression(variable, parallelAutomata);
                         if (!terminalEntry.second) {
                             labelExpression = !labelExpression;
                         }

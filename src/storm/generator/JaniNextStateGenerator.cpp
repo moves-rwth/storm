@@ -109,7 +109,7 @@ namespace storm {
                             STORM_LOG_THROW(variable.isBooleanVariable(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-boolean variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             STORM_LOG_THROW(variable.isTransient(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-transient variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             
-                            this->terminalStates.push_back(std::make_pair(this->model.getLabelExpression(variable.asBooleanVariable(), this->parallelAutomata), expressionOrLabelAndBool.second));
+                            this->terminalStates.push_back(std::make_pair(this->model.getLabelExpression(variable, this->parallelAutomata), expressionOrLabelAndBool.second));
                         }
                     }
                 }

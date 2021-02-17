@@ -1,6 +1,6 @@
 #pragma once
 
-#include "storm/storage/jani/ArrayVariable.h"
+#include "storm/storage/jani/Variable.h"
 #include "storm/storage/expressions/Expressions.h"
 
 namespace storm {
@@ -18,7 +18,7 @@ namespace storm {
             storm::jani::Variable const& getVariable() const;
             
             bool isArrayAccess() const;
-            storm::jani::ArrayVariable const& getArray() const;
+            storm::jani::Variable const& getArray() const;
             storm::expressions::Expression const& getArrayIndex() const;
             void setArrayIndex(storm::expressions::Expression const& newIndex);
             

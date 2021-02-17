@@ -14,7 +14,7 @@ namespace storm {
         class Property;
         
         struct ArrayEliminatorData {
-            std::vector<std::shared_ptr<ArrayVariable>> eliminatedArrayVariables;
+            std::vector<std::shared_ptr<Variable>> eliminatedArrayVariables;
             std::unordered_map<storm::expressions::Variable, std::vector<storm::jani::Variable const*>> replacements;
             
             // Transforms the given expression (which might contain array expressions) to an equivalent expression without array variables.
