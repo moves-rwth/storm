@@ -32,8 +32,11 @@ namespace storm {
             auto wellFormedResult = storm::api::isWellFormed(origDft, true);
             STORM_LOG_THROW(wellFormedResult.first, storm::exceptions::UnmetRequirementException, "DFT is not well-formed for analysis: " << wellFormedResult.second);
 
-            // Optimizing DFT
-            storm::storage::DFT<ValueType> dft = origDft.optimize();
+            // Optimizing DFT for modularisation
+            storm::storage::DFT<ValueType> dft = origDft;
+            if (allowModularisation) {
+                dft = origDft.optimize();
+            }
 
             // TODO: check that all paths reach the target state for approximation
 
