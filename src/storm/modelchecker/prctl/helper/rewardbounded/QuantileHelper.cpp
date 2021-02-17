@@ -202,7 +202,7 @@ namespace storm {
                     std::vector<uint64_t> permutation;
                     for (auto const& v : quantileFormula.getBoundVariables()) {
                         uint64_t openDim = 0;
-                        for (auto const& dim : getOpenDimensions()) {
+                        for (auto dim : getOpenDimensions()) {
                             if (getVariableForDimension(dim) == v) {
                                 permutation.push_back(openDim);
                                 break;
@@ -244,7 +244,7 @@ namespace storm {
                     storm::storage::BitVector lowerBoundedDimensions(getDimension());
                     storm::storage::BitVector downwardClosedDimensions(getDimension());
                     bool hasLowerValueBound = storm::logic::isLowerBound(boundedUntilOp->getComparisonType());
-                    for (auto const& d : getOpenDimensions()) {
+                    for (auto d : getOpenDimensions()) {
                         if (consideredDimensions.get(d)) {
                             bool hasLowerCostBound = boundedUntilOp->getSubformula().asBoundedUntilFormula().hasLowerBound(d);
                             lowerBoundedDimensions.set(d, hasLowerCostBound);
@@ -260,7 +260,7 @@ namespace storm {
                     bool onlyUpperCostBounds = lowerBoundedDimensions.empty();
                     bool onlyLowerCostBounds = lowerBoundedDimensions == consideredDimensions;
                     if (onlyUpperCostBounds || onlyLowerCostBounds) {
-                        for (auto const& k : consideredDimensions) {
+                        for (auto k : consideredDimensions) {
                             storm::storage::BitVector subQueryDimensions = consideredDimensions;
                             subQueryDimensions.set(k, false);
                             bool subQueryComplement = complementaryQuery != ((onlyUpperCostBounds && hasLowerValueBound) || (onlyLowerCostBounds && !hasLowerValueBound));
@@ -268,7 +268,7 @@ namespace storm {
                             for (auto const& subQueryCostLimit : subQueryResult.first.getGenerator()) {
                                 CostLimits initPoint;
                                 uint64_t i = 0;
-                                for (auto const& dim : consideredDimensions) {
+                                for (auto dim : consideredDimensions) {
                                     if (dim == k) {
                                         initPoint.push_back(CostLimit::infinity());
                                     } else {
@@ -294,7 +294,7 @@ namespace storm {
                         MultiDimensionalRewardUnfolding<ValueType, true> rewardUnfolding(model, boundedUntilOp, infinityVariables);
                         if (computeQuantile(env, consideredDimensions, *boundedUntilOp, lowerBoundedDimensions, satCostLimits, unsatCostLimits, rewardUnfolding)) {
                             std::vector<ValueType> scalingFactors;
-                            for (auto const& dim : consideredDimensions) {
+                            for (auto dim : consideredDimensions) {
                                 scalingFactors.push_back(rewardUnfolding.getDimension(dim).scalingFactor);
                             }
                             std::pair<CostLimitClosure, std::vector<ValueType>> result(satCostLimits, scalingFactors);
@@ -386,7 +386,7 @@ namespace storm {
                                 // Transform candidate cost limits to an appropriate start epoch
                                 auto startEpoch = rewardUnfolding.getStartEpoch(true);
                                 auto costLimitIt = currentCandidate.begin();
-                                for (auto const& dim : consideredDimensions) {
+                                for (auto dim : consideredDimensions) {
                                     if (lowerBoundedDimensions.get(dim)) {
                                         if (costLimitIt->get() > 0) {
                                             rewardUnfolding.getEpochManager().setDimensionOfEpoch(startEpoch, dim, costLimitIt->get() - 1);

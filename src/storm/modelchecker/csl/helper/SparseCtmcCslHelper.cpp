@@ -47,7 +47,7 @@ namespace storm {
                 // If we need to compute values with relative precision, it might be necessary to increase the precision requirements (epsilon)
                 ValueType newEpsilon = epsilon;
                 // Only consider positions that are relevant for the solve goal (e.g. initial states of the model) and are supposed to have a non-zero value
-                for (auto const& state : relevantPositions) {
+                for (auto state : relevantPositions) {
                     if (storm::utility::isZero(resultVector[state])) {
                         newEpsilon = std::min(epsilon * storm::utility::convertNumber<ValueType>(0.1), newEpsilon);
                     } else {
@@ -120,7 +120,7 @@ namespace storm {
                                 if (!statesWithProbabilityGreater0NonPsi.empty()) {
                                     // Find the maximal rate of all 'maybe' states to take it as the uniformization rate.
                                     ValueType uniformizationRate = 0;
-                                    for (auto const& state : statesWithProbabilityGreater0NonPsi) {
+                                    for (auto state : statesWithProbabilityGreater0NonPsi) {
                                         uniformizationRate = std::max(uniformizationRate, exitRates[state]);
                                     }
                                     uniformizationRate *= 1.02;
@@ -153,7 +153,7 @@ namespace storm {
                                 storm::utility::vector::selectVectorValues(subResult, relevantStates, result);
                                 
                                 ValueType uniformizationRate = 0;
-                                for (auto const& state : relevantStates) {
+                                for (auto state : relevantStates) {
                                     uniformizationRate = std::max(uniformizationRate, exitRates[state]);
                                 }
                                 uniformizationRate *= 1.02;
@@ -181,7 +181,7 @@ namespace storm {
                                     if (!statesWithProbabilityGreater0NonPsi.empty()) {
                                         // Find the maximal rate of all 'maybe' states to take it as the uniformization rate.
                                         ValueType uniformizationRate = storm::utility::zero<ValueType>();
-                                        for (auto const& state : statesWithProbabilityGreater0NonPsi) {
+                                        for (auto state : statesWithProbabilityGreater0NonPsi) {
                                             uniformizationRate = std::max(uniformizationRate, exitRates[state]);
                                         }
                                         uniformizationRate *= 1.02;
@@ -206,7 +206,7 @@ namespace storm {
                                     // Then compute the transient probabilities of being in such a state after t time units. For this,
                                     // we must re-uniformize the CTMC, so we need to compute the second uniformized matrix.
                                     ValueType uniformizationRate = storm::utility::zero<ValueType>();
-                                    for (auto const& state : relevantStates) {
+                                    for (auto state : relevantStates) {
                                         uniformizationRate = std::max(uniformizationRate, exitRates[state]);
                                     }
                                     uniformizationRate *= 1.02;
@@ -229,7 +229,7 @@ namespace storm {
                                     // Then compute the transient probabilities of being in such a state after t time units. For this,
                                     // we must re-uniformize the CTMC, so we need to compute the second uniformized matrix.
                                     ValueType uniformizationRate = storm::utility::zero<ValueType>();
-                                    for (auto const& state : statesWithProbabilityGreater0) {
+                                    for (auto state : statesWithProbabilityGreater0) {
                                         uniformizationRate = std::max(uniformizationRate, exitRates[state]);
                                     }
                                     uniformizationRate *= 1.02;
@@ -495,7 +495,7 @@ namespace storm {
                 storm::storage::SparseMatrix<ValueType> transposedMatrix(rateMatrix);
                 transposedMatrix.makeRowsAbsorbing(psiStates);
                 std::vector<ValueType> newRates = exitRates;
-                for (auto const& state : psiStates) {
+                for (auto state : psiStates) {
                     newRates[state] = storm::utility::one<ValueType>();
                 }
 
@@ -510,7 +510,7 @@ namespace storm {
                 if (!relevantStates.empty()) {
                     // Find the maximal rate of all relevant states to take it as the uniformization rate.
                     ValueType uniformizationRate = 0;
-                    for (auto const& state : relevantStates) {
+                    for (auto state : relevantStates) {
                         uniformizationRate = std::max(uniformizationRate, newRates[state]);
                     }
                     uniformizationRate *= 1.02;
@@ -534,7 +534,7 @@ namespace storm {
                     // Set initial states
                     size_t i = 0;
                     ValueType initDist = storm::utility::one<ValueType>() / initialStates.getNumberOfSetBits();
-                    for (auto const& state : relevantStates) {
+                    for (auto state : relevantStates) {
                         if (initialStates.get(state)) {
                             values[i] = initDist;
                         }
@@ -567,7 +567,7 @@ namespace storm {
                 // the uniformization rate, and the diagonal needs to be set to the negative exit rate of the
                 // state plus the self-loop rate and then increased by one.
                 uint_fast64_t currentRow = 0;
-                for (auto const& state : maybeStates) {
+                for (auto state : maybeStates) {
                     for (auto& element : uniformizedMatrix.getRow(currentRow)) {
                         if (element.getColumn() == currentRow) {
                             element.setValue((element.getValue() - exitRates[state]) / uniformizationRate + storm::utility::one<ValueType>());

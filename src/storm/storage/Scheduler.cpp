@@ -56,7 +56,7 @@ namespace storm {
 
         template <typename ValueType>
         bool Scheduler<ValueType>::isChoiceSelected(BitVector const& selectedStates, uint64_t memoryState) const {
-            for (auto const& selectedState : selectedStates) {
+            for (auto selectedState : selectedStates) {
                 auto& schedulerChoice = schedulerChoices[memoryState][selectedState];
                 if (!schedulerChoice.isDefined()) {
                     return false;
