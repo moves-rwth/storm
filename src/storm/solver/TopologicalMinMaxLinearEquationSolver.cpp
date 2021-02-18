@@ -311,7 +311,7 @@ namespace storm {
             // b Vector
             std::vector<ValueType> sccB;
             sccB.reserve(sccRows.getNumberOfSetBits());
-            for (auto const& row : sccRows) {
+            for (auto row : sccRows) {
                 ValueType bi = globalB[row];
                 for (auto const& entry : this->A->getRow(row)) {
                     if (!sccRowGroups.get(entry.getColumn())) {

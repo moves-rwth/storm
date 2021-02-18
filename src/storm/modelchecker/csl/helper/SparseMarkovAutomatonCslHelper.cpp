@@ -255,7 +255,7 @@ namespace storm {
                             // Store the best solution we have found so far.
                             if (relevantMaybeStates) {
                                 auto currentSolIt = bestKnownSolution.begin();
-                                for (auto const& state : relevantMaybeStates.get()) {
+                                for (auto state : relevantMaybeStates.get()) {
                                     // We take the average of the lower and upper bounds
                                     *currentSolIt = (maybeStatesValuesLower[state] + maybeStatesValuesUpper[state]) / two;
                                     ++currentSolIt;
@@ -360,7 +360,7 @@ namespace storm {
                     storm::storage::SparseMatrixBuilder<ValueType> builder(submatrix.getRowCount(), submatrix.getColumnCount());
                     auto markovianStateColumns = markovianMaybeStates % maybeStates;
                     uint64_t row = 0;
-                    for (auto const& selfloopColumn : markovianStateColumns) {
+                    for (auto selfloopColumn : markovianStateColumns) {
                         ValueType const& oldExitRate = oldRates[row];
                         bool foundSelfoop = false;
                         for (auto const& entry : submatrix.getRow(row)) {
@@ -385,7 +385,7 @@ namespace storm {
 
                 void uniformize(storm::storage::SparseMatrix<ValueType>& matrix, std::vector<std::pair<uint64_t, ValueType>>& oneSteps,  std::vector<ValueType> const& oldRates, ValueType uniformizationRate, storm::storage::BitVector const& selfloopColumns) {
                     uint64_t row = 0;
-                    for (auto const& selfloopColumn : selfloopColumns) {
+                    for (auto selfloopColumn : selfloopColumns) {
                         ValueType const& oldExitRate = oldRates[row];
                         if (oldExitRate == uniformizationRate) {
                             // Already uniformized.
@@ -415,7 +415,7 @@ namespace storm {
                         ValueType rateDiff = newUniformizationRate - oldUniformizationRate;
                         ValueType rateFraction = oldUniformizationRate / newUniformizationRate;
                         uint64_t row = 0;
-                        for (auto const& selfloopColumn : selfloopColumns) {
+                        for (auto selfloopColumn : selfloopColumns) {
                             for (auto& v : matrix.getRow(row)) {
                                 if (v.getColumn() == selfloopColumn) {
                                     ValueType newSelfLoop = rateDiff + v.getValue() * oldUniformizationRate;

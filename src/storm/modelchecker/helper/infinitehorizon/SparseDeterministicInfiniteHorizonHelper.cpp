@@ -372,7 +372,7 @@ namespace storm {
                 // Create the SSP right-hand-side
                 std::vector<ValueType> rhs;
                 rhs.reserve(sspMatrix.getRowCount());
-                for (auto const& state : statesNotInComponent) {
+                for (auto state : statesNotInComponent) {
                     ValueType stateValue = storm::utility::zero<ValueType>();
                     for (auto const& transition : this->_transitionMatrix.getRow(state)) {
                         if (!statesNotInComponent.get(transition.getColumn())) {
@@ -409,7 +409,7 @@ namespace storm {
                 // Map the non-component states to their index in the SSP. Note that the order of these states will be preserved.
                 uint64_t numberOfNonComponentStates = 0;
                 storm::storage::BitVector statesNotInComponent = ~statesInComponents;
-                for (auto const& nonComponentState : statesNotInComponent) {
+                for (auto nonComponentState : statesNotInComponent) {
                     stateIndexMap[nonComponentState] = numberOfNonComponentStates;
                     ++numberOfNonComponentStates;
                 }

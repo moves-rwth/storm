@@ -107,7 +107,7 @@ namespace storm {
                 }
                 
                 std::map<storm::storage::sparse::state_type, ValueType> result;
-                for (auto const& initState : model.getInitialStates()) {
+                for (auto initState : model.getInitialStates()) {
                     result[initState] = rewardUnfolding.getInitialStateResult(initEpoch, initState);
                 }
                 
@@ -152,7 +152,7 @@ namespace storm {
                     std::vector<ValueType> const& resultsForNonMaybeStates = hint.template asExplicitModelCheckerHint<ValueType>().getResultHint();
                     statesWithProbability1 = storm::storage::BitVector(maybeStates.size(), false);
                     storm::storage::BitVector nonMaybeStates = ~maybeStates;
-                    for (auto const& state : nonMaybeStates) {
+                    for (auto state : nonMaybeStates) {
                         if (storm::utility::isOne(resultsForNonMaybeStates[state])) {
                             statesWithProbability1.set(state, true);
                             result[state] = storm::utility::one<ValueType>();
@@ -267,7 +267,7 @@ namespace storm {
                     // Set initial states
                     size_t i = 0;
                     ValueType initDist = storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType>(initialStates.getNumberOfSetBits());
-                    for (auto const& state : relevantStates) {
+                    for (auto state : relevantStates) {
                         if (initialStates.get(state)) {
                             b[i] = initDist;
                         }
