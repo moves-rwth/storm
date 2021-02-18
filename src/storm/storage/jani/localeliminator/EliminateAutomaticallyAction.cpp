@@ -20,6 +20,7 @@ namespace storm {
                     case EliminationOrder::Arbitrary: {
                         for (auto loc : automaton.getLocations()) {
                             if (session.isEliminable(automatonName, loc.getName())) {
+                                std::cout << "Unfolding location " << loc.getName() << std::endl;
                                 EliminateAction action = EliminateAction(automatonName, loc.getName());
                                 action.doAction(session);
                             }
@@ -65,6 +66,7 @@ namespace storm {
                                 done = true;
                             } else {
                                 std::string locName = automaton.getLocation(bestLocIndex).getName();
+                                std::cout << "Unfolding location " << locName << std::endl;
                                 EliminateAction action = EliminateAction(automatonName, locName);
                                 action.doAction(session);
                                 automaton = session.getModel().getAutomaton(automatonName);

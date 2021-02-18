@@ -26,17 +26,6 @@ namespace storm {
                 buildGroups(model);
             }
 
-            bool UnfoldDependencyGraph::canUnfold(uint32_t groupIndex) {
-                if (variableGroups[groupIndex].unfolded)
-                    return false;
-                for (auto dependencyIndex : variableGroups[groupIndex].dependencies) {
-                    if (!variableGroups[dependencyIndex].unfolded) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-
             void UnfoldDependencyGraph::markUnfolded(uint32_t groupIndex) {
                 variableGroups[groupIndex].unfolded = true;
             }
@@ -51,7 +40,7 @@ namespace storm {
                                 "The UnfoldDependencyGraph does not contain the variable " + expressionVariableName);
             }
 
-            std::vector<uint32_t> UnfoldDependencyGraph::getOrderedDependencies(uint32_t groupIndex) {
+            std::vector<uint32_t> UnfoldDependencyGraph::getOrderedDependencies(uint32_t groupIndex, bool includeSelf) {
                 // This method creates a topological sort of all the dependencies of groupIndex.
 
                 std::vector<uint32_t> res;
@@ -74,7 +63,7 @@ namespace storm {
                         }
                     }
                     closedSet.insert(current);
-                    if (current != groupIndex)
+                    if (includeSelf || current != groupIndex)
                         res.push_back(current);
                 }
 
@@ -82,10 +71,15 @@ namespace storm {
             }
 
             uint32_t UnfoldDependencyGraph::getTotalBlowup(std::vector<uint32_t> groups) {
-                return 0;
+                uint32_t res = 1;
+                for (uint32_t group : groups){
+                    res *= variableGroups[group].domainSize;
+                }
+                return res;
             }
 
             std::set<uint32_t> UnfoldDependencyGraph::getGroupsWithNoDependencies() {
+                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "getGroupsWithNoDependencies() is not yet implemented");
                 return std::set<uint32_t>();
             }
 
@@ -185,8 +179,7 @@ namespace storm {
                 }
 
                 for (int i = 0; i < graph.m_vertices.size(); i++) {
-                    int temp = 0;
-                    for (auto outEdge : graph.m_vertices[i].m_out_edges) {
+                    for (const auto& outEdge : graph.m_vertices[i].m_out_edges) {
                         unsigned long target = findGroupIndex(variables[outEdge.m_target].expressionVariableName);
                         if (variableGroups[sccs[i]].dependencies.count(target) == 0) {
                             variableGroups[sccs[i]].dependencies.insert(target);
@@ -228,16 +221,23 @@ namespace storm {
                         std::cout << std::endl;
                     }
                     if (group.dependencies.size() == 0)
-                        std::cout << "\tNo Dependencies";
+                        std::cout << "\tNo Dependencies" << std::endl;
                     else
                         std::cout << "\tDependencies:" << std::endl;
                     for (auto dep : group.dependencies) {
                         std::cout << "\t\t" << dep << std::endl;
                     }
-                    std::cout << std::endl;
 
                     groupCounter++;
                 }
+            }
+
+            bool UnfoldDependencyGraph::areDependenciesUnfoldable(uint32_t groupIndex) {
+                auto dependencies = getOrderedDependencies(groupIndex, false);
+                return std::all_of(
+                        dependencies.begin(), dependencies.end(),
+                        [this](uint32_t dep) { return this->variableGroups[dep].allVariablesUnfoldable; });
+
             }
         }
     }

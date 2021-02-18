@@ -38,12 +38,12 @@ namespace storm {
 
                 explicit UnfoldDependencyGraph(Model &model);
 
-                bool canUnfold(uint32_t groupIndex);
                 void markUnfolded(uint32_t groupIndex);
                 uint32_t findGroupIndex(std::string variableName);
 
-                std::vector<uint32_t> getOrderedDependencies(uint32_t groupIndex);
+                std::vector<uint32_t> getOrderedDependencies(uint32_t groupIndex, bool includeSelf = false);
                 uint32_t getTotalBlowup(std::vector<uint32_t> groups);
+                bool areDependenciesUnfoldable(uint32_t groupIndex);
 
                 std::set<uint32_t> getGroupsWithNoDependencies();
                 void printGroups();

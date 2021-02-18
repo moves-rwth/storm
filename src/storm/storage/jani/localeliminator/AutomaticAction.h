@@ -17,10 +17,6 @@ namespace storm{
                 std::string getDescription() override;
 
                 void doAction(JaniLocalEliminator::Session &session) override;
-
-            private:
-                adjacency_list<vecS, vecS, directedS> buildVariableGraph(JaniLocalEliminator::Session &session);
-                std::vector<std::string> collectExpressionVariableNames(JaniLocalEliminator::Session &session);
             };
         }
     }

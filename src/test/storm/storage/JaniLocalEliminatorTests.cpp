@@ -198,17 +198,7 @@ TEST(JaniLocalEliminator, BrpTest) {
 
     JaniLocalEliminator eliminator = JaniLocalEliminator(model, props);
 
-    eliminator.scheduler.addAction(std::make_unique<UnfoldAction>("brp_flattened", "r"));
-    eliminator.scheduler.addAction(std::make_unique<UnfoldAction>("brp_flattened", "s"));
-//    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAutomaticallyAction>("brp_flattened"));
-//    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("brp_flattened", "l"));
-//    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAutomaticallyAction>("brp_flattened"));
-//    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("brp_flattened", "k"));
-//    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAutomaticallyAction>("brp_flattened"));
-//    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("brp_flattened", "srep"));
-//    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAutomaticallyAction>("brp_flattened"));
-//    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::UnfoldAction>("brp_flattened", "s_ab"));
-//    eliminator.scheduler.addAction(std::make_unique<JaniLocalEliminator::EliminateAutomaticallyAction>("brp_flattened"));
+    eliminator.scheduler.addAction(std::make_unique<AutomaticAction>());
     eliminator.scheduler.addAction(std::make_unique<FinishAction>());
 
     eliminator.eliminate();
