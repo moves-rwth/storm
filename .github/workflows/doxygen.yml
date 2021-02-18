@@ -2,9 +2,9 @@ name: Doxygen
 # Builds and deploys storms doxygen documentation
 
 on:
-  push:
-    branches:
-      - master
+  schedule:
+      # run daily
+      - cron: '0 8 * * *'
   # needed to trigger the workflow manually
   workflow_dispatch:
 
