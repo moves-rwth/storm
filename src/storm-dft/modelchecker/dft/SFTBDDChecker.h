@@ -384,34 +384,6 @@ class SFTBDDChecker {
         std::vector<ValueType> const &timepoints, size_t chunksize = 0);
 
    private:
-    std::unordered_map<std::pair<uint64_t, uint64_t>, Bdd,
-                       std::hash<std::pair<uint_fast64_t, uint_fast64_t>>>
-        withoutCache;
-    /**
-     * The without operator as defined by Rauzy93
-     * https://doi.org/10.1016/0951-8320(93)90060-C
-     *
-     * \node
-     * f and g must be monotonic
-     *
-     * \return
-     * f without paths that are included in a path in g
-     */
-    Bdd without(Bdd const f, Bdd const g);
-
-    std::map<uint64_t, Bdd> minsolCache{};
-    /**
-     * The minsol algorithm as defined by Rauzy93
-     * https://doi.org/10.1016/0951-8320(93)90060-C
-     *
-     * \node
-     * f must be monotonic
-     *
-     * \return
-     * A bdd encoding the minmal solutions of f
-     */
-    Bdd minsol(Bdd const f);
-
     /**
      * recursivly traverses the given BDD and returns the minimalCutSets
      *

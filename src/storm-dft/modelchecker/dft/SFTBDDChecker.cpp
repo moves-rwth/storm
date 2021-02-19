@@ -322,7 +322,7 @@ std::vector<std::vector<std::string>> SFTBDDChecker::getMinimalCutSets() {
 }
 
 std::vector<std::vector<uint32_t>> SFTBDDChecker::getMinimalCutSetsAsIndices() {
-    auto bdd{minsol(getTopLevelGateBdd())};
+    auto const bdd{getTopLevelGateBdd().Minsol()};
 
     std::vector<std::vector<uint32_t>> mcs{};
     std::vector<uint32_t> buffer{};
@@ -1192,81 +1192,6 @@ std::vector<std::vector<ValueType>> SFTBDDChecker::getAllRRWsAtTimepoints(
         timepoints, chunksize);
 
     return resultVector;
-}
-
-Bdd SFTBDDChecker::without(Bdd const f, Bdd const g) {
-    if (f.isZero() || g.isOne()) {
-        return sylvanBddManager->getZero();
-    } else if (g.isZero()) {
-        return f;
-    } else if (f.isOne()) {
-        return sylvanBddManager->getOne();
-    }
-
-    auto const inputPair{std::make_pair(f.GetBDD(), g.GetBDD())};
-    auto const it{withoutCache.find(inputPair)};
-    if (it != withoutCache.end()) {
-        return it->second;
-    }
-
-    // f = Ite(x, f1, f2)
-    // g = Ite(y, g1, g2)
-
-    if (f.TopVar() < g.TopVar()) {
-        auto const f1{f.Then()};
-        auto const f2{f.Else()};
-
-        auto const currentVar{f.TopVar()};
-        auto const varOne{sylvanBddManager->getPositiveLiteral(currentVar)};
-
-        auto const u{without(f1, g)};
-        auto const v{without(f2, g)};
-
-        return varOne.Ite(u, v);
-    } else if (f.TopVar() > g.TopVar()) {
-        auto const g2{g.Else()};
-
-        return without(f, g2);
-    } else {
-        auto const f1{f.Then()};
-        auto const f2{f.Else()};
-        auto const g1{g.Then()};
-        auto const g2{g.Else()};
-
-        auto const currentVar{f.TopVar()};
-        auto const varOne{sylvanBddManager->getPositiveLiteral(currentVar)};
-
-        auto const u{without(f1, g1)};
-        auto const v{without(f2, g2)};
-
-        auto const result{varOne.Ite(u, v)};
-        withoutCache[inputPair] = result;
-        return result;
-    }
-}
-
-Bdd SFTBDDChecker::minsol(Bdd const f) {
-    if (f.isTerminal()) return f;
-
-    auto const it{minsolCache.find(f.GetBDD())};
-    if (it != minsolCache.end()) {
-        return it->second;
-    }
-
-    // f = Ite(x, g, h)
-
-    auto const g{f.Then()};
-    auto const h{f.Else()};
-    auto const k{minsol(g)};
-    auto const u{without(k, h)};
-    auto const v{minsol(h)};
-
-    auto const currentVar{f.TopVar()};
-    auto const varOne{sylvanBddManager->getPositiveLiteral(currentVar)};
-
-    auto const result{varOne.Ite(u, v)};
-    minsolCache[f.GetBDD()] = result;
-    return result;
 }
 
 void SFTBDDChecker::recursiveMCS(
