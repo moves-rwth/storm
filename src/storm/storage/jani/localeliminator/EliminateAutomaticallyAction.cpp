@@ -28,13 +28,19 @@ namespace storm {
                         break;
                     }
                     case EliminationOrder::NewTransitionCount: {
-                        std::map<std::string, bool> isInitialOrPropMap;
-                        std::map<std::string, bool> alreadyEliminated;
+
+                        // A location is uneliminable if
+                        // - it is initial
+                        // - it (potentially) satisfies the property
+                        // - it has already been eliminated
+                        // - it has a loop
+                        // After each elimination, this list is updated to account for new loops
+                        std::map<std::string, bool> uneliminable;
                         for (auto loc : automaton.getLocations()) {
-                            bool isInitialOrProp = (session.isPossiblyInitial(automatonName, loc.getName())
-                                                    || session.isPartOfProp(automatonName, loc.getName()));
-                            isInitialOrPropMap.insert(std::pair<std::string, bool>(loc.getName(), isInitialOrProp));
-                            alreadyEliminated.insert(std::pair<std::string, bool>(loc.getName(), false));
+                            bool isUneliminable = session.isPossiblyInitial(automatonName, loc.getName())
+                                                    || session.isPartOfProp(automatonName, loc.getName())
+                                                    || session.hasLoops(automatonName, loc.getName());
+                            uneliminable.insert(std::pair<std::string, bool>(loc.getName(), isUneliminable));
                         }
 
                         bool done = false;
@@ -42,7 +48,7 @@ namespace storm {
                             int minNewEdges = transitionCountThreshold;
                             int bestLocIndex = -1;
                             for (auto loc : automaton.getLocations()) {
-                                if (isInitialOrPropMap[loc.getName()] || alreadyEliminated[loc.getName()])
+                                if (uneliminable[loc.getName()])
                                     continue;
 
                                 int locIndex = automaton.getLocationIndex(loc.getName());
@@ -64,13 +70,23 @@ namespace storm {
 
                             if (bestLocIndex == -1){
                                 done = true;
+                                std::cout << "No more locations eliminable" << std::endl;
                             } else {
                                 std::string locName = automaton.getLocation(bestLocIndex).getName();
                                 std::cout << "Unfolding location " << locName << std::endl;
                                 EliminateAction action = EliminateAction(automatonName, locName);
                                 action.doAction(session);
                                 automaton = session.getModel().getAutomaton(automatonName);
-                                isInitialOrPropMap[locName] = true;
+                                uneliminable[locName] = true;
+
+                                // Update "uneliminable" to account for potential new loops
+                                for (const auto& loc : automaton.getLocations()) {
+                                    if (!uneliminable[locName]){
+                                        if (session.hasLoops(automatonName, loc.getName())){
+                                            uneliminable[locName] = true;
+                                        }
+                                    }
+                                }
                             }
                         }
 
