@@ -118,17 +118,16 @@ void processOptions() {
     // BDD Analysis
     if(dftIOSettings.isExportToBddDot() ||
             dftIOSettings.isAnalyzeWithBdds() ||
-            dftIOSettings.isMinimumCutSets()) {
+            dftIOSettings.isMinimumCutSets() ||
+            dftIOSettings.isImportanceMeasureSet()) {
+        bool const isImportanceMeasureSet{dftIOSettings.isImportanceMeasureSet()};
         bool const isMinimumCutSets{dftIOSettings.isMinimumCutSets()};
         bool const isMTTF{dftIOSettings.usePropExpectedTime()};
         bool const isExportToBddDot{dftIOSettings.isExportToBddDot()};
-        bool const isAnalyzeWithBdds{dftIOSettings.isAnalyzeWithBdds()};
+        bool const isTimebound{dftIOSettings.usePropTimebound()};
+        bool const isTimepoints{dftIOSettings.usePropTimepoints()};
 
-        bool const isTimebound{isAnalyzeWithBdds &&
-            dftIOSettings.usePropTimebound()};
-        bool const isTimepoints{isAnalyzeWithBdds &&
-            dftIOSettings.usePropTimepoints()};
-        bool const probabilityAnalysis {isTimebound || isTimepoints || ioSettings.isPropertySet()};
+        bool const probabilityAnalysis {ioSettings.isPropertySet() || !isImportanceMeasureSet};
         size_t const chunksize{faultTreeSettings.getChunksize()};
         bool const isModularisation{faultTreeSettings.useModularisation()};
 
@@ -152,6 +151,11 @@ void processOptions() {
             manuallyInputtedProperties = storm::api::extractFormulasFromProperties(storm::api::parseProperties(ioSettings.getProperty()));
         }
 
+        std::string importanceMeasureName{""};
+        if(isImportanceMeasureSet) {
+            importanceMeasureName = dftIOSettings.getImportanceMeasure();
+        }
+
         storm::api::analyzeDFTBdd<ValueType>(dft,
                 isExportToBddDot,
                 filename,
@@ -159,12 +163,13 @@ void processOptions() {
                 isMinimumCutSets,
                 probabilityAnalysis,
                 isModularisation,
+                importanceMeasureName,
                 timepoints,
                 manuallyInputtedProperties,
                 chunksize);
 
         // don't perform other analysis if analyzeWithBdds is set
-        if(isAnalyzeWithBdds) {
+        if(dftIOSettings.isAnalyzeWithBdds()) {
             return;
         }
     }

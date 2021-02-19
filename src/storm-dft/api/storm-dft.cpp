@@ -23,6 +23,7 @@ namespace storm {
                 bool const calculateMCS,
                 bool const calculateProbability,
                 bool const useModularisation,
+                std::string const importanceMeasureName,
                 std::vector<double> const &timepoints,
                 std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
                 size_t const chunksize) {
@@ -110,6 +111,53 @@ namespace storm {
                     }
                 }
             }
+
+            if(importanceMeasureName != "" && timepoints.size() == 1) {
+                auto const bes{dft->getBasicElements()};
+                std::vector<double> values{};
+                if(importanceMeasureName == "MIF") {
+                    values = checker.getAllBirnbaumFactorsAtTimebound(timepoints[0]);
+                }
+                if(importanceMeasureName == "CIF") {
+                    values = checker.getAllCIFsAtTimebound(timepoints[0]);
+                }
+                if(importanceMeasureName == "DIF") {
+                    values = checker.getAllDIFsAtTimebound(timepoints[0]);
+                }
+                if(importanceMeasureName == "RAW") {
+                    values = checker.getAllRAWsAtTimebound(timepoints[0]);
+                }
+                if(importanceMeasureName == "RRW") {
+                    values = checker.getAllRRWsAtTimebound(timepoints[0]);
+                }
+
+                for (size_t i{0}; i < bes.size(); ++i) {
+                    std::cout << importanceMeasureName << " for the basic event " << bes[i]->name() << " at Timebound " << timepoints[0] << " is " << values[i] << '\n';
+                }
+            } else if (importanceMeasureName != "") {
+                auto const bes{dft->getBasicElements()};
+                std::vector<std::vector<double>> values{};
+                if(importanceMeasureName == "MIF") {
+                    values = checker.getAllBirnbaumFactorsAtTimepoints(timepoints, chunksize);
+                }
+                if(importanceMeasureName == "CIF") {
+                    values = checker.getAllCIFsAtTimepoints(timepoints, chunksize);
+                }
+                if(importanceMeasureName == "DIF") {
+                    values = checker.getAllDIFsAtTimepoints(timepoints, chunksize);
+                }
+                if(importanceMeasureName == "RAW") {
+                    values = checker.getAllRAWsAtTimepoints(timepoints, chunksize);
+                }
+                if(importanceMeasureName == "RRW") {
+                    values = checker.getAllRRWsAtTimepoints(timepoints, chunksize);
+                }
+                for (size_t i{0}; i < bes.size(); ++i) {
+                    for (size_t j{0}; j < timepoints.size(); ++j) {
+                        std::cout << importanceMeasureName << " for the basic event " << bes[i]->name() << " at Timebound " << timepoints[j] << " is " << values[i][j] << '\n';
+                    }
+                }
+            }
         }
 
         template<>
@@ -121,6 +169,7 @@ namespace storm {
                 bool const calculateMCS,
                 bool const calculateProbability,
                 bool const useModularisation,
+                std::string const importanceMeasureName,
                 std::vector<double> const &timepoints,
                 std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
                 size_t const chunksize) {
