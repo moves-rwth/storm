@@ -206,11 +206,12 @@ namespace storm {
                 int groupCounter = 0;
                 for (auto group : variableGroups) {
                     std::cout << std::endl << "Variable Group " << groupCounter << std::endl;
-                    std::cout << "\tDomain size: " << group.domainSize << std::endl;
-                    if (group.allVariablesUnfoldable)
+                    if (group.allVariablesUnfoldable){
+                        std::cout << "\tDomain size: " << group.domainSize << std::endl;
                         std::cout << "\tCan be unfolded" << std::endl;
-                    else
+                    } else{
                         std::cout << "\tCan not be unfolded" << std::endl;
+                    }
                     std::cout << "\tVariables:" << std::endl;
                     for (auto var : group.variables) {
                         std::cout << "\t\t" << var.expressionVariableName;
