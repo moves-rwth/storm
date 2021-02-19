@@ -92,7 +92,10 @@ namespace storm {
         CompressedState createOutOfBoundsState(VariableInformation const& varInfo, bool roundTo64Bit = true);
 
         CompressedState createCompressedState(VariableInformation const& varInfo, std::map<storm::expressions::Variable, storm::expressions::Expression> const& stateDescription, bool checkOutOfBounds);
-    }
+
+        CompressedState packStateFromValuation(expressions::SimpleValuation const& valuation, VariableInformation const& variableInformation, bool checkOutOfBounds = false);
+
+        }
 }
 
 #endif /* STORM_GENERATOR_COMPRESSEDSTATE_H_ */

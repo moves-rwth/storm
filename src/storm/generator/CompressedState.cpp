@@ -48,6 +48,25 @@ namespace storm {
             return result;
         }
 
+        CompressedState packStateFromValuation(expressions::SimpleValuation const& valuation, VariableInformation const& variableInformation, bool checkOutOfBounds) {
+            CompressedState result(variableInformation.getTotalBitOffset(true));
+            STORM_LOG_THROW(variableInformation.locationVariables.size() == 0, storm::exceptions::NotImplementedException, "Support for JANI is not implemented");
+            for (auto const& booleanVariable : variableInformation.booleanVariables) {
+                result.set(booleanVariable.bitOffset, valuation.getBooleanValue(booleanVariable.variable));
+            }
+            for (auto const& integerVariable : variableInformation.integerVariables) {
+                int64_t assignedValue = valuation.getIntegerValue(integerVariable.variable);
+                if (checkOutOfBounds) {
+                    STORM_LOG_THROW(assignedValue >= integerVariable.lowerBound, storm::exceptions::InvalidArgumentException, "The assignment leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << integerVariable.getName() << "'.");
+                    STORM_LOG_THROW(assignedValue <= integerVariable.upperBound, storm::exceptions::InvalidArgumentException, "The assignment leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << integerVariable.getName() << "'.");
+                }
+                result.setFromInt(integerVariable.bitOffset, integerVariable.bitWidth, assignedValue - integerVariable.lowerBound);
+                STORM_LOG_ASSERT(static_cast<int_fast64_t>(result.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth)) + integerVariable.lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << result.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth) << " but wrote " << assignedValue << ").");
+            }
+
+            return result;
+        }
+
         void extractVariableValues(CompressedState const& state, VariableInformation const& variableInformation, std::vector<int64_t>& locationValues, std::vector<bool>& booleanValues, std::vector<int64_t>& integerValues) {
             for (auto const& locationVariable : variableInformation.locationVariables) {
                 if (locationVariable.bitWidth != 0) {

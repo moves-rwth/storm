@@ -111,6 +111,18 @@ namespace storm {
         }
 
         template<typename ValueType>
+        bool DiscreteTimePrismProgramSimulator<ValueType>::resetToState(generator::CompressedState const& newState) {
+            currentState = newState;
+            return explore();
+        }
+
+        template<typename ValueType>
+        bool DiscreteTimePrismProgramSimulator<ValueType>::resetToState(expressions::SimpleValuation const& valuation) {
+            currentState = generator::packStateFromValuation(valuation, stateGenerator->getVariableInformation(), true);
+            return explore();
+        }
+
+        template<typename ValueType>
         uint32_t DiscreteTimePrismProgramSimulator<ValueType>::getOrAddStateIndex(generator::CompressedState const& state) {
             uint32_t newIndex = static_cast<uint32_t>(stateToId.size());
 
