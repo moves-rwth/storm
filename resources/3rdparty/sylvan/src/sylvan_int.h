@@ -111,8 +111,11 @@ static const uint64_t CACHE_MTBDD_MAXIMUM_RF        = (65LL<<40);
 static const uint64_t CACHE_MTBDD_EQUAL_NORM_RF     = (66LL<<40);
 static const uint64_t CACHE_MTBDD_EQUAL_NORM_REL_RF = (67LL<<40);
 
+// Added by storm
 static const uint64_t CACHE_MTBDD_ABSTRACT_REPRESENTATIVE = (68LL<<40);
-    
+static const uint64_t CACHE_BDD_WITHOUT = (69LL<<40);
+static const uint64_t CACHE_BDD_MINSOL = (70LL<<40);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
