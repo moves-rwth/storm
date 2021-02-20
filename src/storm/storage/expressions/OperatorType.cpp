@@ -27,6 +27,9 @@ namespace storm {
                 case OperatorType::Floor: stream << "floor"; break;
                 case OperatorType::Ceil: stream << "ceil"; break;
                 case OperatorType::Ite: stream << "ite"; break;
+                case OperatorType::AtMostOneOf: stream << "atMostOneOf"; break;
+                case OperatorType::AtLeastOneOf: stream << "atLeastOneOf"; break;
+                case OperatorType::ExactlyOneOf: stream << "exactlyOneOf"; break;
             }
             return stream;
         }

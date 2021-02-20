@@ -60,6 +60,7 @@ namespace storm {
             friend Expression minimum(Expression const& first, Expression const& second);
             friend Expression maximum(Expression const& first, Expression const& second);
 
+
             Expression() = default;
             ~Expression();
             
@@ -99,6 +100,11 @@ namespace storm {
              */
             Expression substitute(std::map<Variable, Expression> const& variableToExpressionMap) const;
 
+            /*!
+             * Eliminate nonstandard predicates from the expression.
+             * @return
+             */
+            Expression substituteNonStandardPredicates() const;
             /*!
             * Substitutes all occurrences of the variables according to the given map. Note that this substitution is
             * done simultaneously, i.e., variables appearing in the expressions that were "plugged in" are not
@@ -439,6 +445,9 @@ namespace storm {
         Expression modulo(Expression const& first, Expression const& second);
         Expression minimum(Expression const& first, Expression const& second);
         Expression maximum(Expression const& first, Expression const& second);
+        Expression atLeastOneOf(std::vector<storm::expressions::Expression> const& expressions);
+        Expression atMostOneOf(std::vector<storm::expressions::Expression> const& expressions);
+        Expression exactlyOneOf(std::vector<storm::expressions::Expression> const& expressions);
         Expression disjunction(std::vector<storm::expressions::Expression> const& expressions);
         Expression conjunction(std::vector<storm::expressions::Expression> const& expressions);
         Expression sum(std::vector<storm::expressions::Expression> const& expressions);

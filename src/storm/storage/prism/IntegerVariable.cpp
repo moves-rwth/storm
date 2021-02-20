@@ -21,6 +21,10 @@ namespace storm {
         IntegerVariable IntegerVariable::substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const {
             return IntegerVariable(this->getExpressionVariable(), this->getLowerBoundExpression().substitute(substitution), this->getUpperBoundExpression().substitute(substitution), this->getInitialValueExpression().isInitialized() ? this->getInitialValueExpression().substitute(substitution) : this->getInitialValueExpression(), this->isObservable(), this->getFilename(), this->getLineNumber());
         }
+
+        IntegerVariable IntegerVariable::substituteNonStandardPredicates() const {
+            return IntegerVariable(this->getExpressionVariable(), this->getLowerBoundExpression().substituteNonStandardPredicates(), this->getUpperBoundExpression().substituteNonStandardPredicates(), this->getInitialValueExpression().isInitialized() ? this->getInitialValueExpression().substituteNonStandardPredicates() : this->getInitialValueExpression(), this->isObservable(), this->getFilename(), this->getLineNumber());
+        }
         
         void IntegerVariable::createMissingInitialValue() {
             if (!this->hasInitialValue()) {

@@ -8,4 +8,5 @@
 #include "storm/storage/expressions/UnaryBooleanFunctionExpression.h"
 #include "storm/storage/expressions/UnaryNumericalFunctionExpression.h"
 #include "storm/storage/expressions/VariableExpression.h"
+#include "storm/storage/expressions/PredicateExpression.h"
 #include "storm/storage/expressions/Expression.h"

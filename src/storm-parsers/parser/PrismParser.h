@@ -128,10 +128,13 @@ namespace storm {
                     ("max", 18)
                     ("floor", 19)
                     ("ceil", 20)
-                    ("init", 21)
-                    ("endinit", 22)
-                    ("invariant", 23)
-                    ("endinvariant", 24);
+                    ("atLeastOneOf", 21)
+                    ("atMostOneOf", 22)
+                    ("exactlyOneOf", 23)
+                    ("init", 24)
+                    ("endinit", 25)
+                    ("invariant", 26)
+                    ("endinvariant", 27);
                 }
             };
             
