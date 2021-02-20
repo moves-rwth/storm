@@ -9,7 +9,9 @@ Branch Changes
 
 - n-ary predicates like atMostOneOf, ExactlyOneOf added
 - export to Dice expressions added
-
+- prism language simulator
+- masks
+- export state lookup map
 
 Version 1.6.x
 -------------
