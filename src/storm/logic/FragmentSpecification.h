@@ -93,105 +93,109 @@ namespace storm {
 
             bool areNestedOperatorsAllowed() const;
             FragmentSpecification& setNestedOperatorsAllowed(bool newValue);
-            
+
             bool areNestedPathFormulasAllowed() const;
             FragmentSpecification& setNestedPathFormulasAllowed(bool newValue);
-            
+
             bool areNestedMultiObjectiveFormulasAllowed() const;
             FragmentSpecification& setNestedMultiObjectiveFormulasAllowed(bool newValue);
-            
+
             bool areNestedOperatorsInsideMultiObjectiveFormulasAllowed() const;
             FragmentSpecification& setNestedOperatorsInsideMultiObjectiveFormulasAllowed(bool newValue);
-            
+
             bool areOnlyEventuallyFormuluasInConditionalFormulasAllowed() const;
             FragmentSpecification& setOnlyEventuallyFormuluasInConditionalFormulasAllowed(bool newValue);
 
             bool areStepBoundedUntilFormulasAllowed() const;
             FragmentSpecification& setStepBoundedUntilFormulasAllowed(bool newValue);
-            
+
             bool areTimeBoundedUntilFormulasAllowed() const;
             FragmentSpecification& setTimeBoundedUntilFormulasAllowed(bool newValue);
 
             bool areRewardBoundedUntilFormulasAllowed() const;
             FragmentSpecification& setRewardBoundedUntilFormulasAllowed(bool newValue);
-            
+
             bool areMultiDimensionalBoundedUntilFormulasAllowed() const;
             FragmentSpecification& setMultiDimensionalBoundedUntilFormulasAllowed(bool newValue);
-            
+
             bool areStepBoundedCumulativeRewardFormulasAllowed() const;
             FragmentSpecification& setStepBoundedCumulativeRewardFormulasAllowed(bool newValue);
-            
+
             bool areTimeBoundedCumulativeRewardFormulasAllowed() const;
             FragmentSpecification& setTimeBoundedCumulativeRewardFormulasAllowed(bool newValue);
 
             bool areRewardBoundedCumulativeRewardFormulasAllowed() const;
             FragmentSpecification& setRewardBoundedCumulativeRewardFormulasAllowed(bool newValue);
-            
+
             bool areMultiDimensionalCumulativeRewardFormulasAllowed() const;
             FragmentSpecification& setMultiDimensionalCumulativeRewardFormulasAllowed(bool newValue);
-            
+
             bool isVarianceMeasureTypeAllowed() const;
             FragmentSpecification& setVarianceMeasureTypeAllowed(bool newValue);
-            
+
             bool areQuantitativeOperatorResultsAllowed() const;
             FragmentSpecification& setQuantitativeOperatorResultsAllowed(bool newValue);
 
             bool areQualitativeOperatorResultsAllowed() const;
             FragmentSpecification& setQualitativeOperatorResultsAllowed(bool newValue);
-            
+
             bool isOperatorAtTopLevelRequired() const;
             FragmentSpecification& setOperatorAtTopLevelRequired(bool newValue);
-            
+
             bool isMultiObjectiveFormulaAtTopLevelRequired() const;
             FragmentSpecification& setMultiObjectiveFormulaAtTopLevelRequired(bool newValue);
-            
+
             bool areOperatorsAtTopLevelOfMultiObjectiveFormulasRequired() const;
             FragmentSpecification& setOperatorsAtTopLevelOfMultiObjectiveFormulasRequired(bool newValue);
-            
+
             bool isQuantileFormulaAtTopLevelRequired() const;
             FragmentSpecification& setQuantileFormulaAtTopLevelRequired(bool newValue);
-            
+
             bool isRewardAccumulationAllowed() const;
             FragmentSpecification& setRewardAccumulationAllowed(bool newValue);
 
+            bool areGameFormulasAllowed() const;
+            FragmentSpecification& setGameFormulasAllowed(bool newValue);
             
             FragmentSpecification& setOperatorsAllowed(bool newValue);
             FragmentSpecification& setTimeAllowed(bool newValue);
             FragmentSpecification& setLongRunAverageProbabilitiesAllowed(bool newValue);
-            
+
         private:
             // Flags that indicate whether it is legal to see such a formula.
             bool probabilityOperator;
             bool rewardOperator;
             bool expectedTimeOperator;
             bool longRunAverageOperator;
-            
+
             bool multiObjectiveFormula;
             bool quantileFormula;
-            
+
             bool globallyFormula;
             bool reachabilityProbabilityFormula;
             bool nextFormula;
             bool untilFormula;
             bool boundedUntilFormula;
-            
+
             bool atomicExpressionFormula;
             bool atomicLabelFormula;
             bool booleanLiteralFormula;
             bool unaryBooleanStateFormula;
             bool binaryBooleanStateFormula;
-            
+
             bool cumulativeRewardFormula;
             bool instantaneousRewardFormula;
             bool reachabilityRewardFormula;
             bool longRunAverageRewardFormula;
             bool totalRewardFormula;
-            
+
             bool conditionalProbabilityFormula;
             bool conditionalRewardFormula;
-            
+
             bool reachabilityTimeFormula;
-            
+
+            bool gameFormula;
+
             // Members that indicate certain restrictions.
             bool nestedOperators;
             bool nestedPathFormulas;
@@ -228,7 +232,10 @@ namespace storm {
 
         // Flat PCTL.
         FragmentSpecification flatPctl();
-        
+
+        // rPATL for SMGs
+        FragmentSpecification rpatl();
+
         // PCTL + cumulative, instantaneous, reachability and long-run rewards.
         FragmentSpecification prctl();
         

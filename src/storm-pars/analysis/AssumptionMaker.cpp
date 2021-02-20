@@ -2,66 +2,86 @@
 
 namespace storm {
     namespace analysis {
-        typedef std::shared_ptr<expressions::BinaryRelationExpression> AssumptionType;
-        template<typename ValueType>
-        AssumptionMaker<ValueType>::AssumptionMaker(AssumptionChecker<ValueType>* assumptionChecker, uint_fast64_t numberOfStates, bool validate) {
-            this->numberOfStates = numberOfStates;
-            this->assumptionChecker = assumptionChecker;
-            this->validate = validate;
-            this->expressionManager = std::make_shared<expressions::ExpressionManager>(expressions::ExpressionManager());
+        template<typename ValueType, typename ConstantType>
+        AssumptionMaker<ValueType, ConstantType>::AssumptionMaker(storage::SparseMatrix<ValueType> matrix) : assumptionChecker(matrix){
+            numberOfStates = matrix.getColumnCount();
+            expressionManager = std::make_shared<expressions::ExpressionManager>(expressions::ExpressionManager());
             for (uint_fast64_t i = 0; i < this->numberOfStates; ++i) {
                 expressionManager->declareRationalVariable(std::to_string(i));
             }
         }
 
+        template <typename ValueType, typename ConstantType>
+        std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> AssumptionMaker<ValueType, ConstantType>::createAndCheckAssumptions(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) const {
+            auto vec1 = std::vector<ConstantType>();
+            auto vec2 = std::vector<ConstantType>();
+            return createAndCheckAssumptions(val1, val2, order, region, vec1, vec2);
+        }
 
-        template <typename ValueType>
-        std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> AssumptionMaker<ValueType>::createAndCheckAssumption(uint_fast64_t val1, uint_fast64_t val2, Order* order) {
+        template <typename ValueType, typename ConstantType>
+        std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> AssumptionMaker<ValueType, ConstantType>::createAndCheckAssumptions(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValues) const {
             std::map<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> result;
-
-            expressions::Variable var1 = expressionManager->getVariable(std::to_string(val1));
-            expressions::Variable var2 = expressionManager->getVariable(std::to_string(val2));
-            std::shared_ptr<expressions::BinaryRelationExpression> assumption1
-                    = std::make_shared<expressions::BinaryRelationExpression>(expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
-                                                                                                                                  var1.getExpression().getBaseExpressionPointer(), var2.getExpression().getBaseExpressionPointer(),
-                                                                                                                                  expressions::BinaryRelationExpression::RelationType::Greater));
-            AssumptionStatus result1;
-            AssumptionStatus result2;
-            AssumptionStatus result3;
-            if (validate) {
-                result1 = assumptionChecker->validateAssumption(assumption1, order);
-            } else {
-                result1 = AssumptionStatus::UNKNOWN;
+            STORM_LOG_INFO("Creating assumptions for " << val1 << " and " << val2);
+            assert (order->compare(val1, val2) == Order::UNKNOWN);
+            auto assumption = createAndCheckAssumption(val1, val2, expressions::BinaryRelationExpression::RelationType::Greater, order, region, minValues, maxValues);
+            if (assumption.second != AssumptionStatus::INVALID) {
+                result.insert(assumption);
+                if (assumption.second == AssumptionStatus::VALID) {
+                    assert (createAndCheckAssumption(val2, val1, expressions::BinaryRelationExpression::RelationType::Greater, order, region, minValues, maxValues).second != AssumptionStatus::VALID
+                            && createAndCheckAssumption(val1, val2, expressions::BinaryRelationExpression::RelationType::Equal, order, region, minValues, maxValues).second != AssumptionStatus::VALID);
+                    STORM_LOG_INFO("Assumption " << assumption.first << "is valid" << std::endl);
+                    return result;
+                }
             }
-            result[assumption1] = result1;
-
-
-            std::shared_ptr<expressions::BinaryRelationExpression> assumption2
-                    = std::make_shared<expressions::BinaryRelationExpression>(expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
-                                                                                                                                  var2.getExpression().getBaseExpressionPointer(), var1.getExpression().getBaseExpressionPointer(),
-                                                                                                                                  expressions::BinaryRelationExpression::RelationType::Greater));
-
-            if (validate) {
-                result2 = assumptionChecker->validateAssumption(assumption2, order);
-            } else {
-                result2 = AssumptionStatus::UNKNOWN;
+            assert (order->compare(val1, val2) == Order::UNKNOWN);
+            assumption = createAndCheckAssumption(val2, val1, expressions::BinaryRelationExpression::RelationType::Greater, order, region, minValues, maxValues);
+            if (assumption.second != AssumptionStatus::INVALID) {
+                if (assumption.second == AssumptionStatus::VALID) {
+                    result.clear();
+                    result.insert(assumption);
+                    assert (createAndCheckAssumption(val1, val2, expressions::BinaryRelationExpression::RelationType::Equal, order, region, minValues, maxValues).second != AssumptionStatus::VALID);
+                    STORM_LOG_INFO("Assumption " << assumption.first << "is valid" << std::endl);
+                    return result;
+                }
+                result.insert(assumption);
             }
-            result[assumption2] = result2;
-
-            std::shared_ptr<expressions::BinaryRelationExpression> assumption3
-                    = std::make_shared<expressions::BinaryRelationExpression>(expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(),
-                                                                                                                                  var2.getExpression().getBaseExpressionPointer(), var1.getExpression().getBaseExpressionPointer(),
-                                                                                                                                  expressions::BinaryRelationExpression::RelationType::Equal));
-            if (validate) {
-                result3 = assumptionChecker->validateAssumption(assumption3, order);
-            } else {
-                result3 = AssumptionStatus::UNKNOWN;
+                assert (order->compare(val1, val2) == Order::UNKNOWN);
+            assumption = createAndCheckAssumption(val1, val2, expressions::BinaryRelationExpression::RelationType::Equal, order, region, minValues, maxValues);
+            if (assumption.second != AssumptionStatus::INVALID) {
+                if (assumption.second == AssumptionStatus::VALID) {
+                    result.clear();
+                    result.insert(assumption);
+                    STORM_LOG_INFO("Assumption " << assumption.first << "is valid" << std::endl);
+                    return result;
+                }
+                result.insert(assumption);
             }
-            result[assumption3] = result3;
-
+                assert (order->compare(val1, val2) == Order::UNKNOWN);
+            STORM_LOG_INFO("None of the assumptions is valid, number of possible assumptions:  " << result.size() << std::endl);
             return result;
         }
 
-        template class AssumptionMaker<RationalFunction>;
+        template <typename ValueType, typename ConstantType>
+        void AssumptionMaker<ValueType, ConstantType>::initializeCheckingOnSamples(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Dtmc<ValueType>> model, storage::ParameterRegion<ValueType> region, uint_fast64_t numberOfSamples){
+            assumptionChecker.initializeCheckingOnSamples(formula, model, region, numberOfSamples);
+        }
+
+        template <typename ValueType, typename ConstantType>
+        void AssumptionMaker<ValueType, ConstantType>::setSampleValues(std::vector<std::vector<ConstantType>>const & samples) {
+            assumptionChecker.setSampleValues(samples);
+        }
+
+        template <typename ValueType, typename ConstantType>
+        std::pair<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus> AssumptionMaker<ValueType, ConstantType>::createAndCheckAssumption(uint_fast64_t val1, uint_fast64_t val2, expressions::BinaryRelationExpression::RelationType relationType, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region,  std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValues) const {
+            assert (val1 != val2);
+            expressions::Variable var1 = expressionManager->getVariable(std::to_string(val1));
+            expressions::Variable var2 = expressionManager->getVariable(std::to_string(val2));
+            auto assumption = std::make_shared<expressions::BinaryRelationExpression>(expressions::BinaryRelationExpression(*expressionManager, expressionManager->getBooleanType(), var1.getExpression().getBaseExpressionPointer(), var2.getExpression().getBaseExpressionPointer(), relationType));
+            AssumptionStatus validationResult = assumptionChecker.validateAssumption(val1, val2, assumption, order, region, minValues, maxValues);
+            return std::pair<std::shared_ptr<expressions::BinaryRelationExpression>, AssumptionStatus>(assumption, validationResult);
+        }
+
+        template class AssumptionMaker<RationalFunction, double>;
+        template class AssumptionMaker<RationalFunction, RationalNumber>;
     }
 }

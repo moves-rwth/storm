@@ -17,6 +17,7 @@ namespace storm {
         class EventuallyFormula;
         class TimeOperatorFormula;
         class GloballyFormula;
+        class GameFormula;
         class InstantaneousRewardFormula;
         class LongRunAverageOperatorFormula;
         class LongRunAverageRewardFormula;

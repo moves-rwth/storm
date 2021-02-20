@@ -58,18 +58,19 @@ namespace storm {
                     STORM_LOG_THROW(stateCount == this->getTransitionMatrix().getRowCount(), storm::exceptions::IllegalArgumentException, "Can not create deterministic model: Number of rows of transition matrix does not match state count.");
                     STORM_LOG_THROW(stateCount == this->getTransitionMatrix().getColumnCount(), storm::exceptions::IllegalArgumentException, "Can not create deterministic model: Number of columns of transition matrix does not match state count.");
                     STORM_LOG_ERROR_COND(!components.player1Matrix.is_initialized(), "Player 1 matrix given for a model that is no stochastic game (will be ignored).");
-                } else if (this->isOfType(ModelType::Mdp) || this->isOfType(ModelType::MarkovAutomaton) || this->isOfType(ModelType::Pomdp)) {
+                } else if (this->isOfType(ModelType::Mdp) || this->isOfType(ModelType::MarkovAutomaton) || this->isOfType(ModelType::Pomdp) || this->isOfType(ModelType::Smg)) {
                     STORM_LOG_THROW(stateCount == this->getTransitionMatrix().getRowGroupCount(), storm::exceptions::IllegalArgumentException, "Can not create nondeterministic model: Number of row groups (" << this->getTransitionMatrix().getRowGroupCount() << ") of transition matrix does not match state count (" << stateCount << ").");
                     STORM_LOG_THROW(stateCount == this->getTransitionMatrix().getColumnCount(), storm::exceptions::IllegalArgumentException, "Can not create nondeterministic model: Number of columns of transition matrix does not match state count.");
                     STORM_LOG_ERROR_COND(!components.player1Matrix.is_initialized(), "Player 1 matrix given for a model that is no stochastic game (will be ignored).");
-                } else {
-                    STORM_LOG_THROW(this->isOfType(ModelType::S2pg), storm::exceptions::IllegalArgumentException, "Invalid model type.");
+                } else if (this->isOfType(ModelType::S2pg)) {
                     STORM_LOG_THROW(components.player1Matrix.is_initialized(), storm::exceptions::IllegalArgumentException, "No player 1 matrix given for stochastic game.");
                     STORM_LOG_ASSERT(components.player1Matrix->isProbabilistic(), "Can not create stochastic game: There is a row in the p1 matrix with not exactly one entry.");
                     STORM_LOG_THROW(stateCount == components.player1Matrix->getRowGroupCount(), storm::exceptions::IllegalArgumentException, "Can not create stochastic game: Number of row groups of p1 matrix does not match state count.");
                     STORM_LOG_THROW(this->getTransitionMatrix().getRowGroupCount() == components.player1Matrix->getColumnCount(), storm::exceptions::IllegalArgumentException, "Can not create stochastic game: Number of row groups of p2 matrix does not match column count of p1 matrix.");
+                } else {
+                    STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Invalid model type.");
                 }
-                
+
                 // Branch on continuous/discrete timing
                 if (this->isOfType(ModelType::Ctmc) || this->isOfType(ModelType::MarkovAutomaton)) {
                     STORM_LOG_THROW(components.rateTransitions || components.exitRates.is_initialized(), storm::exceptions::IllegalArgumentException, "Can not create continuous time model: no rates are given.");
@@ -79,6 +80,17 @@ namespace storm {
                     STORM_LOG_WARN_COND(!components.rateTransitions && !components.exitRates.is_initialized(), "Rates specified for discrete-time model. The rates will be ignored.");
                 }
                 STORM_LOG_WARN_COND(this->isOfType(ModelType::MarkovAutomaton) || !components.markovianStates.is_initialized(), "Markovian states given for a model that is not a Markov automaton (will be ignored).");
+                
+                // Treat stochastic multiplayer games
+                if (this->isOfType(ModelType::Smg)) {
+                        STORM_LOG_THROW(components.statePlayerIndications.is_initialized(), storm::exceptions::IllegalArgumentException, "Can not create stochastic multiplayer game: Missing player indications.");
+                        // playerNameToIndexMap is optional.
+                        STORM_LOG_THROW(stateCount == components.statePlayerIndications->size(), storm::exceptions::IllegalArgumentException, "Size of state player indications (" << components.statePlayerIndications->size() << ") of SMG does not match state count (" << stateCount << ").");
+                } else {
+                    STORM_LOG_WARN_COND(!components.statePlayerIndications.is_initialized(), "statePlayerIndications given for a model that is not a stochastic multiplayer game (will be ignored).");
+                    STORM_LOG_WARN_COND(!components.playerNameToIndexMap.is_initialized(), "playerNameToIndexMap given for a model that is not a stochastic multiplayer game (will be ignored).");
+                }
+
             }
             
             template<typename ValueType, typename RewardModelType>

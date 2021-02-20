@@ -14,21 +14,24 @@ Branch Changes
 Version 1.6.x
 -------------
 ## Version 1.6.4 (20xx/xx)
-- Added an export of  check results to json. Use `--exportresult` in the command line interface.
+- Added an export of check results to json. Use `--exportresult` in the command line interface.
 - Added computation of steady state probabilities for DTMC/CTMC in the sparse engine. Use `--steadystate` in the command line interface.
+- Implemented parsing and model building of Stochastic multiplayer games (SMGs) in the PRISM language. No model checking implemented, for now.
+- Added support for continuous integration with Github Actions.
+- `storm-pars`: Exploit monotonicity for computing extremal values and parameter space partitioning.
 
 ## Version 1.6.3 (2020/11)
 - Added support for multi-objective model checking of long-run average objectives including mixtures with other kinds of objectives.
-- Added support for generating optimal schedulers for globally formulae
-- Simulator supports exact arithmetic
-- Added switch `--no-simplify` to disable simplification of PRISM programs (which sometimes costs a bit of time on extremely large inputs)
-- Fixed issues with JANI inputs concerning 
+- Added support for generating optimal schedulers for globally formulae.
+- Simulator supports exact arithmetic.
+- Added switch `--no-simplify` to disable simplification of PRISM programs (which sometimes costs a bit of time on extremely large inputs).
+- Fixed issues with JANI inputs concerning .
     - transient variable expressions in properties,
     - constants in properties, and
     - integer variables with either only an upper or only a lower bound.
-- `storm-pomdp`: States can be labelled with values for observable predicates
-- `storm-pomdp`: (Only API) Track state estimates
-- `storm-pomdp`: (Only API) Reduce computation of state estimates to computation on unrolled MDP
+- `storm-pomdp`: States can be labelled with values for observable predicates.
+- `storm-pomdp`: (Only API) Track state estimates.
+- `storm-pomdp`: (Only API) Reduce computation of state estimates to computation on unrolled MDP.
 
 ## Version 1.6.2 (2020/09)
 - Prism program simplification improved.

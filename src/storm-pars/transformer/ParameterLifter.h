@@ -11,6 +11,9 @@
 #include "storm/storage/BitVector.h"
 #include "storm/storage/SparseMatrix.h"
 #include "storm/solver/OptimizationDirection.h"
+#include "storm-pars/analysis/Order.h"
+
+#include "storm-pars/analysis/MonotonicityChecker.h"
 
 namespace storm {
     namespace transformer {
@@ -31,7 +34,8 @@ namespace storm {
             
             typedef typename storm::utility::parametric::VariableType<ParametricType>::type VariableType;
             typedef typename storm::utility::parametric::CoefficientType<ParametricType>::type CoefficientType;
-            
+            typedef typename storm::analysis::MonotonicityResult<VariableType>::Monotonicity Monotonicity;
+
             /*!
              * Lifts the parameter choices to nondeterminisim. The computation is performed on the submatrix specified by the selected rows and columns
              * @param pMatrix the parametric matrix
@@ -39,16 +43,41 @@ namespace storm {
              * @param selectedRows a Bitvector that specifies which rows of the matrix and the vector are considered.
              * @param selectedColumns a Bitvector that specifies which columns of the matrix are considered.
              */
-            ParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix, std::vector<ParametricType> const& pVector, storm::storage::BitVector const& selectedRows, storm::storage::BitVector const& selectedColumns,  bool generateRowLabels = false);
+            ParameterLifter(storm::storage::SparseMatrix<ParametricType> const& pMatrix, std::vector<ParametricType> const& pVector, storm::storage::BitVector const& selectedRows, storm::storage::BitVector const& selectedColumns,  bool generateRowLabels = false, bool useMonotonicity = false);
             
             void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters);
-            
+
+            /*!
+             * Specifies the region for the parameterlifter, the Bitvector works as a fixed (partial) scheduler, this might not give sound results!
+             * @param region the region
+             * @param dirForParameters the optimization direction 
+             * @param selectedRows a Bitvector that specifies which rows of the matrix and the vector are considered.
+             */
+            void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, storm::storage::BitVector const& selectedRows);
+
+            /*!
+             * Specifies the region for the parameterlifter, the reachability order is used to see if there is local monotonicity, such that a fixed (partial) scheduler can be used
+             * @param region the region
+             * @param dirForParameters the optimization direction
+             * @param reachabilityOrder a (possibly insufficient) reachability order, used for local monotonicity
+             */
+            void specifyRegion(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::Order> reachabilityOrder, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonotonicityResult);
+
             // Returns the resulting matrix. Should only be called AFTER specifying a region
             storm::storage::SparseMatrix<ConstantType> const& getMatrix() const;
             
             // Returns the resulting vector. Should only be called AFTER specifying a region
             std::vector<ConstantType> const& getVector() const;
-            
+
+            std::vector<std::set<VariableType>> const& getOccurringVariablesAtState() const;
+
+            std::map<VariableType, std::set<uint_fast64_t>> getOccuringStatesAtVariable() const;
+
+            uint_fast64_t getRowGroupIndex(uint_fast64_t originalState) const;
+            uint_fast64_t getOriginalStateNumber(uint_fast64_t newState) const;
+            uint_fast64_t getRowGroupSize(uint_fast64_t originalState) const;
+            uint_fast64_t getRowGroupCount() const;
+
             /*
              * During initialization, the actual regions are not known. Hence, we consider abstract valuations,
              * where it is only known whether a parameter will be set to either the lower/upper bound of the region or whether this is unspecified
@@ -68,7 +97,8 @@ namespace storm {
                 std::set<VariableType> const& getLowerParameters() const;
                 std::set<VariableType> const& getUpperParameters() const;
                 std::set<VariableType> const& getUnspecifiedParameters() const;
-                
+                uint_fast64_t getOriginalState(uint_fast64_t newStateNumber) const;
+
                 /*!
                  * Returns the concrete valuation(s) (w.r.t. the provided region) represented by this abstract valuation.
                  * Note that an abstract valuation represents 2^(#unspecified parameters) many concrete valuations.
@@ -82,7 +112,6 @@ namespace storm {
             // Returns for each row the abstract valuation for this row
             // Note: the returned vector might be empty if row label generaion was disabled initially
             std::vector<AbstractValuation> const& getRowLabels() const;
-
             
         private:
             /*
@@ -97,18 +126,19 @@ namespace storm {
             class FunctionValuationCollector {
             public:
                 FunctionValuationCollector() = default;
-                
+
                 /*!
                  * Adds the provided function and valuation.
                  * Returns a reference to a placeholder in which the evaluation result will be written upon calling evaluateCollectedFunctions)
                  */
                 ConstantType& add(ParametricType const& function, AbstractValuation const& valuation);
-                
+
                 void evaluateCollectedFunctions(storm::storage::ParameterRegion<ParametricType> const& region, storm::solver::OptimizationDirection const& dirForUnspecifiedParameters);
                 
             private:
                 // Stores a function and a valuation. The valuation is stored as an index of the collectedValuations-vector.
                 typedef std::pair<ParametricType, AbstractValuation> FunctionValuation;
+
                 class FuncValHash{
                     public:
                         std::size_t operator()(FunctionValuation const& fv) const {
@@ -118,7 +148,7 @@ namespace storm {
                             return seed;
                         }
                 };
-                
+
                 // Stores the collected functions with the valuations together with a placeholder for the result.
                 std::unordered_map<FunctionValuation, ConstantType, FuncValHash> collectedFunctions;
             };
@@ -130,12 +160,18 @@ namespace storm {
             
             std::vector<AbstractValuation> rowLabels;
 
+            std::vector<uint_fast64_t> oldToNewColumnIndexMapping; // Mapping from old to new columnIndex used for monotonicity
+            std::vector<uint_fast64_t> rowGroupToStateNumber; // Mapping from new to old columnIndex used for monotonicity
+
             storm::storage::SparseMatrix<ConstantType> matrix; //The resulting matrix;
             std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType&>> matrixAssignment; // Connection of matrix entries with placeholders
-            
+
             std::vector<ConstantType> vector; //The resulting vector
             std::vector<std::pair<typename std::vector<ConstantType>::iterator, ConstantType&>> vectorAssignment; // Connection of vector entries with placeholders
-                
+
+            // Used for monotonicity in sparsedtmcparameterlifter
+            std::vector<std::set<VariableType>> occurringVariablesAtState;
+            std::map<VariableType, std::set<uint_fast64_t>> occuringStatesAtVariable;
         };
 
     }

@@ -193,7 +193,7 @@ namespace storm {
             for (size_t bucket = 0; bucket < buckets.size(); ++bucket) {
                 out << buckets[bucket].size() << " ";
             }
-            std::cout << std::endl;
+            out << std::endl;
         }
 
         // Template instantiations

@@ -88,13 +88,15 @@ namespace storm {
             virtual std::unique_ptr<CheckResult> checkTimeOperatorFormula(Environment const& env, CheckTask<storm::logic::TimeOperatorFormula, ValueType> const& checkTask);
             virtual std::unique_ptr<CheckResult> checkLongRunAverageOperatorFormula(Environment const& env, CheckTask<storm::logic::LongRunAverageOperatorFormula, ValueType> const& checkTask);
             virtual std::unique_ptr<CheckResult> checkUnaryBooleanStateFormula(Environment const& env, CheckTask<storm::logic::UnaryBooleanStateFormula, ValueType> const& checkTask);
-  
+
             // The methods to check multi-objective formulas.
             virtual std::unique_ptr<CheckResult> checkMultiObjectiveFormula(Environment const& env, CheckTask<storm::logic::MultiObjectiveFormula, ValueType> const& checkTask);
-  
+
             // The methods to check quantile formulas.
             virtual std::unique_ptr<CheckResult> checkQuantileFormula(Environment const& env, CheckTask<storm::logic::QuantileFormula, ValueType> const& checkTask);
-            
+
+            // The methods to check game formulas.
+            virtual std::unique_ptr<CheckResult> checkGameFormula(Environment const& env, CheckTask<storm::logic::GameFormula, ValueType> const& checkTask);
         };
     }
 }

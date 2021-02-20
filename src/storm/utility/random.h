@@ -1,6 +1,7 @@
 #pragma once
 
 #include <random>
+#include <boost/random.hpp>
 #include "storm/adapters/RationalNumberAdapter.h"
 
 namespace storm {
@@ -43,6 +44,13 @@ namespace storm {
         };
 
 
+        class ExponentialDistributionGenerator {
+        public:
+            ExponentialDistributionGenerator(double rate);
+            double random(boost::mt19937& engine);
+        private:
+            boost::random::exponential_distribution<> distribution;
+        };
 
     }
 }

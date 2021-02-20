@@ -810,7 +810,7 @@ namespace storm {
             storm::expressions::Expression functionBody;
             if (!firstPass) {
                 functionBody = parseExpression(functionDefinitionStructure.at("body"), scope.refine("body of function definition " + functionName), false, parameterNameToVariableMap);
-                STORM_LOG_WARN_COND(functionBody.getType() == type.expressionType, "Type of body of function " + functionName + "' (scope: " + scope.description + ") has type " << functionBody.getType() << " although the function type is given as " << type.expressionType);
+                STORM_LOG_WARN_COND(functionBody.getType() == type.expressionType || (functionBody.getType().isIntegerType() && type.expressionType.isRationalType()), "Type of body of function " + functionName + "' (scope: " + scope.description + ") has type " << functionBody.getType() << " although the function type is given as " << type.expressionType);
             }
             return storm::jani::FunctionDefinition(functionName, type.expressionType, parameters, functionBody);
         }
@@ -1263,7 +1263,7 @@ namespace storm {
                         assert(arguments.size() == 2);
                         ensureNumericalType(arguments[0], opstring, 0, scope.description);
                         ensureNumericalType(arguments[1], opstring, 1, scope.description);
-                        return arguments[0]^arguments[1];
+                        return storm::expressions::pow(arguments[0], arguments[1]);
                     } else if (opstring == "exp") {
                         arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
                         assert(arguments.size() == 2);
@@ -1506,7 +1506,7 @@ namespace storm {
                 std::vector<std::pair<uint64_t, storm::expressions::Expression>> destinationLocationsAndProbabilities;
                 for(auto const& destEntry : edgeEntry.at("destinations")) {
                     // target location
-                    STORM_LOG_THROW(edgeEntry.count("location") == 1, storm::exceptions::InvalidJaniException, "Each destination in edge from '" << sourceLoc << "' in automaton '" << name << "' must have a target location");
+                    STORM_LOG_THROW(destEntry.count("location") == 1, storm::exceptions::InvalidJaniException, "Each destination in edge from '" << sourceLoc << "' in automaton '" << name << "' must have a target location");
                     std::string targetLoc = getString<ValueType>(destEntry.at("location"), "target location for edge from '" + sourceLoc + "' in automaton '" + name + "'");
                     STORM_LOG_THROW(locIds.count(targetLoc) == 1, storm::exceptions::InvalidJaniException, "Target of edge has unknown location '" << targetLoc << "' in automaton '" << name << "'.");
                     // probability
