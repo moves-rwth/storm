@@ -39,7 +39,7 @@ namespace storm {
                 // Initialize the stack used for the DFS with the states.
                 std::vector<uint_fast64_t> stack;
                 stack.reserve(initialStates.size());
-                for (auto const& state : initialStates) {
+                for (auto state : initialStates) {
                     if (constraintStates.get(state)) {
                         stack.push_back(state);
                     }
@@ -173,7 +173,7 @@ namespace storm {
                 
                 storm::storage::BitVector statesWithChoice(transitionMatrix.getRowGroupCount(), false);
                 uint_fast64_t state = 0;
-                for (auto const& choice : choices) {
+                for (auto choice : choices) {
                     // Get the correct state
                     while (choice >= transitionMatrix.getRowGroupIndices()[state + 1]) {
                         ++state;
@@ -205,7 +205,7 @@ namespace storm {
                 // Only keep the states that can be reached after performing one of the specified choices
                 statesWithChoice &= candidateStates;
                 storm::storage::BitVector choiceTargets(transitionMatrix.getRowGroupCount(), false);
-                for (auto const& state : statesWithChoice) {
+                for (auto state : statesWithChoice) {
                     for (uint_fast64_t choice = choices.getNextSetIndex(transitionMatrix.getRowGroupIndices()[state]); choice < transitionMatrix.getRowGroupIndices()[state + 1]; choice = choices.getNextSetIndex(choice + 1)) {
                         bool choiceStaysInCandidateSet = true;
                         for (auto const& entry : transitionMatrix.getRow(choice)) {
@@ -228,7 +228,7 @@ namespace storm {
                 while (!candidateStates.empty()) {
                     // Update the states with a choice that stays within the set of candidates
                     statesWithChoice &= candidateStates;
-                    for (auto const& state : statesWithChoice) {
+                    for (auto state : statesWithChoice) {
                         bool stateHasChoice = false;
                         for (uint_fast64_t choice = choices.getNextSetIndex(transitionMatrix.getRowGroupIndices()[state]); choice < transitionMatrix.getRowGroupIndices()[state + 1]; choice = choices.getNextSetIndex(choice + 1)) {
                             bool choiceStaysInCandidateSet = true;
@@ -271,7 +271,7 @@ namespace storm {
                 storm::storage::BitVector statesInQueue(transitionMatrix.getRowGroupCount());
                 
                 storm::storage::sparse::state_type currentPosition = 0;
-                for (auto const& initialState : initialStates) {
+                for (auto initialState : initialStates) {
                     stateQueue.emplace_back(initialState, 0);
                     statesInQueue.set(initialState);
                 }
@@ -446,7 +446,7 @@ namespace storm {
             void computeSchedulerStayingInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::Scheduler<T>& scheduler) {
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
                 
-                for (auto const& state : states) {
+                for (auto state : states) {
                     bool setValue = false;
                     STORM_LOG_ASSERT(nondeterministicChoiceIndices[state+1] - nondeterministicChoiceIndices[state] > 0, "Expected at least one action enabled in state " << state);
                     for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
@@ -473,7 +473,7 @@ namespace storm {
             void computeSchedulerWithOneSuccessorInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::Scheduler<T>& scheduler) {
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
                 
-                for (auto const& state : states) {
+                for (auto state : states) {
                     bool setValue = false;
                     for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                         bool oneSuccessorInStates = false;
@@ -552,7 +552,7 @@ namespace storm {
             void computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::Scheduler<T>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter) {
                 
                 // set an arbitrary (valid) choice for the psi states.
-                for (auto const& psiState : psiStates) {
+                for (auto psiState : psiStates) {
                     for (uint_fast64_t memState = 0; memState < scheduler.getNumberOfMemoryStates(); ++memState) {
                         if (!scheduler.getChoice(psiState, memState).isDefined()) {
                             scheduler.setChoice(0, psiState, memState);
@@ -1666,6 +1666,40 @@ namespace storm {
             }
 
             template <typename T>
+            std::vector<uint_fast64_t> getBFSSort(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint_fast64_t> const& firstStates) {
+                storm::storage::BitVector seenStates(matrix.getRowGroupCount());
+
+                std::vector<uint_fast64_t> stateQueue;
+                stateQueue.reserve(matrix.getRowGroupCount());
+                std::vector<uint_fast64_t> result;
+                result.reserve(matrix.getRowGroupCount());
+
+                storm::storage::sparse::state_type currentPosition = 0;
+                auto count = matrix.getRowGroupCount() - 1;
+                for (auto const& state : firstStates) {
+                    stateQueue.push_back(state);
+                    result[count] = state;
+                    count--;
+                }
+
+                // Perform a BFS.
+                while (!stateQueue.empty()) {
+                    auto state = stateQueue.back();
+                    stateQueue.pop_back();
+                    seenStates.set(state);
+                    for (auto const& successorEntry : matrix.getRowGroup(state)) {
+                        auto succ = successorEntry.geColumn();
+                        if (!seenStates[succ]) {
+                            result[count] = succ;
+                            count--;
+                            stateQueue.insert(stateQueue.begin(), succ);
+                        }
+                    }
+                }
+                return result;
+            }
+
+            template <typename T>
             std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<T> const& matrix, std::vector<uint64_t> const& firstStates) {
                 if (matrix.getRowCount() != matrix.getColumnCount()) {
                     STORM_LOG_ERROR("Provided matrix is required to be square.");
@@ -1673,7 +1707,7 @@ namespace storm {
                 }
                 
                 uint_fast64_t numberOfStates = matrix.getRowCount();
-                
+
                 // Prepare the result. This relies on the matrix being square.
                 std::vector<uint_fast64_t> topologicalSort;
                 topologicalSort.reserve(numberOfStates);
@@ -1695,7 +1729,6 @@ namespace storm {
                 
                 return topologicalSort;
             }
-
 
             template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<double> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps, boost::optional<storm::storage::BitVector> const& choiceFilter);
             
@@ -1774,7 +1807,7 @@ namespace storm {
             template ExplicitGameProb01Result performProb1(storm::storage::SparseMatrix<double> const& transitionMatrix, std::vector<uint64_t> const& player1RowGrouping, storm::storage::SparseMatrix<double> const& player1BackwardTransitions, std::vector<uint64_t> const& player2BackwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::OptimizationDirection const& player1Direction, storm::OptimizationDirection const& player2Direction, storm::abstraction::ExplicitGameStrategyPair* strategyPair, boost::optional<storm::storage::BitVector> const& player1Candidates);
             
             template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<double> const& matrix,  std::vector<uint64_t> const& firstStates) ;
-            
+
             // Instantiations for storm::RationalNumber.
 #ifdef STORM_HAVE_CARL
             template storm::storage::BitVector getReachableStates(storm::storage::SparseMatrix<storm::RationalNumber> const& transitionMatrix, storm::storage::BitVector const& initialStates, storm::storage::BitVector const& constraintStates, storm::storage::BitVector const& targetStates, bool useStepBound, uint_fast64_t maximalSteps, boost::optional<storm::storage::BitVector> const& choiceFilter);
@@ -1888,7 +1921,6 @@ namespace storm {
             
             
             template std::vector<uint_fast64_t> getTopologicalSort(storm::storage::SparseMatrix<storm::RationalFunction> const& matrix,  std::vector<uint64_t> const& firstStates);
-            
 #endif
             
             // Instantiations for CUDD.

@@ -49,7 +49,7 @@ namespace storm {
 
                     storm::expressions::Expression nominatorPartExpr = manager->rational(storm::utility::convertNumber<storm::RationalNumber, storm::RationalFunctionCoefficient>(itr->coeff()));
                     for (auto var : varsFunction) {
-                        nominatorPartExpr = nominatorPartExpr * (manager->getVariable(var.name())^manager->rational(storm::utility::convertNumber<storm::RationalNumber, storm::RationalFunctionCoefficient>(itr->monomial()->exponentOfVariable(var))));
+                        nominatorPartExpr = nominatorPartExpr * storm::expressions::pow(manager->getVariable(var.name()), manager->rational(storm::utility::convertNumber<storm::RationalNumber, storm::RationalFunctionCoefficient>(itr->monomial()->exponentOfVariable(var))));
                     }
                     if (varsFunction.size() >= 1) {
                         result = result + nominatorPartExpr;

@@ -115,7 +115,7 @@ namespace storm {
                             case Z3_OP_IFF:
                                     return storm::expressions::iff(this->translateExpression(expr.arg(0)), this->translateExpression(expr.arg(1)));
                             case Z3_OP_XOR:
-                                    return this->translateExpression(expr.arg(0)) ^ this->translateExpression(expr.arg(1));
+                                    return storm::expressions::xclusiveor(this->translateExpression(expr.arg(0)), this->translateExpression(expr.arg(1)));
                             case Z3_OP_NOT:
                                     return !this->translateExpression(expr.arg(0));
                             case Z3_OP_IMPLIES:

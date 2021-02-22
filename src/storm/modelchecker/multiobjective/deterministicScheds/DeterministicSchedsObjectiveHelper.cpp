@@ -75,13 +75,13 @@ namespace storm {
                         auto backwardTransitions = model.getBackwardTransitions();
                         {
                             storm::storage::BitVector prob1States = storm::utility::graph::performProb1A(model.getTransitionMatrix(), model.getNondeterministicChoiceIndices(), backwardTransitions, phiStates, psiStates);
-                            for (auto const& prob1State : prob1States) {
+                            for (auto prob1State : prob1States) {
                                 result[prob1State] = storm::utility::one<ValueType>();
                             }
                         }
                         {
                             storm::storage::BitVector prob0States = storm::utility::graph::performProb0A(backwardTransitions, phiStates, psiStates);
-                            for (auto const& prob0State : prob0States) {
+                            for (auto prob0State : prob0States) {
                                 result[prob0State] = storm::utility::zero<ValueType>();
                             }
                         }
@@ -93,7 +93,7 @@ namespace storm {
                             storm::storage::BitVector statesWithoutReward = rewardModel.get().getStatesWithZeroReward(model.getTransitionMatrix());
                             rew0States = storm::utility::graph::performProb1A(model.getTransitionMatrix(), model.getNondeterministicChoiceIndices(), model.getBackwardTransitions(), statesWithoutReward, rew0States);
                         }
-                        for (auto const& rew0State : rew0States) {
+                        for (auto rew0State : rew0States) {
                             result[rew0State] = storm::utility::zero<ValueType>();
                         }
                     } else if (formula.isRewardOperatorFormula() && formula.getSubformula().isTotalRewardFormula()) {
@@ -102,7 +102,7 @@ namespace storm {
                         storm::storage::BitVector statesWithoutReward = rewardModel.get().getStatesWithZeroReward(model.getTransitionMatrix());
                         storm::storage::BitVector rew0States = storm::utility::graph::performProbGreater0E(model.getBackwardTransitions(), statesWithoutReward, ~statesWithoutReward);
                         rew0States.complement();
-                        for (auto const& rew0State : rew0States) {
+                        for (auto rew0State : rew0States) {
                             result[rew0State] = storm::utility::zero<ValueType>();
                         }
                     } else {

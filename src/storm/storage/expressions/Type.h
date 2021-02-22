@@ -115,7 +115,7 @@ namespace storm {
             Type plusMinusTimes(Type const& other) const;
             Type minus() const;
             Type divide(Type const& other) const;
-            Type power(Type const& other) const;
+            Type power(Type const& other, bool allowIntegerType = false) const;
             Type logicalConnective(Type const& other) const;
             Type logicalConnective() const;
             Type numericalComparison(Type const& other) const;

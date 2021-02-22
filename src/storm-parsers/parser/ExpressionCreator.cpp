@@ -130,7 +130,7 @@ namespace storm {
             if (this->createExpressions) {
                 try {
                     switch (operatorType) {
-                        case storm::expressions::OperatorType::Power: return e1 ^ e2; break;
+                        case storm::expressions::OperatorType::Power: return storm::expressions::pow(e1, e2, true); break;
                         case storm::expressions::OperatorType::Modulo: return e1 % e2; break;
                         default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
                     }
@@ -173,7 +173,7 @@ namespace storm {
             }
         }
         
-        storm::expressions::Expression ExpressionCreator::createIntegerLiteralExpression(int value, bool&) const {
+        storm::expressions::Expression ExpressionCreator::createIntegerLiteralExpression(int64_t value, bool&) const {
             if (this->createExpressions) {
                 return manager.integer(value);
             } else {

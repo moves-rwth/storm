@@ -1,0 +1,221 @@
+{
+  "actions": [],
+  "automata": [
+    {
+      "edges": [
+        {
+          "destinations": [
+            {
+              "location": "scc1-2",
+              "probability": {
+                "exp": 1
+              }
+            }
+          ],
+          "guard": {
+            "exp": true
+          },
+          "location": "scc1-1",
+          "rate": {
+            "exp": 3
+          }
+        },
+        {
+          "destinations": [
+            {
+              "location": "scc1-1",
+              "probability": {
+                "exp": 0.5
+              }
+            },
+            {
+              "location": "l-2",
+              "probability": {
+                "exp": 0.5
+              }
+            }
+          ],
+          "guard": {
+            "exp": true
+          },
+          "location": "scc1-2",
+          "rate": {
+            "exp": 1
+          }
+        },
+        {
+          "destinations": [
+            {
+              "location": "bscc1",
+              "probability": {
+                "exp": 0.5
+              }
+            },
+            {
+              "location": "bscc3-1",
+              "probability": {
+                "exp": 0.5
+              }
+            }
+          ],
+          "guard": {
+            "exp": true
+          },
+          "location": "scc1-1",
+          "rate": {
+            "exp": 1
+          }
+        },
+        {
+          "destinations": [
+            {
+              "location": "bscc2",
+              "probability": {
+                "exp": 0.3
+              }
+            },
+            {
+              "location": "l-2",
+              "probability": {
+                "exp": 0.7
+              }
+            }
+          ],
+          "guard": {
+            "exp": true
+          },
+          "location": "l-2",
+          "rate": {
+            "exp": 2
+          }
+        },
+        {
+          "destinations": [
+            {
+              "location": "bscc2",
+              "probability": {
+                "exp": 1
+              }
+            }
+          ],
+          "guard": {
+            "exp": true
+          },
+          "location": "bscc2",
+          "rate": {
+            "exp": 4
+          }
+        },
+        {
+          "destinations": [
+            {
+              "location": "bscc3-1",
+              "probability": {
+                "exp": 1
+              }
+            }
+          ],
+          "guard": {
+            "exp": true
+          },
+          "location": "bscc3-3",
+          "rate": {
+            "exp": 1
+          }
+        },
+        {
+          "destinations": [
+            {
+              "location": "bscc3-3",
+              "probability": {
+                "exp": 1
+              }
+            }
+          ],
+          "guard": {
+            "exp": true
+          },
+          "location": "bscc3-2",
+          "rate": {
+            "exp": 2
+          }
+        },
+        {
+          "destinations": [
+            {
+              "location": "bscc3-2",
+              "probability": {
+                "exp": 1
+              }
+            }
+          ],
+          "guard": {
+            "exp": true
+          },
+          "location": "bscc3-1",
+          "rate": {
+            "exp": 4
+          }
+        }
+      ],
+      "initial-locations": [
+        "scc1-1"
+      ],
+      "locations": [
+        {
+          "name": "scc1-1"
+        },
+        {
+          "name": "l-2"
+        },
+        {
+          "name": "bscc3-3"
+        },
+        {
+          "name": "scc1-2"
+        },
+        {
+          "name": "bscc2"
+        },
+        {
+          "name": "bscc1"
+        },
+        {
+          "name": "bscc3-2"
+        },
+        {
+          "name": "bscc3-1"
+        }
+      ],
+      "name": "element_name"
+    }
+  ],
+  "features": [
+    "derived-operators",
+    "functions",
+    "state-exit-rewards"
+  ],
+  "jani-version": 1,
+  "name": "steadystatedistrtest",
+  "system": {
+    "elements": [
+      {
+        "automaton": "element_name"
+      }
+    ]
+  },
+  "type": "ctmc",
+  "variables": [
+    {
+      "initial-value": 0,
+      "name": "x",
+      "transient": false,
+      "type": {
+        "base": "int",
+        "kind": "bounded",
+        "lower-bound": 0,
+        "upper-bound": 1
+      }
+    }
+  ]
+}

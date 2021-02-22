@@ -8,6 +8,8 @@
 #include "storm/storage/expressions/BinaryRelationExpression.h"
 #include "storm-pars/storage/ParameterRegion.h"
 #include "Order.h"
+#include "storm/storage/SparseMatrix.h"
+
 
 namespace storm {
     namespace analysis {
@@ -19,18 +21,19 @@ namespace storm {
             INVALID,
             UNKNOWN,
         };
-        template<typename ValueType>
+
+        template<typename ValueType, typename ConstantType>
         class AssumptionChecker {
         public:
+            typedef typename utility::parametric::VariableType<ValueType>::type VariableType;
+            typedef typename utility::parametric::CoefficientType<ValueType>::type CoefficientType;
 
             /*!
-             * Constructs an AssumptionChecker based on the number of samples, for the given formula and model.
+             * Constructs an AssumptionChecker.
              *
-             * @param formula The formula to check.
-             * @param model The dtmc model to check the formula on.
-             * @param numberOfSamples Number of sample points.
+             * @param matrix The matrix of the considered model.
              */
-            AssumptionChecker(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Dtmc<ValueType>> model, storm::storage::ParameterRegion<ValueType> region, uint_fast64_t numberOfSamples);
+            AssumptionChecker(storage::SparseMatrix<ValueType> matrix);
 
             /*!
              * Constructs an AssumptionChecker based on the number of samples, for the given formula and model.
@@ -39,51 +42,46 @@ namespace storm {
              * @param model The mdp model to check the formula on.
              * @param numberOfSamples Number of sample points.
              */
-            AssumptionChecker(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t numberOfSamples);
+            AssumptionChecker(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Mdp<ValueType>> model, uint_fast64_t const numberOfSamples);
 
             /*!
-             * Checks if the assumption holds at the sample points of the AssumptionChecker.
+             * Initializes the given number of sample points for a given model, formula and region.
              *
-             * @param assumption The assumption to check.
-             * @return AssumptionStatus::UNKNOWN or AssumptionStatus::INVALID
+             * @param formula The formula to compute the samples for.
+             * @param model The considered model.
+             * @param region The region of the model's parameters.
+             * @param numberOfSamples Number of sample points.
              */
-            AssumptionStatus checkOnSamples(std::shared_ptr<expressions::BinaryRelationExpression> assumption);
+            void initializeCheckingOnSamples(std::shared_ptr<logic::Formula const> formula, std::shared_ptr<models::sparse::Dtmc<ValueType>> model, storage::ParameterRegion<ValueType> region, uint_fast64_t numberOfSamples);
+
+            /*!
+             * Sets the sample values to the given vector and useSamples to true.
+             *
+             * @param samples The new value for samples.
+             */
+            void setSampleValues(std::vector<std::vector<ConstantType>> samples);
 
             /*!
              * Tries to validate an assumption based on the order and underlying transition matrix.
              *
              * @param assumption The assumption to validate.
              * @param order The order.
+             * @param region The region of the considered model.
              * @return AssumptionStatus::VALID, or AssumptionStatus::UNKNOWN, or AssumptionStatus::INVALID
              */
-            AssumptionStatus validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption, Order* order);
-
-            /*!
-             * Tries to validate an assumption based on the order, and SMT solving techniques
-             *
-             * @param assumption The assumption to validate.
-             * @param order The order.
-             * @return AssumptionStatus::VALID, or AssumptionStatus::UNKNOWN, or AssumptionStatus::INVALID
-             */
-            AssumptionStatus validateAssumptionSMTSolver(std::shared_ptr<expressions::BinaryRelationExpression> assumption, Order* order);
+            AssumptionStatus validateAssumption(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region,  std::vector<ConstantType> const minValues, std::vector<ConstantType> const maxValue) const;
+            AssumptionStatus validateAssumption(std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region) const;
 
         private:
-            std::shared_ptr<logic::Formula const> formula;
+            bool useSamples;
+
+            std::vector<std::vector<ConstantType>> samples;
 
             storage::SparseMatrix<ValueType> matrix;
 
-            std::vector<std::vector<double>> samples;
+            AssumptionStatus validateAssumptionSMTSolver(uint_fast64_t val1, uint_fast64_t val2, std::shared_ptr<expressions::BinaryRelationExpression> assumption, std::shared_ptr<Order> order, storage::ParameterRegion<ValueType> region, std::vector<ConstantType>const minValues, std::vector<ConstantType>const maxValue) const;
 
-            void createSamples();
-
-            AssumptionStatus validateAssumptionFunction(Order* order,
-                    typename storage::SparseMatrix<ValueType>::iterator state1succ1,
-                    typename storage::SparseMatrix<ValueType>::iterator state1succ2,
-                    typename storage::SparseMatrix<ValueType>::iterator state2succ1,
-                    typename storage::SparseMatrix<ValueType>::iterator state2succ2);
-
-            storm::storage::ParameterRegion<ValueType> region;
-
+            AssumptionStatus checkOnSamples(std::shared_ptr<expressions::BinaryRelationExpression> assumption) const;
         };
     }
 }

@@ -30,7 +30,16 @@ namespace storm {
 				 * Retrieves the region definition string
 				 */
 				std::string getRegionString() const;
-				
+
+                /*!
+                 * Retrieves whether region bound is declared
+                 */
+                bool isRegionBoundSet() const;
+
+                /*!
+                 * Retrieves the region definition string
+                 */
+                std::string getRegionBoundString() const;
 				/*!
 				 * Retrieves whether region(s) were declared
 				 */
@@ -77,6 +86,14 @@ namespace storm {
 				 */
 				double getExtremumValuePrecision() const;
 
+                bool isExtremumSuggestionSet() const;
+
+                double getExtremumSuggestion() const;
+
+                bool isSplittingThresholdSet() const;
+
+                int getSplittingThreshold() const;
+
 				/*!
 				 * Retrieves which type of region check should be performed
 				 */
@@ -99,10 +116,13 @@ namespace storm {
             private:
 				const static std::string regionOptionName;
 				const static std::string regionShortOptionName;
+				const static std::string regionBoundOptionName;
 				const static std::string hypothesisOptionName;
 				const static std::string hypothesisShortOptionName;
 				const static std::string refineOptionName;
+				const static std::string splittingThresholdName;
 				const static std::string extremumOptionName;
+				const static std::string extremumSuggestionOptionName;
 				const static std::string checkEngineOptionName;
 				const static std::string printNoIllustrationOptionName;
 				const static std::string printFullResultOptionName;

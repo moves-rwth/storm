@@ -244,6 +244,28 @@ namespace storm {
             }
         }
         
+        template <typename SparseCtmcModelType>
+        std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseCtmcModelType>::computeSteadyStateDistribution(Environment const& env) {
+            // Initialize helper
+            storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<ValueType> helper(this->getModel().getTransitionMatrix());
+            
+            // Compute result
+            std::vector<ValueType> result;
+            auto const& initialStates = this->getModel().getInitialStates();
+            uint64_t numInitStates = initialStates.getNumberOfSetBits();
+            if (numInitStates == 1) {
+                result = helper.computeLongRunAverageStateDistribution(env, *initialStates.begin());
+            } else {
+                STORM_LOG_WARN("Multiple initial states found. A uniform distribution over initial states is assumed.");
+                ValueType initProb = storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType, uint64_t>(numInitStates);
+                result = helper.computeLongRunAverageStateDistribution(env, [&initialStates,&initProb](uint64_t const& stateIndex) { return initialStates.get(stateIndex) ? initProb : storm::utility::zero<ValueType>(); });
+            }
+
+            // Return CheckResult
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
+        }
+
+        
         template class SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>>;
 
 #ifdef STORM_HAVE_CARL

@@ -39,9 +39,33 @@ namespace storm {
                  */
                 virtual ValueType computeLraForComponent(Environment const& env, ValueGetter const& stateValuesGetter,  ValueGetter const& actionValuesGetter, storm::storage::StronglyConnectedComponent const& component) override;
                 
+                /*!
+                 * Computes the long run average state distribution, i.e., a vector that assigns for each state s the average fraction of the time we spent in s,
+                 * assuming an infinite run.
+                 * Note that all the probability muss will be in bottom SCCs.
+                 * If there are multiple bottom SCCs, the value will depend on the initial state.
+                 * It is also possible to provide a distribution over initial states.
+                 * However, the standard treatment of multiple initial states is not possible here, as this is not defined then.
+                 * @throws InvalidOperationException if no initial state or distribution is provided and the model has multiple BSCCs.
+                 */
+                std::vector<ValueType> computeLongRunAverageStateDistribution(Environment const& env);
+                std::vector<ValueType> computeLongRunAverageStateDistribution(Environment const& env, uint64_t const& initialState);
+                std::vector<ValueType> computeLongRunAverageStateDistribution(Environment const& env, ValueGetter const& initialDistributionGetter);
+
             protected:
                 
                 virtual void createDecomposition() override;
+                
+                /*!
+                 * Computes for each BSCC the probability to reach that SCC assuming the given distribution over initial states.
+                 */
+                std::vector<ValueType> computeBsccReachabilityProbabilities(Environment const& env, ValueGetter const& initialDistributionGetter);
+                
+                /*!
+                 * Computes the long run average (steady state) distribution for the given BSCC.
+                 */
+                std::vector<ValueType> computeSteadyStateDistrForBscc(Environment const& env, storm::storage::StronglyConnectedComponent const& bscc);
+
                 
                 std::pair<bool, ValueType> computeLraForTrivialBscc(Environment const& env, ValueGetter const& stateValuesGetter,  ValueGetter const& actionValuesGetter, storm::storage::StronglyConnectedComponent const& bscc);
                 
@@ -55,10 +79,11 @@ namespace storm {
                  * @see Kretinsky, Meggendorfer: Efficient Strategy Iteration for Mean Payoff in Markov Decision Processes (ATVA 2017), https://doi.org/10.1007/978-3-319-68167-2_25
                  */
                 std::pair<ValueType, std::vector<ValueType>> computeLraForBsccGainBias(Environment const& env, ValueGetter const& stateValuesGetter, ValueGetter const& actionValuesGetter, storm::storage::StronglyConnectedComponent const& bscc);
+
                 /*!
-                 * As computeLraForComponent but solves a linear equation system consisting encoding the long run average (steady state) distribution (independent of what is set in env)
+                 * As computeLraForComponent but does the computation by computing the long run average (steady state) distribution (independent of what is set in env)
                  */
-                std::pair<ValueType, std::vector<ValueType>> computeLraForBsccLraDistr(Environment const& env, ValueGetter const& stateValuesGetter, ValueGetter const& actionValuesGetter, storm::storage::StronglyConnectedComponent const& bscc);
+                std::pair<ValueType, std::vector<ValueType>> computeLraForBsccSteadyStateDistr(Environment const& env, ValueGetter const& stateValuesGetter, ValueGetter const& actionValuesGetter, storm::storage::StronglyConnectedComponent const& bscc);
   
                 std::pair<storm::storage::SparseMatrix<ValueType>, std::vector<ValueType>> buildSspMatrixVector(std::vector<ValueType> const& bsccLraValues, std::vector<uint64_t> const& inputStateToBsccIndexMap, storm::storage::BitVector const& statesNotInComponent, bool asEquationSystem);
                 

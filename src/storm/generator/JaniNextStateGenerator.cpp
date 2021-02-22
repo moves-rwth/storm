@@ -415,8 +415,8 @@ namespace storm {
                 }
                 int64_t assignedValue = expressionEvaluator.asInt(assignmentIt->getAssignedExpression());
                 if (this->options.isExplorationChecksSet()) {
-                    STORM_LOG_THROW(assignedValue >= integerIt->lowerBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
-                    STORM_LOG_THROW(assignedValue <= integerIt->upperBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
+                    STORM_LOG_THROW(!integerIt->lowerBound || assignedValue >= integerIt->lowerBound.get(), storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
+                    STORM_LOG_THROW(!integerIt->upperBound || assignedValue <= integerIt->upperBound.get(), storm::exceptions::WrongFormatException, "The update " << assignmentIt->getExpressionVariable().getName() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
                 }
                 transientValuation.integerValues.emplace_back(&(*integerIt), assignedValue);
             }
@@ -1183,6 +1183,8 @@ namespace storm {
                 uint64_t automatonIndex = 0;
                 for (auto const& composition : parallelComposition.getSubcompositions()) {
                     STORM_LOG_THROW(composition->isAutomatonComposition(), storm::exceptions::WrongFormatException, "Expected flat parallel composition.");
+                    STORM_LOG_THROW(composition->asAutomatonComposition().getInputEnabledActions().empty(), storm::exceptions::NotSupportedException, "Input-enabled actions are not supported right now.");
+
                     this->parallelAutomata.push_back(this->model.getAutomaton(composition->asAutomatonComposition().getAutomatonName()));
                 
                     // Add edges with silent action.

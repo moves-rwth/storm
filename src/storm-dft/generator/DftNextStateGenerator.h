@@ -48,6 +48,26 @@ namespace storm {
              */
             StateBehavior<ValueType, StateType> createMergeFailedState(StateToIdCallback const& stateToIdCallback);
 
+            /*!
+             * Create initial state.
+             * 
+             * @return Initial state.
+             */
+            DFTStatePointer createInitialState() const;
+
+            /*!
+             * Create successor state from given state by letting the given BE fail next.
+             * 
+             * @param state Current state.
+             * @param failedBE BE which fails next.
+             * @param triggeringDependency Dependency which triggered the failure (or nullptr if BE failed on its own).
+             * @param dependencySuccessful Whether the triggering dependency was successful.
+             *              If the dependency is unsuccessful, failedBE does not fail and only the depedendy is marked as failed.
+             * 
+             * @return Successor state.
+             */
+            DFTStatePointer createSuccessorState(DFTStatePointer const state, std::shared_ptr<storm::storage::DFTBE<ValueType> const> &failedBE, std::shared_ptr<storm::storage::DFTDependency<ValueType> const> &triggeringDependency, bool dependencySuccessful = true) const;
+
             /**
              * Propagate the failures in a given state if the given BE fails
              *
@@ -56,7 +76,7 @@ namespace storm {
              */
             void
             propagateFailure(DFTStatePointer newState, std::shared_ptr<storm::storage::DFTBE<ValueType> const> &nextBE,
-                             storm::storage::DFTStateSpaceGenerationQueues<ValueType> &queues);
+                             storm::storage::DFTStateSpaceGenerationQueues<ValueType> &queues) const;
 
             /**
              * Propagate the failsafe state in a given state if the given BE fails
@@ -66,7 +86,7 @@ namespace storm {
              */
             void
             propagateFailsafe(DFTStatePointer newState, std::shared_ptr<storm::storage::DFTBE<ValueType> const> &nextBE,
-                              storm::storage::DFTStateSpaceGenerationQueues<ValueType> &queues);
+                              storm::storage::DFTStateSpaceGenerationQueues<ValueType> &queues) const;
 
         private:
 

@@ -114,7 +114,7 @@ namespace storm {
                 // store them now, before changing them.
                 result.keptActions = keptActions;
             }
-            for (auto const& deadlockState : deadlockStates) {
+            for (auto deadlockState : deadlockStates) {
                 keptActions.set(groupIndices[deadlockState], true);
             }
 
@@ -148,13 +148,13 @@ namespace storm {
                 assert(deadlockStates.getNumberOfSetBits() == subDeadlockStates.getNumberOfSetBits());
                 // erase rewards, choice labels, choice origins
                 for (auto& rewModel : components.rewardModels) {
-                    for (auto const& state : subDeadlockStates) {
+                    for (auto state : subDeadlockStates) {
                         rewModel.second.clearRewardAtState(state, components.transitionMatrix);
                     }
                 }
                 if (components.choiceLabeling) {
                     storm::storage::BitVector nonDeadlockChoices(components.transitionMatrix.getRowCount(), true);
-                    for (auto const& state : subDeadlockStates) {
+                    for (auto state : subDeadlockStates) {
                         auto const& choice = components.transitionMatrix.getRowGroupIndices()[state];
                         nonDeadlockChoices.set(choice, false);
                     }
@@ -163,7 +163,7 @@ namespace storm {
                     }
                 }
                 if (components.choiceOrigins) {
-                    for (auto const& state : subDeadlockStates) {
+                    for (auto state : subDeadlockStates) {
                         auto const& choice = components.transitionMatrix.getRowGroupIndices()[state];
                         components.choiceOrigins.get()->clearOriginOfChoice(choice);
                     }

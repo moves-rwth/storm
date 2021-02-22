@@ -995,8 +995,7 @@ namespace storm {
         void verifyWithSparseEngine(std::shared_ptr<storm::models::ModelBase> const& model, SymbolicInput const& input, ModelProcessingInformation const& mpi) {
             auto sparseModel = model->as<storm::models::sparse::Model<ValueType>>();
             auto const& ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
-            verifyProperties<ValueType>(input,
-                                        [&sparseModel,&ioSettings,&mpi] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
+            auto verificationCallback = [&sparseModel,&ioSettings,&mpi] (std::shared_ptr<storm::logic::Formula const> const& formula, std::shared_ptr<storm::logic::Formula const> const& states) {
                                             bool filterForInitialStates = states->isInitialFormula();
                                             auto task = storm::api::createTask<ValueType>(formula, filterForInitialStates);
                                             if (ioSettings.isExportSchedulerSet()) {
@@ -1014,14 +1013,21 @@ namespace storm {
                                                 result->filter(filter->asQualitativeCheckResult());
                                             }
                                             return result;
-                                        },
-                                        [&sparseModel,&ioSettings] (std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
+                                        };
+            uint64_t exportCount = 0; // this number will be prepended to the export file name of schedulers and/or check results in case of multiple properties.
+            auto postprocessingCallback = [&sparseModel,&ioSettings,&input,&exportCount] (std::unique_ptr<storm::modelchecker::CheckResult> const& result) {
                                             if (ioSettings.isExportSchedulerSet()) {
                                                 if (result->isExplicitQuantitativeCheckResult()) {
                                                     if (result->template asExplicitQuantitativeCheckResult<ValueType>().hasScheduler()) {
                                                         auto const& scheduler = result->template asExplicitQuantitativeCheckResult<ValueType>().getScheduler();
                                                         STORM_PRINT_AND_LOG("Exporting scheduler ... ")
-                                                        storm::api::exportScheduler(sparseModel, scheduler, ioSettings.getExportSchedulerFilename());
+                                                        if (input.model) {
+                                                            STORM_LOG_WARN_COND(sparseModel->hasStateValuations(), "No information of state valuations available. The scheduler output will use internal state ids. You might be interested in building the model with state valuations using --buildstateval.");
+                                                            STORM_LOG_WARN_COND(sparseModel->hasChoiceLabeling() || sparseModel->hasChoiceOrigins(), "No symbolic choice information is available. The scheduler output will use internal choice ids. You might be interested in building the model with choice labels or choice origins using --buildchoicelab or --buildchoiceorig.");
+                                                            STORM_LOG_WARN_COND(sparseModel->hasChoiceLabeling() && !sparseModel->hasChoiceOrigins(), "Only partial choice information is available. You might want to build the model with choice origins using --buildchoicelab or --buildchoiceorig.");
+                                                        }
+                                                        STORM_LOG_WARN_COND(exportCount == 0, "Prepending " << exportCount << " to file name for this property because there are multiple properties.");
+                                                        storm::api::exportScheduler(sparseModel, scheduler, (exportCount == 0 ? std::string("") : std::to_string(exportCount)) + ioSettings.getExportSchedulerFilename());
                                                     } else {
                                                         STORM_LOG_ERROR("Scheduler requested but could not be generated.");
                                                     }
@@ -1029,7 +1035,27 @@ namespace storm {
                                                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Scheduler export not supported for this property.");
                                                 }
                                             }
-                                        });
+                                            if (ioSettings.isExportCheckResultSet()) {
+                                                STORM_LOG_WARN_COND(sparseModel->hasStateValuations(), "No information of state valuations available. The result output will use internal state ids. You might be interested in building the model with state valuations using --buildstateval.");
+                                                STORM_LOG_WARN_COND(exportCount == 0, "Prepending " << exportCount << " to file name for this property because there are multiple properties.");
+                                                storm::api::exportCheckResultToJson(sparseModel, result, (exportCount == 0 ? std::string("") : std::to_string(exportCount)) + ioSettings.getExportCheckResultFilename());
+                                            }
+                                            ++exportCount;
+                                        };
+            verifyProperties<ValueType>(input,verificationCallback, postprocessingCallback);
+            if (ioSettings.isComputeSteadyStateDistributionSet()) {
+                storm::utility::Stopwatch watch(true);
+                std::unique_ptr<storm::modelchecker::CheckResult> result;
+                try {
+                    result = storm::api::computeSteadyStateDistributionWithSparseEngine<ValueType>(mpi.env, sparseModel);
+                } catch (storm::exceptions::BaseException const& ex) {
+                    STORM_LOG_WARN("Cannot compute steady-state probabilities: " << ex.what());
+                }
+                watch.stop();
+                postprocessingCallback(result);
+                STORM_PRINT((storm::utility::resources::isTerminate() ? "Result till abort: " : "Result: ") << *result << std::endl);
+                STORM_PRINT("Time for model checking: " << watch << "." << std::endl);
+            }
         }
         
         template <storm::dd::DdType DdType, typename ValueType>

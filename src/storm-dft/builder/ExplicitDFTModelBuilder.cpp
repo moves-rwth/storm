@@ -743,8 +743,9 @@ namespace storm {
         ValueType ExplicitDFTModelBuilder<ValueType, StateType>::getLowerBound(DFTStatePointer const& state) const {
             // Get the lower bound by considering the failure of all possible BEs
             ValueType lowerBound = storm::utility::zero<ValueType>();
-            for (state->getFailableElements().init(false); !state->getFailableElements().isEnd(); state->getFailableElements().next()) {
-                lowerBound += state->getBERate(state->getFailableElements().get());
+            STORM_LOG_ASSERT(!state->getFailableElements().hasDependencies(), "Lower bound should only be computed if dependencies were already handled.");
+            for (auto it = state->getFailableElements().begin(); it != state->getFailableElements().end(); ++it) {
+                lowerBound += state->getBERate(*it);
             }
             STORM_LOG_TRACE("Lower bound is " << lowerBound << " for state " << state->getId());
             return lowerBound;

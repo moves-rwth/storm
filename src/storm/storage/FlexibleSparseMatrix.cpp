@@ -208,7 +208,7 @@ namespace storm {
         template<typename ValueType>
         storm::storage::SparseMatrix<ValueType> FlexibleSparseMatrix<ValueType>::createSparseMatrix(storm::storage::BitVector const& rowConstraint, storm::storage::BitVector const& columnConstraint) {
             uint_fast64_t numEntries = 0;
-            for (auto const& rowIndex : rowConstraint) {
+            for (auto rowIndex : rowConstraint) {
                 auto const& row = data[rowIndex];
                 for(auto const& entry : row) {
                     if (columnConstraint.get(entry.getColumn())) {
@@ -230,14 +230,14 @@ namespace storm {
             
             std::vector<uint_fast64_t> oldToNewColumnIndexMapping(getColumnCount(), getColumnCount());
             uint_fast64_t newColumnIndex = 0;
-            for (auto const& oldColumnIndex : columnConstraint) {
+            for (auto oldColumnIndex : columnConstraint) {
                 oldToNewColumnIndexMapping[oldColumnIndex] = newColumnIndex++;
             }
             
             storm::storage::SparseMatrixBuilder<ValueType> matrixBuilder(rowConstraint.getNumberOfSetBits(), newColumnIndex, numEntries, true, !hasTrivialRowGrouping(), numRowGroups);
             uint_fast64_t currRowIndex = 0;
             auto rowGroupIndexIt = getRowGroupIndices().begin();
-            for (auto const& oldRowIndex : rowConstraint) {
+            for (auto oldRowIndex : rowConstraint) {
                 if(!hasTrivialRowGrouping() && oldRowIndex >= *rowGroupIndexIt) {
                     matrixBuilder.newRowGroup(currRowIndex);
                     // Skip empty row groups

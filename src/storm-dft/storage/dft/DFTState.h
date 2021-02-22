@@ -1,11 +1,11 @@
 #pragma once
 
-#include <sstream>
 #include <memory>
 
 #include "storm/storage/BitVector.h"
 
 #include "storm-dft/storage/dft/DFTElementState.h"
+#include "storm-dft/storage/dft/FailableElements.h"
 #include "storm-dft/builder/DftExplorationHeuristic.h"
 
 namespace storm {
@@ -16,6 +16,8 @@ namespace storm {
         template<typename ValueType>
         class DFTBE;
         template<typename ValueType>
+        class DFTDependency;
+        template<typename ValueType>
         class DFTElement;
         class DFTStateGenerationInfo;
 
@@ -23,137 +25,16 @@ namespace storm {
         class DFTState {
             friend struct std::hash<DFTState>;
 
-            struct FailableElements {
-
-                FailableElements(size_t nrElements) : currentlyFailableBE(nrElements), it(currentlyFailableBE.begin()) {
-                    // Intentionally left empty
-                }
-
-                void addBE(size_t id) {
-                    currentlyFailableBE.set(id);
-                }
-
-                void addDependency(size_t id, bool isConflicting) {
-                    if (isConflicting) {
-                        if (std::find(mFailableConflictingDependencies.begin(), mFailableConflictingDependencies.end(),
-                                      id) == mFailableConflictingDependencies.end()) {
-                            mFailableConflictingDependencies.push_back(id);
-                        }
-                    } else {
-                        if (std::find(mFailableNonconflictingDependencies.begin(),
-                                      mFailableNonconflictingDependencies.end(), id) ==
-                            mFailableNonconflictingDependencies.end()) {
-                            mFailableNonconflictingDependencies.push_back(id);
-                        }
-                    }
-                }
-
-                void removeBE(size_t id) {
-                    currentlyFailableBE.set(id, false);
-                }
-
-                void removeDependency(size_t id) {
-                    auto it1 = std::find(mFailableConflictingDependencies.begin(),
-                                         mFailableConflictingDependencies.end(), id);
-                    if (it1 != mFailableConflictingDependencies.end()) {
-                        mFailableConflictingDependencies.erase(it1);
-                        return;
-                    }
-                    auto it2 = std::find(mFailableNonconflictingDependencies.begin(),
-                                         mFailableNonconflictingDependencies.end(), id);
-                    if (it2 != mFailableNonconflictingDependencies.end()) {
-                        mFailableNonconflictingDependencies.erase(it2);
-                        return;
-                    }
-                }
-
-                void clear() {
-                    currentlyFailableBE.clear();
-                    mFailableConflictingDependencies.clear();
-                    mFailableNonconflictingDependencies.clear();
-                }
-
-                void init(bool dependency) const {
-                    this->dependency = dependency;
-                    if (this->dependency) {
-                        if (!mFailableNonconflictingDependencies.empty()) {
-                            itDep = mFailableNonconflictingDependencies.begin();
-                            conflicting = false;
-                        } else {
-                            itDep = mFailableConflictingDependencies.begin();
-                            conflicting = true;
-                        }
-                    } else {
-                        it = currentlyFailableBE.begin();
-                    }
-                }
-
-                /**
-                 * Increment iterator.
-                 */
-                void next() const {
-                    if (dependency) {
-                        ++itDep;
-                    } else {
-                        ++it;
-                    }
-                }
-
-                bool isEnd() const {
-                    if (dependency) {
-                        if (!conflicting) {
-                            // If we are handling the non-conflicting FDEPs, end after the first element
-                            return itDep != mFailableNonconflictingDependencies.begin();
-                        } else {
-                            return itDep == mFailableConflictingDependencies.end();
-                        }
-                    } else {
-                        return it == currentlyFailableBE.end();
-                    }
-                }
-
-                /**
-                 * Get underlying element of iterator.
-                 * @return Id of element.
-                 */
-                size_t get() const {
-                    if (dependency) {
-                        return *itDep;
-                    } else {
-                        return *it;
-                    }
-                };
-
-                bool hasDependencies() const {
-                    return !mFailableConflictingDependencies.empty() || !mFailableNonconflictingDependencies.empty();
-                }
-
-                bool hasBEs() const {
-                    return !currentlyFailableBE.empty();
-                }
-
-                mutable bool dependency;
-                mutable bool conflicting;
-
-                storm::storage::BitVector currentlyFailableBE;
-                std::vector<size_t> mFailableConflictingDependencies;
-                std::vector<size_t> mFailableNonconflictingDependencies;
-                std::set<size_t> remainingRelevantEvents;
-
-                mutable storm::storage::BitVector::const_iterator it;
-                mutable std::vector<size_t>::const_iterator itDep;
-            };
-
-
         private:
             // Status is bitvector where each element has two bits with the meaning according to DFTElementState
             storm::storage::BitVector mStatus;
             size_t mId;
-            FailableElements failableElements;
+            storm::dft::storage::FailableElements failableElements;
             std::vector<size_t> mUsedRepresentants;
             size_t indexRelevant;
             bool mPseudoState;
             bool mValid = true;
+            bool mTransient = false;
             const DFT<ValueType>& mDft;
             const DFTStateGenerationInfo& mStateGenerationInfo;
 
@@ -240,6 +121,14 @@ namespace storm {
                 return !mValid;
             }
 
+            void markAsTransient() {
+                mTransient = true;
+            }
+
+            bool isTransient() const {
+                return mTransient;
+            }
+
             bool isPseudoState() const {
                 return mPseudoState;
             }
@@ -248,7 +137,7 @@ namespace storm {
                 return mStatus;
             }
 
-            FailableElements& getFailableElements() {
+            storm::dft::storage::FailableElements& getFailableElements() {
                 return failableElements;
             }
            
@@ -348,18 +237,19 @@ namespace storm {
             void updateDontCareDependencies(size_t id);
 
             /**
-             * Sets the next BE as failed
-             * @param index Index in currentlyFailableBE of BE to fail
-             * @param dueToDependency Whether the failure is due to a dependency.
-             * @return Pair of BE which fails and flag indicating if the failure was due to functional dependencies
+             * Sets the next BE as failed.
+             * Optionally also marks the triggering dependency as successful.
+             * 
+             * @param be BE to fail.
+             * @param dependency Dependency which triggered the failure (or nullptr if the BE fails on its own).
              */
-            std::pair<std::shared_ptr<DFTBE<ValueType> const>, bool> letNextBEFail(size_t index, bool dueToDependency);
+            void letBEFail(std::shared_ptr<DFTBE<ValueType> const> be, std::shared_ptr<DFTDependency<ValueType> const> dependency);
             
             /**
              * Sets the dependency as unsuccesful meaning no BE will fail.
-             * @param index Index of dependency to fail.
+             * @param dependency Dependency.
              */
-            void letDependencyBeUnsuccessful(size_t index = 0);
+            void letDependencyBeUnsuccessful(std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dependency);
             
             /**
              * Order the state in decreasing order using the symmetries.
@@ -386,34 +276,6 @@ namespace storm {
              * @return True iff one operational relevant event exists.
              */
             bool hasOperationalRelevantEvent();
-            
-            std::string getCurrentlyFailableString() const {
-                std::stringstream stream;
-                if (failableElements.hasDependencies()) {
-                    failableElements.init(true);
-                    stream << "{Dependencies: ";
-                    stream << failableElements.get();
-                    failableElements.next();
-                    while(!failableElements.isEnd()) {
-                        stream << ", " << failableElements.get();
-                        failableElements.next();
-                    }
-                    stream << "} ";
-                } else {
-                    failableElements.init(false);
-                    stream << "{";
-                    if (!failableElements.isEnd()) {
-                        stream << failableElements.get();
-                        failableElements.next();
-                        while (!failableElements.isEnd()) {
-                            stream << ", " << failableElements.get();
-                            failableElements.next();
-                        }
-                    }
-                    stream << "}";
-                }
-                return stream.str();
-            }
 
             friend bool operator==(DFTState const& a, DFTState const& b) {
                 return a.mStatus == b.mStatus;
