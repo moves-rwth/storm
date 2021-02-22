@@ -19,12 +19,12 @@ namespace storm {
             }
 
             void AutomaticAction::doAction(JaniLocalEliminator::Session &session) {
-
-                UnfoldDependencyGraph dependencyGraph(session.getModel());
-
                 if (session.getModel().getAutomata().size() > 1) {
                     session.setModel(session.getModel().flattenComposition());
                 }
+
+                UnfoldDependencyGraph dependencyGraph(session.getModel());
+
                 std::string autName = session.getModel().getAutomata()[0].getName();
 
                 auto variables = session.getProperty().getUsedVariablesAndConstants();
