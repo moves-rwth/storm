@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace jani {
-        BoundedType::BoundedType(const ElementType &type, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& expression upperBound) : JaniType(), type(type), lowerBound(lowerBound), upperBound(upperBound) {
+        BoundedType::BoundedType(const ElementType &type, storm::expressions::Expression const& lowerBound, storm::expressions::Expression const& upperBound) : JaniType(), type(type), lowerBound(lowerBound), upperBound(upperBound) {
             STORM_LOG_ASSERT(isIntegerType() || isRealType(), "Wrong type for BoundedType, expecting int or real");
             // Intentionally left empty
         }
@@ -27,11 +27,11 @@ namespace storm {
             this->upperBound = expression;
         }
 
-        storm::expressions::Expression const& BoundedType::getLowerBound() {
+        storm::expressions::Expression const& BoundedType::getLowerBound() const {
             return this->lowerBound;
         }
 
-        storm::expressions::Expression const& BoundedType::getUpperBound() {
+        storm::expressions::Expression const& BoundedType::getUpperBound() const {
             return this->upperBound;
         }
 
@@ -41,6 +41,9 @@ namespace storm {
                     return "bounded real";
                 case ElementType::Int:
                     return "bounded int";
+                case ElementType::Bool:
+                    STORM_LOG_ASSERT(false, "Bool type should not occur in boundedType");
+                    return "bounded bool";
             }
         }
     }

@@ -2,7 +2,7 @@
 
 namespace storm {
     namespace jani {
-        ArrayType::ArrayType(JaniType const* childType) : JaniType(), childType(childType){
+        ArrayType::ArrayType(JaniType* childType) : JaniType(), childType(childType){
             // Intentionally left empty
         }
 
@@ -20,6 +20,14 @@ namespace storm {
 
         std::string ArrayType::getStringRepresentation() const {
             return "array[" + getChildType()->getStringRepresentation() + "]";
+        }
+
+        void ArrayType::setLowerBound(storm::expressions::Expression const& expression) {
+            childType->setLowerBound(expression);
+        }
+
+        void ArrayType::setUpperBound(storm::expressions::Expression const& expression) {
+            childType->setUpperBound(expression);
         }
     }
 }

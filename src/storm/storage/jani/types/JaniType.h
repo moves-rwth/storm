@@ -21,7 +21,6 @@ namespace storm {
             public:
                 enum class ElementType {Bool, Int, Real};
                 JaniType();
-                virtual ~JaniType() {};
                 virtual bool isBoundedType() const;
                 virtual bool isBooleanType() const;
                 virtual bool isIntegerType() const;
@@ -30,6 +29,7 @@ namespace storm {
                 virtual bool isClockType() const;
                 virtual bool isContinuousType() const;
                 virtual JaniType const* getChildType() const;
+                // TODO: fix the asXXXType things, such that this becomes superfluous
                 virtual void setLowerBound(storm::expressions::Expression const& expression);
                 virtual void setUpperBound(storm::expressions::Expression const& expression);
                 virtual storm::expressions::Expression const& getLowerBound() const;

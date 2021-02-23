@@ -39,20 +39,20 @@ namespace storm {
             return false;
         }
 
-        void BoundedType::setLowerBound(storm::expressions::Expression const& expression) {
+        void JaniType::setLowerBound(storm::expressions::Expression const& expression) {
             STORM_LOG_ASSERT(false, "Trying to set lowerbound for not bounded variable");
         }
 
-        void BoundedType::setUpperBound(storm::expressions::Expression const& expression) {
+        void JaniType::setUpperBound(storm::expressions::Expression const& expression) {
             STORM_LOG_ASSERT(false, "Trying to set lowerbound for not bounded variable");
         }
 
-        storm::expressions::Expression const& BoundedType::getLowerBound() {
-            return storm::expressions::Expression();
+        storm::expressions::Expression const&  JaniType::getLowerBound() const{
+            STORM_LOG_ASSERT(false, "Trying to get lowerbound for not bounded variable");
         }
 
-        storm::expressions::Expression const& BoundedType::getUpperBound() {
-            return storm::expressions::Expression();
+        storm::expressions::Expression const& JaniType::getUpperBound() const {
+            STORM_LOG_ASSERT(false, "Trying to get lowerbound for not bounded variable");
         }
 //
 //        BasicType& JaniType::asBasicType() {
