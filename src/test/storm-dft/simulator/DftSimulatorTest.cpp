@@ -50,7 +50,7 @@ namespace {
         size_t count;
         size_t invalid;
         std::tie(count, invalid) = simulateDft(file, timebound, noRuns);
-        EXPECT_EQ(invalid, 0);
+        EXPECT_EQ(invalid, 0ul);
         return (double) count / noRuns;
     }
 
@@ -72,7 +72,12 @@ namespace {
         result = simulateDftProb(STORM_TEST_RESOURCES_DIR "/dft/voting3.dft", 1, 10000);
         EXPECT_NEAR(result, 0.3496529873, 0.01);
         result = simulateDftProb(STORM_TEST_RESOURCES_DIR "/dft/voting4.dft", 1, 10000);
+#if BOOST_VERSION > 106400
         EXPECT_NEAR(result, 0.693568287, 0.01);
+#else
+        // Older Boost versions yield different value
+        EXPECT_NEAR(result, 0.693568287, 0.015);
+#endif
     }
 
     TEST(DftSimulatorTest, PandUnreliability) {
@@ -135,27 +140,27 @@ namespace {
         size_t count;
         size_t invalid;
         std::tie(count, invalid) = simulateDft(STORM_TEST_RESOURCES_DIR "/dft/seq.dft", 1, 10000);
-        EXPECT_EQ(invalid, 0);
+        EXPECT_EQ(invalid, 0ul);
         double result = (double) count / 10000;
         EXPECT_NEAR(result, 0.09020401043, 0.01);
         std::tie(count, invalid) = simulateDft(STORM_TEST_RESOURCES_DIR "/dft/seq2.dft", 1, 10000);
-        EXPECT_EQ(invalid, 0);
+        EXPECT_EQ(invalid, 0ul);
         result = (double) count / 10000;
         EXPECT_NEAR(result, 0.01438767797, 0.01);
         std::tie(count, invalid) = simulateDft(STORM_TEST_RESOURCES_DIR "/dft/seq3.dft", 1, 10000);
-        EXPECT_EQ(invalid, 0);
+        EXPECT_EQ(invalid, 0ul);
         result = (double) count / 10000;
         EXPECT_NEAR(result, 0.01438767797, 0.01);
         std::tie(count, invalid) = simulateDft(STORM_TEST_RESOURCES_DIR "/dft/seq4.dft", 1, 10000);
-        EXPECT_EQ(invalid, 0);
+        EXPECT_EQ(invalid, 0ul);
         result = (double) count / 10000;
         EXPECT_NEAR(result, 0.01438767797, 0.01);
         std::tie(count, invalid) = simulateDft(STORM_TEST_RESOURCES_DIR "/dft/seq5.dft", 1, 10000);
-        EXPECT_EQ(invalid, 0);
+        EXPECT_EQ(invalid, 0ul);
         result = (double) count / 10000;
         EXPECT_FLOAT_EQ(result, 0);
         std::tie(count, invalid) = simulateDft(STORM_TEST_RESOURCES_DIR "/dft/seq6.dft", 1, 10000);
-        EXPECT_EQ(invalid, 0);
+        EXPECT_EQ(invalid, 0ul);
         result = (double) count / 10000;
         EXPECT_NEAR(result, 2.499875004e-09, 0.01);
     }
@@ -172,8 +177,8 @@ namespace {
         //EXPECT_EQ(invalid, 10000);
         //EXPECT_EQ(count, 0);
         std::tie(count, invalid) = simulateDft(STORM_TEST_RESOURCES_DIR "/dft/mutex3.dft", 1, 10000);
-        EXPECT_EQ(invalid, 0);
-        EXPECT_EQ(count, 0);
+        EXPECT_EQ(invalid, 0ul);
+        EXPECT_EQ(count, 0ul);
     }
 
     TEST(DftSimulatorTest, SymmetryUnreliability) {
