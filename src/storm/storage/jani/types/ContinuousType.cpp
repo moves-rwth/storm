@@ -9,5 +9,9 @@ namespace storm {
         bool ContinuousType::isContinuousType() const {
             return true;
         }
+
+        std::string ContinuousType::getStringRepresentation() const {
+            return "continuous";
+        }
     }
 }

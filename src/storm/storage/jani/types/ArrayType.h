@@ -6,12 +6,14 @@ namespace storm {
     namespace jani {
         class ArrayType : public JaniType {
         public:
-            ArrayType(JaniType const& childType);
+            ArrayType(JaniType const* childType);
             bool isArrayType() const override;
-            JaniType const& getChildType() const override;
+            bool isBoundedType() const override;
+            JaniType const* getChildType() const override;
+            std::string getStringRepresentation() const override;
 
         private:
-            JaniType childType;
+            JaniType const* childType;
 
         };
     }

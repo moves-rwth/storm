@@ -3,8 +3,7 @@
 #include <boost/optional.hpp>
 
 #include "storm/storage/expressions/Variable.h"
-#include "storm/storage/expressions/Expression.h"
-#include "storm/storage/jani/types/JaniType.h"
+#include "storm/storage/jani/types/AllJaniTypes.h"
 
 namespace storm {
     namespace jani {
@@ -40,6 +39,22 @@ namespace storm {
             return false;
         }
 
+        void BoundedType::setLowerBound(storm::expressions::Expression const& expression) {
+            STORM_LOG_ASSERT(false, "Trying to set lowerbound for not bounded variable");
+        }
+
+        void BoundedType::setUpperBound(storm::expressions::Expression const& expression) {
+            STORM_LOG_ASSERT(false, "Trying to set lowerbound for not bounded variable");
+        }
+
+        storm::expressions::Expression const& BoundedType::getLowerBound() {
+            return storm::expressions::Expression();
+        }
+
+        storm::expressions::Expression const& BoundedType::getUpperBound() {
+            return storm::expressions::Expression();
+        }
+//
 //        BasicType& JaniType::asBasicType() {
 //            return static_cast<BasicType&>(*this);
 //        }
@@ -80,9 +95,18 @@ namespace storm {
 //            return static_cast<ContinuousType& const>(*this);
 //        }
 
-        JaniType const& JaniType::getChildType() const {
+        JaniType const* JaniType::getChildType() const {
             assert (false);
-            return *this;
+            return this;
+        }
+
+        std::string JaniType::getStringRepresentation() const {
+            return "";
+        }
+
+        std::ostream& operator<<(std::ostream& stream, JaniType const& type) {
+            stream << type.getStringRepresentation();
+            return stream;
         }
     }
 }

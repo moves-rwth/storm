@@ -8,6 +8,7 @@ namespace storm {
         public:
             ContinuousType();
             virtual bool isContinuousType() const override;
+            std::string getStringRepresentation() const override;
 
         private:
 

@@ -9,5 +9,9 @@ namespace storm {
         bool ClockType::isClockType() const {
             return true;
         }
+
+        std::string ClockType::getStringRepresentation() const {
+            return "clock";
+        }
     }
 }

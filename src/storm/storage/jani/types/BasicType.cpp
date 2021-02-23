@@ -2,12 +2,8 @@
 
 namespace storm {
     namespace jani {
-        BasicType::BasicType(const ElementType &type, bool bounded) : JaniType(), type(type), bounded(bounded) {
+        BasicType::BasicType(const ElementType &type) : JaniType(), type(type) {
             // Intentionally left empty
-        }
-
-        bool BasicType::isBoundedType() const {
-            return bounded;
         }
 
         bool BasicType::isBooleanType() const {
@@ -20,6 +16,17 @@ namespace storm {
 
         bool BasicType::isRealType() const {
             return type == ElementType::Real;
+        }
+
+        std::string BasicType::getStringRepresentation() const {
+            switch (type) {
+                case ElementType::Real:
+                    return "real";
+                case ElementType::Bool:
+                    return "bool";
+                case ElementType::Int:
+                    return "int";
+            }
         }
     }
 }
