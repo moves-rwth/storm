@@ -149,7 +149,9 @@ namespace storm {
         
         void JaniTraverser::traverse(LValue& lValue, boost::any const& data) {
             if (lValue.isArrayAccess()) {
-                traverse(lValue.getArrayIndex(), data);
+                assert (false);
+                // TODO: what to do here? what does data look like
+//                traverse(lValue.getArrayIndex(), data);
             }
         }
         
@@ -297,7 +299,9 @@ namespace storm {
         
         void ConstJaniTraverser::traverse(LValue const& lValue, boost::any const& data) {
             if (lValue.isArrayAccess()) {
-                traverse(lValue.getArrayIndex(), data);
+                for (auto& index: lValue.getArrayIndex()) {
+                    traverse(index, data);
+                }
             }
         }
         

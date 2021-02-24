@@ -14,7 +14,7 @@ namespace storm {
             return childType->isBoundedType();
         }
 
-        JaniType const* ArrayType::getChildType() const {
+        JaniType* ArrayType::getChildType() const {
             return childType;
         }
 

@@ -10,7 +10,7 @@
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/jani/ModelType.h"
-#include "storm/storage/jani/CompositionInformationVisitor.h"
+#include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
 #include "storm/storage/jani/expressions/JaniExpressions.h"
 
 #include "storm/storage/jani/types/JaniType.h"
@@ -18,7 +18,7 @@
 #include "storm/storage/jani/types/BasicType.h"
 #include "storm/storage/jani/types/ClockType.h"
 #include "storm/storage/jani/types/ContinuousType.h"
-
+#include "storm/storage/jani/expressions/ArrayAccessIndexExpression.h"
 
 #include "storm/logic/RewardAccumulationEliminationVisitor.h"
 
@@ -897,22 +897,14 @@ namespace storm {
                         return storm::jani::Variable::makeBasicVariable(name, storm::jani::JaniType::ElementType::Bool, expressionManager->declareBooleanVariable(exprManagerName), initVal.get(), transientVar);
                 }
             } else if (type.arrayBase) {
-                auto arrayType = parseArrayVariable(type.arrayBase);
-                auto ptr = type.arrayBase;
-                while (!ptr->basicType) {
-                    ptr = ptr->arrayBase;
-                }
-                storm::expressions::Type exprVariableType = ptr->expressionType;
+                auto arrayType = new storm::jani::ArrayType(parseArrayVariable(type.arrayBase));
+                storm::expressions::Type exprVariableType = type.expressionType;
 
                 if (setInitValFromDefault) {
                     initVal = storm::expressions::ValueArrayExpression(*expressionManager, exprVariableType, {}).toExpression();
                 }
-
-                if (ptr->bounds) {
-                    return storm::jani::Variable::makeBoundedArrayVariable(name, arrayType, expressionManager->declareArrayVariable(exprManagerName, exprVariableType.getElementType()), initVal.get(), transientVar, ptr->bounds->first, ptr->bounds->second);
-                } else {
-                    return storm::jani::Variable::makeArrayVariable(name, arrayType, expressionManager->declareArrayVariable(exprManagerName, exprVariableType.getElementType()), initVal.get(), transientVar);
-                }
+                assert (!type.bounds);
+                return storm::jani::Variable::makeArrayVariable(name, arrayType, expressionManager->declareArrayVariable(exprManagerName, exprVariableType), initVal.get(), transientVar);
             }
             
             STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown type description, " << variableStructure.at("type").dump()  << " for variable '" << name << "' (scope: " << scope.description << ").");
@@ -924,14 +916,18 @@ namespace storm {
                 switch (type->basicType.get()) {
                     case ParsedType::BasicType::Real:
                         STORM_LOG_WARN_COND(!type->bounds.is_initialized(), "Bounds for rational variable will be ignored.");
-                        return new storm::jani::BasicType(storm::jani::JaniType::ElementType::Real, false);
+                        return new storm::jani::BasicType(storm::jani::JaniType::ElementType::Real);
                     case ParsedType::BasicType::Int:
-                        return new storm::jani::BasicType(storm::jani::JaniType::ElementType::Int, type->bounds.is_initialized());
+                        if (type->bounds) {
+                            return new storm::jani::BoundedType(storm::jani::JaniType::ElementType::Int,  type->bounds->first, type->bounds->second);
+                        } else {
+                            return new storm::jani::BasicType(storm::jani::JaniType::ElementType::Int);
+                        }
                     case ParsedType::BasicType::Bool:
-                        return new storm::jani::BasicType(storm::jani::JaniType::ElementType::Bool, false);
+                        return new storm::jani::BasicType(storm::jani::JaniType::ElementType::Bool);
                 }
             } else if (type->arrayBase) {
-                return new storm::jani::ArrayType(*parseArrayVariable(type->arrayBase));
+                return new storm::jani::ArrayType(parseArrayVariable(type->arrayBase));
             } else {
                 STORM_LOG_ASSERT(false, "Cannot parse array variable for this type");
                 return new storm::jani::JaniType();
@@ -1000,12 +996,21 @@ namespace storm {
                 STORM_LOG_THROW(globalVar != scope.globalVars->end(), storm::exceptions::InvalidJaniException, "Unknown identifier '" << ident << "' occurs in " << scope.description);
                 return storm::jani::LValue(*globalVar->second);
             } else if (lValueStructure.count("op") == 1) {
-                std::string opstring = getString<ValueType>(lValueStructure.at("op"), scope.description);
-                STORM_LOG_THROW(opstring == "aa", storm::exceptions::InvalidJaniException, "Unknown operation '" << opstring << "' occurs in " << scope.description);
+                std::vector<storm::expressions::Expression> index;
                 STORM_LOG_THROW(lValueStructure.count("exp"), storm::exceptions::InvalidJaniException, "Missing 'exp' in array access at " << scope.description);
-                storm::jani::LValue exp = parseLValue(lValueStructure.at("exp"), scope.refine("LValue description of array expression"));
-                STORM_LOG_THROW(lValueStructure.count("index"), storm::exceptions::InvalidJaniException, "Missing 'index' in array access at " << scope.description);
-                storm::expressions::Expression index = parseExpression(lValueStructure.at("index"), scope.refine("Index expression of array access"));
+
+                Json subStructure = lValueStructure;
+                while (subStructure.count("exp")) {
+                    std::string opstring = getString<ValueType>(lValueStructure.at("op"), scope.description);
+                    STORM_LOG_THROW(opstring == "aa", storm::exceptions::InvalidJaniException, "Unknown operation '" << opstring << "' occurs in " << scope.description);
+                    STORM_LOG_THROW(lValueStructure.count("exp"), storm::exceptions::InvalidJaniException, "Missing 'exp' in array access at " << scope.description);
+                    STORM_LOG_THROW(lValueStructure.count("index"), storm::exceptions::InvalidJaniException, "Missing 'index' in array access at " << scope.description);
+
+                    index.push_back(parseExpression(subStructure.at("index"), scope.refine("Index expression of array access")));
+                    subStructure = subStructure.at("exp");
+                }
+                assert (subStructure.is_string());
+                storm::jani::LValue exp = parseLValue(subStructure, scope.refine("LValue description of array expression"));
                 return storm::jani::LValue(exp, index);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown LValue '" << lValueStructure.dump() << "' occurs in " << scope.description);
@@ -1043,6 +1048,46 @@ namespace storm {
             STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown identifier '" << ident << "' occurs in " << scope.description);
             // Silly warning suppression.
             return storm::expressions::Variable();
+        }
+
+        // TODO: change this s.t. we don't need this method
+        template <typename ValueType>
+        storm::expressions::ValueArrayExpression::ValueArrayElements JaniParser<ValueType>::parseAV(Json const& expressionStructure, Scope const& scope, bool returnNoneInitializedOnUnknownOperator, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables) {
+            storm::expressions::ValueArrayExpression::ValueArrayElements elements;
+            storm::expressions::Type commonType;
+            bool first = true;
+            std::vector<std::shared_ptr<storm::expressions::ValueArrayExpression::ValueArrayElements const>> elementsOfElements;
+            for (auto const& element : expressionStructure.at("elements")) {
+                if (expressionStructure.is_object()) {
+                    assert (getString<ValueType>(expressionStructure.at("op"), scope.description) == "av");
+                    assert (!elements.elementsWithValue);
+                    elementsOfElements.push_back(std::make_shared<storm::expressions::ValueArrayExpression::ValueArrayElements const>(parseAV(element, scope.refine("element " + std::to_string(elements.elementsOfElements->size()) + " of array value expression"), returnNoneInitializedOnUnknownOperator, auxiliaryVariables)));
+                } else {
+                    assert (!elements.elementsOfElements);
+                    if (first) {
+                        elements.elementsWithValue = std::vector<std::shared_ptr<storm::expressions::BaseExpression const>>();
+
+                        elements.elementsWithValue->push_back(parseExpression(element, scope.refine("element " + std::to_string(elements.elementsWithValue->size()) + " of array value expression"), returnNoneInitializedOnUnknownOperator, auxiliaryVariables).getBaseExpressionPointer());
+                        commonType = elements.elementsWithValue->back()->getType();
+                        first = false;
+                    } else {
+                        elements.elementsWithValue->push_back(parseExpression(element, scope.refine("element " + std::to_string(elements.elementsWithValue->size()) + " of array value expression"), returnNoneInitializedOnUnknownOperator, auxiliaryVariables).getBaseExpressionPointer());
+                        if (!(commonType == elements.elementsWithValue->back()->getType())) {
+                            if (commonType.isIntegerType() && elements.elementsWithValue->back()->getType().isRationalType()) {
+                                commonType = elements.elementsWithValue->back()->getType();
+                            } else {
+                                STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Incompatible element types " << commonType << " and " << elements.elementsWithValue->back()->getType() << " of array value expression at " << scope.description);
+                            }
+                        }
+                    }
+                }
+            }
+            if (elements.elementsWithValue) {
+                assert (elementsOfElements.size() == 0);
+            } else {
+                elements.elementsOfElements = std::move(elementsOfElements);
+            }
+            return elements;
         }
 
         template <typename ValueType>
@@ -1269,44 +1314,90 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "log operation is not yet implemented");
                     } else if (opstring == "aa") {
                         STORM_LOG_THROW(expressionStructure.count("exp") == 1, storm::exceptions::InvalidJaniException, "Array access operator requires exactly one exp (at " + scope.description + ").");
-                        storm::expressions::Expression exp = parseExpression(expressionStructure.at("exp"), scope.refine("'exp' of array access operator"), returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
+                        Json subStructure = expressionStructure;
+                        std::vector<storm::expressions::Expression> index;
+                        while (subStructure.count("exp")) {
+                            index.push_back(parseExpression(expressionStructure.at("index"), scope.refine("index of array access operator"), returnNoneInitializedOnUnknownOperator, auxiliaryVariables));
+                            ensureIntegerType(index.back(), opstring, 1, scope.description);
+                            subStructure = subStructure.at("exp");
+                        }
                         STORM_LOG_THROW(expressionStructure.count("index") == 1, storm::exceptions::InvalidJaniException, "Array access operator requires exactly one index (at " + scope.description + ").");
-                        storm::expressions::Expression index = parseExpression(expressionStructure.at("index"), scope.refine("index of array access operator"), returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
+
+                        storm::expressions::Expression exp = parseExpression(subStructure, scope.refine("'exp' of array access operator"), returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
                         ensureArrayType(exp, opstring, 0, scope.description);
-                        ensureIntegerType(index, opstring, 1, scope.description);
-                        return std::make_shared<storm::expressions::ArrayAccessExpression>(exp.getManager(), exp.getType().getElementType(), exp.getBaseExpressionPointer(), index.getBaseExpressionPointer())->toExpression();
-                    } else if (opstring == "av") {
-                        STORM_LOG_THROW(expressionStructure.count("elements") == 1, storm::exceptions::InvalidJaniException, "Array value operator requires exactly one 'elements' (at " + scope.description + ").");
-                        std::vector<std::shared_ptr<storm::expressions::BaseExpression const>> elements;
-                        storm::expressions::Type commonType;
-                        bool first = true;
-                        for (auto const& element : expressionStructure.at("elements")) {
-                            elements.push_back(parseExpression(element, scope.refine("element " + std::to_string(elements.size()) + " of array value expression"), returnNoneInitializedOnUnknownOperator, auxiliaryVariables).getBaseExpressionPointer());
-                            if (first) {
-                                commonType = elements.back()->getType();
-                                first = false;
-                            } else if (!(commonType == elements.back()->getType())) {
-                                if (commonType.isIntegerType() && elements.back()->getType().isRationalType()) {
-                                    commonType = elements.back()->getType();
+
+                        auto finalType = exp.getType();
+                        while (finalType.isArrayType()) {
+                            finalType = finalType.getElementType();
+                        }
+                        auto & manager = exp.getManager();
+                        std::shared_ptr<storm::expressions::ArrayAccessIndexExpression const> indexExpression;
+                        if (index.size() == 1) {
+                            indexExpression = std::make_shared<storm::expressions::ArrayAccessIndexExpression>(manager, manager.getIntegerType(), index[0].getBaseExpressionPointer());
+                        } else if (index.size() > 1) {
+                            for (int i = index.size() - 1; i >= 0; --i) {
+                                if (i == (index.size() - 1)) {
+                                    assert (indexExpression == nullptr);
+                                    indexExpression = std::make_shared<storm::expressions::ArrayAccessIndexExpression>(manager, manager.getIntegerType(), index[i].getBaseExpressionPointer());
                                 } else {
-                                    STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Incompatible element types " << commonType << " and " << elements.back()->getType() << " of array value expression at " << scope.description);
+                                    assert (indexExpression != nullptr);
+                                    indexExpression = std::make_shared<storm::expressions::ArrayAccessIndexExpression>(manager, manager.getIntegerType(), index[i].getBaseExpressionPointer(), indexExpression);
                                 }
                             }
                         }
-                        return std::make_shared<storm::expressions::ValueArrayExpression>(*expressionManager, expressionManager->getArrayType(commonType), elements)->toExpression();
+                        return std::make_shared<storm::expressions::ArrayAccessExpression>(finalType.getManager(), finalType, exp.getBaseExpressionPointer(), indexExpression)->toExpression();
+                    } else if (opstring == "av") {
+                        STORM_LOG_THROW(expressionStructure.count("elements") == 1, storm::exceptions::InvalidJaniException, "Array value operator requires exactly one 'elements' (at " + scope.description + ").");
+                        storm::expressions::ValueArrayExpression::ValueArrayElements elements = parseAV(expressionStructure, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
+                        if (elements.elementsWithValue) {
+                            return std::make_shared<storm::expressions::ValueArrayExpression>(*expressionManager, expressionManager->getArrayType(elements.elementsWithValue->at(0)->getType()), elements)->toExpression();
+                        } else {
+                            auto elementsForTyping = elements.elementsOfElements->at(0);
+                            while (elementsForTyping->elementsOfElements) {
+                                elementsForTyping = elementsForTyping->elementsOfElements->at(0);
+                            }
+                            return std::make_shared<storm::expressions::ValueArrayExpression>(*expressionManager, expressionManager->getArrayType(elementsForTyping->elementsWithValue->at(0)->getType()), elements)->toExpression();
+                        }
                     } else if (opstring == "ac") {
-                        STORM_LOG_THROW(expressionStructure.count("length") == 1, storm::exceptions::InvalidJaniException, "Array access operator requires exactly one length (at " + scope.description + ").");
-                        storm::expressions::Expression length = parseExpression(expressionStructure.at("length"), scope.refine("index of array constructor expression"), returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
-                        ensureIntegerType(length, opstring, 1, scope.description);
-                        STORM_LOG_THROW(expressionStructure.count("var") == 1, storm::exceptions::InvalidJaniException, "Array access operator requires exactly one var (at " + scope.description + ").");
-                        std::string indexVarName = getString<ValueType>(expressionStructure.at("var"), "Field 'var' of Array access operator (at " + scope.description + ").");
-                        STORM_LOG_THROW(auxiliaryVariables.find(indexVarName) == auxiliaryVariables.end(), storm::exceptions::InvalidJaniException, "Index variable " << indexVarName << " is already defined as an auxiliary variable (at " + scope.description + ").");
+                        std::string indexVarName;
+
+                        std::vector<std::shared_ptr<storm::expressions::BaseExpression const>> lengths;
+                        STORM_LOG_THROW(expressionStructure.count("exp"), storm::exceptions::InvalidJaniException, "Missing 'exp' in array access at " << scope.description);
+
+                        Json subStructure = expressionStructure;
+                        storm::expressions::Type type;
+                        while (subStructure.count("exp")) {
+                            STORM_LOG_THROW(subStructure.count("var") == 1, storm::exceptions::InvalidJaniException, "Array access operator requires exactly one var (at " + scope.description + ").");
+
+                            std::string opstring = getString<ValueType>(expressionStructure.at("op"), scope.description);
+                            STORM_LOG_THROW(opstring == "ac", storm::exceptions::InvalidJaniException, "Unknown operation '" << opstring << "' occurs in " << scope.description);
+                            STORM_LOG_THROW(subStructure.count("exp") == 1, storm::exceptions::InvalidJaniException, "Array constructor operator requires exactly one exp (at " + scope.description + ").");
+                            STORM_LOG_THROW(subStructure.count("length"), storm::exceptions::InvalidJaniException, "Array constructor operator requires a fixed length (at " + scope.description + ").");
+
+                            // Get the index var name
+                            if (indexVarName.size() == 0) {
+                                indexVarName = getString<ValueType>(subStructure.at("var"), "Field 'var' of Array access operator (at " + scope.description + ").");
+                            } else {
+                                indexVarName += "_" + getString<ValueType>(subStructure.at("var"), "Field 'var' of Array access operator (at " + scope.description + ").");
+                            }
+
+                            // Add the array lengths
+                            storm::expressions::Expression length = parseExpression(subStructure.at("length"), scope.refine("index of array constructor expression"), returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
+                            ensureIntegerType(length, opstring, 1, scope.description);
+                            lengths.push_back(length.getBaseExpressionPointer());
+                            subStructure = subStructure.at("exp");
+                        }
+                        // Make a var for this index
                         auto newAuxVars = auxiliaryVariables;
+                        STORM_LOG_THROW(auxiliaryVariables.find(indexVarName) == auxiliaryVariables.end(), storm::exceptions::InvalidJaniException, "Index variable " << indexVarName << " is already defined as an auxiliary variable (at " + scope.description + ").");
                         storm::expressions::Variable indexVar = expressionManager->declareFreshIntegerVariable(false, "ac_" + indexVarName);
                         newAuxVars.emplace(indexVarName, indexVar);
-                        STORM_LOG_THROW(expressionStructure.count("exp") == 1, storm::exceptions::InvalidJaniException, "Array constructor operator requires exactly one exp (at " + scope.description + ").");
-                        storm::expressions::Expression exp = parseExpression(expressionStructure.at("exp"), scope.refine("exp of array constructor"), returnNoneInitializedOnUnknownOperator, newAuxVars);
-                        return std::make_shared<storm::expressions::ConstructorArrayExpression>(*expressionManager, expressionManager->getArrayType(exp.getType()), length.getBaseExpressionPointer(), indexVar, exp.getBaseExpressionPointer())->toExpression();
+                        storm::expressions::Expression exp = parseExpression(subStructure, scope.refine("exp of array constructor"), returnNoneInitializedOnUnknownOperator, newAuxVars);
+
+                        auto indexVarPtr = std::make_shared<storm::expressions::Variable>(indexVar);
+                        STORM_LOG_THROW(expressionStructure.count("length") == 1, storm::exceptions::InvalidJaniException, "Array access operator requires exactly one length (at " + scope.description + ").");
+
+                        return std::make_shared<storm::expressions::ConstructorArrayExpression>(*expressionManager, type, lengths, indexVarPtr, exp.getBaseExpressionPointer())->toExpression();
                     } else if (opstring == "call") {
                         STORM_LOG_THROW(expressionStructure.count("function") == 1, storm::exceptions::InvalidJaniException, "Function call operator requires exactly one function (at " + scope.description + ").");
                         std::string functionName = getString<ValueType>(expressionStructure.at("function"), "in function call operator (at " + scope.description + ").");

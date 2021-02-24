@@ -14,7 +14,7 @@
 #include "storm/storage/jani/Location.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
-#include "storm/storage/jani/CompositionInformationVisitor.h"
+#include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
 
 
 #include "storm/builder/RewardModelInformation.h"

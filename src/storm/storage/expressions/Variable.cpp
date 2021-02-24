@@ -75,5 +75,17 @@ namespace storm {
         bool Variable::hasNumericalType() const {
             return this->getType().isNumericalType();
         }
+
+//        void Variable::setArraySizes(std::vector<std::shared_ptr<storm::expressions::BaseExpression const>> arraySizes) {
+//            this->arraySizes = arraySizes;
+//        }
+//
+//
+//        std::shared_ptr<storm::expressions::BaseExpression const> Variable::getArraySize(int number) const {
+//            assert (number < arraySizes.size());
+//            return this->arraySizes.at(number);
+//        }
+
+
     }
 }

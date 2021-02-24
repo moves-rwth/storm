@@ -7,7 +7,7 @@
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
 #include "storm/storage/jani/TemplateEdge.h"
-#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 #include "storm/storage/jani/expressions/FunctionCallExpression.h"
 #include "storm/storage/jani/types/AllJaniTypes.h"
 

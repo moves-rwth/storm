@@ -9,8 +9,10 @@ namespace storm {
         class JaniExpressionVisitor {
         public:
             virtual boost::any visit(ValueArrayExpression const& expression, boost::any const& data) = 0;
+            virtual boost::any visit(ValueArrayExpression::ValueArrayElements const& elements, boost::any const& data) = 0;
             virtual boost::any visit(ConstructorArrayExpression const& expression, boost::any const& data) = 0;
             virtual boost::any visit(ArrayAccessExpression const& expression, boost::any const& data) = 0;
+            virtual boost::any visit(ArrayAccessIndexExpression const& expression, boost::any const& data) = 0;
             virtual boost::any visit(FunctionCallExpression const& expression, boost::any const& data) = 0;
         };
     }

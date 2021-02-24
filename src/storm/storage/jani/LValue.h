@@ -9,7 +9,7 @@ namespace storm {
         class LValue {
         public:
             explicit LValue(storm::jani::Variable const& variable);
-            LValue(LValue const& array, storm::expressions::Expression const& index);
+            LValue(LValue const& array, std::vector<storm::expressions::Expression> const&);
             
             LValue(LValue const&) = default;
             bool operator==(LValue const& other) const;
@@ -19,8 +19,9 @@ namespace storm {
             
             bool isArrayAccess() const;
             storm::jani::Variable const& getArray() const;
-            storm::expressions::Expression const& getArrayIndex() const;
-            void setArrayIndex(storm::expressions::Expression const& newIndex);
+            std::vector<storm::expressions::Expression> const& getArrayIndex() const;
+            bool arrayIndexContainsVariable() const;
+            void setArrayIndex(std::vector<storm::expressions::Expression> const& newIndex);
             
             bool isTransient() const;
             bool operator< (LValue const& other) const;
@@ -33,10 +34,10 @@ namespace storm {
             
             // The variable being assigned.
             storm::jani::Variable const* variable;
-            
-            
+
+
             // In case of an array access LValue, this is the accessed index of the array.
-            storm::expressions::Expression arrayIndex;
+            boost::optional<std::vector<storm::expressions::Expression>> arrayIndex;
         };
     }
 }

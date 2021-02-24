@@ -1,7 +1,7 @@
 #pragma once
 
 #include "storm/storage/jani/expressions/ArrayExpression.h"
-
+#include <boost/optional.hpp>
 namespace storm {
     namespace expressions {
         /*!
@@ -9,8 +9,12 @@ namespace storm {
          */
         class ValueArrayExpression : public ArrayExpression {
         public:
+            struct ValueArrayElements {
+                boost::optional<std::vector<std::shared_ptr<BaseExpression const>>> elementsWithValue = boost::none;
+                boost::optional<std::vector<std::shared_ptr<ValueArrayElements const>>> elementsOfElements = boost::none;
+            };
             
-            ValueArrayExpression(ExpressionManager const& manager, Type const& type, std::vector<std::shared_ptr<BaseExpression const>> const& elements);
+            ValueArrayExpression(ExpressionManager const& manager, Type const& type, ValueArrayElements const& elements);
             
             
             // Instantiate constructors and assignments with their default implementations.
@@ -30,13 +34,20 @@ namespace storm {
             virtual std::shared_ptr<BaseExpression const> size() const override;
             
             // Returns the element at position i
-            virtual std::shared_ptr<BaseExpression const> at(uint64_t i) const override;
+            virtual std::shared_ptr<BaseExpression const> at(std::vector<uint64_t>& i) const override;
 
         protected:
             virtual void printToStream(std::ostream& stream) const override;
             
         private:
-            std::vector<std::shared_ptr<BaseExpression const>> elements;
+            ValueArrayElements simplify(ValueArrayElements const& elements) const;
+            bool containsVariables(ValueArrayElements const& elementsToCheck) const;
+            size_t size(ValueArrayElements const& elementsToCheck) const;
+            void gatherVariables(std::set<storm::expressions::Variable>& variables, ValueArrayElements const& elementsToCheck) const;
+            void printToStream(std::ostream& stream, ValueArrayElements const& element) const;
+
+            ValueArrayElements const elements;
+
         };
     }
 }

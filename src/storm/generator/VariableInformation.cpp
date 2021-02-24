@@ -4,19 +4,29 @@
 #include "storm/storage/jani/Model.h"
 
 #include "storm/storage/jani/Automaton.h"
-#include "storm/storage/jani/ArrayEliminator.h"
+#include "storm/storage/jani/eliminator/ArrayEliminator.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/utility/macros.h"
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/WrongFormatException.h"
 
 #include <cmath>
 
 namespace storm {
     namespace generator {
+
+        ArrayInformation::ArrayInformation() {
+            // Intentionally left empty.
+        }
+
+        ArrayInformation::ArrayInformation(std::vector<uint_fast64_t> &arrayLengths, std::vector<uint_fast64_t> &indexMapping) : arrayLengths(arrayLengths), indexMapping(indexMapping) {
+            STORM_LOG_THROW(arrayLengths.size() > 2, storm::exceptions::NotImplementedException, "This code doesn't work for nested arrays consisting of more than two arrays");
+            // Intentionally left empty.
+        }
         
         BooleanVariableInformation::BooleanVariableInformation(storm::expressions::Variable const& variable, uint_fast64_t bitOffset, bool global, bool observable) : variable(variable), bitOffset(bitOffset), global(global), observable(observable) {
             // Intentionally left empty.
@@ -147,21 +157,27 @@ namespace storm {
                             STORM_LOG_ASSERT(false, "Unhandled type of base variable.");
                         }
                     }
-                    this->arrayVariableToElementInformations.emplace(arrayVariable->getExpressionVariable(), std::move(varInfoIndices));
+                    //TODO: implement this properly
+                    assert (false);
+//                    this->arrayVariableToElementInformations.emplace(arrayVariable->getExpressionVariable(), std::move(varInfoIndices));
                 }
             }
         }
         
-        BooleanVariableInformation const& VariableInformation::getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) {
-            std::vector<uint64_t> const& boolInfoIndices = arrayVariableToElementInformations.at(arrayVariable);
-            STORM_LOG_THROW(arrayIndex < boolInfoIndices.size(), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex << " which is out of bounds as the array size is " << boolInfoIndices.size());
-            return booleanVariables[boolInfoIndices[arrayIndex]];
+        BooleanVariableInformation const& VariableInformation::getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t>& arrayIndex) {
+            ArrayInformation const & arrayInfo = arrayVariableToElementInformations.at(arrayVariable);
+
+            STORM_LOG_THROW(arrayIndex.at(0) < arrayInfo.arrayLengths.at(0), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " entry 0 evaluates to array index " << arrayIndex.at(0) << " which is out of bounds as the array size is " << arrayInfo.arrayLengths.at(0));
+            STORM_LOG_THROW(arrayIndex.at(1) < arrayInfo.arrayLengths.at(1), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " entry 1 evaluates to array index " << arrayIndex.at(1) << " which is out of bounds as the array size is " << arrayInfo.arrayLengths.at(1));
+            return booleanVariables[arrayInfo.indexMapping.at(arrayIndex.at(0) * arrayInfo.arrayLengths.at(1) + arrayIndex.at(1))];
         }
         
-        IntegerVariableInformation const& VariableInformation::getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) {
-            std::vector<uint64_t> const& intInfoIndices = arrayVariableToElementInformations.at(arrayVariable);
-            STORM_LOG_THROW(arrayIndex < intInfoIndices.size(), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex << " which is out of bounds as the array size is " << intInfoIndices.size());
-            return integerVariables[intInfoIndices[arrayIndex]];
+        IntegerVariableInformation const& VariableInformation::getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t>& arrayIndex) {
+            ArrayInformation const & arrayInfo = arrayVariableToElementInformations.at(arrayVariable);
+
+            STORM_LOG_THROW(arrayIndex.at(0) < arrayInfo.arrayLengths.at(0), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " entry 0 evaluates to array index " << arrayIndex.at(0) << " which is out of bounds as the array size is " << arrayInfo.arrayLengths.at(0));
+            STORM_LOG_THROW(arrayIndex.at(1) < arrayInfo.arrayLengths.at(1), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " entry 1 evaluates to array index " << arrayIndex.at(1) << " which is out of bounds as the array size is " << arrayInfo.arrayLengths.at(1));
+            return integerVariables[arrayInfo.indexMapping.at(arrayIndex.at(0) * arrayInfo.arrayLengths.at(1) + arrayIndex.at(1))];
         }
         
         void VariableInformation::createVariablesForAutomaton(storm::jani::Automaton const& automaton, uint64_t reservedBitsForUnboundedVariables) {

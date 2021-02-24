@@ -10,13 +10,13 @@ namespace storm {
             // Intentionally left empty
         }
         
-        LValue::LValue(LValue const& array, storm::expressions::Expression const& index) : arrayIndex(index) {
-            STORM_LOG_THROW(array.isVariable(), storm::exceptions::NotSupportedException, "Nested arrays as LValues are currently not implemented.");
+        LValue::LValue(LValue const& array, std::vector<storm::expressions::Expression> const& index) : arrayIndex(index) {
+            STORM_LOG_THROW(array.isVariable(), storm::exceptions::NotSupportedException, "Expecting a variable as base of array");
             variable = &array.getVariable();
         }
-        
+
         bool LValue::isVariable() const {
-            return !arrayIndex.isInitialized();
+            return !arrayIndex;
         }
         
         storm::jani::Variable const& LValue::getVariable() const {
@@ -25,21 +25,30 @@ namespace storm {
         }
         
         bool LValue::isArrayAccess() const {
-            return arrayIndex.isInitialized();
+            return arrayIndex.is_initialized();
         }
-        
+
         storm::jani::Variable const&  LValue::getArray() const {
             STORM_LOG_ASSERT(isArrayAccess(), "Tried to get the array variable of an LValue that is not an array access.");
             STORM_LOG_ASSERT(variable->isArrayVariable(), "Tried to get the array variable of an array access LValue, but the variable is not of type array.");
             return *variable;
         }
-        
-        storm::expressions::Expression const& LValue::getArrayIndex() const {
+
+        std::vector<storm::expressions::Expression> const& LValue::getArrayIndex() const {
             STORM_LOG_ASSERT(isArrayAccess(), "Tried to get the array index of an LValue that is not an array access.");
-            return arrayIndex;
+            return arrayIndex.get();
+        }
+
+        bool LValue::arrayIndexContainsVariable() const {
+            for (auto & expr : arrayIndex.get()) {
+                if (expr.containsVariables()) {
+                    return true;
+                }
+            }
+            return false;
         }
         
-        void LValue::setArrayIndex(storm::expressions::Expression const& newIndex) {
+        void LValue::setArrayIndex(std::vector<storm::expressions::Expression> const& newIndex) {
             STORM_LOG_ASSERT(isArrayAccess(), "Tried to set the array index of an LValue that is not an array access.");
             arrayIndex = newIndex;
         }
@@ -62,7 +71,7 @@ namespace storm {
                 if (it == remapping.end()) {
                     return *this;
                 } else {
-                    return LValue(LValue(it->second), arrayIndex);
+                    return LValue(LValue(it->second), arrayIndex.get());
                 }
             }
         }
@@ -81,7 +90,21 @@ namespace storm {
                 } else if (other.getArray().getExpressionVariable() < getArray().getExpressionVariable()) {
                     return false;
                 } else {
-                    return std::less<storm::expressions::Expression>()(arrayIndex, other.getArrayIndex());
+                    // TODO: is this correct?
+                    if (arrayIndex->size() != other.getArrayIndex().size()) {
+                        return false;
+                    } else {
+                        bool less = false;
+                        int i = 0;
+                        while (!less && i < arrayIndex->size()) {
+                            less = std::less<storm::expressions::Expression>()(arrayIndex.get().at(i), other.getArrayIndex().at(i));
+                            if (!less && std::less<storm::expressions::Expression>()(other.getArrayIndex().at(i), arrayIndex.get().at(i))) {
+                                break;
+                            }
+                            ++i;
+                        }
+                        return less;
+                    }
                 }
             }
         }
@@ -91,7 +114,13 @@ namespace storm {
                 return other.isVariable() && getVariable().getExpressionVariable() == other.getVariable().getExpressionVariable();
             } else {
                 STORM_LOG_ASSERT(isArrayAccess(), "Unhandled LValue.");
-                return other.isArrayAccess() && getArray().getExpressionVariable() == other.getArray().getExpressionVariable() && getArrayIndex().isSyntacticallyEqual(other.getArrayIndex());
+                bool equal = other.isArrayAccess() && getArray().getExpressionVariable() == other.getArray().getExpressionVariable() && arrayIndex->size() == other.getArrayIndex().size();
+                int i = 0;
+                while (equal && i < arrayIndex->size()) {
+                    equal &= arrayIndex->at(i).isSyntacticallyEqual(other.getArrayIndex().at(i));
+                    ++i;
+                }
+                return equal;
             }
         }
         
@@ -100,7 +129,10 @@ namespace storm {
                 stream << lValue.getVariable().getName();
             } else {
                 STORM_LOG_ASSERT(lValue.isArrayAccess(), "Unhandled LValue.");
-                stream << lValue.getArray().getName() << "[" << lValue.getArrayIndex() << "]";
+                stream << lValue.getArray().getName();
+                for (auto i = 0; i < lValue.getArrayIndex().size(); ++i) {
+                    stream << "[" << lValue.getArrayIndex().at(i) << "]";
+                }
             }
             return stream;
         }

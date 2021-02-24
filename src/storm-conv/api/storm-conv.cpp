@@ -5,7 +5,7 @@
 #include "storm/storage/jani/Constant.h"
 #include "storm/storage/jani/JaniLocationExpander.h"
 #include "storm/storage/jani/JaniScopeChanger.h"
-#include "storm/storage/jani/JSONExporter.h"
+#include "storm/storage/jani/visitor/JSONExporter.h"
 
 #include "storm/io/file.h"
 #include "storm/api/properties.h"

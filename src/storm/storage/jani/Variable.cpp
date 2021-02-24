@@ -1,15 +1,25 @@
 #include "storm/storage/jani/Variable.h"
-#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 
 namespace storm {
     namespace jani {
 
-        Variable::Variable(std::string const& name, JaniType const* type, storm::expressions::Variable const& variable, storm::expressions::Expression const& init, bool transient) : name(name), variable(variable),  transient(transient), init(init), type(type){
-            // Intentionally left empty.
+        Variable::Variable(std::string const& name, JaniType* type, storm::expressions::Variable const& variable, storm::expressions::Expression const& init, bool transient) : name(name), variable(variable),  transient(transient), init(init), type(type){
+            if (type->isArrayType()) {
+                arrayType = type;
+                while (type->isArrayType()) {
+                    type = type->getChildType();
+                }
+            }
         }
 
-        Variable::Variable(std::string const& name, JaniType const* type, storm::expressions::Variable const& variable) : name(name), variable(variable), transient(false), init(), type(type) {
-            // Intentionally left empty.
+        Variable::Variable(std::string const& name, JaniType* type, storm::expressions::Variable const& variable) : name(name), variable(variable), transient(false), init(), type(type) {
+            if (type->isArrayType()) {
+                arrayType = type;
+                while (type->isArrayType()) {
+                    type = type->getChildType();
+                }
+            }
         }
 
         Variable::~Variable() {
@@ -42,8 +52,13 @@ namespace storm {
         }
         
         bool Variable::isBoundedVariable() const {
-            auto ptr = dynamic_cast<BasicType const*>(type);
-            return ptr != nullptr && ptr->isBoundedType();
+            if (isArrayVariable()) {
+                auto ptr = dynamic_cast<ArrayType const*>(type);
+                return ptr != nullptr && ptr->isBoundedType();
+            } else {
+                auto ptr = dynamic_cast<BasicType const*>(type);
+                return ptr != nullptr && ptr->isBoundedType();
+            }
         }
 
         bool Variable::isRealVariable() const {
@@ -76,7 +91,7 @@ namespace storm {
         }
 
         bool Variable::hasInitExpression() const {
-            return static_cast<bool>(init);
+            return init.is_initialized();
         }
 
         storm::expressions::Expression const& Variable::getInitExpression() const {
@@ -101,12 +116,12 @@ namespace storm {
 
         storm::expressions::Expression const& Variable::getLowerBound() const {
             STORM_LOG_ASSERT(this->hasLowerBound(), "Trying to get lowerBound for variable without lowerBound");
-            return lowerBound;
+            return type->getLowerBound();
         }
 
         void Variable::setLowerBound(storm::expressions::Expression const& expression) {
             STORM_LOG_ASSERT(this->isBoundedVariable(), "Trying to set lowerBound for unbounded variable");
-            this->lowerBound = expression;
+            type->setLowerBound(expression);
         }
 
         bool Variable::hasLowerBound() const {
@@ -115,12 +130,12 @@ namespace storm {
 
         storm::expressions::Expression const& Variable::getUpperBound() const {
             STORM_LOG_ASSERT(this->hasLowerBound(), "Trying to get upperBound for variable without upperBound");
-            return upperBound;
+            return type->getUpperBound();
         }
 
         void Variable::setUpperBound(storm::expressions::Expression const& expression) {
             STORM_LOG_ASSERT(this->isBoundedVariable(), "Trying to set upperBound for unbounded variable");
-            this->upperBound = expression;
+            type->setUpperBound(expression);
         }
 
         bool Variable::hasUpperBound() const {
@@ -144,31 +159,31 @@ namespace storm {
             return range;
         }
 
-        JaniType const* Variable::getType() const {
+        JaniType* Variable::getType() const {
             return type;
+        }
+
+        JaniType* Variable::getArrayType() const {
+            return arrayType;
         }
 
         std::shared_ptr<Variable> Variable::makeBoundedVariable(const std::string &name, JaniType::ElementType type, const expressions::Variable &variable, boost::optional<storm::expressions::Expression> initValue, bool transient, boost::optional<storm::expressions::Expression> lowerBound, boost::optional<storm::expressions::Expression> upperBound) {
             if (initValue) {
-                auto res = std::make_shared<Variable>(name, new storm::jani::BasicType(type, true), variable, initValue.get(), transient);
-                res->setLowerBound(lowerBound ? lowerBound.get() : storm::expressions::Expression());
-                res->setUpperBound(upperBound ? upperBound.get() : storm::expressions::Expression());
+                auto res = std::make_shared<Variable>(name, new storm::jani::BoundedType(type, lowerBound ? lowerBound.get() : storm::expressions::Expression(), upperBound ? upperBound.get() : storm::expressions::Expression()), variable, initValue.get(), transient);
                 return res;
             } else {
                 assert(!transient);
-                auto res = std::make_shared<Variable>(name, new storm::jani::BasicType(type, true), variable);
-                res->setLowerBound(lowerBound ? lowerBound.get() : storm::expressions::Expression());
-                res->setUpperBound(upperBound ? upperBound.get() : storm::expressions::Expression());
+                auto res = std::make_shared<Variable>(name, new storm::jani::BoundedType(type, lowerBound ? lowerBound.get() : storm::expressions::Expression(), upperBound ? upperBound.get() : storm::expressions::Expression()), variable);
                 return res;
             }
         }
 
         std::shared_ptr<Variable> Variable::makeBasicVariable(const std::string &name, JaniType::ElementType type, const expressions::Variable &variable, boost::optional<storm::expressions::Expression> initValue, bool transient) {
             if (initValue) {
-                return std::make_shared<Variable>(name, new storm::jani::BasicType(type, false), variable, initValue.get(), transient);
+                return std::make_shared<Variable>(name, new storm::jani::BasicType(type), variable, initValue.get(), transient);
             } else {
                 assert(!transient);
-                return std::make_shared<Variable>(name, new storm::jani::BasicType(type, false), variable);
+                return std::make_shared<Variable>(name, new storm::jani::BasicType(type), variable);
             }
         }
 
@@ -181,27 +196,13 @@ namespace storm {
             }
         }
 
-        std::shared_ptr<Variable> Variable::makeArrayVariable(const std::string &name, JaniType *const type, const expressions::Variable &variable, boost::optional<storm::expressions::Expression> initValue, bool transient) {
+        std::shared_ptr<Variable> Variable::makeArrayVariable(const std::string &name, JaniType* type, const expressions::Variable &variable, boost::optional<storm::expressions::Expression> initValue, bool transient) {
+            assert (type->isArrayType());
             if (initValue) {
                 return std::make_shared<Variable>(name, type, variable, initValue.get(), transient);
             } else {
                 assert(!transient);
                 return std::make_shared<Variable>(name, type, variable);
-            }
-        }
-
-        std::shared_ptr<Variable> Variable::makeBoundedArrayVariable(const std::string &name, JaniType *const type, const expressions::Variable &variable, boost::optional<storm::expressions::Expression> initValue, bool transient, boost::optional<storm::expressions::Expression> lowerBound, boost::optional<storm::expressions::Expression> upperBound) {
-            if (initValue) {
-                auto res = std::make_shared<Variable>(name, type, variable, initValue.get(), transient);
-                res->setLowerBound(lowerBound ? lowerBound.get() : storm::expressions::Expression());
-                res->setUpperBound(upperBound ? upperBound.get() : storm::expressions::Expression());
-                return res;
-            } else {
-                assert(!transient);
-                auto res = std::make_shared<Variable>(name, type, variable);
-                res->setLowerBound(lowerBound ? lowerBound.get() : storm::expressions::Expression());
-                res->setUpperBound(upperBound ? upperBound.get() : storm::expressions::Expression());
-                return res;
             }
         }
 

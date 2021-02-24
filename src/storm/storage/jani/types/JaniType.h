@@ -28,7 +28,7 @@ namespace storm {
                 virtual bool isArrayType() const;
                 virtual bool isClockType() const;
                 virtual bool isContinuousType() const;
-                virtual JaniType const* getChildType() const;
+                virtual JaniType* getChildType() const;
                 // TODO: fix the asXXXType things, such that this becomes superfluous
                 virtual void setLowerBound(storm::expressions::Expression const& expression);
                 virtual void setUpperBound(storm::expressions::Expression const& expression);

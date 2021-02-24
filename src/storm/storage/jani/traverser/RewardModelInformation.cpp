@@ -3,7 +3,7 @@
 #include "storm/storage/expressions/Expression.h"
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/jani/Model.h"
-#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 
 namespace storm {
     namespace jani {

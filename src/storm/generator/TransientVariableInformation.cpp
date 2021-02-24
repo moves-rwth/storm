@@ -3,7 +3,7 @@
 #include "storm/storage/jani/Model.h"
 
 #include "storm/storage/jani/Automaton.h"
-#include "storm/storage/jani/ArrayEliminator.h"
+#include "storm/storage/jani/eliminator/ArrayEliminator.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
 #include "storm/storage/expressions/ExpressionManager.h"
@@ -12,6 +12,7 @@
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/exceptions/WrongFormatException.h"
 #include "storm/exceptions/OutOfRangeException.h"
+#include "JaniNextStateGenerator.h"
 
 
 #include <cmath>
@@ -91,30 +92,38 @@ namespace storm {
                             STORM_LOG_ASSERT(false, "Unhandled type of base variable.");
                         }
                     }
-                    this->arrayVariableToElementInformations.emplace(arrayVariable->getExpressionVariable(), std::move(varInfoIndices));
+                    assert (false);
+                    // TODO: Implement this properly
+//                    this->arrayVariableToElementInformations.emplace(arrayVariable->getExpressionVariable(), std::move(varInfoIndices));
                 }
             }
         }
         
         template <typename ValueType>
-        TransientVariableData<bool> const& TransientVariableInformation<ValueType>::getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) const {
-            std::vector<uint64_t> const& indices = arrayVariableToElementInformations.at(arrayVariable);
-            STORM_LOG_THROW(arrayIndex < indices.size(), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex << " which is out of bounds as the array size is " << indices.size() << ".");
-            return booleanVariableInformation[indices[arrayIndex]];
+        TransientVariableData<bool> const& TransientVariableInformation<ValueType>::getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t>& arrayIndex) const {
+            auto& arrayInfo = arrayVariableToElementInformations.at(arrayVariable);
+
+            STORM_LOG_THROW(arrayIndex.at(0) < arrayInfo.arrayLengths.at(0), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " entry 0 evaluates to array index " << arrayIndex.at(0) << " which is out of bounds as the array size is " << arrayInfo.arrayLengths.at(0));
+            STORM_LOG_THROW(arrayIndex.at(1) < arrayInfo.arrayLengths.at(1), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " entry 1 evaluates to array index " << arrayIndex.at(1) << " which is out of bounds as the array size is " << arrayInfo.arrayLengths.at(1));
+            return booleanVariableInformation[arrayInfo.indexMapping.at(arrayIndex.at(0) * arrayInfo.arrayLengths.at(1) + arrayIndex.at(1))];
         }
         
         template <typename ValueType>
-        TransientVariableData<int64_t> const& TransientVariableInformation<ValueType>::getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) const {
-            std::vector<uint64_t> const& indices = arrayVariableToElementInformations.at(arrayVariable);
-            STORM_LOG_THROW(arrayIndex < indices.size(), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex << " which is out of bounds as the array size is " << indices.size() << ".");
-            return integerVariableInformation[indices[arrayIndex]];
+        TransientVariableData<int64_t> const& TransientVariableInformation<ValueType>::getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t>& arrayIndex) const {
+            auto& arrayInfo = arrayVariableToElementInformations.at(arrayVariable);
+
+            STORM_LOG_THROW(arrayIndex.at(0) < arrayInfo.arrayLengths.at(0), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " entry 0 evaluates to array index " << arrayIndex.at(0) << " which is out of bounds as the array size is " << arrayInfo.arrayLengths.at(0));
+            STORM_LOG_THROW(arrayIndex.at(1) < arrayInfo.arrayLengths.at(1), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " entry 1 evaluates to array index " << arrayIndex.at(1) << " which is out of bounds as the array size is " << arrayInfo.arrayLengths.at(1));
+            return integerVariableInformation[arrayInfo.indexMapping.at(arrayIndex.at(0) * arrayInfo.arrayLengths.at(1) + arrayIndex.at(1))];
         }
         
         template <typename ValueType>
-        TransientVariableData<ValueType> const& TransientVariableInformation<ValueType>::getRationalArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t arrayIndex) const {
-            std::vector<uint64_t> const& indices = arrayVariableToElementInformations.at(arrayVariable);
-            STORM_LOG_THROW(arrayIndex < indices.size(), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex << " which is out of bounds as the array size is " << indices.size() << ".");
-            return rationalVariableInformation[indices[arrayIndex]];
+        TransientVariableData<ValueType> const& TransientVariableInformation<ValueType>::getRationalArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t>& arrayIndex) const {
+            auto& arrayInfo = arrayVariableToElementInformations.at(arrayVariable);
+
+            STORM_LOG_THROW(arrayIndex.at(0) < arrayInfo.arrayLengths.at(0), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " entry 0 evaluates to array index " << arrayIndex.at(0) << " which is out of bounds as the array size is " << arrayInfo.arrayLengths.at(0));
+            STORM_LOG_THROW(arrayIndex.at(1) < arrayInfo.arrayLengths.at(1), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " entry 1 evaluates to array index " << arrayIndex.at(1) << " which is out of bounds as the array size is " << arrayInfo.arrayLengths.at(1));
+            return rationalVariableInformation[arrayInfo.indexMapping.at(arrayIndex.at(0) * arrayInfo.arrayLengths.at(1) + arrayIndex.at(1))];
         }
         
         template <typename ValueType>

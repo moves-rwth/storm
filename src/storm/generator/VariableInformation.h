@@ -21,6 +21,13 @@ namespace storm {
     }
     
     namespace generator {
+        struct ArrayInformation {
+            ArrayInformation(std::vector<uint_fast64_t>& arrayLengths, std::vector<uint_fast64_t>& indexMapping);
+            ArrayInformation();
+            std::vector<uint_fast64_t> arrayLengths;
+            std::vector<uint_fast64_t> indexMapping;
+        };
+
         // A structure storing information about the boolean variables of the model.
         struct BooleanVariableInformation {
             BooleanVariableInformation(storm::expressions::Variable const& variable, uint_fast64_t bitOffset, bool global, bool observable);
@@ -105,8 +112,8 @@ namespace storm {
             uint_fast64_t getTotalBitOffset(bool roundTo64Bit = false) const;
             
             void registerArrayVariableReplacements(storm::jani::ArrayEliminatorData const& arrayEliminatorData);
-            BooleanVariableInformation const& getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t index);
-            IntegerVariableInformation const& getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t index);
+            BooleanVariableInformation const& getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t>& index);
+            IntegerVariableInformation const& getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t>& index);
 
             /// The total bit offset over all variables.
             uint_fast64_t totalBitOffset;
@@ -124,7 +131,7 @@ namespace storm {
             std::vector<ObservationLabelInformation> observationLabels;
 
             /// Replacements for each array variable
-            std::unordered_map<storm::expressions::Variable, std::vector<uint64_t>> arrayVariableToElementInformations;
+            std::unordered_map<storm::expressions::Variable, ArrayInformation> arrayVariableToElementInformations;
 
             bool hasOutOfBoundsBit() const;
 

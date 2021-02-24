@@ -16,12 +16,12 @@ namespace storm {
             /*!
              * Creates a new variable with initial value construct
              */
-            Variable(std::string const& name, JaniType const* type, storm::expressions::Variable const& variable, storm::expressions::Expression const& init, bool transient = false);
+            Variable(std::string const& name, JaniType* type, storm::expressions::Variable const& variable, storm::expressions::Expression const& init, bool transient = false);
 
             /*!
              * Creates a new variable without initial value construct.
              */
-            Variable(std::string const& name, JaniType const* type, storm::expressions::Variable const& variable);
+            Variable(std::string const& name, JaniType* type, storm::expressions::Variable const& variable);
             
             /*!
              * Clones the variable.
@@ -112,7 +112,8 @@ namespace storm {
 
             bool isTransient() const;
 
-            JaniType const* getType() const;
+            JaniType* getType() const;
+            JaniType* getArrayType() const;
 
             ~Variable();
 
@@ -125,8 +126,7 @@ namespace storm {
          * Convenience function to call the appropriate constructor and return a shared pointer to the variable.
          */
             static std::shared_ptr<Variable> makeBoundedVariable(std::string const& name, JaniType::ElementType type, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> initValue, bool transient, boost::optional<storm::expressions::Expression> lowerBound, boost::optional<storm::expressions::Expression> upperBound);
-            static std::shared_ptr<Variable> makeArrayVariable(std::string const& name, JaniType *const, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> initValue, bool transient);
-            static std::shared_ptr<Variable> makeBoundedArrayVariable(std::string const& name, JaniType *const, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> initValue, bool transient, boost::optional<storm::expressions::Expression> lowerBound, boost::optional<storm::expressions::Expression> upperBound);
+            static std::shared_ptr<Variable> makeArrayVariable(std::string const& name, JaniType* type, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> initValue, bool transient);
             static std::shared_ptr<Variable> makeBasicVariable(std::string const& name, JaniType::ElementType type, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> initValue, bool transient);
             static std::shared_ptr<Variable> makeClockVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> initValue, bool transient);
 
@@ -137,7 +137,9 @@ namespace storm {
             // The expression variable associated with this variable.
             storm::expressions::Variable variable;
 
-            JaniType const * type;
+            JaniType* type;
+
+            JaniType* arrayType;
 
             /// Whether this is a transient variable.
             bool transient;

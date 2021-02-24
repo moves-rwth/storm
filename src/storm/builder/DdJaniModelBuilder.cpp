@@ -13,8 +13,8 @@
 #include "storm/storage/jani/Location.h"
 #include "storm/storage/jani/AutomatonComposition.h"
 #include "storm/storage/jani/ParallelComposition.h"
-#include "storm/storage/jani/CompositionInformationVisitor.h"
-#include "storm/storage/jani/ArrayEliminator.h"
+#include "storm/storage/jani/visitor/CompositionInformationVisitor.h"
+#include "storm/storage/jani/eliminator/ArrayEliminator.h"
 
 #include "storm/storage/dd/Add.h"
 #include "storm/storage/dd/Bdd.h"

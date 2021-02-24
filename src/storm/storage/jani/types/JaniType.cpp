@@ -95,9 +95,9 @@ namespace storm {
 //            return static_cast<ContinuousType& const>(*this);
 //        }
 
-        JaniType const* JaniType::getChildType() const {
+        JaniType* JaniType::getChildType() const {
             assert (false);
-            return this;
+            return nullptr;
         }
 
         std::string JaniType::getStringRepresentation() const {

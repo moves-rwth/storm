@@ -2,7 +2,7 @@
 
 
 #include "storm/storage/expressions/ExpressionVisitor.h"
-#include "storm/storage/jani/expressions/JaniExpressionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionVisitor.h"
 #include "storm/logic/FormulaVisitor.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
@@ -30,8 +30,10 @@ namespace storm {
             virtual boost::any visit(storm::expressions::IntegerLiteralExpression const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::RationalLiteralExpression const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data);
+            virtual boost::any visit(storm::expressions::ValueArrayExpression::ValueArrayElements const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const& data);
+            virtual boost::any visit(storm::expressions::ArrayAccessIndexExpression const& expression, boost::any const& data);
             virtual boost::any visit(storm::expressions::FunctionCallExpression const& expression, boost::any const& data);
 
         private:

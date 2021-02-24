@@ -3,7 +3,7 @@
 #include "storm/storage/jani/Edge.h"
 #include "storm/storage/jani/TemplateEdge.h"
 #include "storm/storage/jani/Location.h"
-#include "storm/storage/jani/expressions/JaniExpressionSubstitutionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionSubstitutionVisitor.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/utility/macros.h"

@@ -8,7 +8,7 @@
 #include "storm/storage/jani/ModelType.h"
 #include "storm/storage/jani/Automaton.h"
 #include "storm/storage/jani/Constant.h"
-#include "storm/storage/jani/Composition.h"
+#include "Composition.h"
 #include "storm/storage/jani/Edge.h"
 #include "storm/storage/jani/FunctionDefinition.h"
 #include "storm/storage/jani/Location.h"

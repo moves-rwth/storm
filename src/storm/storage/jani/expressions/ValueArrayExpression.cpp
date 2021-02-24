@@ -1,6 +1,6 @@
 #include "storm/storage/jani/expressions/ValueArrayExpression.h"
 
-#include "storm/storage/jani/expressions/JaniExpressionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionVisitor.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
@@ -9,32 +9,67 @@
 namespace storm {
     namespace expressions {
         
-        ValueArrayExpression::ValueArrayExpression(ExpressionManager const& manager, Type const& type, std::vector<std::shared_ptr<BaseExpression const>> const& elements) : ArrayExpression(manager, type), elements(elements) {
+        ValueArrayExpression::ValueArrayExpression(ExpressionManager const& manager, Type const& type, ValueArrayElements const& elements) : ArrayExpression(manager, type), elements(elements) {
             // Intentionally left empty
         }
         
         void ValueArrayExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
-            for (auto const& e : elements) {
-                e->gatherVariables(variables);
+            this->gatherVariables(variables, elements);
+        }
+
+        void ValueArrayExpression::gatherVariables(std::set<storm::expressions::Variable>& variables, ValueArrayElements const& elementsToCheck) const {
+            if (elementsToCheck.elementsWithValue) {
+                for (std::shared_ptr<BaseExpression const> e : elementsToCheck.elementsWithValue.get()) {
+                    e->gatherVariables(variables);
+                }
+            } else {
+                for (std::shared_ptr<ValueArrayElements const> e : elementsToCheck.elementsOfElements.get()) {
+                    gatherVariables(variables, *e);
+                }
             }
         }
         
         bool ValueArrayExpression::containsVariables() const {
-            for (auto const& e : elements) {
-                if (e->containsVariables()) {
-                    return true;
+            return this->containsVariables(elements);
+        }
+
+        bool ValueArrayExpression::containsVariables(ValueArrayElements const& elementsToCheck) const {
+            if (elementsToCheck.elementsWithValue) {
+                for (auto const& e : elementsToCheck.elementsWithValue.get()) {
+                    if (e->containsVariables()) {
+                        return true;
+                    }
+                }
+            } else {
+                for (std::shared_ptr<ValueArrayElements const> e : elementsToCheck.elementsOfElements.get()) {
+                    if (containsVariables(*e)) {
+                        return true;
+                    }
                 }
             }
             return false;
         }
-        
+
         std::shared_ptr<BaseExpression const> ValueArrayExpression::simplify() const {
-            std::vector<std::shared_ptr<BaseExpression const>> simplifiedElements;
-            simplifiedElements.reserve(elements.size());
-            for (auto const& e : elements) {
-                simplifiedElements.push_back(e->simplify());
+            return std::shared_ptr<BaseExpression const>(new ValueArrayExpression(getManager(), getType(), simplify(elements)));
+        }
+
+        ValueArrayExpression::ValueArrayElements ValueArrayExpression::simplify(const ValueArrayElements &element) const {
+            ValueArrayElements result;
+            if (element.elementsWithValue) {
+                result.elementsWithValue = std::vector<std::shared_ptr<BaseExpression const>>();
+                result.elementsWithValue.get().reserve(element.elementsWithValue->size());
+                for (auto const& e : elements.elementsWithValue.get()) {
+                    result.elementsWithValue->push_back(e->simplify());
+                }
+            } else {
+                std::vector<std::shared_ptr<ValueArrayElements const>> simplifiedElements;
+                for (auto const& e : element.elementsOfElements.get()) {
+                    simplifiedElements.push_back(std::make_shared<ValueArrayElements const>(simplify(*e)));
+                }
+                result.elementsOfElements = std::move(simplifiedElements);
             }
-            return std::shared_ptr<BaseExpression const>(new ValueArrayExpression(getManager(), getType(), simplifiedElements));
+            return result;
         }
         
         boost::any ValueArrayExpression::accept(ExpressionVisitor& visitor, boost::any const& data) const {
@@ -44,26 +79,71 @@ namespace storm {
         }
         
         void ValueArrayExpression::printToStream(std::ostream& stream) const {
-            stream << "array[ ";
-            bool first = true;
-            for (auto const& e : elements) {
-                stream << *e;
-                if (!first) {
-                    stream << " , ";
+            printToStream(stream, elements);
+        }
+
+        void ValueArrayExpression::printToStream(std::ostream& stream, ValueArrayElements const& element) const {
+            if (element.elementsWithValue) {
+                stream << "array[ ";
+                bool first = true;
+
+                for (auto const& e : element.elementsWithValue.get()) {
+                    stream << *e;
+                    if (!first) {
+                        stream <<  " , ";
+                    }
+                    first = false;
                 }
-                first = false;
+                stream <<  "]";
+            } else {
+                stream <<  "array[ ";
+                bool first = true;
+
+                for (auto const& e : element.elementsOfElements.get()) {
+                        printToStream(stream, *e);
+                        if (!first) {
+                            stream <<  " , ";
+                        }
+                        first = false;
+                }
+                stream <<  "]";
             }
-            stream << " ]";
+
         }
         
         std::shared_ptr<BaseExpression const> ValueArrayExpression::size() const {
-            return getManager().integer(elements.size()).getBaseExpressionPointer();
+            return getManager().integer(size(elements)).getBaseExpressionPointer();
+        }
+
+        size_t ValueArrayExpression::size(ValueArrayElements const& elementsToCheck) const {
+            if (elementsToCheck.elementsWithValue) {
+                return elementsToCheck.elementsWithValue->size();
+            } else {
+                return size(*elementsToCheck.elementsOfElements->at(0)) * elementsToCheck.elementsOfElements->size();
+            }
         }
         
-        std::shared_ptr<BaseExpression const> ValueArrayExpression::at(uint64_t i) const {
-            STORM_LOG_THROW(i < elements.size(), storm::exceptions::InvalidArgumentException, "Tried to access the element with index " << i << " of an array of size " << elements.size() << ".");
-            return elements[i];
+        std::shared_ptr<BaseExpression const> ValueArrayExpression::at(std::vector<uint64_t>& index) const {
+            ValueArrayElements result = elements;
+            for (auto i = 0; i < index.size() - 1; ++i) {
+                assert (!elements.elementsWithValue);
+                if (elements.elementsOfElements) {
+                    STORM_LOG_THROW(index[i] < elements.elementsOfElements->size(), storm::exceptions::InvalidArgumentException, "Tried to access the element with index " << i << " of an array of size " << elements.elementsOfElements->size() << ".");
+
+                } else {
+                    STORM_LOG_THROW(index[i] < elements.elementsWithValue->size(), storm::exceptions::InvalidArgumentException, "Tried to access the element with index " << i << " of an array of size " << elements.elementsWithValue->size() << ".");
+                }
+                result = *elements.elementsOfElements->at(index[i]);
+            }
+            assert (result.elementsWithValue);
+            return result.elementsWithValue->at(index[index.size() -1]);
         }
-        
+
+
+
+
+
+
+
     }
 }

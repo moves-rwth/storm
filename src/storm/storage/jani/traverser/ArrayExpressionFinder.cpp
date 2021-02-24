@@ -1,7 +1,7 @@
 #include "storm/storage/jani/traverser/ArrayExpressionFinder.h"
 
 #include "storm/storage/jani/traverser/JaniTraverser.h"
-#include "storm/storage/jani/expressions/JaniExpressionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionVisitor.h"
 #include "storm/storage/jani/expressions/JaniExpressions.h"
 #include "storm/storage/jani/Model.h"
 
@@ -63,12 +63,21 @@ namespace storm {
                 virtual boost::any visit(storm::expressions::ValueArrayExpression const&, boost::any const&) override {
                     return true;
                 }
+
+                virtual boost::any visit(storm::expressions::ValueArrayExpression::ValueArrayElements const&, boost::any const&) override {
+                    return true;
+                }
                 
                 virtual boost::any visit(storm::expressions::ConstructorArrayExpression const&, boost::any const&) override {
                     return true;
                 }
                 
                 virtual boost::any visit(storm::expressions::ArrayAccessExpression const&, boost::any const&) override {
+                    return true;
+                }
+
+
+                virtual boost::any visit(storm::expressions::ArrayAccessIndexExpression const&, boost::any const&) override {
                     return true;
                 }
                 
