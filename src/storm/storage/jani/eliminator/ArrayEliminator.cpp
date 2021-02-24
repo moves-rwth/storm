@@ -35,13 +35,13 @@ namespace storm {
                 }
 
                 std::size_t getMaxSizeAt(storm::expressions::Expression const& expression, std::unordered_map<storm::expressions::Variable, std::size_t> const& arrayVariableSizeMap, int const index) {
-                    std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, std::pair<int, bool>> pair = {arrayVariableSizeMap, {index, true}};
-                    return boost::any_cast<std::size_t>(expression.accept(*this, std::make_shared<std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, std::pair<int, bool>>>(pair)));
+                    std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, std::pair<int, bool>> dataPair = {arrayVariableSizeMap, {index, true}};
+                    return boost::any_cast<std::size_t>(expression.accept(*this, dataPair));
                 }
 
                 std::size_t getMaxMultiplierFrom(storm::expressions::Expression const& expression, std::unordered_map<storm::expressions::Variable, std::size_t> const& arrayVariableSizeMap, int const index) {
-                    std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, std::pair<int, bool>> pair = {arrayVariableSizeMap, {index, false}};
-                    return boost::any_cast<std::size_t>(expression.accept(*this, std::make_shared<std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, std::pair<int, bool>>>(pair)));
+                    std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, std::pair<int, bool>> dataPair = {arrayVariableSizeMap, {index, false}};
+                    return boost::any_cast<std::size_t>(expression.accept(*this, dataPair));
                 }
      
                 virtual boost::any visit(storm::expressions::IfThenElseExpression const& expression, boost::any const& data) override {
@@ -51,7 +51,7 @@ namespace storm {
                         if (expression.getCondition()->evaluateAsBool()) {
                             return boost::any_cast<std::size_t>(expression.getThenExpression()->accept(*this, data));
                         }
-                            return boost::any_cast<std::size_t>(expression.getElseExpression()->accept(*this, data));
+                        return boost::any_cast<std::size_t>(expression.getElseExpression()->accept(*this, data));
                     }
                 }
                 
@@ -68,12 +68,11 @@ namespace storm {
                 }
                 
                 virtual boost::any visit(storm::expressions::VariableExpression const& expression, boost::any const& data) override {
-                    // TODO: @Jip fix this
-                    assert (false);
-                    std::unordered_map<storm::expressions::Variable, std::size_t> const* arrayVariableSizeMap = boost::any_cast<std::unordered_map<storm::expressions::Variable, std::size_t> const*>(data);
+                    std::cout << "Visiting var expr 1" << std::endl;
+                    auto arrayVariableSizeMap = boost::any_cast<std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, std::pair<int, bool>>>(data);
                     if (expression.getType().isArrayType()) {
-                        auto varIt = arrayVariableSizeMap->find(expression.getVariable());
-                        if (varIt != arrayVariableSizeMap->end()) {
+                        auto varIt = arrayVariableSizeMap.first.find(expression.getVariable());
+                        if (varIt != arrayVariableSizeMap.first.end()) {
                             return varIt->second;
                         }
                     }
@@ -119,15 +118,15 @@ namespace storm {
                 virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) override {
                     std::cout << "Visit constructarray in arrayelim" << std::endl;
 
-                    if (data.type() == typeid(std::shared_ptr<std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, std::pair<int, bool>>>)) {
-                        std::shared_ptr<std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, std::pair<int, bool>>> ptr = boost::any_cast<std::shared_ptr<std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, std::pair<int, bool>>>>(data);
-                        if (ptr->second.second) {
+                    if (data.type() == typeid(std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, std::pair<int, bool>>)) {
+                        auto dataPair = boost::any_cast<std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, std::pair<int, bool>>>(data);
+                        if (dataPair.second.second) {
                             // this is the getAt case
-                            return static_cast<std::size_t>(expression.size(ptr->second.first)->evaluateAsInt());
+                            return static_cast<std::size_t>(expression.size(dataPair.second.first)->evaluateAsInt());
                         } else {
                             // This is the max multiplication from case
                             auto size = 1;
-                            for (auto i = ptr->second.first; i < expression.getNumberOfArrays(); ++i) {
+                            for (auto i = dataPair.second.first; i < expression.getNumberOfArrays(); ++i) {
                                 size = size * expression.size(i)->evaluateAsInt();
                             }
                             return static_cast<std::size_t>(size);
@@ -304,9 +303,22 @@ namespace storm {
                 }
                 
                 virtual boost::any visit(storm::expressions::VariableExpression const& expression, boost::any const& data) override {
+                    std::cout << "Visiting var expr 2" << std::endl;
+
                     if (expression.getType().isArrayType()) {
                         STORM_LOG_THROW(!data.empty(), storm::exceptions::NotSupportedException, "Unable to translate array variable to basic variable, since it does not seem to be within an array access expression.");
-                        uint64_t index = boost::any_cast<uint64_t>(data);
+                        uint64_t index;
+                        if (data.type() == typeid(uint64_t)) {
+                            index = boost::any_cast<uint64_t>(data);
+                        } else {
+                            assert (data.type() == typeid(ResultType));
+                            auto resultType = boost::any_cast<ResultType>(data);
+                            if (resultType.expr()->containsVariables()) {
+                                std::cout << "HELPPP" << *(resultType.expr()) << std::endl;
+                            } else {
+                                index = resultType.expr()->evaluateAsInt();
+                            }
+                        }
                         STORM_LOG_ASSERT(replacements.find(expression.getVariable()) != replacements.end(), "Unable to find array variable " << expression << " in array replacements.");
                         auto const& arrayVarReplacements = replacements.at(expression.getVariable());
                         if (index >= arrayVarReplacements.size()) {
@@ -430,7 +442,6 @@ namespace storm {
 
                     auto castData = boost::any_cast<std::pair<std::shared_ptr<storm::expressions::BaseExpression const>, uint64_t>>(data);
                     auto currentArrayNumber = castData.second;
-                    auto multiplier = MaxArraySizeExpressionVisitor().getMaxMultiplierFrom(castData.first->toExpression(), arraySizes, currentArrayNumber + 1);
                     // TODO: extend this to more than two nested arrays
                     uint64_t indexSoFar = 0;
                     storm::expressions::Expression result;
@@ -507,7 +518,7 @@ namespace storm {
 
                             } else {
                                 indexSoFar += secondIndex->getFirstOperand()->evaluateAsInt();
-                                return boost::any_cast<ResultType>(expression.getFirstOperand()->accept(*this, indexSoFar));
+                                return boost::any_cast<ResultType>(castData.first->accept(*this, indexSoFar));
                             }
                         }
                     }
@@ -727,9 +738,9 @@ namespace storm {
 //                                    newAssignments.emplace_back(LValue(replacement), newRhs, level);
                                 }
                             } else {
-                                assert (false);
-                                // TODO: fix this
-//                                newAssignments.emplace_back(assignment.getLValue(), arrayExprEliminator->eliminate(assignment.getAssignedExpression()), assignment.getLevel());
+//                                assert (false);
+//                                // TODO: fix this
+                                newAssignments.emplace_back(assignment.getLValue(), arrayExprEliminator->eliminate(assignment.getAssignedExpression()), assignment.getLevel());
                             }
                         }
                         for (auto const& arrayAssignments : collectedArrayAccessAssignments) {
