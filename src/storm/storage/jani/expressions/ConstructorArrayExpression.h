@@ -35,6 +35,7 @@ namespace storm {
 
             // Returns the element at position i
             virtual std::shared_ptr<BaseExpression const> at(std::vector<uint64_t>& i) const override;
+            virtual std::shared_ptr<BaseExpression const> at(uint64_t i) const override;
 
             std::shared_ptr<BaseExpression const> const& getElementExpression() const;
             std::shared_ptr<storm::expressions::Variable> getIndexVar() const;

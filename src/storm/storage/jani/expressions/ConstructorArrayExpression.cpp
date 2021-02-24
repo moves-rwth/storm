@@ -83,6 +83,15 @@ namespace storm {
 //            return storm::jani::substituteJaniExpression(elementExpression->toExpression(), substitution).getBaseExpressionPointer();
         }
 
+        std::shared_ptr<const BaseExpression> ConstructorArrayExpression::at(uint64_t i) const {
+            std::cout << indexVar->getName() << std::endl;
+
+            assert (false);
+            std::map<storm::expressions::Variable, storm::expressions::Expression> substitution;
+            substitution.emplace(*indexVar, this->getManager().integer(i));
+            return storm::jani::substituteJaniExpression(elementExpression->toExpression(), substitution).getBaseExpressionPointer();
+        }
+
         size_t ConstructorArrayExpression::getNumberOfArrays() const {
             return sizeExpressions.size();
         }

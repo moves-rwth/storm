@@ -25,7 +25,8 @@ namespace storm {
             
             // Returns the element at position i
             virtual std::shared_ptr<BaseExpression const> at(std::vector<uint64_t>& i) const = 0;
-            
+            virtual std::shared_ptr<BaseExpression const> at(uint64_t i) const = 0;
+
 
         };
     }

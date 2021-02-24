@@ -1315,7 +1315,7 @@ namespace storm {
                     } else if (opstring == "aa") {
                         STORM_LOG_THROW(expressionStructure.count("exp") == 1, storm::exceptions::InvalidJaniException, "Array access operator requires exactly one exp (at " + scope.description + ").");
                         Json subStructure = expressionStructure;
-                        std::vector<storm::expressions::Expression> index;
+                        std::vector<storm::expressions::Expression const> index;
                         while (subStructure.count("exp")) {
                             index.push_back(parseExpression(expressionStructure.at("index"), scope.refine("index of array access operator"), returnNoneInitializedOnUnknownOperator, auxiliaryVariables));
                             ensureIntegerType(index.back(), opstring, 1, scope.description);
@@ -1331,6 +1331,7 @@ namespace storm {
                             finalType = finalType.getElementType();
                         }
                         auto & manager = exp.getManager();
+                        // TODO: mapping van indexExpression naar de bijbehorende echte expression
                         std::shared_ptr<storm::expressions::ArrayAccessIndexExpression const> indexExpression;
                         if (index.size() == 1) {
                             indexExpression = std::make_shared<storm::expressions::ArrayAccessIndexExpression>(manager, manager.getIntegerType(), index[0].getBaseExpressionPointer());
@@ -1365,7 +1366,6 @@ namespace storm {
                         STORM_LOG_THROW(expressionStructure.count("exp"), storm::exceptions::InvalidJaniException, "Missing 'exp' in array access at " << scope.description);
 
                         Json subStructure = expressionStructure;
-                        storm::expressions::Type type;
                         while (subStructure.count("exp")) {
                             STORM_LOG_THROW(subStructure.count("var") == 1, storm::exceptions::InvalidJaniException, "Array access operator requires exactly one var (at " + scope.description + ").");
 
@@ -1393,6 +1393,13 @@ namespace storm {
                         storm::expressions::Variable indexVar = expressionManager->declareFreshIntegerVariable(false, "ac_" + indexVarName);
                         newAuxVars.emplace(indexVarName, indexVar);
                         storm::expressions::Expression exp = parseExpression(subStructure, scope.refine("exp of array constructor"), returnNoneInitializedOnUnknownOperator, newAuxVars);
+
+                        storm::expressions::Type type = exp.getType();
+                        for (auto & length : lengths) {
+                            type = exp.getManager().getArrayType(type);
+                        }
+
+                        std::cout <<"type" << type << std::endl;
 
                         auto indexVarPtr = std::make_shared<storm::expressions::Variable>(indexVar);
                         STORM_LOG_THROW(expressionStructure.count("length") == 1, storm::exceptions::InvalidJaniException, "Array access operator requires exactly one length (at " + scope.description + ").");

@@ -101,18 +101,24 @@ namespace storm {
                 }
                 
                 virtual boost::any visit(storm::expressions::ValueArrayExpression const& expression, boost::any const&) override {
+                    std::cout << "Visit valuearray in arrayelim" << std::endl;
+
                     assert (false);
 //                    STORM_LOG_ASSERT(expression.size()->isIntegerLiteralExpression(), "unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
 //                    return static_cast<std::size_t>(expression.size()->evaluateAsInt());
                 }
 
                 virtual boost::any visit(storm::expressions::ValueArrayExpression::ValueArrayElements const& expression, boost::any const&) override {
+                    std::cout << "Visit valuearray element in arrayelim" << std::endl;
+
                     assert (false);
 //                    STORM_LOG_ASSERT(expression.size()->isIntegerLiteralExpression(), "unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
 //                    return static_cast<std::size_t>(expression.size()->evaluateAsInt());
                 }
                 
                 virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) override {
+                    std::cout << "Visit constructarray in arrayelim" << std::endl;
+
                     if (data.type() == typeid(std::shared_ptr<std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, std::pair<int, bool>>>)) {
                         std::shared_ptr<std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, std::pair<int, bool>>> ptr = boost::any_cast<std::shared_ptr<std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, std::pair<int, bool>>>>(data);
                         if (ptr->second.second) {
@@ -359,6 +365,8 @@ namespace storm {
                 }
                 
                 virtual boost::any visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data) override {
+                    std::cout << "Visit valuearray in arrayelimvisitor" << std::endl;
+
 //                    STORM_LOG_THROW(!data.empty(), storm::exceptions::NotSupportedException, "Unable to translate ValueArrayExpression to element expression since it does not seem to be within an array access expression.");
 //                    uint64_t index = boost::any_cast<uint64_t>(data);
 //                    STORM_LOG_ASSERT(expression.size()->isIntegerLiteralExpression(), "unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
@@ -370,6 +378,8 @@ namespace storm {
                 }
 
                 virtual boost::any visit(storm::expressions::ValueArrayExpression::ValueArrayElements const& expression, boost::any const& data) override {
+                    std::cout << "Visit valuearrayelem in arrayelimvisitor" << std::endl;
+
 //                    STORM_LOG_THROW(!data.empty(), storm::exceptions::NotSupportedException, "Unable to translate ValueArrayExpression to element expression since it does not seem to be within an array access expression.");
 //                    uint64_t index = boost::any_cast<uint64_t>(data);
 //                    STORM_LOG_ASSERT(expression.size()->isIntegerLiteralExpression(), "unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
@@ -379,12 +389,12 @@ namespace storm {
                     assert (false);
 //                    return ResultType(boost::any_cast<ResultType>(expression.at(index)->accept(*this, boost::any())));
                 }
-                
+
                 virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) override {
-                    if (data.empty()) {
-                        STORM_LOG_THROW(!data.empty(), storm::exceptions::NotSupportedException, "Unable to translate ValueArrayExpression to element expression since it does not seem to be within an array access expression.");
-                    }
-                    uint64_t index = boost::any_cast<uint64_t>(data);
+                    STORM_LOG_THROW(!data.empty(), storm::exceptions::NotSupportedException, "Unable to translate ValueArrayExpression to element expression since it does not seem to be within an array access expression.");
+                    // First one is index we want to check, second one is arraynumber
+
+                    auto index = boost::any_cast<uint64_t>(data);
                     if (expression.size()->containsVariables()) {
                         STORM_LOG_WARN("Ignoring length of constructorArrayExpression " << expression << " as it still contains variables.");
                     } else {
@@ -392,58 +402,107 @@ namespace storm {
                             return ResultType("Array index " + std::to_string(index) + " for ConstructorArrayExpression " + expression.toExpression().toString() + " is out of bounds.");
                         }
                     }
-                    assert (false);
-//                    return ResultType(boost::any_cast<ResultType>(expression.at(index)->accept(*this, boost::any())));
+                    return ResultType(boost::any_cast<ResultType>(expression.at(index)->accept(*this, boost::any())));
                 }
                 
                 virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const&) override {
+                    std::cout << "Visit ArrayAccessExpression in arrayelimvisitor" << std::endl;
+
                     std::pair<std::shared_ptr<storm::expressions::BaseExpression const>, uint64_t> data = {expression.getFirstOperand(), 0};
-                    // TODO: getSecondOPerand() zou verwachten dat die naar visit storm::expressions::ArrayAccessIndexExpression zou gaan...
-                    auto indexExpr = boost::any_cast<ResultType>(expression.getSecondOperand()->accept(*this, data));
-                    std::cout << "indexexpr: " << *indexExpr.expr() << std::endl;
-                    auto newExpr = indexExpr.expr();
-                    std:: cout << "newExpr" << std::endl;
-                    auto res = expression.getFirstOperand()->accept(*this, indexExpr.expr());
-                    std::cout << "res klaar" << std::endl;
-                    return boost::any_cast<ResultType>(res);
+                    return expression.getFirstOperand()->accept(*this, expression.getSecondOperand()->accept(*this, data));
                 }
 
 
                 virtual boost::any visit(storm::expressions::ArrayAccessIndexExpression const& expression, boost::any const& data) override {
+                    std::cout << "Visit ArrayAccessIndexExpression in arrayelimvisitor" << std::endl;
+
+                    // Expecting data to be a pair of a base expression pointing to the ArrayExpression, and the current array we are investigating.
+                    // E.g. if we have array[array[int]] as type, 0 refers to outer array
                     assert (data.type() == typeid(std::pair<std::shared_ptr<storm::expressions::BaseExpression const>, uint64_t>));
 
                     auto castData = boost::any_cast<std::pair<std::shared_ptr<storm::expressions::BaseExpression const>, uint64_t>>(data);
                     auto currentArrayNumber = castData.second;
                     auto multiplier = MaxArraySizeExpressionVisitor().getMaxMultiplierFrom(castData.first->toExpression(), arraySizes, currentArrayNumber + 1);
+                    // TODO: extend this to more than two nested arrays
+                    uint64_t indexSoFar = 0;
                     storm::expressions::Expression result;
-
-                    if (expression.getFirstOperand()->containsVariables()) {
-                        //get the size of the array expression
-                        uint64_t size = MaxArraySizeExpressionVisitor().getMaxSizeAt(castData.first->toExpression(), arraySizes, currentArrayNumber);
+                    if (expression.getFirstOperand() == expression.getSecondOperand()) {
+                        // One array
+                        uint64_t size = MaxArraySizeExpressionVisitor().getMaxSizeAt(castData.first->toExpression(), arraySizes, 0);
                         STORM_LOG_THROW(size > 0, storm::exceptions::NotSupportedException, "Unable to get size of array expression for array access " << expression << ".");
                         uint64_t index = size - 1;
-
-                        result = ResultType("Index out of bounds in arrayEliminator").expr()->toExpression();
-
-                        for (uint64_t index = size - 1; index >= 0; index--) {
-                            // TODO: does this accept work?
+                        storm::expressions::Expression result = boost::any_cast<ResultType>(castData.first->accept(*this, index)).expr()->toExpression();
+                        while (index > 0) {
+                            --index;
                             storm::expressions::Expression isCurrentIndex = boost::any_cast<ResultType>(expression.getFirstOperand()->accept(*this, boost::any())).expr()->toExpression() == expression.getManager().integer(index);
-                            result = storm::expressions::ite(isCurrentIndex, expression.getManager().integer(index*multiplier), result);
+                            result = storm::expressions::ite(isCurrentIndex,
+                                                             boost::any_cast<ResultType>(castData.first->accept(*this, index)).expr()->toExpression(),
+                                                             result);
                         }
-                        if (expression.getFirstOperand() != expression.getSecondOperand()) {
-                            // There is more to calculate the index.
-                            std::pair<std::shared_ptr<storm::expressions::BaseExpression const>, uint64_t> newData = {castData.first, castData.second + 1};
-                            result = result + boost::any_cast<storm::expressions::Expression>(expression.getSecondOperand()->accept(*this, newData));
-                        }
+                        return ResultType(result.getBaseExpressionPointer());
                     } else {
-                        result = result + (expression.getFirstOperand()->evaluateAsInt() * multiplier);
-                        if (expression.getFirstOperand() != expression.getSecondOperand()) {
-                            std::pair<std::shared_ptr<storm::expressions::BaseExpression const>, uint64_t> newData = {castData.first, castData.second + 1};
-                            result = result + boost::any_cast<storm::expressions::Expression>(expression.getSecondOperand()->accept(*this, newData));
+                        // Two arrays
+                        auto secondIndex = dynamic_cast<storm::expressions::ArrayAccessIndexExpression const*>(&(*(expression.getSecondOperand())));
+                        STORM_LOG_THROW(secondIndex->getSecondOperand() == secondIndex->getFirstOperand(), storm::exceptions::NotImplementedException, "More than two nested arrays not yet implemented");
+                        if (expression.getFirstOperand()->containsVariables()) {
+                            uint64_t sizeFirstArray = MaxArraySizeExpressionVisitor().getMaxSizeAt(castData.first->toExpression(), arraySizes, 0);
+                            uint64_t sizeSecondArray = MaxArraySizeExpressionVisitor().getMaxSizeAt(castData.first->toExpression(), arraySizes, 1);
+                            uint64_t  indexFirst = sizeFirstArray - 1;
+
+                            if (secondIndex->getFirstOperand()->containsVariables()) {
+                                storm::expressions::Expression result = boost::any_cast<ResultType>(castData.first->accept(*this, indexFirst * sizeSecondArray + sizeSecondArray - 1)).expr()->toExpression();
+                                while (indexFirst >= 0 ) {
+                                    uint64_t indexSecond = sizeSecondArray - 1;
+                                    while (indexSecond >= 0) {
+                                        if (indexFirst != sizeFirstArray -1 || indexSecond != sizeSecondArray -1) {
+                                            storm::expressions::Expression isCurrentIndexFirst = boost::any_cast<ResultType>(expression.getFirstOperand()->accept(*this, boost::any())).expr()->toExpression() == expression.getManager().integer(indexFirst);
+                                            storm::expressions::Expression isCurrentIndexSecond = boost::any_cast<ResultType>(secondIndex->getFirstOperand()->accept(*this, boost::any())).expr()->toExpression() == expression.getManager().integer(indexSecond);
+                                            auto arrayResult = boost::any_cast<ResultType>(castData.first->accept(*this, indexFirst * sizeSecondArray + indexSecond)).expr()->toExpression();
+                                            result = storm::expressions::ite(isCurrentIndexFirst, arrayResult, result);
+                                        }
+                                        indexSecond --;
+                                    }
+                                    indexFirst--;
+                                }
+
+                                return ResultType(result.getBaseExpressionPointer());
+                            } else {
+                                storm::expressions::Expression result = boost::any_cast<ResultType>(castData.first->accept(*this, indexFirst * sizeSecondArray + secondIndex->getFirstOperand()->evaluateAsInt())).expr()->toExpression();
+                                while (indexFirst > 0) {
+                                    indexFirst--;
+                                    storm::expressions::Expression isCurrentIndexFirst = boost::any_cast<ResultType>(expression.getFirstOperand()->accept(*this, boost::any())).expr()->toExpression() == expression.getManager().integer(indexFirst);
+                                    auto arrayResult = boost::any_cast<ResultType>(castData.first->accept(*this, indexFirst * sizeSecondArray + secondIndex->getFirstOperand()->evaluateAsInt()));
+                                    result = storm::expressions::ite(isCurrentIndexFirst, arrayResult.expr()->toExpression(), result);
+                                }
+                                return ResultType(result.getBaseExpressionPointer());
+                            }
+                        } else {
+                            indexSoFar = expression.getFirstOperand()->evaluateAsInt() * MaxArraySizeExpressionVisitor().getMaxSizeAt(castData.first->toExpression(), arraySizes, 0);
+
+                            if (secondIndex->getFirstOperand()->containsVariables()) {
+                                //get the size of the array expression
+                                uint64_t size = MaxArraySizeExpressionVisitor().getMaxSizeAt(castData.first->toExpression(), arraySizes, 1);
+                                STORM_LOG_THROW(size > 0, storm::exceptions::NotSupportedException, "Unable to get size of array expression for array access " << expression << ".");
+                                uint64_t index = size - 1;
+
+                                result = ResultType("Index out of bounds in arrayEliminator").expr()->toExpression();
+
+                                storm::expressions::Expression result = boost::any_cast<ResultType>(castData.first->accept(*this, index + indexSoFar)).expr()->toExpression();
+                                while (index > 0) {
+                                    --index;
+                                    storm::expressions::Expression isCurrentIndex = boost::any_cast<ResultType>(secondIndex->getFirstOperand()->accept(*this, boost::any())).expr()->toExpression() == expression.getManager().integer(index);
+                                    result = storm::expressions::ite(isCurrentIndex,
+                                                                     boost::any_cast<ResultType>(castData.first->accept(*this, index + indexSoFar)).expr()->toExpression(),
+                                                                     result);
+                                }
+                                return ResultType(result.getBaseExpressionPointer());
+
+                            } else {
+                                indexSoFar += secondIndex->getFirstOperand()->evaluateAsInt();
+                                return boost::any_cast<ResultType>(expression.getFirstOperand()->accept(*this, indexSoFar));
+                            }
                         }
                     }
-                    std::cout << "res:" << result << std::endl;
-                    return ResultType(result.getBaseExpressionPointer());
                 }
                 
                 virtual boost::any visit(storm::expressions::FunctionCallExpression const&, boost::any const&) override {
@@ -495,8 +554,6 @@ namespace storm {
                         if (!insertionRes.second) {
                             insertionRes.first->second = std::max(newSize, insertionRes.first->second);
                         }
-                    } else {
-                        std::cout << "Klopt dit wel?" << std::endl;
                     }
                 }
             };
@@ -686,15 +743,9 @@ namespace storm {
                     if (arrayVariable.hasInitExpression()) {
                         // We want to eliminate the initial value for the arrayVariable at entry index, in case of a nested_array, this index is already re-calculated.
                         // In the end we have an ArrayAccessExpression
+                        auto indexExpression = std::make_shared<storm::expressions::ArrayAccessIndexExpression>(expressionManager, expressionManager.getIntegerType(), expressionManager.integer(index).getBaseExpressionPointer());
 
-                        initValue = arrayExprEliminator->eliminate(std::make_shared<storm::expressions::ArrayAccessExpression>(expressionManager, arrayVariable.getExpressionVariable().getType().getElementType(), arrayVariable.getInitExpression().getBaseExpressionPointer(), expressionManager.integer(index).getBaseExpressionPointer())->toExpression());
-//                        std::cout << "arrayvarname: " << arrayVariable.getName() << std::endl;
-//                        std::cout << "type:" << arrayVariable.getInitExpression().getBaseExpressionPointer()->getType() << std::endl;
-//                        auto finalType = arrayVariable.getExpressionVariable().getType();
-//                        while (finalType.isArrayType()) {
-//                            finalType = finalType.getElementType();
-//                        }
-//                        initValue = arrayExprEliminator->eliminate(std::make_shared<storm::expressions::ArrayAccessExpression>(expressionManager, finalType, arrayVariable.getInitExpression().getBaseExpressionPointer(), expressionManager.integer(index).getBaseExpressionPointer())->toExpression());
+                        initValue = arrayExprEliminator->eliminate(std::make_shared<storm::expressions::ArrayAccessExpression>(expressionManager, arrayVariable.getExpressionVariable().getType().getElementType(), arrayVariable.getInitExpression().getBaseExpressionPointer(), indexExpression)->toExpression());
                     }
                     // TODO: @Jip fix this
                     if (arrayVariable.getType()->getChildType()->isIntegerType()) {

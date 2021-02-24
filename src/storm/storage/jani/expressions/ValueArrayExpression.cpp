@@ -139,6 +139,23 @@ namespace storm {
             return result.elementsWithValue->at(index[index.size() -1]);
         }
 
+        std::shared_ptr<BaseExpression const> ValueArrayExpression::at(uint64_t index) const {
+            assert (false);
+//            ValueArrayElements result = elements;
+//            for (auto i = 0; i < index.size() - 1; ++i) {
+//                assert (!elements.elementsWithValue);
+//                if (elements.elementsOfElements) {
+//                    STORM_LOG_THROW(index[i] < elements.elementsOfElements->size(), storm::exceptions::InvalidArgumentException, "Tried to access the element with index " << i << " of an array of size " << elements.elementsOfElements->size() << ".");
+//
+//                } else {
+//                    STORM_LOG_THROW(index[i] < elements.elementsWithValue->size(), storm::exceptions::InvalidArgumentException, "Tried to access the element with index " << i << " of an array of size " << elements.elementsWithValue->size() << ".");
+//                }
+//                result = *elements.elementsOfElements->at(index[i]);
+//            }
+//            assert (result.elementsWithValue);
+//            return result.elementsWithValue->at(index[index.size() -1]);
+        }
+
 
 
 
