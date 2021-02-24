@@ -29,5 +29,13 @@ namespace storm {
         void ArrayType::setUpperBound(storm::expressions::Expression const& expression) {
             childType->setUpperBound(expression);
         }
+
+        storm::expressions::Expression const& ArrayType::getLowerBound() const {
+            return childType->getLowerBound();
+        }
+
+        storm::expressions::Expression const& ArrayType::getUpperBound() const {
+            return childType->getUpperBound();
+        }
     }
 }

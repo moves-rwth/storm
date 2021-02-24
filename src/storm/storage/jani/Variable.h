@@ -147,11 +147,6 @@ namespace storm {
             /// Expression for initial values
             boost::optional<storm::expressions::Expression> init;
 
-            // The expression defining the lower bound of the variable.
-            storm::expressions::Expression lowerBound;
-
-            // The expression defining the upper bound of the variable.
-            storm::expressions::Expression upperBound;
         };
 
         bool operator==(Variable const& lhs, Variable const& rhs);

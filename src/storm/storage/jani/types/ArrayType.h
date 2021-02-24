@@ -13,6 +13,8 @@ namespace storm {
             std::string getStringRepresentation() const override;
             void setLowerBound(storm::expressions::Expression const& expression) override;
             void setUpperBound(storm::expressions::Expression const& expression) override;
+            storm::expressions::Expression const& getLowerBound() const override;
+            storm::expressions::Expression const& getUpperBound() const override;
 
         private:
             JaniType* childType;

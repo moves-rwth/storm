@@ -56,19 +56,29 @@ namespace storm {
                 auto ptr = dynamic_cast<ArrayType const*>(type);
                 return ptr != nullptr && ptr->isBoundedType();
             } else {
-                auto ptr = dynamic_cast<BasicType const*>(type);
-                return ptr != nullptr && ptr->isBoundedType();
+                auto ptr = dynamic_cast<BoundedType const*>(type);
+                return ptr != nullptr;
             }
         }
 
         bool Variable::isRealVariable() const {
-            auto ptr = dynamic_cast<BasicType const*>(type);
-            return ptr != nullptr && ptr->isRealType();
+            if (isBoundedVariable()) {
+                auto ptr = dynamic_cast<BoundedType const*>(type);
+                return ptr != nullptr && ptr->isRealType();
+            } else {
+                auto ptr = dynamic_cast<BasicType const*>(type);
+                return ptr != nullptr && ptr->isRealType();
+            }
         }
 
         bool Variable::isIntegerVariable() const {
-            auto ptr = dynamic_cast<BasicType const*>(type);
-            return ptr != nullptr && ptr->isIntegerType();
+            if (isBoundedVariable()) {
+                auto ptr = dynamic_cast<BoundedType const*>(type);
+                return ptr != nullptr && ptr->isIntegerType();
+            } else {
+                auto ptr = dynamic_cast<BasicType const*>(type);
+                return ptr != nullptr && ptr->isIntegerType();
+            }
         }
         
         bool Variable::isArrayVariable() const {
@@ -115,7 +125,7 @@ namespace storm {
         }
 
         storm::expressions::Expression const& Variable::getLowerBound() const {
-            STORM_LOG_ASSERT(this->hasLowerBound(), "Trying to get lowerBound for variable without lowerBound");
+            STORM_LOG_ASSERT(this->isBoundedVariable(), "Trying to get lowerBound for variable without lowerBound");
             return type->getLowerBound();
         }
 
@@ -125,11 +135,11 @@ namespace storm {
         }
 
         bool Variable::hasLowerBound() const {
-            return this->isBoundedVariable() && this->lowerBound.isInitialized();
+            return this->isBoundedVariable() && this->getLowerBound().isInitialized();
         }
 
         storm::expressions::Expression const& Variable::getUpperBound() const {
-            STORM_LOG_ASSERT(this->hasLowerBound(), "Trying to get upperBound for variable without upperBound");
+            STORM_LOG_ASSERT(this->isBoundedVariable(), "Trying to get upperBound for variable without upperBound");
             return type->getUpperBound();
         }
 
@@ -139,7 +149,7 @@ namespace storm {
         }
 
         bool Variable::hasUpperBound() const {
-            return this->isBoundedVariable() && this->upperBound.isInitialized();
+            return this->isBoundedVariable() && this->getUpperBound().isInitialized();
         }
 
         storm::expressions::Expression Variable::getRangeExpression() const {

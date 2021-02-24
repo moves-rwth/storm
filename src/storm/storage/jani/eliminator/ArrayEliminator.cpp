@@ -392,9 +392,17 @@ namespace storm {
 
                 virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) override {
                     STORM_LOG_THROW(!data.empty(), storm::exceptions::NotSupportedException, "Unable to translate ValueArrayExpression to element expression since it does not seem to be within an array access expression.");
-                    // First one is index we want to check, second one is arraynumber
-
-                    auto index = boost::any_cast<uint64_t>(data);
+                    uint64_t index;
+                    if (data.type() == typeid(uint64_t)) {
+                        index = boost::any_cast<uint64_t>(data);
+                    } else {
+                        auto resultType = boost::any_cast<ResultType>(data);
+                        if (resultType.expr()->containsVariables()) {
+                            std::cout << "HELPPP" << *(resultType.expr()) << std::endl;
+                        } else {
+                            index = resultType.expr()->evaluateAsInt();
+                        }
+                    }
                     if (expression.size()->containsVariables()) {
                         STORM_LOG_WARN("Ignoring length of constructorArrayExpression " << expression << " as it still contains variables.");
                     } else {
@@ -744,10 +752,9 @@ namespace storm {
                         // We want to eliminate the initial value for the arrayVariable at entry index, in case of a nested_array, this index is already re-calculated.
                         // In the end we have an ArrayAccessExpression
                         auto indexExpression = std::make_shared<storm::expressions::ArrayAccessIndexExpression>(expressionManager, expressionManager.getIntegerType(), expressionManager.integer(index).getBaseExpressionPointer());
-
                         initValue = arrayExprEliminator->eliminate(std::make_shared<storm::expressions::ArrayAccessExpression>(expressionManager, arrayVariable.getExpressionVariable().getType().getElementType(), arrayVariable.getInitExpression().getBaseExpressionPointer(), indexExpression)->toExpression());
                     }
-                    // TODO: @Jip fix this
+
                     if (arrayVariable.getType()->getChildType()->isIntegerType()) {
                         storm::expressions::Variable exprVariable = expressionManager.declareIntegerVariable(name);
                         if (arrayVariable.isBoundedVariable()) {
@@ -762,7 +769,23 @@ namespace storm {
                         storm::expressions::Variable exprVariable = expressionManager.declareBooleanVariable(name);
                         return storm::jani::Variable::makeBasicVariable(name, storm::jani::JaniType::ElementType::Bool, exprVariable, initValue, arrayVariable.isTransient());
                     } else if (arrayVariable.getType()->getChildType()->isArrayType()) {
-                        STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "More than two nested arrays not implemented");
+                        auto const childType = arrayVariable.getType()->getChildType();
+                        if (childType->getChildType()->isIntegerType()) {
+                            storm::expressions::Variable exprVariable = expressionManager.declareIntegerVariable(name);
+                            if (arrayVariable.isBoundedVariable()) {
+                                return storm::jani::Variable::makeBoundedVariable(name, storm::jani::JaniType::ElementType::Int, exprVariable, initValue, arrayVariable.isTransient(), arrayVariable.getLowerBound(), arrayVariable.getUpperBound());
+                            } else {
+                                return storm::jani::Variable::makeBasicVariable(name, storm::jani::JaniType::ElementType::Int, exprVariable, initValue, arrayVariable.isTransient());
+                            }
+                        } else if (childType->getChildType()->isRealType()) {
+                            storm::expressions::Variable exprVariable = expressionManager.declareRationalVariable(name);
+                            return storm::jani::Variable::makeBasicVariable(name, storm::jani::JaniType::ElementType::Real, exprVariable, initValue, arrayVariable.isTransient());
+                        } else if (childType->getChildType()->isBooleanType()) {
+                            storm::expressions::Variable exprVariable = expressionManager.declareBooleanVariable(name);
+                            return storm::jani::Variable::makeBasicVariable(name, storm::jani::JaniType::ElementType::Bool, exprVariable, initValue, arrayVariable.isTransient());
+                        } else if (childType->getChildType()->isArrayType()) {
+                            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "More than two nested arrays not implemented");
+                        }
                     }
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Unhandled array base type.");
                     return nullptr;
