@@ -43,16 +43,6 @@ namespace storm {
 
                 friend std::ostream& operator<<(std::ostream& stream, JaniType const& type);
 
-//                BasicType& asBasicType();
-//                BasicType const& asBasicType() const;
-//                BoundedType& asBoundedType();
-//                BoundedType const& asBoundedType() const;
-//                ArrayType& asArrayType();
-//                ArrayType const& asArrayType() const;
-//                ClockType& asClockType();
-//                ClockType const& asClockType() const;
-//                ContinuousType& asContinuousType();
-//                ContinuousType const& asContinuousType() const;
 
             private:
 

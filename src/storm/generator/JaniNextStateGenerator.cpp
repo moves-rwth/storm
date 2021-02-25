@@ -366,7 +366,7 @@ namespace storm {
             }
             // Iterate over all array access assignments and carry them out.
             for (; assignmentIt != assignmentIte && assignmentIt->lValueIsArrayAccess(); ++assignmentIt) {
-                auto & arrayIndex = assignmentIt->getLValue().getArrayIndex();
+                auto & arrayIndex = assignmentIt->getLValue().getArrayIndexVector();
                 std::vector<uint_fast64_t> arrayIndexVector (arrayIndex.size());
                 for (auto i = 0; i < arrayIndex.size(); ++i) {
                     arrayIndexVector[i] = expressionEvaluator.asInt(arrayIndex.at(i));
@@ -436,7 +436,7 @@ namespace storm {
             
             // Iterate over all array access assignments and carry them out.
             for (; assignmentIt != assignmentIte && assignmentIt->lValueIsArrayAccess(); ++assignmentIt) {
-                auto & arrayIndex = assignmentIt->getLValue().getArrayIndex();
+                auto & arrayIndex = assignmentIt->getLValue().getArrayIndexVector();
                 std::vector<uint_fast64_t> arrayIndexVector (arrayIndex.size());
                 for (auto i = 0; i < arrayIndex.size(); ++i) {
                     arrayIndexVector[i] = expressionEvaluator.asInt(arrayIndex.at(i));

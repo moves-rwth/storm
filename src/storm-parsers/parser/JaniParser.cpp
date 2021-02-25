@@ -904,6 +904,7 @@ namespace storm {
                     initVal = storm::expressions::ValueArrayExpression(*expressionManager, exprVariableType, {}).toExpression();
                 }
                 assert (!type.bounds);
+
                 return storm::jani::Variable::makeArrayVariable(name, arrayType, expressionManager->declareArrayVariable(exprManagerName, exprVariableType), initVal.get(), transientVar);
             }
             
@@ -1011,7 +1012,9 @@ namespace storm {
                 }
                 assert (subStructure.is_string());
                 storm::jani::LValue exp = parseLValue(subStructure, scope.refine("LValue description of array expression"));
-                return storm::jani::LValue(exp, index);
+                std::vector<size_t> sizes = sizeMap.at(exp.getVariable().getName());
+                assert (sizes.size() > 0);
+                return storm::jani::LValue(exp, index, sizes);
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown LValue '" << lValueStructure.dump() << "' occurs in " << scope.description);
                 // Silly warning suppression.
@@ -1363,6 +1366,7 @@ namespace storm {
                         std::string indexVarName;
 
                         std::vector<std::shared_ptr<storm::expressions::BaseExpression const>> lengths;
+                        std::vector<size_t> sizes;
                         STORM_LOG_THROW(expressionStructure.count("exp"), storm::exceptions::InvalidJaniException, "Missing 'exp' in array access at " << scope.description);
 
                         Json subStructure = expressionStructure;
@@ -1385,6 +1389,7 @@ namespace storm {
                             storm::expressions::Expression length = parseExpression(subStructure.at("length"), scope.refine("index of array constructor expression"), returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
                             ensureIntegerType(length, opstring, 1, scope.description);
                             lengths.push_back(length.getBaseExpressionPointer());
+                            sizes.push_back(length.evaluateAsInt());
                             subStructure = subStructure.at("exp");
                         }
                         // Make a var for this index
@@ -1399,7 +1404,8 @@ namespace storm {
                             type = exp.getManager().getArrayType(type);
                         }
 
-                        std::cout <<"type" << type << std::endl;
+                        std::cout <<"type: " << type << std::endl;
+                        sizeMap["ac_" + indexVarName] = std::move(sizes);
 
                         auto indexVarPtr = std::make_shared<storm::expressions::Variable>(indexVar);
                         STORM_LOG_THROW(expressionStructure.count("length") == 1, storm::exceptions::InvalidJaniException, "Array access operator requires exactly one length (at " + scope.description + ").");

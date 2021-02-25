@@ -9,8 +9,9 @@ namespace storm {
         class LValue {
         public:
             explicit LValue(storm::jani::Variable const& variable);
-            LValue(LValue const& array, std::vector<storm::expressions::Expression> const&);
-            
+            LValue(LValue const& array, std::vector<storm::expressions::Expression> const&, std::vector<size_t> const& sizes);
+            LValue(LValue const& array, storm::expressions::Expression const&, size_t size);
+
             LValue(LValue const&) = default;
             bool operator==(LValue const& other) const;
 
@@ -19,7 +20,10 @@ namespace storm {
             
             bool isArrayAccess() const;
             storm::jani::Variable const& getArray() const;
-            std::vector<storm::expressions::Expression> const& getArrayIndex() const;
+            std::vector<storm::expressions::Expression> const& getArrayIndexVector() const;
+            storm::expressions::Expression const& getArrayIndex() const;
+            std::vector<size_t> const& getSizes() const;
+            size_t const& getTotalSize() const;
             bool arrayIndexContainsVariable() const;
             void setArrayIndex(std::vector<storm::expressions::Expression> const& newIndex);
             
@@ -37,7 +41,9 @@ namespace storm {
 
 
             // In case of an array access LValue, this is the accessed index of the array.
-            boost::optional<std::vector<storm::expressions::Expression>> arrayIndex;
+            boost::optional<storm::expressions::Expression> arrayIndex;
+            boost::optional<std::vector<storm::expressions::Expression>> arrayIndexVector;
+            std::vector<size_t> sizes;
         };
     }
 }

@@ -960,10 +960,10 @@ namespace storm {
                     ExportJsonType arrayAccess;
                     arrayAccess["op"] = "aa";
                     arrayAccess["exp"] = assignment.getLValue().getArray().getName();
-                    if (assignment.getLValue().getArrayIndex().size() > 1) {
+                    if (assignment.getLValue().getArrayIndexVector().size() > 1) {
                         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Exporting JSON for nested variables is not yet implemented");
                     }
-                    arrayAccess["index"] = buildExpression(assignment.getLValue().getArrayIndex().at(0), constants, globalVariables, localVariables);
+                    arrayAccess["index"] = buildExpression(assignment.getLValue().getArrayIndexVector().at(0), constants, globalVariables, localVariables);
                     assignmentEntry["ref"] = std::move(arrayAccess);
                 }
                 assignmentEntry["value"] = buildExpression(assignment.getAssignedExpression(), constants, globalVariables, localVariables);

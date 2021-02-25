@@ -63,11 +63,11 @@ namespace storm  {
             this->setAssignedExpression(substituteJaniExpression(this->getAssignedExpression(), substitution).simplify());
             if (lValue.isArrayAccess()) {
                 std::vector<storm::expressions::Expression> substitutedExpressions;
-                for (auto& index : lValue.getArrayIndex()) {
+                for (auto& index : lValue.getArrayIndexVector()) {
                     substitutedExpressions.push_back(substituteJaniExpression(index, substitution).simplify());
                 }
 
-                lValue = LValue(LValue(lValue.getArray()), substitutedExpressions);
+                lValue = LValue(LValue(lValue.getArray()), substitutedExpressions, lValue.getSizes());
             }
         }
         

@@ -299,7 +299,7 @@ namespace storm {
         
         void ConstJaniTraverser::traverse(LValue const& lValue, boost::any const& data) {
             if (lValue.isArrayAccess()) {
-                for (auto& index: lValue.getArrayIndex()) {
+                for (auto& index: lValue.getArrayIndexVector()) {
                     traverse(index, data);
                 }
             }
