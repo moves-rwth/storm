@@ -206,7 +206,7 @@ namespace storm {
             }
         }
 
-        std::shared_ptr<Variable> Variable::makeArrayVariable(const std::string &name, JaniType* type, const expressions::Variable &variable, boost::optional<storm::expressions::Expression> initValue, bool transient) {
+        std::shared_ptr<Variable> Variable::makeArrayVariable(const std::string &name, JaniType* type, expressions::Variable &variable, boost::optional<storm::expressions::Expression> initValue, bool transient) {
             assert (type->isArrayType());
             if (initValue) {
                 return std::make_shared<Variable>(name, type, variable, initValue.get(), transient);

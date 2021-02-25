@@ -56,7 +56,7 @@ namespace storm {
             return sizes;
         }
 
-        const size_t & LValue::getTotalSize() const {
+        const size_t LValue::getTotalSize() const {
             size_t result = 1;
             for (auto& array : sizes) {
                 result *= array;

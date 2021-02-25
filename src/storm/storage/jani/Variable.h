@@ -126,7 +126,7 @@ namespace storm {
          * Convenience function to call the appropriate constructor and return a shared pointer to the variable.
          */
             static std::shared_ptr<Variable> makeBoundedVariable(std::string const& name, JaniType::ElementType type, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> initValue, bool transient, boost::optional<storm::expressions::Expression> lowerBound, boost::optional<storm::expressions::Expression> upperBound);
-            static std::shared_ptr<Variable> makeArrayVariable(std::string const& name, JaniType* type, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> initValue, bool transient);
+            static std::shared_ptr<Variable> makeArrayVariable(std::string const& name, JaniType* type, storm::expressions::Variable & variable, boost::optional<storm::expressions::Expression> initValue, bool transient);
             static std::shared_ptr<Variable> makeBasicVariable(std::string const& name, JaniType::ElementType type, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> initValue, bool transient);
             static std::shared_ptr<Variable> makeClockVariable(std::string const& name, storm::expressions::Variable const& variable, boost::optional<storm::expressions::Expression> initValue, bool transient);
 

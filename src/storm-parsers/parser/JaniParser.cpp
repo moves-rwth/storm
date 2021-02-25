@@ -850,7 +850,7 @@ namespace storm {
                 initVal = parseExpression(variableStructure.at("initial-value"), scope.refine("Initial value for variable " + name));
                 auto ptr = dynamic_cast<storm::expressions::ConstructorArrayExpression const *>(&(initVal->getBaseExpression()));
                 if (ptr != nullptr) {
-                    sizeMap[name] = sizeMap.at(ptr->getIndexVar()->getName());
+                    sizeMap[name] = sizeMap[ptr->getIndexVar()->getName()];
                 }
             } else {
                 assert(!transientVar);
@@ -908,8 +908,11 @@ namespace storm {
                     initVal = storm::expressions::ValueArrayExpression(*expressionManager, exprVariableType, {}).toExpression();
                 }
                 assert (!type.bounds);
+                auto variable = expressionManager->declareArrayVariable(exprManagerName, exprVariableType);
 
-                return storm::jani::Variable::makeArrayVariable(name, arrayType, expressionManager->declareArrayVariable(exprManagerName, exprVariableType), initVal.get(), transientVar);
+                STORM_LOG_THROW(sizeMap[name].size() != 0, storm::exceptions::InvalidJaniException, "For nested arrays, we require initialisation, including the length of the array");
+                variable.setArraySizes(sizeMap[name]);
+                return storm::jani::Variable::makeArrayVariable(name, arrayType, variable, initVal.get(), transientVar);
             }
             
             STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown type description, " << variableStructure.at("type").dump()  << " for variable '" << name << "' (scope: " << scope.description << ").");

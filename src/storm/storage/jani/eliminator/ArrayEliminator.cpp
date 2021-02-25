@@ -69,11 +69,31 @@ namespace storm {
                 
                 virtual boost::any visit(storm::expressions::VariableExpression const& expression, boost::any const& data) override {
                     std::cout << "Visiting var expr 1" << std::endl;
-                    auto arrayVariableSizeMap = boost::any_cast<std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, std::pair<int, bool>>>(data);
-                    if (expression.getType().isArrayType()) {
-                        auto varIt = arrayVariableSizeMap.first.find(expression.getVariable());
-                        if (varIt != arrayVariableSizeMap.first.end()) {
-                            return varIt->second;
+                    if (data.type() == typeid(std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, std::pair<int, bool>>)) {
+                        auto arrayVariableSizeMap = boost::any_cast<std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, std::pair<int, bool>>>(data);
+                        if (expression.getType().isArrayType()) {
+                            auto varIt = arrayVariableSizeMap.first.find(expression.getVariable());
+                            if (varIt != arrayVariableSizeMap.first.end()) {
+                                if (arrayVariableSizeMap.second.second) {
+                                    return varIt->first.getArraySize(arrayVariableSizeMap.second.first);
+                                } else {
+                                    // This is the max multiplication from case
+                                    STORM_LOG_ASSERT(false, "Not yet implemented");
+//                                    auto size = 1;
+//                                    for (auto i = arrayVariableSizeMap.second.first; i < expression.getNumberOfArrays(); ++i) {
+//                                        size = size * expression.size(i)->evaluateAsInt();
+//                                    }
+//                                    return static_cast<std::size_t>(size);
+                                }
+                            }
+                        }
+                    } else if (data.type() == typeid(std::unordered_map<storm::expressions::Variable, std::size_t>)) {
+                        auto arrayVariableSizeMap = boost::any_cast<std::unordered_map<storm::expressions::Variable, std::size_t>>(data);
+                        if (expression.getType().isArrayType()) {
+                            auto varIt = arrayVariableSizeMap.find(expression.getVariable());
+                            if (varIt != arrayVariableSizeMap.end()) {
+                                return varIt->second;
+                            }
                         }
                     }
                     return static_cast<std::size_t>(0);

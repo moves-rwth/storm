@@ -1,3 +1,4 @@
+#include <exceptions/IllegalFunctionCallException.h>
 #include "storm/storage/expressions/Variable.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
@@ -76,15 +77,18 @@ namespace storm {
             return this->getType().isNumericalType();
         }
 
-//        void Variable::setArraySizes(std::vector<std::shared_ptr<storm::expressions::BaseExpression const>> arraySizes) {
-//            this->arraySizes = arraySizes;
-//        }
-//
-//
-//        std::shared_ptr<storm::expressions::BaseExpression const> Variable::getArraySize(int number) const {
-//            assert (number < arraySizes.size());
-//            return this->arraySizes.at(number);
-//        }
+        void Variable::setArraySizes(std::vector<size_t> & arraySizes) {
+            STORM_LOG_THROW(this->getType().isArrayType(), storm::exceptions::IllegalFunctionCallException, "Setting arraysize for variable that is not an array is not possible");
+            this->arraySizes = arraySizes;
+        }
+
+
+        size_t Variable::getArraySize(int number) const {
+            STORM_LOG_THROW(this->getType().isArrayType(), storm::exceptions::IllegalFunctionCallException, "Getting arraysize for variable that is not an array is not possible");
+            std::cout << "Variable: " << getName() << std::endl;
+            assert (number < arraySizes.size());
+            return this->arraySizes.at(number);
+        }
 
 
     }

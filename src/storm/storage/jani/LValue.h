@@ -23,7 +23,7 @@ namespace storm {
             std::vector<storm::expressions::Expression> const& getArrayIndexVector() const;
             storm::expressions::Expression const& getArrayIndex() const;
             std::vector<size_t> const& getSizes() const;
-            size_t const& getTotalSize() const;
+            size_t const getTotalSize() const;
             bool arrayIndexContainsVariable() const;
             void setArrayIndex(std::vector<storm::expressions::Expression> const& newIndex);
             

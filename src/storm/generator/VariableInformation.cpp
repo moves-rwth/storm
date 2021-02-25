@@ -135,7 +135,7 @@ namespace storm {
                     uint64_t index = 0;
                     for (auto const& replacedVar : replacements) {
                         if (arrayVariable->getType()->isArrayType()) {
-                            STORM_LOG_ASSERT(!arrayVariable->getType()->getChildType()->isArrayType(), "Cannot handle more than two nested arrays in Variable information");
+                            STORM_LOG_ASSERT(!arrayVariable->getType()->getChildType()->isArrayType() || !arrayVariable->getType()->getChildType()->getChildType()->isArrayType(), "Cannot handle more than two nested arrays in Variable information");
                             if (replacedVar->getExpressionVariable().hasIntegerType()) {
                                 for (auto const &intInfo : integerVariables) {
                                     if (intInfo.variable == replacedVar->getExpressionVariable()) {
