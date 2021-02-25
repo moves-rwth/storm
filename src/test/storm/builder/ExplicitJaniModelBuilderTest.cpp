@@ -18,7 +18,17 @@ TEST(ExplicitJaniModelBuilderTest, Dtmc) {
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
     EXPECT_EQ(13ul, model->getNumberOfStates());
     EXPECT_EQ(20ul, model->getNumberOfTransitions());
-    
+
+    janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/die_array.jani").first;
+    model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
+    EXPECT_EQ(13ul, model->getNumberOfStates());
+    EXPECT_EQ(20ul, model->getNumberOfTransitions());
+
+    janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/die_array_nested.jani").first;
+    model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
+    EXPECT_EQ(13ul, model->getNumberOfStates());
+    EXPECT_EQ(20ul, model->getNumberOfTransitions());
+
     program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/brp-16-2.pm");
     janiModel = program.toJani().substituteConstantsFunctions();
     model = storm::builder::ExplicitModelBuilder<double>(janiModel).build();
