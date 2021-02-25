@@ -17,12 +17,14 @@
 #include "storm-dft/storage/dft/SymmetricUnits.h"
 #include "storm-dft/storage/dft/DFTStateGenerationInfo.h"
 #include "storm-dft/storage/dft/DFTLayoutInfo.h"
-#include "storm-dft/utility/RelevantEvents.h"
 
 namespace storm {
+    // Forward declarations
     namespace builder {
-        // Forward declaration
         template<typename T> class DFTBuilder;
+    }
+    namespace utility {
+        class RelevantEvents;
     }
 
     namespace storage {
