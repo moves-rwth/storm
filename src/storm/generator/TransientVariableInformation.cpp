@@ -101,29 +101,59 @@ namespace storm {
         
         template <typename ValueType>
         TransientVariableData<bool> const& TransientVariableInformation<ValueType>::getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t>& arrayIndex) const {
-            auto& arrayInfo = arrayVariableToElementInformations.at(arrayVariable);
+            auto arrayInfoPtr = arrayVariableToElementInformations.find(arrayVariable);
+            assert (arrayInfoPtr != arrayVariableToElementInformations.end());
+            ArrayInformation arrayInfo = arrayInfoPtr->second;
 
-            STORM_LOG_THROW(arrayIndex.at(0) < arrayInfo.arrayLengths.at(0), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " entry 0 evaluates to array index " << arrayIndex.at(0) << " which is out of bounds as the array size is " << arrayInfo.arrayLengths.at(0));
-            STORM_LOG_THROW(arrayIndex.at(1) < arrayInfo.arrayLengths.at(1), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " entry 1 evaluates to array index " << arrayIndex.at(1) << " which is out of bounds as the array size is " << arrayInfo.arrayLengths.at(1));
-            return booleanVariableInformation[arrayInfo.indexMapping.at(arrayIndex.at(0) * arrayInfo.arrayLengths.at(1) + arrayIndex.at(1))];
+            auto i = 0;
+            while (arrayInfo.arrayIndexMapping.size() > 0) {
+                assert (arrayInfo.indexMapping.size() == 0);
+                assert (i < arrayIndex.size() - 1);
+                STORM_LOG_THROW(arrayIndex.at(i) < arrayInfo.size, storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex.at(i) << " which is out of bounds as the array size is " << arrayInfo.size);
+                i++;
+                arrayInfo = arrayInfo.arrayIndexMapping.at(arrayIndex[i]);
+            }
+            assert (i < arrayIndex.size());
+
+            return booleanVariableInformation[arrayInfo.indexMapping.at(arrayIndex[i])];
         }
         
         template <typename ValueType>
         TransientVariableData<int64_t> const& TransientVariableInformation<ValueType>::getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t>& arrayIndex) const {
-            auto& arrayInfo = arrayVariableToElementInformations.at(arrayVariable);
+            auto arrayInfoPtr = arrayVariableToElementInformations.find(arrayVariable);
+            assert (arrayInfoPtr != arrayVariableToElementInformations.end());
+            ArrayInformation arrayInfo = arrayInfoPtr->second;
 
-            STORM_LOG_THROW(arrayIndex.at(0) < arrayInfo.arrayLengths.at(0), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " entry 0 evaluates to array index " << arrayIndex.at(0) << " which is out of bounds as the array size is " << arrayInfo.arrayLengths.at(0));
-            STORM_LOG_THROW(arrayIndex.at(1) < arrayInfo.arrayLengths.at(1), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " entry 1 evaluates to array index " << arrayIndex.at(1) << " which is out of bounds as the array size is " << arrayInfo.arrayLengths.at(1));
-            return integerVariableInformation[arrayInfo.indexMapping.at(arrayIndex.at(0) * arrayInfo.arrayLengths.at(1) + arrayIndex.at(1))];
+            auto i = 0;
+            while (arrayInfo.arrayIndexMapping.size() > 0) {
+                assert (arrayInfo.indexMapping.size() == 0);
+                assert (i < arrayIndex.size() - 1);
+                STORM_LOG_THROW(arrayIndex.at(i) < arrayInfo.size, storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex.at(i) << " which is out of bounds as the array size is " << arrayInfo.size);
+                i++;
+                arrayInfo = arrayInfo.arrayIndexMapping.at(arrayIndex[i]);
+            }
+            assert (i < arrayIndex.size());
+
+            return integerVariableInformation[arrayInfo.indexMapping.at(arrayIndex[i])];
         }
         
         template <typename ValueType>
         TransientVariableData<ValueType> const& TransientVariableInformation<ValueType>::getRationalArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t>& arrayIndex) const {
-            auto& arrayInfo = arrayVariableToElementInformations.at(arrayVariable);
+            auto arrayInfoPtr = arrayVariableToElementInformations.find(arrayVariable);
+            assert (arrayInfoPtr != arrayVariableToElementInformations.end());
+            ArrayInformation arrayInfo = arrayInfoPtr->second;
 
-            STORM_LOG_THROW(arrayIndex.at(0) < arrayInfo.arrayLengths.at(0), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " entry 0 evaluates to array index " << arrayIndex.at(0) << " which is out of bounds as the array size is " << arrayInfo.arrayLengths.at(0));
-            STORM_LOG_THROW(arrayIndex.at(1) < arrayInfo.arrayLengths.at(1), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " entry 1 evaluates to array index " << arrayIndex.at(1) << " which is out of bounds as the array size is " << arrayInfo.arrayLengths.at(1));
-            return rationalVariableInformation[arrayInfo.indexMapping.at(arrayIndex.at(0) * arrayInfo.arrayLengths.at(1) + arrayIndex.at(1))];
+            auto i = 0;
+            while (arrayInfo.arrayIndexMapping.size() > 0) {
+                assert (arrayInfo.indexMapping.size() == 0);
+                assert (i < arrayIndex.size() - 1);
+                STORM_LOG_THROW(arrayIndex.at(i) < arrayInfo.size, storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex.at(i) << " which is out of bounds as the array size is " << arrayInfo.size);
+                i++;
+                arrayInfo = arrayInfo.arrayIndexMapping.at(arrayIndex[i]);
+            }
+            assert (i < arrayIndex.size());
+
+            return rationalVariableInformation[arrayInfo.indexMapping.at(arrayIndex[i])];
         }
         
         template <typename ValueType>

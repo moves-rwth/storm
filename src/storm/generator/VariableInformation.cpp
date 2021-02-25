@@ -19,15 +19,14 @@
 namespace storm {
     namespace generator {
 
-        ArrayInformation::ArrayInformation() {
+        ArrayInformation::ArrayInformation(size_t arrayLength, std::vector<uint64_t> &indexMapping) : size(arrayLength), indexMapping(indexMapping) {
             // Intentionally left empty.
         }
 
-        ArrayInformation::ArrayInformation(std::vector<uint_fast64_t> &arrayLengths, std::vector<uint_fast64_t> &indexMapping) : arrayLengths(arrayLengths), indexMapping(indexMapping) {
-            STORM_LOG_THROW(arrayLengths.size() > 2, storm::exceptions::NotImplementedException, "This code doesn't work for nested arrays consisting of more than two arrays");
+        ArrayInformation::ArrayInformation(size_t arrayLength, std::vector<ArrayInformation> &indexMapping) : size(arrayLength), arrayIndexMapping(indexMapping) {
             // Intentionally left empty.
         }
-        
+
         BooleanVariableInformation::BooleanVariableInformation(storm::expressions::Variable const& variable, uint_fast64_t bitOffset, bool global, bool observable) : variable(variable), bitOffset(bitOffset), global(global), observable(observable) {
             // Intentionally left empty.
         }
@@ -123,61 +122,77 @@ namespace storm {
                         
             sortVariables();
         }
-        
+
         void VariableInformation::registerArrayVariableReplacements(storm::jani::ArrayEliminatorData const& arrayEliminatorData) {
             arrayVariableToElementInformations.clear();
+            // TODO: change this
+            assert (false);
             // Find for each replaced array variable the corresponding references in this variable information
             for (auto const& arrayVariable : arrayEliminatorData.eliminatedArrayVariables) {
                 if (!arrayVariable->isTransient()) {
                     STORM_LOG_ASSERT(arrayEliminatorData.replacements.count(arrayVariable->getExpressionVariable()) > 0, "No replacement for array variable.");
                     auto const& replacements = arrayEliminatorData.replacements.find(arrayVariable->getExpressionVariable())->second;
-                    std::vector<uint64_t> varInfoIndices;
+                    ArrayInformation* varInfoIndices;
                     for (auto const& replacedVar : replacements) {
                         if (replacedVar->getExpressionVariable().hasIntegerType()) {
                             uint64_t index = 0;
                             for (auto const& intInfo : integerVariables) {
                                 if (intInfo.variable == replacedVar->getExpressionVariable()) {
-                                    varInfoIndices.push_back(index);
+//                                    varInfoIndices.push_back(index);
                                     break;
                                 }
                                 ++index;
                             }
-                            STORM_LOG_ASSERT(!varInfoIndices.empty() && varInfoIndices.back() == index, "Could not find a basic variable for replacement of array variable " << replacedVar->getExpressionVariable().getName() << " .");
+//                            STORM_LOG_ASSERT(!varInfoIndices.empty() && varInfoIndices.back() == index, "Could not find a basic variable for replacement of array variable " << replacedVar->getExpressionVariable().getName() << " .");
                         } else if (replacedVar->getExpressionVariable().hasBooleanType()) {
                             uint64_t index = 0;
                             for (auto const& boolInfo : booleanVariables) {
                                 if (boolInfo.variable == replacedVar->getExpressionVariable()) {
-                                    varInfoIndices.push_back(index);
+//                                    varInfoIndices.push_back(index);
                                     break;
                                 }
                                 ++index;
                             }
-                            STORM_LOG_ASSERT(!varInfoIndices.empty() && varInfoIndices.back() == index, "Could not find a basic variable for replacement of array variable " << replacedVar->getExpressionVariable().getName() << " .");
+//                            STORM_LOG_ASSERT(!varInfoIndices.empty() && varInfoIndices.back() == index, "Could not find a basic variable for replacement of array variable " << replacedVar->getExpressionVariable().getName() << " .");
                         } else {
                             STORM_LOG_ASSERT(false, "Unhandled type of base variable.");
                         }
                     }
-                    //TODO: implement this properly
-                    assert (false);
-//                    this->arrayVariableToElementInformations.emplace(arrayVariable->getExpressionVariable(), std::move(varInfoIndices));
+                    this->arrayVariableToElementInformations.emplace(arrayVariable->getExpressionVariable(), std::move(*varInfoIndices));
                 }
             }
         }
         
-        BooleanVariableInformation const& VariableInformation::getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t>& arrayIndex) {
-            ArrayInformation const & arrayInfo = arrayVariableToElementInformations.at(arrayVariable);
+        BooleanVariableInformation const& VariableInformation::getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t>const& arrayIndex) {
+            ArrayInformation& arrayInfo = arrayVariableToElementInformations.at(arrayVariable);
 
-            STORM_LOG_THROW(arrayIndex.at(0) < arrayInfo.arrayLengths.at(0), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " entry 0 evaluates to array index " << arrayIndex.at(0) << " which is out of bounds as the array size is " << arrayInfo.arrayLengths.at(0));
-            STORM_LOG_THROW(arrayIndex.at(1) < arrayInfo.arrayLengths.at(1), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " entry 1 evaluates to array index " << arrayIndex.at(1) << " which is out of bounds as the array size is " << arrayInfo.arrayLengths.at(1));
-            return booleanVariables[arrayInfo.indexMapping.at(arrayIndex.at(0) * arrayInfo.arrayLengths.at(1) + arrayIndex.at(1))];
+            auto i = 0;
+            while (arrayInfo.arrayIndexMapping.size() > 0) {
+                assert (arrayInfo.indexMapping.size() == 0);
+                assert (i < arrayIndex.size() - 1);
+                STORM_LOG_THROW(arrayIndex.at(i) < arrayInfo.size, storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex.at(i) << " which is out of bounds as the array size is " << arrayInfo.size);
+                i++;
+                arrayInfo = arrayInfo.arrayIndexMapping.at(arrayIndex[i]);
+            }
+            assert (i < arrayIndex.size());
+
+            return booleanVariables[arrayInfo.indexMapping.at(arrayIndex[i])];
         }
         
-        IntegerVariableInformation const& VariableInformation::getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t>& arrayIndex) {
-            ArrayInformation const & arrayInfo = arrayVariableToElementInformations.at(arrayVariable);
+        IntegerVariableInformation const& VariableInformation::getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t>const& arrayIndex) {
+            ArrayInformation& arrayInfo = arrayVariableToElementInformations.at(arrayVariable);
 
-            STORM_LOG_THROW(arrayIndex.at(0) < arrayInfo.arrayLengths.at(0), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " entry 0 evaluates to array index " << arrayIndex.at(0) << " which is out of bounds as the array size is " << arrayInfo.arrayLengths.at(0));
-            STORM_LOG_THROW(arrayIndex.at(1) < arrayInfo.arrayLengths.at(1), storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " entry 1 evaluates to array index " << arrayIndex.at(1) << " which is out of bounds as the array size is " << arrayInfo.arrayLengths.at(1));
-            return integerVariables[arrayInfo.indexMapping.at(arrayIndex.at(0) * arrayInfo.arrayLengths.at(1) + arrayIndex.at(1))];
+            auto i = 0;
+            while (arrayInfo.arrayIndexMapping.size() > 0) {
+                assert (arrayInfo.indexMapping.size() == 0);
+                assert (i < arrayIndex.size() - 1);
+                STORM_LOG_THROW(arrayIndex.at(i) < arrayInfo.size, storm::exceptions::WrongFormatException, "Array access at array " << arrayVariable.getName() << " evaluates to array index " << arrayIndex.at(i) << " which is out of bounds as the array size is " << arrayInfo.size);
+                i++;
+                arrayInfo = arrayInfo.arrayIndexMapping.at(arrayIndex[i]);
+            }
+            assert (i < arrayIndex.size());
+
+            return integerVariables[arrayInfo.indexMapping.at(arrayIndex[i])];
         }
         
         void VariableInformation::createVariablesForAutomaton(storm::jani::Automaton const& automaton, uint64_t reservedBitsForUnboundedVariables) {

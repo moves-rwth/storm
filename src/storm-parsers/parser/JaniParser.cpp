@@ -848,6 +848,10 @@ namespace storm {
             boost::optional<storm::expressions::Expression> initVal;
             if (initvalcount == 1 && !variableStructure.at("initial-value").is_null()) {
                 initVal = parseExpression(variableStructure.at("initial-value"), scope.refine("Initial value for variable " + name));
+                auto ptr = dynamic_cast<storm::expressions::ConstructorArrayExpression const *>(&(initVal->getBaseExpression()));
+                if (ptr != nullptr) {
+                    sizeMap[name] = sizeMap.at(ptr->getIndexVar()->getName());
+                }
             } else {
                 assert(!transientVar);
             }
@@ -1405,7 +1409,7 @@ namespace storm {
                         }
 
                         std::cout <<"type: " << type << std::endl;
-                        sizeMap["ac_" + indexVarName] = std::move(sizes);
+                        sizeMap[indexVar.getName()] = std::move(sizes);
 
                         auto indexVarPtr = std::make_shared<storm::expressions::Variable>(indexVar);
                         STORM_LOG_THROW(expressionStructure.count("length") == 1, storm::exceptions::InvalidJaniException, "Array access operator requires exactly one length (at " + scope.description + ").");
