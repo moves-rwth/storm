@@ -86,10 +86,10 @@ namespace {
             if (!config.useDC) {
                 relevantNames.push_back("all");
             }
-            storm::utility::RelevantEvents relevantEvents = storm::api::computeRelevantEvents<ValueType>(*dft, properties, relevantNames, false);
+            storm::utility::RelevantEvents relevantEvents = storm::api::computeRelevantEvents<ValueType>(*dft, properties, relevantNames);
 
             // Perform model checking
-            typename storm::modelchecker::DFTModelChecker<double>::dft_results results = storm::api::analyzeDFT<double>(*dft, properties, config.useSR, config.useMod, relevantEvents);
+            typename storm::modelchecker::DFTModelChecker<double>::dft_results results = storm::api::analyzeDFT<double>(*dft, properties, config.useSR, config.useMod, relevantEvents, false);
             return boost::get<double>(results[0]);
         }
 

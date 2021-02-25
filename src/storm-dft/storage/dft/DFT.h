@@ -378,8 +378,9 @@ namespace storm {
             /*!
              * Set the relevance flag for all elements according to the given relevant events.
              * @param relevantEvents All elements which should be to relevant. All elements not occurring are set to irrelevant.
+             * @param allowDCForRelevant Whether to allow Don't Care propagation for relevant events
              */
-            void setRelevantEvents(storm::utility::RelevantEvents const& relevantEvents) const;
+            void setRelevantEvents(storm::utility::RelevantEvents const& relevantEvents, bool const allowDCForRelevant) const;
 
             /*!
              * Get a string containing the list of all relevant events.

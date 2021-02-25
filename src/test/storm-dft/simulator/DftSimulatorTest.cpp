@@ -18,8 +18,8 @@ namespace {
         EXPECT_TRUE(storm::api::isWellFormed(*dft).first);
 
         // Set relevant events
-        storm::utility::RelevantEvents relevantEvents = storm::api::computeRelevantEvents<double>(*dft, {}, {}, false);
-        dft->setRelevantEvents(relevantEvents);
+        storm::utility::RelevantEvents relevantEvents = storm::api::computeRelevantEvents<double>(*dft, {}, {});
+        dft->setRelevantEvents(relevantEvents, false);
 
         // Find symmetries
         std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;

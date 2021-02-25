@@ -19,9 +19,8 @@ namespace storm {
              * If name 'all' occurs, all elements are stored as relevant.
              *
              * @param relevantEvents List of relevant event names.
-             * @param allowDCForRelevant Whether to allow Don't Care propagation for relevant events.
              */
-            RelevantEvents(std::vector<std::string> const& relevantEvents = {}, bool allowDCForRelevant = false) : names(), allRelevant(false), allowDC(allowDCForRelevant) {
+            RelevantEvents(std::vector<std::string> const& relevantEvents = {}) : names(), allRelevant(false) {
                 for (auto const& name: relevantEvents) {
                     if (name == "all") {
                         this->allRelevant = true;
@@ -95,10 +94,6 @@ namespace storm {
                 }
             }
 
-            bool isAllowDC() const {
-                return this->allowDC;
-            }
-
         private:
 
             /*!
@@ -115,9 +110,6 @@ namespace storm {
 
             // Whether all elements are relevant.
             bool allRelevant;
-
-            // Whether to allow Don't Care propagation for relevant events.
-            bool allowDC;
         };
 
     } // namespace utility
