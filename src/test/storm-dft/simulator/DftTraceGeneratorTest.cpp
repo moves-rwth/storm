@@ -78,8 +78,8 @@ namespace {
             if (!config.useDC) {
                 relevantNames.push_back("all");
             }
-            storm::utility::RelevantEvents relevantEvents = storm::api::computeRelevantEvents<double>(*dft, {}, relevantNames, false);
-            dft->setRelevantEvents(relevantEvents);
+            storm::utility::RelevantEvents relevantEvents = storm::api::computeRelevantEvents<double>(*dft, {}, relevantNames);
+            dft->setRelevantEvents(relevantEvents, false);
 
             // Find symmetries
             std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
