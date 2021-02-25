@@ -19,11 +19,11 @@
 namespace storm {
     namespace generator {
 
-        ArrayInformation::ArrayInformation(size_t arrayLength, std::vector<uint64_t> &indexMapping) : size(arrayLength), indexMapping(indexMapping) {
+        ArrayInformation::ArrayInformation(size_t arrayLength, std::vector<uint64_t> indexMapping) : size(arrayLength), indexMapping(indexMapping) {
             // Intentionally left empty.
         }
 
-        ArrayInformation::ArrayInformation(size_t arrayLength, std::vector<ArrayInformation> &indexMapping) : size(arrayLength), arrayIndexMapping(indexMapping) {
+        ArrayInformation::ArrayInformation(size_t arrayLength, std::vector<ArrayInformation> indexMapping) : size(arrayLength), arrayIndexMapping(indexMapping) {
             // Intentionally left empty.
         }
 
@@ -125,40 +125,71 @@ namespace storm {
 
         void VariableInformation::registerArrayVariableReplacements(storm::jani::ArrayEliminatorData const& arrayEliminatorData) {
             arrayVariableToElementInformations.clear();
-            // TODO: change this
-            assert (false);
             // Find for each replaced array variable the corresponding references in this variable information
             for (auto const& arrayVariable : arrayEliminatorData.eliminatedArrayVariables) {
                 if (!arrayVariable->isTransient()) {
                     STORM_LOG_ASSERT(arrayEliminatorData.replacements.count(arrayVariable->getExpressionVariable()) > 0, "No replacement for array variable.");
                     auto const& replacements = arrayEliminatorData.replacements.find(arrayVariable->getExpressionVariable())->second;
-                    ArrayInformation* varInfoIndices;
+                    std::vector<uint64_t> lastArrayIndex;
+                    std::vector<ArrayInformation> arrayInformation;
+                    uint64_t index = 0;
                     for (auto const& replacedVar : replacements) {
-                        if (replacedVar->getExpressionVariable().hasIntegerType()) {
-                            uint64_t index = 0;
-                            for (auto const& intInfo : integerVariables) {
-                                if (intInfo.variable == replacedVar->getExpressionVariable()) {
-//                                    varInfoIndices.push_back(index);
-                                    break;
+                        if (arrayVariable->getType()->isArrayType()) {
+                            STORM_LOG_ASSERT(!arrayVariable->getType()->getChildType()->isArrayType(), "Cannot handle more than two nested arrays in Variable information");
+                            if (replacedVar->getExpressionVariable().hasIntegerType()) {
+                                for (auto const &intInfo : integerVariables) {
+                                    if (intInfo.variable == replacedVar->getExpressionVariable()) {
+                                        lastArrayIndex.push_back(index);
+                                        break;
+                                    }
+                                    ++index;
                                 }
-                                ++index;
-                            }
-//                            STORM_LOG_ASSERT(!varInfoIndices.empty() && varInfoIndices.back() == index, "Could not find a basic variable for replacement of array variable " << replacedVar->getExpressionVariable().getName() << " .");
-                        } else if (replacedVar->getExpressionVariable().hasBooleanType()) {
-                            uint64_t index = 0;
-                            for (auto const& boolInfo : booleanVariables) {
-                                if (boolInfo.variable == replacedVar->getExpressionVariable()) {
-//                                    varInfoIndices.push_back(index);
-                                    break;
+                                arrayInformation.push_back(ArrayInformation(lastArrayIndex.size(), std::move(lastArrayIndex)));
+                            } else if (replacedVar->getExpressionVariable().hasBooleanType()) {
+                                for (auto const &boolInfo : booleanVariables) {
+                                    if (boolInfo.variable == replacedVar->getExpressionVariable()) {
+                                        lastArrayIndex.push_back(index);
+                                        break;
+                                    }
+                                    ++index;
                                 }
-                                ++index;
+                                arrayInformation.push_back(ArrayInformation(lastArrayIndex.size(), std::move(lastArrayIndex)));
+                            } else {
+                                STORM_LOG_ASSERT(false, "Unhandled type of base variable.");
                             }
-//                            STORM_LOG_ASSERT(!varInfoIndices.empty() && varInfoIndices.back() == index, "Could not find a basic variable for replacement of array variable " << replacedVar->getExpressionVariable().getName() << " .");
                         } else {
-                            STORM_LOG_ASSERT(false, "Unhandled type of base variable.");
+                            if (replacedVar->getExpressionVariable().hasIntegerType()) {
+                                index = 0;
+                                for (auto const &intInfo : integerVariables) {
+                                    if (intInfo.variable == replacedVar->getExpressionVariable()) {
+                                        lastArrayIndex.push_back(index);
+                                        break;
+                                    }
+                                    ++index;
+                                }
+                                STORM_LOG_ASSERT(!lastArrayIndex.empty() && lastArrayIndex.back() == index, "Could not find a basic variable for replacement of array variable " << replacedVar->getExpressionVariable().getName() << " .");
+                            } else if (replacedVar->getExpressionVariable().hasBooleanType()) {
+                                uint64_t index = 0;
+                                for (auto const &boolInfo : booleanVariables) {
+                                    if (boolInfo.variable == replacedVar->getExpressionVariable()) {
+                                    lastArrayIndex.push_back(index);
+                                        break;
+                                    }
+                                    ++index;
+                                }
+                                STORM_LOG_ASSERT(!lastArrayIndex.empty() && lastArrayIndex.back() == index, "Could not find a basic variable for replacement of array variable " << replacedVar->getExpressionVariable().getName() << " .");
+                            } else {
+                                STORM_LOG_ASSERT(false, "Unhandled type of base variable.");
+                            }
                         }
                     }
-                    this->arrayVariableToElementInformations.emplace(arrayVariable->getExpressionVariable(), std::move(*varInfoIndices));
+                    if (arrayInformation.size() > 0) {
+                        assert (lastArrayIndex.size() == 0);
+                        this->arrayVariableToElementInformations.emplace(arrayVariable->getExpressionVariable(), std::move(ArrayInformation(arrayInformation.size(), std::move(arrayInformation))));
+                    } else {
+                        this->arrayVariableToElementInformations.emplace(arrayVariable->getExpressionVariable(), std::move(ArrayInformation(arrayInformation.size(), std::move(lastArrayIndex))));
+                    }
+
                 }
             }
         }

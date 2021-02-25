@@ -47,12 +47,14 @@ namespace storm {
             
             sortVariables();
         }
-        
+
+        // TODO: make helper class for both variableinfomation and transientvariableinformation
         template <typename ValueType>
         void TransientVariableInformation<ValueType>::registerArrayVariableReplacements(storm::jani::ArrayEliminatorData const& arrayEliminatorData) {
             arrayVariableToElementInformations.clear();
             // Find for each replaced array variable the corresponding references in this variable information
             for (auto const& arrayVariable : arrayEliminatorData.eliminatedArrayVariables) {
+                STORM_LOG_THROW(!arrayVariable->getType()->getChildType()->isArrayType(), storm::exceptions::NotImplementedException, "Registration of transient variable information is not yet implemented for nested arrays");
                 if (arrayVariable->isTransient()) {
                     STORM_LOG_ASSERT(arrayEliminatorData.replacements.count(arrayVariable->getExpressionVariable()) > 0, "No replacement for array variable.");
                     auto const& replacements = arrayEliminatorData.replacements.find(arrayVariable->getExpressionVariable())->second;
@@ -92,9 +94,7 @@ namespace storm {
                             STORM_LOG_ASSERT(false, "Unhandled type of base variable.");
                         }
                     }
-                    assert (false);
-                    // TODO: Implement this properly
-//                    this->arrayVariableToElementInformations.emplace(arrayVariable->getExpressionVariable(), std::move(varInfoIndices));
+                    this->arrayVariableToElementInformations.emplace(arrayVariable->getExpressionVariable(), ArrayInformation(varInfoIndices.size(), std::move(varInfoIndices)));
                 }
             }
         }

@@ -22,8 +22,8 @@ namespace storm {
     
     namespace generator {
         struct ArrayInformation {
-            ArrayInformation(size_t arrayLength, std::vector<ArrayInformation>& indexMapping);
-            ArrayInformation(size_t arrayLength, std::vector<uint64_t>& indexMapping);
+            ArrayInformation(size_t arrayLength, std::vector<ArrayInformation> indexMapping);
+            ArrayInformation(size_t arrayLength, std::vector<uint64_t> indexMapping);
             std::vector<ArrayInformation> arrayIndexMapping;
             std::vector<uint_fast64_t> indexMapping;
             size_t size;
