@@ -20,16 +20,22 @@ namespace storm {
              *
              * @param relevantEvents List of relevant event names.
              */
-            RelevantEvents(std::vector<std::string> const& relevantEvents = {}) : names(), allRelevant(false) {
-                for (auto const& name: relevantEvents) {
-                    if (name == "all") {
-                        this->allRelevant = true;
-                        this->names.clear();
-                        break;
-                    } else {
-                        this->addEvent(name);
-                    }
+            RelevantEvents(std::vector<std::string> const& relevantEvents = {}) {
+                // check if the name "all" occurs
+                if (std::any_of(relevantEvents.begin(), relevantEvents.end(),
+                                [](auto const& name) { return name == "all"; })) {
+                    this->allRelevant = true;
+                } else {
+                    this->names.insert(relevantEvents.begin(), relevantEvents.end());
                 }
+            }
+
+            bool operator==(RelevantEvents const& rhs) {
+                return this->allRelevant == rhs.allRelevant || this->names == rhs.names;
+            }
+
+            bool operator!=(RelevantEvents const& rhs) {
+                return !(*this == rhs);
             }
 
             /*!
@@ -74,7 +80,7 @@ namespace storm {
              * Check that the relevant names correspond to existing elements in the DFT.
              *
              * @param dft DFT.
-             * @return True iff relevant names are consistent with DFT elements.
+             * @return True iff the relevant names are consistent with the given DFT.
              */
             template <typename ValueType>
             bool checkRelevantNames(storm::storage::DFT<ValueType> const& dft) const {
@@ -86,6 +92,9 @@ namespace storm {
                 return true;
             }
 
+            /*!
+             * @return True iff the given name is the name of a relevant Event
+             */
             bool isRelevant(std::string const& name) const {
                 if (this->allRelevant) {
                     return true;
@@ -106,10 +115,10 @@ namespace storm {
             }
 
             // Names of relevant events.
-            std::set<std::string> names;
+            std::set<std::string> names{};
 
             // Whether all elements are relevant.
-            bool allRelevant;
+            bool allRelevant{false};
         };
 
     } // namespace utility
