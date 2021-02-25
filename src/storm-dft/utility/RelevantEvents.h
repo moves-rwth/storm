@@ -57,8 +57,10 @@ namespace storm {
                     } else {
                         // Get name of event
                         if (boost::ends_with(label, "_failed")) {
+                            // length of "_failed" = 7
                             this->addEvent(label.substr(0, label.size() - 7));
                         } else if (boost::ends_with(label, "_dc")) {
+                            // length of "_dc" = 3
                             this->addEvent(label.substr(0, label.size() - 3));
                         } else if (label.find("_claimed_") != std::string::npos) {
                             STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isAddLabelsClaiming(), storm::exceptions::InvalidArgumentException, "Claiming labels will not be exported but are required for label '" << label << "'. Try setting --labels-claiming.");

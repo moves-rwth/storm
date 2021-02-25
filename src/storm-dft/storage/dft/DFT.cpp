@@ -10,6 +10,7 @@
 
 #include "storm-dft/builder/DFTBuilder.h"
 #include "storm-dft/storage/dft/DFTIsomorphism.h"
+#include "storm-dft/utility/RelevantEvents.h"
 
 
 namespace storm {
