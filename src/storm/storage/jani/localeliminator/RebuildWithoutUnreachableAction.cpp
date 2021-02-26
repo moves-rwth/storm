@@ -12,6 +12,7 @@ namespace storm {
             }
 
             void RebuildWithoutUnreachableAction::doAction(JaniLocalEliminator::Session &session) {
+                session.addToLog("Rebuilding model without unreachable locations");
                 for (auto oldAutomaton : session.getModel().getAutomata()) {
                     Automaton newAutomaton(oldAutomaton.getName(), oldAutomaton.getLocationExpressionVariable());
                     for (auto const& localVariable : oldAutomaton.getVariables())
@@ -25,6 +26,7 @@ namespace storm {
                             continue;
                         satisfiableEdges.emplace(&oldEdge);
                     }
+                    session.addToLog("\t" +  std::to_string(satisfiableEdges.size()) + " of " + std::to_string(oldAutomaton.getEdges().size()) + " edges are satisfiable.");
 
                     std::unordered_set<uint64_t> reachableLocs;
                     std::unordered_set<uint64_t> reachableLocsOpen;
@@ -50,6 +52,7 @@ namespace storm {
                             }
                         }
                     }
+                    session.addToLog("\t" +  std::to_string(reachableLocs.size()) + " of " + std::to_string(oldAutomaton.getLocations().size()) + " locations are reachable.");
 
                     std::map<uint64_t, uint64_t> oldToNewLocationIndices;
 
@@ -78,10 +81,6 @@ namespace storm {
                         if (satisfiableEdges.count(&oldEdge) == 0)
                             continue;
 
-//                    storm::expressions::Expression newGuard = oldEdge.getGuard();
-//                    if (!newGuard.containsVariables() && !newGuard.evaluateAsBool())
-//                        continue;
-
                         std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(oldEdge.getGuard());
 
                         STORM_LOG_THROW(oldEdge.getAssignments().empty(), storm::exceptions::NotImplementedException, "Support for oldEdge-assignments is not implemented");
@@ -99,6 +98,8 @@ namespace storm {
                         uint64_t newSource = oldToNewLocationIndices[oldEdge.getSourceLocationIndex()];
                         newAutomaton.addEdge(storm::jani::Edge(newSource, oldEdge.getActionIndex(), oldEdge.hasRate() ? boost::optional<storm::expressions::Expression>(oldEdge.getRate()) : boost::none, templateEdge, destinationLocationsAndProbabilities));
                     }
+
+                    session.addToLog("\tNew automaton has " +  std::to_string(newAutomaton.getEdges().size()) + " edges.");
                     session.getModel().replaceAutomaton(session.getModel().getAutomatonIndex(oldAutomaton.getName()), newAutomaton);
                 }
             }

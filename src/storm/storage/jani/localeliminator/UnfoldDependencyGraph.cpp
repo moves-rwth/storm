@@ -10,7 +10,8 @@ namespace storm {
     namespace jani {
         namespace elimination_actions {
             UnfoldDependencyGraph::VariableGroup::VariableGroup() : domainSize(1), unfolded(false),
-                                                                    allVariablesUnfoldable(true) {
+                                                                    allVariablesUnfoldable(true),
+                                                                    allDependenciesUnfolded(false) {
 
             }
 
@@ -22,12 +23,36 @@ namespace storm {
                 }
             }
 
+            std::string UnfoldDependencyGraph::VariableGroup::getVariablesAsString() {
+                std::string res = "";
+                for (auto var : variables){
+                    if (res != "")
+                        res += ", ";
+                    res += var.janiVariableName;
+                }
+                return res;
+            }
+
             UnfoldDependencyGraph::UnfoldDependencyGraph(Model &model) {
                 buildGroups(model);
             }
 
             void UnfoldDependencyGraph::markUnfolded(uint32_t groupIndex) {
                 variableGroups[groupIndex].unfolded = true;
+
+                // Now that one group has been unfolded, update which groups can be unfolded
+                for (int i = 0; i < variableGroups.size(); i++){
+                    if (variableGroups[i].allDependenciesUnfolded)
+                        continue;
+                    if (variableGroups[i].dependencies.count(i) != 0){
+                        bool allUnfolded = true;
+                        for (uint32_t dep : variableGroups[i].dependencies){
+                            if (!variableGroups[i].unfolded)
+                                allUnfolded = false;
+                        }
+                        variableGroups[i].allDependenciesUnfolded = allUnfolded;
+                    }
+                }
             }
 
             uint32_t UnfoldDependencyGraph::findGroupIndex(std::string expressionVariableName) {
@@ -79,8 +104,12 @@ namespace storm {
             }
 
             std::set<uint32_t> UnfoldDependencyGraph::getGroupsWithNoDependencies() {
-                STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "getGroupsWithNoDependencies() is not yet implemented");
-                return std::set<uint32_t>();
+                std::set<uint32_t> res;
+                for (int i = 0; i < variableGroups.size(); i++)
+                    if (!variableGroups[i].unfolded && variableGroups[i].allVariablesUnfoldable)
+                        res.insert(i);
+
+                return res;
             }
 
             void UnfoldDependencyGraph::buildGroups(Model &model) {
@@ -107,7 +136,7 @@ namespace storm {
 
                                 variables.push_back(VariableInfo(var.getExpressionVariable().getName(), var.getName(),
                                                                  variableSet.first == "", variableSet.first,
-                                                                 true, upperBound - lowerBound));
+                                                                 true, upperBound - lowerBound + 1));
 
                                 isConstBounded = true;
                             }

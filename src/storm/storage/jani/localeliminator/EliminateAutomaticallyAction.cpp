@@ -20,7 +20,7 @@ namespace storm {
                     case EliminationOrder::Arbitrary: {
                         for (auto loc : automaton.getLocations()) {
                             if (session.isEliminable(automatonName, loc.getName())) {
-                                std::cout << "Unfolding location " << loc.getName() << std::endl;
+                                session.addToLog("Eliminating location " + loc.getName());
                                 EliminateAction action = EliminateAction(automatonName, loc.getName());
                                 action.doAction(session);
                             }
@@ -36,12 +36,33 @@ namespace storm {
                         // - it has a loop
                         // After each elimination, this list is updated to account for new loops
                         std::map<std::string, bool> uneliminable;
+                        session.addToLog("Elimination status of locations:");
                         for (auto loc : automaton.getLocations()) {
-                            bool isUneliminable = session.isPossiblyInitial(automatonName, loc.getName())
-                                                    || session.isPartOfProp(automatonName, loc.getName())
-                                                    || session.hasLoops(automatonName, loc.getName());
+
+                            bool possiblyInitial = session.isPossiblyInitial(automatonName, loc.getName());
+                            bool partOfProp = session.isPartOfProp(automatonName, loc.getName());
+                            bool hasLoops = session.hasLoops(automatonName, loc.getName());
+
+                            bool isUneliminable = possiblyInitial || partOfProp || hasLoops;
                             uneliminable.insert(std::pair<std::string, bool>(loc.getName(), isUneliminable));
+
+                            std::string eliminationStatus = "\t" + loc.getName() + ": ";
+                            if (isUneliminable){
+                                eliminationStatus += "Uneliminable (";
+                                if (possiblyInitial)
+                                    eliminationStatus += "initial, ";
+                                if (partOfProp)
+                                    eliminationStatus += "part of prop, ";
+                                if (hasLoops)
+                                    eliminationStatus += "has loops, ";
+                                eliminationStatus = eliminationStatus.substr(0, eliminationStatus.size() - 2) + ")";
+                            }else{
+                                eliminationStatus += "Eliminable";
+                            }
+                            session.addToLog(eliminationStatus);
                         }
+
+                        session.addToLog("Performing elimination");
 
                         bool done = false;
                         while (!done) {
@@ -76,10 +97,10 @@ namespace storm {
                                 done = true;
                                 session.addToLog(
                                         "Cannot eliminate more locations without creating too many new transitions (best: " +
-                                        std::to_string(minNewEdges) + "new transitions)");
+                                        std::to_string(minNewEdges) + " new transitions)");
                             } else {
                                 std::string locName = automaton.getLocation(bestLocIndex).getName();
-                                session.addToLog("Eliminating location " + locName);
+                                session.addToLog("\tEliminating location " + locName);
                                 EliminateAction action = EliminateAction(automatonName, locName);
                                 action.doAction(session);
                                 automaton = session.getModel().getAutomaton(automatonName);
@@ -90,6 +111,7 @@ namespace storm {
                                     if (!uneliminable[locName]){
                                         if (session.hasLoops(automatonName, loc.getName())){
                                             uneliminable[locName] = true;
+                                            session.addToLog("\t" + loc.getName() + " now has a loop");
                                         }
                                     }
                                 }

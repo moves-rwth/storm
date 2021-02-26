@@ -28,10 +28,12 @@ namespace storm {
                     uint32_t domainSize;
                     bool allVariablesUnfoldable;
                     bool unfolded;
+                    bool allDependenciesUnfolded;
                     std::set<uint32_t> dependencies;
 
                     VariableGroup();
                     void addVariable(VariableInfo variable);
+                    std::string getVariablesAsString();
                 };
 
                 std::vector<VariableGroup> variableGroups;
