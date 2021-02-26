@@ -18,6 +18,9 @@ namespace storm {
                 bool getFinished();
                 void setFinished(bool finished);
 
+                void addToLog(std::string item);
+                std::vector<std::string> getLog();
+
                 expressions::Expression getNewGuard(const Edge& edge, const EdgeDestination& dest, const Edge& outgoing);
                 expressions::Expression getProbability(const EdgeDestination& first, const EdgeDestination& then);
                 OrderedAssignments executeInSequence(const EdgeDestination& first, const EdgeDestination& then);
@@ -29,6 +32,9 @@ namespace storm {
                 Model model;
                 Property property;
                 bool finished;
+                // We keep a log separate from the main log to prevent the main log from being overwhelmed. This log
+                // is exposed via the python API
+                std::vector<std::string> log;
             };
 
         public:
@@ -51,11 +57,15 @@ namespace storm {
             explicit JaniLocalEliminator(Model const& original, std::vector<storm::jani::Property>& properties);
             void eliminate();
             Model const& getResult();
+            std::vector<std::string> getLog();
 
         private:
             Model const& original;
             Model newModel;
             Property property;
+            // TODO: Currently, the log is duplicated, as the log entries are stored in the session, but the session
+            // is only created during elimination, so the log would go out of scope before it is needed.
+            std::vector<std::string> log;
 
             void cleanUpAutomaton(std::string const &automatonName);
         };

@@ -9,19 +9,13 @@ namespace storm {
     namespace jani {
         JaniLocalEliminator::JaniLocalEliminator(const Model &original, std::vector<storm::jani::Property>& properties) : original(original) {
             if (properties.size() != 1){
-                STORM_LOG_WARN("Local elimination only works with exactly one property");
+                STORM_LOG_WARN("Only the first property will be used for local elimination.");
             }
             property = properties[0];
             scheduler = EliminationScheduler();
         }
 
         void JaniLocalEliminator::eliminate() {
-
-            if (original.getAutomata().size() != 1) {
-                STORM_LOG_ERROR("State Space Reduction is only supported for Jani models with a single automaton.");
-                return;
-            }
-
             newModel = original; // TODO: Make copy instead?
 
             Session session = Session(newModel, property);
@@ -29,6 +23,7 @@ namespace storm {
                 std::unique_ptr<Action> action = scheduler.getNextAction();
                 action->doAction(session);
             }
+            log = session.getLog();
             newModel = session.getModel();
         }
 
@@ -110,6 +105,10 @@ namespace storm {
             }
 
             newModel.replaceAutomaton(0, newAutomaton);
+        }
+
+        std::vector<std::string> JaniLocalEliminator::getLog() {
+            return log;
         }
 
         JaniLocalEliminator::EliminationScheduler::EliminationScheduler() {
@@ -197,6 +196,14 @@ namespace storm {
                 newOa.add(Assignment(assignment.getVariable(), assignment.getAssignedExpression().substitute(substitutionMap).simplify()));
             }
             return newOa;
+        }
+
+        void JaniLocalEliminator::Session::addToLog(std::string item) {
+            log.push_back(item);
+        }
+
+        std::vector<std::string> JaniLocalEliminator::Session::getLog() {
+            return log;
         }
     }
 }

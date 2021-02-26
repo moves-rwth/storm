@@ -62,7 +62,7 @@ namespace storm {
                 }
 
                 if (bestBlowup == UINT32_MAX) {
-                    STORM_LOG_WARN("Could not unfold any of the variables occuring in the property");
+                    session.addToLog("Could not unfold any of the variables occuring in the property");
                     return;
                 }
 
@@ -78,12 +78,12 @@ namespace storm {
                             // We currently always have to specify an automaton name, regardless of whether the
                             // variable is global or not. This isn't  really a problem, as there is just one automaton
                             // due to the flattening done previously (and the name of that is stored in autName)
-                            std::cout << "Unfolding global variable " << variable.janiVariableName << std::endl;
+                            session.addToLog("Unfolding global variable " + variable.janiVariableName);
                             UnfoldAction unfoldAction(autName, variable.janiVariableName);
                             unfoldAction.doAction(session);
                         } else {
-                            std::cout << "Unfolding variable " << variable.janiVariableName << " (automaton: "
-                                      << variable.automatonName << ")" << std::endl;
+                            session.addToLog("Unfolding variable " + variable.janiVariableName + " (automaton: " +
+                                             variable.automatonName + ")");
                             UnfoldAction unfoldAction(variable.automatonName, variable.janiVariableName);
                             unfoldAction.doAction(session);
                         }

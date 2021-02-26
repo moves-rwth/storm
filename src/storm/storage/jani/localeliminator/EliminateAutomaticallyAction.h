@@ -7,7 +7,7 @@ namespace storm{
         namespace elimination_actions{
         class EliminateAutomaticallyAction : public JaniLocalEliminator::Action {
             public:
-                enum EliminationOrder {
+                enum class EliminationOrder {
                     Arbitrary,
                     NewTransitionCount
                 };

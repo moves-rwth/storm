@@ -163,7 +163,6 @@ namespace storm {
                         (graph, make_iterator_property_map(sccs.begin(), get(vertex_index, graph), sccs[0]));
 
 
-                std::cout << "Total number of components: " << num << std::endl;
                 for (int i = 0; i < num; i++) {
                     variableGroups.push_back(VariableGroup());
                 }
@@ -173,9 +172,6 @@ namespace storm {
                     int index = i - sccs.begin();
                     int component = *i;
                     variableGroups[component].addVariable(variables[index]);
-
-                    std::cout << "Variable " << variables[index].expressionVariableName << " (Index: " << index
-                              << ") is in component " << component << std::endl;
                 }
 
                 for (int i = 0; i < graph.m_vertices.size(); i++) {
@@ -186,7 +182,6 @@ namespace storm {
                         }
                     }
                 }
-                printGroups();
             }
 
             UnfoldDependencyGraph::VariableInfo::VariableInfo(std::string expressionVariableName,

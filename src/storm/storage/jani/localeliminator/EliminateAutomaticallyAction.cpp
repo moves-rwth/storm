@@ -45,7 +45,7 @@ namespace storm {
 
                         bool done = false;
                         while (!done) {
-                            int minNewEdges = transitionCountThreshold;
+                            int minNewEdges = INT_MAX;
                             int bestLocIndex = -1;
                             for (auto loc : automaton.getLocations()) {
                                 if (uneliminable[loc.getName()])
@@ -68,12 +68,18 @@ namespace storm {
                                 }
                             }
 
+
                             if (bestLocIndex == -1){
                                 done = true;
-                                std::cout << "No more locations eliminable" << std::endl;
+                                session.addToLog("Cannot eliminate more locations");
+                            } else if (minNewEdges > transitionCountThreshold) {
+                                done = true;
+                                session.addToLog(
+                                        "Cannot eliminate more locations without creating too many new transitions (best: " +
+                                        std::to_string(minNewEdges) + "new transitions)");
                             } else {
                                 std::string locName = automaton.getLocation(bestLocIndex).getName();
-                                std::cout << "Unfolding location " << locName << std::endl;
+                                session.addToLog("Eliminating location " + locName);
                                 EliminateAction action = EliminateAction(automatonName, locName);
                                 action.doAction(session);
                                 automaton = session.getModel().getAutomaton(automatonName);
