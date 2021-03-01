@@ -150,17 +150,16 @@ namespace storm {
                 return other.isVariable() && getVariable().getExpressionVariable() == other.getVariable().getExpressionVariable();
             } else {
                 STORM_LOG_ASSERT(isArrayAccess(), "Unhandled LValue.");
-//                bool equal = other.isArrayAccess() && getArray().getExpressionVariable() == other.getArray().getExpressionVariable()
-//                        && arrayInsize() == other.getArrayIndexVector().size()
-//                        && arrayIndex->isSyntacticallyEqual(other.getArrayIndex());
-//                int i = 0;
-//                while (equal && i < arrayIndexVector->size()) {
-//                    equal &= arrayIndexVector->at(i).isSyntacticallyEqual(other.getArrayIndexVector().at(i));
-//                    ++i;
-//                }
-                return other.isArrayAccess() && getArray().getExpressionVariable() == other.getArray().getExpressionVariable()
-                       && arrayIndexVector->size() == other.getArrayIndexVector().size()
-                       && arrayIndex->isSyntacticallyEqual(other.getArrayIndex());
+                bool equal = other.isArrayAccess() && getArray().getExpressionVariable() == other.getArray().getExpressionVariable()
+                        && arrayIndexVector->size() == other.getArrayIndexVector().size()
+                        && arrayIndex->isSyntacticallyEqual(other.getArrayIndex());
+                int i = 0;
+                while (equal && i < arrayIndexVector->size()) {
+                    std::cout << "Checking equivalence of " << arrayIndexVector->at(i) << " and " << other.getArrayIndexVector().at(i) << std::endl;
+                    equal &= arrayIndexVector->at(i).isSyntacticallyEqual(other.getArrayIndexVector().at(i));
+                    ++i;
+                }
+                return equal;
             }
         }
         
