@@ -12,6 +12,7 @@ namespace storm {
             struct ValueArrayElements {
                 boost::optional<std::vector<std::shared_ptr<BaseExpression const>>> elementsWithValue = boost::none;
                 boost::optional<std::vector<std::shared_ptr<ValueArrayElements const>>> elementsOfElements = boost::none;
+                std::vector<size_t> getSizes() const;
             };
             
             ValueArrayExpression(ExpressionManager const& manager, Type const& type, ValueArrayElements const& elements);
@@ -32,7 +33,8 @@ namespace storm {
             
             // Returns the size of the array
             virtual std::shared_ptr<BaseExpression const> size() const override;
-            
+            std::vector<size_t> getSizes() const;
+
             // Returns the element at position i
             virtual std::shared_ptr<BaseExpression const> at(std::vector<uint64_t>& i) const override;
             virtual std::shared_ptr<BaseExpression const> at(uint64_t i) const override;

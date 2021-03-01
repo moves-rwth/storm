@@ -848,9 +848,14 @@ namespace storm {
             boost::optional<storm::expressions::Expression> initVal;
             if (initvalcount == 1 && !variableStructure.at("initial-value").is_null()) {
                 initVal = parseExpression(variableStructure.at("initial-value"), scope.refine("Initial value for variable " + name));
-                auto ptr = dynamic_cast<storm::expressions::ConstructorArrayExpression const *>(&(initVal->getBaseExpression()));
-                if (ptr != nullptr) {
-                    sizeMap[name] = sizeMap[ptr->getIndexVar()->getName()];
+                auto ptrCon = dynamic_cast<storm::expressions::ConstructorArrayExpression const *>(&(initVal->getBaseExpression()));
+                if (ptrCon == nullptr) {
+                    auto ptrVal = dynamic_cast<storm::expressions::ValueArrayExpression const *>(&(initVal->getBaseExpression()));
+                    if (ptrVal != nullptr) {
+                        sizeMap[name] = ptrVal->getSizes();
+                    }
+                } else {
+                    sizeMap[name] = sizeMap[ptrCon->getIndexVar()->getName()];
                 }
             } else {
                 assert(!transientVar);
@@ -910,7 +915,7 @@ namespace storm {
                 assert (!type.bounds);
                 auto variable = expressionManager->declareArrayVariable(exprManagerName, exprVariableType);
 
-                STORM_LOG_THROW(sizeMap[name].size() != 0, storm::exceptions::InvalidJaniException, "For nested arrays, we require initialisation, including the length of the array");
+                STORM_LOG_THROW(sizeMap[name].size() != 0, storm::exceptions::InvalidJaniException, "For nested arrays, we require initialisation");
                 variable.setArraySizes(sizeMap[name]);
                 return storm::jani::Variable::makeArrayVariable(name, arrayType, variable, initVal.get(), transientVar);
             }
@@ -1065,21 +1070,21 @@ namespace storm {
         storm::expressions::ValueArrayExpression::ValueArrayElements JaniParser<ValueType>::parseAV(Json const& expressionStructure, Scope const& scope, bool returnNoneInitializedOnUnknownOperator, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables) {
             storm::expressions::ValueArrayExpression::ValueArrayElements elements;
             storm::expressions::Type commonType;
-            bool first = true;
-            std::vector<std::shared_ptr<storm::expressions::ValueArrayExpression::ValueArrayElements const>> elementsOfElements;
-            for (auto const& element : expressionStructure.at("elements")) {
-                if (expressionStructure.is_object()) {
+            for (Json const& element : expressionStructure.at("elements")) {
+                if (element.is_object()) {
                     assert (getString<ValueType>(expressionStructure.at("op"), scope.description) == "av");
                     assert (!elements.elementsWithValue);
-                    elementsOfElements.push_back(std::make_shared<storm::expressions::ValueArrayExpression::ValueArrayElements const>(parseAV(element, scope.refine("element " + std::to_string(elements.elementsOfElements->size()) + " of array value expression"), returnNoneInitializedOnUnknownOperator, auxiliaryVariables)));
+                    if (!elements.elementsOfElements) {
+                        elements.elementsOfElements = std::vector<std::shared_ptr<storm::expressions::ValueArrayExpression::ValueArrayElements const>>();
+                    }
+                    elements.elementsOfElements->push_back(std::make_shared<storm::expressions::ValueArrayExpression::ValueArrayElements const>(parseAV(element, scope.refine("element " + std::to_string(elements.elementsOfElements->size()) + " of array value expression"), returnNoneInitializedOnUnknownOperator, auxiliaryVariables)));
                 } else {
                     assert (!elements.elementsOfElements);
-                    if (first) {
+                    if (!elements.elementsWithValue) {
                         elements.elementsWithValue = std::vector<std::shared_ptr<storm::expressions::BaseExpression const>>();
 
-                        elements.elementsWithValue->push_back(parseExpression(element, scope.refine("element " + std::to_string(elements.elementsWithValue->size()) + " of array value expression"), returnNoneInitializedOnUnknownOperator, auxiliaryVariables).getBaseExpressionPointer());
+                        elements.elementsWithValue->push_back(parseExpression(element, scope.refine("element 0 of array value expression"), returnNoneInitializedOnUnknownOperator, auxiliaryVariables).getBaseExpressionPointer());
                         commonType = elements.elementsWithValue->back()->getType();
-                        first = false;
                     } else {
                         elements.elementsWithValue->push_back(parseExpression(element, scope.refine("element " + std::to_string(elements.elementsWithValue->size()) + " of array value expression"), returnNoneInitializedOnUnknownOperator, auxiliaryVariables).getBaseExpressionPointer());
                         if (!(commonType == elements.elementsWithValue->back()->getType())) {
@@ -1092,16 +1097,13 @@ namespace storm {
                     }
                 }
             }
-            if (elements.elementsWithValue) {
-                assert (elementsOfElements.size() == 0);
-            } else {
-                elements.elementsOfElements = std::move(elementsOfElements);
-            }
+            assert (!elements.elementsOfElements || !elements.elementsWithValue);
+            assert (elements.elementsOfElements || elements.elementsWithValue);
             return elements;
         }
 
         template <typename ValueType>
-        storm::expressions::Expression JaniParser<ValueType>::parseExpression(Json const& expressionStructure, Scope const& scope, bool returnNoneInitializedOnUnknownOperator, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables) {
+        storm::expressions::JaniExpression JaniParser<ValueType>::parseExpression(Json const& expressionStructure, Scope const& scope, bool returnNoneInitializedOnUnknownOperator, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables) {
             if (expressionStructure.is_boolean()) {
                 if (expressionStructure.template get<bool>()) {
                     return expressionManager->boolean(true);

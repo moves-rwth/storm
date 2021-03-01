@@ -115,6 +115,27 @@ namespace storm {
             return getManager().integer(size(elements)).getBaseExpressionPointer();
         }
 
+        std::vector<size_t> ValueArrayExpression::getSizes() const {
+            return elements.getSizes();
+        }
+
+        std::vector<size_t> ValueArrayExpression::ValueArrayElements::getSizes() const {
+            std::vector<size_t> result;
+            if (elementsOfElements) {
+                result.push_back(elementsOfElements->size());
+                auto element = elementsOfElements->at(0);
+                while (element->elementsOfElements) {
+                    result.push_back(element->elementsOfElements->size());
+                    element = element->elementsOfElements->at(0);
+                }
+                result.push_back(element->elementsWithValue->size());
+            } else {
+                result.push_back(elementsWithValue->size());
+            }
+
+            return result;
+        }
+
         size_t ValueArrayExpression::size(ValueArrayElements const& elementsToCheck) const {
             if (elementsToCheck.elementsWithValue) {
                 return elementsToCheck.elementsWithValue->size();
