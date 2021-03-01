@@ -34,3 +34,21 @@ $ storm
 
 and continue with the guide on how to [run Storm]({{ site.github.url }}/documentation/usage/running-storm.html).
 
+### Additional steps for ARM-based Apple Silicon CPUs
+For ARM-based Apple Silicon CPUs, installing Storm currently requires a homebrew installation that uses default x86 installation paths. One valid executable location would be ```/usr/local/bin/brew```. How to obtain multiple Homebrew installations (one for x86 and one for ARM compilation) is explained [here](https://docs.brew.sh/Installation#multiple-installations){:target="_blank"}. You have to enable x86 emulation when invoking homebrew:
+```console
+$ export PATH_TO_X86_BREW=/usr/local/bin
+$ $PATH_TO_X86_BREW/brew tap moves-rwth/storm
+$ arch -x86_64 $PATH_TO_X86_BREW/brew install stormchecker
+```
+After the installation step, you should be able to invoke `storm` as mentioned above. It might be necessary to specify the path of the executable using
+```console
+$ $($PATH_TO_X86_BREW/brew --prefix stormchecker)/bin/storm
+```
+In this case we recommend adding the corresponding path to your `$PATH` environment variable using
+```console
+$ export PATH=$PATH:$($PATH_TO_X86_BREW/brew --prefix stormchecker)/bin
+```
+
+{:.alert .alert-info}
+Native compilation on ARM-based systems is not yet supported. This is work in progress.
