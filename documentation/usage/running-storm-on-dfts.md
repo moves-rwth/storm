@@ -70,7 +70,7 @@ Symmetry reduction reduces the model size drastically which improves the analysi
 For reliability another optimization can be enabled: *modularisation* via `--modularisation`.
 
 ```console
-$ storm-dft -dft hecs.dft --timebound 500 -symred --modularisation
+$ storm-dft -dft hecs.dft --timebound 500 --modularisation
 ```
 
 {% include includes/show_output.html class="dft_hecs_timebound_mod" path="dft/hecs_timebound_mod.out" %}
