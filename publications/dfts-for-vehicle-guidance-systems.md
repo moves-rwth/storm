@@ -24,12 +24,14 @@ The fault tree analysis is performed by [Storm](https://github.com/moves-rwth/st
 
 The computation of the failure probability within for example time `10,000` can be performed with the following call:
 ```console
-$ storm-dft -dftjson sc_1.json --firstdep -symred --timebound 100000
+$ storm-dft -dftjson sc_1.json --firstdep --timebound 100000
 ```
+(Note that symmetry reduction is applied by default from Storm version 1.5.0 on.
+In earlier versions, the flag `-symred` needs to be provided.)
 
-Similarily, the computation of the mean-time-to-failure (MTTF) is computed by:
+Similarly, the computation of the mean-time-to-failure (MTTF) can be performed with:
 ```console
-$ storm-dft -dftjson sc_1.json --firstdep -symred -mttf
+$ storm-dft -dftjson sc_1.json --firstdep -mttf
 ```
 
 For more details on analysing DFTs with Storm we refer to our [documentation]({{ site.github.url }}/documentation/usage/running-storm-on-dfts.html).
