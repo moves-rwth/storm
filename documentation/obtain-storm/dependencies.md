@@ -58,7 +58,7 @@ The installation instructions of the *recommended* dependencies already include 
 {:.alert .alert-danger}
 For ARM-based <i class="fa fa-apple" aria-hidden="true"></i> Apple Silicon CPUs please refer to [this page](apple-silicon.html){:.alert-link}.
 
-First of all, you need to download and install Xcode and its command line utilities to have the suitable command line tools. For more details, we refer to [this tutorial](https://www.moncefbelyamani.com/how-to-install-xcode-homebrew-git-rvm-ruby-on-mac/){:target="_blank"}.
+First of all, you need to download and install Xcode or its command line tools (CLT) to have the suitable tools needed for compilation. For more details, we refer to [this tutorial](https://www.moncefbelyamani.com/how-to-install-xcode-homebrew-git-rvm-ruby-on-mac/){:target="_blank"}.
 
 Furthermore, we recommend the usage of [Homebrew](https://brew.sh){:target="_blank"} to install the missing packages, but MacPorts might (at some point) have the desired dependencies as well.
 
