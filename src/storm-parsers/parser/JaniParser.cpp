@@ -1103,7 +1103,7 @@ namespace storm {
         }
 
         template <typename ValueType>
-        storm::expressions::JaniExpression JaniParser<ValueType>::parseExpression(Json const& expressionStructure, Scope const& scope, bool returnNoneInitializedOnUnknownOperator, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables) {
+        storm::expressions::Expression JaniParser<ValueType>::parseExpression(Json const& expressionStructure, Scope const& scope, bool returnNoneInitializedOnUnknownOperator, std::unordered_map<std::string, storm::expressions::Variable> const& auxiliaryVariables) {
             if (expressionStructure.is_boolean()) {
                 if (expressionStructure.template get<bool>()) {
                     return expressionManager->boolean(true);
