@@ -24,7 +24,7 @@ While compiling the source code is not always a breeze (depending on your operat
 
 Currently, we provide support for
 
-- <i class="fa fa-apple" aria-hidden="true"></i> macOS 10.12 "Sierra" and higher
+- <i class="fa fa-apple" aria-hidden="true"></i> macOS 10.12 "Sierra" and higher on either x86- or [ARM-based](apple-silicon.html) CPUs
 - <i class="icon-debian"></i> Debian 9 "Stretch" and higher
 - <i class="icon-ubuntu"></i> Ubuntu 16.10 "Yakkety Yak" and higher
 
@@ -32,6 +32,9 @@ which are known to enable the easy installation of Storm. Other Linux distributi
 
 {:.alert .alert-danger}
 Note that in particular <i class="icon-ubuntu"></i>Ubuntu 16.04 "Xenial Xerus" is *not* supported anymore as the shipped GCC version is too old.
+
+{:.alert .alert-danger}
+For ARM-based <i class="fa fa-apple" aria-hidden="true"></i> Apple Silicon CPUs [further steps are necessary](apple-silicon.html){:.alert-link}.
 
 ## Dependencies
 
@@ -63,7 +66,6 @@ $ export STORM_DIR=<path to Storm root>
 
 {:.alert .alert-danger}
 Before proceeding with the following steps, make sure that you have set up all [dependencies as required](dependencies.html){:.alert-link}.
-
 
 ## Configuration Step
 

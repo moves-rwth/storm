@@ -37,6 +37,8 @@ We list common issues for specific operating systems.
   $ open /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg
   ```
   For more infos see this [GitHub issue](https://github.com/neovim/neovim/issues/9050#issuecomment-424417456).
+  
+- Additional steps and common issues for ARM-based Apple Silicon CPUs are outlined on [this](apple-silicon.html) page.
 
 ## File an issue
 
