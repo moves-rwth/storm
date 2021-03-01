@@ -34,6 +34,7 @@ namespace storm {
             // Returns the size of the array
             virtual std::shared_ptr<BaseExpression const> size() const override;
             std::vector<size_t> getSizes() const;
+            ValueArrayElements const& getElements() const;
 
             // Returns the element at position i
             virtual std::shared_ptr<BaseExpression const> at(std::vector<uint64_t>& i) const override;

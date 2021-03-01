@@ -852,10 +852,14 @@ namespace storm {
                 if (ptrCon == nullptr) {
                     auto ptrVal = dynamic_cast<storm::expressions::ValueArrayExpression const *>(&(initVal->getBaseExpression()));
                     if (ptrVal != nullptr) {
+                        assert (sizeMap.find(name) == sizeMap.end());
                         sizeMap[name] = ptrVal->getSizes();
                     }
                 } else {
-                    sizeMap[name] = sizeMap[ptrCon->getIndexVar()->getName()];
+                    if (sizeMap.find(name) == sizeMap.end()) {
+                        assert (sizeMap.find(ptrCon->getIndexVar()->getName()) != sizeMap.end());
+                        sizeMap[name] = sizeMap[ptrCon->getIndexVar()->getName()];
+                    }
                 }
             } else {
                 assert(!transientVar);
@@ -915,8 +919,8 @@ namespace storm {
                 assert (!type.bounds);
                 auto variable = expressionManager->declareArrayVariable(exprManagerName, exprVariableType);
 
-                STORM_LOG_THROW(sizeMap[name].size() != 0, storm::exceptions::InvalidJaniException, "For nested arrays, we require initialisation");
-                variable.setArraySizes(sizeMap[name]);
+                STORM_LOG_THROW(sizeMap.at(name).size() != 0, storm::exceptions::InvalidJaniException, "For nested arrays, we require initialisation");
+                variable.setArraySizes(sizeMap.at(name));
                 return storm::jani::Variable::makeArrayVariable(name, arrayType, variable, initVal.get(), transientVar);
             }
             
@@ -1023,10 +1027,12 @@ namespace storm {
                     subStructure = subStructure.at("exp");
                 }
                 assert (subStructure.is_string());
+
                 storm::jani::LValue exp = parseLValue(subStructure, scope.refine("LValue description of array expression"));
+                assert (sizeMap.find(exp.getVariable().getName()) != sizeMap.end());
                 std::vector<size_t> sizes = sizeMap.at(exp.getVariable().getName());
                 assert (sizes.size() > 0);
-                return storm::jani::LValue(exp, index, sizes);
+                return storm::jani::LValue(exp, index, sizeMap.at(exp.getVariable().getName()));
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown LValue '" << lValueStructure.dump() << "' occurs in " << scope.description);
                 // Silly warning suppression.
@@ -1413,8 +1419,8 @@ namespace storm {
                             type = exp.getManager().getArrayType(type);
                         }
 
-                        std::cout <<"type: " << type << std::endl;
-                        sizeMap[indexVar.getName()] = std::move(sizes);
+                        assert (sizeMap.find(indexVar.getName()) == sizeMap.end());
+                        sizeMap[indexVar.getName()] = sizes;
 
                         auto indexVarPtr = std::make_shared<storm::expressions::Variable>(indexVar);
                         STORM_LOG_THROW(expressionStructure.count("length") == 1, storm::exceptions::InvalidJaniException, "Array access operator requires exactly one length (at " + scope.description + ").");

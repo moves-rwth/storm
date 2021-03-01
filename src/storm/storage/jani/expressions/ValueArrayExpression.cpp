@@ -119,6 +119,10 @@ namespace storm {
             return elements.getSizes();
         }
 
+        const ValueArrayExpression::ValueArrayElements & ValueArrayExpression::getElements() const {
+            return elements;
+        }
+
         std::vector<size_t> ValueArrayExpression::ValueArrayElements::getSizes() const {
             std::vector<size_t> result;
             if (elementsOfElements) {
