@@ -72,7 +72,7 @@ Below, we are going to build a standard version of Storm. There are plenty of co
 Switch to the directory `STORM_DIR` and create a build folder that will hold all files related to the build (in other words, building is done out-of source, in-source builds are strongly discouraged and are likely to break). Finally change to the `build` directory.
 
 ```console
-$ cd STORM_DIR
+$ cd $STORM_DIR
 $ mkdir build
 $ cd build
 ```
