@@ -11,7 +11,6 @@ namespace storm {
             STORM_LOG_ASSERT(type.isIntegerType(), "Expecting ArrayAccessIndexExpression to have type integer");
 
             STORM_LOG_ASSERT(getFirstOperand()->getType().isIntegerType(), "The ArrayAccessIndexExpression should be integer type for first operand, instead of " << getFirstOperand()->getType() << ".");
-            STORM_LOG_ASSERT(getFirstOperand()->isIntegerLiteralExpression(), "The ArrayAccessIndexExpression should be integer literal for first operand.");
             STORM_LOG_ASSERT(getSecondOperand()->getType().isIntegerType(), "The ArrayAccessIndexExpression should be integer type for second operand, instead of " << getSecondOperand()->getType() << ".");
 //TODO            STORM_LOG_ASSERT(rhs->isBinaryRelationExpression(), "The ArrayAccessIndexExpression should have an ArrayAccessIndexExpression for the rhs operand");
 
@@ -21,7 +20,6 @@ namespace storm {
             // Assert correct types
             STORM_LOG_ASSERT(type.isIntegerType(), "Expecting ArrayAccessIndexExpression to have type integer");
             STORM_LOG_ASSERT(getFirstOperand()->getType().isIntegerType(), "The ArrayAccessIndexExpression should be integer type for first operand, instead of " << getFirstOperand()->getType() << ".");
-            STORM_LOG_ASSERT(getFirstOperand()->isIntegerLiteralExpression(), "The ArrayAccessIndexExpression should be integer literal for first operand.");
         }
 
         std::shared_ptr<BaseExpression const> ArrayAccessIndexExpression::simplify() const {
