@@ -1,6 +1,6 @@
 name: Build Test
-# Builds and tests storm on varius platforms
-# also deploys images to dockerhub
+# Builds and tests storm on various platforms
+# also deploys images to Dockerhub
 
 on:
   schedule:
@@ -8,6 +8,7 @@ on:
       - cron: '0 6 * * *'
   # needed to trigger the workflow manually
   workflow_dispatch:
+  pull_request:
 
 env:
   CARL_BRANCH: "master14"
@@ -120,7 +121,7 @@ jobs:
       - name: Build storm
         run: sudo docker exec storm bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
 
-        # A bit hacky... but its usefullnes has been proven in production
+        # A bit hacky... but its usefulness has been proven in production
       - name: Check release makeflags
         if: matrix.debugOrRelease == 'release'
         run: |
@@ -134,6 +135,8 @@ jobs:
         run: sudo docker exec storm bash -c "cd /opt/storm/build; ctest test --output-on-failure"
 
       - name: Deploy storm
+        # Only deploy if using master (and not for pull requests)
+        if: github.ref == 'refs/heads/master'
         run: |
           sudo docker commit storm movesrwth/storm:ci-${{ matrix.debugOrRelease }}
           sudo docker push movesrwth/storm:ci-${{ matrix.debugOrRelease }}
