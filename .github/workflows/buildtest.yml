@@ -5,7 +5,7 @@ name: Build Test
 on:
   schedule:
       # run daily
-      - cron: '0 6 * * *'
+      #- cron: '0 6 * * *'
   # needed to trigger the workflow manually
   workflow_dispatch:
 
