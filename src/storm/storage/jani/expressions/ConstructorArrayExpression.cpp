@@ -5,12 +5,14 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
     namespace expressions {
         
-        ConstructorArrayExpression::ConstructorArrayExpression(ExpressionManager const& manager, Type const& type, std::vector<std::shared_ptr<BaseExpression const>> const& size, std::shared_ptr<storm::expressions::Variable> indexVar, std::shared_ptr<BaseExpression const> const& elementExpression) : ArrayExpression(manager, type), sizeExpressions(size), indexVar(indexVar), elementExpression(elementExpression) {
+        ConstructorArrayExpression::ConstructorArrayExpression(ExpressionManager const& manager, Type const& type, std::vector<std::shared_ptr<BaseExpression const>> const& size, std::vector<std::shared_ptr<storm::expressions::Variable>> indexVars, std::shared_ptr<BaseExpression const> const& elementExpression) : ArrayExpression(manager, type), sizeExpressions(size), indexVars(indexVars), elementExpression(elementExpression) {
+            STORM_LOG_ASSERT(size.size() == indexVars.size(), "Expecting the size of the vector of sizes (" << size.size() << ") and the size of the vector of indexVars (" << indexVars.size() << ") to be equal");
             int64_t exprSize = 0;
             for (auto & expr : sizeExpressions) {
                 if (exprSize == 0) {
@@ -24,28 +26,38 @@ namespace storm {
 
         void ConstructorArrayExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
             // The indexVar should not be gathered (unless it is already contained).
-            bool indexVarContained = variables.find(*indexVar) != variables.end();
-            for (auto & expr : sizeExpressions) {
-                expr->gatherVariables(variables);
-            }
-            elementExpression->gatherVariables(variables);
-            if (!indexVarContained) {
-                variables.erase(*indexVar);
+            for (auto const& indexVar : indexVars) {
+                bool indexVarContained = variables.find(*indexVar) != variables.end();
+                for (auto &expr : sizeExpressions) {
+                    expr->gatherVariables(variables);
+                }
+                elementExpression->gatherVariables(variables);
+                if (!indexVarContained) {
+                    variables.erase(*indexVar);
+                }
             }
         }
         
         bool ConstructorArrayExpression::containsVariables() const {
-            for (auto & expr : sizeExpressions) {
-                if (expr->containsVariables()) {
-                    return true;
+            bool containsVariables = false;
+            for (auto const& indexVar : indexVars) {
+
+                for (auto &expr : sizeExpressions) {
+                    if (expr->containsVariables()) {
+                        return true;
+                    }
+                }
+
+                // The index variable should not count
+                std::set<storm::expressions::Variable> variables;
+                elementExpression->gatherVariables(variables);
+                variables.erase(*indexVar);
+                containsVariables |= !variables.empty();
+                if (containsVariables) {
+                    break;
                 }
             }
-
-            // The index variable should not count
-            std::set<storm::expressions::Variable> variables;
-            elementExpression->gatherVariables(variables);
-            variables.erase(*indexVar);
-            return !variables.empty();
+            return containsVariables;
         }
         
         std::shared_ptr<BaseExpression const> ConstructorArrayExpression::simplify() const {
@@ -54,7 +66,7 @@ namespace storm {
             for (auto & expr : sizeExpressions) {
                 simplifiedSizeExpressions.push_back(expr->simplify());
             }
-            return std::shared_ptr<BaseExpression const>(new ConstructorArrayExpression(getManager(), getType(), simplifiedSizeExpressions, indexVar, elementExpression->simplify()));
+            return std::shared_ptr<BaseExpression const>(new ConstructorArrayExpression(getManager(), getType(), simplifiedSizeExpressions, indexVars, elementExpression->simplify()));
         }
         
         boost::any ConstructorArrayExpression::accept(ExpressionVisitor& visitor, boost::any const& data) const {
@@ -64,7 +76,15 @@ namespace storm {
         }
         
         void ConstructorArrayExpression::printToStream(std::ostream& stream) const {
-            stream << "array[elementValue: " << *elementExpression << " | index: " << indexVar->getExpression() << " < bound: " << *sizeExpression << " ]";
+            stream << "array[elementValue: " << *elementExpression << " | index: ";
+            for (auto i = 0; i < indexVars.size(); ++i) {
+                assert (i < sizeExpressions.size());
+                stream << indexVars.at(i)->getExpression() << " < bound: " << *sizeExpressions.at(i);
+                if (i < (indexVars.size() - 1)) {
+                    stream << ",";
+                }
+            }
+            stream << " ]";
         }
         
         std::shared_ptr<BaseExpression const> ConstructorArrayExpression::size() const {
@@ -75,18 +95,29 @@ namespace storm {
             return sizeExpressions.at(index);
         }
         
-        std::shared_ptr<const BaseExpression> ConstructorArrayExpression::at(std::vector<uint64_t> &i) const {
-            assert (false);
-//            std::map<storm::expressions::Variable, storm::expressions::Expression> substitution;
-//            substitution.emplace(indexVar, this->getManager().integer(i));
-//
-//            return storm::jani::substituteJaniExpression(elementExpression->toExpression(), substitution).getBaseExpressionPointer();
+        std::shared_ptr<const BaseExpression> ConstructorArrayExpression::at(std::vector<uint64_t> &indices) const {
+            assert (indices.size() == indexVars.size());
+            std::map<storm::expressions::Variable, storm::expressions::Expression> substitution;
+            for (auto i = 0; i < indices.size(); ++i) {
+                substitution.emplace(*indexVars.at(i), this->getManager().integer(indices.at(i)));
+            }
+            return storm::jani::substituteJaniExpression(elementExpression->toExpression(), substitution).getBaseExpressionPointer();
         }
 
         std::shared_ptr<const BaseExpression> ConstructorArrayExpression::at(uint64_t i) const {
             std::map<storm::expressions::Variable, storm::expressions::Expression> substitution;
-            substitution.emplace(*indexVar, this->getManager().integer(i));
-            return storm::jani::substituteJaniExpression(elementExpression->toExpression(), substitution).getBaseExpressionPointer();
+            std::vector<uint64_t> newI;
+            STORM_LOG_THROW(sizeExpressions.size() > 2, storm::exceptions::NotImplementedException, "Getting entry at " << i << " in Constructor Array for more than two nested arrays is not yet implemented");
+            if (sizeExpressions.size() == 2) {
+                auto size = sizeExpressions.at(1).get()->evaluateAsInt();
+                auto indexSecond = i % size;
+                auto indexFirst = (i-indexSecond) / size;
+                newI.push_back(indexFirst);
+                newI.push_back(indexSecond);
+            } else {
+                newI.push_back(i);
+            }
+            return at(newI);
         }
 
         size_t ConstructorArrayExpression::getNumberOfArrays() const {
@@ -97,8 +128,12 @@ namespace storm {
             return elementExpression;
         }
 
-        std::shared_ptr<storm::expressions::Variable> ConstructorArrayExpression::getIndexVar() const {
-            return indexVar;
+        std::shared_ptr<storm::expressions::Variable> ConstructorArrayExpression::getIndexVar(uint64_t i) const {
+            return indexVars.at(i);
+        }
+
+        size_t ConstructorArrayExpression::getSizeIndexVar(uint64_t i) const {
+            return sizeExpressions.at(i)->evaluateAsInt();
         }
         
     }

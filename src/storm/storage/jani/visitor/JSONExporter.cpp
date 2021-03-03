@@ -709,12 +709,36 @@ namespace storm {
         boost::any ExpressionToJson::visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) {
             ExportJsonType opDecl;
             opDecl["op"] = "ac";
-            opDecl["var"] = expression.getIndexVar()->getName();
-            opDecl["length"] = anyToJson(expression.size()->accept(*this, data));
-            bool inserted = auxiliaryVariables.insert(expression.getIndexVar()->getName()).second;
-            opDecl["exp"] = anyToJson(expression.getElementExpression()->accept(*this, data));
-            if (inserted) {
-                auxiliaryVariables.erase(expression.getIndexVar()->getName());
+            STORM_LOG_THROW(expression.getNumberOfArrays() <= 2, storm::exceptions::NotImplementedException, "Exporting JSON for more than two nested arrays is not yet implemented");
+
+            // TODO: make this generic
+            if (expression.getNumberOfArrays() == 2) {
+                std::cout << expression << std::endl;
+                ExportJsonType opDeclSecond;
+                opDeclSecond["op"] = "ac";
+                opDeclSecond["var"] = expression.getIndexVar(1)->getName();
+                opDeclSecond["length"] = std::to_string(expression.getSizeIndexVar(1));
+                bool insertedSecond = auxiliaryVariables.insert(expression.getIndexVar(1)->getName()).second;
+                opDeclSecond["exp"] = anyToJson(expression.getElementExpression()->accept(*this, data));
+                if (insertedSecond) {
+                    auxiliaryVariables.erase(expression.getIndexVar(1)->getName());
+                }
+                opDecl["var"] = expression.getIndexVar(0)->getName();
+                opDecl["length"] = std::to_string(expression.getSizeIndexVar(0));
+                bool inserted = auxiliaryVariables.insert(expression.getIndexVar(0)->getName()).second;
+                opDecl["exp"] = std::move(opDeclSecond);
+                if (inserted) {
+                    auxiliaryVariables.erase(expression.getIndexVar(0)->getName());
+                }
+                std::cout << opDecl << std::endl;
+            } else {
+                opDecl["var"] = expression.getIndexVar(0)->getName();
+                opDecl["length"] = std::to_string(expression.getSizeIndexVar(0));
+                bool inserted = auxiliaryVariables.insert(expression.getIndexVar(0)->getName()).second;
+                opDecl["exp"] = anyToJson(expression.getElementExpression()->accept(*this, data));
+                if (inserted) {
+                    auxiliaryVariables.erase(expression.getIndexVar(0)->getName());
+                }
             }
             return opDecl;
         }

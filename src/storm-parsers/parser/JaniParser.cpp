@@ -857,8 +857,8 @@ namespace storm {
                     }
                 } else {
                     if (sizeMap.find(name) == sizeMap.end()) {
-                        assert (sizeMap.find(ptrCon->getIndexVar()->getName()) != sizeMap.end());
-                        sizeMap[name] = sizeMap[ptrCon->getIndexVar()->getName()];
+                        assert (sizeMap.find(ptrCon->getIndexVar(0)->getName()) != sizeMap.end());
+                        sizeMap[name] = sizeMap[ptrCon->getIndexVar(0)->getName()];
                     }
                 }
             } else {
@@ -1385,6 +1385,9 @@ namespace storm {
                         STORM_LOG_THROW(expressionStructure.count("exp"), storm::exceptions::InvalidJaniException, "Missing 'exp' in array access at " << scope.description);
 
                         Json subStructure = expressionStructure;
+                        std::vector<std::shared_ptr<storm::expressions::Variable>> indexVars;
+                        // TODO: REFACTOR use existing methods here
+                        auto newAuxVars = auxiliaryVariables;
                         while (subStructure.count("exp")) {
                             STORM_LOG_THROW(subStructure.count("var") == 1, storm::exceptions::InvalidJaniException, "Array access operator requires exactly one var (at " + scope.description + ").");
 
@@ -1405,27 +1408,23 @@ namespace storm {
                             ensureIntegerType(length, opstring, 1, scope.description);
                             lengths.push_back(length.getBaseExpressionPointer());
                             sizes.push_back(length.evaluateAsInt());
+                            STORM_LOG_THROW(auxiliaryVariables.find(indexVarName) == auxiliaryVariables.end(), storm::exceptions::InvalidJaniException, "Index variable " << indexVarName << " is already defined as an auxiliary variable (at " + scope.description + ").");
+                            storm::expressions::Variable indexVar = expressionManager->declareFreshIntegerVariable(false, "ac_" + indexVarName);
+                            newAuxVars.emplace(indexVarName, indexVar);
+                            indexVars.push_back(std::make_shared<storm::expressions::Variable>(indexVar));
                             subStructure = subStructure.at("exp");
                         }
-                        // Make a var for this index
-                        auto newAuxVars = auxiliaryVariables;
-                        STORM_LOG_THROW(auxiliaryVariables.find(indexVarName) == auxiliaryVariables.end(), storm::exceptions::InvalidJaniException, "Index variable " << indexVarName << " is already defined as an auxiliary variable (at " + scope.description + ").");
-                        storm::expressions::Variable indexVar = expressionManager->declareFreshIntegerVariable(false, "ac_" + indexVarName);
-                        newAuxVars.emplace(indexVarName, indexVar);
                         storm::expressions::Expression exp = parseExpression(subStructure, scope.refine("exp of array constructor"), returnNoneInitializedOnUnknownOperator, newAuxVars);
+                        sizeMap[indexVars.at(0)->getName()] = sizes;
 
                         storm::expressions::Type type = exp.getType();
                         for (auto & length : lengths) {
                             type = exp.getManager().getArrayType(type);
                         }
 
-                        assert (sizeMap.find(indexVar.getName()) == sizeMap.end());
-                        sizeMap[indexVar.getName()] = sizes;
-
-                        auto indexVarPtr = std::make_shared<storm::expressions::Variable>(indexVar);
                         STORM_LOG_THROW(expressionStructure.count("length") == 1, storm::exceptions::InvalidJaniException, "Array access operator requires exactly one length (at " + scope.description + ").");
 
-                        return std::make_shared<storm::expressions::ConstructorArrayExpression>(*expressionManager, type, lengths, indexVarPtr, exp.getBaseExpressionPointer())->toExpression();
+                        return std::make_shared<storm::expressions::ConstructorArrayExpression>(*expressionManager, type, lengths, std::move(indexVars), exp.getBaseExpressionPointer())->toExpression();
                     } else if (opstring == "call") {
                         STORM_LOG_THROW(expressionStructure.count("function") == 1, storm::exceptions::InvalidJaniException, "Function call operator requires exactly one function (at " + scope.description + ").");
                         std::string functionName = getString<ValueType>(expressionStructure.at("function"), "in function call operator (at " + scope.description + ").");

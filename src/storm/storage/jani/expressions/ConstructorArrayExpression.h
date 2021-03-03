@@ -11,7 +11,7 @@ namespace storm {
         class ConstructorArrayExpression : public ArrayExpression {
         public:
             
-            ConstructorArrayExpression(ExpressionManager const& manager, Type const& type, std::vector<std::shared_ptr<BaseExpression const>> const& size, std::shared_ptr<storm::expressions::Variable> indexVar, std::shared_ptr<BaseExpression const> const& elementExpression);
+            ConstructorArrayExpression(ExpressionManager const& manager, Type const& type, std::vector<std::shared_ptr<BaseExpression const>> const& size, std::vector<std::shared_ptr<storm::expressions::Variable>> indexVars, std::shared_ptr<BaseExpression const> const& elementExpression);
 
             // Instantiate constructors and assignments with their default implementations.
             ConstructorArrayExpression(ConstructorArrayExpression const& other) = default;
@@ -38,7 +38,8 @@ namespace storm {
             virtual std::shared_ptr<BaseExpression const> at(uint64_t i) const override;
 
             std::shared_ptr<BaseExpression const> const& getElementExpression() const;
-            std::shared_ptr<storm::expressions::Variable> getIndexVar() const;
+            std::shared_ptr<storm::expressions::Variable> getIndexVar(uint64_t i) const;
+            size_t getSizeIndexVar(uint64_t i) const;
             size_t getNumberOfArrays() const;
         protected:
             virtual void printToStream(std::ostream& stream) const override;
@@ -46,7 +47,7 @@ namespace storm {
         private:
             std::vector<std::shared_ptr<BaseExpression const>> sizeExpressions;
             std::shared_ptr<BaseExpression const> sizeExpression;
-            std::shared_ptr<storm::expressions::Variable> indexVar;
+            std::vector<std::shared_ptr<storm::expressions::Variable>> indexVars;
             std::shared_ptr<BaseExpression const> elementExpression;
         };
     }
