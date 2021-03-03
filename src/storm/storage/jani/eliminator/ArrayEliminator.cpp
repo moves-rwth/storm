@@ -68,7 +68,6 @@ namespace storm {
                 }
                 
                 virtual boost::any visit(storm::expressions::VariableExpression const& expression, boost::any const& data) override {
-                    std::cout << "Visiting var expr 1" << std::endl;
                     if (data.type() == typeid(std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, std::pair<int, bool>>)) {
                         auto arrayVariableSizeMap = boost::any_cast<std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, std::pair<int, bool>>>(data);
                         if (expression.getType().isArrayType()) {
@@ -120,24 +119,18 @@ namespace storm {
                 }
                 
                 virtual boost::any visit(storm::expressions::ValueArrayExpression const& expression, boost::any const&) override {
-                    std::cout << "Visit valuearray in arrayelim" << std::endl;
-
                     assert (false);
 //                    STORM_LOG_ASSERT(expression.size()->isIntegerLiteralExpression(), "unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
 //                    return static_cast<std::size_t>(expression.size()->evaluateAsInt());
                 }
 
                 virtual boost::any visit(storm::expressions::ValueArrayExpression::ValueArrayElements const& expression, boost::any const&) override {
-                    std::cout << "Visit valuearray element in arrayelim" << std::endl;
-
                     assert (false);
 //                    STORM_LOG_ASSERT(expression.size()->isIntegerLiteralExpression(), "unexpected kind of size expression of ValueArrayExpression (" << expression.size()->toExpression() << ").");
 //                    return static_cast<std::size_t>(expression.size()->evaluateAsInt());
                 }
                 
                 virtual boost::any visit(storm::expressions::ConstructorArrayExpression const& expression, boost::any const& data) override {
-                    std::cout << "Visit constructarray in arrayelim" << std::endl;
-
                     if (data.type() == typeid(std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, std::pair<int, bool>>)) {
                         auto dataPair = boost::any_cast<std::pair<std::unordered_map<storm::expressions::Variable, std::size_t>, std::pair<int, bool>>>(data);
                         if (dataPair.second.second) {
@@ -323,8 +316,6 @@ namespace storm {
                 }
                 
                 virtual boost::any visit(storm::expressions::VariableExpression const& expression, boost::any const& data) override {
-                    std::cout << "Visiting var expr 2" << std::endl;
-
                     if (expression.getType().isArrayType()) {
                         STORM_LOG_THROW(!data.empty(), storm::exceptions::NotSupportedException, "Unable to translate array variable to basic variable, since it does not seem to be within an array access expression.");
                         uint64_t index;
@@ -334,7 +325,7 @@ namespace storm {
                             assert (data.type() == typeid(ResultType));
                             auto resultType = boost::any_cast<ResultType>(data);
                             if (resultType.expr()->containsVariables()) {
-                                std::cout << "HELPPP" << *(resultType.expr()) << std::endl;
+                                assert (false);
                             } else {
                                 index = resultType.expr()->evaluateAsInt();
                             }
@@ -397,7 +388,6 @@ namespace storm {
                 }
                 
                 virtual boost::any visit(storm::expressions::ValueArrayExpression const& expression, boost::any const& data) override {
-                    std::cout << "Visit valuearray in arrayelimvisitor" << std::endl;
 
 //                    STORM_LOG_THROW(!data.empty(), storm::exceptions::NotSupportedException, "Unable to translate ValueArrayExpression to element expression since it does not seem to be within an array access expression.");
 //                    uint64_t index = boost::any_cast<uint64_t>(data);
@@ -410,7 +400,6 @@ namespace storm {
                 }
 
                 virtual boost::any visit(storm::expressions::ValueArrayExpression::ValueArrayElements const& expression, boost::any const& data) override {
-                    std::cout << "Visit valuearrayelem in arrayelimvisitor" << std::endl;
 
 //                    STORM_LOG_THROW(!data.empty(), storm::exceptions::NotSupportedException, "Unable to translate ValueArrayExpression to element expression since it does not seem to be within an array access expression.");
 //                    uint64_t index = boost::any_cast<uint64_t>(data);
@@ -430,7 +419,7 @@ namespace storm {
                     } else {
                         auto resultType = boost::any_cast<ResultType>(data);
                         if (resultType.expr()->containsVariables()) {
-                            std::cout << "HELPPP" << *(resultType.expr()) << std::endl;
+                            assert (false);
                         } else {
                             index = resultType.expr()->evaluateAsInt();
                         }
@@ -446,15 +435,11 @@ namespace storm {
                 }
                 
                 virtual boost::any visit(storm::expressions::ArrayAccessExpression const& expression, boost::any const&) override {
-                    std::cout << "Visit ArrayAccessExpression in arrayelimvisitor" << std::endl;
-
                     return expression.getSecondOperand()->accept(*this, expression.getFirstOperand());
                 }
 
 
                 virtual boost::any visit(storm::expressions::ArrayAccessIndexExpression const& expression, boost::any const& data) override {
-                    std::cout << "Visit ArrayAccessIndexExpression in arrayelimvisitor" << std::endl;
-
                     // Expecting data to be a pair of a base expression pointing to the ArrayExpression, and the current array we are investigating.
                     // E.g. if we have array[array[int]] as type, 0 refers to outer array
                     assert (data.type() == typeid(std::shared_ptr<storm::expressions::BaseExpression const>));
@@ -566,9 +551,6 @@ namespace storm {
                         previousResult = result;
                         ConstJaniTraverser::traverse(model, &result);
                     } while (previousResult != result);
-                    for (auto& entry : result) {
-                        std::cout << entry.first.getName() << entry.second << std::endl;
-                    }
                     return result;
                 }
                 

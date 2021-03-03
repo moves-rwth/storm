@@ -43,6 +43,8 @@ namespace storm {
              * Retrieves the lValue that is written in this assignment.
              */
             storm::jani::LValue& getLValue();
+
+            std::string getName() const;
             
             /*!
              * Retrieves the Variable that is written in this assignment.

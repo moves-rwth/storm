@@ -122,6 +122,20 @@ namespace storm {
             }
         }
 
+        std::string LValue::getName() const {
+            std::string result;
+            if (isVariable()) {
+                result = getVariable().getName();
+            } else {
+                STORM_LOG_ASSERT(isArrayAccess(), "Unhandled LValue.");
+                result += getArray().getName();
+                for (auto i = 0; i < getArrayIndexVector().size(); ++i) {
+                    result += "[" + getArrayIndexVector().at(i).toString() + "]";
+                }
+            }
+            return result;
+        }
+
         bool LValue::operator<(LValue const& other) const {
             if (isVariable()) {
                 return !other.isVariable() || variable->getExpressionVariable() < other.getVariable().getExpressionVariable();

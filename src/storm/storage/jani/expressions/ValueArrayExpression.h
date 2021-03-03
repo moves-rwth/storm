@@ -51,7 +51,6 @@ namespace storm {
             void printToStream(std::ostream& stream, ValueArrayElements const& element) const;
 
             ValueArrayElements const elements;
-
         };
     }
 }

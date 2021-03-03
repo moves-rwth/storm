@@ -23,8 +23,6 @@ namespace storm {
         
         template<typename MapType>
         boost::any JaniExpressionSubstitutionVisitor<MapType>::visit(ValueArrayExpression const& expression, boost::any const& data) {
-            std::cout << "Visit valuearray in jani expr subst" << std::endl;
-
             assert (false);
 //            uint64_t size = expression.size()->evaluateAsInt();
 //            std::vector<std::shared_ptr<BaseExpression const>> newElements;
@@ -37,8 +35,6 @@ namespace storm {
 
         template<typename MapType>
         boost::any JaniExpressionSubstitutionVisitor<MapType>::visit(ValueArrayExpression::ValueArrayElements const& elements, boost::any const& data) {
-            std::cout << "Visit valuearrayelement in jani expr subst" << std::endl;
-
             assert (false);
 //            uint64_t size = expression.size()->evaluateAsInt();
 //            std::vector<std::shared_ptr<BaseExpression const>> newElements;
@@ -51,12 +47,8 @@ namespace storm {
     
         template<typename MapType>
         boost::any JaniExpressionSubstitutionVisitor<MapType>::visit(ConstructorArrayExpression const& expression, boost::any const& data) {
-            std::cout << "Visit constructArray in jani expr subst" << std::endl;
-
             std::shared_ptr<BaseExpression const> newSize = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.size()->accept(*this, data));
             std::shared_ptr<BaseExpression const> elementExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getElementExpression()->accept(*this, data));
-            std::cout << "Newsize: " << *newSize << std::endl;
-            std::cout << "elementExpression: " << *elementExpression << std::endl;
             STORM_LOG_THROW(this->variableToExpressionMapping.find(*expression.getIndexVar()) == this->variableToExpressionMapping.end(), storm::exceptions::InvalidArgumentException, "substitution of the index variable of a constructorArrayExpression is not possible.");
             // If the arguments did not change, we simply push the expression itself.
             if (newSize.get() == expression.size().get() && elementExpression.get() == expression.getElementExpression().get()) {
@@ -70,7 +62,6 @@ namespace storm {
 
         template<typename MapType>
         boost::any JaniExpressionSubstitutionVisitor<MapType>::visit(ArrayAccessExpression const& expression, boost::any const& data) {
-            std::cout << "Visit arrayAcces in jani expr subst" << std::endl;
             std::shared_ptr<BaseExpression const> firstExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getFirstOperand()->accept(*this, data));
             std::shared_ptr<BaseExpression const> secondExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getSecondOperand()->accept(*this, data));
 
@@ -84,8 +75,6 @@ namespace storm {
 
         template<typename MapType>
         boost::any JaniExpressionSubstitutionVisitor<MapType>::visit(ArrayAccessIndexExpression const& expression, boost::any const& data) {
-            std::cout << "Visit arrayAccesIndex in jani expr subst" << std::endl;
-
             if (expression.getFirstOperand() == expression.getSecondOperand()) {
                 // In this case we are at the last index expression
                 std::shared_ptr<BaseExpression const> firstExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getFirstOperand()->accept(*this, data));
@@ -111,8 +100,6 @@ namespace storm {
 
         template<typename MapType>
         boost::any JaniExpressionSubstitutionVisitor<MapType>::visit(FunctionCallExpression const& expression, boost::any const& data) {
-            std::cout << "Visit functioncall in jani expr subst" << std::endl;
-
             std::vector<std::shared_ptr<BaseExpression const>> newArguments;
             newArguments.reserve(expression.getNumberOfArguments());
             for (uint64_t i = 0; i < expression.getNumberOfArguments(); ++i) {

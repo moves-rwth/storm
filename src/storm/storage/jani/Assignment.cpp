@@ -38,7 +38,11 @@ namespace storm  {
         storm::jani::LValue const& Assignment::getLValue() const {
             return lValue;
         }
-        
+
+        std::string Assignment::getName() const {
+            return lValue.getName();
+        }
+
         storm::jani::Variable const& Assignment::getVariable() const {
             return lValue.getVariable();
         }

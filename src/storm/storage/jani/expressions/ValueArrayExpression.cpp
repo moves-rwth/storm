@@ -4,6 +4,7 @@
 #include "storm/storage/expressions/ExpressionManager.h"
 
 #include "storm/exceptions/InvalidArgumentException.h"
+#include "storm/exceptions/NotImplementedException.h"
 #include "storm/exceptions/UnexpectedException.h"
 
 namespace storm {
@@ -58,8 +59,8 @@ namespace storm {
             ValueArrayElements result;
             if (element.elementsWithValue) {
                 result.elementsWithValue = std::vector<std::shared_ptr<BaseExpression const>>();
-                result.elementsWithValue.get().reserve(element.elementsWithValue->size());
-                for (auto const& e : elements.elementsWithValue.get()) {
+                auto const& elementsWithValue = element.elementsWithValue.get();
+                for (auto const& e : elementsWithValue) {
                     result.elementsWithValue->push_back(e->simplify());
                 }
             } else {
@@ -165,20 +166,17 @@ namespace storm {
         }
 
         std::shared_ptr<BaseExpression const> ValueArrayExpression::at(uint64_t index) const {
-            assert (false);
-//            ValueArrayElements result = elements;
-//            for (auto i = 0; i < index.size() - 1; ++i) {
-//                assert (!elements.elementsWithValue);
-//                if (elements.elementsOfElements) {
-//                    STORM_LOG_THROW(index[i] < elements.elementsOfElements->size(), storm::exceptions::InvalidArgumentException, "Tried to access the element with index " << i << " of an array of size " << elements.elementsOfElements->size() << ".");
-//
-//                } else {
-//                    STORM_LOG_THROW(index[i] < elements.elementsWithValue->size(), storm::exceptions::InvalidArgumentException, "Tried to access the element with index " << i << " of an array of size " << elements.elementsWithValue->size() << ".");
-//                }
-//                result = *elements.elementsOfElements->at(index[i]);
-//            }
-//            assert (result.elementsWithValue);
-//            return result.elementsWithValue->at(index[index.size() -1]);
+            if (elements.elementsWithValue) {
+                return elements.elementsWithValue->at(index);
+            } else {
+                STORM_LOG_THROW(elements.elementsOfElements->at(0)->elementsOfElements, storm::exceptions::NotImplementedException, "Getting the element at index " << index << " is not yet implemented for more than twice nested arrays");
+                auto size = elements.elementsOfElements->at(0)->elementsWithValue->size();
+                uint64_t indexLastPart = index % size;
+                uint64_t indexFirstPart = (index - indexLastPart) / size;
+                return elements.elementsOfElements->at(indexFirstPart)->elementsWithValue->at(indexLastPart);
+
+            }
+
         }
 
 

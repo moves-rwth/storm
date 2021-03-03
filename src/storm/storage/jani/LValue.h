@@ -25,6 +25,8 @@ namespace storm {
             std::vector<size_t> const& getSizes() const;
             size_t const& getSizeAt(int i) const;
             size_t const getTotalSize() const;
+            std::string getName() const;
+
             bool arrayIndexContainsVariable() const;
             void setArrayIndex(std::vector<storm::expressions::Expression> const& newIndex);
             
@@ -34,6 +36,8 @@ namespace storm {
             LValue changeAssignmentVariables(std::map<Variable const*, std::reference_wrapper<Variable const>> const& remapping) const;
             
             friend std::ostream& operator<<(std::ostream& stream, LValue const& lvalue);
+
+
 
         private:
             

@@ -17,25 +17,29 @@ namespace storm {
         }
         
         boost::any JaniReduceNestingExpressionVisitor::visit(ValueArrayExpression const& expression, boost::any const& data) {
-            assert (false);
-//            uint64_t size = expression.size()->evaluateAsInt();
-//            std::vector<std::shared_ptr<BaseExpression const>> newElements;
-//            newElements.reserve(size);
-//            for (uint64_t i = 0; i < size; ++i) {
-//                newElements.push_back(boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.at(i)->accept(*this, data)));
-//            }
-//            return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new ValueArrayExpression(expression.getManager(), expression.getType(), newElements)));
+            uint64_t size = expression.size()->evaluateAsInt();
+            ValueArrayExpression::ValueArrayElements newElements;
+            newElements.elementsWithValue = boost::any_cast<std::vector<std::shared_ptr<BaseExpression const>>>(visit(expression.getElements(), data));
+            std::cout << "Expression type valarrayexpr: " << expression.getType() << std::endl;
+            return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new ValueArrayExpression(expression.getManager(), expression.getType(), newElements)));
         }
 
         boost::any JaniReduceNestingExpressionVisitor::visit(ValueArrayExpression::ValueArrayElements const& elements, boost::any const& data) {
-            assert (false);
-//            uint64_t size = expression.size()->evaluateAsInt();
-//            std::vector<std::shared_ptr<BaseExpression const>> newElements;
-//            newElements.reserve(size);
-//            for (uint64_t i = 0; i < size; ++i) {
-//                newElements.push_back(boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.at(i)->accept(*this, data)));
-//            }
-//            return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new ValueArrayExpression(expression.getManager(), expression.getType(), newElements)));
+            std::vector<std::shared_ptr<BaseExpression const>> elementsWithValue;
+            if (elements.elementsWithValue) {
+                elementsWithValue.reserve(elements.elementsWithValue->size());
+                for (auto& elem : elements.elementsWithValue.get()) {
+                    elementsWithValue.push_back(boost::any_cast<std::shared_ptr<BaseExpression const>>(elem->accept(*this, data)));
+                }
+            } else {
+                for (auto& elem : elements.elementsOfElements.get()) {
+                    auto res = boost::any_cast<std::vector<std::shared_ptr<BaseExpression const>>>(visit(*elem, data));
+                    for (auto& entry : res) {
+                        elementsWithValue.push_back(entry);
+                    }
+                }
+            }
+            return elementsWithValue;
         }
     
         boost::any JaniReduceNestingExpressionVisitor::visit(ConstructorArrayExpression const& expression, boost::any const& data) {
@@ -65,15 +69,25 @@ namespace storm {
         }
 
         boost::any JaniReduceNestingExpressionVisitor::visit(ArrayAccessIndexExpression const& expression, boost::any const& data) {
-            assert (false);
-            std::shared_ptr<BaseExpression const> firstExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getFirstOperand()->accept(*this, data));
-            std::shared_ptr<BaseExpression const> secondExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getSecondOperand()->accept(*this, data));
+            if (expression.getFirstOperand() == expression.getSecondOperand()) {
+                std::shared_ptr<BaseExpression const> firstExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getFirstOperand()->accept(*this, data));
 
-            // If the arguments did not change, we simply push the expression itself.
-            if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
-                return expression.getSharedPointer();
+                // If the arguments did not change, we simply push the expression itself.
+                if (firstExpression.get() == expression.getFirstOperand().get()) {
+                    return expression.getSharedPointer();
+                } else {
+                    return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new ArrayAccessIndexExpression(expression.getManager(), expression.getType(), firstExpression)));
+                }
             } else {
-                return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new ArrayAccessExpression(expression.getManager(), expression.getType(), firstExpression, secondExpression)));
+                std::shared_ptr<BaseExpression const> firstExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getFirstOperand()->accept(*this, data));
+                std::shared_ptr<BaseExpression const> secondExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getSecondOperand()->accept(*this, data));
+
+                // If the arguments did not change, we simply push the expression itself.
+                if (firstExpression.get() == expression.getFirstOperand().get() && secondExpression.get() == expression.getSecondOperand().get()) {
+                    return expression.getSharedPointer();
+                } else {
+                    return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new ArrayAccessIndexExpression(expression.getManager(), expression.getType(), firstExpression, secondExpression)));
+                }
             }
         }
 
