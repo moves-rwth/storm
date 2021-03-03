@@ -45,7 +45,7 @@ jobs:
       - name: Init Docker
         run: sudo docker run -d -it --name storm --privileged movesrwth/storm-basesystem:${{ matrix.distro }}
       - name: Git clone
-        run: sudo docker exec storm git clone --depth 1 --branch $STORM_BRANCH $STORM_GIT_URL /opt/storm
+        run: sudo docker exec storm git clone --branch $STORM_BRANCH $STORM_GIT_URL /opt/storm
       - name: Run cmake
         run: sudo docker exec storm bash -c "mkdir /opt/storm/build; cd /opt/storm/build; cmake .. ${CMAKE_ARGS}"
       - name: Build storm
@@ -115,7 +115,7 @@ jobs:
         # Build & TEST & DEPLOY STORM
         #####
       - name: Git clone
-        run: sudo docker exec storm git clone --depth 1 --branch $STORM_BRANCH $STORM_GIT_URL /opt/storm
+        run: sudo docker exec storm git clone --branch $STORM_BRANCH $STORM_GIT_URL /opt/storm
       - name: Run cmake
         run: sudo docker exec storm bash -c "mkdir /opt/storm/build; cd /opt/storm/build; cmake .. ${CMAKE_ARGS}"
       - name: Build storm
