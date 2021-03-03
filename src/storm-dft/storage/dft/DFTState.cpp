@@ -343,10 +343,10 @@ namespace storm {
         }
  
         template<typename ValueType>
-        void DFTState<ValueType>::letDependencyBeUnsuccessful(size_t id) {
+        void DFTState<ValueType>::letDependencyBeUnsuccessful(std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dependency) {
             STORM_LOG_ASSERT(failableElements.hasDependencies(), "Index invalid.");
-            std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(id);
-            failableElements.removeDependency(id);
+            STORM_LOG_ASSERT(!dependency->isFDEP(), "Dependency is not a PDEP.");
+            failableElements.removeDependency(dependency->id());
             setDependencyUnsuccessful(dependency->id());
         }
 
