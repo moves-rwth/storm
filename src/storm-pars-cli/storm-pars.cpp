@@ -7,6 +7,7 @@
 #include "storm-pars/api/region.h"
 #include "storm-pars/analysis/MonotonicityHelper.h"
 
+#include "storm-pars/derivative/GradientDescentInstantiationSearcher.h"
 #include "storm-pars/modelchecker/instantiation/SparseCtmcInstantiationModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseParameterLiftingModelChecker.h"
 #include "storm-pars/modelchecker/region/SparseDtmcParameterLiftingModelChecker.h"
@@ -14,11 +15,15 @@
 #include "storm-pars/settings/ParsSettings.h"
 #include "storm-pars/settings/modules/ParametricSettings.h"
 #include "storm-pars/settings/modules/MonotonicitySettings.h"
+#include "storm-pars/settings/modules/DerivativeSettings.h"
 #include "storm-pars/settings/modules/RegionSettings.h"
 
 #include "storm-pars/transformer/SparseParametricMdpSimplifier.h"
 #include "storm-pars/transformer/SparseParametricDtmcSimplifier.h"
+#include "storm-pars/derivative/ResultType.h"
+#include "storm-pars/derivative/GradientDescentMethod.h"
 
+#include "storm-parsers/parser/KeyValueParser.h"
 #include "storm/api/storm.h"
 
 #include "storm/exceptions/BaseException.h"
@@ -274,12 +279,29 @@ namespace storm {
             auto parametricSettings = storm::settings::getModule<storm::settings::modules::ParametricSettings>();
             auto transformationSettings = storm::settings::getModule<storm::settings::modules::TransformationSettings>();
             auto monSettings = storm::settings::getModule<storm::settings::modules::MonotonicitySettings>();
+            auto derSettings = storm::settings::getModule<storm::settings::modules::DerivativeSettings>();
+            const bool gradientDescentEnabled = derSettings.isExtremumSearchSet() || derSettings.isFeasibleInstantiationSearchSet();
+
+            // If minimization is active and the model is parametric, parameters might be minimized away because they are inconsequential.
+            // This is the set of all such inconsequential parameters.
+            std::set<RationalFunctionVariable> omittedParameters;
+            // Currently made global in DerivativeSettings because I need this later - TODO! I don't know how to not have this as a global currently.
 
             PreprocessResult result(model, false);
-            if (monSettings.isMonotonicityAnalysisSet() || parametricSettings.isUseMonotonicitySet()) {
+            if (monSettings.isMonotonicityAnalysisSet() || parametricSettings.isUseMonotonicitySet() || gradientDescentEnabled || derSettings.getDerivativeAtInstantiation()) {
+                auto const previousParams = storm::models::sparse::getAllParameters(*model);
                 result.model = storm::pars::simplifyModel<ValueType>(result.model, input);
                 result.changed = true;
+                auto const currentParams = storm::models::sparse::getAllParameters(*model);
+                for (auto const& variable : previousParams) {
+                    if (!currentParams.count(variable)) {
+                        omittedParameters.insert(variable);
+                    }
+                }
             }
+
+            // TODO this is bad - fix it
+            derSettings.omittedParameters = omittedParameters;
             
             if (result.model->isOfType(storm::models::ModelType::MarkovAutomaton)) {
                 result.model = storm::cli::preprocessSparseMarkovAutomaton(result.model->template as<storm::models::sparse::MarkovAutomaton<ValueType>>());
@@ -545,6 +567,154 @@ namespace storm {
         }
 
         template <typename ValueType>
+        void performGradientDescent(std::shared_ptr<storm::models::sparse::Model<ValueType>> model, SymbolicInput const& input) {
+            STORM_LOG_THROW(model->isOfType(storm::models::ModelType::Dtmc), storm::exceptions::NotSupportedException, "Derivative currently only supported for DTMCs.");
+            std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> dtmc = model->template as<storm::models::sparse::Dtmc<ValueType>>();
+
+            std::vector<std::shared_ptr<storm::logic::Formula const>> formulas = storm::api::extractFormulasFromProperties(input.properties);
+            auto derSettings = storm::settings::getModule<storm::settings::modules::DerivativeSettings>();
+            auto formula = formulas[0];
+
+            derivative::ResultType resultType;
+            boost::optional<std::string> rewardModel;
+            if (formula->isProbabilityOperatorFormula()) {
+                resultType = derivative::ResultType::PROBABILITY;
+                rewardModel = boost::none;
+            } else if (formula->isRewardOperatorFormula()) {
+                resultType = derivative::ResultType::REWARD;
+                if (formula->asRewardOperatorFormula().hasRewardModelName()) {
+                    rewardModel = std::string(formula->asRewardOperatorFormula().getRewardModelName());
+                } else {
+                    rewardModel = std::string("");
+                }
+            } else {
+                STORM_LOG_ERROR("Input formula needs to be either a probability operator formula or a reward operator formula.");
+                return;
+            }
+
+            auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
+            if (resultType == derivative::ResultType::REWARD) {
+                for (auto const& rewardParameter : storm::models::sparse::getRewardParameters(*dtmc)) {
+                    vars.insert(rewardParameter);
+                }
+            }
+
+            std::cout << "Parameters: ";
+            for (auto const& entry : vars) {
+                std::cout << entry << " ";
+            }
+            std::cout << std::endl;
+
+
+            // TODO this comes out by magic - fix this
+            auto omittedParameters = derSettings.omittedParameters;
+
+            if (!omittedParameters.empty()) {
+                std::cout << "Parameters ";
+                for (auto const& entry : omittedParameters) {
+                    std::cout << entry << " ";
+                }
+                std::cout << "are inconsequential.";
+                if (derSettings.areInconsequentialParametersOmitted()) {
+                    std::cout << " They will be omitted in the found instantiation." << std::endl;
+                } else {
+                    std::cout << " They will be set to 0.5 in the found instantiation. To omit them, set the flag --omit-inconsequential-params." << std::endl;
+                }
+            }
+
+            boost::optional<derivative::GradientDescentMethod> method = derSettings.getGradientDescentMethod();
+            if (!method) {
+                STORM_LOG_ERROR("Unknown Gradient Descent method: " << derSettings.getGradientDescentMethodAsString());
+                return;
+            }
+
+            // Use the DerivativeEvaluationHelper to retrieve the derivative at an instantiation that is input by the user
+            if (auto instantiationString = derSettings.getDerivativeAtInstantiation()) {
+                std::unordered_map<std::string, std::string> keyValue = storm::parser::parseKeyValueString(*instantiationString);
+                std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type> instantiation;
+                for (auto const& pair : keyValue) {
+                    auto variable = carl::VariablePool::getInstance().findVariableWithName(pair.first);
+                    auto value = storm::utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(pair.second);
+                    instantiation.emplace(variable, value);
+                }
+                derivative::DerivativeEvaluationHelper<ValueType, storm::RationalNumber> evaluationHelper(dtmc, vars, formulas,
+                    resultType, rewardModel);
+                modelchecker::SparseDtmcInstantiationModelChecker<models::sparse::Dtmc<ValueType>, storm::RationalNumber> instantiationModelChecker(*dtmc);
+
+                uint_fast64_t initialState;           
+                const storm::storage::BitVector initialVector = dtmc->getStates("init");
+                for (uint_fast64_t x : initialVector) {
+                    initialState = x;
+                    break;
+                }
+                
+                if (resultType == derivative::ResultType::PROBABILITY) {
+                    auto formulaWithoutBound = std::make_shared<storm::logic::ProbabilityOperatorFormula>(
+                            formulas[0]->asProbabilityOperatorFormula().getSubformula().asSharedPointer(), storm::logic::OperatorInformation(boost::none, boost::none));
+                    const storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> checkTask
+                        = storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*formulaWithoutBound);
+                    instantiationModelChecker.specifyFormula(checkTask);
+                } else if (resultType == derivative::ResultType::REWARD) {
+                    auto formulaWithoutBound = std::make_shared<storm::logic::RewardOperatorFormula>(
+                            formulas[0]->asRewardOperatorFormula().getSubformula().asSharedPointer());
+                    const storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> checkTask
+                        = storm::modelchecker::CheckTask<storm::logic::Formula, ValueType>(*formulaWithoutBound);
+                    instantiationModelChecker.specifyFormula(checkTask);
+                }
+
+                for (auto const& parameter : vars) {
+                    std::cout << "Derivative w.r.t. " << parameter << ": ";
+
+                    Environment env;
+                    std::unique_ptr<storm::modelchecker::CheckResult> checkResult = instantiationModelChecker.check(env, instantiation);
+                    std::vector<storm::RationalNumber> probVector = checkResult->asExplicitQuantitativeCheckResult<storm::RationalNumber>().getValueVector();
+                    
+                    auto result = evaluationHelper.calculateDerivative(parameter, instantiation, probVector);
+                    std::cout << storm::utility::convertNumber<double>(result) << std::endl;
+                }
+                return;
+            // Search for extrema using Gradient Descent
+            } else if (derSettings.isExtremumSearchSet()) {
+                STORM_PRINT("Finding an extremum using Gradient Descent" << std::endl);
+                storm::utility::Stopwatch derivativeWatch(true);
+                storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> derivativeChecker(dtmc, vars, formulas, *method, derSettings.getLearningRate(), derSettings.getAverageDecay(), derSettings.getSquaredAverageDecay(), derSettings.getMiniBatchSize(), derSettings.getTerminationEpsilon(), derSettings.isPrintJsonSet());
+                auto instantiationAndValue = derivativeChecker.gradientDescent(false);
+                if (!derSettings.areInconsequentialParametersOmitted()) {
+                    for (RationalFunctionVariable const& param : omittedParameters) {
+                        instantiationAndValue.first[param] = utility::convertNumber<RationalFunction::CoeffType>(0.5);
+                    }
+                }
+                derivativeWatch.stop();
+                if (derSettings.isPrintJsonSet()) {
+                    derivativeChecker.printRunAsJson();
+                } else {
+                    std::cout << "Found value " << instantiationAndValue.second << " at instantiation " << instantiationAndValue.first << std::endl;
+                }
+                std::cout << "Finished in " << derivativeWatch << std::endl;
+                return;
+            // Search for feasible instantiations using Gradient Descent
+            } else if (derSettings.isFeasibleInstantiationSearchSet()) {
+                STORM_PRINT("Finding a feasible instantiation using Gradient Descent" << std::endl);
+                storm::utility::Stopwatch derivativeWatch(true);
+                storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> derivativeChecker(dtmc, vars, formulas, *method, derSettings.getLearningRate(), derSettings.getAverageDecay(), derSettings.getSquaredAverageDecay(), derSettings.getMiniBatchSize(), derSettings.getTerminationEpsilon(), derSettings.isPrintJsonSet());
+                auto instantiationAndValue = derivativeChecker.gradientDescent(true);
+                if (!derSettings.areInconsequentialParametersOmitted()) {
+                    for (RationalFunctionVariable const& param : omittedParameters) {
+                        instantiationAndValue.first[param] = utility::convertNumber<RationalFunction::CoeffType>(0.5);
+                    }
+                }
+                derivativeWatch.stop();
+                if (derSettings.isPrintJsonSet()) {
+                    derivativeChecker.printRunAsJson();
+                } else {
+                    std::cout << "Found value " << instantiationAndValue.second << " at instantiation " << instantiationAndValue.first << std::endl;
+                }
+                std::cout << "Finished in " << derivativeWatch << std::endl;
+                return;
+            }
+        }
+
+        template <typename ValueType>
         void analyzeMonotonicity(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions) {
             std::ofstream outfile;
             auto monSettings = storm::settings::getModule<storm::settings::modules::MonotonicitySettings>();
@@ -730,6 +900,12 @@ namespace storm {
 
         template <typename ValueType>
         void verifyWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, SymbolicInput const& input, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, SampleInformation<ValueType> const& samples, storm::api::MonotonicitySetting monotonicitySettings = storm::api::MonotonicitySetting(), boost::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>& monotoneParameters = boost::none, uint64_t monThresh = 0) {
+            auto derSettings = storm::settings::getModule<storm::settings::modules::DerivativeSettings>();
+            if (derSettings.isExtremumSearchSet() || derSettings.isFeasibleInstantiationSearchSet() || derSettings.getDerivativeAtInstantiation()) {
+                    storm::pars::performGradientDescent<ValueType>(model, input);
+                    return;
+            }
+
             if (regions.empty()) {
                 storm::pars::verifyPropertiesWithSparseEngine(model, input, samples);
             } else {
