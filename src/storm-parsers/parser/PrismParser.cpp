@@ -453,7 +453,7 @@ namespace storm {
                 return false;
             }
             return true;
-        };
+        }
 
         bool PrismParser::isFreshIdentifier(std::string const& identifier) {
             if (!this->secondRun && this->manager->hasVariable(identifier)) {
