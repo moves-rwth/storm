@@ -683,7 +683,7 @@ namespace storm {
 
         std::set<uint_fast64_t> const& Program::getModuleIndicesByActionIndex(uint_fast64_t actionIndex) const {
             auto const& actionModuleSetPair = this->actionIndicesToModuleIndexMap.find(actionIndex);
-            STORM_LOG_THROW(actionModuleSetPair != this->actionIndicesToModuleIndexMap.end(), storm::exceptions::OutOfRangeException, "Action name '" << actionIndex << "' does not exist.");
+            STORM_LOG_THROW(actionModuleSetPair != this->actionIndicesToModuleIndexMap.end(), storm::exceptions::OutOfRangeException, "Action with index '" << actionIndex << "' does not exist.");
             return actionModuleSetPair->second;
         }
 
