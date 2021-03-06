@@ -76,12 +76,8 @@ TEST(GradientDescentInstantiationSearcherTest, Brp_without_bisimulation) {
     ASSERT_EQ(dtmc->getNumberOfStates(), 193ull);
     ASSERT_EQ(dtmc->getNumberOfTransitions(), 383ull);
 
+    // Sadly, too slow to test with storm::RationalNumber :-(
     storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> doubleChecker(dtmc, vars, formulas);
     auto doubleInstantiation = doubleChecker.gradientDescent(false);
     ASSERT_NEAR(doubleInstantiation.second, 1, 1e-6);
-
-    // FIXME this is too slow to test :-(
-    /* storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, storm::RationalNumber> rationalChecker(dtmc, vars, formulas); */
-    /* auto rationalInstantiation = rationalChecker.gradientDescent(false); */
-    /* ASSERT_NEAR(rationalInstantiation.second, 1, 1e-6); */
 }
