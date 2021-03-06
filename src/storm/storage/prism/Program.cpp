@@ -861,6 +861,7 @@ namespace storm {
                 // Only let all non-zero indices be synchronizing.
                 if (actionIndexPair.second != 0) {
                     this->synchronizingActionIndices.insert(actionIndexPair.second);
+                    this->actionIndicesToModuleIndexMap[actionIndexPair.second] = std::set<uint_fast64_t>();
                 }
             }
 
@@ -870,9 +871,6 @@ namespace storm {
 
                 for (auto const& actionIndex : module.getSynchronizingActionIndices()) {
                     auto const& actionModuleIndicesPair = this->actionIndicesToModuleIndexMap.find(actionIndex);
-                    if (actionModuleIndicesPair == this->actionIndicesToModuleIndexMap.end()) {
-                        this->actionIndicesToModuleIndexMap[actionIndex] = std::set<uint_fast64_t>();
-                    }
                     this->actionIndicesToModuleIndexMap[actionIndex].insert(moduleIndex);
                 }
 
