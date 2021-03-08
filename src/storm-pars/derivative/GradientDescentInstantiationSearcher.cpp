@@ -310,7 +310,7 @@ namespace storm {
                     for (auto const& param : parameters) {
                         // TODO: Temporarily switched to only searching from 0.5.
                         // point[param] = utility::convertNumber<CoefficientType<ValueType>>(dist(engine));
-                        point[param] = utility::convertNumber<CoefficientType<ValueType>>(0.5);
+                        point[param] = utility::convertNumber<CoefficientType<ValueType>>(0.5 + 1e-6);
                     }
 
                     walk.clear();                   
@@ -346,7 +346,7 @@ namespace storm {
                 }
                 std::map<VariableType<ValueType>, CoefficientType<ValueType>> point;
                 for (auto const& param : parameters) {
-                    RationalNumber x = 0.5;
+                    RationalNumber x = 0.5 + 1e-6;
                     point[param] = utility::convertNumber<CoefficientType<ValueType>>(x);
                 }
 

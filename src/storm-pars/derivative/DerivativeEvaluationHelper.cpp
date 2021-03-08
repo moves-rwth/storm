@@ -85,8 +85,43 @@ namespace storm {
 
             // Calculate (1-M)^-1 * resultVec
             std::vector<ConstantType> finalResult(resultVec.size());
+            /* std::cout << constrainedMatrixInstantiated << std::endl; */
             linearEquationSolvers[parameter]->setMatrix(constrainedMatrixInstantiated);
+            /* for (auto const& entry : resultVec) { */
+            /*     std::cout << entry << " "; */
+            /* } */
+            /* std::cout << std::endl; */
+            /* std::cout << constrainedMatrixInstantiated << std::endl; */
             linearEquationSolvers[parameter]->solveEquations(*this->environment, finalResult, resultVec);
+            /* for (auto const& entry : finalResult) { */
+            /*     std::cout << entry << " "; */
+            /* } */
+            /* std::cout << std::endl; */
+
+/*             std::stringstream ss; */
+/*             ss << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()); */
+/*             std::ofstream matrixFileOut; */
+/*             matrixFileOut.open("matrices/" + ss.str() + ".matrix.txt"); */
+/*             for (uint64_t i = 0; i < constrainedMatrixInstantiated.getRowCount(); i++) { */
+/*                 auto row = constrainedMatrixInstantiated.getRow(i); */
+/*                 for (auto entry : row) { */
+/*                     matrixFileOut << i + 1; */
+/*                     matrixFileOut << "    "; */
+/*                     matrixFileOut << entry.getColumn() + 1; */
+/*                     matrixFileOut << "    "; */
+/*                     matrixFileOut << entry.getValue() << std::setprecision(16); */
+/*                     matrixFileOut << "\n"; */
+/*                 } */
+/*             } */
+/*             matrixFileOut.close(); */
+
+/*             std::ofstream vectorFileOut; */
+/*             vectorFileOut.open("matrices/" + ss.str() + ".vector.txt"); */
+/*             for (uint64_t i = 0; i < resultVec.size(); i++) { */
+/*                 vectorFileOut << resultVec[i] << std::setprecision(16); */
+/*                 vectorFileOut << "\n"; */
+/*             } */
+/*             vectorFileOut.close(); */
 
             ConstantType derivative = finalResult[initialState];
 
@@ -121,7 +156,23 @@ namespace storm {
 
             generalSetupWatch.start();
 
-            std::map <VariableType<ValueType>, storage::SparseMatrix<ValueType>> equationSystems;
+            storm::solver::GeneralLinearEquationSolverFactory<ConstantType> factory;
+
+            Environment newEnv;
+            // If the environment was set explicitely to the user to something else than topological+eigen, we will respect that.
+            // Otherwise, set it to topological+eigen.
+            auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
+            // TODO this doesn't work yet
+            /* if (!coreSettings.isEquationSolverSetFromDefaultValue()) { */
+            /*     newEnv.solver().setLinearEquationSolverPrecision( */
+            /*             storm::utility::convertNumber<storm::RationalNumber>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()), true); */
+            /*     newEnv.solver().setLinearEquationSolverType(solver::EquationSolverType::Topological); */
+            /*     newEnv.solver().topological().setUnderlyingEquationSolverType(solver::EquationSolverType::Eigen); */
+            /* } */
+            this->environment = std::make_unique<Environment>(newEnv);
+            bool convertToEquationSystem = factory.getEquationProblemFormat(*environment) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+
+            std::map<VariableType<ValueType>, storage::SparseMatrix<ValueType>> equationSystems;
             // Get initial and target states
             storage::BitVector target = model->getStates("target");
             initialState = model->getStates("init").getNextSetIndex(0);
@@ -151,20 +202,24 @@ namespace storm {
                 stateNumToEquationSystemRow[row] = newRow;
                 newRow++;
             }
-            this->constrainedMatrix = transitionMatrix.getSubmatrix(false, next, next, true);;
+            storage::SparseMatrix<ValueType> constrainedMatrix = transitionMatrix.getSubmatrix(false, next, next, true);
+            // If necessary, convert the matrix from the fixpoint notation to the form needed for the equation system.
+            this->constrainedMatrixEquationSystem = constrainedMatrix;
+            if (convertToEquationSystem) {
+                // go from x = A*x + b to (I-A)x = b.
+                constrainedMatrixEquationSystem.convertToEquationSystem();
+            }
 
             // Setup instantiated constrained matrix
-            
-            // First, just create the object
             storage::SparseMatrixBuilder<ConstantType> instantiatedSystemBuilder;
             const ConstantType dummyValue = storm::utility::one<ConstantType>();
-            for (uint_fast64_t row = 0; row < constrainedMatrix.getRowCount(); ++row) {
-                for (auto const& entry : constrainedMatrix.getRow(row)) {
+            for (uint_fast64_t row = 0; row < constrainedMatrixEquationSystem.getRowCount(); ++row) {
+                for (auto const& entry : constrainedMatrixEquationSystem.getRow(row)) {
                     instantiatedSystemBuilder.addNextValue(row, entry.getColumn(), dummyValue);
                 }
             }
             constrainedMatrixInstantiated = instantiatedSystemBuilder.build();
-            initializeInstantiatedMatrix(constrainedMatrix, constrainedMatrixInstantiated);
+            initializeInstantiatedMatrix(constrainedMatrixEquationSystem, constrainedMatrixInstantiated);
             // The resulting equation systems
             this->deltaConstrainedMatrices = std::make_unique<std::map<VariableType<ValueType>, storage::SparseMatrix<ValueType>>>();
             this->deltaConstrainedMatricesInstantiated = std::make_unique<std::map<VariableType<ValueType>, storage::SparseMatrix<ConstantType>>>();
@@ -233,23 +288,7 @@ namespace storm {
 
             generalSetupWatch.stop();
             
-            Environment newEnv;
-            // If the environment was set explicitely to the user to something else than topological+eigen, we will respect that.
-            // Otherwise, set it to topological+eigen.
-            auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
-            // TODO this doesn't work yet
-            if (!coreSettings.isEquationSolverSetFromDefaultValue()) {
-                newEnv.solver().setLinearEquationSolverPrecision(
-                        storm::utility::convertNumber<storm::RationalNumber>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()), true);
-                newEnv.solver().setLinearEquationSolverType(solver::EquationSolverType::Topological);
-                newEnv.solver().topological().setUnderlyingEquationSolverType(solver::EquationSolverType::Eigen);
-            }
-            this->environment = std::make_unique<Environment>(newEnv);
 
-            storm::solver::GeneralLinearEquationSolverFactory<ConstantType> factory;
-            STORM_LOG_THROW(factory.getEquationProblemFormat(newEnv) == storm::solver::LinearEquationSolverProblemFormat::FixedPointSystem,
-                    storm::exceptions::WrongFormatException,
-                    "only fixed point systems allowed");
             for (auto const& param : parameters) {
                 this->linearEquationSolvers[param] = factory.create(newEnv);
                 this->linearEquationSolvers[param]->setCachingEnabled(true);

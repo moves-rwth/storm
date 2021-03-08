@@ -15,3 +15,4 @@ module test
 	[] s=3 -> 1 : (s'=3);
 endmodule
 
+label "target" = s=2;

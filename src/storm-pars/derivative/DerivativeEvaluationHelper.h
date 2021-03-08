@@ -65,7 +65,7 @@ namespace storm {
             std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType*>> matrixMapping; 
             std::unordered_map<ValueType, ConstantType> functions; 
 
-            storage::SparseMatrix<ValueType> constrainedMatrix;
+            storage::SparseMatrix<ValueType> constrainedMatrixEquationSystem;
             storage::SparseMatrix<ConstantType> constrainedMatrixInstantiated;
             std::unique_ptr<std::map<typename utility::parametric::VariableType<ValueType>::type, storage::SparseMatrix<ValueType>>> deltaConstrainedMatrices;
             std::unique_ptr<std::map<typename utility::parametric::VariableType<ValueType>::type, storage::SparseMatrix<ConstantType>>> deltaConstrainedMatricesInstantiated;
