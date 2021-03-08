@@ -117,6 +117,8 @@ namespace storm {
              */
             void generateSynchronizedDistribution(storm::storage::BitVector const& state, ValueType const& probability, uint64_t position, std::vector<std::vector<std::reference_wrapper<storm::prism::Command const>>::const_iterator> const& iteratorList, storm::builder::jit::Distribution<StateType, ValueType>& distribution, StateToIdCallback stateToIdCallback);
 
+            bool isCommandPotentiallySynchronizing(prism::Command const& command) const;
+
             // The program used for the generation of next states.
             storm::prism::Program program;
 

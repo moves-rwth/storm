@@ -482,6 +482,9 @@ namespace storm {
                 bool hasOneEnabledCommand = false;
                 for (auto commandIndexIt = commandIndices.begin(), commandIndexIte = commandIndices.end(); commandIndexIt != commandIndexIte; ++commandIndexIt) {
                     storm::prism::Command const& command = module.getCommand(*commandIndexIt);
+                    if (!isCommandPotentiallySynchronizing(command)) {
+                        continue;
+                    }
                     if (commandFilter != CommandFilter::All) {
                         STORM_LOG_ASSERT(commandFilter == CommandFilter::Markovian || commandFilter == CommandFilter::Probabilistic, "Unexpected command filter.");
                         if ((commandFilter == CommandFilter::Markovian) != command.isMarkovian()) {
@@ -546,8 +549,8 @@ namespace storm {
                 for (uint_fast64_t j = 0; j < module.getNumberOfCommands(); ++j) {
                     storm::prism::Command const& command = module.getCommand(j);
 
-                    // Only consider unlabeled commands.
-                    if (command.isLabeled()) continue;
+                    // Only consider commands that are not possibly synchronizing.
+                    if (isCommandPotentiallySynchronizing(command)) continue;
 
                     if (commandFilter != CommandFilter::All) {
                         STORM_LOG_ASSERT(commandFilter == CommandFilter::Markovian || commandFilter == CommandFilter::Probabilistic, "Unexpected command filter.");
@@ -605,6 +608,10 @@ namespace storm {
                             }
                         }
                         choice.addReward(stateActionRewardValue);
+                    }
+
+                    if (this->options.isBuildChoiceLabelsSet() && command.isLabeled()) {
+                        choice.addLabel(program.getActionName(command.getActionIndex()));
                     }
 
                     if (program.getModelType() == storm::prism::Program::ModelType::SMG) {
@@ -836,6 +843,11 @@ namespace storm {
             }
 
             return std::make_shared<storm::storage::sparse::PrismChoiceOrigins>(std::make_shared<storm::prism::Program>(program), std::move(identifiers), std::move(identifierToCommandSetMapping));
+        }
+
+        template<typename ValueType, typename StateType>
+        bool PrismNextStateGenerator<ValueType, StateType>::isCommandPotentiallySynchronizing(const prism::Command &command) const {
+            return program.getPossiblySynchronizingCommands().get(command.getGlobalIndex());
         }
 
 

@@ -6,6 +6,7 @@
 #include <vector>
 #include <set>
 #include <boost/optional.hpp>
+#include <storm/storage/BitVector.h>
 
 #include "storm/storage/prism/Constant.h"
 #include "storm/storage/prism/Formula.h"
@@ -729,6 +730,8 @@ namespace storm {
              */
             std::pair<storm::jani::Model, std::vector<storm::jani::Property>> toJani(std::vector<storm::jani::Property> const& properties, bool allVariablesGlobal = true, std::string suffix = "") const;
 
+            storm::storage::BitVector const& getPossiblySynchronizingCommands() const;
+
         private:
             /*!
              * This function builds a command that corresponds to the synchronization of the given list of commands.
@@ -830,6 +833,8 @@ namespace storm {
 
             // A mapping from variable names to the modules in which they were declared.
             std::map<std::string, uint_fast64_t> variableToModuleIndexMap;
+
+            storage::BitVector possiblySynchronizingCommands;
 
             bool prismCompatibility;
         };

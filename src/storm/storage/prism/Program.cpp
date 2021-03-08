@@ -146,7 +146,7 @@ namespace storm {
         formulas(formulas), formulaToIndexMap(), players(players), modules(modules), moduleToIndexMap(),
         rewardModels(rewardModels), rewardModelToIndexMap(), systemCompositionConstruct(compositionConstruct),
         labels(labels), labelToIndexMap(), observationLabels(observationLabels), actionToIndexMap(actionToIndexMap), indexToActionMap(), actions(),
-        synchronizingActionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap(), prismCompatibility(prismCompatibility)
+        synchronizingActionIndices(), actionIndicesToModuleIndexMap(), variableToModuleIndexMap(), possiblySynchronizingCommands(), prismCompatibility(prismCompatibility)
         {
 
             // Start by creating the necessary mappings from the given ones.
@@ -160,6 +160,24 @@ namespace storm {
                 this->createMissingInitialValues();
                 for (auto& modules : this->modules) {
                     modules.createMissingInitialValues();
+                }
+            }
+
+            possiblySynchronizingCommands = storage::BitVector(this->getNumberOfCommands());
+            std::set<uint64_t> possiblySynchronizingActionIndices;
+            for(uint64_t syncAction : synchronizingActionIndices) {
+                if (getModuleIndicesByActionIndex(syncAction).size() > 1) {
+                    std::cout << "syncAction " << syncAction << std::endl;
+                    possiblySynchronizingActionIndices.insert(syncAction);
+                }
+            }
+            for (auto const& module : getModules()) {
+                for (auto const& command : module.getCommands()) {
+                    if (command.isLabeled()) {
+                        if (possiblySynchronizingActionIndices.count(command.getActionIndex())) {
+                            possiblySynchronizingCommands.set(command.getGlobalIndex());
+                        }
+                    }
                 }
             }
 
@@ -814,6 +832,10 @@ namespace storm {
 
         std::size_t Program::getNumberOfObservationLabels() const {
             return this->observationLabels.size();
+        }
+
+        storm::storage::BitVector const& Program::getPossiblySynchronizingCommands() const {
+            return possiblySynchronizingCommands;
         }
 
         Program Program::restrictCommands(storm::storage::FlatSet<uint_fast64_t> const& indexSet) const {
