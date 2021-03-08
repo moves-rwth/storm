@@ -703,6 +703,10 @@ namespace storm {
              */
             Program flattenModules(std::shared_ptr<storm::utility::solver::SmtSolverFactory> const& smtSolverFactory = std::shared_ptr<storm::utility::solver::SmtSolverFactory>(new storm::utility::solver::SmtSolverFactory())) const;
 
+
+            Program labelUnlabelledCommands(std::map<uint64_t,std::string> const& nameSuggestions) const;
+
+
             friend std::ostream& operator<<(std::ostream& stream, Program const& program);
 
             /*!

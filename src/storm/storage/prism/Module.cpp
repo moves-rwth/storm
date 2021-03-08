@@ -257,6 +257,37 @@ namespace storm {
 
             return Module(this->getName(), newBooleanVariables, newIntegerVariables, this->getClockVariables(), this->getInvariant(), newCommands, this->getFilename(), this->getLineNumber());
         }
+
+        Module Module::labelUnlabelledCommands(std::map<uint64_t, std::string> const& suggestions, uint64_t& newId, std::map<std::string, uint64_t>& nameToIdMapping) const {
+            std::vector<Command> newCommands;
+            newCommands.reserve(this->getNumberOfCommands());
+            for (auto const& command : this->getCommands()) {
+                if (command.isLabeled()) {
+                    newCommands.push_back(command);
+                } else {
+                    if(suggestions.count(command.getGlobalIndex())) {
+                        std::string newActionName = suggestions.at(command.getGlobalIndex());
+                        auto it = nameToIdMapping.find(newActionName);
+                        uint64_t actionId = newId;
+                        if (it == nameToIdMapping.end()) {
+                            nameToIdMapping[newActionName] = newId;
+                            newId++;
+                        } else {
+                            actionId = it->second;
+                        }
+                        newCommands.emplace_back(command.getGlobalIndex(), command.isMarkovian(), actionId, newActionName, command.getGuardExpression(), command.getUpdates(), command.getFilename(), command.getLineNumber());
+
+                    } else {
+                        std::string newActionName = getName() + "_cmd_" + std::to_string(command.getGlobalIndex());
+                        newCommands.emplace_back(command.getGlobalIndex(), command.isMarkovian(), newId, newActionName, command.getGuardExpression(), command.getUpdates(), command.getFilename(), command.getLineNumber());
+                        nameToIdMapping[newActionName] = newId;
+                        newId++;
+                    }
+
+                }
+            }
+            return Module(this->getName(), booleanVariables, integerVariables, clockVariables, invariant, newCommands, this->getFilename(), this->getLineNumber());
+        }
         
         bool Module::containsVariablesOnlyInUpdateProbabilities(std::set<storm::expressions::Variable> const& undefinedConstantVariables) const {
             for (auto const& booleanVariable : this->getBooleanVariables()) {

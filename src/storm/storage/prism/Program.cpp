@@ -892,7 +892,6 @@ namespace storm {
                 Module const& module = this->getModule(moduleIndex);
 
                 for (auto const& actionIndex : module.getSynchronizingActionIndices()) {
-                    auto const& actionModuleIndicesPair = this->actionIndicesToModuleIndexMap.find(actionIndex);
                     this->actionIndicesToModuleIndexMap[actionIndex].insert(moduleIndex);
                 }
 
@@ -1068,6 +1067,36 @@ namespace storm {
             }
 
             return Program(this->manager, this->getModelType(), newConstants, newBooleanVariables, newIntegerVariables, newFormulas, this->getPlayers(), newModules, this->getActionNameToIndexMapping(), newRewardModels, newLabels, newObservationLabels, newInitialConstruct, this->getOptionalSystemCompositionConstruct(), prismCompatibility);
+        }
+
+        Program Program::labelUnlabelledCommands(std::map<uint64_t, std::string> const& nameSuggestions) const {
+            for (auto const& entry : nameSuggestions) {
+                STORM_LOG_THROW(!hasAction(entry.second), storm::exceptions::InvalidArgumentException, "Cannot suggest names already in the program.");
+            }
+            std::vector<Module> newModules;
+            std::vector<RewardModel> newRewardModels;
+            std::map<std::string, uint64_t> newActionNameToIndexMapping = getActionNameToIndexMapping();
+
+            uint64_t oldId = 1;
+            if (!getSynchronizingActionIndices().empty()) {
+                oldId = *(getSynchronizingActionIndices().rbegin()) + 1;
+            }
+            uint64_t newId = oldId;
+            for (auto const& module : modules) {
+                newModules.push_back(module.labelUnlabelledCommands(nameSuggestions, newId, newActionNameToIndexMapping));
+            }
+
+            std::vector<std::pair<uint64_t, std::string>> newActionNames;
+            for (auto const& entry : newActionNameToIndexMapping) {
+                if(!hasAction(entry.first)) {
+                    newActionNames.emplace_back(entry.second, entry.first);
+                }
+            }
+            for (auto const& rewardModel : rewardModels) {
+                newRewardModels.push_back(rewardModel.labelUnlabelledCommands(newActionNames));
+            }
+
+            return Program(this->manager, this->getModelType(), this->getConstants(), this->getGlobalBooleanVariables(), this->getGlobalIntegerVariables(), this->getFormulas(), this->getPlayers(), newModules, newActionNameToIndexMapping, newRewardModels, this->getLabels(), this->getObservationLabels(), this->getOptionalInitialConstruct(), this->getOptionalSystemCompositionConstruct(), prismCompatibility);
         }
 
         void Program::checkValidity(Program::ValidityCheckLevel lvl) const {
