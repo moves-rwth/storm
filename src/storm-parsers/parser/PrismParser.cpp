@@ -833,21 +833,21 @@ namespace storm {
                 for (auto const& variable : moduleToRename.getBooleanVariables()) {
                     auto const& renamingPair = renaming.find(variable.getName());
                     if (renamingPair == renaming.end()) {
-                        STORM_LOG_ERROR("Parsing error in renaiming of module '" << oldModuleName << "': Boolean variable '" << variable.getName() << "' was not renamed.");
+                        STORM_LOG_ERROR("Parsing error in renaming of module '" << oldModuleName << "': Boolean variable '" << variable.getName() << "' was not renamed.");
                         return false;
                     }
                 }
                 for (auto const& variable : moduleToRename.getIntegerVariables()) {
                     auto const& renamingPair = renaming.find(variable.getName());
                      if (renamingPair == renaming.end()) {
-                        STORM_LOG_ERROR("Parsing error in renaiming of module '" << oldModuleName << "': Integer variable '" << variable.getName() << "' was not renamed.");
+                        STORM_LOG_ERROR("Parsing error in renaming of module '" << oldModuleName << "': Integer variable '" << variable.getName() << "' was not renamed.");
                         return false;
                     }
                 }
                 for (auto const& variable : moduleToRename.getClockVariables()) {
                     auto const& renamingPair = renaming.find(variable.getName());
                     if (renamingPair == renaming.end()) {
-                        STORM_LOG_ERROR("Parsing error in renaiming of module '" << oldModuleName << "': Clock variable '" << variable.getName() << "' was not renamed.");
+                        STORM_LOG_ERROR("Parsing error in renaming of module '" << oldModuleName << "': Clock variable '" << variable.getName() << "' was not renamed.");
                         return false;
                     }
                 }
