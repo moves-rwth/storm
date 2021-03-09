@@ -10,10 +10,14 @@
 namespace storm {
     namespace expressions {
         
-        ValueArrayExpression::ValueArrayExpression(ExpressionManager const& manager, Type const& type, ValueArrayElements const& elements) : ArrayExpression(manager, type), elements(elements) {
+        ValueArrayExpression::ValueArrayExpression(ExpressionManager const& manager, Type const& type) : ArrayExpression(manager, type), elements(ValueArrayElements()) {
             // Intentionally left empty
         }
-        
+
+        ValueArrayExpression::ValueArrayExpression(ExpressionManager const& manager, Type const& type, ValueArrayElements elements) : ArrayExpression(manager, type), elements(std::move(elements)) {
+            // Intentionally left empty
+        }
+
         void ValueArrayExpression::gatherVariables(std::set<storm::expressions::Variable>& variables) const {
             this->gatherVariables(variables, elements);
         }

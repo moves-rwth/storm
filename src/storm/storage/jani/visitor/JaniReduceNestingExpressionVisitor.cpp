@@ -17,10 +17,8 @@ namespace storm {
         }
         
         boost::any JaniReduceNestingExpressionVisitor::visit(ValueArrayExpression const& expression, boost::any const& data) {
-            uint64_t size = expression.size()->evaluateAsInt();
             ValueArrayExpression::ValueArrayElements newElements;
             newElements.elementsWithValue = boost::any_cast<std::vector<std::shared_ptr<BaseExpression const>>>(visit(expression.getElements(), data));
-            std::cout << "Expression type valarrayexpr: " << expression.getType() << std::endl;
             return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new ValueArrayExpression(expression.getManager(), expression.getType(), newElements)));
         }
 

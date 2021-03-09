@@ -914,7 +914,7 @@ namespace storm {
                 storm::expressions::Type exprVariableType = type.expressionType;
 
                 if (setInitValFromDefault) {
-                    initVal = storm::expressions::ValueArrayExpression(*expressionManager, exprVariableType, {}).toExpression();
+                    initVal = storm::expressions::ValueArrayExpression(*expressionManager, exprVariableType).toExpression();
                 }
                 assert (!type.bounds);
                 auto variable = expressionManager->declareArrayVariable(exprManagerName, exprVariableType);

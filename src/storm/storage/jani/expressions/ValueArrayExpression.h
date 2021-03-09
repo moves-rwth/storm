@@ -15,9 +15,9 @@ namespace storm {
                 std::vector<size_t> getSizes() const;
             };
             
-            ValueArrayExpression(ExpressionManager const& manager, Type const& type, ValueArrayElements const& elements);
-            
-            
+            ValueArrayExpression(ExpressionManager const& manager, Type const& type);
+            ValueArrayExpression(ExpressionManager const& manager, Type const& type, ValueArrayElements elements);
+
             // Instantiate constructors and assignments with their default implementations.
             ValueArrayExpression(ValueArrayExpression const& other) = default;
             ValueArrayExpression& operator=(ValueArrayExpression const& other) = delete;

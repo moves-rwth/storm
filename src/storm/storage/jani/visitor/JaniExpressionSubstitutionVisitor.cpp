@@ -23,26 +23,28 @@ namespace storm {
         
         template<typename MapType>
         boost::any JaniExpressionSubstitutionVisitor<MapType>::visit(ValueArrayExpression const& expression, boost::any const& data) {
-            assert (false);
-//            uint64_t size = expression.size()->evaluateAsInt();
-//            std::vector<std::shared_ptr<BaseExpression const>> newElements;
-//            newElements.reserve(size);
-//            for (uint64_t i = 0; i < size; ++i) {
-//                newElements.push_back(boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.at(i)->accept(*this, data)));
-//            }
-//            return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new ValueArrayExpression(expression.getManager(), expression.getType(), newElements)));
+            auto newElements = boost::any_cast<ValueArrayExpression::ValueArrayElements>(visit(expression.getElements(), data));
+            return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new ValueArrayExpression(expression.getManager(), expression.getType(), newElements)));
         }
 
         template<typename MapType>
         boost::any JaniExpressionSubstitutionVisitor<MapType>::visit(ValueArrayExpression::ValueArrayElements const& elements, boost::any const& data) {
-            assert (false);
-//            uint64_t size = expression.size()->evaluateAsInt();
-//            std::vector<std::shared_ptr<BaseExpression const>> newElements;
-//            newElements.reserve(size);
-//            for (uint64_t i = 0; i < size; ++i) {
-//                newElements.push_back(boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.at(i)->accept(*this, data)));
-//            }
-//            return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new ValueArrayExpression(expression.getManager(), expression.getType(), newElements)));
+            ValueArrayExpression::ValueArrayElements newElements;
+            if (elements.elementsWithValue) {
+                newElements.elementsWithValue = std::vector<std::shared_ptr<BaseExpression const>>();
+                newElements.elementsWithValue->reserve(elements.elementsWithValue->size());
+                for (auto& elem : elements.elementsWithValue.get()) {
+                    newElements.elementsWithValue->push_back(boost::any_cast<std::shared_ptr<BaseExpression const>>(elem->accept(*this, data)));
+                }
+            } else {
+                assert (elements.elementsOfElements);
+                newElements.elementsOfElements = std::vector<std::shared_ptr<ValueArrayExpression::ValueArrayElements const>>();
+                newElements.elementsOfElements->reserve(elements.elementsOfElements->size());
+                for (auto& elem : elements.elementsOfElements.get()) {
+                    newElements.elementsOfElements->push_back(std::make_shared<ValueArrayExpression::ValueArrayElements const>(boost::any_cast<ValueArrayExpression::ValueArrayElements>(visit(*elem, data))));
+                }
+            }
+            return newElements;
         }
     
         template<typename MapType>

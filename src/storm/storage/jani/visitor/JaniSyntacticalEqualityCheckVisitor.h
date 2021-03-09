@@ -3,7 +3,7 @@
 #include "storm/storage/expressions/ExpressionVisitor.h"
 #include "storm/storage/expressions/SyntacticalEqualityCheckVisitor.h"
 #include "storm/storage/jani/expressions/JaniExpressions.h"
-#include "storm/storage/jani/expressions/JaniExpressionVisitor.h"
+#include "storm/storage/jani/visitor/JaniExpressionVisitor.h"
 
 
 
