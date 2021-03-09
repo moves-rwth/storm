@@ -741,7 +741,7 @@ namespace storm {
             
             if (this->options.isExplorationChecksSet()) {
                 // Check that the resulting distribution is in fact a distribution.
-                STORM_LOG_THROW(!this->isDiscreteTimeModel() || this->comparator.isOne(probabilitySum), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for edge (actually sum to " << probabilitySum << ").");
+                STORM_LOG_THROW(!this->isDiscreteTimeModel() || (!storm::utility::isConstant(probabilitySum) || this->comparator.isOne(probabilitySum)), storm::exceptions::WrongFormatException, "Probabilities do not sum to one for edge (actually sum to " << probabilitySum << ").");
             }
             
             return choice;
