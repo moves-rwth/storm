@@ -917,10 +917,19 @@ namespace storm {
                     initVal = storm::expressions::ValueArrayExpression(*expressionManager, exprVariableType).toExpression();
                 }
                 assert (!type.bounds);
-                auto variable = expressionManager->declareArrayVariable(exprManagerName, exprVariableType);
+                auto variable = expressionManager->declareArrayVariable(exprManagerName, exprVariableType.getElementType());
 
                 STORM_LOG_THROW(sizeMap.at(name).size() != 0, storm::exceptions::InvalidJaniException, "For nested arrays, we require initialisation");
                 variable.setArraySizes(sizeMap.at(name));
+
+                auto i =1;
+                auto checkType = arrayType->getChildType();
+                while (checkType->isArrayType()) {
+                    checkType = checkType->getChildType();
+                    i++;
+                }
+                assert (sizeMap.at(name).size() == i);
+
                 return storm::jani::Variable::makeArrayVariable(name, arrayType, variable, initVal.get(), transientVar);
             }
             
@@ -1051,6 +1060,7 @@ namespace storm {
             if (scope.localVars != nullptr) {
                 auto it = scope.localVars->find(ident);
                 if (it != scope.localVars->end()) {
+                    auto test = it->second->getExpressionVariable();
                     return it->second->getExpressionVariable();
                 }
             }
@@ -1345,14 +1355,12 @@ namespace storm {
                         ensureArrayType(exp, opstring, 0, scope.description);
 
                         auto finalType = exp.getType();
-                        while (finalType.isArrayType()) {
-                            finalType = finalType.getElementType();
-                        }
                         auto & manager = exp.getManager();
                         // TODO: mapping van indexExpression naar de bijbehorende echte expression
                         std::shared_ptr<storm::expressions::ArrayAccessIndexExpression const> indexExpression;
                         if (index.size() == 1) {
                             indexExpression = std::make_shared<storm::expressions::ArrayAccessIndexExpression>(manager, manager.getIntegerType(), index[0].getBaseExpressionPointer());
+                            finalType = finalType.getElementType();
                         } else if (index.size() > 1) {
                             for (int i = index.size() - 1; i >= 0; --i) {
                                 if (i == (index.size() - 1)) {
@@ -1362,9 +1370,10 @@ namespace storm {
                                     assert (indexExpression != nullptr);
                                     indexExpression = std::make_shared<storm::expressions::ArrayAccessIndexExpression>(manager, manager.getIntegerType(), index[i].getBaseExpressionPointer(), indexExpression);
                                 }
+                                finalType = finalType.getElementType();
                             }
                         }
-                        return std::make_shared<storm::expressions::ArrayAccessExpression>(finalType.getManager(), finalType, exp.getBaseExpressionPointer(), indexExpression)->toExpression();
+                        return std::make_shared<storm::expressions::ArrayAccessExpression>(exp.getManager(), finalType, exp.getBaseExpressionPointer(), indexExpression)->toExpression();
                     } else if (opstring == "av") {
                         STORM_LOG_THROW(expressionStructure.count("elements") == 1, storm::exceptions::InvalidJaniException, "Array value operator requires exactly one 'elements' (at " + scope.description + ").");
                         storm::expressions::ValueArrayExpression::ValueArrayElements elements = parseAV(expressionStructure, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
@@ -1598,7 +1607,6 @@ namespace storm {
                         // value
                         STORM_LOG_THROW(assignmentEntry.count("value") == 1, storm::exceptions::InvalidJaniException, "Assignment in edge from '" << sourceLoc << "' in automaton '" << name << "' must have one value field");
                         storm::expressions::Expression assignmentExpr = parseExpression(assignmentEntry.at("value"), scope.refine("assignment in edge from '" + sourceLoc + "' in automaton '" + name + "'"));
-                        // TODO check types
                         // index
                         int64_t assignmentIndex = 0; // default.
                         if(assignmentEntry.count("index") > 0) {

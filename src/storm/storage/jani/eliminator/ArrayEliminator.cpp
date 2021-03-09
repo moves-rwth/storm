@@ -327,12 +327,9 @@ namespace storm {
                         STORM_LOG_THROW(!data.empty(), storm::exceptions::NotSupportedException, "Unable to translate array variable to basic variable, since it does not seem to be within an array access expression.");
                         uint64_t index;
                         if (data.type() == typeid(uint64_t)) {
-                            std::cout << "datatype is uint64_t" << std::endl;
                             index = boost::any_cast<uint64_t>(data);
                         } else {
                             assert (data.type() == typeid(ResultType));
-                            std::cout << "datatype is resulttype" << std::endl;
-
                             auto resultType = boost::any_cast<ResultType>(data);
                             if (resultType.expr()->containsVariables()) {
                                 assert (false);
