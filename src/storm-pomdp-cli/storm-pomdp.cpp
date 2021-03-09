@@ -26,6 +26,7 @@
 #include "storm-pomdp/analysis/FormulaInformation.h"
 #include "storm-pomdp/analysis/IterativePolicySearch.h"
 #include "storm-pomdp/analysis/OneShotPolicySearch.h"
+#include "storm-pomdp/analysis/JaniBeliefSupportMdpGenerator.h"
 
 #include "storm/api/storm.h"
 #include "storm/modelchecker/results/ExplicitQuantitativeCheckResult.h"
@@ -154,68 +155,85 @@ namespace storm {
                         formula.asProbabilityOperatorFormula());
                 pomdp.getTransitionMatrix().makeRowGroupsAbsorbing(surelyNotAlmostSurelyReachTarget);
                 storm::storage::BitVector targetStates = qualitativeAnalysis.analyseProb1(formula.asProbabilityOperatorFormula());
-
-                storm::expressions::ExpressionManager expressionManager;
-                std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
-                storm::pomdp::MemlessSearchOptions options = fillMemlessSearchOptionsFromSettings();
-                uint64_t lookahead = qualSettings.getLookahead();
-                if (lookahead == 0) {
-                    lookahead = pomdp.getNumberOfStates();
-                }
-                if (qualSettings.getMemlessSearchMethod() == "one-shot") {
-                    storm::pomdp::OneShotPolicySearch<ValueType> memlessSearch(pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory);
-                    if (qualSettings.isWinningRegionSet()) {
-                        STORM_LOG_ERROR("Computing winning regions is not supported by ccd-memless.");
-                    } else {
-                        memlessSearch.analyzeForInitialStates(lookahead);
+                if (qualSettings.isMemlessSearchSet()) {
+                    storm::expressions::ExpressionManager expressionManager;
+                    std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
+                    storm::pomdp::MemlessSearchOptions options = fillMemlessSearchOptionsFromSettings();
+                    uint64_t lookahead = qualSettings.getLookahead();
+                    if (lookahead == 0) {
+                        lookahead = pomdp.getNumberOfStates();
                     }
-                } else if (qualSettings.getMemlessSearchMethod() == "iterative") {
-                    storm::pomdp::IterativePolicySearch<ValueType> search(pomdp, targetStates, surelyNotAlmostSurelyReachTarget, smtSolverFactory, options);
-                    if (qualSettings.isWinningRegionSet()) {
-                        search.computeWinningRegion(lookahead);
-                    } else {
-                        search.analyzeForInitialStates(lookahead);
-                    }
-
-                    if (qualSettings.isPrintWinningRegionSet()) {
-                        search.getLastWinningRegion().print();
-                        std::cout << std::endl;
-                    }
-                    if (qualSettings.isExportWinningRegionSet()) {
-                        std::size_t hash = pomdp.hash();
-                        search.getLastWinningRegion().storeToFile(qualSettings.exportWinningRegionPath(), "model hash: " + std::to_string(hash));
-                    }
-
-                    search.finalizeStatistics();
-                    if(pomdp.getInitialStates().getNumberOfSetBits() == 1) {
-                        uint64_t initialState = pomdp.getInitialStates().getNextSetIndex(0);
-                        uint64_t initialObservation = pomdp.getObservation(initialState);
-                        // TODO this is inefficient.
-                        uint64_t offset = 0;
-                        for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
-                            if (state == initialState) {
-                                break;
-                            }
-                            if (pomdp.getObservation(state) == initialObservation) {
-                                ++offset;
-                            }
+                    if (qualSettings.getMemlessSearchMethod() == "one-shot") {
+                        storm::pomdp::OneShotPolicySearch<ValueType> memlessSearch(pomdp, targetStates,
+                                                                                   surelyNotAlmostSurelyReachTarget,
+                                                                                   smtSolverFactory);
+                        if (qualSettings.isWinningRegionSet()) {
+                            STORM_LOG_ERROR("Computing winning regions is not supported by ccd-memless.");
+                        } else {
+                            memlessSearch.analyzeForInitialStates(lookahead);
                         }
-                        STORM_PRINT_AND_LOG("Initial state is safe: " << search.getLastWinningRegion().isWinning(initialObservation, offset));
-                    } else {
-                        STORM_LOG_WARN("Output for multiple initial states is incomplete");
-                    }
-                    std::cout << "Number of belief support states: " << search.getLastWinningRegion().beliefSupportStates() << std::endl;
-                    if (coreSettings.isShowStatisticsSet() && qualSettings.computeExpensiveStats()) {
-                        auto wbss = search.getLastWinningRegion().computeNrWinningBeliefs();
-                        STORM_PRINT_AND_LOG( "Number of winning belief support states: [" << wbss.first << "," << wbss.second
-                                  << "]");
-                    }
-                    if (coreSettings.isShowStatisticsSet()) {
-                        search.getStatistics().print();
-                    }
+                    } else if (qualSettings.getMemlessSearchMethod() == "iterative") {
+                        storm::pomdp::IterativePolicySearch<ValueType> search(pomdp, targetStates,
+                                                                              surelyNotAlmostSurelyReachTarget,
+                                                                              smtSolverFactory, options);
+                        if (qualSettings.isWinningRegionSet()) {
+                            search.computeWinningRegion(lookahead);
+                        } else {
+                            search.analyzeForInitialStates(lookahead);
+                        }
 
-                } else {
-                    STORM_LOG_ERROR("This method is not implemented.");
+                        if (qualSettings.isPrintWinningRegionSet()) {
+                            search.getLastWinningRegion().print();
+                            std::cout << std::endl;
+                        }
+                        if (qualSettings.isExportWinningRegionSet()) {
+                            std::size_t hash = pomdp.hash();
+                            search.getLastWinningRegion().storeToFile(qualSettings.exportWinningRegionPath(),
+                                                                      "model hash: " + std::to_string(hash));
+                        }
+
+                        search.finalizeStatistics();
+                        if (pomdp.getInitialStates().getNumberOfSetBits() == 1) {
+                            uint64_t initialState = pomdp.getInitialStates().getNextSetIndex(0);
+                            uint64_t initialObservation = pomdp.getObservation(initialState);
+                            // TODO this is inefficient.
+                            uint64_t offset = 0;
+                            for (uint64_t state = 0; state < pomdp.getNumberOfStates(); ++state) {
+                                if (state == initialState) {
+                                    break;
+                                }
+                                if (pomdp.getObservation(state) == initialObservation) {
+                                    ++offset;
+                                }
+                            }
+                            STORM_PRINT_AND_LOG("Initial state is safe: "
+                                                        << search.getLastWinningRegion().isWinning(initialObservation,
+                                                                                                   offset));
+                        } else {
+                            STORM_LOG_WARN("Output for multiple initial states is incomplete");
+                        }
+                        std::cout << "Number of belief support states: "
+                                  << search.getLastWinningRegion().beliefSupportStates() << std::endl;
+                        if (coreSettings.isShowStatisticsSet() && qualSettings.computeExpensiveStats()) {
+                            auto wbss = search.getLastWinningRegion().computeNrWinningBeliefs();
+                            STORM_PRINT_AND_LOG(
+                                    "Number of winning belief support states: [" << wbss.first << "," << wbss.second
+                                                                                 << "]");
+                        }
+                        if (coreSettings.isShowStatisticsSet()) {
+                            search.getStatistics().print();
+                        }
+
+                    } else {
+                        STORM_LOG_ERROR("This method is not implemented.");
+                    }
+                }
+                if (qualSettings.isComputeOnBeliefSupportSet()) {
+                    storm::pomdp::qualitative::JaniBeliefSupportMdpGenerator<ValueType> janicreator(pomdp);
+                    janicreator.generate(targetStates, surelyNotAlmostSurelyReachTarget);
+                    bool initialOnly = !qualSettings.isWinningRegionSet();
+                    janicreator.verifySymbolic(initialOnly);
+                    STORM_PRINT_AND_LOG("Initial state is safe: " <<  janicreator.isInitialWinning() << "\n");
                 }
             }
             
