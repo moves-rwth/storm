@@ -76,14 +76,14 @@ namespace storm {
                 expressions::ExpressionManager& exprManager = model.getManager();
                 storm::expressions::Variable posProbVar = exprManager.declareRationalVariable("posProb");
                 model.addConstant(jani::Constant("posProb", posProbVar));
-                std::map<uint64_t, jani::BooleanVariable> stateVariables;
-                jani::BoundedIntegerVariable obsVar = model.addVariable(jani::BoundedIntegerVariable("obs", exprManager.declareIntegerVariable("obs"), exprManager.integer(initialObs), exprManager.integer(0), exprManager.integer(pomdp.getNrObservations())));
-                jani::BoundedIntegerVariable oldobsActVar = model.addVariable(jani::BoundedIntegerVariable("prevact", exprManager.declareIntegerVariable("prevact"), exprManager.integer(0), exprManager.integer(0), exprManager.integer(obsactpairs.size())));
+                std::map<uint64_t, const jani::BooleanVariable*> stateVariables;
+                const jani::BoundedIntegerVariable* obsVar = &model.addVariable(jani::BoundedIntegerVariable("obs", exprManager.declareIntegerVariable("obs"), exprManager.integer(initialObs), exprManager.integer(0), exprManager.integer(pomdp.getNrObservations())));
+                const jani::BoundedIntegerVariable* oldobsActVar = &model.addVariable(jani::BoundedIntegerVariable("prevact", exprManager.declareIntegerVariable("prevact"), exprManager.integer(0), exprManager.integer(0), exprManager.integer(obsactpairs.size())));
 
                 for (uint64_t i = 0; i < pomdp.getNumberOfStates(); ++i) {
                     std::string name = "s" + std::to_string(i);
                     bool isInitial = pomdp.getInitialStates().get(i);
-                    stateVariables.emplace(i, model.addVariable(jani::BooleanVariable(name, exprManager.declareBooleanVariable(name), exprManager.boolean(isInitial))));
+                    stateVariables.emplace(i, &model.addVariable(jani::BooleanVariable(name, exprManager.declareBooleanVariable(name), exprManager.boolean(isInitial))));
 
                 }
 
@@ -107,13 +107,13 @@ namespace storm {
                         jani::TemplateEdgeDestination edgedest;
                         std::vector<storm::expressions::Expression> exprVec;
                         for (auto const& pred : predecessorInfo[i][oaps.first]) {
-                            exprVec.push_back(stateVariables.at(pred).getExpressionVariable().getExpression());
+                            exprVec.push_back(stateVariables.at(pred)->getExpressionVariable().getExpression());
                         }
                         if (exprVec.empty()) {
-                            edgedest.addAssignment(jani::Assignment(stateVariables.at(i), exprManager.boolean(false)));
+                            edgedest.addAssignment(jani::Assignment(storm::jani::LValue(*stateVariables.at(i)), exprManager.boolean(false)));
                         } else {
                             edgedest.addAssignment(
-                                    jani::Assignment(stateVariables.at(i), (exprManager.integer(pomdp.getObservation(i)) == obsVar.getExpressionVariable().getExpression()) && storm::expressions::disjunction(exprVec)));
+                                    jani::Assignment(storm::jani::LValue(*stateVariables.at(i)), (exprManager.integer(pomdp.getObservation(i)) == obsVar->getExpressionVariable().getExpression()) && storm::expressions::disjunction(exprVec)));
                         }
                         tedge->addDestination(edgedest);
                         aut.addEdge(jani::Edge(primeloc, oaps.second,  boost::none,  tedge, {primeloc}, {exprManager.rational(1.0)}));
@@ -126,12 +126,12 @@ namespace storm {
                 auto const& targetVar = model.addVariable(jani::BooleanVariable("target", exprManager.declareBooleanVariable("target"), exprManager.boolean(false), true));
                 std::vector<storm::expressions::Expression> notTargetExpression;
                 for (auto const& state : ~targetStates) {
-                    notTargetExpression.push_back(!stateVariables.at(state).getExpressionVariable().getExpression());
+                    notTargetExpression.push_back(!stateVariables.at(state)->getExpressionVariable().getExpression());
                 }
                 auto const& badVar = model.addVariable(jani::BooleanVariable("bad", exprManager.declareBooleanVariable("bad"), exprManager.boolean(false), true));
                 std::vector<storm::expressions::Expression> badExpression;
                 for (auto const& state : badStates) {
-                    badExpression.push_back(stateVariables.at(state).getExpressionVariable().getExpression());
+                    badExpression.push_back(stateVariables.at(state)->getExpressionVariable().getExpression());
                 }
 
                 auto primeLocation = jani::Location("primary");
@@ -142,21 +142,21 @@ namespace storm {
                 uint64_t secloc = obsAut.addLocation(jani::Location("secondary"));
                 // First edges, select observation
                 for (auto const& oaps : actionIndices) {
-                    std::shared_ptr<jani::TemplateEdge> tedge = std::make_shared<jani::TemplateEdge>(exprManager.integer(oaps.first.observation) == obsVar.getExpressionVariable().getExpression());
+                    std::shared_ptr<jani::TemplateEdge> tedge = std::make_shared<jani::TemplateEdge>(exprManager.integer(oaps.first.observation) == obsVar->getExpressionVariable().getExpression());
                     std::vector<uint64_t> destLocs;
                     std::vector<storm::expressions::Expression> probs;
 
                     for (auto const& obsAndPredStates : obsPredInfo[oaps.first]) {
                         jani::TemplateEdgeDestination tedgedest;
-                        tedgedest.addAssignment(jani::Assignment(obsVar, exprManager.integer(obsAndPredStates.first)), true);
-                        tedgedest.addAssignment(jani::Assignment(oldobsActVar, exprManager.integer(oaps.second)), true);
+                        tedgedest.addAssignment(jani::Assignment(jani::LValue(*obsVar), exprManager.integer(obsAndPredStates.first)), true);
+                        tedgedest.addAssignment(jani::Assignment(jani::LValue(*oldobsActVar), exprManager.integer(oaps.second)), true);
 
                         tedge->addDestination(tedgedest);
 
                         destLocs.push_back(secloc);
                         std::vector<storm::expressions::Expression> predExpressions;
                         for (auto predstate : obsAndPredStates.second) {
-                            predExpressions.push_back(stateVariables.at(predstate).getExpressionVariable().getExpression());
+                            predExpressions.push_back(stateVariables.at(predstate)->getExpressionVariable().getExpression());
                         }
                         probs.push_back(storm::expressions::ite(storm::expressions::disjunction(predExpressions), posProbVar.getExpression(), exprManager.rational(0)));
                     }
@@ -165,26 +165,17 @@ namespace storm {
                 }
                 // Back edges
                 for (auto const& oaps : obsactpairs) {
-                    std::shared_ptr<jani::TemplateEdge> tedge = std::make_shared<jani::TemplateEdge>(oldobsActVar.getExpressionVariable() == exprManager.integer(actionIndices[oaps]));
+                    std::shared_ptr<jani::TemplateEdge> tedge = std::make_shared<jani::TemplateEdge>(oldobsActVar->getExpressionVariable() == exprManager.integer(actionIndices[oaps]));
 
                     jani::TemplateEdgeDestination tedgedest;
-                    tedgedest.addAssignment(jani::Assignment(oldobsActVar, exprManager.integer(0)));
+                    tedgedest.addAssignment(jani::Assignment(jani::LValue(*oldobsActVar), exprManager.integer(0)));
                     tedge->addDestination(tedgedest);
                     jani::Edge edge(secloc, actionIndices[oaps], boost::none, tedge, {primeloc}, {exprManager.rational(1.0)});
                     obsAut.addEdge(edge);
                 }
                 model.addAutomaton(obsAut);
-
                 model.setStandardSystemComposition();
-
-
                 model.finalize();
-                std::ofstream ostr;
-
-                storm::utility::openFile("beliefsupport-mdp.jani", ostr);
-                ostr << model;
-                model = storm::api::parseJaniModel("beliefsupport-mdp.jani").first;
-                storm::utility::closeFile(ostr);
             }
 
             template <typename ValueType>
