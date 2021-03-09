@@ -94,6 +94,10 @@ namespace storm {
         std::shared_ptr<BaseExpression const> ConstructorArrayExpression::size(uint_fast64_t index) const {
             return sizeExpressions.at(index);
         }
+
+        std::vector<std::shared_ptr<const BaseExpression>> const& ConstructorArrayExpression::getSizes() const {
+            return sizeExpressions;
+        }
         
         std::shared_ptr<const BaseExpression> ConstructorArrayExpression::at(std::vector<uint64_t> &indices) const {
             assert (indices.size() == indexVars.size());
@@ -130,6 +134,10 @@ namespace storm {
 
         std::shared_ptr<storm::expressions::Variable> ConstructorArrayExpression::getIndexVar(uint64_t i) const {
             return indexVars.at(i);
+        }
+
+        std::vector<std::shared_ptr<storm::expressions::Variable>> ConstructorArrayExpression::getIndexVars() const {
+            return indexVars;
         }
 
         size_t ConstructorArrayExpression::getSizeIndexVar(uint64_t i) const {

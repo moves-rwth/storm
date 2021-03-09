@@ -31,6 +31,7 @@ namespace storm {
 
             // Returns the size of the nestedarray at position i
             std::shared_ptr<BaseExpression const> size(uint_fast64_t i) const;
+            std::vector<std::shared_ptr<BaseExpression const>> const& getSizes() const;
 
 
             // Returns the element at position i
@@ -39,6 +40,7 @@ namespace storm {
 
             std::shared_ptr<BaseExpression const> const& getElementExpression() const;
             std::shared_ptr<storm::expressions::Variable> getIndexVar(uint64_t i) const;
+            std::vector<std::shared_ptr<storm::expressions::Variable>> getIndexVars() const;
             size_t getSizeIndexVar(uint64_t i) const;
             size_t getNumberOfArrays() const;
         protected:

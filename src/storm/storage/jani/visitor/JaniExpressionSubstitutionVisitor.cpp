@@ -49,17 +49,21 @@ namespace storm {
     
         template<typename MapType>
         boost::any JaniExpressionSubstitutionVisitor<MapType>::visit(ConstructorArrayExpression const& expression, boost::any const& data) {
-            std::shared_ptr<BaseExpression const> newSize = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.size()->accept(*this, data));
             std::shared_ptr<BaseExpression const> elementExpression = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.getElementExpression()->accept(*this, data));
-            assert (false);
-//            STORM_LOG_THROW(this->variableToExpressionMapping.find(*expression.getIndexVar()) == this->variableToExpressionMapping.end(), storm::exceptions::InvalidArgumentException, "substitution of the index variable of a constructorArrayExpression is not possible.");
+            std::vector<std::shared_ptr<const BaseExpression>> newSizes;
+            bool same = true;
+            for (auto i = 0; i < expression.getNumberOfArrays(); ++i) {
+                std::shared_ptr<BaseExpression const> newSize = boost::any_cast<std::shared_ptr<BaseExpression const>>(expression.size(i)->accept(*this, data));
+                same &= newSize.get() == expression.size().get();
+                newSizes.push_back(newSize);
+                STORM_LOG_THROW(this->variableToExpressionMapping.find(*(expression.getIndexVar(i))) == this->variableToExpressionMapping.end(), storm::exceptions::InvalidArgumentException, "substitution of the index variable of a constructorArrayExpression is not possible.");
+            }
+
             // If the arguments did not change, we simply push the expression itself.
-            if (newSize.get() == expression.size().get() && elementExpression.get() == expression.getElementExpression().get()) {
+            if (same && elementExpression.get() == expression.getElementExpression().get()) {
                 return expression.getSharedPointer();
             } else {
-                // TODO: how to deal with arrays
-                assert (false);
-//				return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new ConstructorArrayExpression(expression.getManager(), expression.getType(), newSize, expression.getIndexVar(), elementExpression)));
+                return std::const_pointer_cast<BaseExpression const>(std::shared_ptr<BaseExpression>(new ConstructorArrayExpression(expression.getManager(), expression.getType(), std::move(newSizes), expression.getIndexVars(), elementExpression)));
             }
         }
 
