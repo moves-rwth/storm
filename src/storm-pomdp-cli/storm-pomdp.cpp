@@ -475,12 +475,18 @@ int main(const int argc, const char** argv) {
         if (!optionsCorrect) {
             return -1;
         }
+        storm::utility::Stopwatch totalTimer(true);
         storm::cli::setUrgentOptions();
 
         // Invoke storm-pomdp with obtained settings
         storm::pomdp::cli::processOptions();
 
-        // All operations have now been performed, so we clean up everything and terminate.
+        totalTimer.stop();
+        if (storm::settings::getModule<storm::settings::modules::ResourceSettings>().isPrintTimeAndMemorySet()) {
+            storm::cli::printTimeAndMemoryStatistics(totalTimer.getTimeInMilliseconds());
+        }
+
+    // All operations have now been performed, so we clean up everything and terminate.
         storm::utility::cleanUp();
         return 0;
     // } catch (storm::exceptions::BaseException const &exception) {
