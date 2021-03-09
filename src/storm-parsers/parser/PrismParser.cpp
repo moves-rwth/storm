@@ -408,7 +408,7 @@ namespace storm {
                 }
             }
             if (!unprocessed.empty()) {
-                for (auto const& formulaIndex : unprocessed) {
+                for (auto formulaIndex : unprocessed) {
                     STORM_LOG_ERROR("Parsing error in " << this->getFilename() << ": Invalid expression for formula '" << formulas[formulaIndex].getName() << "' at line '" << formulas[formulaIndex].getLineNumber() << "':\n\t" << formulaExpressions[formulaIndex]);
                 }
                 STORM_LOG_THROW(unprocessed.getNumberOfSetBits() == 1, storm::exceptions::WrongFormatException, "Unable to parse expressions for " << unprocessed.getNumberOfSetBits() << " formulas. This could be due to circular dependencies");
@@ -453,7 +453,7 @@ namespace storm {
                 return false;
             }
             return true;
-        };
+        }
 
         bool PrismParser::isFreshIdentifier(std::string const& identifier) {
             if (!this->secondRun && this->manager->hasVariable(identifier)) {

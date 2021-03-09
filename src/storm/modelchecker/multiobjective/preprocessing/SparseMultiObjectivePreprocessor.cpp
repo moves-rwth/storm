@@ -202,7 +202,7 @@ namespace storm {
                     if (!absorbingStates.empty()) {
                         // We can make the states absorbing and delete unreachable states.
                         storm::storage::BitVector subsystemActions(model->getNumberOfChoices(), true);
-                        for (auto const& absorbingState : absorbingStates) {
+                        for (auto absorbingState : absorbingStates) {
                             for (uint64_t action = model->getTransitionMatrix().getRowGroupIndices()[absorbingState]; action < model->getTransitionMatrix().getRowGroupIndices()[absorbingState + 1]; ++action) {
                                 subsystemActions.set(action, false);
                             }
@@ -419,7 +419,7 @@ namespace storm {
                         // Transform to expected total rewards:
                         // build stateAction reward vector that gives (one*transitionProbability) reward whenever a transition leads from a reachableFromInit state to a goalState
                         std::vector<typename SparseModelType::ValueType> objectiveRewards(data.model->getTransitionMatrix().getRowCount(), storm::utility::zero<typename SparseModelType::ValueType>());
-                        for (auto const& state : reachableFromInit) {
+                        for (auto state : reachableFromInit) {
                             for (uint_fast64_t row = data.model->getTransitionMatrix().getRowGroupIndices()[state]; row < data.model->getTransitionMatrix().getRowGroupIndices()[state + 1]; ++row) {
                                 objectiveRewards[row] = data.model->getTransitionMatrix().getConstrainedRowSum(row, rightSubformulaResult);
                             }

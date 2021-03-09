@@ -61,10 +61,12 @@ namespace storm {
              * @param state Current state.
              * @param failedBE BE which fails next.
              * @param triggeringDependency Dependency which triggered the failure (or nullptr if BE failed on its own).
+             * @param dependencySuccessful Whether the triggering dependency was successful.
+             *              If the dependency is unsuccessful, failedBE does not fail and only the depedendy is marked as failed.
              * 
              * @return Successor state.
              */
-            DFTStatePointer createSuccessorState(DFTStatePointer const state, std::shared_ptr<storm::storage::DFTBE<ValueType> const> &failedBE, std::shared_ptr<storm::storage::DFTDependency<ValueType> const> &triggeringDependency) const;
+            DFTStatePointer createSuccessorState(DFTStatePointer const state, std::shared_ptr<storm::storage::DFTBE<ValueType> const> &failedBE, std::shared_ptr<storm::storage::DFTDependency<ValueType> const> &triggeringDependency, bool dependencySuccessful = true) const;
 
             /**
              * Propagate the failures in a given state if the given BE fails

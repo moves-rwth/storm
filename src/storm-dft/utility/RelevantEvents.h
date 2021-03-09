@@ -19,18 +19,23 @@ namespace storm {
              * If name 'all' occurs, all elements are stored as relevant.
              *
              * @param relevantEvents List of relevant event names.
-             * @param allowDCForRelevant Whether to allow Don't Care propagation for relevant events.
              */
-            RelevantEvents(std::vector<std::string> const& relevantEvents = {}, bool allowDCForRelevant = false) : names(), allRelevant(false), allowDC(allowDCForRelevant) {
-                for (auto const& name: relevantEvents) {
-                    if (name == "all") {
-                        this->allRelevant = true;
-                        this->names.clear();
-                        break;
-                    } else {
-                        this->addEvent(name);
-                    }
+            RelevantEvents(std::vector<std::string> const& relevantEvents = {}) {
+                // check if the name "all" occurs
+                if (std::any_of(relevantEvents.begin(), relevantEvents.end(),
+                                [](auto const& name) { return name == "all"; })) {
+                    this->allRelevant = true;
+                } else {
+                    this->names.insert(relevantEvents.begin(), relevantEvents.end());
                 }
+            }
+
+            bool operator==(RelevantEvents const& rhs) {
+                return this->allRelevant == rhs.allRelevant || this->names == rhs.names;
+            }
+
+            bool operator!=(RelevantEvents const& rhs) {
+                return !(*this == rhs);
             }
 
             /*!
@@ -57,8 +62,10 @@ namespace storm {
                     } else {
                         // Get name of event
                         if (boost::ends_with(label, "_failed")) {
+                            // length of "_failed" = 7
                             this->addEvent(label.substr(0, label.size() - 7));
                         } else if (boost::ends_with(label, "_dc")) {
+                            // length of "_dc" = 3
                             this->addEvent(label.substr(0, label.size() - 3));
                         } else if (label.find("_claimed_") != std::string::npos) {
                             STORM_LOG_THROW(storm::settings::getModule<storm::settings::modules::FaultTreeSettings>().isAddLabelsClaiming(), storm::exceptions::InvalidArgumentException, "Claiming labels will not be exported but are required for label '" << label << "'. Try setting --labels-claiming.");
@@ -73,7 +80,7 @@ namespace storm {
              * Check that the relevant names correspond to existing elements in the DFT.
              *
              * @param dft DFT.
-             * @return True iff relevant names are consistent with DFT elements.
+             * @return True iff the relevant names are consistent with the given DFT.
              */
             template <typename ValueType>
             bool checkRelevantNames(storm::storage::DFT<ValueType> const& dft) const {
@@ -85,16 +92,15 @@ namespace storm {
                 return true;
             }
 
+            /*!
+             * @return True iff the given name is the name of a relevant Event
+             */
             bool isRelevant(std::string const& name) const {
                 if (this->allRelevant) {
                     return true;
                 } else {
                     return this->names.find(name) != this->names.end();
                 }
-            }
-
-            bool isAllowDC() const {
-                return this->allowDC;
             }
 
         private:
@@ -109,13 +115,10 @@ namespace storm {
             }
 
             // Names of relevant events.
-            std::set<std::string> names;
+            std::set<std::string> names{};
 
             // Whether all elements are relevant.
-            bool allRelevant;
-
-            // Whether to allow Don't Care propagation for relevant events.
-            bool allowDC;
+            bool allRelevant{false};
         };
 
     } // namespace utility

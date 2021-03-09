@@ -284,7 +284,7 @@ namespace storm {
                         if (!upperBoundedDimensions.empty()) {
                             // To not invalidate upper-bounded dimensions, one needs to consider MECS where no reward for such a dimension is collected.
                             for (uint64_t choiceIndex = 0; choiceIndex < model.getNumberOfChoices(); ++choiceIndex) {
-                                for (auto const& dim : upperBoundedDimensions) {
+                                for (auto dim : upperBoundedDimensions) {
                                     if (epochManager.getDimensionOfEpoch(epochSteps[choiceIndex], dim) != 0) {
                                         choicesWithoutUpperBoundedStep.set(choiceIndex, false);
                                         break;
@@ -301,14 +301,14 @@ namespace storm {
                                 }
                             }
                         }
-                        for (auto const& choice : nonMecChoices) {
-                            for (auto const& dim : infLowerBoundedDimensions) {
+                        for (auto choice : nonMecChoices) {
+                            for (auto dim : infLowerBoundedDimensions) {
                                 epochManager.setDimensionOfEpoch(epochSteps[choice], dim, 0);
                             }
                         }
                         
                         // Translate the dimension to '>0'
-                        for (auto const& dim : infLowerBoundedDimensions) {
+                        for (auto dim : infLowerBoundedDimensions) {
                             dimensions[dim].boundType = DimensionBoundType::LowerBound;
                             dimensions[dim].maxValue = 0;
                         }
@@ -390,7 +390,7 @@ namespace storm {
                     }
                     epochModel.stepSolutions.resize(epochModel.stepChoices.getNumberOfSetBits());
                     auto stepSolIt = epochModel.stepSolutions.begin();
-                    for (auto const& reducedChoice : epochModel.stepChoices) {
+                    for (auto reducedChoice : epochModel.stepChoices) {
                         uint64_t productChoice = epochModelToProductChoiceMap[reducedChoice];
                         uint64_t productState = productModel->getProductStateFromChoice(productChoice);
                         auto const& memoryState = productModel->getMemoryState(productState);
@@ -403,7 +403,7 @@ namespace storm {
                         for (uint64_t objIndex = 0; objIndex < this->objectives.size(); ++objIndex) {
                             bool rewardEarned = !storm::utility::isZero(epochModel.objectiveRewards[objIndex][reducedChoice]);
                             if (rewardEarned) {
-                                for (auto const& dim : objectiveDimensions[objIndex]) {
+                                for (auto dim : objectiveDimensions[objIndex]) {
                                     if ((dimensions[dim].boundType == DimensionBoundType::UpperBound) == epochManager.isBottomDimension(successorEpoch, dim) && productModel->getMemoryStateManager().isRelevantDimension(memoryState, dim)) {
                                         rewardEarned = false;
                                         break;
@@ -554,7 +554,7 @@ namespace storm {
                         epochModelToProductChoiceMap.clear();
                         epochModelToProductChoiceMap.reserve(numEpochModelStates);
                         productToEpochModelStateMapping.assign(nonZeroRewardStates.size(), zeroRewardInState);
-                        for (auto const& productState : nonZeroRewardStates) {
+                        for (auto productState : nonZeroRewardStates) {
                             productToEpochModelStateMapping[productState] = epochModelToProductChoiceMap.size();
                             epochModelToProductChoiceMap.push_back(productState);
                         }
@@ -596,14 +596,14 @@ namespace storm {
                     }
                     
                     epochModel.epochInStates = storm::storage::BitVector(epochModel.epochMatrix.getRowGroupCount(), false);
-                    for (auto const& productState : productInStates) {
+                    for (auto productState : productInStates) {
                         STORM_LOG_ASSERT(productToEpochModelStateMapping[productState] < epochModel.epochMatrix.getRowGroupCount(), "Selected product state does not exist in the epoch model.");
                         epochModel.epochInStates.set(productToEpochModelStateMapping[productState], true);
                     }
                     
                     std::vector<uint64_t> toEpochModelInStatesMap(productModel->getProduct().getNumberOfStates(), std::numeric_limits<uint64_t>::max());
                     std::vector<uint64_t> epochModelStateToInStateMap = epochModel.epochInStates.getNumberOfSetBitsBeforeIndices();
-                    for (auto const& productState : productInStates) {
+                    for (auto productState : productInStates) {
                         toEpochModelInStatesMap[productState] = epochModelStateToInStateMap[productToEpochModelStateMapping[productState]];
                     }
                     productStateToEpochModelInStateMap = std::make_shared<std::vector<uint64_t> const>(std::move(toEpochModelInStatesMap));
@@ -866,7 +866,7 @@ namespace storm {
                         if (productModel->getProb1InitialStates(objIndex) && productModel->getProb1InitialStates(objIndex)->get(initialStateIndex)) {
                             // Check whether the objective can actually hold in this epoch
                             bool objectiveHolds = true;
-                            for (auto const& dim : objectiveDimensions[objIndex]) {
+                            for (auto dim : objectiveDimensions[objIndex]) {
                                 if (dimensions[dim].boundType == DimensionBoundType::LowerBound && !epochManager.isBottomDimension(epoch, dim)) {
                                     objectiveHolds = false;
                                 } else if (dimensions[dim].boundType == DimensionBoundType::UpperBound && epochManager.isBottomDimension(epoch, dim)) {

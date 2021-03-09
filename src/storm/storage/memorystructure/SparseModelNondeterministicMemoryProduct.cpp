@@ -70,7 +70,7 @@ namespace storm {
                     for (uint64_t memState = 0; memState < memory.getNumberOfStates(); ++memState) {
                         builder.newRowGroup(row);
                         for (uint64_t origRow = origTransitions.getRowGroupIndices()[modelState]; origRow < origTransitions.getRowGroupIndices()[modelState + 1]; ++origRow) {
-                            for (auto const& memStatePrime : memory.getTransitions(memState)) {
+                            for (auto memStatePrime : memory.getTransitions(memState)) {
                                 for (auto const& entry : origTransitions.getRow(origRow)) {
                                     builder.addNextValue(row, getProductState(entry.getColumn(), memStatePrime), entry.getValue());
                                 }
@@ -90,11 +90,11 @@ namespace storm {
                     
                     // The init label is only assigned to Product states with the initial memory state
                     if (labelName == "init") {
-                        for (auto const& modelState : model.getStateLabeling().getStates(labelName)) {
+                        for (auto modelState : model.getStateLabeling().getStates(labelName)) {
                             newStates.set(getProductState(modelState, memory.getInitialState()));
                         }
                     } else {
-                        for (auto const& modelState : model.getStateLabeling().getStates(labelName)) {
+                        for (auto modelState : model.getStateLabeling().getStates(labelName)) {
                             for (uint64_t memState = 0; memState < memory.getNumberOfStates(); ++memState) {
                                 newStates.set(getProductState(modelState, memState));
                             }

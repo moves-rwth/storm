@@ -25,7 +25,7 @@ namespace storm {
             STORM_LOG_THROW(initialMemoryState < transitions.size(), storm::exceptions::InvalidOperationException, "Invalid index of initial memory state: " << initialMemoryState << ". There are only " << transitions.size() << " states in this memory structure.");
             
             auto initMemStateIt = initialMemoryStates.begin();
-            for (auto const& initState : model.getInitialStates()) {
+            for (auto initState : model.getInitialStates()) {
                 if (initState == initialModelState) {
                     *initMemStateIt = initialMemoryState;
                     break;
@@ -49,7 +49,7 @@ namespace storm {
             
             storm::storage::BitVector transitionVector(modelTransitions.getEntryCount(), false);
             if (modelChoices) {
-                for (auto const& choice : modelChoices.get()) {
+                for (auto choice : modelChoices.get()) {
                     for (auto entryIt = modelTransitions.getRow(choice).begin(); entryIt < modelTransitions.getRow(choice).end(); ++entryIt) {
                         if (modelStates.get(entryIt->getColumn())) {
                             transitionVector.set(entryIt - modelTransitions.begin());

@@ -22,7 +22,7 @@ namespace storm {
 
         template<typename ValueType>
         typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::check(storm::storage::DFT<ValueType> const& origDft, std::vector<std::shared_ptr<const storm::logic::Formula>> const& properties,
-                                                                                           bool symred, bool allowModularisation, storm::utility::RelevantEvents const& relevantEvents,
+                                                                                           bool symred, bool allowModularisation, storm::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant,
                                                                                            double approximationError, storm::builder::ApproximationHeuristic approximationHeuristic,
                                                                                            bool eliminateChains, storm::transformer::EliminationLabelBehavior labelBehavior) {
             totalTimer.start();
@@ -32,8 +32,11 @@ namespace storm {
             auto wellFormedResult = storm::api::isWellFormed(origDft, true);
             STORM_LOG_THROW(wellFormedResult.first, storm::exceptions::UnmetRequirementException, "DFT is not well-formed for analysis: " << wellFormedResult.second);
 
-            // Optimizing DFT
-            storm::storage::DFT<ValueType> dft = origDft.optimize();
+            // Optimizing DFT for modularisation
+            storm::storage::DFT<ValueType> dft = origDft;
+            if (allowModularisation) {
+                dft = origDft.optimize();
+            }
 
             // TODO: check that all paths reach the target state for approximation
 
@@ -41,14 +44,14 @@ namespace storm {
             // TODO: distinguish for all properties, not only for first one
             if (properties[0]->isTimeOperatorFormula() && allowModularisation) {
                 // Use parallel composition as modularisation approach for expected time
-                std::shared_ptr<storm::models::sparse::Model<ValueType>> model = buildModelViaComposition(dft, properties, symred, true, relevantEvents);
+                std::shared_ptr<storm::models::sparse::Model<ValueType>> model = buildModelViaComposition(dft, properties, symred, true, relevantEvents, allowDCForRelevant);
                 // Model checking
                 std::vector<ValueType> resultsValue = checkModel(model, properties);
                 for (ValueType result : resultsValue) {
                     results.push_back(result);
                 }
             } else {
-                results = checkHelper(dft, properties, symred, allowModularisation, relevantEvents, approximationError, approximationHeuristic, eliminateChains, labelBehavior);
+                results = checkHelper(dft, properties, symred, allowModularisation, relevantEvents, allowDCForRelevant, approximationError, approximationHeuristic, eliminateChains, labelBehavior);
             }
             totalTimer.stop();
             return results;
@@ -56,7 +59,7 @@ namespace storm {
 
         template<typename ValueType>
         typename DFTModelChecker<ValueType>::dft_results DFTModelChecker<ValueType>::checkHelper(storm::storage::DFT<ValueType> const& dft, property_vector const& properties,
-                                                                                                 bool symred, bool allowModularisation, storm::utility::RelevantEvents const& relevantEvents,
+                                                                                                 bool symred, bool allowModularisation, storm::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant,
                                                                                                  double approximationError, storm::builder::ApproximationHeuristic approximationHeuristic,
                                                                                                  bool eliminateChains, storm::transformer::EliminationLabelBehavior labelBehavior) {
             STORM_LOG_TRACE("Check helper called");
@@ -111,7 +114,7 @@ namespace storm {
                         std::vector<ValueType> res;
                         for (auto const ft : dfts) {
                             // TODO: allow approximation in modularisation
-                            dft_results ftResults = checkHelper(ft, {property}, symred, true, relevantEvents, 0.0);
+                            dft_results ftResults = checkHelper(ft, {property}, symred, true, relevantEvents, allowDCForRelevant, 0.0);
                             STORM_LOG_ASSERT(ftResults.size() == 1, "Wrong number of results");
                             res.push_back(boost::get<ValueType>(ftResults[0]));
                         }
@@ -149,13 +152,13 @@ namespace storm {
                 return results;
             } else {
                 // No modularisation was possible
-                return checkDFT(dft, properties, symred, relevantEvents, approximationError, approximationHeuristic, eliminateChains, labelBehavior);
+                return checkDFT(dft, properties, symred, relevantEvents, allowDCForRelevant, approximationError, approximationHeuristic, eliminateChains, labelBehavior);
             }
         }
 
         template<typename ValueType>
         std::shared_ptr<storm::models::sparse::Ctmc<ValueType>>
-        DFTModelChecker<ValueType>::buildModelViaComposition(storm::storage::DFT<ValueType> const &dft, property_vector const &properties, bool symred, bool allowModularisation, storm::utility::RelevantEvents const& relevantEvents) {
+        DFTModelChecker<ValueType>::buildModelViaComposition(storm::storage::DFT<ValueType> const &dft, property_vector const &properties, bool symred, bool allowModularisation, storm::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant) {
             // TODO: use approximation?
             STORM_LOG_TRACE("Build model via composition");
             std::vector<storm::storage::DFT<ValueType>> dfts;
@@ -194,7 +197,7 @@ namespace storm {
                     STORM_LOG_DEBUG("Building Model via parallel composition...");
                     explorationTimer.start();
 
-                    ft.setRelevantEvents(relevantEvents);
+                    ft.setRelevantEvents(relevantEvents, allowDCForRelevant);
                     // Find symmetries
                     std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
                     storm::storage::DFTIndependentSymmetries symmetries(emptySymmetry);
@@ -256,7 +259,7 @@ namespace storm {
                 // No composition was possible
                 explorationTimer.start();
 
-                dft.setRelevantEvents(relevantEvents);
+                dft.setRelevantEvents(relevantEvents, allowDCForRelevant);
 
                 // Find symmetries
                 std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
@@ -286,13 +289,13 @@ namespace storm {
 
         template<typename ValueType>
         typename DFTModelChecker<ValueType>::dft_results
-        DFTModelChecker<ValueType>::checkDFT(storm::storage::DFT<ValueType> const &dft, property_vector const &properties, bool symred, storm::utility::RelevantEvents const& relevantEvents,
+        DFTModelChecker<ValueType>::checkDFT(storm::storage::DFT<ValueType> const &dft, property_vector const &properties, bool symred, storm::utility::RelevantEvents const& relevantEvents, bool allowDCForRelevant,
                                              double approximationError, storm::builder::ApproximationHeuristic approximationHeuristic, bool eliminateChains, storm::transformer::EliminationLabelBehavior labelBehavior) {
             explorationTimer.start();
             auto ioSettings = storm::settings::getModule<storm::settings::modules::IOSettings>();
             auto dftIOSettings = storm::settings::getModule<storm::settings::modules::DftIOSettings>();
 
-            dft.setRelevantEvents(relevantEvents);
+            dft.setRelevantEvents(relevantEvents, allowDCForRelevant);
 
             // Find symmetries
             std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;

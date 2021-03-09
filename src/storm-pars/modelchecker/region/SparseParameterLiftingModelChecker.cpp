@@ -247,11 +247,8 @@ namespace storm {
             storm::utility::Stopwatch boundsWatch(false);
             auto numberOfPLACallsBounds = 0;
             ConstantType initBound;
-            if (minimize) {
-                initBound = storm::utility::zero<ConstantType>();
-            } else {
-                initBound = storm::utility::one<ConstantType>();
-            }
+            initBound = storm::utility::zero<ConstantType>();
+            bool first = true;
             if (useMonotonicity) {
                 if (this->isUseBoundsSet()) {
                     numberOfPLACallsBounds++;
@@ -273,17 +270,10 @@ namespace storm {
                 monotonicityWatch.stop();
                 STORM_LOG_INFO(std::endl << "Total time for monotonicity checking: " << monotonicityWatch << "." << std::endl << std::endl);
 
-                if (minimize) {
-                    regionQueue.emplace(region, order, monRes, initBound);
-                } else {
-                    regionQueue.emplace(region, order, monRes, initBound);
-                }
+                regionQueue.emplace(region, order, monRes, initBound);
+                first = false;
             } else {
-                if (minimize) {
-                    regionQueue.emplace(region, nullptr, nullptr, initBound);
-                } else {
-                    regionQueue.emplace(region, nullptr, nullptr, initBound);
-                }
+                regionQueue.emplace(region, nullptr, nullptr, initBound);
             }
 
             // The results
@@ -309,7 +299,6 @@ namespace storm {
             auto numberOfPLACalls = 0;
             auto numberOfOrderCopies = 0;
             auto numberOfMonResCopies = 0;
-            bool first = true;
             storm::utility::Stopwatch loopWatch(true);
             if (!(useMonotonicity && regionQueue.top().localMonRes->getGlobalMonotonicityResult()->isDone() && regionQueue.top().localMonRes->getGlobalMonotonicityResult()->isAllMonotonicity())) {
                 // Doing the extremal computation, only when we don't use monotonicity or there are possibly not monotone variables.
@@ -325,8 +314,9 @@ namespace storm {
                     std::vector<storm::storage::ParameterRegion<typename SparseModelType::ValueType>> newRegions;
 
                     // Check whether this region needs further investigation based on the bound of the parent region
-                    bool investigateBounds = (minimize && currBound < value.get() - storm::utility::convertNumber<ConstantType>(precision))
+                    bool investigateBounds = first || (minimize && currBound < value.get() - storm::utility::convertNumber<ConstantType>(precision))
                                              || (!minimize && currBound > value.get() + storm::utility::convertNumber<ConstantType>(precision));
+                    first = false;
                     if (investigateBounds) {
                         numberOfPLACalls++;
                         auto bounds = getBound(env, currRegion, dir, localMonotonicityResult)->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();

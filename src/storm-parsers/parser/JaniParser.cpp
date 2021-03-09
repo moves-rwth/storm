@@ -1315,7 +1315,7 @@ namespace storm {
                         assert(arguments.size() == 2);
                         ensureNumericalType(arguments[0], opstring, 0, scope.description);
                         ensureNumericalType(arguments[1], opstring, 1, scope.description);
-                        return arguments[0]^arguments[1];
+                        return storm::expressions::pow(arguments[0], arguments[1]);
                     } else if (opstring == "exp") {
                         arguments = parseBinaryExpressionArguments(expressionStructure, opstring, scope, returnNoneInitializedOnUnknownOperator, auxiliaryVariables);
                         assert(arguments.size() == 2);
