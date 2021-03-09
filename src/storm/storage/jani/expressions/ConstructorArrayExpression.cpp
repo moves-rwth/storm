@@ -111,7 +111,7 @@ namespace storm {
         std::shared_ptr<const BaseExpression> ConstructorArrayExpression::at(uint64_t i) const {
             std::map<storm::expressions::Variable, storm::expressions::Expression> substitution;
             std::vector<uint64_t> newI;
-            STORM_LOG_THROW(sizeExpressions.size() > 2, storm::exceptions::NotImplementedException, "Getting entry at " << i << " in Constructor Array for more than two nested arrays is not yet implemented");
+            STORM_LOG_THROW(sizeExpressions.size() <= 2, storm::exceptions::NotImplementedException, "Getting entry at " << i << " in Constructor Array for more than two nested arrays is not yet implemented");
             if (sizeExpressions.size() == 2) {
                 auto size = sizeExpressions.at(1).get()->evaluateAsInt();
                 auto indexSecond = i % size;

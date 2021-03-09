@@ -173,7 +173,7 @@ namespace storm {
             if (elements.elementsWithValue) {
                 return elements.elementsWithValue->at(index);
             } else {
-                STORM_LOG_THROW(elements.elementsOfElements->at(0)->elementsOfElements, storm::exceptions::NotImplementedException, "Getting the element at index " << index << " is not yet implemented for more than twice nested arrays");
+                STORM_LOG_THROW(elements.elementsOfElements->at(0)->elementsWithValue, storm::exceptions::NotImplementedException, "Getting the element at index " << index << " is not yet implemented for more than twice nested arrays");
                 auto size = elements.elementsOfElements->at(0)->elementsWithValue->size();
                 uint64_t indexLastPart = index % size;
                 uint64_t indexFirstPart = (index - indexLastPart) / size;

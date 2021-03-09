@@ -16,7 +16,6 @@ namespace storm {
             STORM_LOG_THROW(array.isVariable(), storm::exceptions::NotSupportedException, "Expecting a variable as base of array");
             STORM_LOG_ASSERT(arrayIndexVector->size() <= sizes.size(), "Expecting arrayIndexVector and sizes vector to have the same size");
             variable = &array.getVariable();
-            std::cout << "Variable type: " << variable->getName() << *variable->getType() << std::endl;
             arrayIndex = arrayIndexVector->at(0);
             storm::expressions::ExpressionManager const& manager = arrayIndex.get().getManager();
             for (auto i = 1; i < arrayIndexVector->size(); ++i) {
@@ -170,7 +169,6 @@ namespace storm {
         }
         
         bool LValue::operator==(LValue const& other) const {
-            std::cout << "Checking equivalence of: " << *this << " and " << other << std::endl;
             if (isVariable()) {
                 return other.isVariable() && getVariable().getExpressionVariable() == other.getVariable().getExpressionVariable();
             } else {
@@ -180,7 +178,6 @@ namespace storm {
                 int i = 0;
                 storm::expressions::JaniSyntacticalEqualityCheckVisitor checker;
                 while (equal && i < arrayIndexVector->size()) {
-                    std::cout << "Checking equivalence of " << arrayIndexVector->at(i) << " and " << other.getArrayIndexVector().at(i) << std::endl;
                     equal &= (getSizeAt(i) == other.getSizeAt(i) && checker.isSyntacticallyEqual(getArrayIndexVector().at(i), other.getArrayIndexVector().at(i)));
                     ++i;
                 }
