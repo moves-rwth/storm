@@ -9,13 +9,13 @@ namespace storm {
     namespace jani {
         
         LValue::LValue(storm::jani::Variable const& variable) : variable(&variable) {
+            STORM_LOG_ASSERT(!variable.isArrayVariable(), "LValue for variable " << variable.getName() << " not possible as the variable is a array variable, we need an index and sizes for this");
             // Intentionally left empty
         }
-        
-        LValue::LValue(LValue const& array, std::vector<storm::expressions::Expression> const& index, std::vector<size_t> const& sizes) : arrayIndexVector(index), sizes(sizes) {
-            STORM_LOG_THROW(array.isVariable(), storm::exceptions::NotSupportedException, "Expecting a variable as base of array");
-            STORM_LOG_ASSERT(arrayIndexVector->size() <= sizes.size(), "Expecting arrayIndexVector and sizes vector to have the same size");
-            variable = &array.getVariable();
+
+        LValue::LValue(storm::jani::Variable const& variable, std::vector<storm::expressions::Expression> const& index, std::vector<size_t> const& sizes) : variable(&variable), arrayIndexVector(index), sizes(sizes) {
+            STORM_LOG_THROW(variable.isArrayVariable(), storm::exceptions::NotSupportedException, "Expecting an array Variable");
+            STORM_LOG_ASSERT(arrayIndexVector->size() <= sizes.size(), "Expecting arrayIndexVector size to be smaller or equal than the size of the sizes vector for variable: " << variable.getName());
             arrayIndex = arrayIndexVector->at(0);
             storm::expressions::ExpressionManager const& manager = arrayIndex.get().getManager();
             for (auto i = 1; i < arrayIndexVector->size(); ++i) {
@@ -23,9 +23,8 @@ namespace storm {
             }
         }
 
-        LValue::LValue(LValue const& array, storm::expressions::Expression const& index, size_t size) : arrayIndex(index) {
-            STORM_LOG_THROW(array.isVariable(), storm::exceptions::NotSupportedException, "Expecting a variable as base of array");
-            variable = &array.getVariable();
+        LValue::LValue(storm::jani::Variable const& variable, storm::expressions::Expression const& index, size_t size) : variable(&variable), arrayIndex(index) {
+            STORM_LOG_THROW(variable.isArrayVariable(), storm::exceptions::NotSupportedException, "Expecting an array Variable");
             arrayIndexVector = {index};
             sizes = {size};
         }
@@ -35,18 +34,11 @@ namespace storm {
         }
         
         storm::jani::Variable const& LValue::getVariable() const {
-            STORM_LOG_ASSERT(isVariable(), "Tried to get the variable of an LValue, that actually is not a variable.");
             return *variable;
         }
         
         bool LValue::isArrayAccess() const {
             return arrayIndex.is_initialized() && arrayIndexVector.is_initialized();
-        }
-
-        storm::jani::Variable const&  LValue::getArray() const {
-            STORM_LOG_ASSERT(isArrayAccess(), "Tried to get the array variable of an LValue that is not an array access.");
-            STORM_LOG_ASSERT(variable->isArrayVariable(), "Tried to get the array variable of an array access LValue, but the variable is not of type array.");
-            return *variable;
         }
 
         storm::expressions::Expression const& LValue::getArrayIndex() const {
@@ -116,18 +108,14 @@ namespace storm {
                 if (it == remapping.end()) {
                     return *this;
                 } else {
-                    return LValue(LValue(it->second), arrayIndexVector.get(), sizes);
+                    return LValue(it->second, arrayIndexVector.get(), sizes);
                 }
             }
         }
 
         std::string LValue::getName() const {
-            std::string result;
-            if (isVariable()) {
-                result = getVariable().getName();
-            } else {
-                STORM_LOG_ASSERT(isArrayAccess(), "Unhandled LValue.");
-                result += getArray().getName();
+            std::string result = getVariable().getName();;
+            if (isArrayAccess()) {
                 for (auto i = 0; i < getArrayIndexVector().size(); ++i) {
                     result += "[" + getArrayIndexVector().at(i).toString() + "]";
                 }
@@ -144,9 +132,9 @@ namespace storm {
                     return false;
                 }
                 STORM_LOG_ASSERT(other.isArrayAccess(), "Unhandled LValue.");
-                if (getArray().getExpressionVariable() < other.getArray().getExpressionVariable()) {
+                if (getVariable().getExpressionVariable() < other.getVariable().getExpressionVariable()) {
                     return true;
-                } else if (other.getArray().getExpressionVariable() < getArray().getExpressionVariable()) {
+                } else if (other.getVariable().getExpressionVariable() < getVariable().getExpressionVariable()) {
                     return false;
                 } else {
                     if (arrayIndexVector->size() != other.getArrayIndexVector().size()) {
@@ -173,7 +161,7 @@ namespace storm {
                 return other.isVariable() && getVariable().getExpressionVariable() == other.getVariable().getExpressionVariable();
             } else {
                 STORM_LOG_ASSERT(isArrayAccess(), "Unhandled LValue.");
-                bool equal = other.isArrayAccess() && getArray().getExpressionVariable() == other.getArray().getExpressionVariable()
+                bool equal = other.isArrayAccess() && getVariable().getExpressionVariable() == other.getVariable().getExpressionVariable()
                         && arrayIndexVector->size() == other.getArrayIndexVector().size();
                 int i = 0;
                 storm::expressions::JaniSyntacticalEqualityCheckVisitor checker;
@@ -190,7 +178,7 @@ namespace storm {
                 stream << lValue.getVariable().getName();
             } else {
                 STORM_LOG_ASSERT(lValue.isArrayAccess(), "Unhandled LValue.");
-                stream << lValue.getArray().getName();
+                stream << lValue.getVariable().getName();
                 for (auto i = 0; i < lValue.getArrayIndexVector().size(); ++i) {
                     stream << "[" << lValue.getArrayIndexVector().at(i) << "]";
                 }

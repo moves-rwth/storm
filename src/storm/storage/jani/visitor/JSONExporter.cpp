@@ -723,7 +723,6 @@ namespace storm {
 
             // TODO: make this generic
             if (expression.getNumberOfArrays() == 2) {
-                std::cout << expression << std::endl;
                 ExportJsonType opDeclSecond;
                 opDeclSecond["op"] = "ac";
                 opDeclSecond["var"] = expression.getIndexVar(1)->getName();
@@ -740,7 +739,6 @@ namespace storm {
                 if (inserted) {
                     auxiliaryVariables.erase(expression.getIndexVar(0)->getName());
                 }
-                std::cout << opDecl << std::endl;
             } else {
                 opDecl["var"] = expression.getIndexVar(0)->getName();
                 opDecl["length"] = std::to_string(expression.getSizeIndexVar(0));
@@ -992,7 +990,6 @@ namespace storm {
                     assignmentEntry["ref"] = assignment.getVariable().getName();
                 } else {
                     STORM_LOG_ASSERT(assignment.lValueIsArrayAccess(), "Unhandled LValue " << assignment.getLValue());
-                    std::cout << assignment << std::endl;
                     ExportJsonType arrayAccess;
                     arrayAccess["op"] = "aa";
                     if (assignment.getLValue().getArrayIndexVector().size() > 2) {
@@ -1000,11 +997,11 @@ namespace storm {
                     } else if (assignment.getLValue().getArrayIndexVector().size() == 2) {
                         ExportJsonType secondArrayAcces;
                         secondArrayAcces["op"] = "aa";
-                        secondArrayAcces["exp"] = assignment.getLValue().getArray().getName();
+                        secondArrayAcces["exp"] = assignment.getVariable().getName();
                         secondArrayAcces["index"] = buildExpression(assignment.getLValue().getArrayIndexVector().at(1), constants, globalVariables, localVariables);
                         arrayAccess["exp"] = std::move(secondArrayAcces);
                     } else {
-                        arrayAccess["exp"] = assignment.getLValue().getArray().getName();
+                        arrayAccess["exp"] = assignment.getVariable().getName();
                     }
                     arrayAccess["index"] = buildExpression(assignment.getLValue().getArrayIndexVector().at(0), constants, globalVariables, localVariables);
                     assignmentEntry["ref"] = std::move(arrayAccess);

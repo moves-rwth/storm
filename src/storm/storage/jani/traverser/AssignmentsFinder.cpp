@@ -35,7 +35,7 @@ namespace storm {
             auto resVar = boost::any_cast<std::pair<storm::expressions::Variable const*, ResultType*>>(data);
             if (!resVar.second->hasLocationAssignment) {
                 for (auto const& assignment : location.getAssignments()) {
-                    storm::jani::Variable const& assignedVariable = assignment.lValueIsArrayAccess() ? assignment.getLValue().getArray() : assignment.getVariable();
+                    storm::jani::Variable const& assignedVariable = assignment.getVariable();
                     if (assignedVariable.getExpressionVariable() == *resVar.first) {
                         resVar.second->hasLocationAssignment = true;
                         break;
@@ -48,7 +48,7 @@ namespace storm {
             auto resVar = boost::any_cast<std::pair<storm::expressions::Variable const*, ResultType*>>(data);
             if (!resVar.second->hasEdgeAssignment) {
                 for (auto const& assignment : templateEdge.getAssignments()) {
-                    storm::jani::Variable const& assignedVariable = assignment.lValueIsArrayAccess() ? assignment.getLValue().getArray() : assignment.getVariable();
+                    storm::jani::Variable const& assignedVariable = assignment.getVariable();
                     if (assignedVariable.getExpressionVariable() == *resVar.first) {
                         resVar.second->hasEdgeAssignment = true;
                         break;
@@ -65,7 +65,7 @@ namespace storm {
             auto resVar = boost::any_cast<std::pair<storm::expressions::Variable const*, ResultType*>>(data);
             if (!resVar.second->hasEdgeDestinationAssignment) {
                 for (auto const& assignment : templateEdgeDestination.getOrderedAssignments()) {
-                    storm::jani::Variable const& assignedVariable = assignment.lValueIsArrayAccess() ? assignment.getLValue().getArray() : assignment.getVariable();
+                    storm::jani::Variable const& assignedVariable = assignment.getVariable();
                     if (assignedVariable.getExpressionVariable() == *resVar.first) {
                         resVar.second->hasEdgeDestinationAssignment = true;
                         break;

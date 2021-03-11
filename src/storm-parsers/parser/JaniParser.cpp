@@ -1014,13 +1014,23 @@ namespace storm {
                 if (scope.localVars != nullptr) {
                     auto localVar = scope.localVars->find(ident);
                     if (localVar != scope.localVars->end()) {
-                        return storm::jani::LValue(*localVar->second);
+                        if (localVar->second->isArrayVariable()) {
+                            STORM_LOG_ASSERT (sizeMap.find(ident) != sizeMap.end(), "Did you set the size of array variable: " << ident << "?");
+                            return storm::jani::LValue(*localVar->second, {}, sizeMap.at(ident));
+                        } else {
+                            return storm::jani::LValue(*localVar->second);
+                        }
                     }
                 }
                 STORM_LOG_THROW(scope.globalVars != nullptr, storm::exceptions::InvalidJaniException, "Unknown identifier '" << ident << "' occurs in " << scope.description);
                 auto globalVar = scope.globalVars->find(ident);
                 STORM_LOG_THROW(globalVar != scope.globalVars->end(), storm::exceptions::InvalidJaniException, "Unknown identifier '" << ident << "' occurs in " << scope.description);
-                return storm::jani::LValue(*globalVar->second);
+                if (globalVar->second->isArrayVariable()) {
+                    STORM_LOG_ASSERT (sizeMap.find(ident) != sizeMap.end(), "Did you set the size of array variable: " << ident << "?");
+                    return storm::jani::LValue(*globalVar->second, {}, sizeMap.at(ident));
+                } else {
+                    return storm::jani::LValue(*globalVar->second);
+                }
             } else if (lValueStructure.count("op") == 1) {
                 std::vector<storm::expressions::Expression> index;
                 STORM_LOG_THROW(lValueStructure.count("exp"), storm::exceptions::InvalidJaniException, "Missing 'exp' in array access at " << scope.description);
@@ -1035,13 +1045,20 @@ namespace storm {
                     index.push_back(parseExpression(subStructure.at("index"), scope.refine("Index expression of array access")));
                     subStructure = subStructure.at("exp");
                 }
-                assert (subStructure.is_string());
+                STORM_LOG_THROW(subStructure.is_string(), storm::exceptions::InvalidJaniException, "Unknown LValue '" << lValueStructure.dump() << "' occurs in " << scope.description);
 
-                storm::jani::LValue exp = parseLValue(subStructure, scope.refine("LValue description of array expression"));
-                assert (sizeMap.find(exp.getVariable().getName()) != sizeMap.end());
-                std::vector<size_t> sizes = sizeMap.at(exp.getVariable().getName());
-                assert (sizes.size() > 0);
-                return storm::jani::LValue(exp, index, sizeMap.at(exp.getVariable().getName()));
+                std::string ident = getString<ValueType>(subStructure, scope.description);
+                STORM_LOG_ASSERT (sizeMap.find(ident) != sizeMap.end(), "Did you set the size of array variable: " << ident << "?");
+                if (scope.localVars != nullptr) {
+                    auto localVar = scope.localVars->find(ident);
+                    if (localVar != scope.localVars->end()) {
+                        return storm::jani::LValue(*localVar->second, index, sizeMap.at(ident));
+                    }
+                }
+                STORM_LOG_THROW(scope.globalVars != nullptr, storm::exceptions::InvalidJaniException, "Unknown identifier '" << ident << "' occurs in " << scope.description);
+                auto globalVar = scope.globalVars->find(ident);
+                STORM_LOG_THROW(globalVar != scope.globalVars->end(), storm::exceptions::InvalidJaniException, "Unknown identifier '" << ident << "' occurs in " << scope.description);
+                return storm::jani::LValue(*globalVar->second, index, sizeMap.at(ident));
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown LValue '" << lValueStructure.dump() << "' occurs in " << scope.description);
                 // Silly warning suppression.

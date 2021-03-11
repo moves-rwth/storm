@@ -373,7 +373,7 @@ namespace storm {
                 }
 
                 if (assignmentIt->getAssignedExpression().hasIntegerType()) {
-                    IntegerVariableInformation const& intInfo = this->variableInformation.getIntegerArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndexVector);
+                    IntegerVariableInformation const& intInfo = this->variableInformation.getIntegerArrayVariableReplacement(assignmentIt->getLValue().getVariable().getExpressionVariable(), arrayIndexVector);
                     int_fast64_t assignedValue = expressionEvaluator.asInt(assignmentIt->getAssignedExpression());
 
                     if (this->options.isAddOutOfBoundsStateSet()) {
@@ -387,7 +387,7 @@ namespace storm {
                     state.setFromInt(intInfo.bitOffset, intInfo.bitWidth, assignedValue - intInfo.lowerBound);
                     STORM_LOG_ASSERT(static_cast<int_fast64_t>(state.getAsInt(intInfo.bitOffset, intInfo.bitWidth)) + intInfo.lowerBound == assignedValue, "Writing to the bit vector bucket failed (read " << state.getAsInt(intInfo.bitOffset, intInfo.bitWidth) << " but wrote " << assignedValue << ").");
                 } else if (assignmentIt->getAssignedExpression().hasBooleanType()) {
-                    BooleanVariableInformation const& boolInfo = this->variableInformation.getBooleanArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndexVector);
+                    BooleanVariableInformation const& boolInfo = this->variableInformation.getBooleanArrayVariableReplacement(assignmentIt->getLValue().getVariable().getExpressionVariable(), arrayIndexVector);
                     state.set(boolInfo.bitOffset, expressionEvaluator.asBool(assignmentIt->getAssignedExpression()));
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled type of base variable.");
@@ -442,9 +442,9 @@ namespace storm {
                     arrayIndexVector[i] = expressionEvaluator.asInt(arrayIndex.at(i));
                 }
 
-                storm::expressions::Type const& baseType = assignmentIt->getLValue().getArray().getExpressionVariable().getType();
+                storm::expressions::Type const& baseType = assignmentIt->getLValue().getVariable().getExpressionVariable().getType();
                 if (baseType.isIntegerType()) {
-                    auto const& intInfo = this->transientVariableInformation.getIntegerArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndexVector);
+                    auto const& intInfo = this->transientVariableInformation.getIntegerArrayVariableReplacement(assignmentIt->getLValue().getVariable().getExpressionVariable(), arrayIndexVector);
                     int64_t assignedValue = expressionEvaluator.asInt(assignmentIt->getAssignedExpression());
                     if (this->options.isExplorationChecksSet()) {
                         STORM_LOG_THROW(assignedValue >= intInfo.lowerBound, storm::exceptions::WrongFormatException, "The update " << assignmentIt->getLValue() << " := " << assignmentIt->getAssignedExpression() << " leads to an out-of-bounds value (" << assignedValue << ") for the variable '" << assignmentIt->getExpressionVariable().getName() << "'.");
@@ -452,10 +452,10 @@ namespace storm {
                     }
                     transientValuation.integerValues.emplace_back(&intInfo, assignedValue);
                 } else if (baseType.isBooleanType()) {
-                    auto const& boolInfo = this->transientVariableInformation.getBooleanArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndexVector);
+                    auto const& boolInfo = this->transientVariableInformation.getBooleanArrayVariableReplacement(assignmentIt->getLValue().getVariable().getExpressionVariable(), arrayIndexVector);
                     transientValuation.booleanValues.emplace_back(&boolInfo, expressionEvaluator.asBool(assignmentIt->getAssignedExpression()));
                 } else if (baseType.isRationalType()) {
-                    auto const& rationalInfo = this->transientVariableInformation.getRationalArrayVariableReplacement(assignmentIt->getLValue().getArray().getExpressionVariable(), arrayIndexVector);
+                    auto const& rationalInfo = this->transientVariableInformation.getRationalArrayVariableReplacement(assignmentIt->getLValue().getVariable().getExpressionVariable(), arrayIndexVector);
                     transientValuation.rationalValues.emplace_back(&rationalInfo, expressionEvaluator.asRational(assignmentIt->getAssignedExpression()));
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::UnexpectedException, "Unhandled type of base variable.");

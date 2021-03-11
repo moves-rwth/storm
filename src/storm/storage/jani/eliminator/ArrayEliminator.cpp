@@ -31,7 +31,6 @@ namespace storm {
                 virtual ~MaxArraySizeExpressionVisitor() = default;
 
                 std::size_t getMaxSize(storm::expressions::Expression const& expression, std::unordered_map<storm::expressions::Variable, std::size_t> const& arrayVariableSizeMap) {
-                    std::cout << "Getting max size of: " << expression << std::endl;
                     return boost::any_cast<std::size_t>(expression.accept(*this, &arrayVariableSizeMap));
                 }
 
@@ -334,7 +333,6 @@ namespace storm {
                             if (resultType.expr()->containsVariables()) {
                                 assert (false);
                             } else {
-                                std::cout << *resultType.expr() << std::endl;
                                 index = resultType.expr()->evaluateAsInt();
                             }
                         }
@@ -469,7 +467,6 @@ namespace storm {
                                                              boost::any_cast<ResultType>(arrayExpression->accept(*this, index)).expr()->toExpression(),
                                                              result);
                         }
-                        std::cout << result << std::endl;
                         return ResultType(result.getBaseExpressionPointer());
                     } else {
                         // Two arrays
@@ -572,9 +569,7 @@ namespace storm {
                 virtual void traverse(Assignment const& assignment, boost::any const& data) override {
                     if (assignment.lValueIsVariable() && assignment.getExpressionVariable().getType().isArrayType()) {
                         auto& map = *boost::any_cast<MapPtr>(data);
-                        std::cout << "Traversing assignment: " << assignment << std::endl;
                         std::size_t newSize = MaxArraySizeExpressionVisitor().getMaxSize(assignment.getAssignedExpression(), map);
-                        std::cout << "Max size is: " << newSize << std::endl;
                         auto insertionRes = map.emplace(assignment.getExpressionVariable(), newSize);
                         if (!insertionRes.second) {
                             insertionRes.first->second = std::max(newSize, insertionRes.first->second);
@@ -725,14 +720,14 @@ namespace storm {
                             }
                             if (assignment.getLValue().isArrayAccess()) {
                                 if (!keepNonTrivialArrayAccess || !assignment.getLValue().arrayIndexContainsVariable()) {
-                                    auto insertionRes = collectedArrayAccessAssignments.emplace(assignment.getLValue().getArray().getExpressionVariable(), std::vector<Assignment const*>({&assignment}));
+                                    auto insertionRes = collectedArrayAccessAssignments.emplace(assignment.getVariable().getExpressionVariable(), std::vector<Assignment const*>({&assignment}));
                                     if (!insertionRes.second) {
                                         insertionRes.first->second.push_back(&assignment);
                                     }
                                 } else {
                                     // Keeping array access LValue
                                     auto newIndex = arrayExprEliminator->eliminate(assignment.getLValue().getArrayIndex());
-                                    LValue newLValue(LValue(assignment.getLValue().getArray()), newIndex, assignment.getLValue().getTotalSize());
+                                    LValue newLValue(LValue(assignment.getVariable(), newIndex, assignment.getLValue().getTotalSize()));
                                     newAssignments.emplace_back(newLValue, arrayExprEliminator->eliminate(assignment.getAssignedExpression()), assignment.getLevel());
                                 }
                             } else if (assignment.getLValue().isVariable() && assignment.getVariable().isArrayVariable()) {
@@ -749,14 +744,10 @@ namespace storm {
                                     } else {
                                         newRhs = getOutOfBoundsValue(replacement);
                                     }
-                                    assert (false);
-                                    // TODO: fix this
-//                                    newRhs = arrayExprEliminator->eliminate(newRhs);
-//                                    newAssignments.emplace_back(LValue(replacement), newRhs, level);
+                                    newRhs = arrayExprEliminator->eliminate(newRhs);
+                                    newAssignments.emplace_back(LValue(replacement), newRhs, level);
                                 }
                             } else {
-//                                assert (false);
-//                                // TODO: fix this
                                 newAssignments.emplace_back(assignment.getLValue(), arrayExprEliminator->eliminate(assignment.getAssignedExpression()), assignment.getLevel());
                             }
                         }

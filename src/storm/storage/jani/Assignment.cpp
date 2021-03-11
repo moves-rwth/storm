@@ -71,7 +71,7 @@ namespace storm  {
                     substitutedExpressions.push_back(substituteJaniExpression(index, substitution).simplify());
                 }
 
-                lValue = LValue(LValue(lValue.getArray()), substitutedExpressions, lValue.getSizes());
+                lValue = LValue(lValue.getVariable(), substitutedExpressions, lValue.getSizes());
             }
         }
         

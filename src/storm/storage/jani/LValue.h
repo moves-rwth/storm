@@ -9,8 +9,8 @@ namespace storm {
         class LValue {
         public:
             explicit LValue(storm::jani::Variable const& variable);
-            LValue(LValue const& array, std::vector<storm::expressions::Expression> const&, std::vector<size_t> const& sizes);
-            LValue(LValue const& array, storm::expressions::Expression const&, size_t size);
+            LValue(storm::jani::Variable const&, std::vector<storm::expressions::Expression> const&, std::vector<size_t> const& sizes);
+            LValue(storm::jani::Variable const&, storm::expressions::Expression const&, size_t size);
 
             LValue(LValue const&) = default;
             bool operator==(LValue const& other) const;
@@ -19,7 +19,6 @@ namespace storm {
             storm::jani::Variable const& getVariable() const;
             
             bool isArrayAccess() const;
-            storm::jani::Variable const& getArray() const;
             std::vector<storm::expressions::Expression> const& getArrayIndexVector() const;
             storm::expressions::Expression const& getArrayIndex() const;
             std::vector<size_t> const& getSizes() const;
