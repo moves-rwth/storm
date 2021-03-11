@@ -50,7 +50,7 @@ public:
    * @param vString the string to store
    * @param wasQuoted remember that the string was originally quoted
    */
-  IntOrString(const std::string& vString, bool wasQuoted = false) : vInteger(0), vString(new std::string(vString)), wasQuoted(false) {}
+  IntOrString(const std::string& vString, bool wasQuoted = false) : vInteger(0), vString(new std::string(vString)), wasQuoted(wasQuoted) {}
 
   /** Returns true if the stored value is a string */
   bool isString() const {return (bool)vString;}

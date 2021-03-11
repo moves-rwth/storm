@@ -43,7 +43,23 @@ public:
   /** Constructor for error message with location (line/column) information. */
   HOAParserException(const std::string& what, int line, int col) :
     std::runtime_error(what), hasLocation(true), line(line), col(col) {}
-
+  
+  bool getHasLocation() const {
+      return hasLocation;
+  }
+  
+  /** @pre getHasLocation returns true */
+  bool getLine() const {
+      assert(getHasLocation());
+      return line;
+  }
+  
+  /** @pre getHasLocation returns true */
+  bool getCol() const {
+      assert(getHasLocation());
+      return col;
+  }
+  
 private:
   /** True if we have location information */
   bool hasLocation;

@@ -118,7 +118,7 @@ public:
     next->addAlias(name, labelExpr);
   }
 
-  virtual void setAPs(const std::vector<std::string>& aps) {
+  virtual void setAPs(const std::vector<std::string>& aps) override {
     headerAtMostOnce("AP");
 
     numberOfAPs.reset(new unsigned int(aps.size()));
@@ -162,7 +162,7 @@ public:
     next->setTool(name, version);
   }
 
-  virtual void addProperties(const std::vector<std::string>& properties) {
+  virtual void addProperties(const std::vector<std::string>& properties) override {
     usedHeaders.insert("properties");
 
     for (const std::string& property : properties) {
@@ -207,7 +207,7 @@ public:
     next->addMiscHeader(name, content);
   }
 
-  virtual void notifyBodyStart() {
+  virtual void notifyBodyStart() override {
     // check for existence of mandatory headers
     headerIsMandatory("Acceptance");
 
@@ -418,7 +418,7 @@ public:
     next->notifyEnd();
   }
 
-  virtual void notifyAbort() {
+  virtual void notifyAbort() override {
     next->notifyAbort();
   }
 
