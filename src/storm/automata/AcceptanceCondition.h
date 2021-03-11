@@ -30,7 +30,6 @@ namespace storm {
             bool isAccepting(const storm::storage::StateBlock& scc, acceptance_expr::ptr expr) const;
             void extractFromDNFRecursion(acceptance_expr::ptr e, std::vector<std::vector<acceptance_expr::ptr>>& dnf, bool topLevel) const;
 
-            std::size_t numberOfStates;
             unsigned int numberOfAcceptanceSets;
             acceptance_expr::ptr acceptance;
             std::vector<storm::storage::BitVector> acceptanceSets;

@@ -7,7 +7,7 @@ namespace storm {
 namespace automata {
 
 AcceptanceCondition::AcceptanceCondition(std::size_t numberOfStates, unsigned int numberOfAcceptanceSets, acceptance_expr::ptr acceptance)
-    : numberOfStates(numberOfStates), numberOfAcceptanceSets(numberOfAcceptanceSets), acceptance(acceptance) {
+    : numberOfAcceptanceSets(numberOfAcceptanceSets), acceptance(acceptance) {
 
     // initialize acceptance sets
     for (unsigned int i = 0; i < numberOfAcceptanceSets; i++) {
