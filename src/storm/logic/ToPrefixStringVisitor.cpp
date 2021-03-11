@@ -85,6 +85,10 @@ namespace storm {
             return std::string("G ") + subexpression;
         }
         
+        boost::any ToPrefixStringVisitor::visit(GameFormula const&, boost::any const&) const {
+            STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
+        }
+        
         boost::any ToPrefixStringVisitor::visit(InstantaneousRewardFormula const&, boost::any const&) const {
             STORM_LOG_THROW(false, storm::exceptions::InvalidOperationException, "Can not convert to prefix string");
         }
