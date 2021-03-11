@@ -651,6 +651,8 @@ namespace storm {
                         entry.second--;
                     }
                 }
+            } else {
+                std::cout << "Could not remove constant: " << name << std::endl;
             }
 
         }

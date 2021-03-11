@@ -85,7 +85,6 @@ namespace storm {
 
         size_t Variable::getArraySize(int number) const {
             STORM_LOG_THROW(this->getType().isArrayType(), storm::exceptions::IllegalFunctionCallException, "Getting arraysize for variable that is not an array is not possible");
-            std::cout << "Variable: " << getName() << std::endl;
             assert (number < arraySizes.size());
             return this->arraySizes.at(number);
         }

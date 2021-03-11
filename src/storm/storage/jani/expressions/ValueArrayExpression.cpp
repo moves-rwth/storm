@@ -93,23 +93,22 @@ namespace storm {
                 bool first = true;
 
                 for (auto const& e : element.elementsWithValue.get()) {
-                    stream << *e;
                     if (!first) {
                         stream <<  " , ";
                     }
                     first = false;
+                    stream << *e;
                 }
                 stream <<  "]";
             } else {
                 stream <<  "array[ ";
                 bool first = true;
-
                 for (auto const& e : element.elementsOfElements.get()) {
-                        printToStream(stream, *e);
-                        if (!first) {
-                            stream <<  " , ";
-                        }
-                        first = false;
+                    if (!first) {
+                        stream <<  " , ";
+                    }
+                    first = false;
+                    printToStream(stream, *e);
                 }
                 stream <<  "]";
             }

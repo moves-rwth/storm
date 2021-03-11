@@ -1016,7 +1016,7 @@ namespace storm {
                     if (localVar != scope.localVars->end()) {
                         if (localVar->second->isArrayVariable()) {
                             STORM_LOG_ASSERT (sizeMap.find(ident) != sizeMap.end(), "Did you set the size of array variable: " << ident << "?");
-                            return storm::jani::LValue(*localVar->second, {}, sizeMap.at(ident));
+                            return storm::jani::LValue(*localVar->second, sizeMap.at(ident));
                         } else {
                             return storm::jani::LValue(*localVar->second);
                         }
@@ -1027,7 +1027,7 @@ namespace storm {
                 STORM_LOG_THROW(globalVar != scope.globalVars->end(), storm::exceptions::InvalidJaniException, "Unknown identifier '" << ident << "' occurs in " << scope.description);
                 if (globalVar->second->isArrayVariable()) {
                     STORM_LOG_ASSERT (sizeMap.find(ident) != sizeMap.end(), "Did you set the size of array variable: " << ident << "?");
-                    return storm::jani::LValue(*globalVar->second, {}, sizeMap.at(ident));
+                    return storm::jani::LValue(*globalVar->second, sizeMap.at(ident));
                 } else {
                     return storm::jani::LValue(*globalVar->second);
                 }
@@ -1052,13 +1052,13 @@ namespace storm {
                 if (scope.localVars != nullptr) {
                     auto localVar = scope.localVars->find(ident);
                     if (localVar != scope.localVars->end()) {
-                        return storm::jani::LValue(*localVar->second, index, sizeMap.at(ident));
+                        return storm::jani::LValue(*localVar->second, std::move(index), sizeMap.at(ident));
                     }
                 }
                 STORM_LOG_THROW(scope.globalVars != nullptr, storm::exceptions::InvalidJaniException, "Unknown identifier '" << ident << "' occurs in " << scope.description);
                 auto globalVar = scope.globalVars->find(ident);
                 STORM_LOG_THROW(globalVar != scope.globalVars->end(), storm::exceptions::InvalidJaniException, "Unknown identifier '" << ident << "' occurs in " << scope.description);
-                return storm::jani::LValue(*globalVar->second, index, sizeMap.at(ident));
+                return storm::jani::LValue(*globalVar->second, std::move(index), sizeMap.at(ident));
             } else {
                 STORM_LOG_THROW(false, storm::exceptions::InvalidJaniException, "Unknown LValue '" << lValueStructure.dump() << "' occurs in " << scope.description);
                 // Silly warning suppression.
