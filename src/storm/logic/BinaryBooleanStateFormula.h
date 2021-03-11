@@ -4,12 +4,13 @@
 #include <map>
 
 #include "storm/logic/BinaryStateFormula.h"
+#include "storm/logic/BinaryBooleanOperatorType.h"
 
 namespace storm {
     namespace logic {
         class BinaryBooleanStateFormula : public BinaryStateFormula {
         public:
-            enum class OperatorType {And, Or};
+            typedef storm::logic::BinaryBooleanOperatorType OperatorType;
 
             BinaryBooleanStateFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& leftSubformula, std::shared_ptr<Formula const> const& rightSubformula);
             

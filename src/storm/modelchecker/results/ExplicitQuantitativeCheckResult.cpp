@@ -51,6 +51,31 @@ namespace storm {
         ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(boost::variant<vector_type, map_type>&& values, boost::optional<std::shared_ptr<storm::storage::Scheduler<ValueType>>> scheduler) : values(std::move(values)), scheduler(scheduler) {
             // Intentionally left empty.
         }
+
+        template<typename ValueType>
+        ExplicitQuantitativeCheckResult<ValueType>::ExplicitQuantitativeCheckResult(ExplicitQualitativeCheckResult const& other) {
+            if (other.isResultForAllStates()) {
+                storm::storage::BitVector const& bvValues = other.getTruthValuesVector();
+
+                vector_type newVector;
+                newVector.reserve(bvValues.size());
+                for (std::size_t i = 0, n = bvValues.size(); i < n; i++) {
+                    newVector.push_back(bvValues.get(i) ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>());
+                }
+
+                values = newVector;
+            } else {
+                ExplicitQualitativeCheckResult::map_type const& bitMap = other.getTruthValuesMap();
+
+                map_type newMap;
+                for (auto const& e : bitMap) {
+                    newMap[e.first] = e.second ? storm::utility::one<ValueType>() : storm::utility::zero<ValueType>();
+                }
+
+                values = newMap;
+            }
+        }
+
         
         template<typename ValueType>
         std::unique_ptr<CheckResult> ExplicitQuantitativeCheckResult<ValueType>::clone() const {

@@ -3,6 +3,7 @@
 
 #include <unordered_map>
 #include <set>
+#include <string>
 #include <ostream>
 
 
@@ -89,6 +90,28 @@ namespace storm {
                  * @param labeling A bit vector that indicates whether or not the new label is attached to a item.
                  */
                 void addLabel(std::string const& label, storage::BitVector&& labeling);
+
+                /*!
+                 * Creates a new label with a unique name, derived from the prefix,
+                 * and attaches it to the given items. Note that the dimension of given labeling must
+                 * match the number of items for which this item labeling is valid.
+                 *
+                 * @param prefix A prefix to use for the new label.
+                 * @param labeling A bit vector that indicates whether or not the new label is attached to a item.
+                 * @return the new label
+                 */
+                std::string addUniqueLabel(std::string const& prefix, storage::BitVector const& labeling);
+
+                /*!
+                 * Creates a new label with a unique name, derived from the prefix,
+                 * and attaches it to the given items. Note that the dimension of given labeling must
+                 * match the number of items for which this item labeling is valid.
+                 *
+                 * @param prefix A prefix to use for the new label.
+                 * @param labeling A bit vector that indicates whether or not the new label is attached to a item.
+                 * @return the new label
+                 */
+                std::string addUniqueLabel(std::string const& prefix, storage::BitVector const&& labeling);
 
                 /*!
                  * Adds all labels from the other labeling to this labeling.
@@ -217,6 +240,12 @@ namespace storm {
 
                 // A vector that holds the labeling for all known labels.
                 std::vector<storm::storage::BitVector> labelings;
+
+                /*!
+                 * Generate a unique, previously unused label from the given prefix string.
+                 */
+                std::string generateUniqueLabel(const std::string& prefix) const;
+
             };
 
         } // namespace sparse

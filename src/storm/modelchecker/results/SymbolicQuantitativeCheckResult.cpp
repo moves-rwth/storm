@@ -22,6 +22,12 @@ namespace storm {
             // Intentionally left empty.
         }
         
+
+        template<storm::dd::DdType Type, typename ValueType>
+        SymbolicQuantitativeCheckResult<Type, ValueType>::SymbolicQuantitativeCheckResult(SymbolicQualitativeCheckResult<Type> const& other) : reachableStates(other.getReachableStates()), states(other.getStates()), values(other.getTruthValuesVector().template toAdd<ValueType>()) {
+            // Intentionally left empty.
+        }
+
         template<storm::dd::DdType Type, typename ValueType>
         std::unique_ptr<CheckResult> SymbolicQuantitativeCheckResult<Type, ValueType>::clone() const {
             return std::make_unique<SymbolicQuantitativeCheckResult<Type, ValueType>>(this->reachableStates, this->states, this->values);

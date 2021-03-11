@@ -81,7 +81,15 @@ namespace storm {
             SymbolicQualitativeCheckResult<DdType> const& rightResult = rightResultPointer->asSymbolicQualitativeCheckResult<DdType>();
             return storm::modelchecker::helper::HybridDtmcPrctlHelper<DdType, ValueType>::computeBoundedUntilProbabilities(env, this->getModel(), this->getModel().getTransitionMatrix(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), pathFormula.getNonStrictUpperBound<uint64_t>());
         }
-                
+
+        template<typename ModelType>
+        std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<ModelType>::computeStateFormulaProbabilities(Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
+            storm::logic::Formula const& formula = checkTask.getFormula();
+            std::unique_ptr<CheckResult> resultPointer = this->check(env, formula);
+            SymbolicQualitativeCheckResult<DdType> const& result = resultPointer->asSymbolicQualitativeCheckResult<DdType>();
+            return std::make_unique<SymbolicQuantitativeCheckResult<DdType, ValueType>>(result);
+        }
+
         template<typename ModelType>
         std::unique_ptr<CheckResult> HybridDtmcPrctlModelChecker<ModelType>::computeCumulativeRewards(Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) {
             storm::logic::CumulativeRewardFormula const& rewardPathFormula = checkTask.getFormula();

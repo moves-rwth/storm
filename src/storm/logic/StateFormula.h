@@ -12,6 +12,9 @@ namespace storm {
             };
             
             virtual bool isStateFormula() const override;
+
+            virtual bool isProbabilityPathFormula() const override;
+
         };
     }
 }

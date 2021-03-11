@@ -10,6 +10,8 @@
 #include "storm/modelchecker/prctl/helper/rewardbounded/MultiDimensionalRewardUnfolding.h"
 #include "MDPModelCheckingHelperReturnType.h"
 
+#include "storm/automata/AcceptanceCondition.h"
+
 #include "storm/utility/solver.h"
 #include "storm/solver/SolveGoal.h"
 
@@ -47,6 +49,17 @@ namespace storm {
                 
                 static MDPSparseModelCheckingHelperReturnType<ValueType> computeGloballyProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions, storm::storage::BitVector const& psiStates, bool qualitative, bool produceScheduler, bool useMecBasedTechnique = false);
                 
+                /*!
+                 * Compute a set S of states that admit a probability 1 strategy of satisfying the given acceptance conditon.
+                 * More precisely, let
+                 *   accEC be the set of states that are contained in end components that satisfy the acceptance condition
+                 *  and let
+                 *   P1acc be the set of states that satisfy Pmax=1[ F accEC ].
+                 * This function then computes a set that contains accEC and is contained by P1acc.
+                 * However, if the acceptance condition consists of 'true', the whole state space can be returned.
+                 */
+                static storm::storage::BitVector computeSurelyAcceptingPmaxStates(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions);
+
                 template<typename RewardModelType>
                 static std::vector<ValueType> computeInstantaneousRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepCount);
                 

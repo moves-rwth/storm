@@ -1,6 +1,8 @@
 #include "FormulaParserGrammar.h"
 #include "storm/storage/expressions/ExpressionManager.h"
 
+#include <memory>
+
 namespace storm {
     namespace parser {
         
@@ -50,13 +52,13 @@ namespace storm {
             operatorFormula = probabilityOperator | rewardOperator | longRunAverageOperator | timeOperator;
             operatorFormula.name("operator formulas");
             
-            atomicStateFormula = booleanLiteralFormula | labelFormula | expressionFormula | (qi::lit("(") > stateFormula > qi::lit(")")) | operatorFormula;
+            atomicStateFormula = booleanLiteralFormula | labelFormula | expressionFormula | (qi::lit("(") > untilFormula(qi::_r1) > qi::lit(")")) | operatorFormula;
             atomicStateFormula.name("atomic state formula");
             
-            atomicStateFormulaWithoutExpression = booleanLiteralFormula | labelFormula | (qi::lit("(") > stateFormula > qi::lit(")")) | operatorFormula;
+            atomicStateFormulaWithoutExpression = booleanLiteralFormula | labelFormula | (qi::lit("(") > untilFormula(qi::_r1) > qi::lit(")")) | operatorFormula;
             atomicStateFormula.name("atomic state formula without expression");
             
-            notStateFormula = (unaryBooleanOperator_ >> atomicStateFormulaWithoutExpression)[qi::_val = phoenix::bind(&FormulaParserGrammar::createUnaryBooleanStateFormula, phoenix::ref(*this), qi::_2, qi::_1)] | atomicStateFormula[qi::_val = qi::_1];
+            notStateFormula = (unaryBooleanOperator_ >> atomicStateFormulaWithoutExpression(qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createUnaryBooleanStateOrPathFormula, phoenix::ref(*this), qi::_2, qi::_1)] | atomicStateFormula(qi::_r1)[qi::_val = qi::_1];
             notStateFormula.name("negation formula");
             
             eventuallyFormula = (qi::lit("F") >> (-timeBounds) >> pathFormulaWithoutUntil(qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createEventuallyFormula, phoenix::ref(*this), qi::_1, qi::_r1, qi::_2)];
@@ -68,13 +70,21 @@ namespace storm {
             nextFormula = (qi::lit("X") >> pathFormulaWithoutUntil(qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createNextFormula, phoenix::ref(*this), qi::_1)];
             nextFormula.name("next formula");
             
-            pathFormulaWithoutUntil = eventuallyFormula(qi::_r1) | globallyFormula(qi::_r1) | nextFormula(qi::_r1) | stateFormula;
+            pathFormulaWithoutUntil = eventuallyFormula(qi::_r1) | globallyFormula(qi::_r1) | nextFormula(qi::_r1) | stateFormula(qi::_r1);
             pathFormulaWithoutUntil.name("path formula");
             
             untilFormula = pathFormulaWithoutUntil(qi::_r1)[qi::_val = qi::_1] >> *(qi::lit("U") >> (-timeBounds) >> pathFormulaWithoutUntil(qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createUntilFormula, phoenix::ref(*this), qi::_val, qi::_1, qi::_2)];
             untilFormula.name("until formula");
             
-            conditionalFormula = untilFormula(qi::_r1)[qi::_val = qi::_1] >> *(qi::lit("||") >> untilFormula(storm::logic::FormulaContext::Probability))[qi::_val = phoenix::bind(&FormulaParserGrammar::createConditionalFormula, phoenix::ref(*this), qi::_val, qi::_1, qi::_r1)];
+            hoaPathFormula = qi::lit("HOA:") > qi::lit("{")
+                > quotedString[qi::_val = phoenix::bind(&FormulaParserGrammar::createHOAPathFormula, phoenix::ref(*this), qi::_1)]
+                >> *(qi::lit(",") > quotedString > qi::lit("->") > stateFormula(qi::_r1) )[phoenix::bind(&FormulaParserGrammar::addHoaAPMapping, phoenix::ref(*this), *qi::_val, qi::_1, qi::_2)]
+                > qi::lit("}");
+
+            basicPathFormula = (hoaPathFormula(qi::_r1)[qi::_val = qi::_1]) | untilFormula(qi::_r1)[qi::_val = qi::_1];
+            basicPathFormula.name("basic path formula");
+
+            conditionalFormula = basicPathFormula(qi::_r1)[qi::_val = qi::_1] >> *(qi::lit("||") >> basicPathFormula(storm::logic::FormulaContext::Probability))[qi::_val = phoenix::bind(&FormulaParserGrammar::createConditionalFormula, phoenix::ref(*this), qi::_val, qi::_1, qi::_r1)];
             conditionalFormula.name("conditional formula");
             
             timeBoundReference = (-qi::lit("rew") >> rewardModelName)[qi::_val = phoenix::bind(&FormulaParserGrammar::createTimeBoundReference, phoenix::ref(*this), storm::logic::TimeBoundType::Reward, qi::_1)]
@@ -102,7 +112,7 @@ namespace storm {
             operatorInformation = (-optimalityOperator_[qi::_a = qi::_1] >> ((relationalOperator_[qi::_b = qi::_1] > expressionParser[qi::_c = qi::_1]) | (qi::lit("=") > qi::lit("?"))))[qi::_val = phoenix::bind(&FormulaParserGrammar::createOperatorInformation, phoenix::ref(*this), qi::_a, qi::_b, qi::_c)];
             operatorInformation.name("operator information");
             
-            longRunAverageOperator = ((qi::lit("LRA") | qi::lit("S")) > operatorInformation > qi::lit("[") > stateFormula > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createLongRunAverageOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
+            longRunAverageOperator = ((qi::lit("LRA") | qi::lit("S")) > operatorInformation > qi::lit("[") > stateFormula(storm::logic::FormulaContext::LongRunAverage) > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createLongRunAverageOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
             longRunAverageOperator.name("long-run average operator");
             
             rewardModelName = qi::lit("{\"") > label > qi::lit("\"}");
@@ -117,21 +127,21 @@ namespace storm {
             probabilityOperator = (qi::lit("P") > operatorInformation > qi::lit("[") > pathFormula(storm::logic::FormulaContext::Probability) > qi::lit("]"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createProbabilityOperatorFormula, phoenix::ref(*this), qi::_1, qi::_2)];
             probabilityOperator.name("probability operator");
             
-            andStateFormula = notStateFormula[qi::_val = qi::_1] >> *(qi::lit("&") >> notStateFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createBinaryBooleanStateFormula, phoenix::ref(*this), qi::_val, qi::_1, storm::logic::BinaryBooleanStateFormula::OperatorType::And)];
+            andStateFormula = notStateFormula(qi::_r1)[qi::_val = qi::_1] >> *(qi::lit("&") >> notStateFormula(qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createBinaryBooleanStateOrPathFormula, phoenix::ref(*this), qi::_val, qi::_1, storm::logic::BinaryBooleanStateFormula::OperatorType::And)];
             andStateFormula.name("and state formula");
             
-            orStateFormula = andStateFormula[qi::_val = qi::_1] >> *(qi::lit("|") >> andStateFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createBinaryBooleanStateFormula, phoenix::ref(*this), qi::_val, qi::_1, storm::logic::BinaryBooleanStateFormula::OperatorType::Or)];
+            orStateFormula = andStateFormula(qi::_r1)[qi::_val = qi::_1] >> *(qi::lit("|") >> andStateFormula(qi::_r1))[qi::_val = phoenix::bind(&FormulaParserGrammar::createBinaryBooleanStateOrPathFormula, phoenix::ref(*this), qi::_val, qi::_1, storm::logic::BinaryBooleanStateFormula::OperatorType::Or)];
             orStateFormula.name("or state formula");
             
-            multiFormula = (qi::lit("multi") > qi::lit("(") >> ((pathFormula(storm::logic::FormulaContext::Probability) | stateFormula) % qi::lit(",")) >> qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createMultiFormula, phoenix::ref(*this), qi::_1)];
+            multiFormula = (qi::lit("multi") > qi::lit("(") >> ((pathFormula(storm::logic::FormulaContext::Probability) | stateFormula(storm::logic::FormulaContext::Probability)) % qi::lit(",")) >> qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createMultiFormula, phoenix::ref(*this), qi::_1)];
             multiFormula.name("Multi formula");
-
+            
             identifier %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_') | qi::char_('.')) >> *(qi::alnum | qi::char_('_')))]]];
             identifier.name("identifier");
             
             quantileBoundVariable = (-(qi::lit("min")[qi::_a = storm::solver::OptimizationDirection::Minimize] | qi::lit("max")[qi::_a = storm::solver::OptimizationDirection::Maximize]) >> identifier >> qi::lit(","))[qi::_val = phoenix::bind(&FormulaParserGrammar::createQuantileBoundVariables, phoenix::ref(*this), qi::_a,  qi::_1)];
             quantileBoundVariable.name("quantile bound variable");
-            quantileFormula = (qi::lit("quantile") > qi::lit("(") >> *(quantileBoundVariable) >> stateFormula > qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createQuantileFormula, phoenix::ref(*this), qi::_1, qi::_2)];
+            quantileFormula = (qi::lit("quantile") > qi::lit("(") >> *(quantileBoundVariable) >> stateFormula(storm::logic::FormulaContext::Undefined) > qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createQuantileFormula, phoenix::ref(*this), qi::_1, qi::_2)];
             quantileFormula.name("Quantile formula");
 
             playerCoalition = (-((identifier[phoenix::push_back(qi::_a, qi::_1)] | qi::uint_[phoenix::push_back(qi::_a, qi::_1)]) % ','))[qi::_val = phoenix::bind(&FormulaParserGrammar::createPlayerCoalition, phoenix::ref(*this), qi::_a)];
@@ -139,10 +149,13 @@ namespace storm {
 
             gameFormula = (qi::lit("<<") > playerCoalition > qi::lit(">>") > operatorFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createGameFormula, phoenix::ref(*this), qi::_1, qi::_2)];
             gameFormula.name("game formula");
-
-            stateFormula = (orStateFormula | multiFormula | quantileFormula | gameFormula);
+            
+            stateFormula = (orStateFormula(qi::_r1) | multiFormula | quantileFormula | gameFormula);
             stateFormula.name("state formula");
             
+            quotedString %= qi::as_string[qi::lexeme[qi::omit[qi::char_('"')] > qi::raw[*(!qi::char_('"') >> qi::char_)] > qi::omit[qi::lit('"')]]];
+            quotedString.name("quoted string");
+
             formulaName = qi::lit("\"") >> identifier >> qi::lit("\"") >> qi::lit(":");
             formulaName.name("formula name");
             
@@ -152,7 +165,7 @@ namespace storm {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Woverloaded-shift-op-parentheses"
             
-            filterProperty = (-formulaName >> qi::lit("filter") > qi::lit("(") > filterType_ > qi::lit(",") > stateFormula > qi::lit(",") > stateFormula > qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createProperty, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_4)] | (-formulaName >> stateFormula)[qi::_val = phoenix::bind(&FormulaParserGrammar::createPropertyWithDefaultFilterTypeAndStates, phoenix::ref(*this), qi::_1, qi::_2)];
+            filterProperty = (-formulaName >> qi::lit("filter") > qi::lit("(") > filterType_ > qi::lit(",") > stateFormula(storm::logic::FormulaContext::Undefined) > qi::lit(",") > stateFormula(storm::logic::FormulaContext::Undefined) > qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createProperty, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_4)] | (-formulaName >> stateFormula(storm::logic::FormulaContext::Undefined))[qi::_val = phoenix::bind(&FormulaParserGrammar::createPropertyWithDefaultFilterTypeAndStates, phoenix::ref(*this), qi::_1, qi::_2)];
             filterProperty.name("filter property");
 
 #pragma clang diagnostic pop
@@ -203,6 +216,8 @@ namespace storm {
             qi::on_error<qi::fail>(pathFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(conditionalFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(untilFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            qi::on_error<qi::fail>(hoaPathFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
+            qi::on_error<qi::fail>(basicPathFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(nextFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(globallyFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
             qi::on_error<qi::fail>(eventuallyFormula, handler(qi::_1, qi::_2, qi::_3, qi::_4));
@@ -346,7 +361,18 @@ namespace storm {
                 return std::shared_ptr<storm::logic::Formula const>(new storm::logic::UntilFormula(leftSubformula, rightSubformula));
             }
         }
+
+        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createHOAPathFormula(std::string const& automatonFile) const {
+            return std::shared_ptr<storm::logic::Formula const>(new storm::logic::HOAPathFormula(automatonFile));
+        }
         
+        void FormulaParserGrammar::addHoaAPMapping(storm::logic::Formula const& hoaFormula, const std::string& ap, std::shared_ptr<storm::logic::Formula const>& expression) const {
+            // taking a const Formula reference and doing static_ and const_cast from Formula to allow non-const access to
+            // qi::_val of the hoaPathFormula rule
+            storm::logic::HOAPathFormula& hoaFormula_ = static_cast<storm::logic::HOAPathFormula&>(const_cast<storm::logic::Formula&>(hoaFormula));
+            hoaFormula_.addAPMapping(ap, expression);
+        }
+
         std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createConditionalFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, std::shared_ptr<storm::logic::Formula const> const& rightSubformula, storm::logic::FormulaContext context) const {
             return std::shared_ptr<storm::logic::Formula const>(new storm::logic::ConditionalFormula(leftSubformula, rightSubformula, context));
         }
@@ -395,7 +421,35 @@ namespace storm {
                 return subformula;
             }
         }
-        
+
+        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createBinaryBooleanPathFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, std::shared_ptr<storm::logic::Formula const> const& rightSubformula, storm::logic::BinaryBooleanPathFormula::OperatorType operatorType) {
+            return std::shared_ptr<storm::logic::Formula const>(new storm::logic::BinaryBooleanPathFormula(operatorType, leftSubformula, rightSubformula));
+        }
+
+        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createUnaryBooleanPathFormula(std::shared_ptr<storm::logic::Formula const> const& subformula, boost::optional<storm::logic::UnaryBooleanPathFormula::OperatorType> const& operatorType) {
+            if (operatorType) {
+                return std::shared_ptr<storm::logic::Formula const>(new storm::logic::UnaryBooleanPathFormula(operatorType.get(), subformula));
+            } else {
+                return subformula;
+            }
+        }
+
+        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createBinaryBooleanStateOrPathFormula(std::shared_ptr<storm::logic::Formula const> const& leftSubformula, std::shared_ptr<storm::logic::Formula const> const& rightSubformula, storm::logic::BinaryBooleanOperatorType operatorType) {
+            if (leftSubformula->isStateFormula() && rightSubformula->isStateFormula()) {
+                return createBinaryBooleanStateFormula(leftSubformula, rightSubformula, operatorType);
+            } else {
+                return createBinaryBooleanPathFormula(leftSubformula, rightSubformula, operatorType);
+            }
+        }
+
+        std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createUnaryBooleanStateOrPathFormula(std::shared_ptr<storm::logic::Formula const> const& subformula, boost::optional<storm::logic::UnaryBooleanOperatorType> const& operatorType) {
+            if (subformula->isStateFormula()) {
+                return createUnaryBooleanStateFormula(subformula, operatorType);
+            } else {
+                return createUnaryBooleanPathFormula(subformula, operatorType);
+            }
+        }
+
         std::shared_ptr<storm::logic::Formula const> FormulaParserGrammar::createMultiFormula(std::vector<std::shared_ptr<storm::logic::Formula const>> const& subformulas) {
             bool isMultiDimensionalBoundedUntilFormula = !subformulas.empty();
             for (auto const& subformula : subformulas) {

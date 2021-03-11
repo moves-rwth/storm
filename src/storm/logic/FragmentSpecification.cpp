@@ -45,6 +45,17 @@ namespace storm {
             return pctl;
         }
 
+        FragmentSpecification pctlstar() {
+            FragmentSpecification pctlstar = pctl();
+
+            pctlstar.setBinaryBooleanPathFormulasAllowed(true);
+            pctlstar.setUnaryBooleanPathFormulasAllowed(true);
+            pctlstar.setNestedOperatorsAllowed(true);
+            pctlstar.setNestedPathFormulasAllowed(true);
+
+            return pctlstar;
+        }
+
         FragmentSpecification flatPctl() {
             FragmentSpecification flatPctl = pctl();
 
@@ -79,7 +90,22 @@ namespace storm {
             
             return prctl;
         }
-        
+
+        FragmentSpecification prctlstar() {
+            FragmentSpecification prctlstar = pctlstar();
+
+            prctlstar.setRewardOperatorsAllowed(true);
+            prctlstar.setCumulativeRewardFormulasAllowed(true);
+            prctlstar.setInstantaneousFormulasAllowed(true);
+            prctlstar.setReachabilityRewardFormulasAllowed(true);
+            prctlstar.setLongRunAverageOperatorsAllowed(true);
+            prctlstar.setStepBoundedCumulativeRewardFormulasAllowed(true);
+            prctlstar.setTimeBoundedCumulativeRewardFormulasAllowed(true);
+
+            return prctlstar;
+
+        }
+
         FragmentSpecification csl() {
             FragmentSpecification csl = pctl();
             
@@ -87,7 +113,18 @@ namespace storm {
             
             return csl;
         }
-        
+
+        FragmentSpecification cslstar() {
+            FragmentSpecification cslstar = csl();
+
+            cslstar.setBinaryBooleanPathFormulasAllowed(true);
+            cslstar.setUnaryBooleanPathFormulasAllowed(true);
+            cslstar.setNestedOperatorsAllowed(true);
+            cslstar.setNestedPathFormulasAllowed(true);
+
+            return cslstar;
+        }
+
         FragmentSpecification csrl() {
             FragmentSpecification csrl = csl();
             
@@ -100,7 +137,20 @@ namespace storm {
             
             return csrl;
         }
-        
+
+        FragmentSpecification csrlstar() {
+            FragmentSpecification csrlstar = cslstar();
+
+            csrlstar.setRewardOperatorsAllowed(true);
+            csrlstar.setCumulativeRewardFormulasAllowed(true);
+            csrlstar.setInstantaneousFormulasAllowed(true);
+            csrlstar.setReachabilityRewardFormulasAllowed(true);
+            csrlstar.setLongRunAverageOperatorsAllowed(true);
+            csrlstar.setTimeBoundedCumulativeRewardFormulasAllowed(true);
+
+            return csrlstar;
+        }
+
         FragmentSpecification multiObjective() {
             FragmentSpecification multiObjective = propositional();
             
@@ -161,12 +211,15 @@ namespace storm {
             nextFormula = false;
             untilFormula = false;
             boundedUntilFormula = false;
+            hoaPathFormula = false;
             
             atomicExpressionFormula = false;
             atomicLabelFormula = false;
             booleanLiteralFormula = false;
             unaryBooleanStateFormula = false;
             binaryBooleanStateFormula = false;
+            unaryBooleanPathFormula = false;
+            binaryBooleanPathFormula = false;
             
             cumulativeRewardFormula = false;
             instantaneousRewardFormula = false;
@@ -309,7 +362,16 @@ namespace storm {
             this->boundedUntilFormula = newValue;
             return *this;
         }
+
+        bool FragmentSpecification::areHOAPathFormulasAllowed() const {
+            return hoaPathFormula;
+        }
         
+        FragmentSpecification& FragmentSpecification::setHOAPathFormulasAllowed(bool newValue) {
+            this->hoaPathFormula = newValue;
+            return *this;
+        }
+
         bool FragmentSpecification::areAtomicExpressionFormulasAllowed() const {
             return atomicExpressionFormula;
         }
@@ -346,15 +408,33 @@ namespace storm {
             return *this;
         }
         
+        bool FragmentSpecification::areUnaryBooleanPathFormulasAllowed() const {
+            return unaryBooleanPathFormula;
+        }
+
+        FragmentSpecification& FragmentSpecification::setUnaryBooleanPathFormulasAllowed(bool newValue) {
+            this->unaryBooleanPathFormula = newValue;
+            return *this;
+        }
+
         bool FragmentSpecification::areBinaryBooleanStateFormulasAllowed() const {
             return binaryBooleanStateFormula;
         }
-            
+
         FragmentSpecification& FragmentSpecification::setBinaryBooleanStateFormulasAllowed(bool newValue) {
             this->binaryBooleanStateFormula = newValue;
             return *this;
         }
         
+        bool FragmentSpecification::areBinaryBooleanPathFormulasAllowed() const {
+            return binaryBooleanPathFormula;
+        }
+
+        FragmentSpecification& FragmentSpecification::setBinaryBooleanPathFormulasAllowed(bool newValue) {
+            this->binaryBooleanPathFormula = newValue;
+            return *this;
+        }
+
         bool FragmentSpecification::areCumulativeRewardFormulasAllowed() const {
             return cumulativeRewardFormula;
         }

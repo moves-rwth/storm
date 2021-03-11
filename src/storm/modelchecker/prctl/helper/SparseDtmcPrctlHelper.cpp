@@ -6,6 +6,8 @@
 #include "storm/utility/vector.h"
 #include "storm/utility/graph.h"
 
+#include "storm/models/sparse/Dtmc.h"
+
 #include "storm/storage/StronglyConnectedComponentDecomposition.h"
 #include "storm/storage/DynamicPriorityQueue.h"
 #include "storm/storage/ConsecutiveUint64DynamicPriorityQueue.h"
@@ -20,9 +22,12 @@
 
 #include "storm/environment/solver/SolverEnvironment.h"
 
+#include "storm/transformer/DAProductBuilder.h"
+
 #include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
 #include "storm/settings/modules/CoreSettings.h"
+#include "storm/settings/modules/DebugSettings.h"
 #include "storm/settings/modules/IOSettings.h"
 #include "storm/settings/modules/ModelCheckerSettings.h"
 
@@ -39,6 +44,7 @@
 #include "storm/exceptions/IllegalArgumentException.h"
 #include "storm/exceptions/UncheckedRequirementException.h"
 #include "storm/exceptions/NotSupportedException.h"
+
 
 namespace storm {
     namespace modelchecker {
@@ -308,6 +314,98 @@ namespace storm {
                 return result;
             }
             
+            template<typename ValueType, typename RewardModelType>
+            std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeDAProductProbabilities(Environment const& env, typename storm::models::sparse::Dtmc<ValueType,RewardModelType> const& dtmc, storm::solver::SolveGoal<ValueType>&& goal, storm::automata::DeterministicAutomaton const& da, std::map<std::string, storm::storage::BitVector>& apSatSets, bool qualitative) {
+                const storm::automata::APSet& apSet = da.getAPSet();
+
+                std::vector<storm::storage::BitVector> apLabels;
+                for (const std::string& ap : apSet.getAPs()) {
+                    auto it = apSatSets.find(ap);
+                    STORM_LOG_THROW(it != apSatSets.end(), storm::exceptions::InvalidOperationException, "Deterministic automaton has AP " << ap << ", does not appear in formula");
+
+                    apLabels.push_back(std::move(it->second));
+                }
+
+                storm::storage::BitVector statesOfInterest;
+                if (goal.hasRelevantValues()) {
+                    statesOfInterest = goal.relevantValues();
+                } else {
+                    // product from all model states
+                    statesOfInterest = storm::storage::BitVector(dtmc.getNumberOfStates(), true);
+                }
+
+                STORM_LOG_INFO("Building DTMC-DA product with deterministic automaton, starting from " << statesOfInterest.getNumberOfSetBits() << " model states...");
+                storm::transformer::DAProductBuilder productBuilder(da, apLabels);
+                auto product = productBuilder.build(dtmc, statesOfInterest);
+                STORM_LOG_INFO("Product DTMC has " << product->getProductModel().getNumberOfStates() << " states and "
+                        << product->getProductModel().getNumberOfTransitions() << " transitions.");
+
+                if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
+                    STORM_LOG_TRACE("Writing model to model.dot");
+                    std::ofstream modelDot("model.dot");
+                    dtmc.writeDotToStream(modelDot);
+                    modelDot.close();
+
+                    STORM_LOG_TRACE("Writing product model to product.dot");
+                    std::ofstream productDot("product.dot");
+                    product->getProductModel().writeDotToStream(productDot);
+                    productDot.close();
+
+                    STORM_LOG_TRACE("Product model mapping:");
+                    std::stringstream str;
+                    product->printMapping(str);
+                    STORM_LOG_TRACE(str.str());
+                }
+
+                STORM_LOG_INFO("Computing BSCCs and checking for acceptance...");
+                
+                storm::storage::StronglyConnectedComponentDecomposition<ValueType> bottomSccs(product->getProductModel().getTransitionMatrix(),
+                                                                                              storage::StronglyConnectedComponentDecompositionOptions().onlyBottomSccs().dropNaiveSccs());
+                storm::storage::BitVector acceptingBSCC(product->getProductModel().getNumberOfStates());
+                std::size_t checkedBSCCs = 0, acceptingBSCCs = 0, acceptingBSCCStates = 0;
+                for (auto& scc : bottomSccs) {
+                    checkedBSCCs++;
+                    if (product->getAcceptance()->isAccepting(scc)) {
+                        acceptingBSCCs++;
+                        for (auto& state : scc) {
+                            acceptingBSCC.set(state);
+                            acceptingBSCCStates++;
+                        }
+                    }
+                }
+
+                STORM_LOG_INFO("BSCC analysis: " << acceptingBSCCs << " of " << checkedBSCCs << " BSCCs were accepting (" << acceptingBSCCStates << " states in accepting BSCCs).");
+
+                if (acceptingBSCCs == 0) {
+                    STORM_LOG_INFO("No accepting BSCCs, skipping probability computation.");
+                    std::vector<ValueType> numericResult(dtmc.getNumberOfStates(), storm::utility::zero<ValueType>());
+                    return numericResult;
+                }
+
+                STORM_LOG_INFO("Computing probabilities for reaching accepting BSCCs...");
+
+                storm::storage::BitVector bvTrue(product->getProductModel().getNumberOfStates(), true);
+
+                storm::solver::SolveGoal<ValueType> solveGoalProduct(goal);
+                storm::storage::BitVector soiProduct(product->getStatesOfInterest());
+                solveGoalProduct.setRelevantValues(std::move(soiProduct));
+
+                std::vector<ValueType> prodNumericResult
+                    = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeUntilProbabilities(env,
+                                                                                                               std::move(solveGoalProduct),
+                                                                                                               product->getProductModel().getTransitionMatrix(),
+                                                                                                               product->getProductModel().getBackwardTransitions(),
+                                                                                                               bvTrue,
+                                                                                                               acceptingBSCC,
+                                                                                                               qualitative);
+
+                std::vector<ValueType> numericResult = product->projectToOriginalModel(dtmc, prodNumericResult);
+                return numericResult;
+            }
+
+
+
+
             template<typename ValueType, typename RewardModelType>
             std::vector<ValueType> SparseDtmcPrctlHelper<ValueType, RewardModelType>::computeCumulativeRewards(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, RewardModelType const& rewardModel, uint_fast64_t stepBound) {
                 // Initialize result to the null vector.

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <memory>
+#include <sstream>
 
 #include "storm/utility/macros.h"
 #include "storm/utility/FilteredRewardModel.h"
@@ -18,10 +19,17 @@
 #include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
 
 #include "storm/logic/FragmentSpecification.h"
+#include "storm/logic/ExtractMaximalStateFormulasVisitor.h"
+
+#include "storm/automata/AcceptanceCondition.h"
+#include "storm/automata/DeterministicAutomaton.h"
+#include "storm/automata/LTL2DeterministicAutomaton.h"
 
 #include "storm/models/sparse/StandardRewardModel.h"
 
+#include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/DebugSettings.h"
 
 #include "storm/exceptions/InvalidStateException.h"
 
@@ -37,7 +45,7 @@ namespace storm {
         template<typename SparseDtmcModelType>
         bool SparseDtmcPrctlModelChecker<SparseDtmcModelType>::canHandleStatic(CheckTask<storm::logic::Formula, ValueType> const& checkTask, bool* requiresSingleInitialState) {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            if (formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setConditionalProbabilityFormulasAllowed(true).setConditionalRewardFormulasAllowed(true).setTotalRewardFormulasAllowed(true).setOnlyEventuallyFormuluasInConditionalFormulasAllowed(true).setRewardBoundedUntilFormulasAllowed(true).setRewardBoundedCumulativeRewardFormulasAllowed(true).setMultiDimensionalBoundedUntilFormulasAllowed(true).setMultiDimensionalCumulativeRewardFormulasAllowed(true).setTimeOperatorsAllowed(true).setReachbilityTimeFormulasAllowed(true).setRewardAccumulationAllowed(true))) {
+            if (formula.isInFragment(storm::logic::prctlstar().setLongRunAverageRewardFormulasAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setConditionalProbabilityFormulasAllowed(true).setConditionalRewardFormulasAllowed(true).setTotalRewardFormulasAllowed(true).setOnlyEventuallyFormuluasInConditionalFormulasAllowed(true).setRewardBoundedUntilFormulasAllowed(true).setRewardBoundedCumulativeRewardFormulasAllowed(true).setMultiDimensionalBoundedUntilFormulasAllowed(true).setMultiDimensionalCumulativeRewardFormulasAllowed(true).setTimeOperatorsAllowed(true).setReachbilityTimeFormulasAllowed(true).setRewardAccumulationAllowed(true).setHOAPathFormulasAllowed(true))) {
                 return true;
             } else if (checkTask.isOnlyInitialStatesRelevantSet() && formula.isInFragment(storm::logic::quantiles())) {
                 if (requiresSingleInitialState) {
@@ -115,7 +123,86 @@ namespace storm {
         }
         
         template<typename SparseDtmcModelType>
+        std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeHOAPathProbabilities(Environment const& env, CheckTask<storm::logic::HOAPathFormula, ValueType> const& checkTask) {
+            storm::logic::HOAPathFormula const& pathFormula = checkTask.getFormula();
+            STORM_LOG_INFO("Obtaining HOA automaton...");
+            storm::automata::DeterministicAutomaton::ptr da = pathFormula.readAutomaton();
+            const storm::automata::APSet& apSet = da->getAPSet();
+
+            STORM_LOG_INFO("Deterministic automaton from HOA file has "
+                    << da->getNumberOfStates() << " states, "
+                    << da->getAPSet().size() << " atomic propositions and "
+                    << *da->getAcceptance()->getAcceptanceExpression() << " as acceptance condition.");
+
+            std::map<std::string, storm::storage::BitVector> apSets;
+            for (std::string const& ap : apSet.getAPs()) {
+                std::shared_ptr<storm::logic::Formula const> expression = pathFormula.getAPMapping().at(ap);
+                STORM_LOG_INFO("Computing satisfaction set for atomic proposition \"" << ap << "\" <=> " << *expression << "...");
+                std::unique_ptr<CheckResult> resultPointer = this->check(*expression);
+                ExplicitQualitativeCheckResult const& result = resultPointer->asExplicitQualitativeCheckResult();
+                storm::storage::BitVector bitVector = result.getTruthValuesVector();
+                STORM_LOG_INFO("Atomic proposition \"" << ap << "\" is satisfied by " << bitVector.getNumberOfSetBits() << " states.");
+                apSets[ap] = std::move(bitVector);
+            }
+
+            const SparseDtmcModelType& dtmc = this->getModel();
+            storm::solver::SolveGoal<ValueType> goal(dtmc, checkTask);
+
+            std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeDAProductProbabilities(env, dtmc, std::move(goal), *da, apSets, checkTask.isQualitativeSet());
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+        }
+
+        template<typename SparseDtmcModelType>
+        std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeLTLProbabilities(Environment const& env, CheckTask<storm::logic::PathFormula, ValueType> const& checkTask) {
+            storm::logic::PathFormula const& pathFormula = checkTask.getFormula();
+
+            std::vector<storm::logic::ExtractMaximalStateFormulasVisitor::LabelFormulaPair> extracted;
+            std::shared_ptr<storm::logic::Formula> ltlFormula = storm::logic::ExtractMaximalStateFormulasVisitor::extract(pathFormula, extracted);
+
+            STORM_LOG_INFO("Extracting maximal state formulas and computing satisfaction sets for path formula: " << pathFormula);
+
+            std::map<std::string, storm::storage::BitVector> apSets;
+
+            for (auto& p : extracted) {
+                STORM_LOG_INFO(" Computing satisfaction set for atomic proposition \"" << p.first << "\" <=> " << *p.second << "...");
+
+                std::unique_ptr<CheckResult> subResultPointer = this->check(env, *p.second);
+                ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
+                auto sat = subResult.getTruthValuesVector();
+
+                STORM_LOG_INFO(" Atomic proposition \"" << p.first << "\" is satisfied by " << sat.getNumberOfSetBits() << " states.");
+
+                apSets[p.first] = std::move(sat);
+            }
+
+            STORM_LOG_INFO("Resulting LTL path formula: " << *ltlFormula);
+            STORM_LOG_INFO(" in prefix format: " << ltlFormula->toPrefixString());
+
+            std::shared_ptr<storm::automata::DeterministicAutomaton> da = storm::automata::LTL2DeterministicAutomaton::ltl2da(*ltlFormula);
+
+            STORM_LOG_INFO("Deterministic automaton for LTL formula has "
+                    << da->getNumberOfStates() << " states, "
+                    << da->getAPSet().size() << " atomic propositions and "
+                    << *da->getAcceptance()->getAcceptanceExpression() << " as acceptance condition.");
+
+            const SparseDtmcModelType& dtmc = this->getModel();
+            storm::solver::SolveGoal<ValueType> goal(dtmc, checkTask);
+
+            std::vector<ValueType> numericResult = storm::modelchecker::helper::SparseDtmcPrctlHelper<ValueType>::computeDAProductProbabilities(env, dtmc, std::move(goal), *da, apSets, checkTask.isQualitativeSet());
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+        }
+
+        template<typename SparseDtmcModelType>
+        std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeStateFormulaProbabilities(Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
+            // recurse
+            std::unique_ptr<CheckResult> resultPointer = this->check(env, checkTask.getFormula());
+            ExplicitQualitativeCheckResult const& result = resultPointer->asExplicitQualitativeCheckResult();
+            return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(result);
+        }
+
+        template<typename SparseDtmcModelType>
         std::unique_ptr<CheckResult> SparseDtmcPrctlModelChecker<SparseDtmcModelType>::computeCumulativeRewards(Environment const& env, storm::logic::RewardMeasureType, CheckTask<storm::logic::CumulativeRewardFormula, ValueType> const& checkTask) {
+
             storm::logic::CumulativeRewardFormula const& rewardPathFormula = checkTask.getFormula();
             if (rewardPathFormula.isMultiDimensional() || rewardPathFormula.getTimeBoundReference().isRewardBound()) {
                 STORM_LOG_THROW(checkTask.isOnlyInitialStatesRelevantSet(), storm::exceptions::InvalidOperationException, "Checking non-trivial bounded until probabilities can only be computed for the initial states of the model.");

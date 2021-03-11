@@ -137,6 +137,18 @@ namespace storm {
                 labelings.emplace_back(std::move(labeling));
             }
 
+            std::string ItemLabeling::addUniqueLabel(std::string const& prefix, storage::BitVector const& labeling) {
+                std::string label = generateUniqueLabel(prefix);
+                addLabel(label, labeling);
+                return label;
+            }
+
+            std::string ItemLabeling::addUniqueLabel(std::string const& prefix, storage::BitVector const&& labeling) {
+                std::string label = generateUniqueLabel(prefix);
+                addLabel(label, labeling);
+                return label;
+            }
+
             bool ItemLabeling::containsLabel(std::string const& label) const {
                 return nameToLabelingIndexMap.find(label) != nameToLabelingIndexMap.end();
             }
@@ -208,6 +220,18 @@ namespace storm {
             std::ostream& operator<<(std::ostream& out, ItemLabeling const& labeling) {
                 labeling.printLabelingInformationToStream(out);
                 return out;
+            }
+
+            std::string ItemLabeling::generateUniqueLabel(const std::string& prefix) const {
+                if (!containsLabel(prefix)) {
+                    return prefix;
+                }
+                unsigned int i = 0;
+                std::string label;
+                do {
+                    label = prefix + "_" + std::to_string(i);
+                } while (containsLabel(label));
+                return label;
             }
 
         }

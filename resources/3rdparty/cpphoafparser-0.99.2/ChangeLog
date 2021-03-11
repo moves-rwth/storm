@@ -1,0 +1,24 @@
+2016-02-26  Joachim Klein <klein@tcs.inf.tu-dresden.de>
+
+	* Release version 0.99.2: Bugfix release
+
+	* Fix parsing of 't' and 'f' in the extra info of acc-name headers, e.g.,
+	     acc-name: undefined t
+	  Previously, would lead to an infinite loop.
+
+	* Fix dynamic_bitset::getHighestSetBit
+	  Off-by-one error, tries to read potentially uninitialized
+	  memory. This could lead to non-deterministic behavior for
+	  getHighestSetBit, e.g., erroneous validation errors when
+	  parsing when HOAIntermediateCheckValidity is active.
+
+	* Add #include <stdexcept> to boolean_expression.hh to
+	  have access to std::logical_error, even if not included by
+	  the other standard library headers (fix compilation issue
+	  with some older GCCs).
+
+
+2015-07-20  Joachim Klein <klein@tcs.inf.tu-dresden.de>
+
+	* Release version 0.99.1: Initial (preliminary) release
+

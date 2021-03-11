@@ -1,5 +1,7 @@
 #include "storm/modelchecker/prctl/SparseMdpPrctlModelChecker.h"
 
+#include <sstream>
+
 #include "storm/utility/constants.h"
 #include "storm/utility/macros.h"
 #include "storm/utility/vector.h"
@@ -11,6 +13,10 @@
 #include "storm/modelchecker/results/ExplicitParetoCurveCheckResult.h"
 
 #include "storm/logic/FragmentSpecification.h"
+
+#include "storm/transformer/DAProductBuilder.h"
+#include "storm/logic/ExtractMaximalStateFormulasVisitor.h"
+#include "storm/automata/LTL2DeterministicAutomaton.h"
 
 #include "storm/models/sparse/StandardRewardModel.h"
 
@@ -24,7 +30,9 @@
 
 #include "storm/solver/SolveGoal.h"
 
+#include "storm/settings/SettingsManager.h"
 #include "storm/settings/modules/GeneralSettings.h"
+#include "storm/settings/modules/DebugSettings.h"
 
 #include "storm/exceptions/InvalidStateException.h"
 #include "storm/exceptions/InvalidPropertyException.h"
@@ -44,7 +52,7 @@ namespace storm {
         template<typename SparseMdpModelType>
         bool SparseMdpPrctlModelChecker<SparseMdpModelType>::canHandleStatic(CheckTask<storm::logic::Formula, ValueType> const& checkTask, bool* requiresSingleInitialState) {
             storm::logic::Formula const& formula = checkTask.getFormula();
-            if (formula.isInFragment(storm::logic::prctl().setLongRunAverageRewardFormulasAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setConditionalProbabilityFormulasAllowed(true).setOnlyEventuallyFormuluasInConditionalFormulasAllowed(true).setTotalRewardFormulasAllowed(true).setRewardBoundedUntilFormulasAllowed(true).setRewardBoundedCumulativeRewardFormulasAllowed(true).setMultiDimensionalBoundedUntilFormulasAllowed(true).setMultiDimensionalCumulativeRewardFormulasAllowed(true).setTimeOperatorsAllowed(true).setReachbilityTimeFormulasAllowed(true).setRewardAccumulationAllowed(true))) {
+            if (formula.isInFragment(storm::logic::prctlstar().setLongRunAverageRewardFormulasAllowed(true).setLongRunAverageProbabilitiesAllowed(true).setConditionalProbabilityFormulasAllowed(true).setOnlyEventuallyFormuluasInConditionalFormulasAllowed(true).setTotalRewardFormulasAllowed(true).setRewardBoundedUntilFormulasAllowed(true).setRewardBoundedCumulativeRewardFormulasAllowed(true).setMultiDimensionalBoundedUntilFormulasAllowed(true).setMultiDimensionalCumulativeRewardFormulasAllowed(true).setTimeOperatorsAllowed(true).setReachbilityTimeFormulasAllowed(true).setRewardAccumulationAllowed(true))) {
                 return true;
             } else if (checkTask.isOnlyInitialStatesRelevantSet()) {
                 auto multiObjectiveFragment = storm::logic::multiObjective().setCumulativeRewardFormulasAllowed(true).setTimeBoundedCumulativeRewardFormulasAllowed(true).setStepBoundedCumulativeRewardFormulasAllowed(true).setRewardBoundedCumulativeRewardFormulasAllowed(true).setTimeBoundedUntilFormulasAllowed(true).setStepBoundedUntilFormulasAllowed(true).setRewardBoundedUntilFormulasAllowed(true).setMultiDimensionalBoundedUntilFormulasAllowed(true).setMultiDimensionalCumulativeRewardFormulasAllowed(true).setRewardAccumulationAllowed(true);
@@ -137,6 +145,158 @@ namespace storm {
             return result;
         }
         
+        template<typename SparseMdpModelType>
+        std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::computeStateFormulaProbabilities(Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
+            storm::logic::Formula const& formula = checkTask.getFormula();
+            STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
+            std::unique_ptr<CheckResult> resultPointer = this->check(env, formula);
+            ExplicitQualitativeCheckResult const& result = resultPointer->asExplicitQualitativeCheckResult();
+            return std::make_unique<ExplicitQuantitativeCheckResult<ValueType>>(result);
+        }
+
+        template<typename SparseMdpModelType>
+        std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::computeLTLProbabilities(Environment const& env, CheckTask<storm::logic::PathFormula, ValueType> const& checkTask) {
+            storm::logic::PathFormula const& pathFormula = checkTask.getFormula();
+
+            STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
+
+            std::vector<storm::logic::ExtractMaximalStateFormulasVisitor::LabelFormulaPair> extracted;
+            std::shared_ptr<storm::logic::Formula> ltlFormula = storm::logic::ExtractMaximalStateFormulasVisitor::extract(pathFormula, extracted);
+
+            STORM_LOG_INFO("Extracting maximal state formulas and computing satisfaction sets for path formula: " << pathFormula);
+
+            std::map<std::string, storm::storage::BitVector> apSets;
+
+            for (auto& p : extracted) {
+                STORM_LOG_INFO(" Computing satisfaction set for atomic proposition \"" << p.first << "\" <=> " << *p.second << "...");
+
+                std::unique_ptr<CheckResult> subResultPointer = this->check(env, *p.second);
+                ExplicitQualitativeCheckResult const& subResult = subResultPointer->asExplicitQualitativeCheckResult();
+                auto sat = subResult.getTruthValuesVector();
+
+                STORM_LOG_INFO(" Atomic proposition \"" << p.first << "\" is satisfied by " << sat.getNumberOfSetBits() << " states.");
+
+                apSets[p.first] = std::move(sat);
+            }
+
+            bool minimize = false;
+            CheckTask<storm::logic::Formula, ValueType> subTask(checkTask);
+
+            if (checkTask.getOptimizationDirection() == OptimizationDirection::Minimize) {
+                minimize = true;
+                // negate
+                ltlFormula = std::make_shared<storm::logic::UnaryBooleanPathFormula>(storm::logic::UnaryBooleanOperatorType::Not, ltlFormula);
+                STORM_LOG_INFO("Computing Pmin, proceeding with negated LTL formula.");
+
+                subTask = checkTask.negate().substituteFormula(*ltlFormula);
+            } else {
+                subTask = checkTask.substituteFormula(*ltlFormula);
+            }
+
+            STORM_LOG_INFO("Resulting LTL path formula: " << *ltlFormula);
+            STORM_LOG_INFO(" in prefix format: " << ltlFormula->toPrefixString());
+
+            std::shared_ptr<storm::automata::DeterministicAutomaton> da = storm::automata::LTL2DeterministicAutomaton::ltl2da(*ltlFormula);
+
+            STORM_LOG_INFO("Deterministic automaton for LTL formula has "
+                    << da->getNumberOfStates() << " states, "
+                    << da->getAPSet().size() << " atomic propositions and "
+                    << *da->getAcceptance()->getAcceptanceExpression() << " as acceptance condition.");
+
+            const SparseMdpModelType& mdp = this->getModel();
+            storm::solver::SolveGoal<ValueType> goal(mdp, subTask);
+
+            std::vector<ValueType> numericResult = computeDAProductProbabilities(env, std::move(goal), *da, apSets, checkTask.isQualitativeSet());
+
+            if (minimize) {
+                // compute 1-Pmax[!ltl]
+                for (auto& value : numericResult) {
+                    value = storm::utility::one<ValueType>() - value;
+                }
+            }
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
+        }
+
+
+        template<typename SparseMdpModelType>
+        std::vector<typename SparseMdpPrctlModelChecker<SparseMdpModelType>::ValueType> SparseMdpPrctlModelChecker<SparseMdpModelType>::computeDAProductProbabilities(Environment const& env, storm::solver::SolveGoal<typename SparseMdpPrctlModelChecker<SparseMdpModelType>::ValueType>&& goal, storm::automata::DeterministicAutomaton const& da, std::map<std::string, storm::storage::BitVector>& apSatSets, bool qualitative) const {
+            STORM_LOG_THROW(goal.hasDirection() && goal.direction() == OptimizationDirection::Maximize, storm::exceptions::InvalidPropertyException, "Can only compute maximizing probabilties for DA product with MDP");
+
+            const storm::automata::APSet& apSet = da.getAPSet();
+
+            std::vector<storm::storage::BitVector> apLabels;
+            for (const std::string& ap : apSet.getAPs()) {
+                auto it = apSatSets.find(ap);
+                STORM_LOG_THROW(it != apSatSets.end(), storm::exceptions::InvalidOperationException, "Deterministic automaton has AP " << ap << ", does not appear in formula");
+
+                apLabels.push_back(std::move(it->second));
+            }
+
+            const SparseMdpModelType& mdp = this->getModel();
+
+            storm::storage::BitVector statesOfInterest;
+            if (goal.hasRelevantValues()) {
+                statesOfInterest = goal.relevantValues();
+            } else {
+                // product from all model states
+                statesOfInterest = storm::storage::BitVector(mdp.getNumberOfStates(), true);
+            }
+
+            STORM_LOG_INFO("Building MDP-DA product with deterministic automaton, starting from " << statesOfInterest.getNumberOfSetBits() << " model states...");
+            storm::transformer::DAProductBuilder productBuilder(da, apLabels);
+            auto product = productBuilder.build(mdp, statesOfInterest);
+            STORM_LOG_INFO("Product MDP has " << product->getProductModel().getNumberOfStates() << " states and "
+                    << product->getProductModel().getNumberOfTransitions() << " transitions.");
+
+            if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
+                STORM_LOG_TRACE("Writing model to model.dot");
+                std::ofstream modelDot("model.dot");
+                mdp.writeDotToStream(modelDot);
+                modelDot.close();
+
+                STORM_LOG_TRACE("Writing product model to product.dot");
+                std::ofstream productDot("product.dot");
+                product->getProductModel().writeDotToStream(productDot);
+                productDot.close();
+
+                STORM_LOG_TRACE("Product model mapping:");
+                std::stringstream str;
+                product->printMapping(str);
+                STORM_LOG_TRACE(str.str());
+            }
+
+            STORM_LOG_INFO("Computing accepting end components...");
+            storm::storage::BitVector accepting = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeSurelyAcceptingPmaxStates(*product->getAcceptance(), product->getProductModel().getTransitionMatrix(), product->getProductModel().getBackwardTransitions());
+            if (accepting.empty()) {
+                STORM_LOG_INFO("No accepting states, skipping probability computation.");
+                std::vector<ValueType> numericResult(this->getModel().getNumberOfStates(), storm::utility::zero<ValueType>());
+                return numericResult;
+            }
+
+            STORM_LOG_INFO("Computing probabilities for reaching accepting BSCCs...");
+
+            storm::storage::BitVector bvTrue(product->getProductModel().getNumberOfStates(), true);
+
+            storm::solver::SolveGoal<ValueType> solveGoalProduct(goal);
+            storm::storage::BitVector soiProduct(product->getStatesOfInterest());
+            solveGoalProduct.setRelevantValues(std::move(soiProduct));
+
+            std::vector<ValueType> prodNumericResult
+                = std::move(storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(env,
+                                                                                                                    std::move(solveGoalProduct),
+                                                                                                                    product->getProductModel().getTransitionMatrix(),
+                                                                                                                    product->getProductModel().getBackwardTransitions(),
+                                                                                                                    bvTrue,
+                                                                                                                    accepting,
+                                                                                                                    qualitative,
+                                                                                                                    false  // no schedulers (at the moment)
+                                                                                                                   ).values);
+
+            std::vector<ValueType> numericResult = product->projectToOriginalModel(this->getModel(), prodNumericResult);
+            return numericResult;
+        }
+
+
         template<typename SparseMdpModelType>
         std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::computeConditionalProbabilities(Environment const& env, CheckTask<storm::logic::ConditionalFormula, ValueType> const& checkTask) {
             storm::logic::ConditionalFormula const& conditionalFormula = checkTask.getFormula();

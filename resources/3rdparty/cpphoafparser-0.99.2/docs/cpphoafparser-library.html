@@ -1,0 +1,183 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<link href="cpphoafparser.css" rel="stylesheet">
+<link href="cpp2html.css" rel="stylesheet">
+<title>Using the cpphoafparser Library [cpphoafparser Library for the Hanoi Omega-Automata Format (HOAF), version 0.99.2]</title>
+</head>
+
+<body>
+<div class="nav"><a class="nav" href="index.html">^ Overview</a></div>
+
+<h1>
+Using the <span class="blue1">cpp</span><span class="blue2">hoaf</span><span class="blue3">parser</span> Library<br/>
+<span style="font-size:70%">The <span class="blue">cpphoafparser</span>
+Library for the Hanoi Omega-Automata Format (HOAF), version 0.99.2</span>
+</h1>
+
+<p>The cpphoafparser library can be used to parse and process &omega;-automata
+in the HOA format. We assume here that the reader is familiar with the basic concepts of
+the <a href="http://adl.github.io/hoaf/">Hanoi Omega-Automata Format (HOAF)</a>.
+</p>
+
+<h2><a name="general">General Structure</a></h2>
+
+<p>
+The two main building blocks of the parser library are the <em>parser</em> and
+classes implementing the <em>HOAConsumer</em> interface. A <em>HOAConsumer</em> has functions
+corresponding to the various elements that can occur in a HOA automaton. While parsing, the parser
+calls each of these functions to indicate that this particular element has just occurred.
+</p>
+
+<p>cpphoafparser is a <emph>header-only</emph> C++ library, i.e., it suffices to
+add the <span class="classname">include</span> directory to the include path of your compiler
+and include the corresponding header files. All cpphoafparser elements are contained in the
+<span class="classname">cpphoafparser</span> namespace. It uses C++11 features, so ensure that your
+compiler is configured to support this standard version.
+</p>
+
+
+<h3>A Basic Parser</h3>
+<p>The most basic use of the cpphoafparser library is shown in the following code snippet
+(<span class="classname">src/basic_parser_1.cc</span></span>):</p>
+
+<div class="code">
+<pre><span class="pre">#include "cpphoafparser/consumer/hoa_consumer_print.hh"
+#include "cpphoafparser/parser/hoa_parser.hh"
+</span><span class="keyword">
+using namespace</span> cpphoafparser<span class="operator">;</span><span class="comment">
+
+/** The most basic HOA parser: Read an automaton from input and print it to the output. */</span><span class="type">
+int</span><span class="keyword"> main</span><span class="operator">(</span><span class="type">int</span> argc<span class="operator">,</span><span class="keyword"> const</span><span class="type"> char</span><span class="operator">*</span> argv<span class="operator">[]) {</span>
+  HOAConsumer<span class="operator">::</span>ptr consumer<span class="operator">(</span><span class="keyword">new</span> HOAConsumerPrint<span class="operator">(</span>std<span class="operator">::</span>cout<span class="operator">));</span><span class="flow">
+
+  try</span><span class="operator"> {</span>
+
+    HOAParser<span class="operator">::</span>parse<span class="operator">(</span>std<span class="operator">::</span>cin<span class="operator">,</span> consumer<span class="operator">);
+
+  }</span><span class="flow"> catch</span><span class="operator"> (</span>std<span class="operator">::</span>exception<span class="operator">&amp;</span> e<span class="operator">) {</span>
+    std<span class="operator">::</span>cerr<span class="operator"> &lt;&lt;</span> e<span class="operator">.</span>what<span class="operator">() &lt;&lt;</span> std<span class="operator">::</span>endl<span class="operator">;</span><span class="flow">
+    return</span><span class="int"> 1</span><span class="operator">;
+  }</span><span class="flow">
+  return</span><span class="int"> 0</span><span class="operator">;
+}</span>
+</pre>
+</div>
+
+<p>
+Here, the parser reads from <span class="classname">std::cin</span>
+and calls into a <span class="classname">HOAConsumerPrint</span>
+object that just outputs the elements to <span class="classname">std::cout</span>.</p>
+
+<h3>Chaining Multiple HOAConsumers: HOAIntermediate</h3>
+
+<p>The <span class="classname">HOAIntermediate</span> class, which itself
+implements the <span class="classname">HOAConsumer</span> interface, provides the basis for chaining multiple
+<span class="classname">HOAConsumers</span>, one after another, each reading the output of the previous one.
+</p>
+
+<p>
+Consider the following example
+(<span class="classname">src/basic_parser_2.cc</span></span>):</p>
+
+<div class="code">
+<pre><span class="pre">#include "cpphoafparser/consumer/hoa_intermediate.hh"
+#include "cpphoafparser/consumer/hoa_consumer_null.hh"
+#include "cpphoafparser/parser/hoa_parser.hh"
+</span><span class="keyword">
+using namespace</span> cpphoafparser<span class="operator">;</span><span class="comment">
+
+/* An HOAIntermediate that counts invocations of addState */</span><span class="keyword">
+class</span> CountStates<span class="operator"> :</span><span class="keyword"> public</span> HOAIntermediate<span class="operator"> {</span><span class="keyword">
+public</span><span class="operator">:</span><span class="keyword">
+  typedef</span> std<span class="operator">::</span>shared_ptr<span class="operator">&lt;</span>CountStates<span class="operator">&gt;</span> ptr<span class="operator">;</span><span class="type">
+  unsigned int</span> count<span class="operator"> =</span><span class="int"> 0</span><span class="operator">;</span>
+
+  CountStates<span class="operator">(</span>HOAConsumer<span class="operator">::</span>ptr next<span class="operator">) :</span> HOAIntermediate<span class="operator">(</span>next<span class="operator">) {
+  }</span><span class="keyword">
+
+  virtual</span><span class="type"> void</span> addState<span class="operator">(</span><span class="type">unsigned int</span> id<span class="operator">,</span>
+                        std<span class="operator">::</span>shared_ptr<span class="operator">&lt;</span>std<span class="operator">::</span>string<span class="operator">&gt;</span> info<span class="operator">,</span>
+                        label_expr<span class="operator">::</span>ptr labelExpr<span class="operator">,</span>
+                        std<span class="operator">::</span>shared_ptr<span class="operator">&lt;</span>int_list<span class="operator">&gt;</span> accSignature<span class="operator">)</span> override<span class="operator"> {</span>
+    count<span class="operator">++;</span>
+    next<span class="operator">-&gt;</span>addState<span class="operator">(</span>id<span class="operator">,</span> info<span class="operator">,</span> labelExpr<span class="operator">,</span> accSignature<span class="operator">);
+  }
+};</span><span class="comment">
+
+/** Demonstrating the use of HOAIntermediates */</span><span class="type">
+int</span><span class="keyword"> main</span><span class="operator">(</span><span class="type">int</span> argc<span class="operator">,</span><span class="keyword"> const</span><span class="type"> char</span><span class="operator">*</span> argv<span class="operator">[]) {</span>
+  HOAConsumer<span class="operator">::</span>ptr hoaNull<span class="operator">(</span><span class="keyword">new</span> HOAConsumerNull<span class="operator">());</span>
+  CountStates<span class="operator">::</span>ptr counter<span class="operator">(</span><span class="keyword">new</span> CountStates<span class="operator">(</span>hoaNull<span class="operator">));</span><span class="flow">
+
+  try</span><span class="operator"> {</span>
+
+    HOAParser<span class="operator">::</span>parse<span class="operator">(</span>std<span class="operator">::</span>cin<span class="operator">,</span> counter<span class="operator">);</span>
+    std<span class="operator">::</span>cout<span class="operator"> &lt;&lt;</span><span class="string"> "Number of state definitions = "</span><span class="operator"> &lt;&lt;</span> counter<span class="operator">-&gt;</span>count<span class="operator"> &lt;&lt;</span> std<span class="operator">::</span>endl<span class="operator">;
+
+  }</span><span class="flow"> catch</span><span class="operator"> (</span>std<span class="operator">::</span>exception<span class="operator">&amp;</span> e<span class="operator">) {</span>
+    std<span class="operator">::</span>cerr<span class="operator"> &lt;&lt;</span> e<span class="operator">.</span>what<span class="operator">() &lt;&lt;</span> std<span class="operator">::</span>endl<span class="operator">;</span><span class="flow">
+    return</span><span class="int"> 1</span><span class="operator">;
+  }</span><span class="flow">
+  return</span><span class="int"> 0</span><span class="operator">;
+}</span>
+</pre>
+</div>
+
+<p>We derive <span class="classname">CountStates</span> from <span class="classname">HOAIntermediate</span>.
+Its constructor takes the next <span class="classname">HOAConsumer</span> in the chain, which can
+again be a <span class="classname">HOAIntermediate</span>. Here, we are passing a 
+<span class="classname">HOAConsumerNull</span> object, which does nothing when called, acting as a "no-operation"
+end of the consumer chain. Inside the <span class="classname">CountStates</span>, we override the
+<span class="classname">addState</span> method, which is called for each <em>State:</em>
+definition in the automaton.
+We count the number of definitions and pass along the arguments to the next consumer.
+In the end, we just output the count of the definitions.
+</p>
+
+
+<h2>The HOAConsumer API</h2>
+
+<p>
+A good starting point for learning about the HOAConsumer API is the
+<a
+href="http://automata.tools/hoa/cpphoafparser/docs/api-html/classcpphoafparser_1_1_h_o_a_consumer.html">documentation of the HOAConsumer interface</a>
+as well as the rest of the <a href="http://automata.tools/hoa/cpphoafparser/docs/api-html/index.html">API documentation</a>.
+
+<p>Another good introduction is the source code of the <span class="classname">HOAConsumerPrint</span> class,
+as it translates back from the method calls in the <span class="classname">HOAConsumer</span> interface to the
+textual representation of the HOA format.
+</p>
+
+<p>Some further tidbits that might be useful:</p>
+<ul>
+  <li>The boolean expressions for the explicit transition labels and the acceptance condition
+  are represented by
+  <a href="http://automata.tools/hoa/cpphoafparser/docs/api-html/classcpphoafparser_1_1_boolean_expression.html"><span class="classname">BooleanExpression</span></a>,
+  with appropriate <span class="classname">Atoms</span> for the leaf nodes in the abstract syntax tree.
+  The <span class="classname">BooleanExpressions</span> are designed to
+  be <em>immutable</em>. Therefore, subtrees can be safely shared between expressions.
+  </li>
+  <li>
+  If you encounter an error inside one of the <span class="classname">HOAConsumer</span> method calls, throw an
+  <a href="http://automata.tools/hoa/cpphoafparser/docs/api-html/classcpphoafparser_1_1_h_o_a_consumer_exception.html">HOAConsumerException</a>.
+  </li>
+  <li>Memory managment is generally handled via <span class="classname">shared_ptr</span> pointers.</li>
+  <li>
+  To trace the method calls into a <span class="classname">HOAConsumer</span> or <span class="classname">HOAIntermediate</span>,
+  wrap it into a <a href="http://automata.tools//hoa/cpphoafparser/docs/api-html/classcpphoafparser_1_1_h_o_a_intermediate_trace.html"><span class="classname">HOAIntermediateTrace</span></a>
+  object. This will print all the function invocations to the standard output, including the parameters.
+  </li>
+</ul>
+
+<hr>
+<p>If you have further questions, find bugs or want to tell
+us about your use of the cpphoafparser library, please feel free to contact us!</p>
+
+<p>(c) 2015-2016
+Joachim Klein &lt;klein&#064;tcs.inf.tu-dresden.de&gt;,
+David M&uuml;ller &lt;david.mueller&#064;tcs.inf.tu-dresden.de&gt;
+
+</body>
+</html>

@@ -60,6 +60,16 @@ namespace storm {
         }
         
         template<typename ModelType>
+        std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<ModelType>::computeStateFormulaProbabilities(Environment const& env, CheckTask<storm::logic::Formula, ValueType> const& checkTask) {
+            storm::logic::Formula const& formula = checkTask.getFormula();
+            STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidArgumentException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
+            std::unique_ptr<CheckResult> resultPointer = this->check(env, formula);
+            SymbolicQualitativeCheckResult<DdType> const& result = resultPointer->asSymbolicQualitativeCheckResult<DdType>();
+            // min/max does not matters
+            return std::make_unique<SymbolicQuantitativeCheckResult<DdType, ValueType>>(result);
+        }
+
+        template<typename ModelType>
         std::unique_ptr<CheckResult> SymbolicMdpPrctlModelChecker<ModelType>::computeNextProbabilities(Environment const& env, CheckTask<storm::logic::NextFormula, ValueType> const& checkTask) {
             storm::logic::NextFormula const& pathFormula = checkTask.getFormula();
             STORM_LOG_THROW(checkTask.isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");

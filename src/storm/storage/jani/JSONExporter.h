@@ -51,6 +51,7 @@ namespace storm {
             virtual boost::any visit(storm::logic::AtomicExpressionFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::AtomicLabelFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::BinaryBooleanStateFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::BinaryBooleanPathFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::BooleanLiteralFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::BoundedUntilFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::ConditionalFormula const& f, boost::any const& data) const;
@@ -69,7 +70,9 @@ namespace storm {
             virtual boost::any visit(storm::logic::RewardOperatorFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::TotalRewardFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::UnaryBooleanStateFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::UnaryBooleanPathFormula const& f, boost::any const& data) const;
             virtual boost::any visit(storm::logic::UntilFormula const& f, boost::any const& data) const;
+            virtual boost::any visit(storm::logic::HOAPathFormula const& f, boost::any const& data) const;
       
         private:
             FormulaToJaniJson(storm::jani::Model const& model) : model(model), stateExitRewards(false) { }

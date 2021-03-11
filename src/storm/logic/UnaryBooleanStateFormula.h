@@ -2,12 +2,13 @@
 #define STORM_LOGIC_UNARYBOOLEANSTATEFORMULA_H_
 
 #include "storm/logic/UnaryStateFormula.h"
+#include "storm/logic/UnaryBooleanOperatorType.h"
 
 namespace storm {
     namespace logic {
         class UnaryBooleanStateFormula : public UnaryStateFormula {
         public:
-            enum class OperatorType { Not };
+            typedef storm::logic::UnaryBooleanOperatorType OperatorType;
 
             UnaryBooleanStateFormula(OperatorType operatorType, std::shared_ptr<Formula const> const& subformula);
             

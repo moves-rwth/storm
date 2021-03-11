@@ -1,0 +1,13 @@
+
+.comment { color: #008000; font-style: italic; }
+.pre { color: #000099; }
+.string { color: #009900; }
+.char { color: #009900; }
+.float { color: #996600; }
+.int { color: #000080; }
+.bool { color: #000000; font-weight: bold; }
+.type { color: #0000FF; }
+.flow { color: #800000; }
+.keyword { color: #000000; }
+.operator { color: #000000; font-weight: bold; }
+.operator { color: #000000; font-weight: bold; }

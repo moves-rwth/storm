@@ -8,6 +8,7 @@
 #include "storm/logic/LabelSubstitutionVisitor.h"
 #include "storm/logic/RewardModelNameSubstitutionVisitor.h"
 #include "storm/logic/ToExpressionVisitor.h"
+#include "storm/logic/ToPrefixStringVisitor.h"
 
 namespace storm {
     namespace logic {
@@ -40,6 +41,14 @@ namespace storm {
         }
 
         bool Formula::isUnaryBooleanStateFormula() const {
+            return false;
+        }
+
+        bool Formula::isBinaryBooleanPathFormula() const {
+            return false;
+        }
+
+        bool Formula::isUnaryBooleanPathFormula() const {
             return false;
         }
 
@@ -80,6 +89,10 @@ namespace storm {
         }
 
         bool Formula::isGloballyFormula() const {
+            return false;
+        }
+
+        bool Formula::isHOAPathFormula() const {
             return false;
         }
 
@@ -176,9 +189,8 @@ namespace storm {
             return checker.conformsToSpecification(*this, fragment);
         }
 
-        FormulaInformation Formula::info() const {
-            FormulaInformationVisitor visitor;
-            return visitor.getInformation(*this);
+        FormulaInformation Formula::info(bool recurseIntoOperators) const {
+            return FormulaInformationVisitor::getInformation(*this, recurseIntoOperators);
         }
 
         std::shared_ptr<Formula const> Formula::getTrueFormula() {
@@ -283,6 +295,14 @@ namespace storm {
 
         AtomicLabelFormula const& Formula::asAtomicLabelFormula() const {
             return dynamic_cast<AtomicLabelFormula const&>(*this);
+        }
+
+        HOAPathFormula& Formula::asHOAPathFormula() {
+            return dynamic_cast<HOAPathFormula&>(*this);
+        }
+
+        HOAPathFormula const& Formula::asHOAPathFormula() const {
+            return dynamic_cast<HOAPathFormula const&>(*this);
         }
 
         UntilFormula& Formula::asUntilFormula() {
@@ -536,5 +556,11 @@ namespace storm {
         std::ostream& operator<<(std::ostream& out, Formula const& formula) {
             return formula.writeToStream(out);
         }
+
+        std::string Formula::toPrefixString() const {
+            ToPrefixStringVisitor visitor;
+            return visitor.toPrefixString(*this);
+        }
+
     }
 }
