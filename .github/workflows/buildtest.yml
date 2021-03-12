@@ -83,6 +83,8 @@ jobs:
           ([[ ${{ matrix.debugOrRelease }} == "debug" ]] && echo "CARL_CMAKE_ARGS=${CARL_CMAKE_DEBUG}" || echo "CARL_CMAKE_ARGS=${CARL_CMAKE_RELEASE}") >> $GITHUB_ENV
 
       - name: Login into docker
+        # Only login if using master on original repo (and not for pull requests or forks)
+        if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'
         run: echo "${{ secrets.STORM_CI_DOCKER_PASSWORD }}" | sudo docker login -u "${{ secrets.STORM_CI_DOCKER_USERNAME }}" --password-stdin
       - name: Init Docker
         run: sudo docker run -d -it --name storm --privileged movesrwth/storm-basesystem:${DISTRO}
@@ -106,6 +108,8 @@ jobs:
       - name: Build carl
         run: sudo docker exec storm bash -c "cd /opt/carl/build; make lib_carl -j ${NR_JOBS}"
       - name: Deploy carl
+        # Only deploy if using master on original repo (and not for pull requests or forks)
+        if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'
         run: |
           sudo docker commit storm movesrwth/carl:ci-${{ matrix.debugOrRelease }}
           sudo docker push movesrwth/carl:ci-${{ matrix.debugOrRelease }}
@@ -135,8 +139,8 @@ jobs:
         run: sudo docker exec storm bash -c "cd /opt/storm/build; ctest test --output-on-failure"
 
       - name: Deploy storm
-        # Only deploy if using master (and not for pull requests)
-        if: github.ref == 'refs/heads/master'
+        # Only deploy if using master on original repo (and not for pull requests or forks)
+        if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'
         run: |
           sudo docker commit storm movesrwth/storm:ci-${{ matrix.debugOrRelease }}
           sudo docker push movesrwth/storm:ci-${{ matrix.debugOrRelease }}
@@ -145,7 +149,8 @@ jobs:
     name: Email notification
     runs-on: ubuntu-latest
     needs: [noDeploy, deploy]
-    if: always() # set always
+    # Only run in main repo and even if previous step failed
+    if: github.repository_owner == 'moves-rwth' && always()
     steps:
       - uses: technote-space/workflow-conclusion-action@v2
       - uses: dawidd6/action-send-mail@v2
