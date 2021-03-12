@@ -850,7 +850,6 @@ namespace storm {
         
         storm::expressions::Expression ArrayEliminatorData::transformExpression(storm::expressions::Expression const& arrayExpression) const {
             std::unordered_map<storm::expressions::Variable, std::size_t> arraySizes;
-            std::cout << "Expression array: " << arrayExpression << std::endl;
             for (auto const& r : replacements) {
                 arraySizes.emplace(r.first, r.second.size());
             }
@@ -877,12 +876,9 @@ namespace storm {
                     auto constant = model.getConstants().at(i);
                     if (constant.isDefined() && containsArrayExpression(constant.getExpression())) {
                         // We hope we don't need this one any longer however this could break everything :D Breaking things is fun :D
-                        std::cout << "Removing: " << constant.getName() << std::endl;
                         model.removeConstant(constant.getName());
                         i--;
                         size--;
-                    } else {
-                        std::cout << "safe to keep: " << constant.getName() << std::endl;
                     }
                 }
                 model.finalize();

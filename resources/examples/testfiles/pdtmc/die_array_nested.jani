@@ -9,7 +9,14 @@
 		}]
 	},
 	"actions": [],
-	"constants": [],
+	"constants": [ {
+		"name": "p",
+		"type": "real"
+	},
+    {
+		"name": "q",
+		"type": "real"
+	} ],
 	"features": [
 		"derived-operators",
 		"arrays"
@@ -111,8 +118,8 @@
 						}],
 						"location": "l",
 						"probability": {
-							"comment": "1/2",
-							"exp": 0.5
+							"comment": "p",
+							"exp": "p"
 						}
 					},
 					{
@@ -131,8 +138,11 @@
 						}],
 						"location": "l",
 						"probability": {
-							"comment": "1/2",
-							"exp": 0.5
+							"comment": "1-p",
+							"exp":  {
+										"op": "-",
+										"left": 1,
+										"right": "p"}
 						}
 					}
 				],
@@ -193,7 +203,7 @@
 						}],
 						"location": "l",
 						"probability": {
-							"comment": "1/2",
+							"comment": "testjeee",
 							"exp": 0.5
 						}
 					},

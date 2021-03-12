@@ -9,6 +9,7 @@
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/jani/Property.h"
 #include "storm-parsers/api/model_descriptions.h"
+#include "storm/api/storm.h"
 
 
 TEST(ExplicitJaniModelBuilderTest, Dtmc) {
@@ -53,6 +54,28 @@ TEST(ExplicitJaniModelBuilderTest, Dtmc) {
     EXPECT_EQ(1728ul, model->getNumberOfStates());
     EXPECT_EQ(2505ul, model->getNumberOfTransitions());
 }
+
+
+TEST(ExplicitJaniModelBuilderTest, pdtmc) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pdtmc/parametric_die.pm");
+    storm::jani::Model janiModel =  program.toJani().substituteConstantsFunctions();
+    std::shared_ptr<storm::models::sparse::Model<storm::RationalFunction>> model = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(janiModel).build();
+    EXPECT_EQ(13ul, model->getNumberOfStates());
+    EXPECT_EQ(20ul, model->getNumberOfTransitions());
+
+    janiModel = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/pdtmc/die_array_nested.jani").first;
+    janiModel.substituteConstantsFunctions();
+    model = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(janiModel).build();
+    EXPECT_EQ(13ul, model->getNumberOfStates());
+    EXPECT_EQ(20ul, model->getNumberOfTransitions());
+
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm");
+    janiModel =  program.toJani().substituteConstantsFunctions();
+    model = storm::builder::ExplicitModelBuilder<storm::RationalFunction>(janiModel).build();
+    EXPECT_EQ(677ul, model->getNumberOfStates());
+    EXPECT_EQ(867ul, model->getNumberOfTransitions());
+}
+
 
 TEST(ExplicitJaniModelBuilderTest, Ctmc) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/ctmc/cluster2.sm", true);

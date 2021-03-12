@@ -10,65 +10,64 @@
 #include "storm/utility/macros.h"
 
 #include "storm/exceptions/OutOfRangeException.h"
-#include "storm/generator/VariableInformation.h"
-
 
 namespace storm {
-    
+
     namespace jani {
         class Model;
         class Automaton;
         struct ArrayEliminatorData;
         class VariableSet;
     }
-    
+
     namespace expressions {
         template <typename ValueType>
         class ExpressionEvaluator;
     }
-    
+
     namespace generator {
-        
+
+
         // A structure storing information about a transient variable
-        
+
         template <typename VariableType>
         struct TransientVariableData {
             TransientVariableData(storm::expressions::Variable const& variable, boost::optional<VariableType> const& lowerBound, boost::optional<VariableType> const& upperBound, VariableType const& defaultValue, bool global = false);
             TransientVariableData(storm::expressions::Variable const& variable, VariableType const& defaultValue, bool global = false);
-            
+
             // The integer variable.
             storm::expressions::Variable variable;
-            
+
             // The lower bound of its range.
             boost::optional<VariableType> lowerBound;
-            
+
             // The upper bound of its range.
             boost::optional<VariableType> upperBound;
-            
+
             // Its default value
             VariableType defaultValue;
-            
+
             // A flag indicating whether the variable is a global one.
             bool global;
-            
+
         };
-        
+
         template<typename ValueType>
         struct TransientVariableValuation {
             std::vector<std::pair<TransientVariableData<bool> const*, bool>> booleanValues;
             std::vector<std::pair<TransientVariableData<int64_t> const*, int64_t>> integerValues;
             std::vector<std::pair<TransientVariableData<ValueType> const*, ValueType>> rationalValues;
-            
+
             void clear() {
                 booleanValues.clear();
                 integerValues.clear();
                 rationalValues.clear();
             }
-            
+
             bool empty() const {
                 return booleanValues.empty() && integerValues.empty() && rationalValues.empty();
             }
-            
+
             void setInEvaluator(storm::expressions::ExpressionEvaluator<ValueType>& evaluator, bool explorationChecks) const {
                 for (auto const& varValue : booleanValues) {
                     evaluator.setBooleanValue(varValue.first->variable, varValue.second);
@@ -85,27 +84,27 @@ namespace storm {
                 }
             }
         };
-        
+
         // A structure storing information about the used variables of the program.
         template<typename ValueType>
         struct TransientVariableInformation {
             TransientVariableInformation(storm::jani::Model const& model, std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& parallelAutomata);
-            
+
             TransientVariableInformation() = default;
-            
+
             void registerArrayVariableReplacements(storm::jani::ArrayEliminatorData const& arrayEliminatorData);
-            TransientVariableData<bool> const& getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t>& index) const;
-            TransientVariableData<int64_t> const& getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t>& index) const;
-            TransientVariableData<ValueType> const& getRationalArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t>& index) const;
-            
+            TransientVariableData<bool> const& getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t index) const;
+            TransientVariableData<int64_t> const& getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t index) const;
+            TransientVariableData<ValueType> const& getRationalArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t index) const;
+
             void setDefaultValuesInEvaluator(storm::expressions::ExpressionEvaluator<ValueType>& evaluator) const;
-            
+
             std::vector<TransientVariableData<bool>> booleanVariableInformation;
             std::vector<TransientVariableData<int64_t>> integerVariableInformation;
             std::vector<TransientVariableData<ValueType>> rationalVariableInformation;
-            
+
             /// Replacements for each array variable
-            std::unordered_map<storm::expressions::Variable, ArrayInformation> arrayVariableToElementInformations;
+            std::unordered_map<storm::expressions::Variable, std::vector<uint64_t>> arrayVariableToElementInformations;
 
 
         private:
@@ -113,17 +112,17 @@ namespace storm {
              * Sorts the variables to establish a known ordering.
              */
             void sortVariables();
-            
+
             /*!
              * Creates all necessary variables for a JANI automaton.
              */
             void createVariablesForAutomaton(storm::jani::Automaton const& automaton);
-            
+
             /*!
              * Creates all non-transient variables from the given set
              */
             void createVariablesForVariableSet(storm::jani::VariableSet const& variableSet, bool global);
         };
-        
+
     }
 }

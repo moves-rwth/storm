@@ -12,23 +12,15 @@ namespace storm {
     namespace prism {
         class Program;
     }
-    
+
     namespace jani {
         class Model;
         class Automaton;
         struct ArrayEliminatorData;
         class VariableSet;
     }
-    
-    namespace generator {
-        struct ArrayInformation {
-            ArrayInformation(size_t arrayLength, std::vector<ArrayInformation> indexMapping);
-            ArrayInformation(size_t arrayLength, std::vector<uint64_t> indexMapping);
-            std::vector<ArrayInformation> arrayIndexMapping;
-            std::vector<uint_fast64_t> indexMapping;
-            size_t size;
-        };
 
+    namespace generator {
         // A structure storing information about the boolean variables of the model.
         struct BooleanVariableInformation {
             BooleanVariableInformation(storm::expressions::Variable const& variable, uint_fast64_t bitOffset, bool global, bool observable);
@@ -37,7 +29,7 @@ namespace storm {
 
             // The boolean variable.
             storm::expressions::Variable variable;
-            
+
             // Its bit offset in the compressed state.
             uint_fast64_t bitOffset;
 
@@ -47,7 +39,7 @@ namespace storm {
             //
             bool observable;
         };
-        
+
         // A structure storing information about the integer variables of the model.
         struct IntegerVariableInformation {
 
@@ -57,28 +49,28 @@ namespace storm {
 
             // The integer variable.
             storm::expressions::Variable variable;
-            
+
             // The lower bound of its range.
             int_fast64_t lowerBound;
-            
+
             // The upper bound of its range.
             int_fast64_t upperBound;
-            
+
             // Its bit offset in the compressed state.
             uint_fast64_t bitOffset;
-            
+
             // Its bit width in the compressed state.
             uint_fast64_t bitWidth;
-            
+
             // A flag indicating whether the variable is a global one.
             bool global;
 
             bool observable;
-            
+
             // A flag indicating whether an out of bounds check is enforced for this variable.
             bool forceOutOfBoundsCheck;
         };
-        
+
         // A structure storing information about the location variables of the model.
         struct LocationVariableInformation {
             LocationVariableInformation(storm::expressions::Variable const& variable, uint64_t highestValue, uint_fast64_t bitOffset, uint_fast64_t bitWidth, bool observable);
@@ -88,10 +80,10 @@ namespace storm {
 
             // The highest possible location value.
             uint64_t highestValue;
-            
+
             // Its bit offset in the compressed state.
             uint_fast64_t bitOffset;
-            
+
             // Its bit width in the compressed state.
             uint_fast64_t bitWidth;
 
@@ -103,28 +95,28 @@ namespace storm {
             std::string name;
             bool deterministic = true;
         };
-        
+
         // A structure storing information about the used variables of the program.
         struct VariableInformation {
             VariableInformation(storm::prism::Program const& program, bool outOfBoundsState = false);
             VariableInformation(storm::jani::Model const& model, std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& parallelAutomata, uint64_t reservedBitsForUnboundedVariables, bool outOfBoundsState);
-            
+
             VariableInformation() = default;
             uint_fast64_t getTotalBitOffset(bool roundTo64Bit = false) const;
-            
+
             void registerArrayVariableReplacements(storm::jani::ArrayEliminatorData const& arrayEliminatorData);
-            BooleanVariableInformation const& getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t>const& index);
-            IntegerVariableInformation const& getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, std::vector<uint64_t>const& index);
+            BooleanVariableInformation const& getBooleanArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t index);
+            IntegerVariableInformation const& getIntegerArrayVariableReplacement(storm::expressions::Variable const& arrayVariable, uint64_t index);
 
             /// The total bit offset over all variables.
             uint_fast64_t totalBitOffset;
-            
+
             /// The location variables.
             std::vector<LocationVariableInformation> locationVariables;
-            
+
             /// The boolean variables.
             std::vector<BooleanVariableInformation> booleanVariables;
-            
+
             /// The integer variables.
             std::vector<IntegerVariableInformation> integerVariables;
 
@@ -132,7 +124,7 @@ namespace storm {
             std::vector<ObservationLabelInformation> observationLabels;
 
             /// Replacements for each array variable
-            std::unordered_map<storm::expressions::Variable, ArrayInformation> arrayVariableToElementInformations;
+            std::unordered_map<storm::expressions::Variable, std::vector<uint64_t>> arrayVariableToElementInformations;
 
             bool hasOutOfBoundsBit() const;
 
@@ -156,7 +148,7 @@ namespace storm {
              */
             void createVariablesForVariableSet(storm::jani::VariableSet const& variableSet, uint64_t reservedBitsForUnboundedVariables, bool global);
         };
-        
+
     }
 }
 
