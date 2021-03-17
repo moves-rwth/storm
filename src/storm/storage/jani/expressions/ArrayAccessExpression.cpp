@@ -10,9 +10,7 @@ namespace storm {
         ArrayAccessExpression::ArrayAccessExpression(ExpressionManager const& manager, Type const& type, std::shared_ptr<BaseExpression const> const& arrayExpression, std::shared_ptr<BaseExpression const> const& indexExpression) : BinaryExpression(manager, type, arrayExpression, indexExpression) {
             // Assert correct types
             STORM_LOG_ASSERT(getFirstOperand()->getType().isArrayType(), "ArrayAccessExpression for an expression of type " << getFirstOperand()->getType() << ".");
-//            STORM_LOG_ASSERT(type == getFirstOperand()->getType().getElementType(), "The ArrayAccessExpression should have type " << getFirstOperand()->getType().getElementType() << " but has " << type << " instead.");
             STORM_LOG_ASSERT(getSecondOperand()->getType().isIntegerType(), "The index expression does not have an integer type.");
-//TODO            STORM_LOG_ASSERT(indexExpression->isBinaryRelationExpression(), "The ArrayAccessExpression should have an ArrayAccessIndexExpression for the second operand");
         }
 
         std::shared_ptr<BaseExpression const> ArrayAccessExpression::simplify() const {

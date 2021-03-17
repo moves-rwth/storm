@@ -30,6 +30,7 @@
 #include "storm/modelchecker/results/FilterType.h"
 
 #include <iostream>
+#include <algorithm>    // std::iter_swap
 #include <sstream>
 #include <fstream>
 #include <boost/lexical_cast.hpp>
@@ -316,6 +317,7 @@ namespace storm {
 
         template <typename ValueType>
         std::shared_ptr<storm::logic::Formula const> JaniParser<ValueType>::parseFormula(storm::jani::Model& model, Json const& propertyStructure, storm::logic::FormulaContext formulaContext, Scope const& scope, boost::optional<storm::logic::Bound> bound) {
+
             if (propertyStructure.is_boolean()) {
                 return std::make_shared<storm::logic::BooleanLiteralFormula>(propertyStructure.template get<bool>());
             }
@@ -1034,19 +1036,27 @@ namespace storm {
             } else if (lValueStructure.count("op") == 1) {
                 std::vector<storm::expressions::Expression> index;
                 STORM_LOG_THROW(lValueStructure.count("exp"), storm::exceptions::InvalidJaniException, "Missing 'exp' in array access at " << scope.description);
-
+                // structure will be something like "op": "aa", "exp": {}, "index": {}
+                // in exp we have something that is either a variable, or some other array acces.
+                // e.g. a[1][4] will look like: "op": "aa", "exp": {"op": "aa", "exp": "a", "index": {1}}, "index": {4}
                 Json subStructure = lValueStructure;
                 while (subStructure.count("exp")) {
                     std::string opstring = getString<ValueType>(lValueStructure.at("op"), scope.description);
                     STORM_LOG_THROW(opstring == "aa", storm::exceptions::InvalidJaniException, "Unknown operation '" << opstring << "' occurs in " << scope.description);
                     STORM_LOG_THROW(lValueStructure.count("exp"), storm::exceptions::InvalidJaniException, "Missing 'exp' in array access at " << scope.description);
                     STORM_LOG_THROW(lValueStructure.count("index"), storm::exceptions::InvalidJaniException, "Missing 'index' in array access at " << scope.description);
-
                     index.push_back(parseExpression(subStructure.at("index"), scope.refine("Index expression of array access")));
                     subStructure = subStructure.at("exp");
                 }
-                STORM_LOG_THROW(subStructure.is_string(), storm::exceptions::InvalidJaniException, "Unknown LValue '" << lValueStructure.dump() << "' occurs in " << scope.description);
+                // We need to reverse the order as they were added in wrong order (e.g. first 4 then 1)
+                auto first = index.begin();
+                auto last = index.end();
+                while ((first!=last)&&(first!=--last)) {
+                    std::iter_swap(first, last);
+                    ++first;
+                }
 
+                STORM_LOG_THROW(subStructure.is_string(), storm::exceptions::InvalidJaniException, "Unknown LValue '" << lValueStructure.dump() << "' occurs in " << scope.description);
                 std::string ident = getString<ValueType>(subStructure, scope.description);
                 STORM_LOG_ASSERT (sizeMap.find(ident) != sizeMap.end(), "Did you set the size of array variable: " << ident << "?");
                 if (scope.localVars != nullptr) {
@@ -1358,11 +1368,15 @@ namespace storm {
                         // TODO implement
                         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "log operation is not yet implemented");
                     } else if (opstring == "aa") {
+                        // structure will be something like "op": "aa", "exp": {}, "index": {}
+                        // in exp we have something that is either a variable, or some other array acces.
+                        // e.g. a[1][4] will look like: "op": "aa", "exp": {"op": "aa", "exp": "a", "index": {1}}, "index": {4}
                         STORM_LOG_THROW(expressionStructure.count("exp") == 1, storm::exceptions::InvalidJaniException, "Array access operator requires exactly one exp (at " + scope.description + ").");
                         Json subStructure = expressionStructure;
-                        std::vector<storm::expressions::Expression const> index;
+                        std::vector<storm::expressions::Expression> index;
+
                         while (subStructure.count("exp")) {
-                            index.push_back(parseExpression(expressionStructure.at("index"), scope.refine("index of array access operator"), returnNoneInitializedOnUnknownOperator, auxiliaryVariables));
+                            index.push_back(parseExpression(subStructure.at("index"), scope.refine("index of array access operator"), returnNoneInitializedOnUnknownOperator, auxiliaryVariables));
                             ensureIntegerType(index.back(), opstring, 1, scope.description);
                             subStructure = subStructure.at("exp");
                         }
@@ -1373,14 +1387,14 @@ namespace storm {
 
                         auto finalType = exp.getType();
                         auto & manager = exp.getManager();
-                        // TODO: mapping van indexExpression naar de bijbehorende echte expression
                         std::shared_ptr<storm::expressions::ArrayAccessIndexExpression const> indexExpression;
                         if (index.size() == 1) {
                             indexExpression = std::make_shared<storm::expressions::ArrayAccessIndexExpression>(manager, manager.getIntegerType(), index[0].getBaseExpressionPointer());
                             finalType = finalType.getElementType();
                         } else if (index.size() > 1) {
-                            for (int i = index.size() - 1; i >= 0; --i) {
-                                if (i == (index.size() - 1)) {
+                            // we create an arrayaccessindexexpression (AAI) which looks as follows: AAI(1, (AAI(4))
+                            for (int i = 0; i < index.size(); ++i) {
+                                if (i == 0) {
                                     assert (indexExpression == nullptr);
                                     indexExpression = std::make_shared<storm::expressions::ArrayAccessIndexExpression>(manager, manager.getIntegerType(), index[i].getBaseExpressionPointer());
                                 } else {
@@ -1397,6 +1411,7 @@ namespace storm {
                         if (elements.elementsWithValue) {
                             return std::make_shared<storm::expressions::ValueArrayExpression>(*expressionManager, expressionManager->getArrayType(elements.elementsWithValue->at(0)->getType()), elements)->toExpression();
                         } else {
+                            // Use this to get the correct type
                             auto elementsForTyping = elements.elementsOfElements->at(0);
                             while (elementsForTyping->elementsOfElements) {
                                 elementsForTyping = elementsForTyping->elementsOfElements->at(0);
@@ -1404,6 +1419,9 @@ namespace storm {
                             return std::make_shared<storm::expressions::ValueArrayExpression>(*expressionManager, expressionManager->getArrayType(elementsForTyping->elementsWithValue->at(0)->getType()), elements)->toExpression();
                         }
                     } else if (opstring == "ac") {
+                        // structure will be something like "op": "ac", "length": x, "var": "i", "exp": {}
+                        // in exp we will have something that is either a value or an array constructor
+                        // e.g. a = array (i, 5, array(j, 11, false)) will look like:     "op": "ac", "length": 5, "var": "i", "exp": {"op": "ac", "length": 11, "var": "j", "exp": false}
                         std::string indexVarName;
 
                         std::vector<std::shared_ptr<storm::expressions::BaseExpression const>> lengths;
@@ -1440,6 +1458,7 @@ namespace storm {
                             indexVars.push_back(std::make_shared<storm::expressions::Variable>(indexVar));
                             subStructure = subStructure.at("exp");
                         }
+
                         storm::expressions::Expression exp = parseExpression(subStructure, scope.refine("exp of array constructor"), returnNoneInitializedOnUnknownOperator, newAuxVars);
                         sizeMap[indexVars.at(0)->getName()] = sizes;
 
@@ -1558,7 +1577,8 @@ namespace storm {
                     for(auto const& transientValueEntry : locEntry.at("transient-values")) {
                         STORM_LOG_THROW(transientValueEntry.count("ref") == 1, storm::exceptions::InvalidJaniException, "Transient values in location " << locName << " need exactly one ref that is assigned to");
                         STORM_LOG_THROW(transientValueEntry.count("value") == 1, storm::exceptions::InvalidJaniException, "Transient values in location " << locName << " need exactly one assigned value");
-                        storm::jani::LValue lValue = parseLValue(transientValueEntry.at("ref"), scope.refine("LHS of assignment in location " + locName));
+                        storm::jani::LValue lV
+                        alue = parseLValue(transientValueEntry.at("ref"), scope.refine("LHS of assignment in location " + locName));
                         STORM_LOG_THROW(lValue.isTransient(), storm::exceptions::InvalidJaniException, "Assigned non-transient variable " << lValue << " in location " + locName + " (automaton: '" + name + "').");
                         storm::expressions::Expression rhs = parseExpression(transientValueEntry.at("value"), scope.refine("Assignment of lValue in location " + locName));
                         transientAssignments.emplace_back(lValue, rhs);
