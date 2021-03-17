@@ -199,7 +199,6 @@ namespace storm {
                 virtual ~ArrayExpressionEliminationVisitor() = default;
     
                 std::vector<storm::expressions::Expression> eliminate(std::vector<storm::expressions::Expression> const& expressions) {
-                    STORM_LOG_INFO("Eliminating vector");
                     // here, data is the accessed index of the most recent array access expression. Initially, there is none.
                     // TODO: implement this for the expressions, these are index expressions, need to be mapped to 1 index
                     std::vector<storm::expressions::Expression> result;
@@ -212,7 +211,6 @@ namespace storm {
 
                 storm::expressions::Expression eliminate(storm::expressions::Expression const& expression) {
                     // here, data is the accessed index of the most recent array access expression. Initially, there is none.
-                    STORM_LOG_INFO("Eliminating: " << expression);
                     auto res = boost::any_cast<ResultType>(expression.accept(*this, boost::any()));
                     STORM_LOG_THROW(!res.isArrayOutOfBounds(), storm::exceptions::OutOfRangeException, res.outOfBoundsMessage());
                     STORM_LOG_ASSERT(!containsArrayExpression(res.expr()->toExpression()), "Expression still contains array expressions. Before: " << std::endl << expression << std::endl << "After:" << std::endl << res.expr()->toExpression());
@@ -465,7 +463,7 @@ namespace storm {
                             for (auto index = 0; index < size; ++index) {
                                 storm::expressions::Expression isCurrentIndex = boost::any_cast<ResultType>(expression.getFirstOperand()->accept(*this, boost::any())).expr()->toExpression() == expression.getManager().integer(index);
                                 for (auto& entry : resultSecond->first) {
-                                    expressions[index * sizeSoFar + entry.first] = isCurrentIndex && entry.second;
+                                    expressions[index * sizeSoFar + entry.first] = (isCurrentIndex && entry.second).simplify();
                                 }
                             }
                         } else {
@@ -485,7 +483,7 @@ namespace storm {
                         for (; itr != expressions.end(); ++itr) {
                             result = storm::expressions::ite(itr->second, boost::any_cast<ResultType>(arrayExpression->accept(*this, itr->first)).expr()->toExpression(), result);
                         }
-                        return ResultType(result.getBaseExpressionPointer());
+                        return ResultType(result.simplify().getBaseExpressionPointer());
                     } else {
                         std::pair<std::map<uint_fast64_t, storm::expressions::Expression>, uint_fast64_t> result = {expressions, size * sizeSoFar};
                         return result;
