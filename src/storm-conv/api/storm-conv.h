@@ -26,7 +26,7 @@ namespace storm {
 
         std::pair<storm::jani::Model, std::vector<storm::jani::Property>> convertPrismToJani(storm::prism::Program const& program, std::vector<storm::jani::Property> const& properties = std::vector<storm::jani::Property>(), storm::converter::PrismToJaniConverterOptions options = storm::converter::PrismToJaniConverterOptions());
 
-        aiger* convertPrismToAiger(storm::prism::Program const& program, std::vector<storm::jani::Property> const& properties = std::vector<storm::jani::Property>(), storm::converter::PrismToAigerConverterOptions options = storm::converter::PrismToAigerConverterOptions());
+        std::shared_ptr<aiger> convertPrismToAiger(storm::prism::Program const& program, std::vector<storm::jani::Property> const& properties = std::vector<storm::jani::Property>(), storm::converter::PrismToAigerConverterOptions options = storm::converter::PrismToAigerConverterOptions());
         
         void exportJaniToFile(storm::jani::Model const& model, std::vector<storm::jani::Property> const& properties, std::string const& filename, bool compact = false);
         void printJaniToStream(storm::jani::Model const& model, std::vector<storm::jani::Property> const& properties, std::ostream& ostream, bool compact = false);

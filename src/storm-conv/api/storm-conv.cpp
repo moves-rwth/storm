@@ -114,14 +114,16 @@ namespace storm {
             }
         }
 
-        aiger* convertPrismToAiger(storm::prism::Program const& program, std::vector<storm::jani::Property> const & properties, storm::converter::PrismToAigerConverterOptions options) {
+        std::shared_ptr<aiger> convertPrismToAiger(storm::prism::Program const& program, std::vector<storm::jani::Property> const & properties, storm::converter::PrismToAigerConverterOptions options) {
             // we start by replacing constants and formulas by their values
             storm::prism::Program replaced = program.substituteConstantsFormulas();
             // we recover BDD-style information from the prism program by
             // building its symbolic representation
             std::shared_ptr<storm::models::symbolic::Model<storm::dd::DdType::Sylvan, double>> model = storm::builder::DdPrismModelBuilder<storm::dd::DdType::Sylvan, double>().build(replaced);
             // we can now start loading the aiger structure
-            aiger* aig = aiger_init();
+            std::shared_ptr<aiger> aig(aiger_init(), [](auto ptr) {
+                aiger_reset(ptr);
+            });
             // STEP 1:
             // the first thing we need is to add input variables, these come
             // from the encoding of the nondeterminism, a.k.a. actions, and
@@ -131,14 +133,14 @@ namespace storm {
                 auto const& ddMetaVar = model->getManagerAsSharedPointer()->getMetaVariable(var);
                 for (auto const& i : ddMetaVar.getIndices()) {
                     std::string name = var.getName() + std::to_string(i);
-                    aiger_add_input(aig, var2lit(i), name.c_str());
+                    aiger_add_input(aig.get(), var2lit(i), name.c_str());
                 }
             }
             for (auto const& var : model->getColumnVariables()) {
                 auto const& ddMetaVar = model->getManagerAsSharedPointer()->getMetaVariable(var);
                 for (auto const& i : ddMetaVar.getIndices()) {
                     std::string name = var.getName() + std::to_string(i);
-                    aiger_add_input(aig, var2lit(i), name.c_str());
+                    aiger_add_input(aig.get(), var2lit(i), name.c_str());
                 }
             }
             // STEP 2:
@@ -157,26 +159,27 @@ namespace storm {
                 auto idxIt = inIndices.begin();
                 for (auto const& encVar : ddOutMetaVar.getDdVariables()) {
                     auto encVarFun = qualTrans && encVar;
-                    unsigned lit = bdd2lit(encVarFun.getInternalBdd().getSylvanBdd(), aig, maxvar);
+                    unsigned lit = bdd2lit(encVarFun.getInternalBdd().getSylvanBdd(), aig.get(), maxvar);
                     unsigned idx = (unsigned)(*idxIt);
                     std::string name = inVar.getName() + std::to_string(idx);
-                    aiger_add_latch(aig, var2lit(idx), lit, name.c_str());
+                    aiger_add_latch(aig.get(), var2lit(idx), lit, name.c_str());
                     idxIt++;
                 }
             }
             // STEP 3:
             // we add a "bad" output representing when the transition is
             // invalid
-            aiger_add_output(aig,
-                             aiger_not(bdd2lit(qualTrans.getInternalBdd().getSylvanBdd(), aig, maxvar)),
+            aiger_add_output(aig.get(),
+                             aiger_not(bdd2lit(qualTrans.getInternalBdd().getSylvanBdd(),
+                                               aig.get(), maxvar)),
                              "invalid_transition");
             // STEP 4:
             // add labels as outputs as a function of state sets
             std::vector<std::string> labels = model->getLabels();
             for (auto const& label : labels) {
                storm::dd::Bdd<storm::dd::DdType::Sylvan> states4label = model->getStates(label);
-               unsigned lit = bdd2lit(states4label.getInternalBdd().getSylvanBdd(), aig, maxvar);
-               aiger_add_output(aig, lit, label.c_str());
+               unsigned lit = bdd2lit(states4label.getInternalBdd().getSylvanBdd(), aig.get(), maxvar);
+               aiger_add_output(aig.get(), lit, label.c_str());
             }
             // STEP 5:
             // add coin outputs
@@ -204,12 +207,12 @@ namespace storm {
                 for (auto const& encInVar : ddInMetaVar.getDdVariables()) {
                     unsigned idx = (unsigned)(*idxIt);
                     unsigned init = ((encInVar && initStates) == initStates) ? 1 : 0;
-                    aiger_add_reset(aig, var2lit(idx), init);
+                    aiger_add_reset(aig.get(), var2lit(idx), init);
                     idxIt++;
                 }
             }
             
-            const char* check = aiger_check(aig);
+            const char* check = aiger_check(aig.get());
             STORM_LOG_ASSERT(check == NULL, check);
             return aig;
         }

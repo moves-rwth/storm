@@ -201,7 +201,7 @@ namespace storm {
             std::vector<storm::jani::Property> outputProperties = properties;
             
             // prism-to-aiger transformation
-            aiger* outputCircuit = storm::api::convertPrismToAiger(prismProg, outputProperties);
+            std::shared_ptr<aiger> outputCircuit = storm::api::convertPrismToAiger(prismProg, outputProperties);
             
 
             // exporting of aiger file
@@ -209,14 +209,13 @@ namespace storm {
             auto exportingTime = startStopwatch("Exporting Aiger program ... ");
             
             if (outputFilename != "") {
-                aiger_open_and_write_to_file(outputCircuit, outputFilename.c_str());
+                aiger_open_and_write_to_file(outputCircuit.get(), outputFilename.c_str());
                 STORM_PRINT_AND_LOG("Stored to file '" << outputFilename << "'");
             }
             
             if (output.isStdOutOutputEnabled()) {
-                aiger_write_to_file(outputCircuit, aiger_ascii_mode, stdout);
+                aiger_write_to_file(outputCircuit.get(), aiger_ascii_mode, stdout);
             }
-            aiger_reset(outputCircuit);
             stopStopwatch(exportingTime);
         }
         
