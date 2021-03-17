@@ -1577,8 +1577,7 @@ namespace storm {
                     for(auto const& transientValueEntry : locEntry.at("transient-values")) {
                         STORM_LOG_THROW(transientValueEntry.count("ref") == 1, storm::exceptions::InvalidJaniException, "Transient values in location " << locName << " need exactly one ref that is assigned to");
                         STORM_LOG_THROW(transientValueEntry.count("value") == 1, storm::exceptions::InvalidJaniException, "Transient values in location " << locName << " need exactly one assigned value");
-                        storm::jani::LValue lV
-                        alue = parseLValue(transientValueEntry.at("ref"), scope.refine("LHS of assignment in location " + locName));
+                        storm::jani::LValue lValue = parseLValue(transientValueEntry.at("ref"), scope.refine("LHS of assignment in location " + locName));
                         STORM_LOG_THROW(lValue.isTransient(), storm::exceptions::InvalidJaniException, "Assigned non-transient variable " << lValue << " in location " + locName + " (automaton: '" + name + "').");
                         storm::expressions::Expression rhs = parseExpression(transientValueEntry.at("value"), scope.refine("Assignment of lValue in location " + locName));
                         transientAssignments.emplace_back(lValue, rhs);
