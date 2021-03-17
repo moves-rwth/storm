@@ -65,16 +65,24 @@
 					}
 				}
 			},
-			"initial-value": {
-				"op": "ac",
-				"length": 2,
-				"var": "i",
-				"exp": {
-					"op": "ac",
-					"length": 3,
-					"var": "j",
-					"exp": 0
-				}
+            "initial-value": {
+			     "op": "av",
+				    "elements": [
+					{
+						"op": "av",
+						"elements": [
+							0,
+							0
+						]
+					},
+					{
+						"op": "av",
+						"elements": [
+							0,
+							0
+						]
+					}
+				]
 			}
 		}
 	],
@@ -203,8 +211,11 @@
 						}],
 						"location": "l",
 						"probability": {
-							"comment": "testjeee",
-							"exp": 0.5
+							"comment": "1-q",
+							"exp":  {
+										"op": "-",
+										"left": 1,
+										"right": "q"}
 						}
 					},
 					{
@@ -223,8 +234,8 @@
 						}],
 						"location": "l",
 						"probability": {
-							"comment": "1/2",
-							"exp": 0.5
+							"comment": "q",
+							"exp":  "q"
 						}
 					}
 				],
@@ -285,8 +296,11 @@
 						}],
 						"location": "l",
 						"probability": {
-							"comment": "1/2",
-							"exp": 0.5
+							"comment": "1-p",
+							"exp":  {
+										"op": "-",
+										"left": 1,
+										"right": "p"}
 						}
 					},
 					{
@@ -305,8 +319,11 @@
 						}],
 						"location": "l",
 						"probability": {
-							"comment": "1/2",
-							"exp": 0.5
+							"comment": "1-p",
+							"exp":  {
+										"op": "-",
+										"left": 1,
+										"right": "p"}
 						}
 					}
 				],
