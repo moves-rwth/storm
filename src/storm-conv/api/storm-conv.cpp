@@ -192,9 +192,9 @@ namespace storm {
                 auto lteq = trans.lessOrEqual(prob);
                 auto gteq = trans.greaterOrEqual(prob);
                 auto eq = lteq && gteq;
-                unsigned lit = bdd2lit(eq.getInternalBdd().getSylvanBdd(), aig, maxvar);
+                unsigned lit = bdd2lit(eq.getInternalBdd().getSylvanBdd(), aig.get(), maxvar);
                 std::string name = "coin_" + std::to_string(prob);
-                aiger_add_output(aig, lit, name.c_str());
+                aiger_add_output(aig.get(), lit, name.c_str());
             }
             // STEP 6:
             // we set the initial values for all latches

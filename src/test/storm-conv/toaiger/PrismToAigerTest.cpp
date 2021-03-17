@@ -50,5 +50,5 @@ TEST(PrismToAigerTest, Simple) {
     std::vector<storm::jani::Property> outputProperties = properties;
     
     // prism-to-aiger transformation
-    std::shared_ptr<aiger> outputCircuit = storm::api::convertPrismToAiger(prismProg, outputProperties);
+    std::shared_ptr<aiger> outputCircuit = storm::api::convertPrismToAiger(prismProg.asPrismProgram(), outputProperties);
 }

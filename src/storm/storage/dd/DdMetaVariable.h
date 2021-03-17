@@ -36,7 +36,7 @@ namespace storm {
             template <DdType LibraryTypePrime, typename ValueTypePrime>
             friend class AddIterator;
 
-            friend aiger* storm::api::convertPrismToAiger(storm::prism::Program const&, std::vector<storm::jani::Property> const&, storm::converter::PrismToAigerConverterOptions);
+            friend std::shared_ptr<aiger> storm::api::convertPrismToAiger(storm::prism::Program const&, std::vector<storm::jani::Property> const&, storm::converter::PrismToAigerConverterOptions);
             
             /*!
              * Retrieves the name of the meta variable.
