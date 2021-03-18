@@ -205,6 +205,8 @@ namespace {
         EXPECT_FLOAT_EQ(result, 551 / 150.0);
         result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/spare8.dft");
         EXPECT_FLOAT_EQ(result, 249 / 52.0); // DFTCalc has result of 4.33779 due to different semantics of nested spares
+        result = this->analyzeMTTF(STORM_TEST_RESOURCES_DIR "/dft/spare_dc.dft");
+        EXPECT_FLOAT_EQ(result, 78311 / 182700.0);
     }
 
     TYPED_TEST(DftModelCheckerTest, SeqMTTF) {
