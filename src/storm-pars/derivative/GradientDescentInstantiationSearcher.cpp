@@ -387,6 +387,11 @@ namespace storm {
             std::cout << storm::utility::convertNumber<double>(walk.at(walk.size() - 1).value) << std::endl;
         }
 
+        template<typename ValueType, typename ConstantType>
+        std::vector<typename GradientDescentInstantiationSearcher<ValueType, ConstantType>::VisualizationPoint> GradientDescentInstantiationSearcher<ValueType, ConstantType>::getVisualizationWalk() {
+            return walk;
+        }
+
         template class GradientDescentInstantiationSearcher<RationalFunction, RationalNumber>;
         template class GradientDescentInstantiationSearcher<RationalFunction, double>;
     }

@@ -173,7 +173,23 @@ namespace storm {
             std::pair<std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>, ConstantType> gradientDescent(
                 bool findFeasibleInstantiation
             );
+            /**
+             * Print the previously done run as JSON. This run can be retrieved using getVisualizationWalk.
+             */
             void printRunAsJson();
+            
+            /**
+             * A point in the Gradient Descent walk, recorded if recordRun is set to true in the constructor (false by default).
+             */
+            struct VisualizationPoint {
+                std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type> position;
+                ConstantType value;
+            };
+            /**
+             * Get the visualization walk that is recorded if recordRun is set to true in the constructor (false by default).
+             */
+            std::vector<VisualizationPoint> getVisualizationWalk();
+            
         private:
             const std::shared_ptr<models::sparse::Dtmc<ValueType>> model;
             const std::set<typename utility::parametric::VariableType<ValueType>::type> parameters;
@@ -187,10 +203,6 @@ namespace storm {
 
             // This is for visualizing data
             const bool recordRun;
-            struct VisualizationPoint {
-                std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type> position;
-                ConstantType value;
-            };
             std::vector<VisualizationPoint> walk; 
             ResultType resultType;
 

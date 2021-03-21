@@ -159,16 +159,7 @@ namespace storm {
             storm::solver::GeneralLinearEquationSolverFactory<ConstantType> factory;
 
             Environment newEnv;
-            // If the environment was set explicitely to the user to something else than topological+eigen, we will respect that.
-            // Otherwise, set it to topological+eigen.
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
-            // TODO this doesn't work yet
-            /* if (!coreSettings.isEquationSolverSetFromDefaultValue()) { */
-            /*     newEnv.solver().setLinearEquationSolverPrecision( */
-            /*             storm::utility::convertNumber<storm::RationalNumber>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision()), true); */
-            /*     newEnv.solver().setLinearEquationSolverType(solver::EquationSolverType::Topological); */
-            /*     newEnv.solver().topological().setUnderlyingEquationSolverType(solver::EquationSolverType::Eigen); */
-            /* } */
             this->environment = std::make_unique<Environment>(newEnv);
             bool convertToEquationSystem = factory.getEquationProblemFormat(*environment) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
 
