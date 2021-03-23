@@ -565,7 +565,7 @@ namespace storm {
         }
 
         /*** Output ***/
-
+        /*
         void Order::toDotOutput() const {
             // Graphviz Output start
             STORM_PRINT("Dot Output:" << std::endl << "digraph model {" << std::endl);
@@ -605,7 +605,7 @@ namespace storm {
             }
             // Graphviz Output end
             STORM_PRINT("}" << std::endl);
-        }
+        }*/
 
         void Order::dotOutputToFile(std::ofstream& dotOutfile) const {
             // Graphviz Output start

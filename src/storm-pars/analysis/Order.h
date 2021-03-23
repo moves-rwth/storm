@@ -297,7 +297,7 @@ namespace storm {
                     /*!
                      * Prints the dot output to normal STORM_PRINT.
                      */
-                    void toDotOutput() const;
+                    //void toDotOutput() const;
 
                     /*!
                      * Writes dotoutput to the given file.
@@ -318,13 +318,13 @@ namespace storm {
                     bool isInvalid() const;
 
                 protected:
-                    storage::Decomposition<storage::StronglyConnectedComponent> getDecomposition() const;
+                    //storage::Decomposition<storage::StronglyConnectedComponent> getDecomposition() const;
 
 
                 private:
                     bool above(Node * node1, Node * node2);
 
-                    bool above(Node * node1, Node * node2, storm::analysis::Order::Node *nodePrev, storm::storage::BitVector *statesSeen);
+                    //bool above(Node * node1, Node * node2, storm::analysis::Order::Node *nodePrev, storm::storage::BitVector *statesSeen);
 
                     bool aboveFast(Node * node1, Node * node2) const;
 
@@ -336,7 +336,7 @@ namespace storm {
 
                     bool invalid;
 
-                    void nodeOutput();
+                    //void nodeOutput();
 
                     bool doneBuilding;
 
