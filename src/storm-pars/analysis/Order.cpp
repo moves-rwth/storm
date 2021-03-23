@@ -312,9 +312,11 @@ namespace storm {
             return nodes[stateNumber];
         }
 
+        /*
         std::vector<Order::Node*> Order::getNodes() const {
             return nodes;
         }
+        */
 
         std::vector<uint_fast64_t>& Order::getStatesSorted() {
             return statesSorted;
@@ -384,6 +386,7 @@ namespace storm {
             return result;
         }
 
+        /*
         std::pair<std::pair<uint_fast64_t,uint_fast64_t>, std::vector<uint_fast64_t>> Order::sortStatesForForward(uint_fast64_t currentState, std::vector<uint_fast64_t> const& states) {
             std::vector<uint_fast64_t> statesSorted;
             statesSorted.push_back(currentState);
@@ -434,6 +437,7 @@ namespace storm {
 
             return {{s1, s2}, statesSorted};
         }
+        */
 
         std::pair<std::pair<uint_fast64_t ,uint_fast64_t>,std::vector<uint_fast64_t>> Order::sortStatesUnorderedPair(const std::vector<uint_fast64_t>* states) {
             assert (states != nullptr);

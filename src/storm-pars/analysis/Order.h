@@ -203,7 +203,7 @@ namespace storm {
                      *
                      * @return The vector with nodes of the order.
                      */
-                    std::vector<Node*> getNodes() const;
+                    //std::vector<Node*> getNodes() const;
 
                     std::vector<uint_fast64_t>& getStatesSorted();
                     /*!
@@ -257,7 +257,7 @@ namespace storm {
                      * if s1 < numberOfStates && s2 == numberOfStates, all states excluding s1 could be sorted, forward reasonging can be continued
                      * else assumption is needed
                      */
-                    std::pair<std::pair<uint_fast64_t,uint_fast64_t>, std::vector<uint_fast64_t>> sortStatesForForward(uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors);
+                    //std::pair<std::pair<uint_fast64_t,uint_fast64_t>, std::vector<uint_fast64_t>> sortStatesForForward(uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors);
 
                     /*!
                      * Sorts the given states if possible.
@@ -292,7 +292,7 @@ namespace storm {
                     /*!
                      * If the order is fully built, this can be set to true.
                      */
-                    void setDoneBuilding(bool done = true);
+                    //void setDoneBuilding(bool done = true);
 
                     /*!
                      * Prints the dot output to normal STORM_PRINT.

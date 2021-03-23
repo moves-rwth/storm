@@ -252,6 +252,14 @@ namespace storm {
             return regionChecker->computeExtremalValue(env, region, dir, precision.is_initialized() ? precision.get() : storm::utility::zero<ValueType>());
         }
 
+        template <typename ValueType>
+        std::pair<ValueType, typename storm::storage::ParameterRegion<ValueType>::Valuation> getBound(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::solver::OptimizationDirection const& dir, MonotonicitySetting monotonicitySetting, bool generateSplitEstimates = false, boost::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>& monotoneParameters = boost::none) {
+            Environment env;
+            bool allowModelSimplification = !monotonicitySetting.useMonotonicity;
+            auto regionChecker = initializeParameterLiftingRegionModelChecker(env, model, task, generateSplitEstimates, allowModelSimplification, monotonicitySetting, monotoneParameters);
+            return regionChecker->getBound(env, region, dir);
+        }
+
         // TODO: update documentation
         /*!
          * Checks if a given extremal value is indeed the extremal value in the given region
