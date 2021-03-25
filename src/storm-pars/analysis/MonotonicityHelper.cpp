@@ -58,7 +58,7 @@ namespace storm {
                 checkSamples = false;
             }
 
-            this->extender = new analysis::OrderExtender<ValueType, ConstantType>(model, formulas[0]);
+            this->extender = new analysis::ReachabilityOrderExtender<ValueType, ConstantType>(model, formulas[0]);
 
             for (auto i = 0; i < matrix.getRowCount(); ++i) {
                 std::set<VariableType> occurringVariables;
