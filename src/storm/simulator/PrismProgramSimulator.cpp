@@ -44,6 +44,9 @@ namespace storm {
             if (behavior.getStateRewards().size() > 0) {
                 STORM_LOG_ASSERT(behavior.getStateRewards().size() == lastActionRewards.size(), "Reward vectors should have same length.");
             }
+            for(uint64_t i = 0; i < behavior.getStateRewards().size(); i++) {
+                lastActionRewards[i] += behavior.getStateRewards()[i];
+            }
             return true;
         }
 
