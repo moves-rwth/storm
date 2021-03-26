@@ -107,6 +107,7 @@ namespace storm {
 
         template<typename ValueType>
         bool DiscreteTimePrismProgramSimulator<ValueType>::resetToInitial() {
+            lastActionRewards = zeroRewards;
             auto indices = stateGenerator->getInitialStates(stateToIdCallback);
             STORM_LOG_THROW(indices.size() == 1, storm::exceptions::NotSupportedException, "Program must have a unique initial state");
             currentState = idToState[indices[0]];
@@ -115,6 +116,7 @@ namespace storm {
 
         template<typename ValueType>
         bool DiscreteTimePrismProgramSimulator<ValueType>::resetToState(generator::CompressedState const& newState) {
+            lastActionRewards = zeroRewards;
             currentState = newState;
             return explore();
         }
