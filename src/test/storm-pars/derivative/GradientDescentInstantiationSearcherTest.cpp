@@ -87,6 +87,7 @@ TEST(GradientDescentInstantiationSearcherTest, Crowds) {
             0.999,
             2,
             1e-6,
+            boost::none,
             true
     );
     auto doubleInstantiation = doubleChecker.gradientDescent(false);

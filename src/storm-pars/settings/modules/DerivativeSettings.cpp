@@ -26,6 +26,7 @@ namespace storm {
             const std::string DerivativeSettings::printJson = "print-json";
             const std::string DerivativeSettings::gradientDescentMethod = "descent-method";
             const std::string DerivativeSettings::omitInconsequentialParams = "omit-inconsequential-params";
+            const std::string DerivativeSettings::startPoint = "start-point";
 
             DerivativeSettings::DerivativeSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, extremumSearch, false, "Search for an extremum (one-shot, starting at p->0.5 for all parameters p)").build());
@@ -42,6 +43,8 @@ namespace storm {
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(averageDecay, "Decay of decaying step average").setDefaultValueDouble(0.9).build())
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(squaredAverageDecay, "Decay of squared decaying step average").setDefaultValueDouble(0.999).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, printJson, false, "Print the run as json after finishing (slow!)").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, startPoint, false, "Start point for the search. Default is p->0.5 for all parameters p").setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument(startPoint, "Start point (aka start instantiation / sample)").setDefaultValueString("").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, terminationEpsilon, false, "The change in value that constitutes as a \"tiny change\", after a few of which the gradient descent will terminate")
                     .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(terminationEpsilon, "The epsilon").setDefaultValueDouble(1e-6).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, omitInconsequentialParams, false, "Parameters that are removed in minimization because they have no effect on the rational function are normally set to 0.5 in the final instantiation. If this flag is set, they will be omitted from the final instantiation entirely.").setIsAdvanced().build());
@@ -94,6 +97,13 @@ namespace storm {
 
             bool DerivativeSettings::areInconsequentialParametersOmitted() const  {
                 return this->getOption(omitInconsequentialParams).getHasOptionBeenSet();
+            }
+
+            boost::optional<std::string> DerivativeSettings::getStartPoint() const  {
+                if (this->getOption(startPoint).getHasOptionBeenSet()) {
+                    return this->getOption(startPoint).getArgumentByName(startPoint).getValueAsString();
+                }
+                return boost::none;
             }
 
             boost::optional<derivative::GradientDescentMethod> DerivativeSettings::methodFromString(const std::string &str) const {

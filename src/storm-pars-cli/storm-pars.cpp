@@ -609,6 +609,18 @@ namespace storm {
                 return;
             }
 
+            boost::optional<std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>> startPoint;
+            auto startPointAsString = derSettings.getStartPoint();
+            if (startPointAsString) {
+                auto samples = parseSamples<ValueType>(model, *startPointAsString, true);
+                std::map<typename utility::parametric::VariableType<ValueType>::type, std::vector<typename utility::parametric::CoefficientType<ValueType>::type>> cartesianProduct = samples.cartesianProducts[0];
+                std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type> point;
+                for (auto const& entry : cartesianProduct) {
+                    point[entry.first] = entry.second[0];
+                }
+                startPoint = point;
+            }
+
             // Use the DerivativeEvaluationHelper to retrieve the derivative at an instantiation that is input by the user
             if (auto instantiationString = derSettings.getDerivativeAtInstantiation()) {
                 std::unordered_map<std::string, std::string> keyValue = storm::parser::parseKeyValueString(*instantiationString);
@@ -658,11 +670,15 @@ namespace storm {
             } else if (derSettings.isExtremumSearchSet()) {
                 STORM_PRINT("Finding an extremum using Gradient Descent" << std::endl);
                 storm::utility::Stopwatch derivativeWatch(true);
-                storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> derivativeChecker(dtmc, vars, formulas, *method, derSettings.getLearningRate(), derSettings.getAverageDecay(), derSettings.getSquaredAverageDecay(), derSettings.getMiniBatchSize(), derSettings.getTerminationEpsilon(), derSettings.isPrintJsonSet());
+                storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> derivativeChecker(dtmc, vars, formulas, *method, derSettings.getLearningRate(), derSettings.getAverageDecay(), derSettings.getSquaredAverageDecay(), derSettings.getMiniBatchSize(), derSettings.getTerminationEpsilon(), startPoint, derSettings.isPrintJsonSet());
                 auto instantiationAndValue = derivativeChecker.gradientDescent(false);
                 if (!derSettings.areInconsequentialParametersOmitted() && omittedParameters) {
                     for (RationalFunctionVariable const& param : *omittedParameters) {
-                        instantiationAndValue.first[param] = utility::convertNumber<RationalFunction::CoeffType>(0.5);
+                        /* if (startPoint) { */
+                        /*     instantiationAndValue.first[param] = startPoint->at(param); */
+                        /* } else { */
+                            instantiationAndValue.first[param] = utility::convertNumber<RationalFunction::CoeffType>(0.5);
+                        /* } */
                     }
                 }
                 derivativeWatch.stop();
@@ -686,11 +702,15 @@ namespace storm {
             } else if (derSettings.isFeasibleInstantiationSearchSet()) {
                 STORM_PRINT("Finding a feasible instantiation using Gradient Descent" << std::endl);
                 storm::utility::Stopwatch derivativeWatch(true);
-                storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> derivativeChecker(dtmc, vars, formulas, *method, derSettings.getLearningRate(), derSettings.getAverageDecay(), derSettings.getSquaredAverageDecay(), derSettings.getMiniBatchSize(), derSettings.getTerminationEpsilon(), derSettings.isPrintJsonSet());
+                storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> derivativeChecker(dtmc, vars, formulas, *method, derSettings.getLearningRate(), derSettings.getAverageDecay(), derSettings.getSquaredAverageDecay(), derSettings.getMiniBatchSize(), derSettings.getTerminationEpsilon(), startPoint, derSettings.isPrintJsonSet());
                 auto instantiationAndValue = derivativeChecker.gradientDescent(true);
                 if (!derSettings.areInconsequentialParametersOmitted() && omittedParameters) {
                     for (RationalFunctionVariable const& param : *omittedParameters) {
-                        instantiationAndValue.first[param] = utility::convertNumber<RationalFunction::CoeffType>(0.5);
+                        /* if (startPoint) { */
+                        /*     instantiationAndValue.first[param] = startPoint->at(param); */
+                        /* } else { */
+                            instantiationAndValue.first[param] = utility::convertNumber<RationalFunction::CoeffType>(0.5);
+                        /* } */
                     }
                 }
                 derivativeWatch.stop();

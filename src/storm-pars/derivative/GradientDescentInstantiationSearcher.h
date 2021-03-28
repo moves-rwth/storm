@@ -42,6 +42,7 @@ namespace storm {
              * @param miniBatchSize Size of a minibatch.
              * @param terminationEpsilon A value step smaller than this is considered a "tiny step", after
              * a number of these the algorithm will terminate.
+             * @param startPoint Start point of the search (default: all parameters set to 0.5)
              * @param recordRun Records the run into a global variable, which can be converted into JSON
              * using the printRunAsJson function (currently not exposed as API though).
              */
@@ -55,6 +56,7 @@ namespace storm {
                     double squaredAverageDecay = 0.999,
                     uint_fast64_t miniBatchSize = 32,
                     double terminationEpsilon = 1e-6,
+                    boost::optional<std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>> startPoint = boost::none,
                     bool recordRun = false
             ) : model(model)
               , parameters(parameters)
@@ -64,6 +66,7 @@ namespace storm {
               , environment(std::make_unique<Environment>())
               , miniBatchSize(miniBatchSize)
               , terminationEpsilon(terminationEpsilon)
+              , startPoint(startPoint)
               , recordRun(recordRun) {
                 if (formula->isProbabilityOperatorFormula()) {
                     resultType = ResultType::PROBABILITY;
@@ -225,6 +228,7 @@ namespace storm {
             ResultType resultType;
             boost::optional<storm::logic::Bound> bound;
             OptimizationDirection optimalityType;
+            boost::optional<std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>> startPoint;
 
             // This is for visualizing data
             const bool recordRun;

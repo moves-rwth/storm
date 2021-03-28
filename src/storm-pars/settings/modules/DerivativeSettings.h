@@ -82,6 +82,11 @@ namespace storm {
                  */
                 bool areInconsequentialParametersOmitted() const;
 
+                /*!
+                 * Get start point
+                 */
+                boost::optional<std::string> getStartPoint() const;
+
                 const static std::string moduleName;
             private:
                 const static std::string extremumSearch;
@@ -96,6 +101,7 @@ namespace storm {
                 const static std::string terminationEpsilon;
                 const static std::string gradientDescentMethod;
                 const static std::string omitInconsequentialParams;
+                const static std::string startPoint;
                 boost::optional<derivative::GradientDescentMethod> methodFromString(const std::string &str) const;
             };
 

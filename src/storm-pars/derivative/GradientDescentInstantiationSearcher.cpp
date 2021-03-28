@@ -287,11 +287,18 @@ namespace storm {
                 bool initialGuess = true;
                 while (true) {
                     std::cout << "Trying out a new starting point" << std::endl;
+                    if (initialGuess) {
+                        std::cout << "Trying initial guess (p->0.5 for every parameter p or set start point)" << std::endl;
+                    }
                     // Generate random starting point
                     std::map<VariableType<ValueType>, CoefficientType<ValueType>> point;
                     for (auto const& param : parameters) {
                         if (initialGuess) {
-                            point[param] = utility::convertNumber<CoefficientType<ValueType>>(0.5 + 1e-6);
+                            if (startPoint) {
+                                point[param] = (*startPoint)[param];
+                            } else {
+                                point[param] = utility::convertNumber<CoefficientType<ValueType>>(0.5 + 1e-6);
+                            }
                         } else {
                             point[param] = utility::convertNumber<CoefficientType<ValueType>>(dist(engine));
                         }
@@ -331,8 +338,11 @@ namespace storm {
                 }
                 std::map<VariableType<ValueType>, CoefficientType<ValueType>> point;
                 for (auto const& param : parameters) {
-                    RationalNumber x = 0.5 + 1e-6;
-                    point[param] = utility::convertNumber<CoefficientType<ValueType>>(x);
+                    if (startPoint) {
+                        point[param] = (*startPoint)[param];
+                    } else {
+                        point[param] = utility::convertNumber<CoefficientType<ValueType>>(0.5 + 1e-6);
+                    }
                 }
 
                 stochasticWatch.start();
