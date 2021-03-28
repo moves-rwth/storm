@@ -143,30 +143,6 @@ namespace storm {
                 break;
             }
 
-            boost::optional<storm::logic::Bound> bound;
-            OptimizationDirection optimalityType;
-            switch (resultType) {
-                case ResultType::PROBABILITY: {
-                    STORM_LOG_THROW(formula->asProbabilityOperatorFormula().hasOptimalityType(),
-                            storm::exceptions::WrongFormatException,
-                            "no optimality type in formula");
-                    optimalityType = formula->asProbabilityOperatorFormula().getOptimalityType();
-                    if (formula->asProbabilityOperatorFormula().hasBound()) {
-                        bound = boost::make_optional(formula->asProbabilityOperatorFormula().getBound());
-                    }
-                    break;
-                }
-                case ResultType::REWARD: {
-                    STORM_LOG_THROW(formula->asRewardOperatorFormula().hasOptimalityType(),
-                            storm::exceptions::WrongFormatException,
-                            "no optimality type in formula");
-                    optimalityType = formula->asRewardOperatorFormula().getOptimalityType();
-                    if (formula->asRewardOperatorFormula().hasBound()) {
-                        bound = boost::make_optional(formula->asRewardOperatorFormula().getBound());
-                    }
-                }
-            }
-
             ConstantType currentValue;
             switch (optimalityType) {
                 case storm::OptimizationDirection::Maximize:
@@ -187,14 +163,11 @@ namespace storm {
                 parameterEnumeration.push_back(parameter);
             }
 
-            const uint_fast64_t batchSize = 32;
-
-
             utility::Stopwatch printUpdateStopwatch;
             printUpdateStopwatch.start();
             
             // The index to keep track of what parameter(s) to consider next.
-            // The "mini-batch", so the parameters to consider, are parameterNum..parameterNum+batchSize-1
+            // The "mini-batch", so the parameters to consider, are parameterNum..parameterNum+miniBatchSize-1
             uint_fast64_t parameterNum = 0;
             for (uint_fast64_t stepNum = 0; true; ++stepNum) {
                 if (printUpdateStopwatch.getTimeInSeconds() >= 15) {
@@ -204,7 +177,7 @@ namespace storm {
                 }
 
                 std::vector<VariableType<ValueType>> miniBatch;
-                for (uint_fast64_t i = parameterNum; i < std::min(parameterEnumeration.size(), parameterNum + batchSize); i++) {
+                for (uint_fast64_t i = parameterNum; i < std::min(parameterEnumeration.size(), parameterNum + miniBatchSize); i++) {
                     miniBatch.push_back(parameterEnumeration[i]);
                 }
                 
@@ -237,7 +210,7 @@ namespace storm {
 
                 for (auto const& parameter : miniBatch) {
                     ConstantType delta = derivativeEvaluationHelper->calculateDerivative(parameter, position, valueVector); 
-                    if (optimalityType == storm::OptimizationDirection::Minimize) {
+                    if (optimalityType == storm::OptimizationDirection::Maximize) {
                         delta *= -1;
                     }
                     deltaVector[parameter] = delta;
@@ -269,7 +242,7 @@ namespace storm {
                 }
 
                 // Consider the next parameter
-                parameterNum = parameterNum + batchSize;
+                parameterNum = parameterNum + miniBatchSize;
                 if (parameterNum >= parameterEnumeration.size()) {
                     parameterNum = 0;
                 }
@@ -287,7 +260,15 @@ namespace storm {
             bool findFeasibleInstantiation
         ) {
             std::map<VariableType<ValueType>, CoefficientType<ValueType>> bestInstantiation;
-            ConstantType bestValue = utility::zero<ConstantType>();
+            ConstantType bestValue;
+            switch (optimalityType) {
+                case storm::OptimizationDirection::Maximize:
+                    bestValue = -utility::infinity<ConstantType>();
+                    break;
+                case storm::OptimizationDirection::Minimize:
+                    bestValue = utility::infinity<ConstantType>();
+                    break;
+            }
 
             // For bounded formulas, always start from random positions until point found
             if (findFeasibleInstantiation) {
@@ -303,15 +284,19 @@ namespace storm {
                 std::random_device device;
                 std::default_random_engine engine(device());
                 std::uniform_real_distribution<> dist(0, 1);
+                bool initialGuess = true;
                 while (true) {
-                    /* std::cout << "Trying out a new starting point" << std::endl; */
+                    std::cout << "Trying out a new starting point" << std::endl;
                     // Generate random starting point
                     std::map<VariableType<ValueType>, CoefficientType<ValueType>> point;
                     for (auto const& param : parameters) {
-                        // TODO: Temporarily switched to only searching from 0.5.
-                        // point[param] = utility::convertNumber<CoefficientType<ValueType>>(dist(engine));
-                        point[param] = utility::convertNumber<CoefficientType<ValueType>>(0.5 + 1e-6);
+                        if (initialGuess) {
+                            point[param] = utility::convertNumber<CoefficientType<ValueType>>(0.5 + 1e-6);
+                        } else {
+                            point[param] = utility::convertNumber<CoefficientType<ValueType>>(dist(engine));
+                        }
                     }
+                    initialGuess = false;
 
                     walk.clear();                   
 
@@ -319,7 +304,8 @@ namespace storm {
                     ConstantType prob = stochasticGradientDescent(point);
                     stochasticWatch.stop();
 
-                    if (bestValue < prob) {
+                    if ((optimalityType == OptimizationDirection::Maximize && bestValue < prob)
+                        || (optimalityType == solver::OptimizationDirection::Minimize && bestValue > prob)) {
                         bestInstantiation = point;
                         bestValue = prob;
                     }
@@ -329,9 +315,8 @@ namespace storm {
                         std::cout << "Aborting because the bound is satisfied" << std::endl;
                         break;
                     } else {
-                        // TODO: Temporarily switched to only searching from 0.5.
-                        std::cout << "Sorry, couldn't satisfy the bound." << std::endl;
-                        break;
+                        std::cout << "Sorry, couldn't satisfy the bound (yet). Best found value so far: " << bestValue << std::endl;
+                        continue;
                     }
                 }
             } else {
@@ -354,10 +339,8 @@ namespace storm {
                 ConstantType prob = stochasticGradientDescent(point);
                 stochasticWatch.stop();
 
-                if (bestValue < prob) {
-                    bestInstantiation = point;
-                    bestValue = prob;
-                }
+                bestInstantiation = point;
+                bestValue = prob;
             }
 
             return std::make_pair(bestInstantiation, bestValue);

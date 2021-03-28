@@ -3,6 +3,7 @@
 
 #include <map>
 #include "analysis/GraphConditions.h"
+#include "storm/exceptions/WrongFormatException.h"
 #include "logic/Formula.h"
 #include "solver/LinearEquationSolver.h"
 #include "storm-pars/analysis/MonotonicityChecker.h"
@@ -72,6 +73,27 @@ namespace storm {
                     derivativeEvaluationHelper = std::move(std::make_unique<storm::derivative::DerivativeEvaluationHelper<ValueType, ConstantType>>(model, parameters, formulas, ResultType::REWARD, std::string("")));
                 } else {
                     STORM_LOG_ERROR("Formula must be reward operator formula or probability operator formula!");
+                }
+                switch (resultType) {
+                    case ResultType::PROBABILITY: {
+                        STORM_LOG_THROW(formula->asProbabilityOperatorFormula().hasOptimalityType(),
+                                storm::exceptions::WrongFormatException,
+                                "no optimality type in formula");
+                        optimalityType = formula->asProbabilityOperatorFormula().getOptimalityType();
+                        if (formula->asProbabilityOperatorFormula().hasBound()) {
+                            bound = boost::make_optional(formula->asProbabilityOperatorFormula().getBound());
+                        }
+                        break;
+                    }
+                    case ResultType::REWARD: {
+                        STORM_LOG_THROW(formula->asRewardOperatorFormula().hasOptimalityType(),
+                                storm::exceptions::WrongFormatException,
+                                "no optimality type in formula");
+                        optimalityType = formula->asRewardOperatorFormula().getOptimalityType();
+                        if (formula->asRewardOperatorFormula().hasBound()) {
+                            bound = boost::make_optional(formula->asRewardOperatorFormula().getBound());
+                        }
+                    }
                 }
 
                 switch (resultType) {
@@ -200,11 +222,14 @@ namespace storm {
             const std::unique_ptr<storm::Environment> environment;
             const uint_fast64_t miniBatchSize;
             const double terminationEpsilon;
+            ResultType resultType;
+            boost::optional<storm::logic::Bound> bound;
+            OptimizationDirection optimalityType;
 
             // This is for visualizing data
             const bool recordRun;
             std::vector<VisualizationPoint> walk; 
-            ResultType resultType;
+
 
             // Gradient Descent types and data that belongs to them, with hyperparameters and running data.
             struct Adam {
