@@ -83,10 +83,6 @@ namespace storm {
                 bool areInconsequentialParametersOmitted() const;
 
                 const static std::string moduleName;
-
-                // TODO - This is processing information from storm-pars.cpp, it is bad that it is here, sorry.
-                std::set<RationalFunctionVariable> omittedParameters;
-
             private:
                 const static std::string extremumSearch;
                 const static std::string feasibleInstantiationSearch;
