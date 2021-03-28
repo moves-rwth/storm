@@ -210,7 +210,7 @@ namespace storm {
 
                 for (auto const& parameter : miniBatch) {
                     ConstantType delta = derivativeEvaluationHelper->calculateDerivative(parameter, position, valueVector); 
-                    if (optimalityType == storm::OptimizationDirection::Maximize) {
+                    if (optimalityType == storm::OptimizationDirection::Minimize) {
                         delta *= -1;
                     }
                     deltaVector[parameter] = delta;

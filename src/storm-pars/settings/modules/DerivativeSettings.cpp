@@ -28,20 +28,20 @@ namespace storm {
             const std::string DerivativeSettings::omitInconsequentialParams = "omit-inconsequential-params";
 
             DerivativeSettings::DerivativeSettings() : ModuleSettings(moduleName) {
-                this->addOption(storm::settings::OptionBuilder(moduleName, extremumSearch, false, "Search for an extremum").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, feasibleInstantiationSearch, false, "Search for a feasible instantiation").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, derivativeAtInstantiation, false, "Calculate the derivative at an input instantiation")
+                this->addOption(storm::settings::OptionBuilder(moduleName, extremumSearch, false, "Search for an extremum (one-shot, starting at p->0.5 for all parameters p)").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, feasibleInstantiationSearch, false, "Search for a feasible instantiation (restart with new instantiation while not feasible)").build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, derivativeAtInstantiation, false, "Compute the derivative at an input instantiation")
                     .addArgument(storm::settings::ArgumentBuilder::createStringArgument(derivativeAtInstantiation, "Instantiation at which the derivative should be computed").build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, learningRate, false, "Sets the learning rate of gradient descent")
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(learningRate, "The learning rate of the gradient descent").setDefaultValueDouble(0.1).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, miniBatchSize, false, "Sets the size of the minibatch").setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createIntegerArgument(miniBatchSize, "The size of the minibatch").setDefaultValueInteger(32).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, gradientDescentMethod, false, "Sets the gradient descent method (experimental)").setIsAdvanced()
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument(gradientDescentMethod, "Gradinent Descent method (adam, rmsprop, plain, sign, momentum)").setDefaultValueString("adam").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, adamParams, false, "Sets hyperparameters of the ADAM Gradient Descent algorithm").setIsAdvanced()
+                this->addOption(storm::settings::OptionBuilder(moduleName, gradientDescentMethod, false, "Sets the gradient descent method").setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument(gradientDescentMethod, "Gradient Descent method (adam, rmsprop, plain, plain-sign, momentum, momentum-sign, nesterov, nesterov-sign)").setDefaultValueString("adam").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, adamParams, false, "Sets hyperparameters of the Gradient Descent algorithms, especially ADAM's. If you're using RMSProp, averageDecay is RMSProp's decay.").setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(averageDecay, "Decay of decaying step average").setDefaultValueDouble(0.9).build())
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(squaredAverageDecay, "Decay of squared decaying step average").setDefaultValueDouble(0.999).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, printJson, false, "Print the run as json after finishing").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, printJson, false, "Print the run as json after finishing (slow!)").setIsAdvanced().build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, terminationEpsilon, false, "The change in value that constitutes as a \"tiny change\", after a few of which the gradient descent will terminate")
                     .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(terminationEpsilon, "The epsilon").setDefaultValueDouble(1e-6).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, omitInconsequentialParams, false, "Parameters that are removed in minimization because they have no effect on the rational function are normally set to 0.5 in the final instantiation. If this flag is set, they will be omitted from the final instantiation entirely.").setIsAdvanced().build());

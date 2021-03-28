@@ -127,7 +127,7 @@ namespace storm {
 
             approximationWatch.stop();
 
-            return -derivative;
+            return derivative;
         }
 
         template<typename ValueType, typename ConstantType>
