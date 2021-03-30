@@ -550,6 +550,8 @@ namespace storm {
         
         template<typename ValueType, typename StateType>
         StateBehavior<ValueType, StateType> JaniNextStateGenerator<ValueType, StateType>::expand(StateToIdCallback const& stateToIdCallback) {
+            // The evaluator should have the default values of the transient variables right now.
+            
             // Prepare the result, in case we return early.
             StateBehavior<ValueType, StateType> result;
             
@@ -561,10 +563,11 @@ namespace storm {
             auto transientVariableValuation = getTransientVariableValuationAtLocations(locations, *this->evaluator);
             transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
             result.addStateRewards(evaluateRewardExpressions());
+            // Set back transient variables to default values so we are ready to process the transition assignments
             this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
-
             
             // If a terminal expression was set and we must not expand this state, return now.
+            // Terminal state expressions do not consider transient variables.
             if (!this->terminalStates.empty()) {
                 for (auto const& expressionBool : this->terminalStates) {
                     if (this->evaluator->asBool(expressionBool.first) == expressionBool.second) {
