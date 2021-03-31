@@ -4,7 +4,7 @@
 #include <map>
 #include "Order.h"
 #include "LocalMonotonicityResult.h"
-#include "OrderExtender.h"
+#include "ReachabilityOrderExtender.h"
 #include "AssumptionMaker.h"
 #include "MonotonicityResult.h"
 
@@ -152,7 +152,7 @@ namespace storm {
 
             std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> monResults;
 
-            OrderExtender<ValueType, ConstantType> *extender;
+            ReachabilityOrderExtender<ValueType, ConstantType> *extender;
 
             ConstantType precision;
 

@@ -234,7 +234,7 @@ TEST(MonotonicityHelperTest, zeroconf) {
     std::vector<storm::storage::ParameterRegion<storm::RationalFunction>> regions = {region};
 
     // Start testing
-    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, true, 50);
+    auto MonotonicityHelper = storm::analysis::MonotonicityHelper<storm::RationalFunction, double>(model, formulas, regions, 50);
     // Check if correct result size
     auto result = MonotonicityHelper.checkMonotonicityInBuild(std::cout, false);
     EXPECT_EQ(1, result.size());

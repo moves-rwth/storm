@@ -228,7 +228,7 @@ namespace storm {
 
                 //Found candidates. Now swap them to the front.
                 const uint_fast64_t numOfGoodCandidates = goodCandidates.getNumberOfSetBits();
-                for ( auto const& goodCandidate : goodCandidates) {
+                for ( auto goodCandidate : goodCandidates) {
                     if (goodCandidate >= numOfGoodCandidates) {
                         uint_fast64_t notGoodCandidate = *notGoodCandidates.begin();
                         assert(notGoodCandidate < numOfGoodCandidates);

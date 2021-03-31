@@ -291,7 +291,12 @@ namespace storm {
                 s.setTimeout(100);
                 // assert that sorting of successors in the order and the bounds on the expression are at least satisfiable
                 // when this is not the case, the order is invalid
-                assert (s.check() == solver::SmtSolver::CheckResult::Sat);
+                // however, it could be that the sat solver didn't finish in time, in that case we just continue.
+                if (s.check() == solver::SmtSolver::CheckResult::Unsat) {
+                    return AssumptionStatus::INVALID;
+                }
+                assert (s.check() != solver::SmtSolver::CheckResult::Unsat);
+
                 s.add(exprToCheck);
                 auto smtRes = s.check();
                 if (smtRes == solver::SmtSolver::CheckResult::Unsat) {

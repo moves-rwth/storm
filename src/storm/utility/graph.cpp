@@ -39,7 +39,7 @@ namespace storm {
                 // Initialize the stack used for the DFS with the states.
                 std::vector<uint_fast64_t> stack;
                 stack.reserve(initialStates.size());
-                for (auto const& state : initialStates) {
+                for (auto state : initialStates) {
                     if (constraintStates.get(state)) {
                         stack.push_back(state);
                     }
@@ -141,12 +141,14 @@ namespace storm {
                         if (unexploredStates.get(state)) {
                             unexploredStates.set(state, false);
                             for (auto const& entry : transitionMatrix.getRowGroup(state)) {
-                                if (unexploredStates.get(entry.getColumn())) {
-                                    dfsStack.push_back(entry.getColumn());
-                                } else {
-                                    if (!acyclicStates.get(entry.getColumn())) {
-                                        // The state has been visited before but is not known to be acyclic.
-                                        return true;
+                                if (!storm::utility::isZero(entry.getValue())) {
+                                    if (unexploredStates.get(entry.getColumn())) {
+                                        dfsStack.push_back(entry.getColumn());
+                                    } else {
+                                        if (!acyclicStates.get(entry.getColumn())) {
+                                            // The state has been visited before but is not known to be acyclic.
+                                            return true;
+                                        }
                                     }
                                 }
                             }
@@ -171,7 +173,7 @@ namespace storm {
                 
                 storm::storage::BitVector statesWithChoice(transitionMatrix.getRowGroupCount(), false);
                 uint_fast64_t state = 0;
-                for (auto const& choice : choices) {
+                for (auto choice : choices) {
                     // Get the correct state
                     while (choice >= transitionMatrix.getRowGroupIndices()[state + 1]) {
                         ++state;
@@ -203,7 +205,7 @@ namespace storm {
                 // Only keep the states that can be reached after performing one of the specified choices
                 statesWithChoice &= candidateStates;
                 storm::storage::BitVector choiceTargets(transitionMatrix.getRowGroupCount(), false);
-                for (auto const& state : statesWithChoice) {
+                for (auto state : statesWithChoice) {
                     for (uint_fast64_t choice = choices.getNextSetIndex(transitionMatrix.getRowGroupIndices()[state]); choice < transitionMatrix.getRowGroupIndices()[state + 1]; choice = choices.getNextSetIndex(choice + 1)) {
                         bool choiceStaysInCandidateSet = true;
                         for (auto const& entry : transitionMatrix.getRow(choice)) {
@@ -226,7 +228,7 @@ namespace storm {
                 while (!candidateStates.empty()) {
                     // Update the states with a choice that stays within the set of candidates
                     statesWithChoice &= candidateStates;
-                    for (auto const& state : statesWithChoice) {
+                    for (auto state : statesWithChoice) {
                         bool stateHasChoice = false;
                         for (uint_fast64_t choice = choices.getNextSetIndex(transitionMatrix.getRowGroupIndices()[state]); choice < transitionMatrix.getRowGroupIndices()[state + 1]; choice = choices.getNextSetIndex(choice + 1)) {
                             bool choiceStaysInCandidateSet = true;
@@ -269,7 +271,7 @@ namespace storm {
                 storm::storage::BitVector statesInQueue(transitionMatrix.getRowGroupCount());
                 
                 storm::storage::sparse::state_type currentPosition = 0;
-                for (auto const& initialState : initialStates) {
+                for (auto initialState : initialStates) {
                     stateQueue.emplace_back(initialState, 0);
                     statesInQueue.set(initialState);
                 }
@@ -444,7 +446,7 @@ namespace storm {
             void computeSchedulerStayingInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::Scheduler<T>& scheduler) {
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
                 
-                for (auto const& state : states) {
+                for (auto state : states) {
                     bool setValue = false;
                     STORM_LOG_ASSERT(nondeterministicChoiceIndices[state+1] - nondeterministicChoiceIndices[state] > 0, "Expected at least one action enabled in state " << state);
                     for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
@@ -471,7 +473,7 @@ namespace storm {
             void computeSchedulerWithOneSuccessorInStates(storm::storage::BitVector const& states, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::Scheduler<T>& scheduler) {
                 std::vector<uint_fast64_t> const& nondeterministicChoiceIndices = transitionMatrix.getRowGroupIndices();
                 
-                for (auto const& state : states) {
+                for (auto state : states) {
                     bool setValue = false;
                     for (uint_fast64_t choice = nondeterministicChoiceIndices[state]; choice < nondeterministicChoiceIndices[state + 1]; ++choice) {
                         bool oneSuccessorInStates = false;
@@ -550,7 +552,7 @@ namespace storm {
             void computeSchedulerProb1E(storm::storage::BitVector const& prob1EStates, storm::storage::SparseMatrix<T> const& transitionMatrix, storm::storage::SparseMatrix<T> const& backwardTransitions, storm::storage::BitVector const& phiStates, storm::storage::BitVector const& psiStates, storm::storage::Scheduler<T>& scheduler, boost::optional<storm::storage::BitVector> const& rowFilter) {
                 
                 // set an arbitrary (valid) choice for the psi states.
-                for (auto const& psiState : psiStates) {
+                for (auto psiState : psiStates) {
                     for (uint_fast64_t memState = 0; memState < scheduler.getNumberOfMemoryStates(); ++memState) {
                         if (!scheduler.getChoice(psiState, memState).isDefined()) {
                             scheduler.setChoice(0, psiState, memState);

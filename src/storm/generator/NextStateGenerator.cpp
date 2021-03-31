@@ -169,6 +169,7 @@ namespace storm {
             auto const& states = stateStorage.stateToId;
             for (auto const& stateIndexPair : states) {
                 unpackStateIntoEvaluator(stateIndexPair.first, variableInformation, *this->evaluator);
+                unpackTransientVariableValuesIntoEvaluator(stateIndexPair.first, *this->evaluator);
                 
                 for (auto const& label : labelsAndExpressions) {
                     // Add label to state, if the corresponding expression is true.
@@ -209,6 +210,12 @@ namespace storm {
             return result;
         }
         
+        template<typename ValueType, typename StateType>
+        void NextStateGenerator<ValueType, StateType>::unpackTransientVariableValuesIntoEvaluator(CompressedState const&, storm::expressions::ExpressionEvaluator<ValueType>&) const {
+            // Intentionally left empty.
+            // This method should be overwritten in case there are transient variables (e.g. JANI).
+        }
+
         template<typename ValueType, typename StateType>
         void NextStateGenerator<ValueType, StateType>::postprocess(StateBehavior<ValueType, StateType>& result) {
             // If the model we build is a Markov Automaton, we postprocess the choices to sum all Markovian choices
@@ -271,6 +278,11 @@ namespace storm {
             return classId;
         }
 
+        template<typename ValueType, typename StateType>
+        std::map<std::string, storm::storage::PlayerIndex> NextStateGenerator<ValueType, StateType>::getPlayerNameToIndexMap() const {
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Generating player mappings is not supported for this model input format");
+        }
+        
         template<typename ValueType, typename StateType>
         void NextStateGenerator<ValueType, StateType>::remapStateIds(std::function<StateType(StateType const&)> const& remapping) {
             if (overlappingGuardStates != boost::none) {

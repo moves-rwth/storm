@@ -29,6 +29,8 @@ namespace storm {
                 typename SparseModelType::ValueType weightedPrecision = storm::utility::convertNumber<typename SparseModelType::ValueType>(env.modelchecker().multi().getPrecision());
                 weightedPrecision /= storm::utility::sqrt(storm::utility::convertNumber<typename SparseModelType::ValueType, uint_fast64_t>(this->objectives.size()));
                 // multiobjPrecision / sqrt(numObjectives) is the largest possible value for which termination is guaranteed.
+                // To see this, assume that for both weight vectors <1,0> and <0,1> we get the same point <a,b> for the under-approximation and <a+weightedPrecision,b> resp. <a,b+weightedPrecision>
+                // for the over-approximation. Then, the over-approx. point <a+weightedPrecision,b+weightedPrecision> has a distance to the under-approximation of weightedPrecision * sqrt(numObjectives).
                 // Lets be a little bit more precise to reduce the number of required iterations.
                 weightedPrecision *= storm::utility::convertNumber<typename SparseModelType::ValueType>(0.9);
                 this->weightVectorChecker->setWeightedPrecision(weightedPrecision);

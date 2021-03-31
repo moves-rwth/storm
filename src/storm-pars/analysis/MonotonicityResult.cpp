@@ -120,7 +120,7 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "Could not get a string from the region monotonicity check result. The case has not been implemented");
                 }
             }
-            result = "#Incr: " + std::to_string(countIncr) + " #Decr" + std::to_string(countDecr) + "\n" + result;
+            result = "#Incr: " + std::to_string(countIncr) + " #Decr: " + std::to_string(countDecr) + "\n" + result;
             return result;
         }
 

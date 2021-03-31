@@ -188,12 +188,18 @@ namespace storm {
             result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
             return result;
         }
-        
+
+        boost::any FragmentChecker::visit(GameFormula const& f, boost::any const& data) const {
+            InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
+            bool result = inherited.getSpecification().areGameFormulasAllowed();
+            return result && boost::any_cast<bool>(f.getSubformula().accept(*this, data));
+        }
+
         boost::any FragmentChecker::visit(InstantaneousRewardFormula const&, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             return inherited.getSpecification().areInstantaneousRewardFormulasAllowed();
         }
-        
+
         boost::any FragmentChecker::visit(LongRunAverageOperatorFormula const& f, boost::any const& data) const {
             InheritedInformation const& inherited = boost::any_cast<InheritedInformation const&>(data);
             bool result = inherited.getSpecification().areLongRunAverageOperatorsAllowed();

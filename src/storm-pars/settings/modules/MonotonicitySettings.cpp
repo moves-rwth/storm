@@ -11,38 +11,35 @@
 namespace storm {
     namespace settings {
         namespace modules {
-
-            const std::string MonotonicitySettings::moduleName = "monotonicity";
+    // TODO @Svenja, check what the module prefix is, maybe instead of doing mon- we could set this to true for the onces where we now have mon-"optionname"
+            const std::string MonotonicitySettings::moduleName = "mon";
             const std::string MonotonicitySettings::monotonicityAnalysis = "monotonicity-analysis";
-            const std::string MonotonicitySettings::usePLABounds = "mon-bounds";
-            const std::string MonotonicitySettings::sccElimination = "mon-elim-scc";
-            const std::string MonotonicitySettings::samplesMonotonicityAnalysis = "mon-samples";
-            const std::string MonotonicitySettings::precision = "mon-precision";
-            const std::string MonotonicitySettings::dotOutput = "dotOutput";
-            const std::string MonotonicitySettings::dotOutputName = "exportDotOutput";
-            const std::string MonotonicitySettings::exportMonotonicityName = "exportmonotonicity";
-            const std::string MonotonicitySettings::monotonicityThreshold ="mon-threshold";
-            const std::string MonotonicitySettings::monotoneParameters ="mon-parameters";
-            const std::string MonotonicitySettings::monSolution ="mon-solution";
+            const std::string MonotonicitySettings::monotonicityAnalysisShortName = "ma";
+            const std::string MonotonicitySettings::usePLABounds = "useBounds";
+            const std::string MonotonicitySettings::sccElimination = "eliminateSCCs";
+            const std::string MonotonicitySettings::samplesMonotonicityAnalysis = "samples";
 
+            const std::string MonotonicitySettings::dotOutput = "dotOutput";
+            const std::string MonotonicitySettings::exportMonotonicityName = "exportMonotonicity";
+            const std::string MonotonicitySettings::monSolution ="solutionFunction";
+            const std::string MonotonicitySettings::monSolutionShortName ="msf";
+            const std::string MonotonicitySettings::monotonicityThreshold ="depth";
+
+            const std::string MonotonicitySettings::monotoneParameters ="parameters";
 
             MonotonicitySettings::MonotonicitySettings() : ModuleSettings(moduleName) {
-                this->addOption(storm::settings::OptionBuilder(moduleName, monotonicityAnalysis, false, "Sets whether monotonicity analysis is done").setIsAdvanced().build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, usePLABounds, false, "Sets whether pla bounds should be used for monotonicity analysis").setIsAdvanced().build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, sccElimination, false, "Sets whether SCCs should be eliminated in the monotonicity analysis").setIsAdvanced().build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, samplesMonotonicityAnalysis, false, "Sets whether monotonicity should be checked on samples").setIsAdvanced()
-                                        .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("mon-samples", "The number of samples taken in monotonicity-analysis can be given, default is 0, no samples").setDefaultValueUnsignedInteger(0).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, monSolution, false, "Sets whether monotonicity should be checked on solutionfiunction").setIsAdvanced().build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, precision, false, "Sets precision of monotonicity checking on samples").setIsAdvanced()
-                                        .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("mon-precision", "The precision of checking monotonicity on samples, default is 1e-6").setDefaultValueDouble(0.000001).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, dotOutput, false, "Sets whether a dot output of the ROs is needed").setIsAdvanced().build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, exportMonotonicityName, false, "Exports the result of monotonicity checking to the given file.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The output file.").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, dotOutputName, false, "Exports the dot output to the given file.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("dotFilename", "The output file.").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, monotoneParameters, false, "Sets monotone parameters from file.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("monotoneParametersFilename", "The file where the monotone parameters are set").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, monotonicityAnalysis, false, "Sets whether monotonicity analysis is done").setIsAdvanced().setShortName(monotonicityAnalysisShortName).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, usePLABounds, true, "Sets whether pla bounds should be used for monotonicity analysis").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, sccElimination, true, "Sets whether SCCs should be eliminated in the monotonicity analysis").setIsAdvanced().build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, samplesMonotonicityAnalysis, true, "Sets whether monotonicity should be checked on samples").setIsAdvanced()
+                                        .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument(samplesMonotonicityAnalysis, "The number of samples taken in monotonicity-analysis can be given, default is 0, no samples").setDefaultValueUnsignedInteger(0).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, monSolution, true, "Sets whether monotonicity should be checked on solution function or reachability order").setIsAdvanced().setShortName(monSolutionShortName).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, dotOutput, true, "Sets whether a dot output of the ROs is needed").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("dotFilename", "The output file.").setDefaultValueString("dotOutput").makeOptional().build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, exportMonotonicityName, true, "Exports the result of monotonicity checking to the given file.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("filename", "The output file.").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, monotonicityThreshold, true, "Sets for region refinement after which depth whether monotonicity checking should be used.").setIsAdvanced()
+                                        .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument(monotonicityThreshold, "The depth threshold from which on monotonicity is used for Parameter Lifting").setDefaultValueUnsignedInteger(0).build()).build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, monotonicityThreshold, false, "Sets whether monotonotonicity should only be used beyond a certain depth threshold").setIsAdvanced()
-                                        .addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("mon-threshold", "The depth threshold from which on monotonicity is used for Parameter Lifting").setDefaultValueUnsignedInteger(0).build()).build());
-
+                this->addOption(storm::settings::OptionBuilder(moduleName, monotoneParameters, true, "Sets monotone parameters from file.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createStringArgument("monotoneParametersFilename", "The file where the monotone parameters are set").build()).build());
             }
 
             bool MonotonicitySettings::isMonotonicityAnalysisSet() const {
@@ -66,10 +63,7 @@ namespace storm {
             }
 
             std::string MonotonicitySettings::getDotOutputFilename() const {
-                if(this->getOption(dotOutputName).getArgumentByName("dotFilename").getHasBeenSet()){
-                    return this->getOption(dotOutputName).getArgumentByName("dotFilename").getValueAsString();
-                }
-                return "dotOutput";
+                return this->getOption(dotOutput).getArgumentByName("dotFilename").getValueAsString();
             }
 
             std::string MonotonicitySettings::getMonotoneParameterFilename() const {
@@ -77,11 +71,23 @@ namespace storm {
             }
 
             uint_fast64_t MonotonicitySettings::getNumberOfSamples() const {
-                return this->getOption(samplesMonotonicityAnalysis).getArgumentByName("mon-samples").getValueAsUnsignedInteger();
+                return this->getOption(samplesMonotonicityAnalysis).getArgumentByName("samples").getValueAsUnsignedInteger();
             }
 
-            double MonotonicitySettings::getMonotonicityAnalysisPrecision() const {
-                return this->getOption(precision).getArgumentByName("mon-precision").getValueAsDouble();
+            bool MonotonicitySettings::isExportMonotonicitySet() const {
+                return this->getOption(exportMonotonicityName).getHasOptionBeenSet();
+            }
+
+            std::string MonotonicitySettings::getExportMonotonicityFilename() const {
+                return this->getOption(exportMonotonicityName).getArgumentByName("filename").getValueAsString();
+            }
+
+            uint_fast64_t MonotonicitySettings::getMonotonicityThreshold() const {
+                return this->getOption(monotonicityThreshold).getArgumentByName("depth").getValueAsUnsignedInteger();
+            }
+
+            bool MonotonicitySettings::isMonSolutionSet() const {
+                return this->getOption(monSolution).getHasOptionBeenSet();
             }
 
             bool MonotonicitySettings::isExportMonotonicitySet() const {

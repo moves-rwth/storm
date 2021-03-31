@@ -499,8 +499,7 @@ namespace {
 
         // Reachability order, as it is already done building we don't need to recreate the order for each region
         auto monHelper = new storm::analysis::MonotonicityHelper<storm::RationalFunction, ValueType>(model, formulas, regions);
-        // TODO @Jip set usePLA to true or to false?
-        auto order = monHelper->checkMonotonicityInBuild(std::cout, false).begin()->first;
+        auto order = monHelper->checkMonotonicityInBuild(std::cout).begin()->first;
         ASSERT_EQ(order->getNumberOfAddedStates(), model->getTransitionMatrix().getColumnCount());
         ASSERT_TRUE(order->getDoneBuilding());
 
@@ -631,8 +630,7 @@ namespace {
 
         // Reachability order, as it is already done building we don't need to recreate the order for each region
         auto monHelper = new storm::analysis::MonotonicityHelper<storm::RationalFunction, ValueType>(model, formulas, regions);
-        // TODO @Jip set usePLA to true or to false?
-        auto order = monHelper->checkMonotonicityInBuild(std::cout, false).begin()->first;
+        auto order = monHelper->checkMonotonicityInBuild(std::cout).begin()->first;
         ASSERT_EQ(order->getNumberOfAddedStates(), model->getTransitionMatrix().getColumnCount());
         ASSERT_TRUE(order->getDoneBuilding());
 
@@ -777,7 +775,6 @@ namespace {
         EXPECT_EQ(regionChecker->analyzeRegion(this->env(), allSatRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true), regionCheckerMon->analyzeRegion(this->env(), allSatRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true, order, monRes));
 
         auto exBothRegion = storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.9,0.1<=q<=0.9", modelParameters);
-        o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0], exBothRegion);
         res = o->extendOrder(nullptr, exBothRegion);
         order = std::get<0>(res);
         monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
@@ -786,7 +783,6 @@ namespace {
         EXPECT_EQ(regionChecker->analyzeRegion(this->env(), exBothRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true), regionCheckerMon->analyzeRegion(this->env(), exBothRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, order, monRes));
 
         auto allVioRegion = storm::api::parseRegion<storm::RationalFunction>("0.8<=p<=0.9,0.1<=q<=0.2", modelParameters);
-        o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0], allVioRegion);
         res = o->extendOrder(nullptr, allVioRegion);
         order = std::get<0>(res);
         monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
@@ -828,7 +824,6 @@ namespace {
         EXPECT_EQ(regionChecker->analyzeRegion(this->env(), allSatRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true), regionCheckerMon->analyzeRegion(this->env(), allSatRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true, order, monRes));
 
         auto exBothRegion=storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.9", modelParameters);
-        o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0], exBothRegion);
         res = o->extendOrder(nullptr, exBothRegion);
         order = std::get<0>(res);
         monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
@@ -837,7 +832,6 @@ namespace {
         EXPECT_EQ(regionChecker->analyzeRegion(this->env(), exBothRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true), regionCheckerMon->analyzeRegion(this->env(), exBothRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, order, monRes));
 
         auto allVioRegion=storm::api::parseRegion<storm::RationalFunction>("0.05<=p<=0.1", modelParameters);
-        o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0], allVioRegion);
         res = o->extendOrder(nullptr, allVioRegion);
         order = std::get<0>(res);
         monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
@@ -880,7 +874,6 @@ namespace {
         EXPECT_EQ(regionChecker->analyzeRegion(this->env(), allSatRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true), regionCheckerMon->analyzeRegion(this->env(), allSatRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true, order, monRes));
 
         auto exBothRegion=storm::api::parseRegion<storm::RationalFunction>("0.4<=p<=0.8", modelParameters);
-        o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0], exBothRegion);
         res = o->extendOrder(nullptr, exBothRegion);
         order = std::get<0>(res);
         monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
@@ -889,7 +882,6 @@ namespace {
         EXPECT_EQ(regionChecker->analyzeRegion(this->env(), exBothRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true), regionCheckerMon->analyzeRegion(this->env(), exBothRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, order, monRes));
 
         auto allVioRegion=storm::api::parseRegion<storm::RationalFunction>("0.7<=p<=0.9", modelParameters);
-        o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0], allVioRegion);
         res = o->extendOrder(nullptr, allVioRegion);
         order = std::get<0>(res);
         monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
@@ -931,7 +923,6 @@ namespace {
         EXPECT_EQ(regionChecker->analyzeRegion(this->env(), allSatRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true), regionCheckerMon->analyzeRegion(this->env(), allSatRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true, order, monRes));
 
         auto exBothRegion=storm::api::parseRegion<storm::RationalFunction>("0.4<=p<=0.9", modelParameters);
-        o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0], exBothRegion);
         res = o->extendOrder(nullptr, exBothRegion);
         order = std::get<0>(res);
         monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
@@ -940,7 +931,6 @@ namespace {
         EXPECT_EQ(regionChecker->analyzeRegion(this->env(), exBothRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true), regionCheckerMon->analyzeRegion(this->env(), exBothRegion, storm::modelchecker::RegionResultHypothesis::Unknown,storm::modelchecker::RegionResult::Unknown, true, order, monRes));
 
         auto allVioRegion=storm::api::parseRegion<storm::RationalFunction>("0.8<=p<=0.9", modelParameters);
-        o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0], allVioRegion);
         res = o->extendOrder(nullptr, allVioRegion);
         order = std::get<0>(res);
         monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
@@ -984,7 +974,6 @@ namespace {
         EXPECT_EQ(regionChecker->analyzeRegion(this->env(), allSatRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true), regionCheckerMon->analyzeRegion(this->env(), allSatRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true, order, monRes));
 
         auto exBothRegion=storm::api::parseRegion<storm::RationalFunction>("0.3<=p<=0.7", modelParameters);
-        o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0], exBothRegion);
         res = o->extendOrder(nullptr, exBothRegion);
         order = std::get<0>(res);
         monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
@@ -994,7 +983,6 @@ namespace {
         EXPECT_EQ(regionChecker->analyzeRegion(this->env(), exBothRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true), regionCheckerMon->analyzeRegion(this->env(), exBothRegion, storm::modelchecker::RegionResultHypothesis::Unknown, storm::modelchecker::RegionResult::Unknown, true, order, monRes));
 
         auto allVioRegion=storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.4", modelParameters);
-        o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0], allVioRegion);
         res = o->extendOrder(nullptr, allVioRegion);
         order = std::get<0>(res);
         monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());

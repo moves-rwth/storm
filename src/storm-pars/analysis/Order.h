@@ -127,13 +127,15 @@ namespace storm {
 
                     /*!
                      * Merges node2 into node1.
+                     * @return false when merging leads to invalid order
                      */
-                    void mergeNodes(Node* node1, Node* node2);
+                    bool mergeNodes(Node* node1, Node* node2);
 
                     /*!
                      * Merges node of var2 into node of var1.
+                     * @return false when merging leads to invalid order
                      */
-                    void merge(uint_fast64_t var1, uint_fast64_t var2);
+                    bool merge(uint_fast64_t var1, uint_fast64_t var2);
 
                     /*!
                      * Compares the level of the nodes of the states.
@@ -147,7 +149,7 @@ namespace storm {
                      *         UNKNOWN if it is unclear from the structure of the order how the nodes relate.
                      */
                     Order::NodeComparison compare(uint_fast64_t state1, uint_fast64_t state2, NodeComparison hypothesis = UNKNOWN);
-                    Order::NodeComparison compareFast(uint_fast64_t state1, uint_fast64_t state2, NodeComparison hypothesis = UNKNOWN);
+                    Order::NodeComparison compareFast(uint_fast64_t state1, uint_fast64_t state2, NodeComparison hypothesis = UNKNOWN) const;
 
                     /*!
                      * Compares the level of the two nodes.
@@ -160,19 +162,13 @@ namespace storm {
                      *         UNKNOWN if it is unclear from the structure of the order how the nodes relate.
                      */
                     NodeComparison compare(Node* node1, Node* node2, NodeComparison hypothesis = UNKNOWN);
-                    NodeComparison compareFast(Node* node1, Node* node2, NodeComparison hypothesis = UNKNOWN);
+                    NodeComparison compareFast(Node* node1, Node* node2, NodeComparison hypothesis = UNKNOWN) const;
 
                     /*!
                      * Check if state is already contained in order.
                      */
                     bool contains(uint_fast64_t state) const;
 
-                    /*!
-                     * Returns a BitVector in which all added states are set.
-                     *
-                     * @return The BitVector with all added states.
-                     */
-                    storm::storage::BitVector getAddedStates() const;
 
                     /*!
                      * Retrieves the bottom node of the order.
@@ -187,9 +183,8 @@ namespace storm {
                     bool getDoneBuilding() const;
 
                     /*!
-                     * Returns the next added state of the order, returns the number of state if end of added states is reached.
+                     * Returns the next done state of the order, returns the number of state if end of done states is reached.
                      */
-                    uint_fast64_t getNextAddedState(uint_fast64_t state) const;
                     uint_fast64_t getNextDoneState(uint_fast64_t state) const;
 
                     uint_fast64_t getNumberOfDoneStates() const;
@@ -211,6 +206,7 @@ namespace storm {
                      */
                     std::vector<Node*> getNodes() const;
 
+                    std::vector<uint_fast64_t>& getStatesSorted();
                     /*!
                      * Retrieves the top node of the order.
                      *
@@ -318,7 +314,7 @@ namespace storm {
                      */
                     std::shared_ptr<Order> copy() const;
 //                    void setAddedSCC(uint_fast64_t sccNumber);
-                    void setAddedState(uint_fast64_t sccNumber);
+                    void setDoneState(uint_fast64_t sccNumber);
 
                     /*!
                      * Adds an action for a state in an mdp
@@ -336,10 +332,10 @@ namespace storm {
                      */
                     uint64_t getActionAtState(uint64_t state);
 
-                    bool same(uint64_t state1, uint64_t state2);
+                    bool isInvalid() const;
 
                 protected:
-                    storage::Decomposition<storage::StronglyConnectedComponent> getDecomposition() const;
+                    //storage::Decomposition<storage::StronglyConnectedComponent> getDecomposition() const;
 
 
                 private:
@@ -355,13 +351,14 @@ namespace storm {
 
                     std::string nodeLabel(Node n) const;
 
+                    bool invalid;
+
                     void nodeOutput();
 
                     bool doneBuilding;
 
                     bool onlyBottomTopOrder;
 
-                    storm::storage::BitVector addedStates;
                     storm::storage::BitVector doneStates;
                     storm::storage::BitVector trivialStates;
 

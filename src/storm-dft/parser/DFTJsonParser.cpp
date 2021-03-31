@@ -125,6 +125,9 @@ namespace storm {
                         STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Distribution: " << distribution << " not supported.");
                         success = false;
                     }
+                } else if (type == "compound") {
+                    STORM_LOG_TRACE("Ignoring compound node '" << name << "'.");
+
                 } else {
                     STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Type name: " << type << " not recognized.");
                     success = false;

@@ -115,7 +115,11 @@ namespace storm {
                  * @return
                  */
                 uint64_t getBitsForUnboundedVariables() const;
-
+                
+                /*!
+                 * Retrieves whether simplification of symbolic inputs through static analysis shall be disabled
+                 */
+                 bool isNoSimplifySet() const;
 
                 // The name of the module.
                 static const std::string moduleName;

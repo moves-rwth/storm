@@ -1,5 +1,6 @@
 #pragma once
 
+#include <storm-pars/analysis/ReachabilityOrderExtender.h>
 #include "storm-pars/modelchecker/region/RegionModelChecker.h"
 #include "storm-pars/modelchecker/instantiation/SparseInstantiationModelChecker.h"
 #include "storm-pars/storage/ParameterRegion.h"
@@ -12,7 +13,7 @@
 
 namespace storm {
     namespace modelchecker {
-            
+
         /*!
          * Class to approximatively check a formula on a parametric model for all parameter valuations within a region
          * It is assumed that all considered valuations are graph-preserving and well defined, i.e.,
@@ -38,7 +39,7 @@ namespace storm {
              * Analyzes the 2^#parameters corner points of the given region.
              */
             RegionResult sampleVertices(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, RegionResult const& initialResult = RegionResult::Unknown);
-            
+
             /*!
              * Checks the specified formula on the given region by applying parameter lifting (Parameter choices are lifted to nondeterministic choices)
              * This yields a (sound) approximative model checking result.
@@ -47,11 +48,11 @@ namespace storm {
              * @param dirForParameters  The optimization direction for the parameter choices. If this is, e.g., minimize, then the returned result will be a lower bound for all results induced by the parameter evaluations inside the region.
              */
             std::unique_ptr<CheckResult> check(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::Order> reachabilityOrder = nullptr, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult = nullptr);
-            
+
             std::unique_ptr<QuantitativeCheckResult<ConstantType>> getBound(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters, std::shared_ptr<storm::analysis::LocalMonotonicityResult<typename RegionModelChecker<typename SparseModelType::ValueType>::VariableType>> localMonotonicityResult = nullptr);
             virtual typename SparseModelType::ValueType getBoundAtInitState(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dirForParameters) override;
 
-            
+
             /*!
              * Finds the extremal value within the given region and with the given precision.
              * The returned value v corresponds to the value at the returned valuation.
@@ -62,10 +63,10 @@ namespace storm {
 
             SparseModelType const& getConsideredParametricModel() const;
             CheckTask<storm::logic::Formula, ConstantType> const& getCurrentCheckTask() const;
-            
+
         protected:
             void specifyFormula(Environment const& env, CheckTask<storm::logic::Formula, typename SparseModelType::ValueType> const& checkTask);
-            
+
             // Resets all data that correspond to the currently defined property.
             virtual void reset() = 0;
 
@@ -75,7 +76,7 @@ namespace storm {
             virtual void specifyReachabilityRewardFormula(Environment const& env, CheckTask<storm::logic::EventuallyFormula, ConstantType> const& checkTask);
             virtual void specifyCumulativeRewardFormula(Environment const& env, CheckTask<storm::logic::CumulativeRewardFormula, ConstantType> const& checkTask);
 
-            
+
             virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationChecker() = 0;
             virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationCheckerSAT();
             virtual storm::modelchecker::SparseInstantiationModelChecker<SparseModelType, ConstantType>& getInstantiationCheckerVIO();
@@ -86,7 +87,7 @@ namespace storm {
             std::shared_ptr<SparseModelType> parametricModel;
             std::unique_ptr<CheckTask<storm::logic::Formula, ConstantType>> currentCheckTask;
             ConstantType lastValue;
-            boost::optional<storm::analysis::OrderExtender<typename SparseModelType::ValueType, ConstantType>> orderExtender;
+            boost::optional<storm::analysis::ReachabilityOrderExtender<typename SparseModelType::ValueType, ConstantType>> orderExtender;
 
             std::pair<typename SparseModelType::ValueType, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation> checkForPossibleMonotonicity(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, std::set<VariableType>& possibleMonotoneIncrParameters, std::set<VariableType>& possibleMonotoneDecrParameters, std::set<VariableType>& possibleNotMonotoneParameters, std::set<VariableType>const& consideredVariables, storm::solver::OptimizationDirection const& dir);
             std::pair<typename SparseModelType::ValueType, typename storm::storage::ParameterRegion<typename SparseModelType::ValueType>::Valuation> getGoodInitialPoint(Environment const& env, storm::storage::ParameterRegion<typename SparseModelType::ValueType> const& region, storm::solver::OptimizationDirection const& dir, std::shared_ptr<storm::analysis::LocalMonotonicityResult<VariableType>> localMonRes);

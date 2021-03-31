@@ -18,7 +18,7 @@
 
 #include "test/storm_gtest.h"
 
-TEST(OrderExtenderTest, Brp_with_bisimulation_on_model) {
+TEST(ReachabilityOrderExtenderTest, Brp_with_bisimulation_on_model) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [F s=4 & i=N ]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
@@ -54,7 +54,7 @@ TEST(OrderExtenderTest, Brp_with_bisimulation_on_model) {
 
     auto order = std::get<0>(criticalTuple);
     for (uint_fast64_t i = 0; i < model->getNumberOfStates(); ++i) {
-        EXPECT_TRUE((order->getAddedStates())[i]);
+        EXPECT_TRUE((order->contains(i)));
     }
 
     // Check on some nodes
@@ -65,7 +65,7 @@ TEST(OrderExtenderTest, Brp_with_bisimulation_on_model) {
     EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(7,13));
 }
 
-TEST(OrderExtenderTest, Brp_without_bisimulation_on_model) {
+TEST(ReachabilityOrderExtenderTest, Brp_without_bisimulation_on_model) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [F s=4 & i=N ]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
@@ -92,7 +92,7 @@ TEST(OrderExtenderTest, Brp_without_bisimulation_on_model) {
     EXPECT_EQ(186ul, std::get<2>(criticalTuple));
 }
 
-TEST(OrderExtenderTest, Brp_with_bisimulation_on_matrix) {
+TEST(ReachabilityOrderExtenderTest, Brp_with_bisimulation_on_matrix) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [F s=4 & i=N ]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
@@ -144,7 +144,7 @@ TEST(OrderExtenderTest, Brp_with_bisimulation_on_matrix) {
     EXPECT_EQ(storm::analysis::Order::NodeComparison::UNKNOWN, order->compare(7,13));
 }
 
-TEST(OrderExtenderTest, Brp_without_bisimulation_on_matrix) {
+TEST(ReachabilityOrderExtenderTest, Brp_without_bisimulation_on_matrix) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/brp16_2.pm";
     std::string formulaAsString = "P=? [F s=4 & i=N ]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
@@ -181,7 +181,7 @@ TEST(OrderExtenderTest, Brp_without_bisimulation_on_matrix) {
     EXPECT_FALSE(order->getDoneBuilding());
 }
 
-TEST(OrderExtenderTest, simple1_on_model) {
+TEST(ReachabilityOrderExtenderTest, simple1_on_model) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple1.pm";
     std::string formulaAsString = "P=? [F s=3 ]";
     std::string constantsAsString = "";
@@ -217,7 +217,7 @@ TEST(OrderExtenderTest, simple1_on_model) {
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(2,4));
 }
 
-TEST(OrderExtenderTest, simple1_on_matrix) {
+TEST(ReachabilityOrderExtenderTest, simple1_on_matrix) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple1.pm";
     std::string formulaAsString = "P=? [F s=3 ]";
     std::string constantsAsString = "";
@@ -267,7 +267,7 @@ TEST(OrderExtenderTest, simple1_on_matrix) {
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(2,4));
 }
 
-TEST(OrderExtenderTest, casestudy1_on_model) {
+TEST(ReachabilityOrderExtenderTest, casestudy1_on_model) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/simple1.pm";
     std::string formulaAsString = "P=? [F s=3 ]";
     std::string constantsAsString = "";
@@ -303,7 +303,7 @@ TEST(OrderExtenderTest, casestudy1_on_model) {
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(2,4));
 }
 
-TEST(OrderExtenderTest, casestudy1_on_matrix) {
+TEST(ReachabilityOrderExtenderTest, casestudy1_on_matrix) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy1.pm";
     std::string formulaAsString = "P=? [F s=3 ]";
     std::string constantsAsString = "";
@@ -353,7 +353,7 @@ TEST(OrderExtenderTest, casestudy1_on_matrix) {
     EXPECT_EQ(storm::analysis::Order::NodeComparison::ABOVE, order->compare(2,4));
 }
 
-TEST(OrderExtenderTest, casestudy2_on_matrix) {
+TEST(ReachabilityOrderExtenderTest, casestudy2_on_matrix) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/casestudy2.pm";
     std::string formulaAsString = "P=? [F s=4 ]";
     std::string constantsAsString = "";

@@ -107,7 +107,7 @@ namespace storm {
                 }
                 
                 std::map<storm::storage::sparse::state_type, ValueType> result;
-                for (auto const& initState : model.getInitialStates()) {
+                for (auto initState : model.getInitialStates()) {
                     result[initState] = rewardUnfolding.getInitialStateResult(initEpoch, initState);
                 }
                 
@@ -152,7 +152,7 @@ namespace storm {
                     std::vector<ValueType> const& resultsForNonMaybeStates = hint.template asExplicitModelCheckerHint<ValueType>().getResultHint();
                     statesWithProbability1 = storm::storage::BitVector(maybeStates.size(), false);
                     storm::storage::BitVector nonMaybeStates = ~maybeStates;
-                    for (auto const& state : nonMaybeStates) {
+                    for (auto state : nonMaybeStates) {
                         if (storm::utility::isOne(resultsForNonMaybeStates[state])) {
                             statesWithProbability1.set(state, true);
                             result[state] = storm::utility::one<ValueType>();
@@ -176,8 +176,11 @@ namespace storm {
                     storm::utility::vector::setVectorValues<ValueType>(result, statesWithProbability1, storm::utility::one<ValueType>());
                 }
                 
+                // Check if the values of the maybe states are relevant for the SolveGoal
+                bool maybeStatesNotRelevant = goal.hasRelevantValues() && goal.relevantValues().isDisjointFrom(maybeStates);
+                
                 // Check whether we need to compute exact probabilities for some states.
-                if (qualitative) {
+                if (qualitative || maybeStatesNotRelevant) {
                     // Set the values for all maybe-states to 0.5 to indicate that their probability values are neither 0 nor 1.
                     storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, storm::utility::convertNumber<ValueType>(0.5));
                 } else {
@@ -264,7 +267,7 @@ namespace storm {
                     // Set initial states
                     size_t i = 0;
                     ValueType initDist = storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType>(initialStates.getNumberOfSetBits());
-                    for (auto const& state : relevantStates) {
+                    for (auto state : relevantStates) {
                         if (initialStates.get(state)) {
                             b[i] = initDist;
                         }
@@ -434,8 +437,11 @@ namespace storm {
                     storm::utility::vector::setVectorValues(result, infinityStates, storm::utility::infinity<ValueType>());
                 }
                 
+                // Check if the values of the maybe states are relevant for the SolveGoal
+                bool maybeStatesNotRelevant = goal.hasRelevantValues() && goal.relevantValues().isDisjointFrom(maybeStates);
+                
                 // Check whether we need to compute exact rewards for some states.
-                if (qualitative) {
+                if (qualitative || maybeStatesNotRelevant) {
                     // Set the values for all maybe-states to 1 to indicate that their reward values
                     // are neither 0 nor infinity.
                     storm::utility::vector::setVectorValues<ValueType>(result, maybeStates, storm::utility::one<ValueType>());

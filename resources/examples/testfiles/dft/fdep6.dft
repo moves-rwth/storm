@@ -1,0 +1,11 @@
+toplevel "A";
+"A" and "B" "C";
+"B" lambda=1;
+"C" lambda=1;
+"F1" fdep "O" "B";
+"F2" fdep "O" "C";
+"O" or "S" "T";
+"S" or "T" "D";
+"T" or "E";
+"D" lambda=2;
+"E" lambda=4;

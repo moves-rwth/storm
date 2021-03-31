@@ -20,7 +20,6 @@ namespace storm {
             class StateValuations : public storm::models::sparse::StateAnnotation {
             public:
                 friend class StateValuationsBuilder;
-                typedef storm::json<storm::RationalNumber> Json;
 
                 class StateValuation {
                 public:
@@ -112,8 +111,8 @@ namespace storm {
                  * @param selectedVariables If given, only the informations for the variables in this set are processed.
                  * @return
                  */
-                Json toJson(storm::storage::sparse::state_type const& stateIndex, boost::optional<std::set<storm::expressions::Variable>> const& selectedVariables = boost::none) const;
-
+                template<typename JsonRationalType = storm::RationalNumber>
+                storm::json<JsonRationalType> toJson(storm::storage::sparse::state_type const& stateIndex, boost::optional<std::set<storm::expressions::Variable>> const& selectedVariables = boost::none) const;
                 
                 // Returns the (current) number of states that this object describes.
                 uint_fast64_t getNumberOfStates() const;

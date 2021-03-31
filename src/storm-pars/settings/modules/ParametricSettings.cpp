@@ -11,7 +11,7 @@
 namespace storm {
     namespace settings {
         namespace modules {
-            
+
             const std::string ParametricSettings::moduleName = "parametric";
             const std::string ParametricSettings::exportResultOptionName = "resultfile";
             const std::string ParametricSettings::derivativesOptionName = "derivatives";
@@ -22,7 +22,7 @@ namespace storm {
             const std::string ParametricSettings::samplesGraphPreservingOptionName = "samples-graph-preserving";
             const std::string ParametricSettings::sampleExactOptionName = "sample-exact";
             const std::string ParametricSettings::useMonotonicityName = "use-monotonicity";
-            const std::string ParametricSettings::onlyGlobalName = "onlyGlobal";
+//            const std::string ParametricSettings::onlyGlobalName = "onlyGlobal";
 
             ParametricSettings::ParametricSettings() : ModuleSettings(moduleName) {
                 this->addOption(storm::settings::OptionBuilder(moduleName, exportResultOptionName, false, "A path to a file where the parametric result should be saved.")
@@ -35,21 +35,21 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, samplesGraphPreservingOptionName, false, "Sets whether it can be assumed that the samples are graph-preserving.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, sampleExactOptionName, false, "Sets whether to sample using exact arithmetic.").build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, useMonotonicityName, false, "If set, monotonicity will be used.").build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, onlyGlobalName, false, "If set, only global monotonicity will be used.").build());
+//                this->addOption(storm::settings::OptionBuilder(moduleName, onlyGlobalName, false, "If set, only global monotonicity will be used.").build());
             }
-            
+
             bool ParametricSettings::exportResultToFile() const {
                 return this->getOption(exportResultOptionName).getHasOptionBeenSet();
             }
-            
+
             std::string ParametricSettings::exportResultPath() const {
                 return this->getOption(exportResultOptionName).getArgumentByName("path").getValueAsString();
             }
-            
+
             bool ParametricSettings::isDerivativesSet() const {
                 return this->getOption(derivativesOptionName).getHasOptionBeenSet();
             }
-            
+
             bool ParametricSettings::transformContinuousModel() const {
                 return this->getOption(transformContinuousOptionName).getHasOptionBeenSet();
             }
@@ -57,15 +57,15 @@ namespace storm {
             bool ParametricSettings::onlyObtainConstraints() const {
                 return this->getOption(onlyWellformednessConstraintsOptionName).getHasOptionBeenSet();
             }
-            
+
             std::string ParametricSettings::getSamples() const {
                 return this->getOption(samplesOptionName).getArgumentByName("samples").getValueAsString();
             }
-            
+
             bool ParametricSettings::isSamplesAreGraphPreservingSet() const {
                 return this->getOption(samplesGraphPreservingOptionName).getHasOptionBeenSet();
             }
-            
+
             bool ParametricSettings::isSampleExactSet() const {
                 return this->getOption(sampleExactOptionName).getHasOptionBeenSet();
             }
@@ -73,9 +73,9 @@ namespace storm {
             bool ParametricSettings::isUseMonotonicitySet() const {
                 return this->getOption(useMonotonicityName).getHasOptionBeenSet();
             }
-            bool ParametricSettings::isOnlyGlobalSet() const {
-                return this->getOption(onlyGlobalName).getHasOptionBeenSet();
-            }
+//            bool ParametricSettings::isOnlyGlobalSet() const {
+//                return this->getOption(onlyGlobalName).getHasOptionBeenSet();
+//            }
 
         } // namespace modules
     } // namespace settings

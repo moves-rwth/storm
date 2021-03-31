@@ -87,7 +87,7 @@ namespace storm {
         std::map<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<typename MonotonicityHelper<ValueType, ConstantType>::VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>> MonotonicityHelper<ValueType, ConstantType>::checkMonotonicityInBuild(std::ostream& outfile, bool usePLA, std::string dotOutfileName) {
             if (usePLA) {
                 storm::utility::Stopwatch plaWatch(true);
-                this->extender->initializeMinMaxValues();
+                this->extender->initializeMinMaxValues(region);
                 plaWatch.stop();
                 STORM_PRINT(std::endl << "Total time for pla checking: " << plaWatch << "." << std::endl << std::endl);
             }
@@ -187,11 +187,15 @@ namespace storm {
         template <typename ValueType, typename ConstantType>
         void MonotonicityHelper<ValueType, ConstantType>::extendOrderWithAssumptions(std::shared_ptr<Order> order, uint_fast64_t val1, uint_fast64_t val2, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>> assumptions, std::shared_ptr<MonotonicityResult<VariableType>> monRes) {
             std::map<std::shared_ptr<Order>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>> result;
-
+            if (order->isInvalid()) {
+                // We don't add anything as the order we created with assumptions turns out to be invalid
+                STORM_LOG_INFO("    The order was invalid, so we stop here");
+                return;
+            }
             auto numberOfStates = model->getNumberOfStates();
             if (val1 == numberOfStates || val2 == numberOfStates) {
                 assert (val1 == val2);
-                assert (order->getAddedStates().size() == order->getAddedStates().getNumberOfSetBits());
+                assert (order->getNumberOfAddedStates() == order->getNumberOfStates());
                 auto resAssumptionPair = std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>(monRes, assumptions);
                 monResults.insert(std::pair<std::shared_ptr<Order>, std::pair<std::shared_ptr<MonotonicityResult<VariableType>>, std::vector<std::shared_ptr<expressions::BinaryRelationExpression>>>>(std::move(order), std::move(resAssumptionPair)));
             } else {
@@ -211,9 +215,7 @@ namespace storm {
                         }
                         monRes->setDoneForVar(entry.first);
                     }
-//                    if (monRes->existsMonotonicity()) {
-                        monResults.insert({order, {monRes, assumptions}});
-//                    }
+                    monResults.insert({order, {monRes, assumptions}});
                     STORM_LOG_INFO("    None of the assumptions were valid, we stop exploring the current order");
                 } else {
                     STORM_LOG_INFO("    Created " << newAssumptions.size() << " assumptions, we continue extending the current order");

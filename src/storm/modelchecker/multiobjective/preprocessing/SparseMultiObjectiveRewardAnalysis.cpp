@@ -93,7 +93,7 @@ namespace storm {
                     
                     storm::storage::BitVector maxRewardsToCheck(preprocessorResult.preprocessedModel->getNumberOfChoices(), true);
                     storm::storage::BitVector minRewardsToCheck(preprocessorResult.preprocessedModel->getNumberOfChoices(), true);
-                    for (auto const& objIndex : preprocessorResult.maybeInfiniteRewardObjectives) {
+                    for (auto objIndex : preprocessorResult.maybeInfiniteRewardObjectives) {
                         STORM_LOG_ASSERT(preprocessorResult.objectives[objIndex].formula->isRewardOperatorFormula(), "Objective needs to be checked for finite reward but has no reward operator.");
                         auto const& rewModel = preprocessorResult.preprocessedModel->getRewardModel(preprocessorResult.objectives[objIndex].formula->asRewardOperatorFormula().getRewardModelName());
                         auto unrelevantChoices = rewModel.getChoicesWithZeroReward(transitions);

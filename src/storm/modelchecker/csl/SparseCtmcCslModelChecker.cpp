@@ -172,6 +172,29 @@ namespace storm {
             std::vector<ValueType> result = storm::modelchecker::helper::SparseCtmcCslHelper::computeAllTransientProbabilities(env, this->getModel().getTransitionMatrix(), this->getModel().getInitialStates(), leftResult.getTruthValuesVector(), rightResult.getTruthValuesVector(), this->getModel().getExitRateVector(), upperBound);
             return result;
         }
+        
+        template <typename SparseCtmcModelType>
+        std::unique_ptr<CheckResult> SparseCtmcCslModelChecker<SparseCtmcModelType>::computeSteadyStateDistribution(Environment const& env) {
+            // Initialize helper
+            auto probabilisticTransitions = this->getModel().computeProbabilityMatrix();
+            storm::modelchecker::helper::SparseDeterministicInfiniteHorizonHelper<ValueType> helper(probabilisticTransitions, this->getModel().getExitRateVector());
+            
+            // Compute result
+            std::vector<ValueType> result;
+            auto const& initialStates = this->getModel().getInitialStates();
+            uint64_t numInitStates = initialStates.getNumberOfSetBits();
+            if (numInitStates == 1) {
+                result = helper.computeLongRunAverageStateDistribution(env, *initialStates.begin());
+            } else {
+                STORM_LOG_WARN("Multiple initial states found. A uniform distribution over initial states is assumed.");
+                ValueType initProb = storm::utility::one<ValueType>() / storm::utility::convertNumber<ValueType, uint64_t>(numInitStates);
+                result = helper.computeLongRunAverageStateDistribution(env, [&initialStates,&initProb](uint64_t const& stateIndex) { return initialStates.get(stateIndex) ? initProb : storm::utility::zero<ValueType>(); });
+            }
+
+            // Return CheckResult
+            return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(result)));
+        }
+
 
         // Explicitly instantiate the model checker.
         template class SparseCtmcCslModelChecker<storm::models::sparse::Ctmc<double>>;

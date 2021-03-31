@@ -22,7 +22,7 @@ namespace storm {
                     epochResult.reserve(epochModel.epochInStates.getNumberOfSetBits());
                     auto stepSolutionIt = epochModel.stepSolutions.begin();
                     auto stepChoiceIt = epochModel.stepChoices.begin();
-                    for (auto const& state : epochModel.epochInStates) {
+                    for (auto state : epochModel.epochInStates) {
                         while (*stepChoiceIt < state) {
                             ++stepChoiceIt;
                             ++stepSolutionIt;
@@ -83,11 +83,11 @@ namespace storm {
                     // Prepare the right hand side of the equation system
                     b.assign(epochModel.epochMatrix.getRowCount(), storm::utility::zero<ValueType>());
                     std::vector<ValueType> const& objectiveValues = epochModel.objectiveRewards.front();
-                    for (auto const& choice : epochModel.objectiveRewardFilter.front()) {
+                    for (auto choice : epochModel.objectiveRewardFilter.front()) {
                         b[choice] = objectiveValues[choice];
                     }
                     auto stepSolutionIt = epochModel.stepSolutions.begin();
-                    for (auto const& choice : epochModel.stepChoices) {
+                    for (auto choice : epochModel.stepChoices) {
                         b[choice] += *stepSolutionIt;
                         ++stepSolutionIt;
                     }
@@ -109,7 +109,7 @@ namespace storm {
 
                     auto stepSolutionIt = epochModel.stepSolutions.begin();
                     auto stepChoiceIt = epochModel.stepChoices.begin();
-                    for (auto const& state : epochModel.epochInStates) {
+                    for (auto state : epochModel.epochInStates) {
                         // Obtain the best choice for this state
                         ValueType bestValue;
                         uint64_t lastChoice = epochModel.epochMatrix.getRowGroupIndices()[state + 1];
@@ -194,11 +194,11 @@ namespace storm {
                     // Prepare the right hand side of the equation system
                     b.assign(epochModel.epochMatrix.getRowCount(), storm::utility::zero<ValueType>());
                     std::vector<ValueType> const& objectiveValues = epochModel.objectiveRewards.front();
-                    for (auto const& choice : epochModel.objectiveRewardFilter.front()) {
+                    for (auto choice : epochModel.objectiveRewardFilter.front()) {
                         b[choice] = objectiveValues[choice];
                     }
                     auto stepSolutionIt = epochModel.stepSolutions.begin();
-                    for (auto const& choice : epochModel.stepChoices) {
+                    for (auto choice : epochModel.stepChoices) {
                         b[choice] += *stepSolutionIt;
                         ++stepSolutionIt;
                     }

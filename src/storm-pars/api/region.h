@@ -29,7 +29,7 @@
 #include "storm/exceptions/NotSupportedException.h"
 
 namespace storm {
-    
+
     namespace api {
         struct MonotonicitySetting {
             MonotonicitySetting(bool a = false, bool b = false, bool c = false) { useMonotonicity = a; useOnlyGlobalMonotonicity = b; useBoundsFromPLA = c;}
@@ -39,7 +39,7 @@ namespace storm {
         };
 
         template <typename ValueType>
-        std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables, boost::optional<int> splittingThreshold = boost::none) {
+        std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold = boost::none) {
             // If the given input string looks like a file (containing a dot and there exists a file with that name),
             // we try to parse it as a file, otherwise we assume it's a region string.
             if (inputString.find(".") != std::string::npos && std::ifstream(inputString).good()) {
@@ -50,12 +50,12 @@ namespace storm {
         }
 
         template <typename ValueType>
-        storm::storage::ParameterRegion<ValueType> createRegion(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables, boost::optional<int> splittingThreshold= boost::none) {
+        storm::storage::ParameterRegion<ValueType> createRegion(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold = boost::none) {
             return storm::parser::ParameterRegionParser<ValueType>().createRegion(inputString, consideredVariables, splittingThreshold);
         }
 
         template <typename ValueType>
-        std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, storm::models::ModelBase const& model, boost::optional<int> splittingThreshold= boost::none) {
+        std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, storm::models::ModelBase const& model, boost::optional<int> const& splittingThreshold = boost::none) {
             std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> modelParameters;
             if (model.isSparseModel()) {
                 auto const& sparseModel = dynamic_cast<storm::models::sparse::Model<ValueType> const&>(model);
@@ -69,7 +69,7 @@ namespace storm {
         }
 
         template <typename ValueType>
-        std::vector<storm::storage::ParameterRegion<ValueType>> createRegion(std::string const& inputString, storm::models::ModelBase const& model, boost::optional<int> splittingThreshold= boost::none) {
+        std::vector<storm::storage::ParameterRegion<ValueType>> createRegion(std::string const& inputString, storm::models::ModelBase const& model, boost::optional<int> const& splittingThreshold = boost::none) {
             std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> modelParameters;
             if (model.isSparseModel()) {
                 auto const& sparseModel = dynamic_cast<storm::models::sparse::Model<ValueType> const&>(model);
@@ -81,26 +81,26 @@ namespace storm {
             }
             return std::vector<storm::storage::ParameterRegion<ValueType>>({createRegion<ValueType>(inputString, modelParameters, splittingThreshold)});
         }
-        
+
         template <typename ValueType>
-        storm::storage::ParameterRegion<ValueType> parseRegion(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables, boost::optional<int> splittingThreshold= boost::none) {
+        storm::storage::ParameterRegion<ValueType> parseRegion(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold = boost::none) {
             // Handle the "empty region" case
             if (inputString == "" && consideredVariables.empty()) {
                 return storm::storage::ParameterRegion<ValueType>();
             }
-            
+
             auto res = parseRegions<ValueType>(inputString, consideredVariables, splittingThreshold);
             STORM_LOG_THROW(res.size() == 1, storm::exceptions::InvalidOperationException, "Parsed " << res.size() << " regions but exactly one was expected.");
             return res.front();
         }
-        
+
         template <typename ValueType>
-        storm::storage::ParameterRegion<ValueType> parseRegion(std::string const& inputString, storm::models::ModelBase const& model, boost::optional<int> splittingThreshold= boost::none) {
+        storm::storage::ParameterRegion<ValueType> parseRegion(std::string const& inputString, storm::models::ModelBase const& model, boost::optional<int> const& splittingThreshold = boost::none) {
             // Handle the "empty region" case
             if (inputString == "" && !model.hasParameters()) {
                 return storm::storage::ParameterRegion<ValueType>();
             }
-            
+
             auto res = parseRegions<ValueType>(inputString, model);
             STORM_LOG_THROW(res.size() == 1, storm::exceptions::InvalidOperationException, "Parsed " << res.size() << " regions but exactly one was expected.");
             return res.front();
@@ -112,9 +112,6 @@ namespace storm {
             modelParameters = storm::models::sparse::getProbabilityParameters(*model);
             auto rewParameters = storm::models::sparse::getRewardParameters(*model);
             modelParameters.insert(rewParameters.begin(), rewParameters.end());
-
-//            TODO: if (inputString.find(".") != std::string::npos && std::ifstream(inputString).good()) {
-
             return std::move(storm::parser::MonotonicityParser<typename storm::storage::ParameterRegion<ValueType>::VariableType>().parseMonotoneVariablesFromFile(fileName, modelParameters));
         }
 
@@ -160,11 +157,11 @@ namespace storm {
 
         template <typename ParametricType, typename ImpreciseType, typename PreciseType>
         std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> initializeValidatingRegionModelChecker(Environment const& env, std::shared_ptr<storm::models::sparse::Model<ParametricType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ParametricType> const& task, bool generateSplitEstimates = false, bool allowModelSimplification = true) {
-            
+
             STORM_LOG_WARN_COND(storm::utility::parameterlifting::validateParameterLiftingSound(*model, task.getFormula()), "Could not validate whether parameter lifting is applicable. Please validate manually...");
 
             std::shared_ptr<storm::models::sparse::Model<ParametricType>> consideredModel = model;
-            
+
             // Treat continuous time models
             if (consideredModel->isOfType(storm::models::ModelType::Ctmc) || consideredModel->isOfType(storm::models::ModelType::MarkovAutomaton)) {
                     STORM_LOG_WARN("Parameter lifting not supported for continuous time models. Transforming continuous model to discrete model...");
@@ -172,7 +169,7 @@ namespace storm {
                     consideredModel = storm::api::transformContinuousToDiscreteTimeSparseModel(consideredModel, taskFormulaAsVector).first;
                     STORM_LOG_THROW(consideredModel->isOfType(storm::models::ModelType::Dtmc) || consideredModel->isOfType(storm::models::ModelType::Mdp), storm::exceptions::UnexpectedException, "Transformation to discrete time model has failed.");
             }
-            
+
             // Obtain the region model checker
             std::shared_ptr<storm::modelchecker::RegionModelChecker<ParametricType>> checker;
             if (consideredModel->isOfType(storm::models::ModelType::Dtmc)) {
@@ -186,7 +183,7 @@ namespace storm {
             checker->specify(env, consideredModel, task, generateSplitEstimates, allowModelSimplification);
             return checker;
         }
-        
+
         template <typename ValueType>
         std::shared_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRegionModelChecker(Environment const& env, std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine, bool generateSplitEstimates = false, bool allowModelSimplification = true, MonotonicitySetting monotonicitySetting = MonotonicitySetting(), boost::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>> monotoneParameters = boost::none) {
             switch (engine) {
@@ -202,26 +199,26 @@ namespace storm {
             }
             return nullptr;
         }
-        
+
         template <typename ValueType>
         std::shared_ptr<storm::modelchecker::RegionModelChecker<ValueType>> initializeRegionModelChecker(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::modelchecker::RegionCheckEngine engine) {
             Environment env;
             initializeRegionModelChecker(env, model, task, engine);
         }
-        
+
         template <typename ValueType>
         std::unique_ptr<storm::modelchecker::RegionCheckResult<ValueType>> checkRegionsWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, storm::modelchecker::RegionCheckEngine engine, std::vector<storm::modelchecker::RegionResultHypothesis> const& hypotheses, bool sampleVerticesOfRegions) {
             Environment env;
             auto regionChecker = initializeRegionModelChecker(env, model, task, engine);
             return regionChecker->analyzeRegions(env, regions, hypotheses, sampleVerticesOfRegions);
         }
-    
+
         template <typename ValueType>
         std::unique_ptr<storm::modelchecker::RegionCheckResult<ValueType>> checkRegionsWithSparseEngine(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, std::vector<storm::storage::ParameterRegion<ValueType>> const& regions, storm::modelchecker::RegionCheckEngine engine, storm::modelchecker::RegionResultHypothesis const& hypothesis = storm::modelchecker::RegionResultHypothesis::Unknown, bool sampleVerticesOfRegions = false) {
             std::vector<storm::modelchecker::RegionResultHypothesis> hypotheses(regions.size(), hypothesis);
             return checkRegionsWithSparseEngine(model, task, regions, engine, hypotheses, sampleVerticesOfRegions);
         }
-    
+
         /*!
          * Checks and iteratively refines the given region with the sparse engine
          * @param engine The considered region checking engine
@@ -255,6 +252,14 @@ namespace storm {
             return regionChecker->computeExtremalValue(env, region, dir, precision.is_initialized() ? precision.get() : storm::utility::zero<ValueType>());
         }
 
+        template <typename ValueType>
+        std::pair<ValueType, typename storm::storage::ParameterRegion<ValueType>::Valuation> getBound(std::shared_ptr<storm::models::sparse::Model<ValueType>> const& model, storm::modelchecker::CheckTask<storm::logic::Formula, ValueType> const& task, storm::storage::ParameterRegion<ValueType> const& region, storm::solver::OptimizationDirection const& dir, MonotonicitySetting monotonicitySetting, bool generateSplitEstimates = false, boost::optional<std::pair<std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType>>>& monotoneParameters = boost::none) {
+            Environment env;
+            bool allowModelSimplification = !monotonicitySetting.useMonotonicity;
+            auto regionChecker = initializeParameterLiftingRegionModelChecker(env, model, task, generateSplitEstimates, allowModelSimplification, monotonicitySetting, monotoneParameters);
+            return regionChecker->getBound(env, region, dir);
+        }
+
         // TODO: update documentation
         /*!
          * Checks if a given extremal value is indeed the extremal value in the given region
@@ -270,13 +275,13 @@ namespace storm {
             auto regionChecker = initializeRegionModelChecker(env, model, task, engine, generateSplitEstimates, allowModelSimplification, monotonicitySetting, monotoneParameters);
             return regionChecker->checkExtremalValue(env, region, dir, precision.is_initialized() ? precision.get() : storm::utility::zero<ValueType>(), suggestion);
         }
-        
+
         template <typename ValueType>
         void exportRegionCheckResultToFile(std::unique_ptr<storm::modelchecker::CheckResult> const& checkResult, std::string const& filename, bool onlyConclusiveResults = false) {
 
             auto const* regionCheckResult = dynamic_cast<storm::modelchecker::RegionCheckResult<ValueType> const*>(checkResult.get());
             STORM_LOG_THROW(regionCheckResult != nullptr, storm::exceptions::UnexpectedException, "Can not export region check result: The given checkresult does not have the expected type.");
-            
+
             std::ofstream filestream;
             storm::utility::openFile(filename, filestream);
             for (auto const& res : regionCheckResult->getRegionResults()) {
@@ -286,6 +291,6 @@ namespace storm {
                 }
             }
         }
-    
+
     }
 }

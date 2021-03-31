@@ -10,6 +10,7 @@
 
 #include "storm-dft/builder/DFTBuilder.h"
 #include "storm-dft/storage/dft/DFTIsomorphism.h"
+#include "storm-dft/utility/RelevantEvents.h"
 
 
 namespace storm {
@@ -1038,7 +1039,7 @@ namespace storm {
         }
 
         template<typename ValueType>
-        void DFT<ValueType>::setRelevantEvents(storm::utility::RelevantEvents const& relevantEvents) const {
+        void DFT<ValueType>::setRelevantEvents(storm::utility::RelevantEvents const& relevantEvents, bool const allowDCForRelevant) const {
             mRelevantEvents.clear();
             STORM_LOG_THROW(relevantEvents.checkRelevantNames(*this), storm::exceptions::InvalidArgumentException, "One of the relevant elements does not exist.");
             // Top level element is first element
@@ -1046,7 +1047,7 @@ namespace storm {
             for (auto& elem : mElements) {
                 if (relevantEvents.isRelevant(elem->name()) || elem->id() == this->getTopLevelIndex()) {
                     elem->setRelevance(true);
-                    elem->setAllowDC(relevantEvents.isAllowDC());
+                    elem->setAllowDC(allowDCForRelevant);
                     if (elem->id() != this->getTopLevelIndex()) {
                         // Top level element was already added
                         mRelevantEvents.push_back(elem->id());

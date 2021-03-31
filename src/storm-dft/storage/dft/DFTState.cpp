@@ -51,14 +51,14 @@ namespace storm {
                     if (be->canFail()) {
                         switch (be->beType()) {
                             case storm::storage::BEType::CONSTANT:
-                                failableElements.addBE(index);
+                                failableElements.addBE(be->id());
                                 STORM_LOG_TRACE("Currently failable: " << *be);
                                 break;
                             case storm::storage::BEType::EXPONENTIAL:
                             {
                                 auto beExp = std::static_pointer_cast<BEExponential<ValueType> const>(be);
                                 if (!beExp->isColdBasicElement() || !mDft.hasRepresentant(index) || isActive(mDft.getRepresentant(index))) {
-                                    failableElements.addBE(index);
+                                    failableElements.addBE(be->id());
                                     STORM_LOG_TRACE("Currently failable: " << *beExp);
                                 }
                                 break;
@@ -327,35 +327,26 @@ namespace storm {
         }
 
         template<typename ValueType>
-        std::pair<std::shared_ptr<DFTBE<ValueType> const>, bool> DFTState<ValueType>::letNextBEFail(size_t id, bool dueToDependency) {
-            STORM_LOG_TRACE("currently failable: " << getCurrentlyFailableString());
-            if (dueToDependency) {
+        void DFTState<ValueType>::letBEFail(std::shared_ptr<DFTBE<ValueType> const> be, std::shared_ptr<DFTDependency<ValueType> const> dependency) {
+            STORM_LOG_ASSERT(!hasFailed(be->id()), "Element " << *be << " has already failed.");
+            if (dependency != nullptr) {
                 // Consider failure due to dependency
-                std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(id);
-                STORM_LOG_ASSERT(dependency->dependentEvents().size() == 1, "More than one dependent event");
-                std::pair<std::shared_ptr<DFTBE<ValueType> const>,bool> res(mDft.getBasicElement(dependency->dependentEvents()[0]->id()), true);
-                STORM_LOG_ASSERT(!hasFailed(res.first->id()), "Element " << *(res.first) << " has already failed.");
-                failableElements.removeDependency(id);
-                setFailed(res.first->id());
+                failableElements.removeDependency(dependency->id());
                 setDependencySuccessful(dependency->id());
-                beNoLongerFailable(res.first->id());
-                return res;
             } else {
                 // Consider "normal" failure
-                std::pair<std::shared_ptr<DFTBE<ValueType> const>,bool> res(mDft.getBasicElement(id), false);
-                STORM_LOG_ASSERT(!hasFailed(res.first->id()), "Element " << *(res.first) << " has already failed.");
-                STORM_LOG_ASSERT(res.first->canFail(), "Element " << *(res.first) << " cannot fail.");
-                failableElements.removeBE(id);
-                setFailed(res.first->id());
-                return res;
+                STORM_LOG_ASSERT(be->canFail(), "Element " << *be << " cannot fail.");
             }
+            // Set BE as failed
+            setFailed(be->id());
+            failableElements.removeBE(be->id());
         }
  
         template<typename ValueType>
-        void DFTState<ValueType>::letDependencyBeUnsuccessful(size_t id) {
+        void DFTState<ValueType>::letDependencyBeUnsuccessful(std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dependency) {
             STORM_LOG_ASSERT(failableElements.hasDependencies(), "Index invalid.");
-            std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(id);
-            failableElements.removeDependency(id);
+            STORM_LOG_ASSERT(!dependency->isFDEP(), "Dependency is not a PDEP.");
+            failableElements.removeDependency(dependency->id());
             setDependencyUnsuccessful(dependency->id());
         }
 
@@ -396,8 +387,13 @@ namespace storm {
                                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BE type '" << be->type() << "' is not supported.");
                         }
                     }
-                } else if (mDft.getElement(elem)->isSpareGate() && !isActive(uses(elem))) {
-                    propagateActivation(uses(elem));
+                } else if (mDft.getElement(elem)->isSpareGate()){
+                    if (isOperational(elem)) {
+                        // We do not activate children if the SPARE is already failed
+                        if (!isActive(uses(elem))) {
+                            propagateActivation(uses(elem));
+                        }
+                    }
                 }
             }
         }
