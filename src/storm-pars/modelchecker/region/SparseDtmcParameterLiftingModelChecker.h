@@ -62,7 +62,6 @@ namespace storm {
 
             virtual void splitSmart(storm::storage::ParameterRegion<ValueType> & region, std::vector<storm::storage::ParameterRegion<ValueType>> &regionVector,  std::shared_ptr<storm::analysis::Order> order, storm::analysis::MonotonicityResult<VariableType> & monRes, bool splitForExtremum) const override;
 
-
         private:
             storm::storage::BitVector maybeStates;
             std::vector<ConstantType> resultsForNonMaybeStates;

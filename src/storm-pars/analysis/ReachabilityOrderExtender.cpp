@@ -39,7 +39,8 @@ namespace storm {
                     auto itr = statesSorted.begin();
                     while (itr != statesSorted.end()) {
                         auto state = *itr;
-                        auto &successors = this->stateMap[state];
+                        //TODO [0] means its only implemented for dtmc atm. Move to OEDtmc later
+                        auto &successors = this->stateMap[state][0];
                         bool all = true;
                         for (auto i = 0; i < successors.size(); ++i) {
                             auto state1 = successors[i];
@@ -107,7 +108,8 @@ namespace storm {
             while (currentStateMode.first != this->numberOfStates) {
                 assert (currentStateMode.first < this->numberOfStates);
                 auto& currentState = currentStateMode.first;
-                auto& successors = this->stateMap[currentState];
+                //TODO [0] means its only implemented for dtmc atm. Move to OEDtmc later
+                auto& successors = this->stateMap[currentState][0];
                 std::pair<uint_fast64_t, uint_fast64_t> result =  {this->numberOfStates, this->numberOfStates};
 
                 if (successors.size() == 1) {
@@ -453,23 +455,32 @@ namespace storm {
                 this->bottomTopOrder = std::shared_ptr<Order>(new Order(&topStates, &bottomStates, this->numberOfStates, std::move(decomposition), std::move(statesSorted)));
 
                 // Build stateMap
+                auto rowCount = 0;
+                auto currentOption = 0;
+                auto numberOfOptionsForState = 0;
                 for (uint_fast64_t state = 0; state < this->numberOfStates; ++state) {
-                    auto const& row = matrix.getRow(state);
-                    this->stateMap[state] = std::vector<uint_fast64_t>();
+                    this->stateMap[state] = std::vector<std::vector<uint_fast64_t>>();
                     std::set<VariableType> occurringVariables;
+                    numberOfOptionsForState = matrix.getRowGroupSize(state);
+                    while (currentOption < numberOfOptionsForState) {
+                        auto row = matrix.getRow(rowCount);
+                        this->stateMap[state].push_back(std::vector<uint64_t>());
+                        for (auto& entry : row) {
+                            // ignore self-loops when there are more transitions
+                            if (state != entry.getColumn() || row.getNumberOfEntries() == 1) {
+                                if (!subStates[entry.getColumn()] && !this->bottomTopOrder->contains(state)) {
+                                    this->bottomTopOrder->add(state);
+                                }
+                                this->stateMap[state][currentOption].push_back(entry.getColumn());
+                            }
+                            storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
 
-                    for (auto& entry : matrix.getRow(state)) {
-
-                        // ignore self-loops when there are more transitions
-                        if (state != entry.getColumn() || row.getNumberOfEntries() == 1) {
-//                            if (!subStates[entry.getColumn()] && !bottomTopOrder->contains(state)) {
-//                                bottomTopOrder->add(state);
-//                            }
-                            this->stateMap[state].push_back(entry.getColumn());
                         }
-                        storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
 
+                        currentOption++;
+                        rowCount++;
                     }
+
                     if (occurringVariables.empty()) {
                         this->nonParametricStates.insert(state);
                     }
@@ -478,6 +489,9 @@ namespace storm {
                         this->occuringStatesAtVariable[var].push_back(state);
                     }
                     this->occuringVariablesAtState.push_back(std::move(occurringVariables));
+                    this->occuringVariablesAtState.push_back(std::move(occurringVariables));
+
+                    currentOption = 0;
                 }
 
             }

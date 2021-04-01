@@ -58,23 +58,32 @@ namespace storm {
             this->bottomTopOrder = std::shared_ptr<Order>(new Order(topStates, bottomStates, numberOfStates, std::move(decomposition), std::move(statesSorted)));
 
             // Build stateMap
+            auto rowCount = 0;
+            auto currentOption = 0;
+            auto numberOfOptionsForState = 0;
             for (uint_fast64_t state = 0; state < numberOfStates; ++state) {
-                auto const& row = matrix.getRow(state);
-                stateMap[state] = std::vector<uint_fast64_t>();
+                stateMap[state] = std::vector<std::vector<uint_fast64_t>>();
                 std::set<VariableType> occurringVariables;
-
-                for (auto& entry : matrix.getRow(state)) {
-
-                    // ignore self-loops when there are more transitions
-                    if (state != entry.getColumn() || row.getNumberOfEntries() == 1) {
-                        if (!subStates[entry.getColumn()] && !bottomTopOrder->contains(state)) {
-                            bottomTopOrder->add(state);
+                numberOfOptionsForState = matrix.getRowGroupSize(state);
+                while (currentOption < numberOfOptionsForState) {
+                    auto row = matrix.getRow(rowCount);
+                    stateMap[state].push_back(std::vector<uint64_t>());
+                    for (auto& entry : row) {
+                        // ignore self-loops when there are more transitions
+                        if (state != entry.getColumn() || row.getNumberOfEntries() == 1) {
+                            if (!subStates[entry.getColumn()] && !bottomTopOrder->contains(state)) {
+                                bottomTopOrder->add(state);
+                            }
+                            stateMap[state][currentOption].push_back(entry.getColumn());
                         }
-                        stateMap[state].push_back(entry.getColumn());
-                    }
-                    storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
+                        storm::utility::parametric::gatherOccurringVariables(entry.getValue(), occurringVariables);
 
+                    }
+
+                    currentOption++;
+                    rowCount++;
                 }
+
                 if (occurringVariables.empty()) {
                     nonParametricStates.insert(state);
                 }
@@ -83,6 +92,8 @@ namespace storm {
                     occuringStatesAtVariable[var].push_back(state);
                 }
                 occuringVariablesAtState.push_back(std::move(occurringVariables));
+
+                currentOption = 0;
             }
 
             this->assumptionMaker = new analysis::AssumptionMaker<ValueType, ConstantType>(matrix);
@@ -93,12 +104,6 @@ namespace storm {
             return this->extendOrder(nullptr, region, monRes, nullptr);
         }
 
-<<<<<<< HEAD
-=======
-
-
-
->>>>>>> order-for-rewards
         template <typename ValueType, typename ConstantType>
         void OrderExtender<ValueType, ConstantType>::handleAssumption(std::shared_ptr<Order> order, std::shared_ptr<expressions::BinaryRelationExpression> assumption) const {
             assert (assumption != nullptr);

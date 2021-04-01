@@ -31,7 +31,7 @@ namespace storm {
             if (numberOfAddedStates == numberOfStates) {
                 doneBuilding = doneStates.full();
             }
-            assert (addedStates.getNumberOfSetBits() == (topStates->getNumberOfSetBits() + bottomStates->getNumberOfSetBits()));
+
         }
 
         Order::Order(uint_fast64_t topState, uint_fast64_t bottomState, uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent> decomposition, std::vector<uint_fast64_t> statesSorted) {

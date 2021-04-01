@@ -1,10 +1,10 @@
 #pragma once
-#include "storm-pars/analysis/OrderExtender.h"
+#include "storm-pars/analysis/ReachabilityOrderExtender.h"
 
 namespace storm {
     namespace analysis {
         template<typename ValueType, typename ConstantType>
-        class OrderExtenderMdp : public OrderExtender<ValueType, ConstantType> {
+        class OrderExtenderMdp : public ReachabilityOrderExtender<ValueType, ConstantType> {
             public:
 
                 enum ActionComparison {
@@ -13,7 +13,7 @@ namespace storm {
                     UNKNOWN,
                 };
 
-                OrderExtenderMdp(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, storage::ParameterRegion<ValueType> region, bool prMax = true);
+                OrderExtenderMdp(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, bool prMax = true);
 
                 OrderExtenderMdp(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool prMax = true);
 

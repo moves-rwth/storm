@@ -4,12 +4,12 @@ namespace storm {
     namespace analysis {
 
         template<typename ValueType, typename ConstantType>
-        OrderExtenderMdp<ValueType, ConstantType>::OrderExtenderMdp(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, storage::ParameterRegion<ValueType> region, bool prMax) : OrderExtender<ValueType, ConstantType>(model, formula, region) {
+        OrderExtenderMdp<ValueType, ConstantType>::OrderExtenderMdp(std::shared_ptr<models::sparse::Model<ValueType>> model, std::shared_ptr<logic::Formula const> formula, bool prMax) : ReachabilityOrderExtender<ValueType, ConstantType>(model, formula) {
             this->prMax = prMax;
         }
 
         template<typename ValueType, typename ConstantType>
-        OrderExtenderMdp<ValueType, ConstantType>::OrderExtenderMdp(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool prMax) : OrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix) {
+        OrderExtenderMdp<ValueType, ConstantType>::OrderExtenderMdp(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool prMax) : ReachabilityOrderExtender<ValueType, ConstantType>(topStates, bottomStates, matrix) {
             this->prMax = prMax;
         }
 
@@ -322,7 +322,7 @@ namespace storm {
                 auto var = manager->declareRationalVariable(varName);
                 exprStateVars = exprStateVars && manager->rational(0) < var && var < manager->rational(1);
                 if(i > 0) {
-                    if (order->same(occSuccs[i], occSuccs[i - 1])){
+                    if (order->compare(occSuccs[i], occSuccs[i - 1]) == Order::SAME){
                         auto sameVar = manager->getVariable("s" + std::to_string(occSuccs[i-1]));
                         expressions::Expression exprSame = sameVar.getExpression() = var.getExpression();
                         exprStateVars = exprStateVars && exprSame;

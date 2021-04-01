@@ -61,10 +61,10 @@ namespace storm {
             }
 
             if (model->isOfType(models::ModelType::Dtmc)) {
-                this->extender = new analysis::OrderExtenderDtmc<ValueType, ConstantType>(model, formulas[0], region);
+                this->extender = new analysis::OrderExtenderDtmc<ValueType, ConstantType>(model, formulas[0]);
             } else if (model->isOfType(models::ModelType::Mdp)) {
                 // TODO where to get prMax? Based on what was given via --prop?
-                this->extender = new analysis::OrderExtenderMdp<ValueType, ConstantType>(model, formulas[0], region, true);
+                this->extender = new analysis::OrderExtenderMdp<ValueType, ConstantType>(model, formulas[0], true);
             } else {
                 // TODO @Jip Warning that we can't do anything that isnt a dtmc or an mdp bc else we might have a null pointer exception at some point
             }

@@ -87,6 +87,7 @@ namespace storm {
             virtual std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) = 0;
             virtual std::pair<uint_fast64_t, uint_fast64_t> extendByForwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState, std::vector<uint_fast64_t> const& successors, bool allowMerge) = 0;
             virtual bool extendByAssumption(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t succState2, uint_fast64_t succState1) = 0;
+            virtual std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState) = 0;
 
             virtual void handleOneSuccessor(std::shared_ptr<Order> order, uint_fast64_t currentState, uint_fast64_t successor) = 0;
             void handleAssumption(std::shared_ptr<Order> order, std::shared_ptr<expressions::BinaryRelationExpression> assumption) const;
@@ -105,7 +106,7 @@ namespace storm {
             storage::SparseMatrix<ValueType> matrix;
             std::shared_ptr<models::sparse::Model<ValueType>> model;
 
-            std::map<uint_fast64_t, std::vector<uint_fast64_t>> stateMap;
+            std::map<uint_fast64_t, std::vector<std::vector<uint_fast64_t>>> stateMap;
             std::map<std::shared_ptr<Order>, std::pair<uint_fast64_t, uint_fast64_t>> unknownStatesMap;
 
             std::map<std::shared_ptr<Order>, bool> usePLA;

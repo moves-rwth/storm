@@ -343,7 +343,7 @@ namespace storm {
 
                     bool above(Node * node1, Node * node2, storm::analysis::Order::Node *nodePrev, storm::storage::BitVector *statesSeen);
 
-                    bool aboveFast(Node * node1, Node * node2);
+                    bool aboveFast(Node * node1, Node * node2) const;
 
                     void init(uint_fast64_t numberOfStates, storage::Decomposition<storage::StronglyConnectedComponent>, bool doneBuilding = false);
 
