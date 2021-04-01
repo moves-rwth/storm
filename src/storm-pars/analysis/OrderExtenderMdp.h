@@ -6,6 +6,7 @@ namespace storm {
         template<typename ValueType, typename ConstantType>
         class OrderExtenderMdp : public ReachabilityOrderExtender<ValueType, ConstantType> {
             public:
+                typedef typename utility::parametric::VariableType<ValueType>::type VariableType;
 
                 enum ActionComparison {
                     GEQ,
@@ -17,10 +18,13 @@ namespace storm {
 
                 OrderExtenderMdp(storm::storage::BitVector* topStates,  storm::storage::BitVector* bottomStates, storm::storage::SparseMatrix<ValueType> matrix, bool prMax = true);
 
+            std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes = nullptr, std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr) override;
+
             private:
 
                 storm::storage::BitVector gatherPotentialSuccs(uint64_t state);
 
+                std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> extendOrder(std::shared_ptr<Order> order, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption = nullptr) override;
 
                 std::pair<uint_fast64_t, uint_fast64_t> extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState) override;
 

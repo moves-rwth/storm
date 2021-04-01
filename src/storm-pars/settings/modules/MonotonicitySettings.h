@@ -67,23 +67,6 @@ namespace storm {
                 uint64_t getMonotonicityThreshold() const;
 
 
-                /*!
-                 *
-                 */
-                bool isExportMonotonicitySet() const;
-
-                bool isMonSolutionSet() const;
-
-                /*!
-                 *
-                 */
-                std::string getExportMonotonicityFilename() const;
-
-                /*!
-                 * Retrieves the depth threshold from which on monotonicity should be used in parameter lifting
-                 */
-                uint64_t getMonotonicityThreshold() const;
-
 
                 const static std::string moduleName;
 

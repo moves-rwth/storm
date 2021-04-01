@@ -25,6 +25,22 @@ namespace storm {
             return res;
         }
 
+        template <typename ValueType, typename ConstantType>
+        std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtenderMdp<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
+            STORM_LOG_WARN("This function is not yet implemented for this sub-class (OEMdp)");
+            // TODO implement.
+            // Original Version moved from ReachOE to OEDtmc. That might have broken the implementation or orders for mdps.
+            // But original version only ever took the first possible action into account (when accessing stateMap)
+        }
+
+        template <typename ValueType, typename ConstantType>
+        std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtenderMdp<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
+            STORM_LOG_WARN("This function is not yet implemented for this sub-class (OEMdp)");
+            // TODO implement.
+            // Original Version moved from ReachOE to OEDtmc. That might have broken the implementation or orders for mdps.
+            // But original version only ever took the first possible action into account (when accessing stateMap)
+        }
+
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t> OrderExtenderMdp<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState) {
             // Finding the best action for the current state

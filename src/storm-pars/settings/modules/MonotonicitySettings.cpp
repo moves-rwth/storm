@@ -90,26 +90,6 @@ namespace storm {
                 return this->getOption(monSolution).getHasOptionBeenSet();
             }
 
-            bool MonotonicitySettings::isExportMonotonicitySet() const {
-                return this->getOption(exportMonotonicityName).getHasOptionBeenSet();
-            }
-
-            std::string MonotonicitySettings::getExportMonotonicityFilename() const {
-                return this->getOption(exportMonotonicityName).getArgumentByName("filename").getValueAsString();
-            }
-
-            uint_fast64_t MonotonicitySettings::getMonotonicityThreshold() const {
-                if (this->isSet("mon-threshold")) {
-                    return this->getOption(monotonicityThreshold).getArgumentByName(
-                            "mon-threshold").getValueAsUnsignedInteger();
-                } else {
-                    return 0;
-                }
-            }
-
-            bool MonotonicitySettings::isMonSolutionSet() const {
-                return this->getOption(monSolution).getHasOptionBeenSet();
-            }
         } // namespace modules
     } // namespace settings
 } // namespace storm
