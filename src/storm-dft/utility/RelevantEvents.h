@@ -152,6 +152,22 @@ namespace storm {
                 }
             }
 
+            /*!
+             * Merge the given RelevantEvents with *this
+             *
+             * @return A reference to *this, allowing chaining i.e. e.merge(a).merge(b)
+             */
+            RelevantEvents& merge(RelevantEvents const &other) {
+                if (!this->allRelevant) {
+                    if(other.allRelevant) {
+                        setAllRelevant();
+                    } else {
+                        this->names.insert(other.names.begin(), other.names.end());
+                    }
+                }
+                return *this;
+            }
+
         private:
             void setAllRelevant() {
                 this->allRelevant = true;
