@@ -47,11 +47,11 @@ namespace storm {
                 insert(first, last);
             }
 
-            bool operator==(RelevantEvents const& rhs) {
+            bool operator==(RelevantEvents const& rhs) const {
                 return this->allRelevant == rhs.allRelevant || this->names == rhs.names;
             }
 
-            bool operator!=(RelevantEvents const& rhs) {
+            bool operator!=(RelevantEvents const& rhs) const {
                 return !(*this == rhs);
             }
 
