@@ -56,7 +56,7 @@ namespace storm {
              * @return Model checking results for the given properties..
              */
             dft_results check(storm::storage::DFT<ValueType> const& origDft, property_vector const& properties, bool symred = true, bool allowModularisation = true,
-                              storm::utility::RelevantEvents const& relevantEvents = storm::utility::RelevantEvents(), bool allowDCForRelevant = false,
+                              storm::utility::RelevantEvents const& relevantEvents = {}, bool allowDCForRelevant = false,
                               double approximationError = 0.0, storm::builder::ApproximationHeuristic approximationHeuristic = storm::builder::ApproximationHeuristic::DEPTH,
                               bool eliminateChains = false, storm::transformer::EliminationLabelBehavior labelBehavior = storm::transformer::EliminationLabelBehavior::KeepLabels);
 
