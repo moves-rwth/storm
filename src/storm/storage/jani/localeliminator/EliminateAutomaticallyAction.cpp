@@ -38,7 +38,6 @@ namespace storm {
                         std::map<std::string, bool> uneliminable;
                         session.addToLog("Elimination status of locations:");
                         for (auto loc : automaton.getLocations()) {
-
                             bool possiblyInitial = session.isPossiblyInitial(automatonName, loc.getName());
                             bool partOfProp = session.isPartOfProp(automatonName, loc.getName());
                             bool hasLoops = session.hasLoops(automatonName, loc.getName());

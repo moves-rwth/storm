@@ -72,8 +72,27 @@ namespace storm {
         }
 
         bool JaniLocalEliminator::Session::isPartOfProp(const std::string &automatonName, std::string const& locationName) {
+            uint64_t locationIndex = model.getAutomaton(automatonName).getLocationIndex(locationName);
+            return isPartOfProp(automatonName, locationIndex);
+        }
+
+        bool JaniLocalEliminator::Session::isPartOfProp(const std::string &automatonName, uint64_t locationIndex) {
+            AutomatonInfo &autInfo = automataInfo[automatonName];
+            return autInfo.potentiallyPartOfProp.count(locationIndex) == 1;
+        }
+
+
+        bool JaniLocalEliminator::Session::computeIsPartOfProp(const std::string &automatonName,
+                                                               const std::string &locationName) {
             Automaton &automaton = model.getAutomaton(automatonName);
-            auto location = automaton.getLocation(automaton.getLocationIndex(locationName));
+            uint64_t locationIndex = automaton.getLocationIndex(locationName);
+            return computeIsPartOfProp(automatonName, locationIndex);
+        }
+
+        bool JaniLocalEliminator::Session::computeIsPartOfProp(const std::string &automatonName,
+                                                               uint64_t locationIndex) {
+            Automaton &automaton = model.getAutomaton(automatonName);
+            auto location = automaton.getLocation(locationIndex);
             std::map<expressions::Variable, expressions::Expression> substitutionMap;
             for (auto asg : location.getAssignments()){
                 if (!asg.isTransient())
@@ -83,11 +102,34 @@ namespace storm {
 
             storm::solver::Z3SmtSolver solver(model.getExpressionManager());
             auto propertyFormula = property.getRawFormula()->substitute(substitutionMap);
-            for (auto atomicFormula : propertyFormula->getAtomicExpressionFormulas()){
-                solver.add(atomicFormula->getExpression());
+            auto atomicFormulas = propertyFormula->getAtomicExpressionFormulas();
+            STORM_LOG_THROW(atomicFormulas.size() == 1, storm::exceptions::NotImplementedException, "Formulas with more than one (or zero) atomic formulas are not implemented");
+            auto simplified = atomicFormulas[0]->getExpression().simplify();
+            if (simplified.isLiteral()) {
+                return simplified.evaluateAsBool();
             }
+            solver.add(simplified);
+
             auto result = solver.check();
             return result != storm::solver::SmtSolver::CheckResult::Unsat;
+        }
+
+        void JaniLocalEliminator::Session::setPartOfProp(const std::string &automatonName, const std::string &locationName, bool isPartOfProp) {
+            uint64_t locationIndex = model.getAutomaton(automatonName).getLocationIndex(locationName);
+            return setPartOfProp(automatonName, locationIndex, isPartOfProp);
+        }
+
+        void JaniLocalEliminator::Session::setPartOfProp(const std::string &automatonName, uint64_t locationIndex, bool isPartOfProp) {
+            AutomatonInfo &autInfo = automataInfo[automatonName];
+            if (autInfo.potentiallyPartOfProp.count(locationIndex) == 1) {
+                if (!isPartOfProp){
+                    autInfo.potentiallyPartOfProp.erase(locationIndex);
+                }
+            } else {
+                if (isPartOfProp){
+                    autInfo.potentiallyPartOfProp.insert(locationIndex);
+                }
+            }
         }
 
         void JaniLocalEliminator::cleanUpAutomaton(std::string const &automatonName){
@@ -136,7 +178,13 @@ namespace storm {
         }
 
         JaniLocalEliminator::Session::Session(Model model, Property property) : model(model), property(property), finished(false){
-
+            for (auto &aut : model.getAutomata()){
+                automataInfo[aut.getName()] =  AutomatonInfo();
+                for (auto &loc : aut.getLocations()){
+                    bool isPartOfProp = computeIsPartOfProp(aut.getName(), loc.getName());
+                    setPartOfProp(aut.getName(), loc.getName(), isPartOfProp);
+                }
+            }
         }
 
         Model &JaniLocalEliminator::Session::getModel() {

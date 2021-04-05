@@ -91,9 +91,6 @@ namespace storm {
             // This map will only ever contain a single entry: the variable to be eliminated. It is used during substitutions
             std::map<storm::expressions::Variable, storm::expressions::Expression> substitutionMap;
 
-            // Maps each old location index to a map that maps every variable value to the index of the (new) location that corresponds to the old location and variable value
-            std::map<uint64_t, std::map<int64_t, uint64_t>> locationVariableValueMap; //TODO: Switch inner map to vector?
-
             for (auto const &loc : automaton.getLocations()) {
                 uint64_t origIndex = automaton.getLocationIndex(loc.getName());
 

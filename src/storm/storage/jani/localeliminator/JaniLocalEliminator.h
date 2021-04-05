@@ -8,6 +8,12 @@
 namespace storm {
     namespace jani {
         class JaniLocalEliminator{
+        private:
+            class AutomatonInfo{
+            public:
+                explicit AutomatonInfo() = default;
+                std::set<uint64_t> potentiallyPartOfProp;
+            };
         public:
             class Session {
             public:
@@ -28,6 +34,11 @@ namespace storm {
                 bool hasLoops(const std::string &automatonName, std::string const& locationName);
                 bool isPossiblyInitial(const std::string &automatonName, std::string const &locationName);
                 bool isPartOfProp(const std::string &automatonName, std::string const &locationName);
+                bool isPartOfProp(const std::string &automatonName, uint64_t locationIndex);
+                bool computeIsPartOfProp(const std::string &automatonName, const std::string &locationName);
+                bool computeIsPartOfProp(const std::string &automatonName, uint64_t locationIndex);
+                void setPartOfProp(const std::string &automatonName, const std::string &locationName, bool isPartOfProp);
+                void setPartOfProp(const std::string &automatonName, uint64_t locationIndex, bool isPartOfProp);
             private:
                 Model model;
                 Property property;
@@ -35,6 +46,7 @@ namespace storm {
                 // We keep a log separate from the main log to prevent the main log from being overwhelmed. This log
                 // is exposed via the python API
                 std::vector<std::string> log;
+                std::map<std::string, AutomatonInfo> automataInfo;
             };
 
         public:
