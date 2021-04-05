@@ -20,13 +20,94 @@ namespace storm {
 
             void AutomaticAction::doAction(JaniLocalEliminator::Session &session) {
                 if (session.getModel().getAutomata().size() > 1) {
+                    session.addToLog("Flattening model");
                     session.setModel(session.getModel().flattenComposition());
                 }
 
+                session.addToLog("Generating variable dependency graph");
                 UnfoldDependencyGraph dependencyGraph(session.getModel());
+                session.addToLog(dependencyGraph.toString());
 
-                std::string autName = session.getModel().getAutomata()[0].getName();
+                std::string const& autName = session.getModel().getAutomata()[0].getName();
 
+                if (!unfoldPropertyVariable(session, autName, dependencyGraph)){
+                    return;
+                }
+
+
+                session.addToLog("Performing automatic elimination");
+
+                EliminateAutomaticallyAction eliminateAction(autName,
+                                                             EliminateAutomaticallyAction::EliminationOrder::NewTransitionCount,
+                                                             20000);
+                eliminateAction.doAction(session);
+
+                RebuildWithoutUnreachableAction rebuildAction;
+                rebuildAction.doAction(session);
+
+                while (session.getModel().getAutomaton(0).getLocations().size() < 40) {
+//                    std::set<uint32_t> potentialUnfolds = dependencyGraph.getGroupsWithNoDependencies();
+//
+//                    if (potentialUnfolds.empty()){
+//                        session.addToLog("No more unfoldable variables found");
+//                        break;
+//                    }
+//
+//                    session.addToLog("Potential next unfolds:");
+//                    for (uint32_t unf : potentialUnfolds)
+//                        session.addToLog("\t" + dependencyGraph.variableGroups[unf].getVariablesAsString());
+//                    uint32_t chosen = *potentialUnfolds.begin();
+
+                    auto nextUnfold = chooseNextUnfold(session, autName, dependencyGraph);
+                    if (!nextUnfold){
+                        break;
+                    }
+
+                    unfoldGroupAndDependencies(session, autName, dependencyGraph, nextUnfold.get());
+
+
+                    EliminateAutomaticallyAction eliminateAction(autName,
+                                                                 EliminateAutomaticallyAction::EliminationOrder::NewTransitionCount,
+                                                                 20000);
+                    eliminateAction.doAction(session);
+
+                    RebuildWithoutUnreachableAction rebuildAction;
+                    rebuildAction.doAction(session);
+                }
+            }
+
+            void AutomaticAction::unfoldGroupAndDependencies(JaniLocalEliminator::Session &session,
+                                                             std::string autName,
+                                                             UnfoldDependencyGraph &dependencyGraph,
+                                                             uint32_t groupIndex) {
+
+                auto orderedDependencies = dependencyGraph.getOrderedDependencies(groupIndex, true);
+                session.addToLog("Unfolding " + dependencyGraph.variableGroups[groupIndex].getVariablesAsString() + " and their dependencies");
+                for (auto dependency : orderedDependencies) {
+                    auto variables = dependencyGraph.variableGroups[dependency].variables;
+                    if (variables.size() != 1) {
+                        STORM_LOG_WARN("Unfolding variables with circular dependencies is currently unsupported");
+                    }
+                    for (const auto& variable : variables) {
+                        if (variable.isGlobal) {
+                            // We currently always have to specify an automaton name, regardless of whether the
+                            // variable is global or not. This isn't  really a problem, as there is just one automaton
+                            // due to the flattening done previously (and the name of that is stored in autName)
+                            session.addToLog("\tUnfolding global variable " + variable.janiVariableName);
+                            UnfoldAction unfoldAction(autName, variable.janiVariableName);
+                            unfoldAction.doAction(session);
+                        } else {
+                            session.addToLog("\tUnfolding variable " + variable.janiVariableName + " (automaton: " +
+                                             variable.automatonName + ")");
+                            UnfoldAction unfoldAction(variable.automatonName, variable.janiVariableName);
+                            unfoldAction.doAction(session);
+                        }
+                    }
+                    dependencyGraph.markUnfolded(dependency);
+                }
+            }
+
+            bool AutomaticAction::unfoldPropertyVariable(JaniLocalEliminator::Session &session, std::string const& autName, UnfoldDependencyGraph& dependencyGraph) {
                 auto variables = session.getProperty().getUsedVariablesAndConstants();
 
                 uint32_t bestVariableGroupIndex;
@@ -73,79 +154,71 @@ namespace storm {
 
                 if (bestBlowup == UINT32_MAX) {
                     session.addToLog("Could not unfold any of the variables occurring in the property");
-                    return;
+                    return false;
                 }
+
                 session.addToLog("Best total Blowup: " + std::to_string(bestBlowup));
 
                 unfoldGroupAndDependencies(session, autName, dependencyGraph, bestVariableGroupIndex);
 
-                session.addToLog("Performing automatic elimination");
-
-                EliminateAutomaticallyAction eliminateAction(autName,
-                                                             EliminateAutomaticallyAction::EliminationOrder::NewTransitionCount,
-                                                             20000);
-                eliminateAction.doAction(session);
-
-                RebuildWithoutUnreachableAction rebuildAction;
-                rebuildAction.doAction(session);
-
-
-                while (session.getModel().getAutomaton(0).getLocations().size() < 40    ) {
-                    std::set<uint32_t> potentialUnfolds = dependencyGraph.getGroupsWithNoDependencies();
-
-                    if (potentialUnfolds.empty()){
-                        session.addToLog("No more unfoldable variables found");
-                        break;
-                    }
-
-                    session.addToLog("Potential next unfolds:");
-                    for (uint32_t unf : potentialUnfolds)
-                        session.addToLog("\t" + dependencyGraph.variableGroups[unf].getVariablesAsString());
-
-                    uint32_t chosen = *potentialUnfolds.begin();
-
-                    unfoldGroupAndDependencies(session, autName, dependencyGraph, chosen);
-
-
-                    EliminateAutomaticallyAction eliminateAction(autName,
-                                                                 EliminateAutomaticallyAction::EliminationOrder::NewTransitionCount,
-                                                                 20000);
-                    eliminateAction.doAction(session);
-
-                    RebuildWithoutUnreachableAction rebuildAction;
-                    rebuildAction.doAction(session);
-                }
+                return true;
             }
 
-            void AutomaticAction::unfoldGroupAndDependencies(JaniLocalEliminator::Session &session,
-                                                             std::string autName,
-                                                             UnfoldDependencyGraph &dependencyGraph,
-                                                             uint32_t groupIndex) {
-
-                auto orderedDependencies = dependencyGraph.getOrderedDependencies(groupIndex, true);
-                session.addToLog("Unfolding " + dependencyGraph.variableGroups[groupIndex].getVariablesAsString() + " and their dependencies");
-                for (auto dependency : orderedDependencies) {
-                    auto variables = dependencyGraph.variableGroups[dependency].variables;
-                    if (variables.size() != 1) {
-                        STORM_LOG_WARN("Unfolding variables with circular dependencies is currently unsupported");
-                    }
-                    for (const auto& variable : variables) {
-                        if (variable.isGlobal) {
-                            // We currently always have to specify an automaton name, regardless of whether the
-                            // variable is global or not. This isn't  really a problem, as there is just one automaton
-                            // due to the flattening done previously (and the name of that is stored in autName)
-                            session.addToLog("\tUnfolding global variable " + variable.janiVariableName);
-                            UnfoldAction unfoldAction(autName, variable.janiVariableName);
-                            unfoldAction.doAction(session);
-                        } else {
-                            session.addToLog("\tUnfolding variable " + variable.janiVariableName + " (automaton: " +
-                                             variable.automatonName + ")");
-                            UnfoldAction unfoldAction(variable.automatonName, variable.janiVariableName);
-                            unfoldAction.doAction(session);
+            std::map<std::string, uint32_t> AutomaticAction::getAssignmentCountByVariable(JaniLocalEliminator::Session &session, std::string const& automatonName) {
+                std::map<std::string, uint32_t> res;
+                auto automaton = session.getModel().getAutomaton(automatonName);
+                for (auto edge : automaton.getEdges()) {
+                    for (auto dest : edge.getDestinations()){
+                        for (auto asg : dest.getOrderedAssignments()){
+                            auto name = asg.getExpressionVariable().getName();
+                            if (res.count(name) == 0) {
+                                res[name] = 0;
+                            }
+                            res[name] += 1;
                         }
                     }
-                    dependencyGraph.markUnfolded(dependency);
+
                 }
+
+                session.addToLog("\tNumber of (left-side) variable occurences: ");
+                for (auto entry : res){
+                    session.addToLog("\t\t" + entry.first + ": " + std::to_string(entry.second));
+                }
+
+                return res;
+            }
+
+            boost::optional<uint32_t> AutomaticAction::chooseNextUnfold(JaniLocalEliminator::Session &session, std::string const& automatonName, UnfoldDependencyGraph &dependencyGraph) {
+                std::map<std::string, uint32_t> variableOccurrenceCounts = getAssignmentCountByVariable(session, automatonName);
+                session.addToLog(dependencyGraph.toString());
+                std::set<uint32_t> groupsWithoutDependencies = dependencyGraph.getGroupsWithNoDependencies();
+
+                uint32_t bestValue = 0;
+                uint32_t bestGroup = 0;
+
+                session.addToLog("\tAnalysing groups without dependencies:");
+                for (auto groupIndex : groupsWithoutDependencies){
+                    UnfoldDependencyGraph::VariableGroup &group = dependencyGraph.variableGroups[groupIndex];
+                    uint32_t totalOccurences = 0;
+                    for (auto var : group.variables){
+                        if (variableOccurrenceCounts.count(var.expressionVariableName) > 0){
+                            totalOccurences += variableOccurrenceCounts[var.expressionVariableName];
+                        }
+                    }
+                    if (totalOccurences > bestValue){
+                        bestValue = totalOccurences;
+                        bestGroup = groupIndex;
+                    }
+                    session.addToLog("\t\t{" + group.getVariablesAsString() + "}: " + std::to_string(totalOccurences) + " occurences");
+                }
+
+                if (bestValue == 0){
+                    session.addToLog("No unfoldable variable occurs in any edges.");
+                    return boost::none;
+                }
+
+
+                return bestGroup;
             }
         }
     }

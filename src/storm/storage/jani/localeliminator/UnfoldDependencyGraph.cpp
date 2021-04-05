@@ -106,7 +106,7 @@ namespace storm {
             std::set<uint32_t> UnfoldDependencyGraph::getGroupsWithNoDependencies() {
                 std::set<uint32_t> res;
                 for (int i = 0; i < variableGroups.size(); i++)
-                    if (!variableGroups[i].unfolded && variableGroups[i].allVariablesUnfoldable)
+                    if (!variableGroups[i].unfolded && variableGroups[i].allVariablesUnfoldable && variableGroups[i].allDependenciesUnfolded)
                         res.insert(i);
 
                 return res;
@@ -140,6 +140,12 @@ namespace storm {
 
                                 isConstBounded = true;
                             }
+                        }
+                        else if (var.isBooleanVariable()) {
+                            variables.push_back(VariableInfo(var.getExpressionVariable().getName(), var.getName(),
+                                                             variableSet.first == "", variableSet.first, true, 2));
+
+                            isConstBounded = true;
                         }
                         if (!isConstBounded) {
                             // Still add the variable (so that dependencies are computed correctly). The
@@ -211,6 +217,12 @@ namespace storm {
                         }
                     }
                 }
+
+                for (int i = 0; i < variableGroups.size(); i++){
+                    if (variableGroups[i].dependencies.empty()){
+                        variableGroups[i].allDependenciesUnfolded = true;
+                    }
+                }
             }
 
             UnfoldDependencyGraph::VariableInfo::VariableInfo(std::string expressionVariableName,
@@ -263,6 +275,52 @@ namespace storm {
                         dependencies.begin(), dependencies.end(),
                         [this](uint32_t dep) { return this->variableGroups[dep].allVariablesUnfoldable; });
 
+            }
+
+            std::string UnfoldDependencyGraph::toString() {
+                std::string res = "";
+
+                for (uint32_t i = 0; i < variableGroups.size(); i++){
+                    auto group = variableGroups[i];
+                    std::vector<uint32_t> allDependencies = getOrderedDependencies(i, false);
+
+                    res += "{" + group.getVariablesAsString() + "}:";
+                    if (group.dependencies.size() > 0) {
+                        res += "\n\tDepends on ";
+                        for (uint32_t dep : group.dependencies)
+                            res += "{" + variableGroups[dep].getVariablesAsString() + "}, ";
+                        if (allDependencies.size() > group.dependencies.size()) {
+                            res += "(";
+                            for (uint32_t dep : allDependencies) {
+                                if (group.dependencies.count(dep) == 0)
+                                    res += "{" + variableGroups[dep].getVariablesAsString() + "}, ";
+                            }
+                            res = res.substr(0, res.length() - 2); // Remove trailing comma
+                            res += ")";
+                        } else {
+                            res = res.substr(0, res.length() - 2); // Remove trailing comma
+                        }
+                    }
+                    res += "\n\t";
+                    if (group.unfolded)
+                        res += "Unfolded\n";
+                    else if (group.allVariablesUnfoldable && areDependenciesUnfoldable(i))
+                        res += "Can be unfolded\n";
+                    else{
+                        res += "Can't be unfolded:\n";
+                        for (auto var : group.variables){
+                            if (!var.isConstBoundedInteger)
+                                res += "\t\tVariable " + var.expressionVariableName + " is not a const-bounded integer\n";
+                        }
+                        for (auto dep : allDependencies){
+                            if (!variableGroups[dep].allVariablesUnfoldable){
+                                res += "\t\tDependency {" + variableGroups[dep].getVariablesAsString() + "} can't be unfolded\n";
+                            }
+                        }
+                    }
+                }
+
+                return res;
             }
         }
     }

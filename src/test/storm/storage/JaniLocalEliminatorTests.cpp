@@ -19,6 +19,8 @@
 #include <storm/modelchecker/results/ExplicitQuantitativeCheckResult.h>
 #include "storm/environment/Environment.h"
 #include <storm/settings/modules/GeneralSettings.h>
+#include <storm-parsers/parser/JaniParser.h>
+#include "storm/storage/jani/JSONExporter.h"
 
 
 typedef storm::models::sparse::Dtmc<double> Dtmc;
@@ -166,6 +168,67 @@ TEST(JaniLocalEliminator, NandAutomatic) {
     checkModel(model, props, consts, 16182, 58102, 0.28641904638485044);
 }
 
+TEST(JaniLocalEliminator, BoolUnfoldTest) {
+    auto janiModelProperties = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/bool_unfold.jani", storm::jani::getAllKnownModelFeatures(), boost::none);
+    auto model = janiModelProperties.first;
+    auto props = janiModelProperties.second;
+
+    JaniLocalEliminator eliminator = JaniLocalEliminator(model, props);
+
+    eliminator.scheduler.addAction(std::make_unique<UnfoldAction>("main", "on"));
+//    eliminator.scheduler.addAction(std::make_unique<EliminateAction>("main", "l_x_2"));
+//    eliminator.scheduler.addAction(std::make_unique<RebuildWithoutUnreachableAction>());
+    eliminator.scheduler.addAction(std::make_unique<FinishAction>());
+
+    eliminator.eliminate();
+    model = eliminator.getResult();
+    model.checkValid();
+    model.finalize();
+    std::map<storm::expressions::Variable, storm::expressions::Expression> consts = { };
+
+    checkModel(model, props, consts, 21, 32, 0.9990234375);
+}
+
+
+TEST(JaniLocalEliminator, MiscTest) {
+    auto janiModelProperties = storm::api::parseJaniModel("/home/johannes/Documents/hiwi/out-of-control-benchmarking/files/coupon-custom.jani", storm::jani::getAllKnownModelFeatures(), boost::none);
+    auto model = janiModelProperties.first;
+    auto props = janiModelProperties.second;
+
+    JaniLocalEliminator eliminator = JaniLocalEliminator(model, props);
+
+    eliminator.scheduler.addAction(std::make_unique<AutomaticAction>());
+    //    eliminator.scheduler.addAction(std::make_unique<RebuildWithoutUnreachableAction>());
+    eliminator.scheduler.addAction(std::make_unique<FinishAction>());
+
+    eliminator.eliminate();
+
+    for (auto logLine : eliminator.getLog()){
+        std::cout << logLine << std::endl;
+    }
+
+    model = eliminator.getResult();
+    model.checkValid();
+    model.finalize();
+
+    storm::jani::JsonExporter::toFile(model, props, "/home/johannes/Documents/hiwi/out-of-control-benchmarking/files/crowds_custom_prop_unfolded.jani", true, false);
+
+    std::map<storm::expressions::Variable, storm::expressions::Expression> consts = {
+            {model.getConstant("TotalRuns").getExpressionVariable(), model.getExpressionManager().integer(2)},
+            {model.getConstant("CrowdSize").getExpressionVariable(), model.getExpressionManager().integer(1)}};
+
+    checkModel(model, props, consts, 21, 32, 0.9990234375);
+
+    auto janiModelProperties2 = storm::api::parseJaniModel("/home/johannes/Documents/hiwi/out-of-control-benchmarking/files/crowds_custom_prop_unfolded.jani", storm::jani::getAllKnownModelFeatures(), boost::none);
+    auto model2 = janiModelProperties2.first;
+    auto props2 = janiModelProperties2.second;
+
+    std::map<storm::expressions::Variable, storm::expressions::Expression> consts2 = {
+            {model2.getConstant("TotalRuns").getExpressionVariable(), model2.getExpressionManager().integer(2)},
+            {model2.getConstant("CrowdSize").getExpressionVariable(), model2.getExpressionManager().integer(1)}};
+    checkModel(model2, props2, consts2, 21, 32, 0.9990234375);
+}
+
 TEST(JaniLocalEliminator, MultiplicityTest) {
     auto janiModelProperties = storm::api::parseJaniModel(STORM_TEST_RESOURCES_DIR "/dtmc/multiplicity.jani", storm::jani::getAllKnownModelFeatures(), boost::none);
     auto model = janiModelProperties.first;
@@ -185,7 +248,7 @@ TEST(JaniLocalEliminator, MultiplicityTest) {
 
     EXPECT_EQ(model.getAutomaton("main").getEdges().size(), 0);
 
-    std::map<storm::expressions::Variable, storm::expressions::Expression> consts = { };
+    std::map<storm::expressions::Variable, storm::expressions::Expression> consts = {};
 
     checkModel(model, props, consts, 31, 55, 0.04);
 }

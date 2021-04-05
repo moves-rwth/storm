@@ -49,6 +49,7 @@ namespace storm {
 
                 std::set<uint32_t> getGroupsWithNoDependencies();
                 void printGroups();
+                std::string toString();
 
 
             private:

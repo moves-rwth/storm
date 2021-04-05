@@ -54,10 +54,18 @@ namespace storm {
                     continue;
                 if (asg.getAssignedExpression().containsVariables() || asg.getVariable().getInitExpression().containsVariables())
                     continue;
-                int initValue = asg.getVariable().getInitExpression().evaluateAsInt();
-                int currentValue = asg.getAssignedExpression().evaluateAsInt();
-                if (initValue != currentValue)
-                    return false;
+                if (asg.getVariable().isBoundedIntegerVariable()){
+                    int initValue = asg.getVariable().getInitExpression().evaluateAsInt();
+                    int currentValue = asg.getAssignedExpression().evaluateAsInt();
+                    if (initValue != currentValue)
+                        return false;
+                }
+                else if (asg.getVariable().isBooleanVariable()){
+                    bool initValue = asg.getVariable().getInitExpression().evaluateAsBool();
+                    bool currentValue = asg.getAssignedExpression().evaluateAsBool();
+                    if (initValue != currentValue)
+                        return false;
+                }
             }
 
             return true;

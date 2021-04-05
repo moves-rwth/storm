@@ -5,6 +5,7 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <vector>
 #include "UnfoldDependencyGraph.h"
+#include <boost/optional.hpp>
 
 using namespace boost;
 
@@ -22,6 +23,10 @@ namespace storm{
             private:
                 void unfoldGroupAndDependencies(JaniLocalEliminator::Session &session, std::string autName,
                                                 UnfoldDependencyGraph &dependencyGraph, uint32_t groupIndex);
+                bool unfoldPropertyVariable(JaniLocalEliminator::Session &session, std::string const& autName, UnfoldDependencyGraph& dependencyGraph);
+
+                boost::optional<uint32_t> chooseNextUnfold(JaniLocalEliminator::Session &session, std::string const& automatonName, UnfoldDependencyGraph &dependencyGraph);
+                std::map<std::string, uint32_t> getAssignmentCountByVariable(JaniLocalEliminator::Session &session, std::string const& automatonName);
             };
         }
     }

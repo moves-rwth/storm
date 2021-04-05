@@ -108,9 +108,9 @@ namespace storm {
 
                                 // Update "uneliminable" to account for potential new loops
                                 for (const auto& loc : automaton.getLocations()) {
-                                    if (!uneliminable[locName]){
+                                    if (!uneliminable[loc.getName()]){
                                         if (session.hasLoops(automatonName, loc.getName())){
-                                            uneliminable[locName] = true;
+                                            uneliminable[loc.getName()] = true;
                                             session.addToLog("\t" + loc.getName() + " now has a loop");
                                         }
                                     }
