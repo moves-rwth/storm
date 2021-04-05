@@ -54,6 +54,17 @@ namespace storm {
                     }
                     session.addToLog("\t" +  std::to_string(reachableLocs.size()) + " of " + std::to_string(oldAutomaton.getLocations().size()) + " locations are reachable.");
 
+                    // Because the session keeps track of which variables might satisfy the property, we need to update
+                    // those values (because we're changing the indices of locations). As a first step, we store which
+                    // (old) locations potentially satisfy the property.
+                    std::set<uint64_t> oldIsPartOfProp;
+                    for (auto const& oldLoc : oldAutomaton.getLocations()) {
+                        uint64_t oldLocationIndex = oldAutomaton.getLocationIndex(oldLoc.getName());
+                        if (session.isPartOfProp(oldAutomaton.getName(), oldLocationIndex)){
+                            oldIsPartOfProp.insert(oldLocationIndex);
+                        }
+                    }
+
                     std::map<uint64_t, uint64_t> oldToNewLocationIndices;
 
                     for (auto const& oldLoc : oldAutomaton.getLocations()) {
@@ -97,6 +108,13 @@ namespace storm {
 
                         uint64_t newSource = oldToNewLocationIndices[oldEdge.getSourceLocationIndex()];
                         newAutomaton.addEdge(storm::jani::Edge(newSource, oldEdge.getActionIndex(), oldEdge.hasRate() ? boost::optional<storm::expressions::Expression>(oldEdge.getRate()) : boost::none, templateEdge, destinationLocationsAndProbabilities));
+                    }
+
+                    // We now update which locations might satisfy the property (based on which old locations did and
+                    // the old-to-new map.
+                    session.clearIsPartOfProp(oldAutomaton.getName());
+                    for (uint64_t oldLocationIndex : oldIsPartOfProp) {
+                        session.setPartOfProp(oldAutomaton.getName(), oldToNewLocationIndices[oldLocationIndex], true);
                     }
 
                     session.addToLog("\tNew automaton has " +  std::to_string(newAutomaton.getEdges().size()) + " edges.");

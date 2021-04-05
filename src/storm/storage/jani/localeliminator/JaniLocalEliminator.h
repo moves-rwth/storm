@@ -39,6 +39,7 @@ namespace storm {
                 bool computeIsPartOfProp(const std::string &automatonName, uint64_t locationIndex);
                 void setPartOfProp(const std::string &automatonName, const std::string &locationName, bool isPartOfProp);
                 void setPartOfProp(const std::string &automatonName, uint64_t locationIndex, bool isPartOfProp);
+                void clearIsPartOfProp(const std::string &automatonName);
             private:
                 Model model;
                 Property property;

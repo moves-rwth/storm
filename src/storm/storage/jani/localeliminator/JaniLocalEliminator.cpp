@@ -132,6 +132,11 @@ namespace storm {
             }
         }
 
+        void JaniLocalEliminator::Session::clearIsPartOfProp(const std::string &automatonName) {
+            AutomatonInfo &autInfo = automataInfo[automatonName];
+            autInfo.potentiallyPartOfProp.clear();
+        }
+
         void JaniLocalEliminator::cleanUpAutomaton(std::string const &automatonName){
             Automaton& oldAutomaton = newModel.getAutomaton(automatonName);
             Automaton newAutomaton(oldAutomaton.getName(), oldAutomaton.getLocationExpressionVariable());
