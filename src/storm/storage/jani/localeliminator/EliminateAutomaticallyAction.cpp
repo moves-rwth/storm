@@ -18,7 +18,7 @@ namespace storm {
                 Automaton &automaton = session.getModel().getAutomaton(automatonName);
                 switch (eliminationOrder){
                     case EliminationOrder::Arbitrary: {
-                        for (auto loc : automaton.getLocations()) {
+                        for (const auto& loc : automaton.getLocations()) {
                             if (session.isEliminable(automatonName, loc.getName())) {
                                 session.addToLog("Eliminating location " + loc.getName());
                                 EliminateAction action = EliminateAction(automatonName, loc.getName());
@@ -37,7 +37,7 @@ namespace storm {
                         // After each elimination, this list is updated to account for new loops
                         std::map<std::string, bool> uneliminable;
                         session.addToLog("Elimination status of locations:");
-                        for (auto loc : automaton.getLocations()) {
+                        for (const auto& loc : automaton.getLocations()) {
                             bool possiblyInitial = session.isPossiblyInitial(automatonName, loc.getName());
                             bool partOfProp = session.isPartOfProp(automatonName, loc.getName());
                             bool hasLoops = session.hasLoops(automatonName, loc.getName());
@@ -67,16 +67,16 @@ namespace storm {
                         while (!done) {
                             int minNewEdges = INT_MAX;
                             int bestLocIndex = -1;
-                            for (auto loc : automaton.getLocations()) {
+                            for (const auto& loc : automaton.getLocations()) {
                                 if (uneliminable[loc.getName()])
                                     continue;
 
                                 int locIndex = automaton.getLocationIndex(loc.getName());
                                 int outgoing = automaton.getEdgesFromLocation(locIndex).size();
                                 int incoming = 0;
-                                for (auto edge : automaton.getEdges()) {
+                                for (const auto& edge : automaton.getEdges()) {
                                     int addedTransitions = 1;
-                                    for (auto dest : edge.getDestinations())
+                                    for (const auto& dest : edge.getDestinations())
                                         if (dest.getLocationIndex() == locIndex)
                                             addedTransitions *= outgoing;
                                     incoming += addedTransitions;

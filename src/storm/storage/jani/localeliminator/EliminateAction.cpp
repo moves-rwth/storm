@@ -24,6 +24,7 @@ namespace storm {
                 while (changed) {
                     changed = false;
                     for (Edge edge : automaton.getEdges()) {
+
                         if (!edge.getGuard().containsVariables() && !edge.getGuard().evaluateAsBool())
                             continue;
 
@@ -45,10 +46,10 @@ namespace storm {
                 }
 
 
-                for (Edge edge : automaton.getEdges()) {
+                for (Edge& edge : automaton.getEdges()) {
                     if (!edge.getGuard().containsVariables() && !edge.getGuard().evaluateAsBool())
                         continue;
-                    for (const EdgeDestination dest : edge.getDestinations()) {
+                    for (const EdgeDestination& dest : edge.getDestinations()) {
                         if (dest.getLocationIndex() == locIndex){
                             STORM_LOG_THROW(false, storm::exceptions::IllegalArgumentException, "Could not eliminate location");
                         }
@@ -63,7 +64,7 @@ namespace storm {
 
                 std::vector<Edge> newEdges; // Don't add the new edges immediately -- we cannot safely iterate over the outgoing edges while adding new edges to the structure
 
-                for (Edge outEdge : outgoing) {
+                for (Edge& outEdge : outgoing) {
                     if (!outEdge.getGuard().containsVariables() && !outEdge.getGuard().evaluateAsBool())
                         continue;
 
