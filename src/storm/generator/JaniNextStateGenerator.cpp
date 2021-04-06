@@ -98,10 +98,9 @@ namespace storm {
             if (this->options.hasTerminalStates()) {
                 for (auto const& expressionOrLabelAndBool : this->options.getTerminalStates()) {
                     if (expressionOrLabelAndBool.first.isExpression()) {
-                        this->terminalStates.push_back(std::make_pair(expressionOrLabelAndBool.first.getExpression(), expressionOrLabelAndBool.second));
+                        this->terminalStates.emplace_back(expressionOrLabelAndBool.first.getExpression(), expressionOrLabelAndBool.second);
                     } else {
-                        // If it's a label, i.e. refers to a transient boolean variable we need to derive the expression
-                        // for the label so we can cut off the exploration there.
+                        // If it's a label, i.e. refers to a transient boolean variable we do some sanity checks first
                         if (expressionOrLabelAndBool.first.getLabel() != "init" && expressionOrLabelAndBool.first.getLabel() != "deadlock") {
                             STORM_LOG_THROW(this->model.getGlobalVariables().hasVariable(expressionOrLabelAndBool.first.getLabel()) , storm::exceptions::InvalidSettingsException, "Terminal states refer to illegal label '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             
@@ -109,7 +108,7 @@ namespace storm {
                             STORM_LOG_THROW(variable.isBooleanVariable(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-boolean variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             STORM_LOG_THROW(variable.isTransient(), storm::exceptions::InvalidSettingsException, "Terminal states refer to non-transient variable '" << expressionOrLabelAndBool.first.getLabel() << "'.");
                             
-                            this->terminalStates.push_back(std::make_pair(this->model.getLabelExpression(variable.asBooleanVariable(), this->parallelAutomata), expressionOrLabelAndBool.second));
+                            this->terminalStates.emplace_back(variable.getExpressionVariable().getExpression(), expressionOrLabelAndBool.second);
                         }
                     }
                 }
@@ -563,18 +562,21 @@ namespace storm {
             auto transientVariableValuation = getTransientVariableValuationAtLocations(locations, *this->evaluator);
             transientVariableValuation.setInEvaluator(*this->evaluator, this->getOptions().isExplorationChecksSet());
             result.addStateRewards(evaluateRewardExpressions());
-            // Set back transient variables to default values so we are ready to process the transition assignments
-            this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
-            
+
             // If a terminal expression was set and we must not expand this state, return now.
             // Terminal state expressions do not consider transient variables.
             if (!this->terminalStates.empty()) {
                 for (auto const& expressionBool : this->terminalStates) {
                     if (this->evaluator->asBool(expressionBool.first) == expressionBool.second) {
+                        // Set back transient variables to default values so we are ready to process the next state
+                        this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
                         return result;
                     }
                 }
             }
+            
+            // Set back transient variables to default values so we are ready to process the transition assignments
+            this->transientVariableInformation.setDefaultValuesInEvaluator(*this->evaluator);
             
             // Get all choices for the state.
             result.setExpanded();
