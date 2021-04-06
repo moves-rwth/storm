@@ -155,7 +155,6 @@ TEST(FormulaParserTest, CommentTest) {
     ASSERT_TRUE(formula->asProbabilityOperatorFormula().getSubformula().asNextFormula().getSubformula().isAtomicLabelFormula());
 }
 
-
 TEST(FormulaParserTest, WrongFormatTest) {
     std::shared_ptr<storm::expressions::ExpressionManager> manager(new storm::expressions::ExpressionManager());
     manager->declareBooleanVariable("x");
@@ -205,4 +204,146 @@ TEST(FormulaParserTest, MultiObjectiveFormulaTest) {
     ASSERT_TRUE(mof.getSubformula(2).asProbabilityOperatorFormula().hasOptimalityType());
     ASSERT_TRUE(storm::solver::minimize(mof.getSubformula(2).asProbabilityOperatorFormula().getOptimalityType()));
 
+}
+
+TEST(FormulaParserTest, LogicalPrecedenceTest) {
+    // Test precedence of logical operators over temporal operators, etc.
+    storm::parser::FormulaParser formulaParser;
+    std::shared_ptr<storm::logic::Formula const> formula(nullptr);
+
+    std::string input = "P=? [ !\"a\" & \"b\" U ! \"c\" | \"b\" ]";
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    EXPECT_TRUE(formula->isProbabilityOperatorFormula());
+
+    auto const &nested1 = formula->asProbabilityOperatorFormula().getSubformula();
+    EXPECT_TRUE(nested1.isUntilFormula());
+    ASSERT_TRUE(nested1.asUntilFormula().getLeftSubformula().isBinaryBooleanStateFormula());
+    ASSERT_TRUE(nested1.asUntilFormula().getLeftSubformula().asBinaryBooleanStateFormula().getLeftSubformula().isUnaryBooleanStateFormula());
+    ASSERT_TRUE(nested1.asUntilFormula().getRightSubformula().isBinaryBooleanStateFormula());
+    ASSERT_TRUE(nested1.asUntilFormula().getRightSubformula().asBinaryBooleanStateFormula().getLeftSubformula().isUnaryBooleanStateFormula());
+
+    input = "P<0.9 [ F G !\"a\" | \"b\" ] ";
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested2 = formula->asProbabilityOperatorFormula().getSubformula();
+    EXPECT_TRUE(nested2.asEventuallyFormula().getSubformula().isGloballyFormula());
+    auto const &nested2Subformula = nested2.asEventuallyFormula().getSubformula().asGloballyFormula();
+    EXPECT_TRUE(nested2Subformula.getSubformula().isBinaryBooleanStateFormula());
+    ASSERT_TRUE(nested2Subformula.getSubformula().asBinaryBooleanStateFormula().getLeftSubformula().isUnaryBooleanStateFormula());
+
+    input = "P<0.9 [ X G \"a\" |  !\"b\" | \"c\"] ";  // from left to right
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested3 = formula->asProbabilityOperatorFormula().getSubformula();
+    EXPECT_TRUE(nested3.asNextFormula().getSubformula().isGloballyFormula());
+    EXPECT_TRUE(nested3.asNextFormula().getSubformula().asGloballyFormula().getSubformula().isBinaryBooleanStateFormula());
+    auto const &nested3Subformula = nested3.asNextFormula().getSubformula().asGloballyFormula().getSubformula().asBinaryBooleanStateFormula();
+    ASSERT_TRUE(nested3Subformula.getLeftSubformula().isBinaryBooleanStateFormula());
+    ASSERT_TRUE(nested3Subformula.asBinaryBooleanStateFormula().getRightSubformula().isAtomicLabelFormula());
+
+    input = "P<0.9 [ X F \"a\" | ! \"b\" & \"c\"] ";  // & has precedence over | and ! over &
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested4 = formula->asProbabilityOperatorFormula().getSubformula();
+    EXPECT_TRUE(nested4.asNextFormula().getSubformula().isEventuallyFormula());
+    EXPECT_TRUE(nested4.asNextFormula().getSubformula().asEventuallyFormula().getSubformula().isBinaryBooleanStateFormula());
+    auto const &nested4Subformula = nested4.asNextFormula().getSubformula().asEventuallyFormula().getSubformula().asBinaryBooleanStateFormula();
+    ASSERT_TRUE(nested4Subformula.getLeftSubformula().isAtomicLabelFormula());
+    ASSERT_TRUE(nested4Subformula.getRightSubformula().isBinaryBooleanStateFormula());
+
+    input = "P<0.9 [X \"a\" | (X \"b\")]"; // X(a|Xb)  todo why is this allowed, but not [X \"a\" | X \"b\"]
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested5 = formula->asProbabilityOperatorFormula().getSubformula();
+    EXPECT_TRUE(nested5.isNextFormula());
+    EXPECT_TRUE(nested5.asNextFormula().getSubformula().isBinaryBooleanPathFormula());
+    auto const &nested5Subformula = nested5.asNextFormula().getSubformula().asBinaryPathFormula();
+    EXPECT_TRUE(nested5.asNextFormula().getSubformula().asBinaryPathFormula().getLeftSubformula().isAtomicLabelFormula());
+    EXPECT_TRUE(nested5.asNextFormula().getSubformula().asBinaryPathFormula().getRightSubformula().isNextFormula());
+}
+
+TEST(FormulaParserTest, TemporalPrecedenceTest) {
+    // Unary operators (F, G and X) have precedence over binary operators (U).
+    storm::parser::FormulaParser formulaParser;
+    std::shared_ptr<storm::logic::Formula const> formula(nullptr);
+
+    std::string input = "P=? [ F \"a\" U G \"b\" ]"; // (F a) U (G b)
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested1 = formula->asProbabilityOperatorFormula().getSubformula();
+    EXPECT_TRUE(nested1.isUntilFormula());
+    ASSERT_TRUE(nested1.asUntilFormula().getLeftSubformula().isEventuallyFormula());
+    ASSERT_TRUE(nested1.asUntilFormula().getRightSubformula().isGloballyFormula());
+
+    input = "P=? [ X ( F \"a\" U G \"b\") U G \"c\"]"; // X((F a) U (G b)) U (G c)
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested2 = formula->asProbabilityOperatorFormula().getSubformula();
+    EXPECT_TRUE(nested2.isUntilFormula());
+    EXPECT_TRUE(nested2.asUntilFormula().getLeftSubformula().isNextFormula());
+    EXPECT_TRUE(nested2.asUntilFormula().getLeftSubformula().asNextFormula().getSubformula().isUntilFormula());
+    EXPECT_TRUE(nested2.asUntilFormula().getRightSubformula().isGloballyFormula());
+
+    input = "P=? [ X F \"a\" U G \"b\" U G \"c\"]"; // (X F a) U (G b) U (G c)
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested3 = formula->asProbabilityOperatorFormula().getSubformula();
+    EXPECT_TRUE(nested3.isUntilFormula());
+    EXPECT_TRUE(nested3.asUntilFormula().getLeftSubformula().isUntilFormula());
+    EXPECT_TRUE(nested3.asUntilFormula().getLeftSubformula().asUntilFormula().getLeftSubformula().isNextFormula());
+    EXPECT_TRUE(nested3.asUntilFormula().getRightSubformula().isGloballyFormula());
+}
+
+TEST(FormulaParserTest, NestedUntilTest) {
+    storm::parser::FormulaParser formulaParser;
+    std::string input = "P<0.9 [\"a\" U (\"b\" U \"c\")]";
+    std::shared_ptr<storm::logic::Formula const> formula(nullptr);
+
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested1 = formula->asProbabilityOperatorFormula().getSubformula();
+    EXPECT_TRUE(nested1.isUntilFormula());
+    EXPECT_FALSE(nested1.isBoundedUntilFormula());
+    ASSERT_TRUE( nested1.asUntilFormula().getLeftSubformula().isAtomicLabelFormula());
+    ASSERT_TRUE(nested1.asUntilFormula().getRightSubformula().isUntilFormula());
+
+    input = "P<0.9 [\"a\" U \"b\" U \"c\"]"; // Nested Until without parentheses: (a U b) U c
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested2 = formula->asProbabilityOperatorFormula().getSubformula();
+    EXPECT_TRUE(nested2.isUntilFormula());
+    EXPECT_FALSE(nested2.isBoundedUntilFormula());
+    ASSERT_TRUE(nested2.asUntilFormula().getLeftSubformula().isUntilFormula());
+    ASSERT_TRUE(nested2.asUntilFormula().getRightSubformula().isAtomicLabelFormula());
+}
+
+TEST(FormulaParserTest, ComplexPathFormulaTest) {
+    storm::parser::FormulaParser formulaParser;
+    std::shared_ptr<storm::logic::Formula const> formula(nullptr);
+    formula = formulaParser.parseSingleFormulaFromString( "P=? [(X \"a\") U ( \"b\"& \"c\")]");
+
+    std::string input = "P<0.9 [(X !\"a\") & (F ( X \"b\" U G \"c\" & \"d\"))]";  // ((X ! a) & (F ( (X b) U (G (c & d)))))
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested1 = formula->asProbabilityOperatorFormula().getSubformula();
+    EXPECT_TRUE(nested1.asBinaryPathFormula().getRightSubformula().asEventuallyFormula().getSubformula().isUntilFormula());
+    auto const nested1Subformula = nested1.asBinaryPathFormula().getRightSubformula().asEventuallyFormula().getSubformula().asUntilFormula();
+    EXPECT_TRUE(nested1Subformula.getLeftSubformula().isNextFormula());
+    EXPECT_TRUE(nested1Subformula.getRightSubformula().asGloballyFormula().getSubformula().isBinaryBooleanStateFormula());
+
+    input = "P<0.9 [(F \"a\") & (G \"b\") | (!\"a\" U (F X ! \"b\"))]";
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
+    auto const &nested2 = formula->asProbabilityOperatorFormula().getSubformula();
+    ASSERT_TRUE(nested2.asBinaryPathFormula().getLeftSubformula().isBinaryPathFormula());
+    ASSERT_TRUE(nested2.asBinaryPathFormula().getRightSubformula().isUntilFormula());
+}
+
+TEST(FormulaParserTest, LtlWrongFormatTest) {
+    storm::parser::FormulaParser formulaParser;
+    std::shared_ptr<storm::logic::Formula const> formula(nullptr);
+
+    std::string input = "P<0.9 [F \"a\" & X \"b\"]";
+    STORM_SILENT_EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
+
+    input = "P<0.9 [X \"a\" & G \"b\"]";
+    STORM_SILENT_EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
+
+    input = "P<0.9 [G \"a\" & G \"b\"]";
+    STORM_SILENT_EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
+
+    input = "P<0.9 [(G \"a\") & G \"b\"]";  //todo why?
+    STORM_SILENT_EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
+
+    input = "P<0.9 [! X \"b\"]";
+    STORM_SILENT_EXPECT_THROW(formula = formulaParser.parseSingleFormulaFromString(input), storm::exceptions::WrongFormatException);
 }
