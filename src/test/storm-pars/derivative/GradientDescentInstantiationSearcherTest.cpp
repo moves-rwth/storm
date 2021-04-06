@@ -77,7 +77,7 @@ TEST(GradientDescentInstantiationSearcherTest, Crowds) {
     /* ASSERT_EQ(dtmc->getNumberOfTransitions(), 383ull); */
 
     // First, test an ADAM instance. We will check that we have implemented ADAM correctly by comparing our results to results gathered by an ADAM implementation in tensorflow :)
-    storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> doubleChecker(
+    storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> adamChecker(
             dtmc, 
             vars, 
             formulas,
@@ -90,9 +90,9 @@ TEST(GradientDescentInstantiationSearcherTest, Crowds) {
             boost::none,
             true
     );
-    auto doubleInstantiation = doubleChecker.gradientDescent(false);
-    doubleChecker.printRunAsJson();
-    auto walk = doubleChecker.getVisualizationWalk();
+    auto doubleInstantiation = adamChecker.gradientDescent(false);
+    adamChecker.printRunAsJson();
+    auto walk = adamChecker.getVisualizationWalk();
 
     carl::Variable badCVar;
     carl::Variable pfVar;
@@ -113,6 +113,34 @@ TEST(GradientDescentInstantiationSearcherTest, Crowds) {
     for (uint_fast64_t i = 0; i < 41; i++) {
         ASSERT_NEAR(storm::utility::convertNumber<double>(walk[i].position[badCVar]), badCValues[i], 1e-4);
         ASSERT_NEAR(storm::utility::convertNumber<double>(walk[i].position[pfVar]), pfValues[i], 1e-4);
+    }
+    
+    ASSERT_NEAR(doubleInstantiation.second, 0, 1e-6);
+
+    // Same thing with RAdam
+    storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> radamChecker(
+            dtmc, 
+            vars, 
+            formulas,
+            storm::derivative::GradientDescentMethod::RADAM,
+            0.01,
+            0.9,
+            0.999,
+            2,
+            1e-6,
+            boost::none,
+            true
+    );
+    auto radamInstantiation = radamChecker.gradientDescent(false);
+    radamChecker.printRunAsJson();
+    auto radamWalk = radamChecker.getVisualizationWalk();
+
+    const float badCValuesRadam[] = {0.5, 0.49060654640197754, 0.48096320033073425, 0.47105303406715393, 0.4608582556247711, 0.45036017894744873, 0.45009857416152954, 0.44976693391799927, 0.4493735134601593, 0.44892504811286926, 0.44842588901519775, 0.4478800892829895, 0.44729089736938477, 0.446660578250885, 0.4459914565086365, 0.4452851712703705, 0.4445434808731079, 0.44376760721206665, 0.44295892119407654, 0.4421185553073883, 0.4412473738193512, 0.4403461515903473, 0.43941572308540344, 0.4384567141532898, 0.43746981024742126, 0.43645551800727844, 0.43541428446769714, 0.43434661626815796, 0.43325290083885193, 0.4321334660053253, 0.43098869919776917, 0.42981886863708496, 0.42862433195114136, 0.4274052083492279, 0.4261617660522461, 0.42489421367645264, 0.42360275983810425, 0.4222874939441681, 0.4209486246109009, 0.41958627104759216, 0.4182005524635315};
+    const float pfValuesRadam[] =  {0.5, 0.4985547959804535, 0.4970662295818329, 0.4955315589904785, 0.4939480423927307, 0.49231281876564026, 0.49205103516578674, 0.4917190968990326, 0.491325318813324, 0.4908764064311981, 0.490376740694046, 0.4898303747177124, 0.4892405867576599, 0.4886097013950348, 0.4879400432109833, 0.4872332811355591, 0.48649120330810547, 0.4857150912284851, 0.48490628600120544, 0.4840660095214844, 0.48319515585899353, 0.4822945296764374, 0.48136502504348755, 0.4804072678089142, 0.47942203283309937, 0.4784098267555237, 0.4773711562156677, 0.47630661725997925, 0.4752165973186493, 0.4741014540195465, 0.4729616641998291, 0.4717975854873657, 0.470609575510025, 0.46939781308174133, 0.4681626856327057, 0.4669044017791748, 0.46562328934669495, 0.46431946754455566, 0.46299320459365845, 0.46164470911026, 0.4602741599082947};
+
+    for (uint_fast64_t i = 0; i < 41; i++) {
+        ASSERT_NEAR(storm::utility::convertNumber<double>(radamWalk[i].position[badCVar]), badCValuesRadam[i], 1e-5);
+        ASSERT_NEAR(storm::utility::convertNumber<double>(radamWalk[i].position[pfVar]), pfValuesRadam[i], 1e-5);
     }
     
     ASSERT_NEAR(doubleInstantiation.second, 0, 1e-6);

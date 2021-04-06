@@ -10,6 +10,7 @@ namespace storm {
 		 */
 		enum class GradientDescentMethod {
 			ADAM, ///< The default.
+			RADAM,
 			RMSPROP,
 			PLAIN,
 			PLAIN_SIGN,

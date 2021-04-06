@@ -43,6 +43,8 @@ namespace storm {
             // Compute step based on used gradient descent method
             ConstantType step; 
             if (Adam* adam = boost::get<Adam>(&gradientDescentType)) {
+                // For this algorihm, see the various sources available on the ADAM algorithm. This implementation should
+                // be correct, as it is compared with a run of keras's ADAM optimizer in the test.
                 adam->decayingStepAverage[steppingParameter] = adam->averageDecay * adam->decayingStepAverage[steppingParameter] +
                     (1 - adam->averageDecay) * gradient.at(steppingParameter);
                 adam->decayingStepAverageSquared[steppingParameter] = adam->squaredAverageDecay * adam->decayingStepAverageSquared[steppingParameter] +
@@ -52,25 +54,59 @@ namespace storm {
                 const ConstantType correctedSquaredGradient = adam->decayingStepAverageSquared[steppingParameter] / (1 - utility::pow(adam->squaredAverageDecay, stepNum + 1));
 
                 const ConstantType toSqrt = correctedSquaredGradient;
-                ConstantType sqrtResult;
-                if (std::is_same<ConstantType, double>::value) {
-                    sqrtResult = utility::sqrt(toSqrt);
-                } else {
-                    sqrtResult = carl::sqrt(toSqrt);
-                }
+                ConstantType sqrtResult = constantTypeSqrt(toSqrt);
+                /* if (std::is_same<ConstantType, double>::value) { */
+                /*     sqrtResult = constantTypeSqrt(toSqrt); */
+                /* } else { */
+                /*     sqrtResult = carl::sqrt(toSqrt); */
+                /* } */
                 
                 step = (adam->learningRate / (sqrtResult + precisionAsConstant)) * correctedGradient;
+            } else if (RAdam* radam = boost::get<RAdam>(&gradientDescentType)) {
+                // You can compare this with the RAdam paper's "Algorithm 2: Rectified Adam".
+                // The line numbers and comments are matched.
+                // Initializing / Compute Gradient: Already happened.
+                // 2: Compute maximum length of approximated simple moving average
+                const ConstantType maxLengthApproxSMA = 2.0 / (1.0 - radam->squaredAverageDecay) - 1.0;
+
+                // 5: Update exponential moving 2nd moment
+                radam->decayingStepAverageSquared[steppingParameter] = radam->squaredAverageDecay * radam->decayingStepAverageSquared[steppingParameter] +
+                    (1.0 - radam->squaredAverageDecay) * utility::pow(gradient.at(steppingParameter), 2);
+                // 6: Update exponential moving 1st moment
+                radam->decayingStepAverage[steppingParameter] = radam->averageDecay * radam->decayingStepAverage[steppingParameter] +
+                    (1 - radam->averageDecay) * gradient.at(steppingParameter);
+                // 7: Compute bias corrected moving average
+                const ConstantType biasCorrectedMovingAverage = radam->decayingStepAverage[steppingParameter] / (1 - utility::pow(radam->averageDecay, stepNum + 1));
+                const ConstantType squaredAverageDecayPow = utility::pow(radam->squaredAverageDecay, stepNum + 1);
+                // 8: Compute the length of the approximated single moving average
+                const ConstantType lengthApproxSMA = maxLengthApproxSMA - ((2 * (stepNum + 1) * squaredAverageDecayPow) / (1 - squaredAverageDecayPow));
+                // 9: If the variance is tractable, i.e. lengthApproxSMA > 4, then
+                if (lengthApproxSMA > 5) {
+                    // 10: Compute adaptive learning rate
+                    const ConstantType adaptiveLearningRate = constantTypeSqrt((1 - squaredAverageDecayPow) / radam->decayingStepAverageSquared[steppingParameter]);
+                    // 11: Compute the variance rectification term
+                    const ConstantType varianceRectification = constantTypeSqrt(
+                            ((lengthApproxSMA - 4.0) / (maxLengthApproxSMA - 4.0)) *
+                            ((lengthApproxSMA - 2.0) / (maxLengthApproxSMA - 2.0)) *
+                            ((maxLengthApproxSMA) / (lengthApproxSMA))
+                    );
+                    // 12: Update parameters with adaptive momentum
+                    step = radam->learningRate * varianceRectification * biasCorrectedMovingAverage * adaptiveLearningRate;
+                    /* std::cout << "Adaptive step" << std::endl; */
+                    /* std::cout << step << std::endl; */
+                    /* std::cout << radam->learningRate << ", " << varianceRectification << ", " << biasCorrectedMovingAverage << ", " << adaptiveLearningRate << std::endl; */
+                    /* std::cout << lengthApproxSMA << "," << maxLengthApproxSMA << std::endl; */
+                } else {
+                    // 14: Update parameters with un-adapted momentum
+                    step = radam->learningRate * biasCorrectedMovingAverage;
+                    /* std::cout << "Non-adaptive step" << std::endl; */
+                }
             } else if (RmsProp* rmsProp = boost::get<RmsProp>(&gradientDescentType)) {
                 rmsProp->rootMeanSquare[steppingParameter] = rmsProp->averageDecay * rmsProp->rootMeanSquare[steppingParameter] +
                     (1 - rmsProp->averageDecay) * gradient.at(steppingParameter) * gradient.at(steppingParameter);
 
                 const ConstantType toSqrt = rmsProp->rootMeanSquare[steppingParameter] + precisionAsConstant;
-                ConstantType sqrtResult;
-                if (std::is_same<ConstantType, double>::value) {
-                    sqrtResult = utility::sqrt(toSqrt);
-                } else {
-                    sqrtResult = carl::sqrt(toSqrt);
-                }
+                ConstantType sqrtResult = constantTypeSqrt(toSqrt);
 
                 step = (rmsProp->learningRate / sqrtResult) * gradient.at(steppingParameter);
             } else if (Plain* plain = boost::get<Plain>(&gradientDescentType)) {

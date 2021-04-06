@@ -132,6 +132,19 @@ namespace storm {
                         gradientDescentType = adam;
                         break;
                     }
+                    case GradientDescentMethod::RADAM: {
+                        RAdam radam;
+                        radam.learningRate = learningRate;
+                        radam.averageDecay = averageDecay;
+                        radam.averageDecay = averageDecay;
+                        radam.squaredAverageDecay = squaredAverageDecay;
+                        for (auto const& parameter : parameters) {
+                            radam.decayingStepAverage[parameter] = 0;
+                            radam.decayingStepAverageSquared[parameter] = 0;
+                        }
+                        gradientDescentType = radam;
+                        break;
+                    }
                     case GradientDescentMethod::RMSPROP: {
                         RmsProp rmsProp;
                         rmsProp.learningRate = learningRate;
@@ -243,6 +256,13 @@ namespace storm {
                 std::map<typename utility::parametric::VariableType<ValueType>::type, ConstantType> decayingStepAverageSquared;
                 std::map<typename utility::parametric::VariableType<ValueType>::type, ConstantType> decayingStepAverage;
             };
+            struct RAdam {
+                double averageDecay;
+                double squaredAverageDecay;
+                double learningRate;
+                std::map<typename utility::parametric::VariableType<ValueType>::type, ConstantType> decayingStepAverageSquared;
+                std::map<typename utility::parametric::VariableType<ValueType>::type, ConstantType> decayingStepAverage;
+            };
             struct RmsProp {
                 double averageDecay;
                 double learningRate;
@@ -261,7 +281,7 @@ namespace storm {
                 double momentumTerm;
                 std::map<typename utility::parametric::VariableType<ValueType>::type, ConstantType> pastStep;
             };
-            typedef boost::variant<Adam, RmsProp, Plain, Momentum, Nesterov> GradientDescentType;
+            typedef boost::variant<Adam, RAdam, RmsProp, Plain, Momentum, Nesterov> GradientDescentType;
             GradientDescentType gradientDescentType;
             // Only respected by some Gradient Descent methods, the ones that have a "sign" version in the GradientDescentMethod enum
             bool useSignsOnly;
@@ -275,6 +295,13 @@ namespace storm {
                 const std::map<typename utility::parametric::VariableType<ValueType>::type, ConstantType> &gradient,
                 uint_fast64_t stepNum
             );
+            ConstantType constantTypeSqrt(ConstantType input) {
+                if (std::is_same<ConstantType, double>::value) {
+                    return utility::sqrt(input);
+                } else {
+                    return carl::sqrt(input);
+                }
+            }
 
             utility::Stopwatch stochasticWatch;
             utility::Stopwatch batchWatch;

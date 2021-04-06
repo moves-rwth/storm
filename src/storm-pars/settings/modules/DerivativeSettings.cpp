@@ -38,8 +38,8 @@ namespace storm {
                 this->addOption(storm::settings::OptionBuilder(moduleName, miniBatchSize, false, "Sets the size of the minibatch").setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createIntegerArgument(miniBatchSize, "The size of the minibatch").setDefaultValueInteger(32).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, gradientDescentMethod, false, "Sets the gradient descent method").setIsAdvanced()
-                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument(gradientDescentMethod, "Gradient Descent method (adam, rmsprop, plain, plain-sign, momentum, momentum-sign, nesterov, nesterov-sign)").setDefaultValueString("adam").build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, adamParams, false, "Sets hyperparameters of the Gradient Descent algorithms, especially ADAM's. If you're using RMSProp, averageDecay is RMSProp's decay.").setIsAdvanced()
+                        .addArgument(storm::settings::ArgumentBuilder::createStringArgument(gradientDescentMethod, "Gradient Descent method (adam, radam, rmsprop, plain, plain-sign, momentum, momentum-sign, nesterov, nesterov-sign)").setDefaultValueString("adam").build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, adamParams, false, "Sets hyperparameters of the Gradient Descent algorithms, especially (R)ADAM's. If you're using RMSProp, averageDecay is RMSProp's decay.").setIsAdvanced()
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(averageDecay, "Decay of decaying step average").setDefaultValueDouble(0.9).build())
                         .addArgument(storm::settings::ArgumentBuilder::createDoubleArgument(squaredAverageDecay, "Decay of squared decaying step average").setDefaultValueDouble(0.999).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, printJson, false, "Print the run as json after finishing (slow!)").setIsAdvanced().build());
@@ -110,6 +110,8 @@ namespace storm {
                   derivative::GradientDescentMethod method;
                   if (str == "adam") {
                       method = derivative::GradientDescentMethod::ADAM;
+                  } else if (str == "radam") {
+                      method = derivative::GradientDescentMethod::RADAM;
                   } else if (str == "rmsprop") {
                       method = derivative::GradientDescentMethod::RMSPROP;
                   } else if (str == "plain") {
