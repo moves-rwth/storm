@@ -215,7 +215,7 @@ namespace storm {
             
             if (this->isResultForAllStates()) {
                 map_type newMap;
-                for (auto const& element : filterTruthValues) {
+                for (auto element : filterTruthValues) {
                     newMap.emplace(element, this->getTruthValuesVector().get(element));
                 }
                 this->truthValues = newMap;

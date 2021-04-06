@@ -42,7 +42,7 @@ namespace storm {
         }
 
         template<typename ParametricType>
-        storm::storage::ParameterRegion<ParametricType> ParameterRegionParser<ParametricType>::parseRegion(std::string const& regionString, std::set<VariableType> const& consideredVariables, boost::optional<int> splittingThreshold) {
+        storm::storage::ParameterRegion<ParametricType> ParameterRegionParser<ParametricType>::parseRegion(std::string const& regionString, std::set<VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold) {
             Valuation lowerBoundaries;
             Valuation upperBoundaries;
             std::vector<std::string> parameterBoundaries;
@@ -66,7 +66,7 @@ namespace storm {
         }
 
         template<typename ParametricType>
-        storm::storage::ParameterRegion<ParametricType> ParameterRegionParser<ParametricType>::createRegion(std::string const& regionBound, std::set<VariableType> const& consideredVariables, boost::optional<int> splittingThreshold) {
+        storm::storage::ParameterRegion<ParametricType> ParameterRegionParser<ParametricType>::createRegion(std::string const& regionBound, std::set<VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold) {
             Valuation lowerBoundaries;
             Valuation upperBoundaries;
             std::vector<std::string> parameterBoundaries;
@@ -84,7 +84,7 @@ namespace storm {
         }
 
         template<typename ParametricType>
-        std::vector<storm::storage::ParameterRegion<ParametricType>> ParameterRegionParser<ParametricType>::parseMultipleRegions(std::string const& regionsString, std::set<VariableType> const& consideredVariables, boost::optional<int> splittingThreshold) {
+        std::vector<storm::storage::ParameterRegion<ParametricType>> ParameterRegionParser<ParametricType>::parseMultipleRegions(std::string const& regionsString, std::set<VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold) {
             std::vector<storm::storage::ParameterRegion<ParametricType>> result;
             std::vector<std::string> regionsStrVec;
             boost::split(regionsStrVec, regionsString, boost::is_any_of(";"));
@@ -97,7 +97,7 @@ namespace storm {
         }
 
         template<typename ParametricType>
-        std::vector<storm::storage::ParameterRegion<ParametricType>> ParameterRegionParser<ParametricType>::parseMultipleRegionsFromFile(std::string const& fileName, std::set<VariableType> const& consideredVariables, boost::optional<int> splittingThreshold) {
+        std::vector<storm::storage::ParameterRegion<ParametricType>> ParameterRegionParser<ParametricType>::parseMultipleRegionsFromFile(std::string const& fileName, std::set<VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold) {
      
             // Open file and initialize result.
             std::ifstream inputFileStream;

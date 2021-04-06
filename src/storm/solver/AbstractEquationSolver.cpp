@@ -125,7 +125,22 @@ namespace storm {
         ValueType const& AbstractEquationSolver<ValueType>::getLowerBound() const {
             return lowerBound.get();
         }
-        
+
+        template<typename ValueType>
+        ValueType const& AbstractEquationSolver<ValueType>::getLowerBound(uint64_t const& index) const {
+            if (lowerBounds) {
+                STORM_LOG_ASSERT(index < lowerBounds->size(), "Invalid row index " << index << " for vector of size " << lowerBounds->size());
+                if (lowerBound) {
+                    return std::max(lowerBound.get(), lowerBounds.get()[index]);
+                } else {
+                    return lowerBounds.get()[index];
+                }
+            } else {
+                STORM_LOG_ASSERT(lowerBound, "Lower bound requested but was not specified before.");
+                return lowerBound.get();
+            }
+        }
+
         template<typename ValueType>
         ValueType AbstractEquationSolver<ValueType>::getLowerBound(bool convertLocalBounds) const {
             if (lowerBound) {
@@ -140,6 +155,21 @@ namespace storm {
         template<typename ValueType>
         ValueType const& AbstractEquationSolver<ValueType>::getUpperBound() const {
             return upperBound.get();
+        }
+
+        template<typename ValueType>
+        ValueType const& AbstractEquationSolver<ValueType>::getUpperBound(uint64_t const& index) const {
+            if (upperBounds) {
+                STORM_LOG_ASSERT(index < upperBounds->size(), "Invalid row index " << index << " for vector of size " << upperBounds->size());
+                if (upperBound) {
+                    return std::min(upperBound.get(), upperBounds.get()[index]);
+                } else {
+                    return upperBounds.get()[index];
+                }
+            } else {
+                STORM_LOG_ASSERT(upperBound, "Upper bound requested but was not specified before.");
+                return upperBound.get();
+            }
         }
 
         template<typename ValueType>

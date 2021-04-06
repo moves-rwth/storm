@@ -39,7 +39,7 @@ namespace storm {
         };
 
         template <typename ValueType>
-        std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables, boost::optional<int> splittingThreshold = boost::none) {
+        std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold = boost::none) {
             // If the given input string looks like a file (containing a dot and there exists a file with that name),
             // we try to parse it as a file, otherwise we assume it's a region string.
             if (inputString.find(".") != std::string::npos && std::ifstream(inputString).good()) {
@@ -50,12 +50,12 @@ namespace storm {
         }
 
         template <typename ValueType>
-        storm::storage::ParameterRegion<ValueType> createRegion(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables, boost::optional<int> splittingThreshold= boost::none) {
+        storm::storage::ParameterRegion<ValueType> createRegion(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold = boost::none) {
             return storm::parser::ParameterRegionParser<ValueType>().createRegion(inputString, consideredVariables, splittingThreshold);
         }
 
         template <typename ValueType>
-        std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, storm::models::ModelBase const& model, boost::optional<int> splittingThreshold= boost::none) {
+        std::vector<storm::storage::ParameterRegion<ValueType>> parseRegions(std::string const& inputString, storm::models::ModelBase const& model, boost::optional<int> const& splittingThreshold = boost::none) {
             std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> modelParameters;
             if (model.isSparseModel()) {
                 auto const& sparseModel = dynamic_cast<storm::models::sparse::Model<ValueType> const&>(model);
@@ -69,7 +69,7 @@ namespace storm {
         }
 
         template <typename ValueType>
-        std::vector<storm::storage::ParameterRegion<ValueType>> createRegion(std::string const& inputString, storm::models::ModelBase const& model, boost::optional<int> splittingThreshold= boost::none) {
+        std::vector<storm::storage::ParameterRegion<ValueType>> createRegion(std::string const& inputString, storm::models::ModelBase const& model, boost::optional<int> const& splittingThreshold = boost::none) {
             std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> modelParameters;
             if (model.isSparseModel()) {
                 auto const& sparseModel = dynamic_cast<storm::models::sparse::Model<ValueType> const&>(model);
@@ -83,7 +83,7 @@ namespace storm {
         }
         
         template <typename ValueType>
-        storm::storage::ParameterRegion<ValueType> parseRegion(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables, boost::optional<int> splittingThreshold= boost::none) {
+        storm::storage::ParameterRegion<ValueType> parseRegion(std::string const& inputString, std::set<typename storm::storage::ParameterRegion<ValueType>::VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold = boost::none) {
             // Handle the "empty region" case
             if (inputString == "" && consideredVariables.empty()) {
                 return storm::storage::ParameterRegion<ValueType>();
@@ -95,7 +95,7 @@ namespace storm {
         }
         
         template <typename ValueType>
-        storm::storage::ParameterRegion<ValueType> parseRegion(std::string const& inputString, storm::models::ModelBase const& model, boost::optional<int> splittingThreshold= boost::none) {
+        storm::storage::ParameterRegion<ValueType> parseRegion(std::string const& inputString, storm::models::ModelBase const& model, boost::optional<int> const& splittingThreshold = boost::none) {
             // Handle the "empty region" case
             if (inputString == "" && !model.hasParameters()) {
                 return storm::storage::ParameterRegion<ValueType>();
