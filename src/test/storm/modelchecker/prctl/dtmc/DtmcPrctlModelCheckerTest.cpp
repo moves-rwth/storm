@@ -30,6 +30,8 @@
 #include "storm/environment/solver/EigenSolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
 
+#include <cstdlib> //todo
+
 namespace {
     
     enum class DtmcEngine {PrismSparse, JaniSparse, JitSparse, Hybrid, PrismDd, JaniDd};
@@ -630,13 +632,13 @@ namespace {
         
         result = checker->check(this->env(), tasks[0]);
         EXPECT_NEAR(this->parseNumber("78686542099694893/1268858272000000000"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
-    
+
         result = checker->check(this->env(), tasks[1]);
         EXPECT_NEAR(this->parseNumber("40300855878315123/1268858272000000000"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
     
         result = checker->check(this->env(), tasks[2]);
         EXPECT_NEAR(this->parseNumber("13433618626105041/1268858272000000000"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
-    
+
     }
     
     TYPED_TEST(DtmcPrctlModelCheckerTest, SynchronousLeader) {
@@ -714,6 +716,67 @@ namespace {
         EXPECT_NEAR(0.125, result[10], 1e-6);
         EXPECT_NEAR(0.125, result[11], 1e-6);
         EXPECT_NEAR(0, result[12], 1e-6);
+    }
+
+    TEST(DtmcPrctlModelCheckerTest, LtlProbabilitiesDie) {
+        setenv("LTL2DA", "ltl2da-ltl2tgba", true); //todo set PATH variable
+
+        std::string formulasString = "P=? [(X s>0) U (s=7 & d=2)]";
+        formulasString += "; P=? [ X (s=1) U (s=3) U (s=7)]";  //  a U b U c  is Treated as: ( a U b ) U c
+        formulasString += "; P=? [ G s!=3 U (\"three\") ]";
+        formulasString += "; P=? [ (F (X (s=6 & (XX s=5) ))) & (F G (d!=5))]";
+        formulasString += "; P=? [ F ((s=6) & (X \"done\"))]";
+
+        storm::prism::Program program = storm::api::parseProgram(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
+        auto formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasString, program));
+        std::vector<storm::modelchecker::CheckTask<storm::logic::Formula, double>> tasks;
+        for (auto const& f : formulas) {
+        tasks.emplace_back(*f);
+        }
+        auto model = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::Dtmc<double>>();
+        auto checker = storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>>(*model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+        result = checker.check(tasks[0]);
+        EXPECT_NEAR(1/6, result->asQuantitativeCheckResult<double>().getMin(), 1e-6);
+
+        result = checker.check(tasks[1]);
+        EXPECT_NEAR(1/6, result->asQuantitativeCheckResult<double>().getMin(), 1e-6);
+
+        result = checker.check(tasks[2]);
+        EXPECT_NEAR(1/8, result->asQuantitativeCheckResult<double>().getMin(), 1e-6);
+
+        result = checker.check(tasks[3]);
+        EXPECT_NEAR(1/24, result->asQuantitativeCheckResult<double>().getMin(), 1e-6);
+
+        result = checker.check(tasks[4]);
+        EXPECT_NEAR(1/2, result->asQuantitativeCheckResult<double>().getMin(), 1e-6);
+    }
+
+    TEST(DtmcPrctlModelCheckerTest, LtlProbabilitiesSynchronousLeader) {
+        setenv("LTL2DA", "ltl2da-ltl2tgba", true);
+        std::string formulasString = "P=? [X (u1=true U \"elected\")]";
+        formulasString += "; P=? [X v1=2 & (X v1=1)]"; // (X v1=2 & (XX v1=1)
+        formulasString += "; P=? [(X v1=2) & (X v1=1)]";
+
+        storm::prism::Program program = storm::api::parseProgram(STORM_TEST_RESOURCES_DIR "/dtmc/leader-3-5.pm");
+        auto formulas = storm::api::extractFormulasFromProperties(storm::api::parsePropertiesForPrismProgram(formulasString, program));
+        std::vector<storm::modelchecker::CheckTask<storm::logic::Formula, double>> tasks;
+        for (auto const& f : formulas) {
+            tasks.emplace_back(*f);
+        }
+        auto model = storm::api::buildSparseModel<double>(program, formulas)->as<storm::models::sparse::Dtmc<double>>();
+        auto checker = storm::modelchecker::SparseDtmcPrctlModelChecker<storm::models::sparse::Dtmc<double>>(*model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+        result= checker.check(tasks[0]);
+        EXPECT_NEAR(16/25, result->asQuantitativeCheckResult<double>().getMin(), 1e-6);
+
+        result = checker.check(tasks[1]);
+        EXPECT_NEAR(1/25, result->asQuantitativeCheckResult<double>().getMin(), 1e-6);
+
+        result = checker.check(tasks[2]);
+        EXPECT_NEAR(0, result->asQuantitativeCheckResult<double>().getMin(), 1e-6);
     }
 
 }
