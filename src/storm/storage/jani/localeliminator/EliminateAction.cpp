@@ -20,32 +20,51 @@ namespace storm {
                 Automaton& automaton = session.getModel().getAutomaton(automatonName);
                 uint64_t locIndex = automaton.getLocationIndex(locationName);
 
-                bool changed = true;
-                while (changed) {
-                    changed = false;
-                    for (Edge edge : automaton.getEdges()) {
+                // The basic idea is to iterate over the edges and eliminate those that are incident to the location.
+                // There are a few complications:
+                // - When we modify the edges, the edge container is rebuilt and we have to call automaton.getEdges()
+                //   again instead of continuing with the current list of edges.
+                // - Edges are ordered according to the index of the outgoing location. This means that if we add a new
+                //   edge, that doesn't append it to the end of the edge list, but inserts it somewhere into the list.
+                // - We only remove one destination per step. If an edge has two destinations leading to the location we
+                //   want to eliminate, we eliminate one, add a new edge and then later visit the new edge to eliminate
+                //   the other destination. This means that a single pass is not sufficient to perform elimination.
+                // The basic idea is therefore to iterate over the edges until we've completed a full iteration without
+                // performing any eliminations.
 
-                        if (!edge.getGuard().containsVariables() && !edge.getGuard().evaluateAsBool())
-                            continue;
+                uint64_t edgeIndex = 0;
+                uint64_t stepsWithoutChange = 0;
+                std::vector<Edge>& edges = automaton.getEdges();
+                while (stepsWithoutChange <= edges.size()) {
 
+                    Edge edge = edges[edgeIndex];
+
+                    if (edge.getGuard().containsVariables() || edge.getGuard().evaluateAsBool()){
                         uint64_t destCount = edge.getNumberOfDestinations();
-                        for (uint64_t i = 0; i < destCount; i++) {
-                            const EdgeDestination& dest = edge.getDestination(i);
+                        for (uint64_t j = 0; j < destCount; j++) {
+                            const EdgeDestination& dest = edge.getDestination(j);
                             if (dest.getLocationIndex() == locIndex) {
                                 detail::Edges outgoingEdges = automaton.getEdgesFromLocation(locationName);
-                                eliminateDestination(session, automaton, edge, i, outgoingEdges);
-                                changed = true;
-                                break; // Avoids weird behaviour, but doesn't work if multiplicity is higher than 1
-                                // incomingEdges.emplace_back(std::make_tuple(edge, dest));
+                                eliminateDestination(session, automaton, edges[edgeIndex], j, outgoingEdges);
+
+                                // eliminateDestination adds new edges to the edge container, so we need to get the
+                                // new list of edges:
+                                edges = automaton.getEdges();
+                                stepsWithoutChange = 0;
+                                break;
                             }
                         }
+                    }
 
-                        if (changed)
-                            break;
+                    edgeIndex++;
+                    stepsWithoutChange++;
+                    if (edgeIndex >= edges.size()){
+                        edgeIndex -= edges.size();
                     }
                 }
 
-
+                // The elimination is now complete. To make sure nothing went wrong, we go over all the edges one more
+                // time. If any are still incident to the location we want to eliminate, something went wrong.
                 for (Edge& edge : automaton.getEdges()) {
                     if (!edge.getGuard().containsVariables() && !edge.getGuard().evaluateAsBool())
                         continue;
@@ -85,7 +104,7 @@ namespace storm {
 
                     }
 
-                    // Add remaining edges back to the edge:
+                    // Add remaining destinations back to the edge:
                     uint64_t destCount = edge.getNumberOfDestinations();
                     for (uint64_t i = 0; i < destCount; i++) {
                         if (i == destIndex)
@@ -100,11 +119,12 @@ namespace storm {
                     STORM_LOG_THROW(!edge.hasRate() && !outEdge.hasRate(), storm::exceptions::NotImplementedException, "Edge Rates are not implemented");
                     newEdges.emplace_back(Edge(sourceIndex, actionIndex, boost::none, templateEdge, destinationLocationsAndProbabilities));
                 }
+
+                edge.setGuard(edge.getGuard().getManager().boolean(false)); // Instead of deleting the edge
+
                 for (const Edge& newEdge : newEdges){
                     automaton.addEdge(newEdge);
                 }
-
-                edge.setGuard(edge.getGuard().getManager().boolean(false)); // Instead of deleting the edge
             }
         }
     }
