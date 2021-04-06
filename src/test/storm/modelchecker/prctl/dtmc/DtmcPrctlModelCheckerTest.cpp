@@ -722,7 +722,7 @@ namespace {
         setenv("LTL2DA", "ltl2da-ltl2tgba", true); //todo set PATH variable
 
         std::string formulasString = "P=? [(X s>0) U (s=7 & d=2)]";
-        formulasString += "; P=? [ X (s=1) U (s=3) U (s=7)]";  //  a U b U c  is Treated as: ( a U b ) U c
+        formulasString += "; P=? [ X (s=1) U (s=3) U (s=7)]";  //  a U b U c  is Treated as: (a U b ) U c
         formulasString += "; P=? [ G s!=3 U (\"three\") ]";
         formulasString += "; P=? [ (F (X (s=6 & (XX s=5) ))) & (F G (d!=5))]";
         formulasString += "; P=? [ F ((s=6) & (X \"done\"))]";
