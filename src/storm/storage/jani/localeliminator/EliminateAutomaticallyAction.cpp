@@ -15,10 +15,10 @@ namespace storm {
             }
 
             void EliminateAutomaticallyAction::doAction(JaniLocalEliminator::Session &session) {
-                Automaton &automaton = session.getModel().getAutomaton(automatonName);
+                Automaton* automaton = &session.getModel().getAutomaton(automatonName);
                 switch (eliminationOrder){
                     case EliminationOrder::Arbitrary: {
-                        for (const auto& loc : automaton.getLocations()) {
+                        for (const auto& loc : automaton->getLocations()) {
                             if (session.isEliminable(automatonName, loc.getName())) {
                                 session.addToLog("Eliminating location " + loc.getName());
                                 EliminateAction action = EliminateAction(automatonName, loc.getName());
@@ -37,7 +37,7 @@ namespace storm {
                         // After each elimination, this list is updated to account for new loops
                         std::map<std::string, bool> uneliminable;
                         session.addToLog("Elimination status of locations:");
-                        for (const auto& loc : automaton.getLocations()) {
+                        for (const auto& loc : automaton->getLocations()) {
                             bool possiblyInitial = session.isPossiblyInitial(automatonName, loc.getName());
                             bool partOfProp = session.isPartOfProp(automatonName, loc.getName());
                             bool hasLoops = session.hasLoops(automatonName, loc.getName());
@@ -67,14 +67,14 @@ namespace storm {
                         while (!done) {
                             int minNewEdges = INT_MAX;
                             int bestLocIndex = -1;
-                            for (const auto& loc : automaton.getLocations()) {
+                            for (const auto& loc : automaton->getLocations()) {
                                 if (uneliminable[loc.getName()])
                                     continue;
 
-                                int locIndex = automaton.getLocationIndex(loc.getName());
-                                int outgoing = automaton.getEdgesFromLocation(locIndex).size();
+                                int locIndex = automaton->getLocationIndex(loc.getName());
+                                int outgoing = automaton->getEdgesFromLocation(locIndex).size();
                                 int incoming = 0;
-                                for (const auto& edge : automaton.getEdges()) {
+                                for (const auto& edge : automaton->getEdges()) {
                                     int addedTransitions = 1;
                                     for (const auto& dest : edge.getDestinations())
                                         if (dest.getLocationIndex() == locIndex)
@@ -98,15 +98,15 @@ namespace storm {
                                         "Cannot eliminate more locations without creating too many new transitions (best: " +
                                         std::to_string(minNewEdges) + " new transitions)");
                             } else {
-                                std::string locName = automaton.getLocation(bestLocIndex).getName();
+                                std::string locName = automaton->getLocation(bestLocIndex).getName();
                                 session.addToLog("\tEliminating location " + locName);
                                 EliminateAction action = EliminateAction(automatonName, locName);
                                 action.doAction(session);
-                                automaton = session.getModel().getAutomaton(automatonName);
+                                automaton = &session.getModel().getAutomaton(automatonName);
                                 uneliminable[locName] = true;
 
                                 // Update "uneliminable" to account for potential new loops
-                                for (const auto& loc : automaton.getLocations()) {
+                                for (const auto& loc : automaton->getLocations()) {
                                     if (!uneliminable[loc.getName()]){
                                         if (session.hasLoops(automatonName, loc.getName())){
                                             uneliminable[loc.getName()] = true;
