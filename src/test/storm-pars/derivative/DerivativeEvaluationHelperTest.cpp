@@ -104,6 +104,7 @@ void testModel(std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFuncti
     for (auto const& testCase : testCases) {
         auto instantiation = testCase.first;
         for (auto const& position : instantiation) {
+            std::cout << position << std::endl;
             auto parameter = position.first;
             auto parameterValue = position.second;
             auto expectedResult = testCase.second.at(parameter);
