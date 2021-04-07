@@ -12,8 +12,12 @@ namespace storm {
             void transform(std::string const& automatonName, std::string const& variableName);
             Model const& getResult() const;
 
+            // The following variables will be set during executing and should therefore only be used afterwards.
+
             // Maps each old location index to a map that maps every variable value to the index of the (new) location that corresponds to the old location and variable value
-            std::map<uint64_t, std::map<int64_t, uint64_t>> locationVariableValueMap; //TODO: Switch inner map to vector?
+            std::map<uint64_t, std::map<int64_t, uint64_t>> locationVariableValueMap;
+            std::vector<storm::expressions::Expression> variableDomain;
+
 
         private:
             Model const& original;

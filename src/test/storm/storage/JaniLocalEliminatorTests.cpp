@@ -191,7 +191,7 @@ TEST(JaniLocalEliminator, BoolUnfoldTest) {
 
 
 TEST(JaniLocalEliminator, MiscTest) {
-    auto janiModelProperties = storm::api::parseJaniModel("/home/johannes/Documents/hiwi/out-of-control-benchmarking/files/brp.v1.jani", storm::jani::getAllKnownModelFeatures(), boost::none);
+    auto janiModelProperties = storm::api::parseJaniModel("/home/johannes/Documents/hiwi/out-of-control-benchmarking/files/coupon-custom.jani", storm::jani::getAllKnownModelFeatures(), boost::none);
     auto model = janiModelProperties.first;
     auto props = janiModelProperties.second;
 

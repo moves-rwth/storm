@@ -37,9 +37,11 @@ namespace storm {
                 bool isPartOfProp(const std::string &automatonName, uint64_t locationIndex);
                 bool computeIsPartOfProp(const std::string &automatonName, const std::string &locationName);
                 bool computeIsPartOfProp(const std::string &automatonName, uint64_t locationIndex);
+                bool computeIsPartOfProp(const std::map<expressions::Variable, expressions::Expression>& substitutionMap);
                 void setPartOfProp(const std::string &automatonName, const std::string &locationName, bool isPartOfProp);
                 void setPartOfProp(const std::string &automatonName, uint64_t locationIndex, bool isPartOfProp);
                 void clearIsPartOfProp(const std::string &automatonName);
+                bool isVariablePartOfProperty(const std::string &expressionVariableName);
             private:
                 Model model;
                 Property property;
@@ -48,6 +50,7 @@ namespace storm {
                 // is exposed via the python API
                 std::vector<std::string> log;
                 std::map<std::string, AutomatonInfo> automataInfo;
+                std::set<uint_fast64_t> expressionVarsInProperty;
             };
 
         public:

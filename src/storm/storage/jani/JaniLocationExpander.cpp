@@ -51,8 +51,6 @@ namespace storm {
             // As we are using transitive variables, we're no longer really eliminating variables and the initialStatesRestriction should hopefully still work
             // STORM_LOG_THROW(!automaton.getInitialStatesRestriction().containsVariable({eliminatedExpressionVariable}), storm::exceptions::NotSupportedException, "Elimination of variable that occurs in the initial state restriction is not allowed");
             newAutomaton.setInitialStatesRestriction(automaton.getInitialStatesRestriction());
-
-            std::vector<storm::expressions::Expression> variableDomain;
             uint32_t initialValueIndex; // The index in variableDomain of the initial value
 
             if (isBoundedInteger) {

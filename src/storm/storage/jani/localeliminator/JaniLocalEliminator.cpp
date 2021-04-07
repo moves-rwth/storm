@@ -94,12 +94,15 @@ namespace storm {
             Automaton &automaton = model.getAutomaton(automatonName);
             auto location = automaton.getLocation(locationIndex);
             std::map<expressions::Variable, expressions::Expression> substitutionMap;
-            for (auto asg : location.getAssignments()){
+            for (auto &asg : location.getAssignments()){
                 if (!asg.isTransient())
                     continue;
                 substitutionMap.insert(std::pair<expressions::Variable, expressions::Expression>(asg.getExpressionVariable(), asg.getAssignedExpression()));
             }
+            return computeIsPartOfProp(substitutionMap);
+        }
 
+        bool JaniLocalEliminator::Session::computeIsPartOfProp(const std::map<expressions::Variable, expressions::Expression>& substitutionMap) {
             storm::solver::Z3SmtSolver solver(model.getExpressionManager());
             auto propertyFormula = property.getRawFormula()->substitute(substitutionMap);
             auto atomicFormulas = propertyFormula->getAtomicExpressionFormulas();
@@ -190,6 +193,11 @@ namespace storm {
                     setPartOfProp(aut.getName(), loc.getName(), isPartOfProp);
                 }
             }
+
+            for (auto &var : property.getUsedVariablesAndConstants()){
+                expressionVarsInProperty.insert(var.getIndex());
+            }
+
         }
 
         Model &JaniLocalEliminator::Session::getModel() {
@@ -257,6 +265,12 @@ namespace storm {
                 newOa.add(Assignment(assignment.getVariable(), assignment.getAssignedExpression().substitute(substitutionMap).simplify()));
             }
             return newOa;
+        }
+
+        bool JaniLocalEliminator::Session::isVariablePartOfProperty(const std::string &expressionVariableName){
+            auto expressionVariable = model.getExpressionManager().getVariable(expressionVariableName);
+            uint_fast64_t expressionVariableIndex = expressionVariable.getIndex();
+            return expressionVarsInProperty.count(expressionVariableIndex) != 0;
         }
 
         void JaniLocalEliminator::Session::addToLog(std::string item) {
