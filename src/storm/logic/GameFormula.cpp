@@ -28,9 +28,10 @@ namespace storm {
             return visitor.visit(*this, data);
         }
 
-        std::ostream& GameFormula::writeToStream(std::ostream& out) const {
+        std::ostream& GameFormula::writeToStream(std::ostream& out, bool /* allowParentheses */) const {
+            // No parenthesis necessary
             out << "<<" << coalition << ">> ";
-            this->getSubformula().writeToStream(out);
+            this->getSubformula().writeToStream(out, true);
             return out;
         }
     }

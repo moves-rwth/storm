@@ -84,7 +84,8 @@ namespace storm {
             }
         }
         
-        std::ostream& MultiObjectiveFormula::writeToStream(std::ostream &out) const {
+        std::ostream& MultiObjectiveFormula::writeToStream(std::ostream &out, bool /* allowParentheses */) const {
+            // No parentheses necessary
             out << "multi(";
             for(uint_fast64_t index = 0; index < this->getNumberOfSubformulas(); ++index){
                 if(index>0){

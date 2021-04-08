@@ -19,7 +19,7 @@ namespace storm {
             
             storm::expressions::Expression const& getExpression() const;
             
-            virtual std::ostream& writeToStream(std::ostream& out) const override;
+            virtual std::ostream& writeToStream(std::ostream& out, bool allowParentheses = false) const override;
             
             virtual void gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const override;
             virtual void gatherUsedVariables(std::set<storm::expressions::Variable>& usedVariables) const override;

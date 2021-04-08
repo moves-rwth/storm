@@ -94,6 +94,7 @@ namespace storm {
             virtual bool isBinaryStateFormula() const;
             virtual bool isUnaryPathFormula() const;
             virtual bool isUnaryStateFormula() const;
+            bool isUnaryFormula() const;
 
             // Accessors for the return type of a formula.
             virtual bool hasQualitativeResult() const;
@@ -233,7 +234,14 @@ namespace storm {
             storm::expressions::Expression toExpression(storm::expressions::ExpressionManager const& manager, std::map<std::string, storm::expressions::Expression> const& labelToExpressionMapping = {}) const;
             
             std::string toString() const;
-            virtual std::ostream& writeToStream(std::ostream& out) const = 0;
+
+            /*!
+             * Writes the forumla to the given output stream
+             * @param allowParenthesis if true, the output is *potentially* surrounded by parentheses depending on whether parentheses are needed to avoid ambiguity when this formula appears as a subformula of some larger formula.
+             * @return
+             */
+            virtual std::ostream& writeToStream(std::ostream& out, bool allowParentheses = false) const = 0;
+            
             std::string toPrefixString() const;
             
             virtual void gatherAtomicExpressionFormulas(std::vector<std::shared_ptr<AtomicExpressionFormula const>>& atomicExpressionFormulas) const;

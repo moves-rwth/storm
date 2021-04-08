@@ -24,7 +24,8 @@ namespace storm {
             return visitor.visit(*this, data);
         }
         
-        std::ostream& BooleanLiteralFormula::writeToStream(std::ostream& out) const {
+        std::ostream& BooleanLiteralFormula::writeToStream(std::ostream& out, bool /*allowParentheses */) const {
+            // No parentheses necessary
             if (value) {
                 out << "true";
             } else {

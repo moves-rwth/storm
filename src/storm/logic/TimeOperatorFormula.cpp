@@ -24,7 +24,8 @@ namespace storm {
             return rewardMeasureType;
         }
         
-        std::ostream& TimeOperatorFormula::writeToStream(std::ostream& out) const {
+        std::ostream& TimeOperatorFormula::writeToStream(std::ostream& out, bool /* allowParentheses */) const {
+            // No parentheses necessary
             out << "T";
             out << "[" << rewardMeasureType << "]";
             OperatorFormula::writeToStream(out);

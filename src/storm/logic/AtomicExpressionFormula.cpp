@@ -28,8 +28,15 @@ namespace storm {
             expression.gatherVariables(usedVariables);
         }
         
-        std::ostream& AtomicExpressionFormula::writeToStream(std::ostream& out) const {
+        std::ostream& AtomicExpressionFormula::writeToStream(std::ostream& out, bool allowParentheses) const {
+            bool parentheses = allowParentheses & (this->expression.isLiteral() || this->expression.isVariable());
+            if (parentheses) {
+                out << "(";
+            }
             out << expression;
+            if (parentheses) {
+                out << ")";
+            }
             return out;
         }
     }

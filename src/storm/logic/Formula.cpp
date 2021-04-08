@@ -175,6 +175,10 @@ namespace storm {
         bool Formula::isOperatorFormula() const {
             return false;
         }
+        
+        bool Formula::isUnaryFormula() const {
+            return isUnaryPathFormula() || isUnaryStateFormula();
+        }
 
         bool Formula::hasQualitativeResult() const {
             return true;

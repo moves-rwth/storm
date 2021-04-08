@@ -76,7 +76,8 @@ namespace storm {
         }
 
 
-        std::ostream& HOAPathFormula::writeToStream(std::ostream& out) const {
+        std::ostream& HOAPathFormula::writeToStream(std::ostream& out, bool /* allowParentheses */ ) const {
+            // No parentheses necessary
             out << "HOA: { ";
             out << "\"" <<  automatonFile << "\"";
             for (auto& mapping : apToFormulaMap) {

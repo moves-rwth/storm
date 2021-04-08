@@ -39,7 +39,7 @@ namespace storm {
             virtual void gatherAtomicLabelFormulas(std::vector<std::shared_ptr<AtomicLabelFormula const>>& atomicLabelFormulas) const override;
             virtual void gatherReferencedRewardModels(std::set<std::string>& referencedRewardModels) const override;
 
-            virtual std::ostream& writeToStream(std::ostream& out) const override;
+            virtual std::ostream& writeToStream(std::ostream& out, bool allowParentheses = false) const override;
 
 	    std::shared_ptr<storm::automata::DeterministicAutomaton> readAutomaton() const;
 

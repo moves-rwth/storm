@@ -27,12 +27,17 @@ namespace storm {
             return this->getOperator() == OperatorType::Not;
         }
                 
-        std::ostream& UnaryBooleanStateFormula::writeToStream(std::ostream& out) const {
-            switch (operatorType) {
-                case OperatorType::Not: out << "!("; break;
+        std::ostream& UnaryBooleanStateFormula::writeToStream(std::ostream& out, bool allowParentheses) const {
+            if (allowParentheses) {
+                out << "(";
             }
-            this->getSubformula().writeToStream(out);
-            out << ")";
+            switch (operatorType) {
+                case OperatorType::Not: out << "!"; break;
+            }
+            this->getSubformula().writeToStream(out, !this->getSubformula().isUnaryFormula());
+            if (allowParentheses) {
+                out << ")";
+            }
             return out;
         }
     }

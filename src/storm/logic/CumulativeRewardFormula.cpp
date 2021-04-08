@@ -161,7 +161,8 @@ namespace storm {
             return std::make_shared<CumulativeRewardFormula const>(bounds.at(i), getTimeBoundReference(i), rewardAccumulation);
         }
         
-        std::ostream& CumulativeRewardFormula::writeToStream(std::ostream& out) const {
+        std::ostream& CumulativeRewardFormula::writeToStream(std::ostream& out, bool /*allowParentheses*/ ) const {
+            // No parentheses necessary
             out << "C";
             if (hasRewardAccumulation()) {
                 out << "[" << getRewardAccumulation() << "]";

@@ -24,7 +24,7 @@ namespace storm {
 
             virtual boost::any accept(FormulaVisitor const& visitor, boost::any const& data) const override;
 
-            virtual std::ostream& writeToStream(std::ostream& out) const override;
+            virtual std::ostream& writeToStream(std::ostream& out, bool allowParentheses = false) const override;
 
         private:
             boost::optional<RewardAccumulation> rewardAccumulation;

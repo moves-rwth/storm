@@ -31,15 +31,19 @@ namespace storm {
             return this->getOperator() == OperatorType::Or;
         }
                 
-        std::ostream& BinaryBooleanStateFormula::writeToStream(std::ostream& out) const {
-            out << "(";
-            this->getLeftSubformula().writeToStream(out);
+        std::ostream& BinaryBooleanStateFormula::writeToStream(std::ostream& out, bool allowParentheses) const {
+            if (allowParentheses) {
+                out << "(";
+            }
+            this->getLeftSubformula().writeToStream(out, true);
             switch (operatorType) {
                 case OperatorType::And: out << " & "; break;
                 case OperatorType::Or: out << " | "; break;
             }
-            this->getRightSubformula().writeToStream(out);
-            out << ")";
+            this->getRightSubformula().writeToStream(out, true);
+            if (allowParentheses) {
+                out << ")";
+            }
             return out;
         }
     }

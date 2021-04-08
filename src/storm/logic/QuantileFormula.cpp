@@ -73,7 +73,8 @@ namespace storm {
             subformula->gatherReferencedRewardModels(referencedRewardModels);
         }
         
-        std::ostream& QuantileFormula::writeToStream(std::ostream& out) const {
+        std::ostream& QuantileFormula::writeToStream(std::ostream& out, bool /* allowParentheses */) const {
+            // No parentheses necessary
             out << "quantile(";
             for (auto const& bv : boundVariables) {
                 out << bv.getName() << ", ";

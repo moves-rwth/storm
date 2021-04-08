@@ -32,7 +32,8 @@ namespace storm {
             return visitor.visit(*this, data);
         }
 
-        std::ostream& TotalRewardFormula::writeToStream(std::ostream& out) const {
+        std::ostream& TotalRewardFormula::writeToStream(std::ostream& out, bool /* allowParentheses */) const {
+            // No parentheses necessary
             out << "C";
             if (hasRewardAccumulation()) {
                 out << "[" << getRewardAccumulation() << "]";

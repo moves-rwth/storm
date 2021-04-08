@@ -309,7 +309,7 @@ namespace storm {
             return std::make_shared<BoundedUntilFormula const>(getLeftSubformula(i).asSharedPointer(), getRightSubformula(i).asSharedPointer(), lowerBound.at(i), upperBound.at(i), getTimeBoundReference(i));
         }
 
-        std::ostream& BoundedUntilFormula::writeToStream(std::ostream& out) const {
+        std::ostream& BoundedUntilFormula::writeToStream(std::ostream& out, bool allowParentheses) const {
             if (hasMultiDimensionalSubformulas()) {
                 out << "multi(";
                 restrictToDimension(0)->writeToStream(out);
@@ -319,8 +319,10 @@ namespace storm {
                 }
                 out << ")";
             } else {
-                
-                this->getLeftSubformula().writeToStream(out);
+                if (allowParentheses) {
+                    out << "(";
+                }
+                this->getLeftSubformula().writeToStream(out, true);
                 
                 out << " U";
                 if (this->isMultiDimensional()) {
@@ -379,7 +381,10 @@ namespace storm {
                     out << "}";
                 }
                 
-                this->getRightSubformula().writeToStream(out);
+                this->getRightSubformula().writeToStream(out, true);
+                if (allowParentheses) {
+                    out << ")";
+                }
             }
             
             return out;
