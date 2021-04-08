@@ -740,7 +740,6 @@ namespace {
 
         // LTL not supported in all engines (Hybrid,  PrismDd, JaniDd)
         if (TypeParam::engine == DtmcEngine::PrismSparse || TypeParam::engine == DtmcEngine::JaniSparse || TypeParam::engine == DtmcEngine::JitSparse) {
-            EXPECT_TRUE(checker->canHandle(tasks[0]));
             result = checker->check(tasks[0]);
             EXPECT_NEAR(this->parseNumber("1/6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
@@ -785,7 +784,6 @@ namespace {
 
         // LTL not supported in all engines (Hybrid,  PrismDd, JaniDd)
         if (TypeParam::engine == DtmcEngine::PrismSparse || TypeParam::engine == DtmcEngine::JaniSparse || TypeParam::engine == DtmcEngine::JitSparse) {
-            EXPECT_TRUE(checker->canHandle(tasks[0]));
             result = checker->check(tasks[0]);
             EXPECT_NEAR(this->parseNumber("16/25"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
