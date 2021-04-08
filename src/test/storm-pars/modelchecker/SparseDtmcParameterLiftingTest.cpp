@@ -563,7 +563,7 @@ namespace {
         modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
         // Reachability order, as it is already done building we don't need to recreate the order for each region
-        auto o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0], storm::api::parseRegion<storm::RationalFunction>("0.01<=pL<=0.99,0.01<=pK<=0.99", modelParameters));
+        auto o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0]);
         auto res = o->extendOrder(nullptr, storm::api::parseRegion<storm::RationalFunction>("0.01<=pL<=0.99,0.01<=pK<=0.99", modelParameters));
         auto order = std::get<0>(res);
         ASSERT_EQ(order->getNumberOfAddedStates(), model->getTransitionMatrix().getColumnCount());
@@ -694,7 +694,7 @@ namespace {
         modelParameters.insert(rewParameters.begin(), rewParameters.end());
 
         // Reachability order, as it is already done building we don't need to recreate the order for each region
-        auto o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0], storm::api::parseRegion<storm::RationalFunction>("0.01<=pL<=0.99,0.01<=pK<=0.99", modelParameters));
+        auto o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0]);
         auto res = o->extendOrder(nullptr, storm::api::parseRegion<storm::RationalFunction>("0.01<=pL<=0.99,0.01<=pK<=0.99", modelParameters));
         auto order = std::get<0>(res);
 
@@ -766,7 +766,7 @@ namespace {
 
         // Start testing
         auto allSatRegion = storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.2,0.8<=q<=0.9", modelParameters);
-        auto o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0], allSatRegion);
+        auto o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0]);
         auto res = o->extendOrder(nullptr, allSatRegion);
         auto order = std::get<0>(res);
         auto monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
@@ -815,7 +815,7 @@ namespace {
 
         // Start testing
         auto allSatRegion=storm::api::parseRegion<storm::RationalFunction>("0.4<=p<=0.6", modelParameters);
-        auto o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0], allSatRegion);
+        auto o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0]);
         auto res = o->extendOrder(nullptr, allSatRegion);
         auto order = std::get<0>(res);
         auto monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
@@ -865,7 +865,7 @@ namespace {
 
         // Start testing
         auto allSatRegion=storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.5", modelParameters);
-        auto o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0], allSatRegion);
+        auto o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0]);
         auto res = o->extendOrder(nullptr, allSatRegion);
         auto order = std::get<0>(res);
         auto monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
@@ -914,7 +914,7 @@ namespace {
 
         // Start testing
         auto allSatRegion=storm::api::parseRegion<storm::RationalFunction>("0.1<=p<=0.4", modelParameters);
-        auto o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0], allSatRegion);
+        auto o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0]);
         auto res = o->extendOrder(nullptr, allSatRegion);
         auto order = std::get<0>(res);
         auto monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());
@@ -964,7 +964,7 @@ namespace {
 
         // Start testing
         auto allSatRegion=storm::api::parseRegion<storm::RationalFunction>("0.6<=p<=0.9", modelParameters);
-        auto o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0], allSatRegion);
+        auto o = new storm::analysis::OrderExtenderDtmc<storm::RationalFunction, ValueType>(model, formulas[0]);
         auto res = o->extendOrder(nullptr, allSatRegion);
         auto order = std::get<0>(res);
         auto monRes = std::make_shared<storm::analysis::LocalMonotonicityResult<storm::RationalFunctionVariable>>(order->getNumberOfStates());

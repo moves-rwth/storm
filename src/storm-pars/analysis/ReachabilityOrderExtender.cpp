@@ -28,17 +28,17 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
-            STORM_LOG_WARN("This function is only implemented in sub-classes");
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This function is only implemented in sub-classes");
         }
 
         template<typename ValueType, typename ConstantType>
         std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
-            STORM_LOG_WARN("This function is only implemented in sub-classes");
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This function is only implemented in sub-classes");
         }
 
         template<typename ValueType, typename ConstantType>
         std::pair<uint_fast64_t, uint_fast64_t> ReachabilityOrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(std::shared_ptr<Order> order, uint_fast64_t currentState) {
-            STORM_LOG_WARN("This function is only implemented in sub-classes");
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This function is only implemented in sub-classes");
         }
 
         template<typename ValueType, typename ConstantType>

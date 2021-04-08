@@ -27,17 +27,17 @@ namespace storm {
 
         template <typename ValueType, typename ConstantType>
         std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtenderMdp<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, storm::storage::ParameterRegion<ValueType> region, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
-            STORM_LOG_WARN("This function is not yet implemented for this sub-class (OEMdp)");
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This function is not yet implemented for this sub-class (OEMdp)");
             // TODO implement.
-            // Original Version moved from ReachOE to OEDtmc. That might have broken the implementation or orders for mdps.
+            // Original Version moved from ReachOE to OEDtmc. That might have broken the implementation for orders for mdps.
             // But original version only ever took the first possible action into account (when accessing stateMap)
         }
 
         template <typename ValueType, typename ConstantType>
         std::tuple<std::shared_ptr<Order>, uint_fast64_t, uint_fast64_t> OrderExtenderMdp<ValueType, ConstantType>::extendOrder(std::shared_ptr<Order> order, std::shared_ptr<MonotonicityResult<VariableType>> monRes, std::shared_ptr<expressions::BinaryRelationExpression> assumption) {
-            STORM_LOG_WARN("This function is not yet implemented for this sub-class (OEMdp)");
+            STORM_LOG_THROW(false, storm::exceptions::NotImplementedException, "This function is not yet implemented for this sub-class (OEMdp)");
             // TODO implement.
-            // Original Version moved from ReachOE to OEDtmc. That might have broken the implementation or orders for mdps.
+            // Original Version moved from ReachOE to OEDtmc. That might have broken the implementation for orders for mdps.
             // But original version only ever took the first possible action into account (when accessing stateMap)
         }
 
@@ -210,7 +210,7 @@ namespace storm {
 
             // Actual extending of the order here
             std::vector<uint64_t> successors = this->stateMap[currentState][bestAct]; // Get actual succs
-            return OrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(order, currentState, successors, false); // Call Base Class function.
+            return ReachabilityOrderExtender<ValueType, ConstantType>::extendByBackwardReasoning(order, currentState, successors, false); // Call Base Class function.
 
         }
 
