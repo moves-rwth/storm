@@ -35,6 +35,7 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         ConstantType DerivativeEvaluationHelper<ValueType, ConstantType>::calculateDerivative(
+                Environment const& env,
                 const VariableType<ValueType> parameter,
                 const std::map<VariableType<ValueType>, CoefficientType<ValueType>> &substitutions,
                 const std::vector<ConstantType> reachabilityProbabilities) {
@@ -85,43 +86,8 @@ namespace storm {
 
             // Calculate (1-M)^-1 * resultVec
             std::vector<ConstantType> finalResult(resultVec.size());
-            /* std::cout << constrainedMatrixInstantiated << std::endl; */
             linearEquationSolvers[parameter]->setMatrix(constrainedMatrixInstantiated);
-            /* for (auto const& entry : resultVec) { */
-            /*     std::cout << entry << " "; */
-            /* } */
-            /* std::cout << std::endl; */
-            /* std::cout << constrainedMatrixInstantiated << std::endl; */
-            linearEquationSolvers[parameter]->solveEquations(*this->environment, finalResult, resultVec);
-            /* for (auto const& entry : finalResult) { */
-            /*     std::cout << entry << " "; */
-            /* } */
-            /* std::cout << std::endl; */
-
-/*             std::stringstream ss; */
-/*             ss << std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()); */
-/*             std::ofstream matrixFileOut; */
-/*             matrixFileOut.open("matrices/" + ss.str() + ".matrix.txt"); */
-/*             for (uint64_t i = 0; i < constrainedMatrixInstantiated.getRowCount(); i++) { */
-/*                 auto row = constrainedMatrixInstantiated.getRow(i); */
-/*                 for (auto entry : row) { */
-/*                     matrixFileOut << i + 1; */
-/*                     matrixFileOut << "    "; */
-/*                     matrixFileOut << entry.getColumn() + 1; */
-/*                     matrixFileOut << "    "; */
-/*                     matrixFileOut << entry.getValue() << std::setprecision(16); */
-/*                     matrixFileOut << "\n"; */
-/*                 } */
-/*             } */
-/*             matrixFileOut.close(); */
-
-/*             std::ofstream vectorFileOut; */
-/*             vectorFileOut.open("matrices/" + ss.str() + ".vector.txt"); */
-/*             for (uint64_t i = 0; i < resultVec.size(); i++) { */
-/*                 vectorFileOut << resultVec[i] << std::setprecision(16); */
-/*                 vectorFileOut << "\n"; */
-/*             } */
-/*             vectorFileOut.close(); */
+            linearEquationSolvers[parameter]->solveEquations(env, finalResult, resultVec);
 
             ConstantType derivative = finalResult[initialState];
 
@@ -132,6 +98,7 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         void DerivativeEvaluationHelper<ValueType, ConstantType>::setup(
+                    Environment const& env,
                     std::set<typename utility::parametric::VariableType<ValueType>::type> const& parameters,
                     std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas)  {
             this->formula = formulas[0];
@@ -158,10 +125,8 @@ namespace storm {
 
             storm::solver::GeneralLinearEquationSolverFactory<ConstantType> factory;
 
-            Environment newEnv;
             auto coreSettings = storm::settings::getModule<storm::settings::modules::CoreSettings>();
-            this->environment = std::make_unique<Environment>(newEnv);
-            bool convertToEquationSystem = factory.getEquationProblemFormat(*environment) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
+            bool convertToEquationSystem = factory.getEquationProblemFormat(env) == storm::solver::LinearEquationSolverProblemFormat::EquationSystem;
 
             std::map<VariableType<ValueType>, storage::SparseMatrix<ValueType>> equationSystems;
             // Get initial and target states
@@ -281,7 +246,7 @@ namespace storm {
             
 
             for (auto const& param : parameters) {
-                this->linearEquationSolvers[param] = factory.create(newEnv);
+                this->linearEquationSolvers[param] = factory.create(env);
                 this->linearEquationSolvers[param]->setCachingEnabled(true);
             }
         }

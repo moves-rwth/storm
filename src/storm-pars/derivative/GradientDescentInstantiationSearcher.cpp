@@ -169,6 +169,7 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         ConstantType GradientDescentInstantiationSearcher<ValueType, ConstantType>::stochasticGradientDescent(
+            Environment const& env,
             std::map<VariableType<ValueType>, CoefficientType<ValueType>> &position
         ) {
 
@@ -223,7 +224,7 @@ namespace storm {
                 // zero or one when computing probabilities. The "valueVector" (just the probability/expected
                 // reward for eventually reaching the target from every state) is also used for computing
                 // the gradient later. We only need one computation of the "valueVector" per mini-batch.
-                std::unique_ptr<storm::modelchecker::CheckResult> result = instantiationModelChecker->check(*environment, position);
+                std::unique_ptr<storm::modelchecker::CheckResult> result = instantiationModelChecker->check(env, position);
                 std::vector<ConstantType> valueVector = result->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
                 currentValue = valueVector[initialState];
                 
@@ -245,7 +246,7 @@ namespace storm {
                 }
 
                 for (auto const& parameter : miniBatch) {
-                    ConstantType delta = derivativeEvaluationHelper->calculateDerivative(parameter, position, valueVector); 
+                    ConstantType delta = derivativeEvaluationHelper->calculateDerivative(env, parameter, position, valueVector); 
                     if (optimalityType == storm::OptimizationDirection::Minimize) {
                         delta *= -1;
                     }
@@ -293,6 +294,7 @@ namespace storm {
 
         template<typename ValueType, typename ConstantType>
         std::pair<std::map<VariableType<ValueType>, CoefficientType<ValueType>>, ConstantType> GradientDescentInstantiationSearcher<ValueType, ConstantType>::gradientDescent(
+            Environment const& env,
             bool findFeasibleInstantiation
         ) {
             std::map<VariableType<ValueType>, CoefficientType<ValueType>> bestInstantiation;
@@ -344,7 +346,7 @@ namespace storm {
                     walk.clear();                   
 
                     stochasticWatch.start();
-                    ConstantType prob = stochasticGradientDescent(point);
+                    ConstantType prob = stochasticGradientDescent(env, point);
                     stochasticWatch.stop();
 
                     if ((optimalityType == OptimizationDirection::Maximize && bestValue < prob)
@@ -382,7 +384,7 @@ namespace storm {
                 }
 
                 stochasticWatch.start();
-                ConstantType prob = stochasticGradientDescent(point);
+                ConstantType prob = stochasticGradientDescent(env, point);
                 stochasticWatch.stop();
 
                 bestInstantiation = point;

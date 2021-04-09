@@ -25,6 +25,7 @@ namespace storm {
              * The GradientDescentInstantiationSearcher can find extrema and feasible instantiations in pMCs,
              * for either rewards or probabilities.
              * Internally uses the DerivativeEvaluationHelper to evaluate derivatives at instantiations.
+             * @param env The environment. Always pass the same environment to the gradientDescent call!
              * @param model The Dtmc to optimize. This must have _one_
              * target state labeled "target" and _one_ initial state labeled "init". Note this is exactly the
              * kind of Dtmc the SparseParametricDtmcSimplifier spits out.
@@ -47,6 +48,7 @@ namespace storm {
              * using the printRunAsJson function (currently not exposed as API though).
              */
             GradientDescentInstantiationSearcher<ValueType, ConstantType>(
+                    Environment const& env,
                     std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> const model,
                     std::set<typename utility::parametric::VariableType<ValueType>::type> const parameters,
                     std::vector<std::shared_ptr<storm::logic::Formula const>> const formulas,
@@ -63,17 +65,16 @@ namespace storm {
               , formula(formulas[0])
               , instantiationModelChecker(std::make_unique<modelchecker::SparseDtmcInstantiationModelChecker<models::sparse::Dtmc<ValueType>, ConstantType>>(*model))
               /* , monotonicityChecker(std::make_unique<analysis::MonotonicityChecker<ValueType>>(model, formulas, std::vector<storm::storage::ParameterRegion<ValueType>>(), true)) */
-              , environment(std::make_unique<Environment>())
               , miniBatchSize(miniBatchSize)
               , terminationEpsilon(terminationEpsilon)
               , startPoint(startPoint)
               , recordRun(recordRun) {
                 if (formula->isProbabilityOperatorFormula()) {
                     resultType = ResultType::PROBABILITY;
-                    derivativeEvaluationHelper = std::move(std::make_unique<storm::derivative::DerivativeEvaluationHelper<ValueType, ConstantType>>(model, parameters, formulas));
+                    derivativeEvaluationHelper = std::move(std::make_unique<storm::derivative::DerivativeEvaluationHelper<ValueType, ConstantType>>(env, model, parameters, formulas));
                 } else if (formula->isRewardOperatorFormula()) {
                     resultType = ResultType::REWARD;
-                    derivativeEvaluationHelper = std::move(std::make_unique<storm::derivative::DerivativeEvaluationHelper<ValueType, ConstantType>>(model, parameters, formulas, ResultType::REWARD, std::string("")));
+                    derivativeEvaluationHelper = std::move(std::make_unique<storm::derivative::DerivativeEvaluationHelper<ValueType, ConstantType>>(env, model, parameters, formulas, ResultType::REWARD, std::string("")));
                 } else {
                     STORM_LOG_ERROR("Formula must be reward operator formula or probability operator formula!");
                 }
@@ -205,10 +206,12 @@ namespace storm {
             }
             /**
              * Perform Gradient Descent.
+             * @param env The environment. Always pass the same environment as the constructor!
              * @param findFeasibleInstantiation true iff a feasible instantiation needs to be found, false iff an optimum
              * needs to be found. This must be compatible with the input formula.
              */
             std::pair<std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type>, ConstantType> gradientDescent(
+                Environment const& env,
                 bool findFeasibleInstantiation
             );
             /**
@@ -235,7 +238,6 @@ namespace storm {
             const std::shared_ptr<storm::logic::Formula const> formula;
             const std::unique_ptr<modelchecker::SparseDtmcInstantiationModelChecker<models::sparse::Dtmc<ValueType>, ConstantType>> instantiationModelChecker;
             const std::unique_ptr<storm::analysis::MonotonicityChecker<ValueType>> monotonicityChecker;
-            const std::unique_ptr<storm::Environment> environment;
             const uint_fast64_t miniBatchSize;
             const double terminationEpsilon;
             ResultType resultType;
@@ -287,6 +289,7 @@ namespace storm {
             bool useSignsOnly;
 
             ConstantType stochasticGradientDescent(
+                Environment const& env,
                 std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type> &position
             );
             ConstantType doStep(

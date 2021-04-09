@@ -630,7 +630,7 @@ namespace storm {
                     auto value = storm::utility::convertNumber<typename utility::parametric::CoefficientType<ValueType>::type>(pair.second);
                     instantiation.emplace(variable, value);
                 }
-                derivative::DerivativeEvaluationHelper<ValueType, storm::RationalNumber> evaluationHelper(dtmc, vars, formulas,
+                derivative::DerivativeEvaluationHelper<ValueType, storm::RationalNumber> evaluationHelper(Environment(), dtmc, vars, formulas,
                     resultType, rewardModel);
                 modelchecker::SparseDtmcInstantiationModelChecker<models::sparse::Dtmc<ValueType>, storm::RationalNumber> instantiationModelChecker(*dtmc);
 
@@ -662,7 +662,7 @@ namespace storm {
                     std::unique_ptr<storm::modelchecker::CheckResult> checkResult = instantiationModelChecker.check(env, instantiation);
                     std::vector<storm::RationalNumber> probVector = checkResult->asExplicitQuantitativeCheckResult<storm::RationalNumber>().getValueVector();
                     
-                    auto result = evaluationHelper.calculateDerivative(parameter, instantiation, probVector);
+                    auto result = evaluationHelper.calculateDerivative(Environment(), parameter, instantiation, probVector);
                     std::cout << storm::utility::convertNumber<double>(result) << std::endl;
                 }
                 return;
@@ -670,8 +670,8 @@ namespace storm {
             } else if (derSettings.isExtremumSearchSet()) {
                 STORM_PRINT("Finding an extremum using Gradient Descent" << std::endl);
                 storm::utility::Stopwatch derivativeWatch(true);
-                storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> derivativeChecker(dtmc, vars, formulas, *method, derSettings.getLearningRate(), derSettings.getAverageDecay(), derSettings.getSquaredAverageDecay(), derSettings.getMiniBatchSize(), derSettings.getTerminationEpsilon(), startPoint, derSettings.isPrintJsonSet());
-                auto instantiationAndValue = derivativeChecker.gradientDescent(false);
+                storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> derivativeChecker(Environment(), dtmc, vars, formulas, *method, derSettings.getLearningRate(), derSettings.getAverageDecay(), derSettings.getSquaredAverageDecay(), derSettings.getMiniBatchSize(), derSettings.getTerminationEpsilon(), startPoint, derSettings.isPrintJsonSet());
+                auto instantiationAndValue = derivativeChecker.gradientDescent(Environment(), false);
                 if (!derSettings.areInconsequentialParametersOmitted() && omittedParameters) {
                     for (RationalFunctionVariable const& param : *omittedParameters) {
                         /* if (startPoint) { */
@@ -702,8 +702,8 @@ namespace storm {
             } else if (derSettings.isFeasibleInstantiationSearchSet()) {
                 STORM_PRINT("Finding a feasible instantiation using Gradient Descent" << std::endl);
                 storm::utility::Stopwatch derivativeWatch(true);
-                storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> derivativeChecker(dtmc, vars, formulas, *method, derSettings.getLearningRate(), derSettings.getAverageDecay(), derSettings.getSquaredAverageDecay(), derSettings.getMiniBatchSize(), derSettings.getTerminationEpsilon(), startPoint, derSettings.isPrintJsonSet());
-                auto instantiationAndValue = derivativeChecker.gradientDescent(true);
+                storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> derivativeChecker(Environment(), dtmc, vars, formulas, *method, derSettings.getLearningRate(), derSettings.getAverageDecay(), derSettings.getSquaredAverageDecay(), derSettings.getMiniBatchSize(), derSettings.getTerminationEpsilon(), startPoint, derSettings.isPrintJsonSet());
+                auto instantiationAndValue = derivativeChecker.gradientDescent(Environment(), true);
                 if (!derSettings.areInconsequentialParametersOmitted() && omittedParameters) {
                     for (RationalFunctionVariable const& param : *omittedParameters) {
                         /* if (startPoint) { */

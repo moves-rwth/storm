@@ -1,6 +1,7 @@
 #include "test/storm_gtest.h"
 #include "environment/solver/GmmxxSolverEnvironment.h"
 #include "environment/solver/SolverEnvironment.h"
+#include "environment/solver/TopologicalSolverEnvironment.h"
 #include "solver/EliminationLinearEquationSolver.h"
 #include "test/storm_gtest.h"
 #include "storm-config.h"
@@ -28,7 +29,82 @@
 #include "storm-pars/derivative/GradientDescentInstantiationSearcher.h"
 #include "gtest/gtest.h"
 
-TEST(GradientDescentInstantiationSearcherTest, Simple) {
+namespace {
+    class RationalGmmxxEnvironment {
+    public:
+        typedef storm::RationalFunction ValueType;
+        typedef storm::RationalNumber ConstantType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
+            return env;
+        }
+    };
+    class DoubleGmmxxEnvironment {
+    public:
+        typedef storm::RationalFunction ValueType;
+        typedef double ConstantType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Gmmxx);
+            return env;
+        }
+    };
+    class RationalEigenEnvironment {
+    public:
+        typedef storm::RationalFunction ValueType;
+        typedef storm::RationalNumber ConstantType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Eigen);
+            return env;
+        }
+    };
+    class DoubleEigenEnvironment {
+    public:
+        typedef storm::RationalFunction ValueType;
+        typedef double ConstantType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Eigen);
+            return env;
+        }
+    };
+    class DoubleEigenTopologicalEnvironment {
+    public:
+        typedef storm::RationalFunction ValueType;
+        typedef double ConstantType;
+        static storm::Environment createEnvironment() {
+            storm::Environment env;
+            env.solver().setLinearEquationSolverType(storm::solver::EquationSolverType::Topological);
+            env.solver().topological().setUnderlyingEquationSolverType(storm::solver::EquationSolverType::Eigen);
+            return env;
+        }
+    };
+    template<typename TestType>
+    class GradientDescentInstantiationSearcherTest : public ::testing::Test {
+    public:
+        typedef typename TestType::ValueType ValueType;
+        typedef typename TestType::ConstantType ConstantType;
+        GradientDescentInstantiationSearcherTest<ValueType>() : _environment(TestType::createEnvironment()) {}
+        storm::Environment const& env() const { return _environment; }
+        virtual void SetUp() { carl::VariablePool::getInstance().clear(); }
+        virtual void TearDown() { carl::VariablePool::getInstance().clear(); }
+    private:
+        storm::Environment _environment;
+    };
+
+    typedef ::testing::Types<
+        // The rational environments take ages... sorry, but GD is just not made for rational arithmetic.
+        DoubleGmmxxEnvironment,
+        DoubleEigenEnvironment,
+        DoubleEigenTopologicalEnvironment
+    > TestingTypes;
+}
+
+TYPED_TEST_SUITE(GradientDescentInstantiationSearcherTest, TestingTypes, );
+
+TYPED_TEST(GradientDescentInstantiationSearcherTest, Simple) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/gradient1.pm";
     std::string formulaAsString = "Pmax=? [F s=2]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
@@ -46,16 +122,12 @@ TEST(GradientDescentInstantiationSearcherTest, Simple) {
 
     auto vars = storm::models::sparse::getProbabilityParameters(*dtmc);
 
-    storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> doubleChecker(dtmc, vars, formulas);
-    auto doubleInstantiation = doubleChecker.gradientDescent(false);
+    storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::ValueType, typename TestFixture::ConstantType> checker(this->env(), dtmc, vars, formulas);
+    auto doubleInstantiation = checker.gradientDescent(this->env(), false);
     ASSERT_NEAR(doubleInstantiation.second, 0.25, 1e-6);
-
-    /* storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, storm::RationalNumber> rationalChecker(dtmc, vars, formulas); */
-    /* auto rationalInstantiation = rationalChecker.gradientDescent(false); */
-    /* ASSERT_NEAR(rationalInstantiation.second, 0.25, 1e-6); */
 }
 
-TEST(GradientDescentInstantiationSearcherTest, Crowds) {
+TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
     std::string programFile = STORM_TEST_RESOURCES_DIR "/pdtmc/crowds3_5.pm";
     std::string formulaAsString = "Pmin=? [F \"observe0Greater1\"]";
     std::string constantsAsString = ""; //e.g. pL=0.9,TOACK=0.5
@@ -77,7 +149,8 @@ TEST(GradientDescentInstantiationSearcherTest, Crowds) {
     /* ASSERT_EQ(dtmc->getNumberOfTransitions(), 383ull); */
 
     // First, test an ADAM instance. We will check that we have implemented ADAM correctly by comparing our results to results gathered by an ADAM implementation in tensorflow :)
-    storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> adamChecker(
+    storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::ValueType, typename TestFixture::ConstantType> adamChecker(
+            this->env(),
             dtmc, 
             vars, 
             formulas,
@@ -90,7 +163,7 @@ TEST(GradientDescentInstantiationSearcherTest, Crowds) {
             boost::none,
             true
     );
-    auto doubleInstantiation = adamChecker.gradientDescent(false);
+    auto doubleInstantiation = adamChecker.gradientDescent(this->env(), false);
     adamChecker.printRunAsJson();
     auto walk = adamChecker.getVisualizationWalk();
 
@@ -118,7 +191,8 @@ TEST(GradientDescentInstantiationSearcherTest, Crowds) {
     ASSERT_NEAR(doubleInstantiation.second, 0, 1e-6);
 
     // Same thing with RAdam
-    storm::derivative::GradientDescentInstantiationSearcher<storm::RationalFunction, double> radamChecker(
+    storm::derivative::GradientDescentInstantiationSearcher<typename TestFixture::ValueType, typename TestFixture::ConstantType> radamChecker(
+            this->env(),
             dtmc, 
             vars, 
             formulas,
@@ -131,7 +205,7 @@ TEST(GradientDescentInstantiationSearcherTest, Crowds) {
             boost::none,
             true
     );
-    auto radamInstantiation = radamChecker.gradientDescent(false);
+    auto radamInstantiation = radamChecker.gradientDescent(this->env(), false);
     radamChecker.printRunAsJson();
     auto radamWalk = radamChecker.getVisualizationWalk();
 

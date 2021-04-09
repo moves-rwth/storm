@@ -17,6 +17,7 @@ namespace storm {
         public:
             /**
              * Computes the derivative of the reachability probability or the derivative of the expected reward of a given Dtmc at an instantiation
+             * @param env The environment. Always pass the same environment to the calculateDerivative call!
              * @param model The Dtmc to compute the derivatives of. This must have _one_
              * target state labeled "target" and _one_ initial state labeled "init". Note this is exactly the
              * kind of Dtmc the SparseParametricDtmcSimplifier spits out.
@@ -29,18 +30,18 @@ namespace storm {
              * @param rewardModelName When computing an expected reward, the name of the reward model in the Dtmc.
              */
             DerivativeEvaluationHelper<ValueType, ConstantType>(
+                    Environment const& env,
                     std::shared_ptr<storm::models::sparse::Dtmc<ValueType>> const model,
                     std::set<typename utility::parametric::VariableType<ValueType>::type> const& parameters,
                     std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas,
                     ResultType mode = ResultType::PROBABILITY,
                     boost::optional<std::string> rewardModelName = boost::none
                 ) : model(model), mode(mode), rewardModelName(rewardModelName) {
-                std::cout << "Setting up matrices..." << std::endl;
-                setup(parameters, formulas);
-                std::cout << "Done setting up, starting the search" << std::endl;
+                setup(env, parameters, formulas);
             }
             /**
              * calculateDerivative calculates the deriative of the model w.r.t. a parameter at an instantiation
+             * @param env The environment. Always pass the same environment as the constructor!
              * @param parameter The parameter w.r.t. the derivivative will be computed
              * @param substitutions The instantiation at which the derivivative will be computed.
              * @param valueVector A vector of reachability probabilities or expected rewards of eventually reaching the model's
@@ -50,6 +51,7 @@ namespace storm {
              * model has states, and of course the ith element of the vector is the reachability probability of the ith state.
              */
             ConstantType calculateDerivative(
+                Environment const& env,
                 const typename utility::parametric::VariableType<ValueType>::type parameter,
                 const std::map<typename utility::parametric::VariableType<ValueType>::type, typename utility::parametric::CoefficientType<ValueType>::type> &substitutions,
                 const std::vector<ConstantType> valueVector
@@ -60,7 +62,6 @@ namespace storm {
             std::shared_ptr<storm::logic::Formula const> formula;
             std::shared_ptr<storm::logic::Formula const> formulaWithoutBound;
             std::map<typename utility::parametric::VariableType<ValueType>::type, std::unique_ptr<storm::solver::LinearEquationSolver<ConstantType>>> linearEquationSolvers;
-            std::unique_ptr<storm::Environment> environment;
 
             std::vector<std::pair<typename storm::storage::SparseMatrix<ConstantType>::iterator, ConstantType*>> matrixMapping; 
             std::unordered_map<ValueType, ConstantType> functions; 
@@ -83,6 +84,7 @@ namespace storm {
                 storage::SparseMatrix<ConstantType> &matrixInstantiated
             );
             void setup(
+                Environment const& env,
                 std::set<typename utility::parametric::VariableType<ValueType>::type> const& parameters,
                 std::vector<std::shared_ptr<storm::logic::Formula const>> const& formulas);
 
