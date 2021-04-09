@@ -9,6 +9,7 @@
 
 #include "storm-dft/storage/SylvanBddManager.h"
 #include "storm-dft/storage/dft/DFT.h"
+#include "storm-dft/transformations/SftToBddTransformator.h"
 #include "storm/storage/PairHash.h"
 
 namespace storm {
@@ -23,19 +24,32 @@ class SFTBDDChecker {
     using ValueType = double;
     using Bdd = sylvan::Bdd;
 
-    SFTBDDChecker(std::shared_ptr<storm::storage::DFT<ValueType>> dft);
-
     SFTBDDChecker(
-        std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager,
-        std::shared_ptr<storm::storage::DFT<ValueType>> dft);
+        std::shared_ptr<storm::storage::DFT<ValueType>> dft,
+        std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager =
+            std::make_shared<storm::storage::SylvanBddManager>());
+
+    SFTBDDChecker(std::shared_ptr<
+                  storm::transformations::dft::SftToBddTransformator<ValueType>>
+                      transformator);
 
     /**
-     * \return
-     * The internal sylvanBddManager
+     * \return The internal DFT
      */
-    std::shared_ptr<storm::storage::SylvanBddManager> getSylvanBddManager() {
-        return sylvanBddManager;
-    }
+    std::shared_ptr<storm::storage::DFT<ValueType>> getDFT() const noexcept;
+
+    /**
+     * \return The internal sylvanBddManager
+     */
+    std::shared_ptr<storm::storage::SylvanBddManager> getSylvanBddManager()
+        const noexcept;
+
+    /**
+     * \return The internal SftToBddTransformator
+     */
+    std::shared_ptr<
+        storm::transformations::dft::SftToBddTransformator<ValueType>>
+    getTransformator() const noexcept;
 
     /**
      * Exports the Bdd that represents the top level gate to a file
@@ -45,21 +59,8 @@ class SFTBDDChecker {
      * The name of the file the dot graph is written to
      */
     void exportBddToDot(std::string const &filename) {
-        sylvanBddManager->exportBddToDot(getTopLevelGateBdd(), filename);
+        getSylvanBddManager()->exportBddToDot(getTopLevelGateBdd(), filename);
     }
-
-    /**
-     * \return
-     * Generated Bdd that represents the formula of the top level gate
-     */
-    Bdd getTopLevelGateBdd();
-
-    /**
-     * \return
-     * Generated Bdds that represent the logical formula of the given events
-     */
-    std::map<std::string, Bdd> getRelevantEventBdds(
-        std::set<std::string> relevantEventNames);
 
     /**
      * \return
@@ -406,11 +407,15 @@ class SFTBDDChecker {
                                   std::vector<ValueType> const &timepoints,
                                   size_t chunksize) const;
 
-    std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager;
-    std::shared_ptr<storm::storage::DFT<ValueType>> dft;
+    /**
+     * \return
+     * Generated Bdd that represents the formula of the top level gate
+     */
+    Bdd getTopLevelGateBdd();
 
-    bool calculatedTopLevelGate;
-    Bdd topLevelGateBdd;
+    std::shared_ptr<
+        storm::transformations::dft::SftToBddTransformator<ValueType>>
+        transformator;
 };
 
 }  // namespace modelchecker

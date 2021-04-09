@@ -43,9 +43,9 @@ std::vector<ValueType> DFTModularizer::check(FormulaVector const &formulas,
     replaceDynamicModules(topLevelElement, timepoints);
 
     auto const subDFT{getSubDFT(topLevelElement)};
-    storm::adapters::SFTBDDPropertyFormulaAdapter checker{sylvanBddManager,
-                                                          subDFT};
-    return checker.check(formulas, chunksize);
+    storm::adapters::SFTBDDPropertyFormulaAdapter checker{
+        subDFT, formulas, {}, sylvanBddManager};
+    return checker.check(chunksize);
 }
 
 std::vector<ValueType> DFTModularizer::getProbabilitiesAtTimepoints(
@@ -58,7 +58,7 @@ std::vector<ValueType> DFTModularizer::getProbabilitiesAtTimepoints(
     replaceDynamicModules(topLevelElement, timepoints);
 
     auto const subDFT{getSubDFT(topLevelElement)};
-    storm::modelchecker::SFTBDDChecker checker{sylvanBddManager, subDFT};
+    storm::modelchecker::SFTBDDChecker checker{subDFT, sylvanBddManager};
     return checker.getProbabilitiesAtTimepoints(timepoints, chunksize);
 }
 
@@ -260,7 +260,7 @@ void DFTModularizer::updateWorkDFT(
 void DFTModularizer::analyseDynamic(DFTElementCPointer const element,
                                     std::vector<ValueType> const &timepoints) {
     // Check that analysis is needed
-    if(workDFT->getElement(element->id())->isBasicElement()) {
+    if (workDFT->getElement(element->id())->isBasicElement()) {
         return;
     }
     auto subDFT{getSubDFT(element)};

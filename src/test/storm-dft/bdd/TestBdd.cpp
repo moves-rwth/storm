@@ -36,23 +36,19 @@ std::string const VotBdd =
 TEST(TestBdd, AndOrFormulaFail) {
     auto dft = storm::api::loadDFTJsonString<double>(AndOrBdd);
     auto manager = std::make_shared<storm::storage::SylvanBddManager>();
-    storm::adapters::SFTBDDPropertyFormulaAdapter checker{dft};
-
     auto const props{storm::api::extractFormulasFromProperties(
         storm::api::parseProperties("P=? [F < 1 !\"F2_failed\"];"))};
+    storm::adapters::SFTBDDPropertyFormulaAdapter checker{dft, props};
 
     STORM_LOG_ERROR(
         "NotSupportedException: "
         "Can only use negation with... is intended");
-    EXPECT_THROW(checker.check(props),
-                 storm::exceptions::NotSupportedException);
+    EXPECT_THROW(checker.check(), storm::exceptions::NotSupportedException);
 }
 
 TEST(TestBdd, AndOrFormula) {
     auto dft = storm::api::loadDFTJsonString<double>(AndOrBdd);
     auto manager = std::make_shared<storm::storage::SylvanBddManager>();
-    storm::adapters::SFTBDDPropertyFormulaAdapter checker{dft};
-
     auto const props{
         storm::api::extractFormulasFromProperties(storm::api::parseProperties(
             "P=? [F <= 1 \"failed\"];"
@@ -63,9 +59,10 @@ TEST(TestBdd, AndOrFormula) {
             "P=? [F  = 1 !\"F2_failed\"];"
             "P=? [F <= 1 \"F1_failed\"];"
             "P=? [F <= 1 \"F2_failed\"];"))};
+    storm::adapters::SFTBDDPropertyFormulaAdapter checker{dft, props};
 
-    auto const resultProbs{checker.check(props)};
-    auto const result{checker.formulasToBdd(props)};
+    auto const resultProbs{checker.check()};
+    auto const result{checker.formulasToBdd()};
 
     EXPECT_EQ(result.size(), 8);
 
@@ -112,14 +109,18 @@ TEST(TestBdd, AndOrFormula) {
 
 TEST(TestBdd, AndMTTF) {
     auto dft = storm::api::loadDFTJsonString<double>(AndBdd);
-    EXPECT_NEAR(storm::dft::utility::MTTFHelperProceeding(dft), 2.164042561, 1e-6);
-    EXPECT_NEAR(storm::dft::utility::MTTFHelperVariableChange(dft), 2.164042561, 1e-6);
+    EXPECT_NEAR(storm::dft::utility::MTTFHelperProceeding(dft), 2.164042561,
+                1e-6);
+    EXPECT_NEAR(storm::dft::utility::MTTFHelperVariableChange(dft), 2.164042561,
+                1e-6);
 }
 
 TEST(TestBdd, VotMTTF) {
     auto dft = storm::api::loadDFTJsonString<double>(VotBdd);
-    EXPECT_NEAR(storm::dft::utility::MTTFHelperProceeding(dft), 0.8415721072, 1e-6);
-    EXPECT_NEAR(storm::dft::utility::MTTFHelperVariableChange(dft), 0.8415721072, 1e-6);
+    EXPECT_NEAR(storm::dft::utility::MTTFHelperProceeding(dft), 0.8415721072,
+                1e-6);
+    EXPECT_NEAR(storm::dft::utility::MTTFHelperVariableChange(dft),
+                0.8415721072, 1e-6);
 }
 
 TEST(TestBdd, And) {
@@ -133,7 +134,7 @@ TEST(TestBdd, And) {
 TEST(TestBdd, Or) {
     auto dft = storm::api::loadDFTJsonString<double>(OrBdd);
     storm::modelchecker::SFTBDDChecker checker{dft};
-    auto result = checker.getTopLevelGateBdd();
+    auto result = checker.getTransformator()->transformTopLevel();
 
     EXPECT_NEAR(checker.getProbabilityAtTimebound(1), 0.75, 1e-6);
     checker.exportBddToDot("/tmp/test/or.dot");
@@ -142,7 +143,7 @@ TEST(TestBdd, Or) {
 TEST(TestBdd, AndOr) {
     auto dft = storm::api::loadDFTJsonString<double>(AndOrBdd);
     storm::modelchecker::SFTBDDChecker checker{dft};
-    auto result = checker.getTopLevelGateBdd();
+    auto result = checker.getTransformator()->transformTopLevel();
 
     EXPECT_NEAR(checker.getProbabilityAtTimebound(1), 0.5625, 1e-6);
     checker.exportBddToDot("/tmp/test/andOr.dot");
@@ -151,7 +152,7 @@ TEST(TestBdd, AndOr) {
 TEST(TestBdd, Vot) {
     auto dft = storm::api::loadDFTJsonString<double>(VotBdd);
     storm::modelchecker::SFTBDDChecker checker{dft};
-    auto result = checker.getTopLevelGateBdd();
+    auto result = checker.getTransformator()->transformTopLevel();
 
     EXPECT_NEAR(checker.getProbabilityAtTimebound(1), 0.6875, 1e-6);
     checker.exportBddToDot("/tmp/test/vot.dot");
@@ -160,12 +161,11 @@ TEST(TestBdd, Vot) {
 TEST(TestBdd, AndOrRelevantEvents) {
     auto dft = storm::api::loadDFTJsonString<double>(AndOrBdd);
     auto manager = std::make_shared<storm::storage::SylvanBddManager>();
+    storm::utility::RelevantEvents relevantEvents{"F", "F1", "F2", "x1"};
     storm::transformations::dft::SftToBddTransformator<double> transformer{
-        dft, manager};
+        dft, manager, relevantEvents};
 
-    std::set<std::string> relevantEventNames = {"F", "F1", "F2", "x1"};
-
-    auto const result = transformer.transform(relevantEventNames);
+    auto const result = transformer.transformRelevantEvents();
 
     EXPECT_EQ(result.size(), 4);
 
@@ -176,18 +176,25 @@ TEST(TestBdd, AndOrRelevantEvents) {
 
 TEST(TestBdd, AndOrRelevantEventsChecked) {
     auto dft = storm::api::loadDFTJsonString<double>(AndOrBdd);
-    storm::modelchecker::SFTBDDChecker checker{dft};
-    auto relevantEvents = checker.getRelevantEventBdds({"F", "F1", "F2", "x1"});
+    auto manager{std::make_shared<storm::storage::SylvanBddManager>()};
+    storm::utility::RelevantEvents relevantEvents{"F", "F1", "F2", "x1"};
+    auto transformator{std::make_shared<
+        storm::transformations::dft::SftToBddTransformator<double>>(
+        dft, manager, relevantEvents)};
 
-    EXPECT_NEAR(checker.getProbabilityAtTimebound(relevantEvents["F"], 1),
+    storm::modelchecker::SFTBDDChecker checker{transformator};
+
+    auto relevantEventsBdds = transformator->transformRelevantEvents();
+
+    EXPECT_NEAR(checker.getProbabilityAtTimebound(relevantEventsBdds["F"], 1),
                 0.5625, 1e-6);
 
-    EXPECT_NEAR(checker.getProbabilityAtTimebound(relevantEvents["F1"], 1),
+    EXPECT_NEAR(checker.getProbabilityAtTimebound(relevantEventsBdds["F1"], 1),
                 0.75, 1e-6);
-    EXPECT_NEAR(checker.getProbabilityAtTimebound(relevantEvents["F2"], 1),
+    EXPECT_NEAR(checker.getProbabilityAtTimebound(relevantEventsBdds["F2"], 1),
                 0.75, 1e-6);
 
-    EXPECT_NEAR(checker.getProbabilityAtTimebound(relevantEvents["x1"], 1), 0.5,
+    EXPECT_NEAR(checker.getProbabilityAtTimebound(relevantEventsBdds["x1"], 1), 0.5,
                 1e-6);
 }
 

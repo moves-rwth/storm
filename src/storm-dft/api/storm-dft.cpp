@@ -8,6 +8,8 @@
 #include "storm-dft/modelchecker/dft/SFTBDDChecker.h"
 #include "storm-dft/modelchecker/dft/DFTModularizer.h"
 #include "storm-dft/modelchecker/dft/SFTBDDPropertyFormulaAdapter.h"
+#include "storm-dft/storage/SylvanBddManager.h"
+#include "storm-dft/transformations/SftToBddTransformator.h"
 #include "storm-dft/utility/MTTFHelper.h"
 #include <memory>
 #include <vector>
@@ -64,14 +66,17 @@ namespace storm {
                         "Try modularisation.");
             }
 
-            storm::modelchecker::SFTBDDChecker checker{dft};
+            auto sylvanBddManager{std::make_shared<storm::storage::SylvanBddManager>()};
+            storm::adapters::SFTBDDPropertyFormulaAdapter adapter{dft, properties, {}, sylvanBddManager};
+            auto checker{adapter.getSFTBDDChecker()};
+
             if(exportToDot) {
-                checker.exportBddToDot(filename);
+                checker->exportBddToDot(filename);
             }
 
             if(calculateMCS) {
-                auto const minimalCutSets {checker.getMinimalCutSetsAsIndices()};
-                auto const sylvanBddManager{checker.getSylvanBddManager()};
+                auto const minimalCutSets {checker->getMinimalCutSetsAsIndices()};
+                auto const sylvanBddManager{checker->getSylvanBddManager()};
 
                 std::cout << "{\n";
                 for(auto const &minimalCutSet : minimalCutSets) {
@@ -88,11 +93,11 @@ namespace storm {
                 if(chunksize == 1) {
                     for(auto const& timebound : timepoints) {
                         auto const probability{
-                            checker.getProbabilityAtTimebound(timebound)};
+                            checker->getProbabilityAtTimebound(timebound)};
                         std::cout << "Systemfailure Probability at Timebound " << timebound << " is " << probability << '\n';
                     }
                 } else {
-                    auto const probabilities{checker.getProbabilitiesAtTimepoints(timepoints, chunksize)};
+                    auto const probabilities{checker->getProbabilitiesAtTimepoints(timepoints, chunksize)};
                     for(size_t i{0}; i < timepoints.size(); ++i) {
                         auto const timebound{timepoints[i]};
                         auto const probability{probabilities[i]};
@@ -101,8 +106,7 @@ namespace storm {
                 }
 
                 if(!properties.empty()) {
-                    storm::adapters::SFTBDDPropertyFormulaAdapter adapter{checker, dft};
-                    auto const probabilities{adapter.check(properties, chunksize)};
+                    auto const probabilities{adapter.check(chunksize)};
                     for(size_t i{0}; i < probabilities.size(); ++i) {
                         std::cout << "Property \""
                             << properties.at(i)->toString()
@@ -116,19 +120,19 @@ namespace storm {
                 auto const bes{dft->getBasicElements()};
                 std::vector<double> values{};
                 if(importanceMeasureName == "MIF") {
-                    values = checker.getAllBirnbaumFactorsAtTimebound(timepoints[0]);
+                    values = checker->getAllBirnbaumFactorsAtTimebound(timepoints[0]);
                 }
                 if(importanceMeasureName == "CIF") {
-                    values = checker.getAllCIFsAtTimebound(timepoints[0]);
+                    values = checker->getAllCIFsAtTimebound(timepoints[0]);
                 }
                 if(importanceMeasureName == "DIF") {
-                    values = checker.getAllDIFsAtTimebound(timepoints[0]);
+                    values = checker->getAllDIFsAtTimebound(timepoints[0]);
                 }
                 if(importanceMeasureName == "RAW") {
-                    values = checker.getAllRAWsAtTimebound(timepoints[0]);
+                    values = checker->getAllRAWsAtTimebound(timepoints[0]);
                 }
                 if(importanceMeasureName == "RRW") {
-                    values = checker.getAllRRWsAtTimebound(timepoints[0]);
+                    values = checker->getAllRRWsAtTimebound(timepoints[0]);
                 }
 
                 for (size_t i{0}; i < bes.size(); ++i) {
@@ -138,19 +142,19 @@ namespace storm {
                 auto const bes{dft->getBasicElements()};
                 std::vector<std::vector<double>> values{};
                 if(importanceMeasureName == "MIF") {
-                    values = checker.getAllBirnbaumFactorsAtTimepoints(timepoints, chunksize);
+                    values = checker->getAllBirnbaumFactorsAtTimepoints(timepoints, chunksize);
                 }
                 if(importanceMeasureName == "CIF") {
-                    values = checker.getAllCIFsAtTimepoints(timepoints, chunksize);
+                    values = checker->getAllCIFsAtTimepoints(timepoints, chunksize);
                 }
                 if(importanceMeasureName == "DIF") {
-                    values = checker.getAllDIFsAtTimepoints(timepoints, chunksize);
+                    values = checker->getAllDIFsAtTimepoints(timepoints, chunksize);
                 }
                 if(importanceMeasureName == "RAW") {
-                    values = checker.getAllRAWsAtTimepoints(timepoints, chunksize);
+                    values = checker->getAllRAWsAtTimepoints(timepoints, chunksize);
                 }
                 if(importanceMeasureName == "RRW") {
-                    values = checker.getAllRRWsAtTimepoints(timepoints, chunksize);
+                    values = checker->getAllRRWsAtTimepoints(timepoints, chunksize);
                 }
                 for (size_t i{0}; i < bes.size(); ++i) {
                     for (size_t j{0}; j < timepoints.size(); ++j) {

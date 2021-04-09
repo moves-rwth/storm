@@ -5,6 +5,7 @@
 
 #include "storm-dft/storage/SylvanBddManager.h"
 #include "storm-dft/storage/dft/DFT.h"
+#include "storm-dft/utility/RelevantEvents.h"
 #include "storm/exceptions/NotSupportedException.h"
 #include "storm/utility/bitoperations.h"
 
@@ -22,10 +23,12 @@ class SftToBddTransformator {
 
     SftToBddTransformator(
         std::shared_ptr<storm::storage::DFT<ValueType>> dft,
-        std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager)
+        std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager =
+            std::make_shared<storm::storage::SylvanBddManager>(),
+        storm::utility::RelevantEvents relevantEvents = {})
         : dft{std::move(dft)},
           sylvanBddManager{std::move(sylvanBddManager)},
-          variables{} {
+          relevantEvents{relevantEvents} {
         // create Variables for the BEs
         for (auto const& i : this->dft->getBasicElements()) {
             // Filter constantBeTrigger
@@ -42,12 +45,21 @@ class SftToBddTransformator {
      *
      * \exception storm::exceptions::NotSupportedException
      * The given DFT is not a SFT
+     *
+     * \return The translated Bdd of the toplevel gate
      */
-    Bdd transform() {
-        calculateRelevantEvents = false;
-        return translate(std::static_pointer_cast<
-                         storm::storage::DFTElement<ValueType> const>(
-            dft->getTopLevelGate()));
+    Bdd const& transformTopLevel() {
+        auto const tlName{dft->getTopLevelGate()->name()};
+        if (relevantEventBdds.empty()) {
+            relevantEventBdds[tlName] =
+                translate(std::static_pointer_cast<
+                          storm::storage::DFTElement<ValueType> const>(
+                    dft->getTopLevelGate()));
+        }
+        // else relevantEventBdds is not empty and we maintain the invaraint
+        // that the toplevel gate is in there
+
+        return relevantEventBdds[tlName];
     }
 
     /**
@@ -58,19 +70,18 @@ class SftToBddTransformator {
      * \exception storm::exceptions::NotSupportedException
      * The given DFT is not a SFT
      *
-     * \param relevantEventNames
-     * The Names of the Events that should be transformed into Bdd's
-     *
+     * \return A mapping from element name to translated Bdd
      */
-    std::map<std::string, Bdd> transform(
-        std::set<std::string> const& relevantEventNames) {
-        this->relevantEventNames = relevantEventNames;
-        relevantEventBdds = {};
-        calculateRelevantEvents = true;
-        relevantEventBdds[dft->getTopLevelGate()->name()] =
-            translate(std::static_pointer_cast<
-                      storm::storage::DFTElement<ValueType> const>(
-                dft->getTopLevelGate()));
+    std::map<std::string, Bdd> const& transformRelevantEvents() {
+        if (relevantEventBdds.empty()) {
+            relevantEventBdds[dft->getTopLevelGate()->name()] =
+                translate(std::static_pointer_cast<
+                          storm::storage::DFTElement<ValueType> const>(
+                    dft->getTopLevelGate()));
+        }
+
+        // we maintain the invariant that if relevantEventBdds is not empty
+        // then we have calculated all relevant bdds
 
         return relevantEventBdds;
     }
@@ -78,12 +89,31 @@ class SftToBddTransformator {
     /**
      * Get Variables in the order they where inserted
      */
-    std::vector<uint32_t> const& getDdVariables() { return variables; }
+    std::vector<uint32_t> const& getDdVariables() const noexcept {
+        return variables;
+    }
+
+    /**
+     * \return The internal DFT
+     */
+    std::shared_ptr<storm::storage::DFT<ValueType>> getDFT() const noexcept {
+        return dft;
+    }
+
+    /**
+     * \return The internal sylvanBddManager
+     */
+    std::shared_ptr<storm::storage::SylvanBddManager> getSylvanBddManager()
+        const noexcept {
+        return sylvanBddManager;
+    }
 
    private:
-    bool calculateRelevantEvents{false};
-    std::set<std::string> relevantEventNames{};
     std::map<std::string, Bdd> relevantEventBdds{};
+    std::vector<uint32_t> variables{};
+    std::shared_ptr<storm::storage::DFT<ValueType>> dft;
+    std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager;
+    storm::utility::RelevantEvents relevantEvents;
 
     /**
      * Translate a simple DFT element into a BDD.
@@ -93,7 +123,8 @@ class SftToBddTransformator {
      */
     Bdd translate(
         std::shared_ptr<storm::storage::DFTElement<ValueType> const> element) {
-        if (calculateRelevantEvents) {
+        auto isRelevant{relevantEvents.isRelevant(element->name())};
+        if (isRelevant) {
             auto const it{relevantEventBdds.find(element->name())};
             if (it != relevantEventBdds.end()) {
                 return it->second;
@@ -116,14 +147,11 @@ class SftToBddTransformator {
             rBdd = sylvanBddManager->getZero();
         }
 
-        if (calculateRelevantEvents) {
-            auto const it{relevantEventNames.find(element->name())};
-            if (it != relevantEventNames.end()) {
-                // rBdd can't be in relevantEventBdds
-                // as we would've returned
-                // at the start of the function
-                relevantEventBdds[element->name()] = rBdd;
-            }
+        if (isRelevant) {
+            // rBdd can't be in relevantEventBdds
+            // as we would've returned
+            // at the start of the function
+            relevantEventBdds[element->name()] = rBdd;
         }
 
         return rBdd;
@@ -225,11 +253,6 @@ class SftToBddTransformator {
                       basicElement) {
         return sylvanBddManager->getPositiveLiteral(basicElement->name());
     }
-
-    std::shared_ptr<storm::storage::DFT<ValueType>> dft;
-    std::shared_ptr<storm::storage::SylvanBddManager> sylvanBddManager;
-
-    std::vector<uint32_t> variables;
 };
 
 }  // namespace dft
