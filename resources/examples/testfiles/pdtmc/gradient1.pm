@@ -6,7 +6,6 @@ module test
 
 	// local state
 	s : [0..4] init 0;
-
 	
 
 	[] s=0 -> p : (s'=1) + (1-p) : (s'=3);

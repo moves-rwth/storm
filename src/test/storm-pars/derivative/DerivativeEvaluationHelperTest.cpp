@@ -111,6 +111,7 @@ void testModel(std::shared_ptr<storm::models::sparse::Dtmc<storm::RationalFuncti
 
             auto probability = calculateProbability<storm::RationalFunction, storm::RationalNumber>(dtmc, formulaWithoutBound, instantiation);
             auto derivative = helper.calculateDerivative(parameter, instantiation, probability);
+            std::cout << derivative << ", " << expectedResult << std::endl;
             ASSERT_NEAR(derivative, expectedResult, 1e-6) << instantiation;
         }
     }
@@ -134,7 +135,12 @@ TEST(DerivativeEvaluationHelperTest, Simple) {
     dtmc = model->as<storm::models::sparse::Dtmc<storm::RationalFunction>>();
 
     // The associated polynomial. In this case, it's p * (1 - p).
-    carl::Variable varP = carl::VariablePool::getInstance().findVariableWithName("p");
+    carl::Variable varP; 
+    for (auto parameter : storm::models::sparse::getProbabilityParameters(*dtmc)) {
+        if (parameter.name() == "p") {
+            varP = parameter;
+        }
+    }
     std::shared_ptr<storm::RawPolynomialCache> cache = std::make_shared<storm::RawPolynomialCache>();
     auto p = storm::RationalFunction(storm::Polynomial(storm::RawPolynomial(varP), cache));
     storm::RationalFunction reachabilityFunction = p * (storm::RationalFunction(1)-p);
