@@ -82,7 +82,7 @@ namespace {
         using Instantiation = std::map<VariableType<storm::RationalFunction>, CoefficientType<storm::RationalFunction>>;
         template<typename ValueType>
         using ResultMap = std::map<VariableType<storm::RationalFunction>, ConstantType>;
-        DerivativeEvaluationHelperTest<ValueType>() : _environment(TestType::createEnvironment()) {}
+        DerivativeEvaluationHelperTest() : _environment(TestType::createEnvironment()) {}
         storm::Environment const& env() const { return _environment; }
         virtual void SetUp() { carl::VariablePool::getInstance().clear(); }
         virtual void TearDown() { carl::VariablePool::getInstance().clear(); }

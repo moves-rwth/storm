@@ -86,7 +86,7 @@ namespace {
     public:
         typedef typename TestType::ValueType ValueType;
         typedef typename TestType::ConstantType ConstantType;
-        GradientDescentInstantiationSearcherTest<ValueType>() : _environment(TestType::createEnvironment()) {}
+        GradientDescentInstantiationSearcherTest() : _environment(TestType::createEnvironment()) {}
         storm::Environment const& env() const { return _environment; }
         virtual void SetUp() { carl::VariablePool::getInstance().clear(); }
         virtual void TearDown() { carl::VariablePool::getInstance().clear(); }
@@ -164,7 +164,6 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
             true
     );
     auto doubleInstantiation = adamChecker.gradientDescent(this->env(), false);
-    adamChecker.printRunAsJson();
     auto walk = adamChecker.getVisualizationWalk();
 
     carl::Variable badCVar;
@@ -206,7 +205,6 @@ TYPED_TEST(GradientDescentInstantiationSearcherTest, Crowds) {
             true
     );
     auto radamInstantiation = radamChecker.gradientDescent(this->env(), false);
-    radamChecker.printRunAsJson();
     auto radamWalk = radamChecker.getVisualizationWalk();
 
     const float badCValuesRadam[] = {0.5, 0.49060654640197754, 0.48096320033073425, 0.47105303406715393, 0.4608582556247711, 0.45036017894744873, 0.45009857416152954, 0.44976693391799927, 0.4493735134601593, 0.44892504811286926, 0.44842588901519775, 0.4478800892829895, 0.44729089736938477, 0.446660578250885, 0.4459914565086365, 0.4452851712703705, 0.4445434808731079, 0.44376760721206665, 0.44295892119407654, 0.4421185553073883, 0.4412473738193512, 0.4403461515903473, 0.43941572308540344, 0.4384567141532898, 0.43746981024742126, 0.43645551800727844, 0.43541428446769714, 0.43434661626815796, 0.43325290083885193, 0.4321334660053253, 0.43098869919776917, 0.42981886863708496, 0.42862433195114136, 0.4274052083492279, 0.4261617660522461, 0.42489421367645264, 0.42360275983810425, 0.4222874939441681, 0.4209486246109009, 0.41958627104759216, 0.4182005524635315};
