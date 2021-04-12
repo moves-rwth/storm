@@ -14,7 +14,7 @@ env:
   CARL_BRANCH: "master14"
   CARL_GIT_URL: "https://github.com/smtrat/carl.git"
   STORM_GIT_URL: "${{ github.server_url }}/${{ github.repository }}.git"
-  STORM_BRANCH: "master"
+  STORM_BRANCH: "${{ github.head_ref || github.sha }}"
   # github runners currently have two cores
   NR_JOBS: "2"
 
@@ -45,7 +45,10 @@ jobs:
       - name: Init Docker
         run: sudo docker run -d -it --name storm --privileged movesrwth/storm-basesystem:${{ matrix.distro }}
       - name: Git clone
-        run: sudo docker exec storm git clone --branch $STORM_BRANCH $STORM_GIT_URL /opt/storm
+        # git clone cannot clone individual commits based on a sha and some other refs
+        # this workaround fixes this and fetches only one commit
+        run: |
+          sudo docker exec storm bash -c "mkdir /opt/storm; cd /opt/storm; git init && git remote add origin ${STORM_GIT_URL} && git fetch --depth 1 origin ${STORM_BRANCH} && git checkout FETCH_HEAD"
       - name: Run cmake
         run: sudo docker exec storm bash -c "mkdir /opt/storm/build; cd /opt/storm/build; cmake .. ${CMAKE_ARGS}"
       - name: Build storm
@@ -118,8 +121,17 @@ jobs:
         #####
         # Build & TEST & DEPLOY STORM
         #####
-      - name: Git clone
-        run: sudo docker exec storm git clone --branch $STORM_BRANCH $STORM_GIT_URL /opt/storm
+      - name: Git shallow clone
+        # Only clone shallow if not using master on original repo (and not for pull requests or forks)
+        if: ${{ !(github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master') }}
+        run: |
+          # git clone cannot clone individual commits based on a sha and some other refs
+          sudo docker exec storm bash -c "mkdir /opt/storm; cd /opt/storm; git init && git remote add origin ${STORM_GIT_URL} && git fetch --depth 1 origin ${STORM_BRANCH} && git checkout FETCH_HEAD"
+      - name: Git deep clone
+        # needed for versioning for now on deployment
+        if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'
+        run: |
+          sudo docker exec storm git clone --branch master $STORM_GIT_URL /opt/storm
       - name: Run cmake
         run: sudo docker exec storm bash -c "mkdir /opt/storm/build; cd /opt/storm/build; cmake .. ${CMAKE_ARGS}"
       - name: Build storm
