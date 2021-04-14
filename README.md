@@ -48,10 +48,12 @@ Storm has been developed at RWTH Aachen University.
 * Jip Spel
 
 ###### Contributors (lexicographical order)
+* Daniel Basgöze
 * Dimitri Bohlender
 * Alexander Bork
 * Harold Bruintjes
 * Michael Deutschen
+* Linus Heck
 * Thomas Heinemann
 * Thomas Henn
 * Tom Janson
