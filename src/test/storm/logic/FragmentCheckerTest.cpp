@@ -150,7 +150,7 @@ TEST(FragmentCheckerTest, MultiObjective) {
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("P=? [F \"label\"]"));
     EXPECT_FALSE(checker.conformsToSpecification(*formula, multiobjective));
     
-    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("multi(R<0.3 [ C ], P<0.6 [F \"label\"] & \"label\" & R<=4[F \"label\"])"));
+    ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("multi(R<0.3 [ C ], P<0.6 [(F \"label1\") & G \"label2\"])"));
     EXPECT_FALSE(checker.conformsToSpecification(*formula, multiobjective));
     
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString("Pmax=? [ F multi(R<0.3 [ C ], P<0.6 [F \"label\"] & \"label\" & R<=4[F \"label\"])]"));
