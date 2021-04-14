@@ -38,7 +38,7 @@ TEST(FormulaParserTest, ExpressionTest) {
     ASSERT_NO_THROW(formula = formulaParser.parseSingleFormulaFromString(input));
     
     EXPECT_TRUE(formula->isInFragment(storm::logic::propositional()));
-    EXPECT_TRUE(formula->isUnaryBooleanStateFormula());
+    EXPECT_TRUE(formula->isAtomicExpressionFormula());
 }
 
 TEST(FormulaParserTest, LabelAndExpressionTest) {
