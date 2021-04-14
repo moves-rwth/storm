@@ -79,10 +79,10 @@ namespace storm {
                                 | atomicPropositionFormula // Should be checked before operator formulas and others. Otherwise, e.g. variable "Random" would be parsed as reward operator 'R' (followed by andom)
                                 | negationPropositionalFormula(qi::_r1, qi::_r2)
                                 | operatorFormula
-                                | multiOperatorFormula
+                                | (isPathFormula(qi::_r1) >> prefixOperatorPathFormula(qi::_r2)) // Needed for e.g. F "a" & X "a" = F ("a" & (X "a"))
+                                | multiOperatorFormula // Has to come after prefixOperatorPathFormula to avoid confusion with multiBoundedPathFormula
                                 | quantileFormula
-                                | gameFormula
-                                | (isPathFormula(qi::_r1) >> prefixOperatorPathFormula(qi::_r2)); // Needed for e.g. F "a" & X "a" = F ("a" & (X "a"))
+                                | gameFormula;
             negationPropositionalFormula = (qi::lit("!") > basicPropositionalFormula(qi::_r1, qi::_r2))[qi::_val = phoenix::bind(&FormulaParserGrammar::createUnaryBooleanStateOrPathFormula, phoenix::ref(*this), qi::_1, storm::logic::UnaryBooleanOperatorType::Not)];
             basicPropositionalFormula.name("basic propositional formula");
             andLevelPropositionalFormula = basicPropositionalFormula(qi::_r1, qi::_r2)[qi::_val = qi::_1]
@@ -128,9 +128,9 @@ namespace storm {
                 > quotedString[qi::_val = phoenix::bind(&FormulaParserGrammar::createHOAPathFormula, phoenix::ref(*this), qi::_1)]
                 >> *(qi::lit(",") > quotedString > qi::lit("->") > formula(FormulaKind::Path, qi::_r1) )[phoenix::bind(&FormulaParserGrammar::addHoaAPMapping, phoenix::ref(*this), *qi::_val, qi::_1, qi::_2)]
                 > qi::lit("}");
-            multiBoundedPathFormulaOperand = pathFormula(qi::_r1)[qi::_pass = phoenix::bind(&FormulaParserGrammar::isValidMultiBoundedPathFormulaOperand, phoenix::ref(*this), qi::_val)];
+            multiBoundedPathFormulaOperand = pathFormula(qi::_r1)[qi::_pass = phoenix::bind(&FormulaParserGrammar::isValidMultiBoundedPathFormulaOperand, phoenix::ref(*this), qi::_1)][qi::_val = qi::_1];
             multiBoundedPathFormulaOperand.name("multi bounded path formula operand");
-            multiBoundedPathFormula = (qi::lit("multi") > qi::lit("(") >> (multiBoundedPathFormulaOperand(qi::_r1) % qi::lit(",")) >> qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createMultiBoundedPathFormula, phoenix::ref(*this), qi::_1)];
+            multiBoundedPathFormula = ((qi::lit("multi") > qi::lit("(")) >> (multiBoundedPathFormulaOperand(qi::_r1) % qi::lit(",")) >> qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createMultiBoundedPathFormula, phoenix::ref(*this), qi::_1)];
             multiBoundedPathFormula.name("multi bounded path formula");
             untilLevelPathFormula = basicPathFormula(qi::_r1)[qi::_val = qi::_1]
                                                >> -( (qi::lit("U")
@@ -161,7 +161,7 @@ namespace storm {
                                     > (operatorFormula % qi::lit(","))
                                     > qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createMultiOperatorFormula, phoenix::ref(*this), qi::_1)];
             multiOperatorFormula.name("multi-objective operator formula");
-            quantileBoundVariable = (-optimalityOperator_ > identifier > qi::lit(","))[qi::_val = phoenix::bind(&FormulaParserGrammar::createQuantileBoundVariables, phoenix::ref(*this), qi::_1,  qi::_2)];
+            quantileBoundVariable = (-optimalityOperator_ >> identifier >> qi::lit(","))[qi::_val = phoenix::bind(&FormulaParserGrammar::createQuantileBoundVariables, phoenix::ref(*this), qi::_1,  qi::_2)];
             quantileBoundVariable.name("quantile bound variable");
             quantileFormula = (qi::lit("quantile") > qi::lit("(") > *(quantileBoundVariable) > operatorFormula[qi::_pass = phoenix::bind(&FormulaParserGrammar::isBooleanReturnType, phoenix::ref(*this), qi::_1, true)] > qi::lit(")"))[qi::_val = phoenix::bind(&FormulaParserGrammar::createQuantileFormula, phoenix::ref(*this), qi::_1, qi::_2)];
             quantileFormula.name("Quantile formula");
