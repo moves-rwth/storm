@@ -19,6 +19,10 @@ namespace storm {
             return true;
         }
         
+        bool MultiObjectiveFormula::isStateFormula() const {
+            return true;
+        }
+        
         bool MultiObjectiveFormula::hasQualitativeResult() const {
             for(auto const& subformula : this->subformulas){
                 if(subformula->hasQuantitativeResult()){

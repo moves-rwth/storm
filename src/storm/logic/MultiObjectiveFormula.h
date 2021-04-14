@@ -12,6 +12,7 @@ namespace storm {
             virtual ~MultiObjectiveFormula();
             
             virtual bool isMultiObjectiveFormula() const override;
+            virtual bool isStateFormula() const override;
             
             virtual bool hasQualitativeResult() const override; // Result is true or false
             virtual bool hasQuantitativeResult() const override; // Result is numerical or a pareto curve
