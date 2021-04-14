@@ -1,18 +1,17 @@
 #ifndef STORM_LOGIC_MULTIOBJECTIVEFORMULA_H_
 #define STORM_LOGIC_MULTIOBJECTIVEFORMULA_H_
 
-#include "storm/logic/Formula.h"
+#include "storm/logic/StateFormula.h"
 
 namespace storm {
     namespace logic {
-        class MultiObjectiveFormula : public Formula {
+        class MultiObjectiveFormula : public StateFormula {
         public:
             MultiObjectiveFormula(std::vector<std::shared_ptr<Formula const>> const& subformulas);
             
             virtual ~MultiObjectiveFormula();
             
             virtual bool isMultiObjectiveFormula() const override;
-            virtual bool isStateFormula() const override;
             
             virtual bool hasQualitativeResult() const override; // Result is true or false
             virtual bool hasQuantitativeResult() const override; // Result is numerical or a pareto curve

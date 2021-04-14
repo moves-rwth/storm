@@ -1,10 +1,10 @@
 #pragma once
 
-#include "storm/logic/Formula.h"
+#include "storm/logic/StateFormula.h"
 
 namespace storm {
     namespace logic {
-        class QuantileFormula : public Formula {
+        class QuantileFormula : public StateFormula {
         public:
             QuantileFormula(std::vector<storm::expressions::Variable> const& boundVariables, std::shared_ptr<Formula const> subformula);
             
