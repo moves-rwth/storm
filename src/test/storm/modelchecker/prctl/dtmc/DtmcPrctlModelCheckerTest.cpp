@@ -30,7 +30,6 @@
 #include "storm/environment/solver/EigenSolverEnvironment.h"
 #include "storm/environment/solver/TopologicalSolverEnvironment.h"
 
-#include <cstdlib> //todo
 
 namespace {
     
@@ -726,7 +725,7 @@ namespace {
         formulasString += "; P=? [ (F (X (s=6 & (XX s=5)))) & (F G (d!=5))]";
         formulasString += "; P=? [ F (s=3 U (\"three\"))]";
         formulasString += "; P=? [ F s=3 U (\"three\")]";
-        formulasString += "; P=? [ F (s=6) & (X \"done\")]";  // TODO without ()
+        formulasString += "; P=? [ F (s=6) & X \"done\"]";
         formulasString += "; P=? [ (F s=6) & (X \"done\")]";
 
         auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm", formulasString);
@@ -758,7 +757,7 @@ namespace {
             result = checker->check(tasks[5]);
             EXPECT_NEAR(this->parseNumber("1/6"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
-            result = checker->check(tasks[4]);
+            result = checker->check(tasks[6]);
             EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
         } else {
             EXPECT_FALSE(checker->canHandle(tasks[0]));
@@ -769,9 +768,10 @@ namespace {
         setenv("LTL2DA", "ltl2da-ltl2tgba", true);
 
         std::string formulasString = "P=? [X (u1=true U \"elected\")]";
-        formulasString += "; P=? [X v1=2 & (X v1=1)]"; // (X v1=2 & (XX v1=1))
+        formulasString += "; P=? [X !(u1=true U \"elected\")]";
+        formulasString += "; P=? [X v1=2 & X v1=1]";
         formulasString += "; P=? [(X v1=2) & (X v1=1)]";
-        // TODO (X v1=2 & XX v1=1)
+        formulasString += "; P=? [(!X v1=2) & (X v1=1)]";
 
         auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/dtmc/leader-3-5.pm", formulasString);
         auto model = std::move(modelFormulas.first);
@@ -788,14 +788,16 @@ namespace {
             EXPECT_NEAR(this->parseNumber("16/25"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
             result = checker->check(tasks[1]);
-            EXPECT_NEAR(this->parseNumber("1/25"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            EXPECT_NEAR(this->parseNumber("9/25"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
             result = checker->check(tasks[2]);
+            EXPECT_NEAR(this->parseNumber("1/25"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(tasks[3]);
             EXPECT_NEAR(this->parseNumber("0"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
-            // TODO
-            // result = checker->check(tasks[3]);
-            // EXPECT_NEAR(this->parseNumber("1/25"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+            result = checker->check(tasks[4]);
+            EXPECT_NEAR(this->parseNumber("1/5"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
         } else {
             EXPECT_FALSE(checker->canHandle(tasks[0]));
