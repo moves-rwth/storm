@@ -28,6 +28,7 @@ TEST(PrismParser, SimpleTest) {
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
     EXPECT_EQ(1ul, result.getNumberOfModules());
     EXPECT_EQ(storm::prism::Program::ModelType::DTMC, result.getModelType());
+    EXPECT_FALSE(result.hasUnboundedVariables());
     
     testInput =
     R"(mdp
@@ -44,6 +45,7 @@ TEST(PrismParser, SimpleTest) {
     EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
     EXPECT_EQ(1ul, result.getNumberOfModules());
     EXPECT_EQ(storm::prism::Program::ModelType::MDP, result.getModelType());
+    EXPECT_FALSE(result.hasUnboundedVariables());
 }
 
 TEST(PrismParser, ComplexTest) {
@@ -97,8 +99,23 @@ TEST(PrismParser, ComplexTest) {
     EXPECT_EQ(3ul, result.getNumberOfModules());
     EXPECT_EQ(2ul, result.getNumberOfRewardModels());
     EXPECT_EQ(1ul, result.getNumberOfLabels());
+    EXPECT_FALSE(result.hasUnboundedVariables());
 }
 
+TEST(PrismParser, UnboundedTest) {
+    std::string testInput =
+    R"(mdp
+    module main
+        b : int;
+        [a] true -> 1: (b'=b+1);
+    endmodule)";
+    
+    storm::prism::Program result;
+    EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
+    EXPECT_EQ(1ul, result.getNumberOfModules());
+    EXPECT_EQ(storm::prism::Program::ModelType::MDP, result.getModelType());
+    EXPECT_TRUE(result.hasUnboundedVariables());
+}
 
 TEST(PrismParser, POMDPInputTest) {
     std::string testInput =
