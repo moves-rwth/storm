@@ -10,14 +10,14 @@ namespace storm {
         namespace modelchecker {
             template<typename ValueType>
             struct BeliefExplorationPomdpModelCheckerOptions {
-                BeliefExplorationPomdpModelCheckerOptions(bool discretize, bool unfold, bool gridCulling = false) : discretize(discretize), unfold(unfold), gridCulling(gridCulling) {
+                BeliefExplorationPomdpModelCheckerOptions(bool discretize, bool unfold, bool gridClipping = false) : discretize(discretize), unfold(unfold), gridClipping(gridClipping) {
                     // Intentionally left empty
                 }
                 
                 bool discretize;
                 bool unfold;
-                bool gridCulling;
-                bool hybridCulling;
+                bool gridClipping;
+                bool hybridClipping;
                 bool refine = false;
                 boost::optional<uint64_t> refineStepLimit;
                 ValueType refinePrecision = storm::utility::zero<ValueType>();
@@ -39,10 +39,10 @@ namespace storm {
                 // Controls which observations are refined.
                 ValueType obsThresholdInit = storm::utility::convertNumber<ValueType>(0.1);
                 ValueType obsThresholdIncrementFactor = storm::utility::convertNumber<ValueType>(0.1);
-                // Controls the delta value up to which culling will be applied.
-                ValueType cullingThresholdInit = storm::utility::zero<ValueType>();
+                // Controls the delta value up to which clipping will be applied.
+                ValueType clippingThresholdInit = storm::utility::zero<ValueType>();
 
-                uint64_t culllingGridRes = 2;
+                uint64_t clippingGridRes = 2;
 
                 bool disableClippingReduction = false;
                 

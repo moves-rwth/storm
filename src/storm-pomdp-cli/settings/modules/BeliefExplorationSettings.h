@@ -40,8 +40,8 @@ namespace storm {
                 uint64_t getResolutionInit() const;
                 double getResolutionFactor() const;
 
-                /// Culling Grid Resolution
-                uint64_t getCullingGridResolution() const;
+                /// Clipping Grid Resolution
+                uint64_t getClippingGridResolution() const;
 
                 /// The maximal number of newly expanded MDP states in a refinement step
                 uint64_t getSizeThresholdInit() const;
@@ -51,8 +51,8 @@ namespace storm {
                 double getGapThresholdInit() const;
                 double getGapThresholdFactor() const;
 
-                /// Controls how large the delta is allowed to be for culling
-                double getCullingThresholdInit() const;
+                /// Controls how large the delta is allowed to be for clipping
+                double getClippingThresholdInit() const;
 
                 /// Controls if the clipping set reduction heuristic is usec
                 bool isDisableClippingReductionSet() const;
@@ -72,8 +72,8 @@ namespace storm {
                 bool isDynamicTriangulationModeSet() const;
                 bool isStaticTriangulationModeSet() const;
 
-                bool isClassicCullingModeSet() const;
-                bool isGridCullingModeSet() const;
+                bool isClassicClippingModeSet() const;
+                bool isGridClippingModeSet() const;
 
                 storm::builder::ExplorationHeuristic getExplorationHeuristic() const;
     

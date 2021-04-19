@@ -65,9 +65,9 @@ namespace storm {
             mdpActionRewards.clear();
             targetStates.clear();
             truncatedStates.clear();
-            culledStates.clear();
+            clippedStates.clear();
             delayedExplorationChoices.clear();
-            cullingTransitionRewards.clear();
+            clippingTransitionRewards.clear();
             optimalChoices = boost::none;
             optimalChoicesReachableMdpStates = boost::none;
             exploredMdp = nullptr;
@@ -120,7 +120,7 @@ namespace storm {
             exploredBeliefIds.grow(beliefManager->getNumberOfBeliefIds(), false);
             exploredMdpTransitions.clear();
             exploredMdpTransitions.resize(exploredMdp->getNumberOfChoices());
-            cullingTransitionRewards.clear();
+            clippingTransitionRewards.clear();
             exploredChoiceIndices = exploredMdp->getNondeterministicChoiceIndices();
             mdpActionRewards.clear();
             probabilityEstimation.clear();
@@ -130,7 +130,7 @@ namespace storm {
             }
             targetStates = storm::storage::BitVector(getCurrentNumberOfMdpStates(), false);
             truncatedStates = storm::storage::BitVector(getCurrentNumberOfMdpStates(), false);
-            culledStates = storm::storage::BitVector(getCurrentNumberOfMdpStates(), false);
+            clippedStates = storm::storage::BitVector(getCurrentNumberOfMdpStates(), false);
             delayedExplorationChoices.clear();
             mdpStatesToExplorePrioState.clear();
             mdpStatesToExploreStatePrio.clear();
@@ -276,10 +276,10 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
-        void BeliefMdpExplorer<PomdpType, BeliefValueType>::addCullingRewardToCurrentState(uint64 const &localActionIndex, ValueType rewardValue) {
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::addClippingRewardToCurrentState(uint64 const &localActionIndex, ValueType rewardValue) {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
             uint64_t row = getStartOfCurrentRowGroup() + localActionIndex;
-            cullingTransitionRewards[row] = rewardValue;
+            clippingTransitionRewards[row] = rewardValue;
         }
 
         template<typename PomdpType, typename BeliefValueType>
@@ -297,11 +297,11 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
-        void BeliefMdpExplorer<PomdpType, BeliefValueType>::setCurrentStateIsCulled() {
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::setCurrentStateIsClipped() {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
             setCurrentStateIsTruncated();
-            culledStates.grow(getCurrentNumberOfMdpStates(), false);
-            culledStates.set(getCurrentMdpState(), true);
+            clippedStates.grow(getCurrentNumberOfMdpStates(), false);
+            clippedStates.set(getCurrentMdpState(), true);
         }
 
         template<typename PomdpType, typename BeliefValueType>
@@ -328,12 +328,12 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
-        bool BeliefMdpExplorer<PomdpType, BeliefValueType>::getCurrentStateWasCulled() const {
+        bool BeliefMdpExplorer<PomdpType, BeliefValueType>::getCurrentStateWasClipped() const {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
             STORM_LOG_ASSERT(getCurrentMdpState() != noState(), "Method 'actionAtCurrentStateWasOptimal' called but there is no current state.");
             STORM_LOG_ASSERT(currentStateHasOldBehavior(), "Method 'actionAtCurrentStateWasOptimal' called but current state has no old behavior");
             STORM_LOG_ASSERT(exploredMdp, "No 'old' mdp available");
-            return exploredMdp->getStateLabeling().getStateHasLabel("culled", getCurrentMdpState());
+            return exploredMdp->getStateLabeling().getStateHasLabel("clipped", getCurrentMdpState());
         }
 
         template<typename PomdpType, typename BeliefValueType>
@@ -449,7 +449,7 @@ namespace storm {
             // Resize state- and choice based vectors to the correct size
             targetStates.resize(getCurrentNumberOfMdpStates(), false);
             truncatedStates.resize(getCurrentNumberOfMdpStates(), false);
-            culledStates.resize(getCurrentNumberOfMdpStates(), false);
+            clippedStates.resize(getCurrentNumberOfMdpStates(), false);
             if (!mdpActionRewards.empty()) {
                 mdpActionRewards.resize(getCurrentNumberOfMdpChoices(), storm::utility::zero<ValueType>());
             }
@@ -512,23 +512,23 @@ namespace storm {
             mdpLabeling.addLabel("target", std::move(targetStates));
             truncatedStates.resize(getCurrentNumberOfMdpStates(), false);
             mdpLabeling.addLabel("truncated", std::move(truncatedStates));
-            culledStates.resize(getCurrentNumberOfMdpStates(), false);
-            mdpLabeling.addLabel("culled", std::move(culledStates));
+            clippedStates.resize(getCurrentNumberOfMdpStates(), false);
+            mdpLabeling.addLabel("clipped", std::move(clippedStates));
 
             // Create a standard reward model (if rewards are available)
             std::unordered_map<std::string, storm::models::sparse::StandardRewardModel<ValueType>> mdpRewardModels;
             if (!mdpActionRewards.empty()) {
                 mdpActionRewards.resize(getCurrentNumberOfMdpChoices(), storm::utility::zero<ValueType>());
-                if(!cullingTransitionRewards.empty()){
-                    storm::storage::SparseMatrixBuilder<ValueType> rewardBuilder(getCurrentNumberOfMdpChoices(), getCurrentNumberOfMdpStates(), cullingTransitionRewards.size(), true, true,getCurrentNumberOfMdpStates());
+                if(!clippingTransitionRewards.empty()){
+                    storm::storage::SparseMatrixBuilder<ValueType> rewardBuilder(getCurrentNumberOfMdpChoices(), getCurrentNumberOfMdpStates(), clippingTransitionRewards.size(), true, true, getCurrentNumberOfMdpStates());
                     for (uint64_t groupIndex = 0; groupIndex < exploredChoiceIndices.size() - 1; ++groupIndex) {
                         uint64_t rowIndex = exploredChoiceIndices[groupIndex];
                         uint64_t groupEnd = exploredChoiceIndices[groupIndex + 1];
                         rewardBuilder.newRowGroup(rowIndex);
                         for (; rowIndex < groupEnd; ++rowIndex) {
-                            if(cullingTransitionRewards.find(rowIndex) != cullingTransitionRewards.end()){
+                            if(clippingTransitionRewards.find(rowIndex) != clippingTransitionRewards.end()){
                                 STORM_LOG_ASSERT(extraTargetState.is_initialized(), "Requested a transition to the extra target state but there is none.");
-                                rewardBuilder.addNextValue(rowIndex, extraTargetState.get(), cullingTransitionRewards[rowIndex]);
+                                rewardBuilder.addNextValue(rowIndex, extraTargetState.get(), clippingTransitionRewards[rowIndex]);
                             }
                         }
                     }
@@ -555,8 +555,8 @@ namespace storm {
             exploredMdp = std::make_shared<storm::models::sparse::Mdp<ValueType>>(std::move(modelComponents));
             status = Status::ModelFinished;
             STORM_LOG_DEBUG(
-                    "Explored Mdp with " << exploredMdp->getNumberOfStates() << " states (" << culledStates.getNumberOfSetBits() << " of which were culled and "
-                                         << truncatedStates.getNumberOfSetBits() - culledStates.getNumberOfSetBits() << " of which were flagged as truncated).");
+                    "Explored Mdp with " << exploredMdp->getNumberOfStates() << " states (" << clippedStates.getNumberOfSetBits() << " of which were clipped and "
+                                         << truncatedStates.getNumberOfSetBits() - clippedStates.getNumberOfSetBits() << " of which were flagged as truncated).");
         }
 
         template<typename PomdpType, typename BeliefValueType>
@@ -654,7 +654,7 @@ namespace storm {
             }
             targetStates = targetStates % relevantMdpStates;
             truncatedStates = truncatedStates % relevantMdpStates;
-            culledStates = culledStates % relevantMdpStates;
+            clippedStates = clippedStates % relevantMdpStates;
             initialMdpState = toRelevantStateIndexMap[initialMdpState];
 
             storm::utility::vector::filterVectorInPlace(lowerValueBounds, relevantMdpStates);

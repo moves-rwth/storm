@@ -83,7 +83,7 @@ namespace storm {
                     ValueType gapThreshold;
                     ValueType observationThreshold;
                     uint64_t sizeThreshold;
-                    ValueType cullingThreshold;
+                    ValueType clippingThreshold;
                     ValueType optimalChoiceValueEpsilon;
                 };
                 
@@ -128,11 +128,11 @@ namespace storm {
                     storm::utility::Stopwatch underApproximationBuildTime;
                     storm::utility::Stopwatch underApproximationCheckTime;
                     boost::optional<uint64_t> underApproximationStateLimit;
-                    boost::optional<uint64_t> nrCullingAttempts;
-                    boost::optional<uint64_t> nrCulledStates;
+                    boost::optional<uint64_t> nrClippingAttempts;
+                    boost::optional<uint64_t> nrClippedStates;
                     boost::optional<uint64_t> nrTruncatedStates;
-                    storm::utility::Stopwatch cullWatch;
-                    storm::utility::Stopwatch cullingPreTime;
+                    storm::utility::Stopwatch clipWatch;
+                    storm::utility::Stopwatch clippingPreTime;
                     
                     bool aborted;
                 };

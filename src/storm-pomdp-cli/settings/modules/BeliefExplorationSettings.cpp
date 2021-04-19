@@ -27,11 +27,11 @@ namespace storm {
             const std::string gapThresholdOption = "gap-threshold";
             const std::string schedulerThresholdOption = "scheduler-threshold";
             const std::string observationThresholdOption = "obs-threshold";
-            const std::string cullingThresholdOption = "culling-threshold";
+            const std::string clippingThresholdOption = "clipping-threshold";
             const std::string numericPrecisionOption = "numeric-precision";
             const std::string triangulationModeOption = "triangulationmode";
             const std::string explHeuristicOption = "expl-heuristic";
-            const std::string cullingModeOption = "culling-mode";
+            const std::string clippingModeOption = "clipping-mode";
             const std::string disableClippingReductionOption = "disable-clipping-reduction";
 
             BeliefExplorationSettings::BeliefExplorationSettings() : ModuleSettings(moduleName) {
@@ -42,7 +42,7 @@ namespace storm {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, resolutionOption, false,"Sets the resolution of the discretization and how it is increased in case of refinement").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("init","the initial resolution (higher means more precise)").setDefaultValueUnsignedInteger(3).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor","Multiplied to the resolution of refined observations (higher means more precise).").setDefaultValueDouble(2).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterValidator(1)).build()).build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, culGridResolutionOption, false,"Sets the resolution of the culling grid").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("resolution","the resolution (higher means more precise)").setDefaultValueUnsignedInteger(3).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterValidator(0)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, culGridResolutionOption, false,"Sets the resolution of the clipping grid").addArgument(storm::settings::ArgumentBuilder::createUnsignedIntegerArgument("resolution","the resolution (higher means more precise)").setDefaultValueUnsignedInteger(3).addValidatorUnsignedInteger(storm::settings::ArgumentValidatorFactory::createUnsignedGreaterValidator(0)).build()).build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, observationThresholdOption, false,"Only observations whose score is below this threshold will be refined.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("init","initial threshold (higher means more precise").setDefaultValueDouble(0.1).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0,1)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor","Controlls how fast the threshold is increased in each refinement step (higher means more precise).").setDefaultValueDouble(0.1).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0,1)).build()).build());
                 
@@ -50,7 +50,7 @@ namespace storm {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, gapThresholdOption, false,"Sets how large the gap between known lower- and upper bounds at a beliefstate needs to be in order to explore").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("init","initial threshold (higher means less precise").setDefaultValueDouble(0.1).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor","Multiplied to the gap in each refinement step (higher means less precise).").setDefaultValueDouble(0.25).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleRangeValidatorIncluding(0,1)).build()).build());
 
-                this->addOption(storm::settings::OptionBuilder(moduleName, cullingThresholdOption, false,"Sets how large the delta values are allowed to be for culling to be applied.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("init","initial threshold").setDefaultValueDouble(0.0).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0)).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, clippingThresholdOption, false, "Sets how large the delta values are allowed to be for clipping to be applied.").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("init", "initial threshold").setDefaultValueDouble(0.0).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0)).build()).build());
 
                 this->addOption(storm::settings::OptionBuilder(moduleName, schedulerThresholdOption, false,"Sets how much worse a sub-optimal choice can be in order to be included in the relevant explored fragment").setIsAdvanced().addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("init","initial threshold (higher means more precise").setDefaultValueDouble(1e-3).addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(0)).build()).addArgument(storm::settings::ArgumentBuilder::createDoubleArgument("factor","Multiplied to the threshold in each refinement step (higher means more precise).").setDefaultValueDouble(1).makeOptional().addValidatorDouble(storm::settings::ArgumentValidatorFactory::createDoubleGreaterEqualValidator(1)).build()).build());
                 
@@ -59,8 +59,8 @@ namespace storm {
                 
                 this->addOption(storm::settings::OptionBuilder(moduleName, triangulationModeOption, false,"Sets how to triangulate beliefs when discretizing.").setIsAdvanced().addArgument(
                         storm::settings::ArgumentBuilder::createStringArgument("value","the triangulation mode").setDefaultValueString("dynamic").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"dynamic", "static"})).build()).build());
-                this->addOption(storm::settings::OptionBuilder(moduleName, cullingModeOption, false,"Sets how to cull beliefs after the size-threshold was reached").setIsAdvanced().addArgument(
-                        storm::settings::ArgumentBuilder::createStringArgument("value","the culling mode").setDefaultValueString("classic").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"classic", "grid"})).build()).build());
+                this->addOption(storm::settings::OptionBuilder(moduleName, clippingModeOption, false, "Sets how to clip beliefs after the size-threshold was reached").setIsAdvanced().addArgument(
+                        storm::settings::ArgumentBuilder::createStringArgument("value","the clipping mode").setDefaultValueString("classic").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"classic", "grid"})).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, explHeuristicOption, false,"Sets how to sort the states into the exploration queue.").setIsAdvanced().addArgument(
                         storm::settings::ArgumentBuilder::createStringArgument("value","the exploration heuristic").setDefaultValueString("bfs").addValidatorString(storm::settings::ArgumentValidatorFactory::createMultipleChoiceValidator({"bfs", "lowerBound", "upperBound", "gap", "prob"})).build()).build());
                 this->addOption(storm::settings::OptionBuilder(moduleName, disableClippingReductionOption, false, "Disable the reduction of clipping candidate sets by difference 1-norm heuristic").build());
@@ -95,7 +95,7 @@ namespace storm {
                 return this->getOption(resolutionOption).getArgumentByName("init").getValueAsUnsignedInteger();
             }
 
-            uint64_t BeliefExplorationSettings::getCullingGridResolution() const {
+            uint64_t BeliefExplorationSettings::getClippingGridResolution() const {
                 return this->getOption(culGridResolutionOption).getArgumentByName("resolution").getValueAsUnsignedInteger();
             }
 
@@ -119,8 +119,8 @@ namespace storm {
                 return this->getOption(gapThresholdOption).getArgumentByName("factor").getValueAsDouble();
             }
 
-            double BeliefExplorationSettings::getCullingThresholdInit() const {
-                return this->getOption(cullingThresholdOption).getArgumentByName("init").getValueAsDouble();
+            double BeliefExplorationSettings::getClippingThresholdInit() const {
+                return this->getOption(clippingThresholdOption).getArgumentByName("init").getValueAsDouble();
             }
             
             double BeliefExplorationSettings::getOptimalChoiceValueThresholdInit() const {
@@ -155,12 +155,12 @@ namespace storm {
                 return this->getOption(triangulationModeOption).getArgumentByName("value").getValueAsString() == "static";
             }
 
-            bool BeliefExplorationSettings::isClassicCullingModeSet() const {
-                return this->getOption(cullingModeOption).getArgumentByName("value").getValueAsString() == "classic";
+            bool BeliefExplorationSettings::isClassicClippingModeSet() const {
+                return this->getOption(clippingModeOption).getArgumentByName("value").getValueAsString() == "classic";
             }
 
-            bool BeliefExplorationSettings::isGridCullingModeSet() const {
-                return this->getOption(cullingModeOption).getArgumentByName("value").getValueAsString() == "grid";
+            bool BeliefExplorationSettings::isGridClippingModeSet() const {
+                return this->getOption(clippingModeOption).getArgumentByName("value").getValueAsString() == "grid";
             }
 
             storm::builder::ExplorationHeuristic BeliefExplorationSettings::getExplorationHeuristic() const {
@@ -200,7 +200,7 @@ namespace storm {
                 } else {
                     options.explorationTimeLimit = boost::none;
                 }
-                options.culllingGridRes = getCullingGridResolution();
+                options.clippingGridRes = getClippingGridResolution();
                 options.resolutionInit = getResolutionInit();
                 options.resolutionFactor = storm::utility::convertNumber<ValueType>(getResolutionFactor());
                 options.sizeThresholdInit = getSizeThresholdInit();
@@ -211,11 +211,11 @@ namespace storm {
                 options.optimalChoiceValueThresholdFactor = storm::utility::convertNumber<ValueType>(getOptimalChoiceValueThresholdFactor());
                 options.obsThresholdInit = storm::utility::convertNumber<ValueType>(getObservationScoreThresholdInit());
                 options.obsThresholdIncrementFactor = storm::utility::convertNumber<ValueType>(getObservationScoreThresholdFactor());
-                options.hybridCulling = isGridCullingModeSet();
+                options.hybridClipping = isGridClippingModeSet();
 
                 options.disableClippingReduction = isDisableClippingReductionSet();
 
-                options.cullingThresholdInit = storm::utility::convertNumber<ValueType>(getCullingThresholdInit());
+                options.clippingThresholdInit = storm::utility::convertNumber<ValueType>(getClippingThresholdInit());
                 
                 options.numericPrecision = storm::utility::convertNumber<ValueType>(getNumericPrecision());
                 if (storm::NumberTraits<ValueType>::IsExact) {

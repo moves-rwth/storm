@@ -135,7 +135,7 @@ namespace {
         static bool const isExactModelChecking = false;
         static ValueType precision() { return storm::utility::convertNumber<ValueType>(0.12); } // there actually aren't any precision guarantees, but we still want to detect if results are weird.
         static void adaptOptions(storm::pomdp::modelchecker::BeliefExplorationPomdpModelCheckerOptions<ValueType>& options) {
-            options.cullingThresholdInit = storm::utility::convertNumber<ValueType>(0.1);
+            options.clippingThresholdInit = storm::utility::convertNumber<ValueType>(0.1);
             //options.gapThresholdInit = storm::utility::convertNumber<ValueType>(0.001);
         }
         static PreprocessingType const preprocessingType = PreprocessingType::All;
