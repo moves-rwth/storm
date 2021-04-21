@@ -3,59 +3,40 @@
 
 #include "storm/logic/Formula.h"
 #include "storm/utility/macros.h"
-#include "storm/exceptions/FileIoException.h"
 
-#include <cstring>
-#include <cerrno>
-#include <cstdlib>
-#include <unistd.h> // for execlp
-#include <sys/wait.h>
+#ifdef STORM_HAVE_SPOT
+#include "spot/tl/formula.hh"
+#include "spot/tl/parse.hh"
+#include "spot/twaalgos/translate.hh"
+#include "spot/twaalgos/hoa.hh"
+#endif
 
 namespace storm {
     namespace automata {
 
-        // TODO: this is quite hacky, improve robustness
         std::shared_ptr<DeterministicAutomaton> LTL2DeterministicAutomaton::ltl2da(storm::logic::Formula const& f) {
-            std::string prefixLtl = f.toPrefixString();
+#ifdef STORM_HAVE_SPOT
+            spot::formula parsed_formula = spot::parse_formula(f.toPrefixString());
 
-            std::string ltl2da_tool = "ltl2da";
-            if (const char* ltl2da_env = std::getenv("LTL2DA")) {
-                ltl2da_tool = ltl2da_env;
-            }
+            STORM_LOG_INFO("Construct deterministic automaton for "<< parsed_formula);
 
-            STORM_LOG_INFO("Calling external LTL->DA tool:   " << ltl2da_tool << " '" << prefixLtl << "' da.hoa");
+            // Request a deterministic, complete automaton with state-based acceptance
+            spot::translator trans = spot::translator();
+            trans.set_type(spot::postprocessor::Generic);
+            trans.set_pref(spot::postprocessor::Deterministic | spot::postprocessor::SBAcc | spot::postprocessor::Complete);
+            auto aut = trans.run(parsed_formula);
 
-            pid_t pid;
+            std::stringstream autStream;
+            // Print reachable states in HOA format, implicit edges (i), state-based acceptance (s)
+            spot::print_hoa(autStream, aut, "is");
 
-            pid = fork();
-            STORM_LOG_THROW(pid >= 0, storm::exceptions::FileIoException, "Could not construct deterministic automaton, fork failed");
+            storm::automata::DeterministicAutomaton::ptr da = DeterministicAutomaton::parse(autStream);
 
-            if (pid == 0) {
-                // we are in the child process
-                if (execlp(ltl2da_tool.c_str(), ltl2da_tool.c_str(), prefixLtl.c_str(), "da.hoa", NULL) < 0) {
-                    std::cerr << "ERROR: exec failed: " << strerror(errno) << std::endl;
-                    std::exit(1);
-                }
-                // never reached
-                return std::shared_ptr<DeterministicAutomaton>();
-            } else { // in the parent
-                int status;
+            return da;
 
-                // wait for completion
-                while (wait(&status) != pid)
-                    ;
-
-                int rv;
-                if (WIFEXITED(status)) {
-                    rv = WEXITSTATUS(status);
-                } else {
-                    STORM_LOG_THROW(false, storm::exceptions::FileIoException, "Could not construct deterministic automaton: process aborted");
-                }
-                STORM_LOG_THROW(rv == 0, storm::exceptions::FileIoException, "Could not construct deterministic automaton for " << prefixLtl << ", return code = " << rv);
-
-                STORM_LOG_INFO("Reading automaton for " << prefixLtl << " from da.hoa");
-                return DeterministicAutomaton::parseFromFile("da.hoa");
-            }
+#else
+            STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "Storm is compiled without Spot support.");
+#endif
         }
     }
 }
