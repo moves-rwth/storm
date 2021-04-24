@@ -167,7 +167,6 @@ namespace storm {
             std::set<uint64_t> possiblySynchronizingActionIndices;
             for(uint64_t syncAction : synchronizingActionIndices) {
                 if (getModuleIndicesByActionIndex(syncAction).size() > 1) {
-                    std::cout << "syncAction " << syncAction << std::endl;
                     possiblySynchronizingActionIndices.insert(syncAction);
                 }
             }
