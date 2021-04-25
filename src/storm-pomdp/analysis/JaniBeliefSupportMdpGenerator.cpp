@@ -200,16 +200,14 @@ namespace storm {
                 }
 
                 if(result && !onlyInitial) {
-                    std::cout << "count: " << result->asQualitativeCheckResult().count() << std::endl;
+                   auto vars = result->asSymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>().getTruthValuesVector().getContainedMetaVariables();
+
                 } else if (result) {
                     initialIsWinning = result->asQualitativeCheckResult().existsTrue();
                 }
-
-
-
             }
 
-            template <typename ValueType>
+                template <typename ValueType>
             bool JaniBeliefSupportMdpGenerator<ValueType>::isInitialWinning() const {
                 return initialIsWinning;
             }

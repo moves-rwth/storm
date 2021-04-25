@@ -16,6 +16,7 @@ namespace storm {
                 void generate(storm::storage::BitVector const& targetStates, storm::storage::BitVector const& badStates);
                 void verifySymbolic(bool onlyInitial = true);
                 bool isInitialWinning() const;
+
             private:
                 storm::models::sparse::Pomdp<ValueType> const& pomdp;
                 jani::Model model;

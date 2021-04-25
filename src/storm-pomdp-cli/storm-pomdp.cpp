@@ -155,7 +155,9 @@ namespace storm {
                         formula.asProbabilityOperatorFormula());
                 pomdp.getTransitionMatrix().makeRowGroupsAbsorbing(surelyNotAlmostSurelyReachTarget);
                 storm::storage::BitVector targetStates = qualitativeAnalysis.analyseProb1(formula.asProbabilityOperatorFormula());
+                bool computedSomething = false;
                 if (qualSettings.isMemlessSearchSet()) {
+                    computedSomething = true;
                     storm::expressions::ExpressionManager expressionManager;
                     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
                     storm::pomdp::MemlessSearchOptions options = fillMemlessSearchOptionsFromSettings();
@@ -168,7 +170,7 @@ namespace storm {
                                                                                    surelyNotAlmostSurelyReachTarget,
                                                                                    smtSolverFactory);
                         if (qualSettings.isWinningRegionSet()) {
-                            STORM_LOG_ERROR("Computing winning regions is not supported by ccd-memless.");
+                            STORM_LOG_ERROR("Computing winning regions is not supported by the one-shot method.");
                         } else {
                             memlessSearch.analyzeForInitialStates(lookahead);
                         }
@@ -206,21 +208,28 @@ namespace storm {
                                     ++offset;
                                 }
                             }
-                            STORM_PRINT_AND_LOG("Initial state is safe: "
-                                                        << search.getLastWinningRegion().isWinning(initialObservation,
-                                                                                                   offset));
+
+                            if (search.getLastWinningRegion().isWinning(initialObservation,
+                                                                        offset)) {
+                                STORM_PRINT_AND_LOG("Initial state is safe!"
+                                                            << std::endl);
+                            } else {
+                                STORM_PRINT_AND_LOG("Initial state may not be safe."
+                                                            << std::endl);
+                            }
                         } else {
                             STORM_LOG_WARN("Output for multiple initial states is incomplete");
                         }
-                        std::cout << "Number of belief support states: "
-                                  << search.getLastWinningRegion().beliefSupportStates() << std::endl;
-                        if (coreSettings.isShowStatisticsSet() && qualSettings.computeExpensiveStats()) {
-                            auto wbss = search.getLastWinningRegion().computeNrWinningBeliefs();
-                            STORM_PRINT_AND_LOG(
-                                    "Number of winning belief support states: [" << wbss.first << "," << wbss.second
-                                                                                 << "]");
-                        }
+
                         if (coreSettings.isShowStatisticsSet()) {
+                            STORM_PRINT_AND_LOG("#STATS Number of belief support states: "
+                                                        << search.getLastWinningRegion().beliefSupportStates() << std::endl);
+                            if (qualSettings.computeExpensiveStats()) {
+                                auto wbss = search.getLastWinningRegion().computeNrWinningBeliefs();
+                                STORM_PRINT_AND_LOG(
+                                        "#STATS Number of winning belief support states: [" << wbss.first << "," << wbss.second
+                                                                                     << "]");
+                            }
                             search.getStatistics().print();
                         }
 
@@ -229,12 +238,15 @@ namespace storm {
                     }
                 }
                 if (qualSettings.isComputeOnBeliefSupportSet()) {
+                    computedSomething = true;
                     storm::pomdp::qualitative::JaniBeliefSupportMdpGenerator<ValueType> janicreator(pomdp);
                     janicreator.generate(targetStates, surelyNotAlmostSurelyReachTarget);
                     bool initialOnly = !qualSettings.isWinningRegionSet();
                     janicreator.verifySymbolic(initialOnly);
                     STORM_PRINT_AND_LOG("Initial state is safe: " <<  janicreator.isInitialWinning() << "\n");
                 }
+                STORM_LOG_THROW(computedSomething, storm::exceptions::InvalidSettingsException, "Nothing to be done, did you forget to set a method?");
+
             }
             
             template<typename ValueType, storm::dd::DdType DdType>
