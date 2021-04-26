@@ -20,7 +20,7 @@ namespace storm {
 #ifdef STORM_HAVE_SPOT
 
             std::string prefixLtl = f.toPrefixString();
-            spot::parsed_formula spotPrefixLtl = spot::parse_prefix_ltl("())");
+            spot::parsed_formula spotPrefixLtl = spot::parse_prefix_ltl(prefixLtl);
             if(!spotPrefixLtl.errors.empty()){
                 std::ostringstream errorMsg;
                 spotPrefixLtl.format_errors(errorMsg);
