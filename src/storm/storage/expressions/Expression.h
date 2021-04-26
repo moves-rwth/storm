@@ -32,7 +32,6 @@ namespace storm {
             friend Expression operator-(Expression const& first);
             friend Expression operator*(Expression const& first, Expression const& second);
             friend Expression operator/(Expression const& first, Expression const& second);
-            friend Expression operator^(Expression const& first, Expression const& second);
             friend Expression operator%(Expression const& first, Expression const& second);
             friend Expression operator&&(Expression const& first, Expression const& second);
             friend Expression operator||(Expression const& first, Expression const& second);
@@ -51,6 +50,7 @@ namespace storm {
             friend Expression implies(Expression const& first, Expression const& second);
             friend Expression iff(Expression const& first, Expression const& second);
             friend Expression xclusiveor(Expression const& first, Expression const& second);
+            friend Expression pow(Expression const& base, Expression const& exponent, bool allowIntegerType);
             friend Expression abs(Expression const& first);
             friend Expression truncate(Expression const& first);
             friend Expression sign(Expression const& first);
@@ -59,6 +59,7 @@ namespace storm {
             friend Expression round(Expression const& first);
             friend Expression minimum(Expression const& first, Expression const& second);
             friend Expression maximum(Expression const& first, Expression const& second);
+
 
             Expression() = default;
             ~Expression();
@@ -99,6 +100,11 @@ namespace storm {
              */
             Expression substitute(std::map<Variable, Expression> const& variableToExpressionMap) const;
 
+            /*!
+             * Eliminate nonstandard predicates from the expression.
+             * @return
+             */
+            Expression substituteNonStandardPredicates() const;
             /*!
             * Substitutes all occurrences of the variables according to the given map. Note that this substitution is
             * done simultaneously, i.e., variables appearing in the expressions that were "plugged in" are not
@@ -412,7 +418,6 @@ namespace storm {
         Expression operator-(Expression const& first);
         Expression operator*(Expression const& first, Expression const& second);
         Expression operator/(Expression const& first, Expression const& second);
-        Expression operator^(Expression const& first, Expression const& second);
         Expression operator&&(Expression const& first, Expression const& second);
         Expression operator||(Expression const& first, Expression const& second);
         Expression operator!(Expression const& first);
@@ -430,6 +435,16 @@ namespace storm {
         Expression implies(Expression const& first, Expression const& second);
         Expression iff(Expression const& first, Expression const& second);
         Expression xclusiveor(Expression const& first, Expression const& second);
+        
+        /*!
+         * The type of the resulting expression is
+         * - integer, if base and exponent are integer expressions and allowIntegerType is true
+         *      (in this case it is assumed that exponent is always positive), and
+         * - rational, otherwise.
+         * The integer case is to reflect the PRISM semantics
+         * @see https://github.com/ahartmanns/qcomp/issues/103
+         */
+        Expression pow(Expression const& base, Expression const& exponent, bool allowIntegerType = false);
         Expression abs(Expression const& first);
         Expression truncate(Expression const& first);
         Expression sign(Expression const& first);
@@ -439,6 +454,9 @@ namespace storm {
         Expression modulo(Expression const& first, Expression const& second);
         Expression minimum(Expression const& first, Expression const& second);
         Expression maximum(Expression const& first, Expression const& second);
+        Expression atLeastOneOf(std::vector<storm::expressions::Expression> const& expressions);
+        Expression atMostOneOf(std::vector<storm::expressions::Expression> const& expressions);
+        Expression exactlyOneOf(std::vector<storm::expressions::Expression> const& expressions);
         Expression disjunction(std::vector<storm::expressions::Expression> const& expressions);
         Expression conjunction(std::vector<storm::expressions::Expression> const& expressions);
         Expression sum(std::vector<storm::expressions::Expression> const& expressions);

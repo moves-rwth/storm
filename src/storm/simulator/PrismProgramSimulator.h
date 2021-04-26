@@ -70,6 +70,10 @@ namespace storm {
              * @return
              */
             bool resetToInitial();
+
+            bool resetToState(generator::CompressedState const& compressedState);
+
+            bool resetToState(expressions::SimpleValuation const& valuationState);
         protected:
             bool explore();
             void clearStateCaches();

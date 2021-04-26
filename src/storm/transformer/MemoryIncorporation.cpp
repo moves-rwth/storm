@@ -38,7 +38,7 @@ namespace storm {
             builder.setTransition(0, 0, ~goalStates);
             builder.setTransition(0, 1, goalStates);
             builder.setTransition(1, 1, storm::storage::BitVector(model.getNumberOfStates(), true));
-            for (auto const& initState : model.getInitialStates()) {
+            for (auto initState : model.getInitialStates()) {
                 builder.setInitialMemoryState(initState, goalStates.get(initState) ? 1 : 0);
             }
             return builder.build();

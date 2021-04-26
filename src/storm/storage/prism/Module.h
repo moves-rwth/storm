@@ -250,7 +250,23 @@ namespace storm {
              * @return The resulting module.
              */
             Module substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
-            
+
+            /**
+             * Nonstandard predicates such as ExacltyOneOff etc can be substituted
+             * @return
+             */
+            Module substituteNonStandardPredicates() const;
+
+            /**
+             * Label unlabelled commands.
+             *
+             * @param suggestions Map from global index to names that is used to label unlabelled commands
+             * @param newId The new action ids to use are given sequentially from this number onwards (and the argument is updated)
+             * @param nameToIdMapping A mapping that is updated giving action indices to used names
+             * @return
+             */
+            Module labelUnlabelledCommands(std::map<uint64_t, std::string> const& suggestions, uint64_t& newId, std::map<std::string, uint64_t>& nameToIdMapping) const;
+
             /*!
              * Checks whether the given variables only appear in the update probabilities of the module and nowhere else.
              *

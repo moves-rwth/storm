@@ -150,7 +150,7 @@ namespace storm {
                         }
                         case storm::storage::DFTElementType::POR: {
                             auto por = std::static_pointer_cast<storm::storage::DFTPor<ValueType> const>(element);
-                            builder.addPandElement(por->name(), getChildrenVector(por), por->isInclusive());
+                            builder.addPorElement(por->name(), getChildrenVector(por), por->isInclusive());
                             break;
                         }
                         case storm::storage::DFTElementType::SPARE:

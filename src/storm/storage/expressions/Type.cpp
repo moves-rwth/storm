@@ -215,10 +215,14 @@ namespace storm {
             return std::max(*this, other);
         }
         
-        Type Type::power(Type const& other) const {
+        Type Type::power(Type const& other, bool allowIntegerType) const {
             STORM_LOG_THROW(this->isNumericalType() && other.isNumericalType(), storm::exceptions::InvalidTypeException, "Operator requires numerical operands.");
             STORM_LOG_THROW(!this->isBitVectorType() && !other.isBitVectorType(), storm::exceptions::InvalidTypeException, "Operator requires non-bitvector operands.");
-            return std::max(*this, other);
+            if (allowIntegerType) {
+                return std::max(*this, other);
+            } else {
+                return this->getManager().getRationalType();
+            }
         }
         
         Type Type::logicalConnective(Type const& other) const {

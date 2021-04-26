@@ -97,7 +97,9 @@ namespace storm {
              * @return The resulting reward model.
              */
             RewardModel substitute(std::map<storm::expressions::Variable, storm::expressions::Expression> const& substitution) const;
-            
+
+            RewardModel labelUnlabelledCommands(std::vector<std::pair<uint64_t, std::string>> const& newActionNames) const;
+
             /*!
              * Checks whether any of the given variables only appear in the expressions defining the reward value.
              *

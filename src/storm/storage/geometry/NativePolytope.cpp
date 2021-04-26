@@ -437,7 +437,7 @@ namespace storm {
                 }
                 std::vector<Halfspace<ValueType>> newHalfspaces;
                 newHalfspaces.reserve(keptConstraints.getNumberOfSetBits());
-                for (auto const& row : keptConstraints) {
+                for (auto row : keptConstraints) {
                     newHalfspaces.emplace_back(storm::adapters::EigenAdapter::toStdVector(EigenVector(A.row(row))), b(row));
                 }
                 return create(newHalfspaces, boost::none);

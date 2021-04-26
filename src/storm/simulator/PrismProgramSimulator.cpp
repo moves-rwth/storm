@@ -44,6 +44,9 @@ namespace storm {
             if (behavior.getStateRewards().size() > 0) {
                 STORM_LOG_ASSERT(behavior.getStateRewards().size() == lastActionRewards.size(), "Reward vectors should have same length.");
             }
+            for(uint64_t i = 0; i < behavior.getStateRewards().size(); i++) {
+                lastActionRewards[i] += behavior.getStateRewards()[i];
+            }
             return true;
         }
 
@@ -104,9 +107,23 @@ namespace storm {
 
         template<typename ValueType>
         bool DiscreteTimePrismProgramSimulator<ValueType>::resetToInitial() {
+            lastActionRewards = zeroRewards;
             auto indices = stateGenerator->getInitialStates(stateToIdCallback);
             STORM_LOG_THROW(indices.size() == 1, storm::exceptions::NotSupportedException, "Program must have a unique initial state");
             currentState = idToState[indices[0]];
+            return explore();
+        }
+
+        template<typename ValueType>
+        bool DiscreteTimePrismProgramSimulator<ValueType>::resetToState(generator::CompressedState const& newState) {
+            lastActionRewards = zeroRewards;
+            currentState = newState;
+            return explore();
+        }
+
+        template<typename ValueType>
+        bool DiscreteTimePrismProgramSimulator<ValueType>::resetToState(expressions::SimpleValuation const& valuation) {
+            currentState = generator::packStateFromValuation(valuation, stateGenerator->getVariableInformation(), true);
             return explore();
         }
 

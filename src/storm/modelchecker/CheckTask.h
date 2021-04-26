@@ -9,6 +9,7 @@
 
 #include "storm/solver/OptimizationDirection.h"
 #include "storm/logic/ComparisonType.h"
+#include "storm/logic/PlayerCoalition.h"
 #include "storm/modelchecker/hints/ModelCheckerHint.h"
 
 #include "storm/exceptions/InvalidOperationException.h"
@@ -51,7 +52,7 @@ namespace storm {
              */
             template<typename NewFormulaType>
             CheckTask<NewFormulaType, ValueType> substituteFormula(NewFormulaType const& newFormula) const {
-                CheckTask<NewFormulaType, ValueType> result(newFormula, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->hint);
+                CheckTask<NewFormulaType, ValueType> result(newFormula, this->optimizationDirection, this->playerCoalition, this->rewardModel, this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->hint);
                 result.updateOperatorInformation();
                 return result;
             }
@@ -104,7 +105,7 @@ namespace storm {
              */
             template<typename NewValueType>
             CheckTask<FormulaType, NewValueType> convertValueType() const {
-                return CheckTask<FormulaType, NewValueType>(this->formula, this->optimizationDirection, this->rewardModel, this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->hint);
+                return CheckTask<FormulaType, NewValueType>(this->formula, this->optimizationDirection, this->playerCoalition, this->rewardModel, this->onlyInitialStatesRelevant, this->bound, this->qualitative, this->produceSchedulers, this->hint);
             }
             
             /*!
@@ -133,6 +134,28 @@ namespace storm {
              */
             void setOptimizationDirection(storm::OptimizationDirection const& dir) {
                 optimizationDirection = dir;
+            }
+            
+            /*!
+             * Retrieves whether a player coalition was set.
+             */
+            bool isPlayerCoalitionSet() const {
+                return static_cast<bool>(playerCoalition);
+            }
+            
+            /*!
+             * Retrieves the player coalition (if set).
+             */
+            storm::logic::PlayerCoalition const& getPlayerCoalition() const {
+                return playerCoalition.get();
+            }
+            
+            /*!
+             * Sets the player coalition.
+             */
+            CheckTask<FormulaType, ValueType>& setPlayerCoalition(storm::logic::PlayerCoalition const& coalition) {
+                playerCoalition = coalition;
+                return *this;
             }
             
             /*!
@@ -261,6 +284,7 @@ namespace storm {
              *
              * @param formula The formula to attach to the task.
              * @param optimizationDirection If set, the probabilities will be minimized/maximized.
+             * @param playerCoalition If set, the given coalitions of players will be assumed.
              * @param rewardModelName If given, the checking has to be done wrt. to this reward model.
              * @param onlyInitialStatesRelevant If set to true, the model checker may decide to only compute the values
              * for the initial states.
@@ -270,7 +294,7 @@ namespace storm {
              * @param produceSchedulers If supported by the model checker and the model formalism, schedulers to achieve
              * a value will be produced if this flag is set.
              */
-            CheckTask(std::reference_wrapper<FormulaType const> const& formula, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant, boost::optional<storm::logic::Bound> const& bound, bool qualitative, bool produceSchedulers, std::shared_ptr<ModelCheckerHint> const& hint) : formula(formula), optimizationDirection(optimizationDirection), rewardModel(rewardModel), onlyInitialStatesRelevant(onlyInitialStatesRelevant), bound(bound), qualitative(qualitative), produceSchedulers(produceSchedulers), hint(hint) {
+            CheckTask(std::reference_wrapper<FormulaType const> const& formula, boost::optional<storm::OptimizationDirection> const& optimizationDirection, boost::optional<storm::logic::PlayerCoalition> playerCoalition, boost::optional<std::string> const& rewardModel, bool onlyInitialStatesRelevant, boost::optional<storm::logic::Bound> const& bound, bool qualitative, bool produceSchedulers, std::shared_ptr<ModelCheckerHint> const& hint) : formula(formula), optimizationDirection(optimizationDirection), playerCoalition(playerCoalition), rewardModel(rewardModel), onlyInitialStatesRelevant(onlyInitialStatesRelevant), bound(bound), qualitative(qualitative), produceSchedulers(produceSchedulers), hint(hint) {
                 // Intentionally left empty.
             }
             
@@ -279,6 +303,9 @@ namespace storm {
             
             // If set, the probabilities will be minimized/maximized.
             boost::optional<storm::OptimizationDirection> optimizationDirection;
+            
+            // If set, the given coalitions of players will be assumed.
+            boost::optional<storm::logic::PlayerCoalition> playerCoalition;
 
             // If set, the reward property has to be interpreted over this model.
             boost::optional<std::string> rewardModel;

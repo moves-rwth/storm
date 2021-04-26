@@ -13,6 +13,7 @@
 #include "storm/exceptions/InvalidTypeException.h"
 #include "storm/exceptions/InvalidArgumentException.h"
 #include "storm/utility/macros.h"
+#include "storm/storage/expressions/SimplificationVisitor.h"
 
 namespace storm {
     namespace expressions {
@@ -52,6 +53,10 @@ namespace storm {
 		Expression Expression::substitute(std::unordered_map<Variable, Expression> const& identifierToExpressionMap) const {
 			return SubstitutionVisitor<std::unordered_map<Variable, Expression>>(identifierToExpressionMap).substitute(*this);
 		}
+
+		Expression Expression::substituteNonStandardPredicates() const {
+            return SimplificationVisitor().substitute(*this);
+        }
 
         bool Expression::evaluateAsBool(Valuation const* valuation) const {
             return this->getBaseExpression().evaluateAsBool(valuation);
@@ -283,11 +288,6 @@ namespace storm {
             return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType().divide(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Divide)));
         }
         
-        Expression operator^(Expression const& first, Expression const& second) {
-            assertSameManager(first.getBaseExpression(), second.getBaseExpression());
-            return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType().power(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Power)));
-        }
-        
         Expression operator%(Expression const& first, Expression const& second) {
             assertSameManager(first.getBaseExpression(), second.getBaseExpression());
             return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType().power(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Modulo)));
@@ -408,6 +408,12 @@ namespace storm {
             return Expression(std::shared_ptr<BaseExpression>(new BinaryBooleanFunctionExpression(first.getBaseExpression().getManager(), first.getType().logicalConnective(second.getType()), first.getBaseExpressionPointer(), second.getBaseExpressionPointer(), BinaryBooleanFunctionExpression::OperatorType::Xor)));
         }
         
+        Expression pow(Expression const& base, Expression const& exponent, bool allowIntegerType) {
+            assertSameManager(base.getBaseExpression(), exponent.getBaseExpression());
+            return Expression(std::shared_ptr<BaseExpression>(new BinaryNumericalFunctionExpression(base.getBaseExpression().getManager(), base.getType().power(exponent.getType(), allowIntegerType), base.getBaseExpressionPointer(), exponent.getBaseExpressionPointer(), BinaryNumericalFunctionExpression::OperatorType::Power)));
+        }
+
+        
         Expression floor(Expression const& first) {
             STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Operator 'floor' requires numerical operand.");
             return Expression(std::shared_ptr<BaseExpression>(new UnaryNumericalFunctionExpression(first.getBaseExpression().getManager(), first.getType().floorCeil(), first.getBaseExpressionPointer(), UnaryNumericalFunctionExpression::OperatorType::Floor)));
@@ -436,6 +442,33 @@ namespace storm {
         Expression truncate(Expression const& first) {
             STORM_LOG_THROW(first.hasNumericalType(), storm::exceptions::InvalidTypeException, "Truncate is only defined for numerical operands");
             return ite(first < 0, floor(first), ceil(first));
+        }
+
+        Expression atLeastOneOf(std::vector<Expression> const& expressions) {
+            STORM_LOG_THROW(expressions.size() > 0, storm::exceptions::InvalidArgumentException, "AtLeastOneOf requires arguments");
+            std::vector<std::shared_ptr<BaseExpression const>> baseexpressions;
+            for(auto const& expr : expressions) {
+                baseexpressions.push_back(expr.getBaseExpressionPointer());
+            }
+            return Expression(std::shared_ptr<BaseExpression>(new PredicateExpression(expressions.front().getManager(), expressions.front().getManager().getBooleanType(), baseexpressions, PredicateExpression::PredicateType::AtLeastOneOf)));
+        }
+
+        Expression atMostOneOf(std::vector<Expression> const& expressions) {
+            STORM_LOG_THROW(expressions.size() > 0, storm::exceptions::InvalidArgumentException, "AtMostOneOf requires arguments");
+            std::vector<std::shared_ptr<BaseExpression const>> baseexpressions;
+            for(auto const& expr : expressions) {
+                baseexpressions.push_back(expr.getBaseExpressionPointer());
+            }
+            return Expression(std::shared_ptr<BaseExpression>(new PredicateExpression(expressions.front().getManager(), expressions.front().getManager().getBooleanType(), baseexpressions, PredicateExpression::PredicateType::AtMostOneOf)));
+        }
+
+        Expression exactlyOneOf(std::vector<Expression> const& expressions) {
+            STORM_LOG_THROW(expressions.size() > 0, storm::exceptions::InvalidArgumentException, "ExactlyOneOf requires arguments");
+            std::vector<std::shared_ptr<BaseExpression const>> baseexpressions;
+            for(auto const& expr : expressions) {
+                baseexpressions.push_back(expr.getBaseExpressionPointer());
+            }
+            return Expression(std::shared_ptr<BaseExpression>(new PredicateExpression(expressions.front().getManager(), expressions.front().getManager().getBooleanType(), baseexpressions, PredicateExpression::PredicateType::ExactlyOneOf)));
         }
 
         Expression disjunction(std::vector<storm::expressions::Expression> const& expressions) {

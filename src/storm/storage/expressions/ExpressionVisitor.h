@@ -17,6 +17,7 @@ namespace storm {
         class BooleanLiteralExpression;
         class IntegerLiteralExpression;
         class RationalLiteralExpression;
+        class PredicateExpression;
         
         class ExpressionVisitor {
         public:
@@ -32,6 +33,7 @@ namespace storm {
             virtual boost::any visit(BooleanLiteralExpression const& expression, boost::any const& data) = 0;
             virtual boost::any visit(IntegerLiteralExpression const& expression, boost::any const& data) = 0;
             virtual boost::any visit(RationalLiteralExpression const& expression, boost::any const& data) = 0;
+            virtual boost::any visit(PredicateExpression const& expression, boost::any const& data);
         };
     }
 }

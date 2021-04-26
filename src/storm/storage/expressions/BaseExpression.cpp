@@ -191,6 +191,14 @@ namespace storm {
         VariableExpression const& BaseExpression::asVariableExpression() const {
             return static_cast<VariableExpression const&>(*this);
         }
+
+        bool BaseExpression::isPredicateExpression() const {
+            return false;
+        }
+
+        PredicateExpression const& BaseExpression::asPredicateExpression() const {
+            return static_cast<PredicateExpression const&>(*this);
+        }
         
         std::ostream& operator<<(std::ostream& stream, BaseExpression const& expression) {
             expression.printToStream(stream);

@@ -62,31 +62,37 @@ namespace storm {
             }
             return true;
         }
-        
+
         boost::any LiftableTransitionRewardsVisitor::visit(EventuallyFormula const& f, boost::any const& data) const {
             return f.getSubformula().accept(*this, data);
         }
-        
+
         boost::any LiftableTransitionRewardsVisitor::visit(TimeOperatorFormula const& f, boost::any const& data) const {
             return f.getSubformula().accept(*this, data);
         }
-        
+
         boost::any LiftableTransitionRewardsVisitor::visit(GloballyFormula const& f, boost::any const& data) const {
             return f.getSubformula().accept(*this, data);
         }
-        
+
+        boost::any LiftableTransitionRewardsVisitor::visit(GameFormula const& f, boost::any const& data) const {
+            STORM_LOG_WARN("Transitionbranch-based rewards might be reduced to action-based rewards. Be sure that this is correct for your property.");
+            // TODO: Check if this is correct
+            return f.getSubformula().accept(*this, data);
+        }
+
         boost::any LiftableTransitionRewardsVisitor::visit(InstantaneousRewardFormula const&, boost::any const&) const {
             return true;
         }
-        
+
         boost::any LiftableTransitionRewardsVisitor::visit(LongRunAverageOperatorFormula const& f, boost::any const& data) const {
             return f.getSubformula().accept(*this, data);
         }
-        
+
         boost::any LiftableTransitionRewardsVisitor::visit(LongRunAverageRewardFormula const&, boost::any const&) const {
             return true;
         }
-        
+
         boost::any LiftableTransitionRewardsVisitor::visit(MultiObjectiveFormula const& f, boost::any const& data) const {
             bool result = true;
             for (auto const& subF : f.getSubformulas()){

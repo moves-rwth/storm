@@ -44,7 +44,14 @@ namespace storm {
             
             identifier %= qi::as_string[qi::raw[qi::lexeme[((qi::alpha | qi::char_('_') | qi::char_('.')) >> *(qi::alnum | qi::char_('_')))]]][qi::_pass = phoenix::bind(&ExpressionParser::isValidIdentifier, phoenix::ref(*this), qi::_1)];
             identifier.name("identifier");
-            
+
+            if (allowBacktracking) {
+                predicateExpression = ((predicateOperator_ >> qi::lit("(")) >>  (expression % qi::lit(",") ) >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createPredicateExpression, phoenix::ref(*expressionCreator),  qi::_1, qi::_2, qi::_pass)];
+            } else {
+                predicateExpression = ((predicateOperator_ >> qi::lit("(")) >  (expression % qi::lit(",") ) > qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createPredicateExpression, phoenix::ref(*expressionCreator),  qi::_1, qi::_2, qi::_pass)];
+            }
+            predicateExpression.name("predicate expression");
+
             if (allowBacktracking) {
                 floorCeilExpression = ((floorCeilOperator_ >> qi::lit("(")) >> expression >> qi::lit(")"))[qi::_val = phoenix::bind(&ExpressionCreator::createFloorCeilExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_2, qi::_pass)];
             } else {
@@ -84,7 +91,7 @@ namespace storm {
                 | qi::long_long[qi::_val = phoenix::bind(&ExpressionCreator::createIntegerLiteralExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_pass)];
             literalExpression.name("literal expression");
             
-            atomicExpression = floorCeilExpression | roundExpression | prefixPowerModuloExpression | minMaxExpression | (qi::lit("(") >> expression >> qi::lit(")")) | identifierExpression | literalExpression;
+            atomicExpression = predicateExpression | floorCeilExpression | roundExpression | prefixPowerModuloExpression | minMaxExpression | (qi::lit("(") >> expression >> qi::lit(")")) | identifierExpression | literalExpression;
             atomicExpression.name("atomic expression");
             
             unaryExpression = (*unaryOperator_ >> atomicExpression)[qi::_val = phoenix::bind(&ExpressionCreator::createUnaryExpression, phoenix::ref(*expressionCreator), qi::_1, qi::_2, qi::_pass)];

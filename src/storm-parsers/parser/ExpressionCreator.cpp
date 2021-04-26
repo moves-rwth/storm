@@ -130,7 +130,7 @@ namespace storm {
             if (this->createExpressions) {
                 try {
                     switch (operatorType) {
-                        case storm::expressions::OperatorType::Power: return e1 ^ e2; break;
+                        case storm::expressions::OperatorType::Power: return storm::expressions::pow(e1, e2, true); break;
                         case storm::expressions::OperatorType::Modulo: return e1 % e2; break;
                         default: STORM_LOG_ASSERT(false, "Invalid operation."); break;
                     }
@@ -224,6 +224,21 @@ namespace storm {
             if (this->createExpressions) {
                 try {
                     return storm::expressions::round(e1);
+                } catch (storm::exceptions::InvalidTypeException const& e) {
+                    pass = false;
+                }
+            }
+            return manager.boolean(false);
+        }
+
+        storm::expressions::Expression ExpressionCreator::createPredicateExpression(storm::expressions::OperatorType const& opTyp, std::vector<storm::expressions::Expression> const&operands, bool &pass) const {
+            if (this->createExpressions) {
+                try {
+                    switch (opTyp) {
+                        case storm::expressions::OperatorType::AtLeastOneOf: return storm::expressions::atLeastOneOf(operands);
+                        case storm::expressions::OperatorType::AtMostOneOf: return storm::expressions::atMostOneOf(operands);
+                        case storm::expressions::OperatorType::ExactlyOneOf: return storm::expressions::exactlyOneOf(operands);
+                    }
                 } catch (storm::exceptions::InvalidTypeException const& e) {
                     pass = false;
                 }

@@ -74,7 +74,7 @@ namespace storm {
                 std::vector<Point> auxiliaryPoints = points;
                 auxiliaryPoints.reserve(auxiliaryPoints.size() * (1 + selectedDimensions.getNumberOfSetBits()));
                 for (auto const& point : points) {
-                    for (auto const& dim : selectedDimensions) {
+                    for (auto dim : selectedDimensions) {
                         auxiliaryPoints.push_back(point);
                         auxiliaryPoints.back()[dim] -= storm::utility::one<ValueType>();
                     }
@@ -83,7 +83,7 @@ namespace storm {
                 // The downward closure is obtained by erasing the halfspaces for which the normal vector is negative for one of the selected dimensions.
                 for (auto& h : auxiliaryHalfspaces) {
                     bool allGreaterEqZero = true;
-                    for (auto const& dim : selectedDimensions) {
+                    for (auto dim : selectedDimensions) {
                         allGreaterEqZero &= (h.normalVector()[dim] >= storm::utility::zero<ValueType>());
                     }
                     if (allGreaterEqZero){
@@ -122,7 +122,7 @@ namespace storm {
                             verticesOnHalfspace.set(v);
                         }
                     }
-                    for(auto const& v : verticesOnHalfspace) {
+                    for(auto v : verticesOnHalfspace) {
                         neighborsOfVertices[v] |= verticesOnHalfspace;
                         neighborsOfVertices[v].set(v, false);
                     }

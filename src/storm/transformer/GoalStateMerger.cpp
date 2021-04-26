@@ -218,7 +218,7 @@ namespace storm {
                 boost::optional<storm::storage::SparseMatrix<RewardValueType>> transitionRewards;
                 if (origRewardModel.hasTransitionRewards()) {
                     storm::storage::SparseMatrixBuilder<RewardValueType> builder(choiceCount, stateCount, 0, true);
-                    for (auto const& row : resultData.keptChoices) {
+                    for (auto row : resultData.keptChoices) {
                         boost::optional<typename SparseModelType::ValueType> targetValue, sinkValue;
                         for (auto const& entry : origRewardModel.getTransitionRewardMatrix().getRow(row)) {
                             uint_fast64_t const& newColumn = resultData.oldToNewStateIndexMapping[entry.getColumn()];

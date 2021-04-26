@@ -42,7 +42,7 @@ namespace storm {
         }
 
         template<typename ParametricType>
-        storm::storage::ParameterRegion<ParametricType> ParameterRegionParser<ParametricType>::parseRegion(std::string const& regionString, std::set<VariableType> const& consideredVariables) {
+        storm::storage::ParameterRegion<ParametricType> ParameterRegionParser<ParametricType>::parseRegion(std::string const& regionString, std::set<VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold) {
             Valuation lowerBoundaries;
             Valuation upperBoundaries;
             std::vector<std::string> parameterBoundaries;
@@ -58,24 +58,46 @@ namespace storm {
                 STORM_LOG_THROW(lowerBoundaries.count(v) > 0, storm::exceptions::WrongFormatException, "Variable " << v << " was not defined in region string.");
                 STORM_LOG_ASSERT(upperBoundaries.count(v) > 0, "Variable " << v << " has a lower but not an upper bound.");
             }
-            return storm::storage::ParameterRegion<ParametricType>(std::move(lowerBoundaries), std::move(upperBoundaries));
+            auto res = storm::storage::ParameterRegion<ParametricType>(std::move(lowerBoundaries), std::move(upperBoundaries));
+            if (splittingThreshold) {
+                res.setSplitThreshold(splittingThreshold.get());
+            }
+            return res;
         }
 
         template<typename ParametricType>
-        std::vector<storm::storage::ParameterRegion<ParametricType>> ParameterRegionParser<ParametricType>::parseMultipleRegions(std::string const& regionsString, std::set<VariableType> const& consideredVariables) {
+        storm::storage::ParameterRegion<ParametricType> ParameterRegionParser<ParametricType>::createRegion(std::string const& regionBound, std::set<VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold) {
+            Valuation lowerBoundaries;
+            Valuation upperBoundaries;
+            std::vector<std::string> parameterBoundaries;
+            CoefficientType bound = storm::utility::convertNumber<CoefficientType>(regionBound);
+            STORM_LOG_THROW(0 < bound && bound < 1, storm::exceptions::WrongFormatException, "Bound must be between 0 and 1, " << bound << " is not.");
+            for (auto const& v : consideredVariables) {
+                lowerBoundaries.emplace(std::make_pair(v, 0+bound));
+                upperBoundaries.emplace(std::make_pair(v, 1-bound));
+            }
+            auto res = storm::storage::ParameterRegion<ParametricType>(std::move(lowerBoundaries), std::move(upperBoundaries));
+            if (splittingThreshold) {
+                res.setSplitThreshold(splittingThreshold.get());
+            }
+            return res;
+        }
+
+        template<typename ParametricType>
+        std::vector<storm::storage::ParameterRegion<ParametricType>> ParameterRegionParser<ParametricType>::parseMultipleRegions(std::string const& regionsString, std::set<VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold) {
             std::vector<storm::storage::ParameterRegion<ParametricType>> result;
             std::vector<std::string> regionsStrVec;
             boost::split(regionsStrVec, regionsString, boost::is_any_of(";"));
             for (auto const& regionStr : regionsStrVec){
                 if (!std::all_of(regionStr.begin(),regionStr.end(), ::isspace)){ //skip this string if it only consists of space
-                    result.emplace_back(parseRegion(regionStr, consideredVariables));
+                    result.emplace_back(parseRegion(regionStr, consideredVariables, splittingThreshold));
                 }
             }
             return result;
         }
 
         template<typename ParametricType>
-        std::vector<storm::storage::ParameterRegion<ParametricType>> ParameterRegionParser<ParametricType>::parseMultipleRegionsFromFile(std::string const& fileName, std::set<VariableType> const& consideredVariables) {
+        std::vector<storm::storage::ParameterRegion<ParametricType>> ParameterRegionParser<ParametricType>::parseMultipleRegionsFromFile(std::string const& fileName, std::set<VariableType> const& consideredVariables, boost::optional<int> const& splittingThreshold) {
      
             // Open file and initialize result.
             std::ifstream inputFileStream;
@@ -86,7 +108,7 @@ namespace storm {
             // Now try to parse the contents of the file.
             try {
                 std::string fileContent((std::istreambuf_iterator<char>(inputFileStream)), (std::istreambuf_iterator<char>()));
-                result = parseMultipleRegions(fileContent, consideredVariables);
+                result = parseMultipleRegions(fileContent, consideredVariables, splittingThreshold);
             } catch(std::exception& e) {
                 // In case of an exception properly close the file before passing exception.
                 storm::utility::closeFile(inputFileStream);
