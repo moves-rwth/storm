@@ -4,6 +4,7 @@
 #include "storm/logic/Formula.h"
 #include "storm/utility/macros.h"
 #include "storm/exceptions/ExpressionEvaluationException.h"
+#include "storm/exceptions/WrongFormatException.h"
 
 #ifdef STORM_HAVE_SPOT
 #include "spot/tl/formula.hh"
@@ -19,8 +20,12 @@ namespace storm {
 #ifdef STORM_HAVE_SPOT
 
             std::string prefixLtl = f.toPrefixString();
-            spot::parsed_formula spotPrefixLtl = spot::parse_prefix_ltl(prefixLtl);
-            STORM_LOG_THROW(!spotPrefixLtl.format_errors(std::cerr), storm::exceptions::ExpressionEvaluationException, "Spot could not parse formula: " << prefixLtl);
+            spot::parsed_formula spotPrefixLtl = spot::parse_prefix_ltl("())");
+            if(!spotPrefixLtl.errors.empty()){
+                std::ostringstream errorMsg;
+                spotPrefixLtl.format_errors(errorMsg);
+                STORM_LOG_THROW(false, storm::exceptions::ExpressionEvaluationException, "Spot could not parse formula: " << prefixLtl << ": " << errorMsg.str());
+            }
             spot::formula spotFormula = spotPrefixLtl.f;
 
 
