@@ -1,12 +1,12 @@
 #include "storm-pomdp/analysis/JaniBeliefSupportMdpGenerator.h"
 #include "storm/storage/jani/Model.h"
 #include "storm/storage/expressions/ExpressionManager.h"
+#include "storm/models/symbolic/StandardRewardModel.h"
 #include "storm/io/file.h"
 #include "storm/api/verification.h"
 #include "storm/api/builder.h"
 #include "storm-parsers/api/properties.h"
 #include "storm/storage/SymbolicModelDescription.h"
-#include "storm-parsers/api/model_descriptions.h"
 #include "storm/modelchecker/results/CheckResult.h"
 #include "storm/modelchecker/results/SymbolicQualitativeCheckResult.h"
 
@@ -84,7 +84,6 @@ namespace storm {
                     std::string name = "s" + std::to_string(i);
                     bool isInitial = pomdp.getInitialStates().get(i);
                     stateVariables.emplace(i, &model.addVariable(jani::BooleanVariable(name, exprManager.declareBooleanVariable(name), exprManager.boolean(isInitial))));
-
                 }
 
                 std::map<detail::ObsActPair, uint64_t> actionIndices;
@@ -118,8 +117,6 @@ namespace storm {
                         tedge->addDestination(edgedest);
                         aut.addEdge(jani::Edge(primeloc, oaps.second,  boost::none,  tedge, {primeloc}, {exprManager.rational(1.0)}));
                     }
-
-
                     model.addAutomaton(aut);
                 }
                 jani::Automaton obsAut("obsAut", exprManager.declareIntegerVariable("obsAut"));
@@ -181,10 +178,10 @@ namespace storm {
             template <typename ValueType>
             void JaniBeliefSupportMdpGenerator<ValueType>::verifySymbolic(bool onlyInitial) {
                 storage::SymbolicModelDescription symdesc(model);
+                // This trick only works because we do not explictly check that the model is stochastic!
                 symdesc = symdesc.preprocess("posProb=0.1");
                 auto property = storm::api::parsePropertiesForJaniModel("Pmax>=1 [!\"bad\" U \"target\"]", model)[0];
                 auto mdp = storm::api::buildSymbolicModel<storm::dd::DdType::Sylvan, ValueType>(symdesc, {property.getRawFormula()});
-                mdp->printModelInformationToStream(std::cout);
                 storm::Environment env;
                 std::unique_ptr<modelchecker::CheckResult> result = storm::api::verifyWithDdEngine(env, mdp, storm::api::createTask<ValueType>(property.getRawFormula(), onlyInitial));
                 std::unique_ptr<storm::modelchecker::CheckResult> filter;
@@ -200,14 +197,14 @@ namespace storm {
                 }
 
                 if(result && !onlyInitial) {
-                   auto vars = result->asSymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>().getTruthValuesVector().getContainedMetaVariables();
-
+                    auto vars = result->asSymbolicQualitativeCheckResult<storm::dd::DdType::Sylvan>().getTruthValuesVector().getContainedMetaVariables();
+                    // TODO Export these results.
                 } else if (result) {
                     initialIsWinning = result->asQualitativeCheckResult().existsTrue();
                 }
             }
 
-                template <typename ValueType>
+            template <typename ValueType>
             bool JaniBeliefSupportMdpGenerator<ValueType>::isInitialWinning() const {
                 return initialIsWinning;
             }
@@ -216,8 +213,6 @@ namespace storm {
             template class JaniBeliefSupportMdpGenerator<double>;
             template class JaniBeliefSupportMdpGenerator<storm::RationalNumber>;
             template class JaniBeliefSupportMdpGenerator<storm::RationalFunction>;
-
-
 
         }
     }
