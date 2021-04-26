@@ -98,7 +98,7 @@ namespace storm {
         
         // A structure storing information about the used variables of the program.
         struct VariableInformation {
-            VariableInformation(storm::prism::Program const& program, bool outOfBoundsState = false);
+            VariableInformation(storm::prism::Program const& program, uint64_t reservedBitsForUnboundedVariables, bool outOfBoundsState = false);
             VariableInformation(storm::jani::Model const& model, std::vector<std::reference_wrapper<storm::jani::Automaton const>> const& parallelAutomata, uint64_t reservedBitsForUnboundedVariables, bool outOfBoundsState);
             
             VariableInformation() = default;

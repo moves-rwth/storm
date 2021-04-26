@@ -541,7 +541,7 @@ namespace storm {
         
         template <storm::dd::DdType Type, typename ValueType>
         bool DdPrismModelBuilder<Type, ValueType>::canHandle(storm::prism::Program const& program) {
-            return program.getModelType() != storm::prism::Program::ModelType::PTA;
+            return !program.hasUnboundedVariables() && (program.getModelType() != storm::prism::Program::ModelType::PTA);
         }
         
         template <storm::dd::DdType Type, typename ValueType>
@@ -1311,6 +1311,7 @@ namespace storm {
                 stream << ".";
                 STORM_LOG_THROW(false, storm::exceptions::InvalidArgumentException, "Program still contains these undefined constants: " + stream.str());
             }
+            STORM_LOG_THROW(!program.hasUnboundedVariables(), storm::exceptions::InvalidArgumentException, "Program contains unbounded variables which is not supported by the DD engine.");
             
             STORM_LOG_TRACE("Building representation of program:" << std::endl << program << std::endl);
             
