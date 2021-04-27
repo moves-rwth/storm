@@ -695,4 +695,36 @@ namespace {
             EXPECT_FALSE(checker->canHandle(tasks[0]));
         }
     }
+
+    TYPED_TEST(MdpPrctlModelCheckerTest, LtlProbabilitiesCoin) {
+#ifdef STORM_HAVE_LTL_MODELCHECKING_SUPPORT
+        std::string formulasString = "Pmin=? [!(GF \"all_coins_equal_1\")]";
+        formulasString += "; Pmax=? [F \"all_coins_equal_1\" U \"finished\"]";
+
+        auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", formulasString);
+        auto model = std::move(modelFormulas.first);
+        auto tasks = this->getTasks(modelFormulas.second);
+        EXPECT_EQ(272ul, model->getNumberOfStates());
+        EXPECT_EQ(492ul, model->getNumberOfTransitions());
+        ASSERT_EQ(model->getType(), storm::models::ModelType::Mdp);
+        auto checker = this->createModelChecker(model);
+        std::unique_ptr<storm::modelchecker::CheckResult> result;
+
+        // LTL not supported in all engines (Hybrid,  PrismDd, JaniDd)
+        if (TypeParam::engine == MdpEngine::PrismSparse || TypeParam::engine == MdpEngine::JaniSparse || TypeParam::engine == MdpEngine::JitSparse) {
+            result = checker->check(this->env(), tasks[0]);
+            EXPECT_NEAR(this->parseNumber("4/9"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+            result = checker->check(this->env(), tasks[1]);
+            EXPECT_NEAR(this->parseNumber("5/9"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+        } else {
+            EXPECT_FALSE(checker->canHandle(tasks[0]));
+        }
+    }
+#else
+    GTEST_SKIP();
+#endif
+
+
 }
