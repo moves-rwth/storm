@@ -78,8 +78,8 @@ namespace {
             if (!config.useDC) {
                 relevantNames.push_back("all");
             }
-            storm::utility::RelevantEvents relevantEvents = storm::api::computeRelevantEvents<double>(*dft, {}, relevantNames, false);
-            dft->setRelevantEvents(relevantEvents);
+            storm::utility::RelevantEvents relevantEvents = storm::api::computeRelevantEvents<double>(*dft, {}, relevantNames);
+            dft->setRelevantEvents(relevantEvents, false);
 
             // Find symmetries
             std::map<size_t, std::vector<std::vector<size_t>>> emptySymmetry;
@@ -173,8 +173,11 @@ namespace {
         auto state = simulator.getCurrentState();
         EXPECT_FALSE(state->hasFailed(dft->getTopLevelIndex()));
    
+        storm::dft::simulator::SimulationResult res;
+        double timebound;
         // First random step
-        double timebound = simulator.randomStep();
+        std::tie(res, timebound) = simulator.randomStep();
+        EXPECT_EQ(res, storm::dft::simulator::SimulationResult::SUCCESSFUL);
 #if BOOST_VERSION > 106400
         // Older Boost versions yield different value
         EXPECT_FLOAT_EQ(timebound, 0.522079);
@@ -182,7 +185,8 @@ namespace {
         state = simulator.getCurrentState();
         EXPECT_FALSE(state->hasFailed(dft->getTopLevelIndex()));
 
-        timebound = simulator.randomStep();
+        std::tie(res, timebound) = simulator.randomStep();
+        EXPECT_EQ(res, storm::dft::simulator::SimulationResult::SUCCESSFUL);
 #if BOOST_VERSION > 106400
         // Older Boost versions yield different value
         EXPECT_FLOAT_EQ(timebound, 0.9497214);

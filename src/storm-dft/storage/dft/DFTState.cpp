@@ -343,10 +343,10 @@ namespace storm {
         }
  
         template<typename ValueType>
-        void DFTState<ValueType>::letDependencyBeUnsuccessful(size_t id) {
+        void DFTState<ValueType>::letDependencyBeUnsuccessful(std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dependency) {
             STORM_LOG_ASSERT(failableElements.hasDependencies(), "Index invalid.");
-            std::shared_ptr<DFTDependency<ValueType> const> dependency = mDft.getDependency(id);
-            failableElements.removeDependency(id);
+            STORM_LOG_ASSERT(!dependency->isFDEP(), "Dependency is not a PDEP.");
+            failableElements.removeDependency(dependency->id());
             setDependencyUnsuccessful(dependency->id());
         }
 
@@ -387,8 +387,13 @@ namespace storm {
                                 STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BE type '" << be->type() << "' is not supported.");
                         }
                     }
-                } else if (mDft.getElement(elem)->isSpareGate() && !isActive(uses(elem))) {
-                    propagateActivation(uses(elem));
+                } else if (mDft.getElement(elem)->isSpareGate()){
+                    if (isOperational(elem)) {
+                        // We do not activate children if the SPARE is already failed
+                        if (!isActive(uses(elem))) {
+                            propagateActivation(uses(elem));
+                        }
+                    }
                 }
             }
         }

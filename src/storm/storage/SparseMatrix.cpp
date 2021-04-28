@@ -726,7 +726,7 @@ namespace storm {
         template<typename ValueType>
         storm::storage::BitVector SparseMatrix<ValueType>::getRowFilter(storm::storage::BitVector const& groupConstraint, storm::storage::BitVector const& columnConstraint) const {
             storm::storage::BitVector result(this->getRowCount(), false);
-            for (auto const& group : groupConstraint) {
+            for (auto group : groupConstraint) {
                 uint_fast64_t const endOfGroup = this->getRowGroupIndices()[group + 1];
                 for (uint_fast64_t row = this->getRowGroupIndices()[group]; row < endOfGroup; ++row) {
                     bool choiceSatisfiesColumnConstraint = true;
@@ -1120,7 +1120,7 @@ namespace storm {
             
             // Count the number of entries of the resulting matrix
             uint_fast64_t entryCount = 0;
-            for (auto const& row : rowsToKeep) {
+            for (auto row : rowsToKeep) {
                 entryCount += this->getRow(row).getNumberOfEntries();
             }
             
@@ -1160,13 +1160,13 @@ namespace storm {
         SparseMatrix<ValueType> SparseMatrix<ValueType>::filterEntries(storm::storage::BitVector const& rowFilter) const {
             // Count the number of entries in the resulting matrix.
             index_type entryCount = 0;
-            for (auto const& row : rowFilter) {
+            for (auto row : rowFilter) {
                 entryCount += getRow(row).getNumberOfEntries();
             }
             
             // Build the resulting matrix.
             SparseMatrixBuilder<ValueType> builder(getRowCount(), getColumnCount(), entryCount);
-            for (auto const& row : rowFilter) {
+            for (auto row : rowFilter) {
                 for (auto const& entry : getRow(row)) {
                     builder.addNextValue(row, entry.getColumn(), entry.getValue());
                 }

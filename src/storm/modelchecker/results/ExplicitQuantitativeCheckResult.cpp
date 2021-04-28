@@ -82,7 +82,7 @@ namespace storm {
             if (this->isResultForAllStates()) {
                 map_type newMap;
                 
-                for (auto const& element : filterTruthValues) {
+                for (auto element : filterTruthValues) {
                     STORM_LOG_THROW(element < this->getValueVector().size(), storm::exceptions::InvalidAccessException, "Invalid index in results.");
                     newMap.emplace(element, this->getValueVector()[element]);
                 }

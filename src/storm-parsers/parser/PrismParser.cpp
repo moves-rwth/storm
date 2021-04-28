@@ -151,7 +151,13 @@ namespace storm {
             booleanVariableDefinition = (((freshIdentifier > qi::lit(":")) >> qi::lit("bool")) > -((qi::lit("init") > boolExpression[qi::_a = qi::_1]) | qi::attr(manager->boolean(false))) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createBooleanVariable, phoenix::ref(*this), qi::_1, qi::_a)];
             booleanVariableDefinition.name("boolean variable definition");
 
-            integerVariableDefinition = (((freshIdentifier > qi::lit(":")) >> qi::lit("[")) > intExpression > qi::lit("..") > intExpression > qi::lit("]") > -(qi::lit("init") > intExpression[qi::_a = qi::_1]) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createIntegerVariable, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_a)];
+            boundedIntegerVariableDefinition = (((freshIdentifier > qi::lit(":")) >> qi::lit("[")) > intExpression > qi::lit("..") > intExpression > qi::lit("]") > -(qi::lit("init") > intExpression[qi::_a = qi::_1]) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createIntegerVariable, phoenix::ref(*this), qi::_1, qi::_2, qi::_3, qi::_a)];
+            boundedIntegerVariableDefinition.name("bounded integer variable definition");
+
+            unboundedIntegerVariableDefinition = (((freshIdentifier > qi::lit(":")) >> qi::lit("int")) > -(qi::lit("init") > intExpression[qi::_a = qi::_1]) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createIntegerVariable, phoenix::ref(*this), qi::_1, storm::expressions::Expression(), storm::expressions::Expression(), qi::_a)];
+            unboundedIntegerVariableDefinition.name("unbounded integer variable definition");
+
+            integerVariableDefinition = boundedIntegerVariableDefinition | unboundedIntegerVariableDefinition;
             integerVariableDefinition.name("integer variable definition");
 
             clockVariableDefinition = (((freshIdentifier > qi::lit(":")) >> qi::lit("clock")) > qi::lit(";"))[qi::_val = phoenix::bind(&PrismParser::createClockVariable, phoenix::ref(*this), qi::_1)];
@@ -408,7 +414,7 @@ namespace storm {
                 }
             }
             if (!unprocessed.empty()) {
-                for (auto const& formulaIndex : unprocessed) {
+                for (auto formulaIndex : unprocessed) {
                     STORM_LOG_ERROR("Parsing error in " << this->getFilename() << ": Invalid expression for formula '" << formulas[formulaIndex].getName() << "' at line '" << formulas[formulaIndex].getLineNumber() << "':\n\t" << formulaExpressions[formulaIndex]);
                 }
                 STORM_LOG_THROW(unprocessed.getNumberOfSetBits() == 1, storm::exceptions::WrongFormatException, "Unable to parse expressions for " << unprocessed.getNumberOfSetBits() << " formulas. This could be due to circular dependencies");
@@ -453,7 +459,7 @@ namespace storm {
                 return false;
             }
             return true;
-        };
+        }
 
         bool PrismParser::isFreshIdentifier(std::string const& identifier) {
             if (!this->secondRun && this->manager->hasVariable(identifier)) {

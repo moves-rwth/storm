@@ -69,7 +69,10 @@ namespace storm {
              * Unsets the optimization direction to use for calls to methods that do not explicitly provide one.
              */
             void unsetOptimizationDirection();
-            
+
+            void setFixedStates(storm::storage::BitVector&& states);
+            void updateScheduler();
+
             /*!
              * Sets whether the solution to the min max equation system is known to be unique.
              */
@@ -182,7 +185,9 @@ namespace storm {
             
             // A scheduler that can be used by solvers that require a valid initial scheduler.
             boost::optional<std::vector<uint_fast64_t>> initialScheduler;
-            
+
+            boost::optional<storm::storage::BitVector> fixedStates;
+
         private:
             /// Whether the solver can assume that the min-max equation system has a unique solution
             bool uniqueSolution;

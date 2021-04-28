@@ -37,6 +37,13 @@ namespace storm {
         }
 
 
+        BernoulliDistributionGenerator::BernoulliDistributionGenerator(double prob) : distribution(prob) {
+        }
+
+        bool BernoulliDistributionGenerator::random(boost::mt19937& engine) {
+            return distribution(engine);
+        }
+
         ExponentialDistributionGenerator::ExponentialDistributionGenerator(double rate) : distribution(rate) {
         }
 

@@ -240,8 +240,6 @@ namespace storm {
 
             // Rules for global variable definitions.
             qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> globalVariableDefinition;
-            qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> globalBooleanVariableDefinition;
-            qi::rule<Iterator, qi::unused_type(GlobalProgramInformation&), Skipper> globalIntegerVariableDefinition;
 
             // Rules for modules definition.
             qi::rule<Iterator, std::string(), Skipper> knownModuleName;
@@ -254,6 +252,8 @@ namespace storm {
             qi::rule<Iterator, qi::unused_type(std::vector<storm::prism::BooleanVariable>&, std::vector<storm::prism::IntegerVariable>&, std::vector<storm::prism::ClockVariable>&), Skipper> variableDefinition;
             qi::rule<Iterator, storm::prism::BooleanVariable(), qi::locals<storm::expressions::Expression>, Skipper> booleanVariableDefinition;
             qi::rule<Iterator, storm::prism::IntegerVariable(), qi::locals<storm::expressions::Expression>, Skipper> integerVariableDefinition;
+            qi::rule<Iterator, storm::prism::IntegerVariable(), qi::locals<storm::expressions::Expression>, Skipper> boundedIntegerVariableDefinition;
+            qi::rule<Iterator, storm::prism::IntegerVariable(), qi::locals<storm::expressions::Expression>, Skipper> unboundedIntegerVariableDefinition;
             qi::rule<Iterator, storm::prism::ClockVariable(), qi::locals<storm::expressions::Expression>, Skipper> clockVariableDefinition;
 
             // Rules for command definitions.

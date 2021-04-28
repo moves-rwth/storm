@@ -214,7 +214,7 @@ namespace storm {
             std::shared_ptr<Variable> janiVar = std::move(vToVIt->second);
             variableToVariable.erase(vToVIt);
             
-            nameToVariable.erase(variable.getName());
+            nameToVariable.erase(janiVar->getName());
             eraseFromVariableVector(variables, variable);
             if (janiVar->isBooleanVariable()) {
                 eraseFromVariableVector(booleanVariables, variable);

@@ -145,7 +145,7 @@ namespace storm {
 
                     auto stepSolutionIt = epochModel.stepSolutions.begin();
                     auto stepChoiceIt = epochModel.stepChoices.begin();
-                    for (auto const& state : epochModel.epochInStates) {
+                    for (auto state : epochModel.epochInStates) {
                         // Obtain the best choice for this state according to the weighted combination of objectives
                         ValueType bestValue;
                         uint64_t bestChoice = std::numeric_limits<uint64_t>::max();
@@ -216,20 +216,20 @@ namespace storm {
                         ValueType weight = storm::solver::minimize(this->objectives[objIndex].formula->getOptimalityType()) ? -weightVector[objIndex] : weightVector[objIndex];
                         if (!storm::utility::isZero(weight)) {
                             std::vector<ValueType> const& objectiveReward = epochModel.objectiveRewards[objIndex];
-                            for (auto const& choice : epochModel.objectiveRewardFilter[objIndex]) {
+                            for (auto choice : epochModel.objectiveRewardFilter[objIndex]) {
                                 cachedData.bMinMax[choice] += weight * objectiveReward[choice];
                             }
                         }
                     }
                     auto stepSolutionIt = epochModel.stepSolutions.begin();
-                    for (auto const& choice : epochModel.stepChoices) {
+                    for (auto choice : epochModel.stepChoices) {
                         cachedData.bMinMax[choice] += stepSolutionIt->front();
                         ++stepSolutionIt;
                     }
                     
                     // Invoke the min max solver
                     cachedData.minMaxSolver->solveEquations(env, cachedData.xMinMax, cachedData.bMinMax);
-                    for (auto const& state : epochModel.epochInStates) {
+                    for (auto state : epochModel.epochInStates) {
                         result.emplace_back();
                         result.back().reserve(solutionSize);
                         result.back().push_back(cachedData.xMinMax[state]);
@@ -301,7 +301,7 @@ namespace storm {
                         STORM_LOG_THROW(!req.hasEnabledCriticalRequirement(), storm::exceptions::UncheckedRequirementException, "Solver requirements " + req.getEnabledRequirementsAsString() + " not checked.");
                         cachedData.linEqSolver->solveEquations(env, x, cachedData.bLinEq);
                         auto resultIt = result.begin();
-                        for (auto const& state : epochModel.epochInStates) {
+                        for (auto state : epochModel.epochInStates) {
                             resultIt->push_back(x[state]);
                             ++resultIt;
                         }

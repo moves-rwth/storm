@@ -423,13 +423,11 @@ namespace storm {
                         
                         // Then add the constraints for bounds of the integer variables.
                         for (auto const& integerVariable : program.getGlobalIntegerVariables()) {
-                            localSolver->add(integerVariable.getExpressionVariable() >= integerVariable.getLowerBoundExpression());
-                            localSolver->add(integerVariable.getExpressionVariable() <= integerVariable.getUpperBoundExpression());
+                            localSolver->add(integerVariable.getRangeExpression());
                         }
                         for (auto const& module : program.getModules()) {
                             for (auto const& integerVariable : module.getIntegerVariables()) {
-                                localSolver->add(integerVariable.getExpressionVariable() >= integerVariable.getLowerBoundExpression());
-                                localSolver->add(integerVariable.getExpressionVariable() <= integerVariable.getUpperBoundExpression());
+                                localSolver->add(integerVariable.getRangeExpression());
                             }
                         }
                     } else {
@@ -1909,7 +1907,7 @@ namespace storm {
                 // Create a queue of reachable prob0E(psi) states so we can check which commands need to be added
                 // to give them a strategy that avoids psi states.
                 std::queue<uint_fast64_t> prob0EWorklist;
-                for (auto const& e : reachableProb0EStates) {
+                for (auto e : reachableProb0EStates) {
                     prob0EWorklist.push(e);
                 }
                 

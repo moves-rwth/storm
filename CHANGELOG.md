@@ -1,3 +1,4 @@
+
 Changelog
 ==============
 
@@ -8,10 +9,12 @@ The releases of major and minor versions contain an overview of changes since th
 Version 1.6.x
 -------------
 ## Version 1.6.4 (20xx/xx)
+- Added support for PRISM models that use unbounded integer variables.
 - Added an export of check results to json. Use `--exportresult` in the command line interface.
 - Added computation of steady state probabilities for DTMC/CTMC in the sparse engine. Use `--steadystate` in the command line interface.
 - Implemented parsing and model building of Stochastic multiplayer games (SMGs) in the PRISM language. No model checking implemented, for now.
 - Added support for continuous integration with Github Actions.
+- `storm-pars`: Exploit monotonicity for computing extremal values and parameter space partitioning.
 
 ## Version 1.6.3 (2020/11)
 - Added support for multi-objective model checking of long-run average objectives including mixtures with other kinds of objectives.

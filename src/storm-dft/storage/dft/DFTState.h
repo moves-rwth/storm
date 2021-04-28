@@ -247,9 +247,9 @@ namespace storm {
             
             /**
              * Sets the dependency as unsuccesful meaning no BE will fail.
-             * @param index Index of dependency to fail.
+             * @param dependency Dependency.
              */
-            void letDependencyBeUnsuccessful(size_t index = 0);
+            void letDependencyBeUnsuccessful(std::shared_ptr<storm::storage::DFTDependency<ValueType> const> dependency);
             
             /**
              * Order the state in decreasing order using the symmetries.

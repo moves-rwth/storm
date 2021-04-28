@@ -140,7 +140,7 @@ namespace storm {
             // Check the formula and store the result as a hint for the next call.
             // For qualitative properties, we still want a quantitative result hint. Hence we perform the check on the subformula
             if(this->currentCheckTask->getFormula().asOperatorFormula().hasQuantitativeResult()) {
-                std::unique_ptr<storm::modelchecker::CheckResult> result = modelChecker.check(env, *this->currentCheckTask);
+                result = modelChecker.check(env, *this->currentCheckTask);
                 storm::storage::Scheduler<ConstantType> const& scheduler = result->template asExplicitQuantitativeCheckResult<ConstantType>().getScheduler();
                 hint.setResultHint(result->template asExplicitQuantitativeCheckResult<ConstantType>().getValueVector());
                 hint.setSchedulerHint(dynamic_cast<storm::storage::Scheduler<ConstantType> const&>(scheduler));

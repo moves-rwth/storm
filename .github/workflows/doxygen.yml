@@ -2,9 +2,9 @@ name: Doxygen
 # Builds and deploys storms doxygen documentation
 
 on:
-  push:
-    branches:
-      - master
+  schedule:
+      # run daily
+      - cron: '0 8 * * *'
   # needed to trigger the workflow manually
   workflow_dispatch:
 
@@ -21,6 +21,8 @@ jobs:
   deploy:
     name: Create documentation
     runs-on: ubuntu-latest
+    # Do not run on forks
+    if: github.repository_owner == 'moves-rwth'
     steps:
       - name: Init Docker
         run: sudo docker run -d -it --name storm --privileged ${BASE_IMG}
@@ -55,7 +57,8 @@ jobs:
     name: Email notification
     runs-on: ubuntu-latest
     needs: [deploy]
-    if: always() # set always
+    # Only run in main repo and even if previous step failed
+    if: github.repository_owner == 'moves-rwth' && always()
     steps:
       - uses: technote-space/workflow-conclusion-action@v2
       - uses: dawidd6/action-send-mail@v2

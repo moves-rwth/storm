@@ -1,6 +1,6 @@
 name: Build Test
-# Builds and tests storm on varius platforms
-# also deploys images to dockerhub
+# Builds and tests storm on various platforms
+# also deploys images to Dockerhub
 
 on:
   schedule:
@@ -8,12 +8,13 @@ on:
       - cron: '0 6 * * *'
   # needed to trigger the workflow manually
   workflow_dispatch:
+  pull_request:
 
 env:
   CARL_BRANCH: "master14"
   CARL_GIT_URL: "https://github.com/smtrat/carl.git"
   STORM_GIT_URL: "${{ github.server_url }}/${{ github.repository }}.git"
-  STORM_BRANCH: "master"
+  STORM_BRANCH: "${{ github.ref }}"
   # github runners currently have two cores
   NR_JOBS: "2"
 
@@ -44,7 +45,10 @@ jobs:
       - name: Init Docker
         run: sudo docker run -d -it --name storm --privileged movesrwth/storm-basesystem:${{ matrix.distro }}
       - name: Git clone
-        run: sudo docker exec storm git clone --depth 1 --branch $STORM_BRANCH $STORM_GIT_URL /opt/storm
+        # git clone cannot clone individual commits based on a sha and some other refs
+        # this workaround fixes this and fetches only one commit
+        run: |
+          sudo docker exec storm bash -c "mkdir /opt/storm; cd /opt/storm; git init && git remote add origin ${STORM_GIT_URL} && git fetch --depth 1 origin ${STORM_BRANCH} && git checkout FETCH_HEAD"
       - name: Run cmake
         run: sudo docker exec storm bash -c "mkdir /opt/storm/build; cd /opt/storm/build; cmake .. ${CMAKE_ARGS}"
       - name: Build storm
@@ -82,6 +86,8 @@ jobs:
           ([[ ${{ matrix.debugOrRelease }} == "debug" ]] && echo "CARL_CMAKE_ARGS=${CARL_CMAKE_DEBUG}" || echo "CARL_CMAKE_ARGS=${CARL_CMAKE_RELEASE}") >> $GITHUB_ENV
 
       - name: Login into docker
+        # Only login if using master on original repo (and not for pull requests or forks)
+        if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'
         run: echo "${{ secrets.STORM_CI_DOCKER_PASSWORD }}" | sudo docker login -u "${{ secrets.STORM_CI_DOCKER_USERNAME }}" --password-stdin
       - name: Init Docker
         run: sudo docker run -d -it --name storm --privileged movesrwth/storm-basesystem:${DISTRO}
@@ -105,6 +111,8 @@ jobs:
       - name: Build carl
         run: sudo docker exec storm bash -c "cd /opt/carl/build; make lib_carl -j ${NR_JOBS}"
       - name: Deploy carl
+        # Only deploy if using master on original repo (and not for pull requests or forks)
+        if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'
         run: |
           sudo docker commit storm movesrwth/carl:ci-${{ matrix.debugOrRelease }}
           sudo docker push movesrwth/carl:ci-${{ matrix.debugOrRelease }}
@@ -113,14 +121,23 @@ jobs:
         #####
         # Build & TEST & DEPLOY STORM
         #####
-      - name: Git clone
-        run: sudo docker exec storm git clone --depth 1 --branch $STORM_BRANCH $STORM_GIT_URL /opt/storm
+      - name: Git shallow clone
+        # Only clone shallow if not using master on original repo (and not for pull requests or forks)
+        if: ${{ !(github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master') }}
+        run: |
+          # git clone cannot clone individual commits based on a sha and some other refs
+          sudo docker exec storm bash -c "mkdir /opt/storm; cd /opt/storm; git init && git remote add origin ${STORM_GIT_URL} && git fetch --depth 1 origin ${STORM_BRANCH} && git checkout FETCH_HEAD"
+      - name: Git deep clone
+        # needed for versioning for now on deployment
+        if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'
+        run: |
+          sudo docker exec storm git clone --branch master $STORM_GIT_URL /opt/storm
       - name: Run cmake
         run: sudo docker exec storm bash -c "mkdir /opt/storm/build; cd /opt/storm/build; cmake .. ${CMAKE_ARGS}"
       - name: Build storm
         run: sudo docker exec storm bash -c "cd /opt/storm/build; make -j ${NR_JOBS}"
 
-        # A bit hacky... but its usefullnes has been proven in production
+        # A bit hacky... but its usefulness has been proven in production
       - name: Check release makeflags
         if: matrix.debugOrRelease == 'release'
         run: |
@@ -134,6 +151,8 @@ jobs:
         run: sudo docker exec storm bash -c "cd /opt/storm/build; ctest test --output-on-failure"
 
       - name: Deploy storm
+        # Only deploy if using master on original repo (and not for pull requests or forks)
+        if: github.repository_owner == 'moves-rwth' && github.ref == 'refs/heads/master'
         run: |
           sudo docker commit storm movesrwth/storm:ci-${{ matrix.debugOrRelease }}
           sudo docker push movesrwth/storm:ci-${{ matrix.debugOrRelease }}
@@ -142,7 +161,8 @@ jobs:
     name: Email notification
     runs-on: ubuntu-latest
     needs: [noDeploy, deploy]
-    if: always() # set always
+    # Only run in main repo and even if previous step failed
+    if: github.repository_owner == 'moves-rwth' && always()
     steps:
       - uses: technote-space/workflow-conclusion-action@v2
       - uses: dawidd6/action-send-mail@v2

@@ -98,7 +98,11 @@ namespace storm {
                  * @return True iff the option was set.
                  */
                 bool isParametricSet() const;
-                
+
+                bool isPrecisionSet() const;
+
+                void setPrecision(std::string precision);
+
                 /*!
                  * Retrieves whether the option enabling exact model checking is set and we should use infinite precision rationals.
                  *
