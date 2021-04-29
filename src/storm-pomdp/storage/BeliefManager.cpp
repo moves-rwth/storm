@@ -652,7 +652,7 @@ namespace storm {
                         lpSolver->update();
                         // Add the constraint to describe the transformation between the state values in the beliefs
                         // b(s_i) - d_i_j
-                        storm::expressions::Expression leftSide = lpSolver->getConstant(state.second) - localDelta;
+                        storm::expressions::Expression leftSide = /*lpSolver->getConstant(state.second)*/ - localDelta;
                         storm::expressions::Expression targetValue = lpSolver->getConstant(candidate[i]);
                         if (candidate.find(state.first) != candidate.end()) {
                             targetValue = lpSolver->getConstant(candidate.at(state.first));
@@ -662,9 +662,7 @@ namespace storm {
 
                         // b_j(s_i) * (1 - D_j) + (1-a_j) * (b(s_i) - b_j(s_i))
                         storm::expressions::Expression rightSide =
-                                targetValue * (lpSolver->getConstant(storm::utility::one<ValueType>()) - storm::expressions::Expression(bigDelta))
-                                + (lpSolver->getConstant(storm::utility::one<ValueType>()) - storm::expressions::Expression(decisionVar)) *
-                                  (lpSolver->getConstant(state.second) - targetValue);
+                                - targetValue * storm::expressions::Expression(bigDelta) - storm::expressions::Expression(decisionVar) * (lpSolver->getConstant(state.second) - targetValue);
                         // Add equality
                         lpSolver->addConstraint("state_eq_" + std::to_string(i) + "_" + std::to_string(gridCandidates.size() - 1), leftSide == rightSide);
                         ++i;
@@ -713,7 +711,7 @@ namespace storm {
             if(lpSolver->isOptimal()){
                 optDelta = lpSolver->getObjectiveValue();
                 if(optDelta == storm::utility::one<ValueType>()){
-                    STORM_LOG_WARN("Huh!!!!!" << std::endl);
+                    STORM_LOG_WARN("optDelta of 1!" << std::endl);
                     // If we get an optimal value of 1, we cannot clip the belief as by definition this would correspond to a division by 0.
                     return BeliefClipping{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}};
                 }
@@ -815,7 +813,7 @@ namespace storm {
                                 lpSolver->update();
                                 // Add the constraint to describe the transformation between the state values in the beliefs
                                 // b(s_i) - d_i_j
-                                storm::expressions::Expression leftSide = lpSolver->getConstant(state.second) - localDelta;
+                                storm::expressions::Expression leftSide = /*lpSolver->getConstant(state.second)*/ - lpSolver->getConstant(10000) * localDelta;
                                 storm::expressions::Expression targetValue;
                                 try {
                                     targetValue = lpSolver->getConstant(candidate.first.at(state.first));
@@ -823,10 +821,7 @@ namespace storm {
                                     targetValue = lpSolver->getConstant(storm::utility::zero<ValueType>());
                                 }
                                 // b_j(s_i) * (1 - D_j) + (1-a_j) * (b(s_i) - b_j(s_i))
-                                storm::expressions::Expression rightSide =
-                                        targetValue * (lpSolver->getConstant(storm::utility::one<ValueType>()) - storm::expressions::Expression(bigDelta))
-                                        + (lpSolver->getConstant(storm::utility::one<ValueType>()) - storm::expressions::Expression(decisionVar)) *
-                                          (lpSolver->getConstant(state.second) - targetValue);
+                                storm::expressions::Expression rightSide = - lpSolver->getConstant(10000) * targetValue * storm::expressions::Expression(bigDelta) - storm::expressions::Expression(decisionVar) * lpSolver->getConstant(10000) * (lpSolver->getConstant(state.second) - targetValue);
                                 // Add equality
                                 lpSolver->addConstraint("state_eq_" + std::to_string(i) + "_" + std::to_string(candidate.second), leftSide == rightSide);
                                 ++i;
@@ -879,6 +874,7 @@ namespace storm {
                     }
                 }
                 if(optDelta == storm::utility::zero<ValueType>()){
+                    STORM_PRINT("OPTVAL 0" << std::endl)
                     // If we get an optimal value of 0, the LP solver considers two beliefs to be equal, possibly due to numerical instability
                     // For a sound result, we consider the state to not be clippable
                     STORM_LOG_WARN("LP solver returned an optimal value of 0. Consider increasing the solver's precision");
