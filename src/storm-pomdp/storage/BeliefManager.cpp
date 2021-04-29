@@ -213,8 +213,8 @@ namespace storm {
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
         std::vector<std::pair<typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefId, typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType>>
-        BeliefManager<PomdpType, BeliefValueType, StateType>::expandAndCull(BeliefId const &beliefId, uint64_t actionIndex,
-                                                                                   std::vector<uint64_t> const &observationResolutions) {
+        BeliefManager<PomdpType, BeliefValueType, StateType>::expandAndClip(BeliefId const &beliefId, uint64_t actionIndex,
+                                                                            std::vector<uint64_t> const &observationResolutions) {
             return expandInternal(beliefId, actionIndex, boost::none, observationResolutions);
         }
 
@@ -492,7 +492,7 @@ namespace storm {
         std::vector<std::pair<typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefId, typename BeliefManager<PomdpType, BeliefValueType, StateType>::ValueType>>
         BeliefManager<PomdpType, BeliefValueType, StateType>::expandInternal(BeliefId const &beliefId, uint64_t actionIndex,
                                                                              boost::optional<std::vector<BeliefValueType>> const &observationTriangulationResolutions,
-                                                                             boost::optional<std::vector<uint64_t>> const &observationGridCullingResolutions) {
+                                                                             boost::optional<std::vector<uint64_t>> const &observationGridClippingResolutions) {
             std::vector<std::pair<BeliefId, ValueType>> destinations;
 
             BeliefType belief = getBelief(beliefId);
@@ -532,10 +532,10 @@ namespace storm {
                         // Here we additionally assume that triangulation.gridPoints does not contain the same point multiple times
                         destinations.emplace_back(triangulation.gridPoints[j], triangulation.weights[j] * successor.second);
                     }
-                } else if(observationGridCullingResolutions){
-                    BeliefCulling culling = cullBeliefToGrid(successorBelief, observationGridCullingResolutions.get()[successor.first]);
-                    if(culling.isCullable) {
-                        destinations.emplace_back(culling.targetBelief, (storm::utility::one<ValueType>() - culling.delta) * successor.second);
+                } else if(observationGridClippingResolutions){
+                    BeliefClipping clipping = clipBeliefToGrid(successorBelief, observationGridClippingResolutions.get()[successor.first]);
+                    if(clipping.isClippable) {
+                        destinations.emplace_back(clipping.targetBelief, (storm::utility::one<ValueType>() - clipping.delta) * successor.second);
                     } else {
                         // Belief on Grid
                         destinations.emplace_back(getOrAddBeliefId(successorBelief), successor.second);
@@ -590,17 +590,16 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
-        typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefCulling
-        BeliefManager<PomdpType, BeliefValueType, StateType>::cullBeliefToGrid(BeliefId const &beliefId, uint64_t resolution){
-            auto res = cullBeliefToGrid(getBelief(beliefId), resolution);
+        typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefClipping
+        BeliefManager<PomdpType, BeliefValueType, StateType>::clipBeliefToGrid(BeliefId const &beliefId, uint64_t resolution){
+            auto res = clipBeliefToGrid(getBelief(beliefId), resolution);
             res.startingBelief = beliefId;
             return res;
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
-        typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefCulling
-        BeliefManager<PomdpType, BeliefValueType, StateType>::cullBeliefToGrid(BeliefType const &belief, uint64_t resolution){
-            //STORM_PRINT("Grid cull " << toString(belief) << std::endl)
+        typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefClipping
+        BeliefManager<PomdpType, BeliefValueType, StateType>::clipBeliefToGrid(BeliefType const &belief, uint64_t resolution){
             uint32_t obs = getBeliefObservation(belief);
             STORM_LOG_ASSERT(obs < beliefToIdMap.size(), "Belief has unknown observation.");
             if(!lpSolver){
@@ -632,7 +631,7 @@ namespace storm {
                 if(isEqual(candidate, belief)){
                     // TODO Do something for successors which are already on the grid
                     //STORM_PRINT("Belief on grid" << std::endl)
-                    return BeliefCulling{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}};
+                    return BeliefClipping{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}};
                 } else {
                     //STORM_PRINT("Add candidate " << toString(candidate) << std::endl)
                     gridCandidates.push_back(candidate);
@@ -653,7 +652,7 @@ namespace storm {
                         lpSolver->update();
                         // Add the constraint to describe the transformation between the state values in the beliefs
                         // b(s_i) - d_i_j
-                        storm::expressions::Expression leftSide = lpSolver->getConstant(state.second) - localDelta;
+                        storm::expressions::Expression leftSide = /*lpSolver->getConstant(state.second)*/ - localDelta;
                         storm::expressions::Expression targetValue = lpSolver->getConstant(candidate[i]);
                         if (candidate.find(state.first) != candidate.end()) {
                             targetValue = lpSolver->getConstant(candidate.at(state.first));
@@ -663,9 +662,7 @@ namespace storm {
 
                         // b_j(s_i) * (1 - D_j) + (1-a_j) * (b(s_i) - b_j(s_i))
                         storm::expressions::Expression rightSide =
-                                targetValue * (lpSolver->getConstant(storm::utility::one<ValueType>()) - storm::expressions::Expression(bigDelta))
-                                + (lpSolver->getConstant(storm::utility::one<ValueType>()) - storm::expressions::Expression(decisionVar)) *
-                                  (lpSolver->getConstant(state.second) - targetValue);
+                                - targetValue * storm::expressions::Expression(bigDelta) - storm::expressions::Expression(decisionVar) * (lpSolver->getConstant(state.second) - targetValue);
                         // Add equality
                         lpSolver->addConstraint("state_eq_" + std::to_string(i) + "_" + std::to_string(gridCandidates.size() - 1), leftSide == rightSide);
                         ++i;
@@ -689,7 +686,7 @@ namespace storm {
                     while (*helperIt == *(helperIt-1)) {
                         --helperIt;
                     }
-                    STORM_LOG_ASSERT(helperIt != helper.begin(), "Error in grid culling - index wrong");
+                    STORM_LOG_ASSERT(helperIt != helper.begin(), "Error in grid clipping - index wrong");
                     // Increment the value at the index
                     *helperIt += 1;
                     // Reset all indices greater than the changed one to 0
@@ -701,17 +698,12 @@ namespace storm {
 
                 }
             }
-            // At this point we added constraints for all possible gridpoints
-           /* if(decisionVariables.empty()){
-                STORM_LOG_DEBUG("Belief " << belief << " cannot be culled - no candidate with valid support");
-                return BeliefCulling{false, belief, noId(), storm::utility::zero<BeliefValueType>()};
-            }*/
 
             // Only one target belief should be chosen
             lpSolver->addConstraint("choice", storm::expressions::sum(decisionVariables) == lpSolver->getConstant(storm::utility::one<ValueType>()));
 
             lpSolver->optimize();
-            // Get the optimal belief fo culling
+            // Get the optimal belief for clipping
             BeliefId targetBelief = noId();
             // Not a belief but has the same type
             BeliefType deltaValues;
@@ -719,14 +711,13 @@ namespace storm {
             if(lpSolver->isOptimal()){
                 optDelta = lpSolver->getObjectiveValue();
                 if(optDelta == storm::utility::one<ValueType>()){
-                    STORM_LOG_WARN("Huh!!!!!" << std::endl);
-                    // If we get an optimal value of 1, we cannot cull the belief as by definition this would correspond to a division by 0.
-                    return BeliefCulling{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}};
+                    STORM_LOG_WARN("optDelta of 1!" << std::endl);
+                    // If we get an optimal value of 1, we cannot clip the belief as by definition this would correspond to a division by 0.
+                    return BeliefClipping{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}};
                 }
                 for(uint64_t dist = 0; dist < gridCandidates.size(); ++dist){
                     if(lpSolver->getBinaryValue(lpSolver->getManager().getVariable("a_" + std::to_string(dist)))){
                         targetBelief = getOrAddBeliefId(gridCandidates[dist]);
-                        //STORM_PRINT("Culling Target " << toString(gridCandidates[dist]) << std::endl)
                         //Collect delta values
                         uint64_t i = 0;
                         for (auto const &state : belief) {
@@ -742,26 +733,26 @@ namespace storm {
 
                 if(cc.isEqual(optDelta, storm::utility::zero<ValueType>())){
                     // If we get an optimal value of 0, the LP solver considers two beliefs to be equal, possibly due to numerical instability
-                    // For a sound result, we consider the state to be uncullable
+                    // For a sound result, we consider the state to be not be clippable
                     STORM_LOG_WARN("LP solver returned an optimal value of 0. This should definitely not happen when using a grid");
                     STORM_LOG_WARN("Origin" << toString(belief));
                     STORM_LOG_WARN("Target [Bel " << targetBelief << "] " << toString(targetBelief));
-                    return BeliefCulling{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}};
+                    return BeliefClipping{false, noId(), noId(), storm::utility::zero<BeliefValueType>(), {}};
                 }
                 //STORM_LOG_ASSERT(cc.isEqual(optDelta, lpSolver->getContinuousValue(lpSolver->getManager().getVariable("D_" + std::to_string(targetBelief)))), "Objective value " << optDelta << " is not equal to the Delta " << lpSolver->getContinuousValue(lpSolver->getManager().getVariable("D_" + std::to_string(targetBelief))) << " for the target state");
             }
-            return BeliefCulling{lpSolver->isOptimal(), noId(), targetBelief, optDelta, deltaValues};
+            return BeliefClipping{lpSolver->isOptimal(), noId(), targetBelief, optDelta, deltaValues};
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>
-        typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefCulling
-        BeliefManager<PomdpType, BeliefValueType, StateType>::cullBelief(BeliefId const &beliefId, ValueType threshold, boost::optional<std::vector<BeliefId>> const &targets){
+        typename BeliefManager<PomdpType, BeliefValueType, StateType>::BeliefClipping
+        BeliefManager<PomdpType, BeliefValueType, StateType>::clipBelief(BeliefId const &beliefId, ValueType threshold, boost::optional<std::vector<BeliefId>> const &targets){
             //TODO compare performance if a blacklist is used instead of target list (whitelist)
             uint32_t obs = getBeliefObservation(beliefId);
             STORM_LOG_ASSERT(obs < beliefToIdMap.size(), "Belief has unknown observation.");
             if(beliefToIdMap[obs].size() < 2){
-                STORM_LOG_DEBUG("Belief " << beliefId << " cannot be culled - only one belief with observation " << obs);
-                return BeliefCulling{false, beliefId, noId(), storm::utility::zero<BeliefValueType>()};
+                STORM_LOG_DEBUG("Belief " << beliefId << " cannot be clipped - only one belief with observation " << obs);
+                return BeliefClipping{false, beliefId, noId(), storm::utility::zero<BeliefValueType>()};
             }
             if(!lpSolver){
                 auto lpSolverFactory = storm::utility::solver::LpSolverFactory<ValueType>();
@@ -774,7 +765,7 @@ namespace storm {
             // Iterate over all possible candidates TODO optimize this
             std::vector<storm::expressions::Expression> decisionVariables;
             std::vector<BeliefId> consideredCandidates;
-            STORM_LOG_DEBUG("Cull Belief with ID " << beliefId << " (" << toString(beliefId) << ")");
+            STORM_LOG_DEBUG("Clip Belief with ID " << beliefId << " (" << toString(beliefId) << ")");
             for(auto const &candidate : beliefToIdMap[obs]) {
                 if (candidate.second != beliefId) {
                     if(targets){
@@ -790,7 +781,7 @@ namespace storm {
                                         })
                     ){
                         // Check if the support of the candidate is a subset of the belief's support
-                        STORM_LOG_DEBUG("Belief with ID " << candidate.second << " has unsuitable support for culling");
+                        STORM_LOG_DEBUG("Belief with ID " << candidate.second << " has unsuitable support for clipping");
                     } else {
                         // Check if reductions to zero would exceed the threshold
                         // First create a map of all 0 values in the candidate which are set in the belief
@@ -802,7 +793,7 @@ namespace storm {
                         // Check if the sum of all values in the newly created map exceeds the threshold
                         if (std::accumulate(compHelper.begin(), compHelper.end(), storm::utility::zero<ValueType>(),
                                             [](const ValueType acc, const std::pair<StateType, BeliefValueType> belief) { return acc + belief.second; }) > threshold) {
-                            STORM_LOG_DEBUG("Belief with ID " << candidate.second << " exceeds culling threshold");
+                            STORM_LOG_DEBUG("Belief with ID " << candidate.second << " exceeds clipping threshold");
                         } else {
                             STORM_LOG_DEBUG("Add constraints for Belief with ID " << candidate.second << " " << toString(candidate.second));
                             consideredCandidates.push_back(candidate.second);
@@ -822,7 +813,7 @@ namespace storm {
                                 lpSolver->update();
                                 // Add the constraint to describe the transformation between the state values in the beliefs
                                 // b(s_i) - d_i_j
-                                storm::expressions::Expression leftSide = lpSolver->getConstant(state.second) - localDelta;
+                                storm::expressions::Expression leftSide = /*lpSolver->getConstant(state.second)*/ - lpSolver->getConstant(10000) * localDelta;
                                 storm::expressions::Expression targetValue;
                                 try {
                                     targetValue = lpSolver->getConstant(candidate.first.at(state.first));
@@ -830,10 +821,7 @@ namespace storm {
                                     targetValue = lpSolver->getConstant(storm::utility::zero<ValueType>());
                                 }
                                 // b_j(s_i) * (1 - D_j) + (1-a_j) * (b(s_i) - b_j(s_i))
-                                storm::expressions::Expression rightSide =
-                                        targetValue * (lpSolver->getConstant(storm::utility::one<ValueType>()) - storm::expressions::Expression(bigDelta))
-                                        + (lpSolver->getConstant(storm::utility::one<ValueType>()) - storm::expressions::Expression(decisionVar)) *
-                                          (lpSolver->getConstant(state.second) - targetValue);
+                                storm::expressions::Expression rightSide = - lpSolver->getConstant(10000) * targetValue * storm::expressions::Expression(bigDelta) - storm::expressions::Expression(decisionVar) * lpSolver->getConstant(10000) * (lpSolver->getConstant(state.second) - targetValue);
                                 // Add equality
                                 lpSolver->addConstraint("state_eq_" + std::to_string(i) + "_" + std::to_string(candidate.second), leftSide == rightSide);
                                 ++i;
@@ -851,16 +839,16 @@ namespace storm {
                     }
                 }
             }
-            // If no valid candidate was found, we cannot cull the belief
+            // If no valid candidate was found, we cannot clip the belief
             if(decisionVariables.empty()){
-                STORM_LOG_DEBUG("Belief " << beliefId << " cannot be culled - no candidate with valid support");
-                return BeliefCulling{false, beliefId, noId(), storm::utility::zero<BeliefValueType>(),{}};
+                STORM_LOG_DEBUG("Belief " << beliefId << " cannot be clipped - no candidate with valid support");
+                return BeliefClipping{false, beliefId, noId(), storm::utility::zero<BeliefValueType>(), {}};
             }
             // Only one target belief should be chosen
             lpSolver->addConstraint("choice", storm::expressions::sum(decisionVariables) == lpSolver->getConstant(storm::utility::one<ValueType>()));
 
             lpSolver->optimize();
-            // Get the optimal belief fo culling
+            // Get the optimal belief fo clipping
             BeliefId targetBelief = noId();
             auto optDelta = storm::utility::zero<BeliefValueType>();
             // Not a belief but has the same type
@@ -868,8 +856,8 @@ namespace storm {
             if(lpSolver->isOptimal()){
                 optDelta = lpSolver->getObjectiveValue();
                 if(optDelta == storm::utility::one<ValueType>()){
-                    // If we get an optimal value of 1, we cannot cull the belief as by definition this would correspond to a division by 0.
-                    return BeliefCulling{false, beliefId, noId(), storm::utility::zero<BeliefValueType>(),{}};
+                    // If we get an optimal value of 1, we cannot clip the belief as by definition this would correspond to a division by 0.
+                    return BeliefClipping{false, beliefId, noId(), storm::utility::zero<BeliefValueType>(), {}};
                 }
                 for(auto const &candidate : consideredCandidates) {
                     if(lpSolver->getBinaryValue(lpSolver->getManager().getVariable("a_" + std::to_string(candidate)))){
@@ -886,16 +874,17 @@ namespace storm {
                     }
                 }
                 if(optDelta == storm::utility::zero<ValueType>()){
+                    STORM_PRINT("OPTVAL 0" << std::endl)
                     // If we get an optimal value of 0, the LP solver considers two beliefs to be equal, possibly due to numerical instability
-                    // For a sound result, we consider the state to be uncullable
+                    // For a sound result, we consider the state to not be clippable
                     STORM_LOG_WARN("LP solver returned an optimal value of 0. Consider increasing the solver's precision");
                     STORM_LOG_WARN("Origin [Bel " << beliefId << "] " << toString(beliefId));
                     STORM_LOG_WARN("Target [Bel " << targetBelief << "] " << toString(targetBelief));
-                    return BeliefCulling{false, beliefId, noId(), storm::utility::zero<BeliefValueType>(),{}};
+                    return BeliefClipping{false, beliefId, noId(), storm::utility::zero<BeliefValueType>(), {}};
                 }
                 STORM_LOG_ASSERT(cc.isEqual(optDelta, lpSolver->getContinuousValue(lpSolver->getManager().getVariable("D_" + std::to_string(targetBelief)))), "Objective value " << optDelta << " is not equal to the Delta " << lpSolver->getContinuousValue(lpSolver->getManager().getVariable("D_" + std::to_string(targetBelief))) << " for the target state");
             }
-            return BeliefCulling{lpSolver->isOptimal(), beliefId, targetBelief, optDelta, deltaValues};
+            return BeliefClipping{lpSolver->isOptimal(), beliefId, targetBelief, optDelta, deltaValues};
         }
 
         template<typename PomdpType, typename BeliefValueType, typename StateType>

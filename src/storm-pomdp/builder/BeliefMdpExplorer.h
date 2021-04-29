@@ -98,7 +98,7 @@ namespace storm {
 
             void setCurrentStateIsTruncated();
 
-            void setCurrentStateIsCulled();
+            void setCurrentStateIsClipped();
 
             void setCurrentChoiceIsDelayed(uint64_t const &localActionIndex);
 
@@ -106,7 +106,7 @@ namespace storm {
 
             bool getCurrentStateWasTruncated() const;
 
-            bool getCurrentStateWasCulled() const;
+            bool getCurrentStateWasClipped() const;
 
             /*!
              * Retrieves whether the current state can be reached under an optimal scheduler
@@ -195,7 +195,7 @@ namespace storm {
 
             std::vector<BeliefId> getBeliefsInMdp();
 
-            void addCullingRewardToCurrentState(uint64 const &localActionIndex, ValueType rewardValue);
+            void addClippingRewardToCurrentState(uint64 const &localActionIndex, ValueType rewardValue);
 
             ValueType getTrivialUpperBoundAtPOMDPState(uint64_t const &pomdpState);
 
@@ -242,7 +242,7 @@ namespace storm {
             std::vector<std::map<MdpStateType, ValueType>> exploredMdpTransitions;
             std::vector<MdpStateType> exploredChoiceIndices;
             std::vector<ValueType> mdpActionRewards;
-            std::map<MdpStateType, ValueType> cullingTransitionRewards;
+            std::map<MdpStateType, ValueType> clippingTransitionRewards;
             uint64_t currentMdpState;
             std::map<MdpStateType, MdpStateType> stateRemapping;
             uint64_t nextId;
@@ -253,7 +253,7 @@ namespace storm {
             boost::optional<MdpStateType> extraBottomState;
             storm::storage::BitVector targetStates;
             storm::storage::BitVector truncatedStates;
-            storm::storage::BitVector culledStates;
+            storm::storage::BitVector clippedStates;
             MdpStateType initialMdpState;
             storm::storage::BitVector delayedExplorationChoices;
 

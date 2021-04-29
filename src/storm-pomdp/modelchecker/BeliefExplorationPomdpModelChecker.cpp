@@ -102,7 +102,7 @@ namespace storm {
                 initialValueBounds.trivialPomdpValueBounds = initialPomdpValueBounds;
 
                 // If we clip and compute rewards, compute the values necessary for the correction terms
-                if((options.cullingThresholdInit > 0 || options.hybridCulling || options.gridCulling) && formula.isRewardOperatorFormula()){
+                if((options.clippingThresholdInit > 0 || options.hybridClipping || options.gridClipping) && formula.isRewardOperatorFormula()){
                     initialValueBounds.extremePomdpValueBound = TrivialPomdpValueBoundsModelChecker<storm::models::sparse::Pomdp<ValueType>>(pomdp()).getExtremeValueBound(formula, formulaInfo);
                     STORM_LOG_INFO("Extreme Bound in Init: " << initialValueBounds.extremePomdpValueBound.getValueForState(initialPomdpState));
                 }
@@ -141,10 +141,10 @@ namespace storm {
                     computeReachabilityOTF(targetObservations, formulaInfo.minimize(), rewardModelName, initialValueBounds, result);
                 }
                 // "clear" results in case they were actually not requested (this will make the output a bit more clear)
-                if ((formulaInfo.minimize() && !options.discretize) || (formulaInfo.maximize() && !options.unfold && !options.gridCulling)) {
+                if ((formulaInfo.minimize() && !options.discretize) || (formulaInfo.maximize() && !options.unfold && !options.gridClipping)) {
                     result.lowerBound = -storm::utility::infinity<ValueType>();
                 }
-                if ((formulaInfo.maximize() && !options.discretize) || (formulaInfo.minimize() && !options.unfold && !options.gridCulling)) {
+                if ((formulaInfo.maximize() && !options.discretize) || (formulaInfo.minimize() && !options.unfold && !options.gridClipping)) {
                     result.upperBound = storm::utility::infinity<ValueType>();
                 }
 
@@ -206,14 +206,14 @@ namespace storm {
                         stream << ">=";
                     }
                     stream << statistics.underApproximationStates.get() << std::endl;
-                    if(statistics.nrCullingAttempts) {
-                        stream << "# Culling attempts (culled states) for the under-approximation: ";
+                    if(statistics.nrClippingAttempts) {
+                        stream << "# Clipping attempts (clipped states) for the under-approximation: ";
                         if (statistics.underApproximationBuildAborted) {
                             stream << ">=";
                         }
-                        stream << statistics.nrCullingAttempts.get() << " (" << statistics.nrCulledStates.get() << ")" << std::endl;
-                        stream << "# Total Culling Preprocessing time: " << statistics.cullingPreTime << std::endl;
-                        stream << "# Total culling time: " << statistics.cullWatch << std::endl;
+                        stream << statistics.nrClippingAttempts.get() << " (" << statistics.nrClippedStates.get() << ")" << std::endl;
+                        stream << "# Total clipping preprocessing time: " << statistics.clippingPreTime << std::endl;
+                        stream << "# Total clipping time: " << statistics.clipWatch << std::endl;
                     } else if (statistics.nrTruncatedStates){
                         stream << "# Truncated states for the under-approximation: ";
                         if (statistics.underApproximationBuildAborted) {
@@ -249,7 +249,7 @@ namespace storm {
                     heuristicParameters.observationThreshold = options.obsThresholdInit; // Actually not relevant without refinement
                     heuristicParameters.sizeThreshold = options.sizeThresholdInit == 0 ? std::numeric_limits<uint64_t>::max() : options.sizeThresholdInit;
                     heuristicParameters.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
-                    heuristicParameters.cullingThreshold = options.cullingThresholdInit;
+                    heuristicParameters.clippingThreshold = options.clippingThresholdInit;
 
                     buildOverApproximation(targetObservations, min, rewardModelName.is_initialized(), false, heuristicParameters, observationResolutionVector, manager, approx);
                     if (approx->hasComputedValues()) {
@@ -264,7 +264,7 @@ namespace storm {
                         resultValue = approx->getComputedValueAtInitialState();
                     }
                 }
-                if(options.gridCulling){ // Grid-based Underapproximation
+                if(options.gridClipping){ // Grid-based Underapproximation
                     auto manager = std::make_shared<BeliefManagerType>(pomdp(), options.numericPrecision,
                                                                        options.dynamicTriangulation ? BeliefManagerType::TriangulationMode::Dynamic
                                                                                                     : BeliefManagerType::TriangulationMode::Static);
@@ -275,7 +275,7 @@ namespace storm {
                     HeuristicParameters heuristicParameters;
                     heuristicParameters.gapThreshold = options.gapThresholdInit;
                     heuristicParameters.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
-                    std::vector<uint64_t> observationResolutionVector(pomdp().getNrObservations(), options.culllingGridRes);
+                    std::vector<uint64_t> observationResolutionVector(pomdp().getNrObservations(), options.clippingGridRes);
                     buildGridUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, heuristicParameters, manager, approx, observationResolutionVector);
                     if (approx->hasComputedValues()) {
                         auto printInfo = [&approx]() {
@@ -301,7 +301,7 @@ namespace storm {
                     heuristicParameters.gapThreshold = options.gapThresholdInit;
                     heuristicParameters.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
                     heuristicParameters.sizeThreshold = options.sizeThresholdInit;
-                    heuristicParameters.cullingThreshold = options.cullingThresholdInit;
+                    heuristicParameters.clippingThreshold = options.clippingThresholdInit;
                     if (heuristicParameters.sizeThreshold == 0) {
                         if (options.explorationTimeLimit) {
                             heuristicParameters.sizeThreshold = std::numeric_limits<uint64_t>::max();
@@ -311,7 +311,7 @@ namespace storm {
                         }
                     }
                     // If we clip and compute rewards
-                    if((options.cullingThresholdInit > 0 || options.hybridCulling) && rewardModelName.is_initialized()) {
+                    if((options.clippingThresholdInit > 0 || options.hybridClipping) && rewardModelName.is_initialized()) {
                         approx->setExtremeValueBound(pomdpValueBounds.extremePomdpValueBound);
                     }
                     buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, heuristicParameters, manager, approx);
@@ -331,7 +331,6 @@ namespace storm {
 
             template<typename PomdpModelType, typename BeliefValueType>
             void BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::refineReachability(std::set<uint32_t> const &targetObservations, bool min, boost::optional<std::string> rewardModelName, storm::pomdp::modelchecker::POMDPValueBounds<ValueType> const &pomdpValueBounds, Result &result) {
-                //TODO correction terms for clipping
                 statistics.refinementSteps = 0;
                 auto trivialPOMDPBounds = pomdpValueBounds.trivialPomdpValueBounds;
                 // Set up exploration data
@@ -350,7 +349,7 @@ namespace storm {
                     overApproxHeuristicPar.observationThreshold = options.obsThresholdInit;
                     overApproxHeuristicPar.sizeThreshold = options.sizeThresholdInit == 0 ? std::numeric_limits<uint64_t>::max() : options.sizeThresholdInit;
                     overApproxHeuristicPar.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
-                    overApproxHeuristicPar.cullingThreshold = options.cullingThresholdInit;
+                    overApproxHeuristicPar.clippingThreshold = options.clippingThresholdInit;
                     buildOverApproximation(targetObservations, min, rewardModelName.is_initialized(), false, overApproxHeuristicPar, observationResolutionVector, overApproxBeliefManager, overApproximation);
                     if (!overApproximation->hasComputedValues() || storm::utility::resources::isTerminate()) {
                         return;
@@ -375,12 +374,12 @@ namespace storm {
                     underApproxHeuristicPar.gapThreshold = options.gapThresholdInit;
                     underApproxHeuristicPar.optimalChoiceValueEpsilon = options.optimalChoiceValueThresholdInit;
                     underApproxHeuristicPar.sizeThreshold = options.sizeThresholdInit;
-                    underApproxHeuristicPar.cullingThreshold = options.cullingThresholdInit;
+                    underApproxHeuristicPar.clippingThreshold = options.clippingThresholdInit;
                     if (underApproxHeuristicPar.sizeThreshold == 0) {
                         // Select a decent value automatically
                         underApproxHeuristicPar.sizeThreshold = pomdp().getNumberOfStates() * pomdp().getMaxNrStatesWithSameObservation();
                     }
-                    if((options.cullingThresholdInit > 0 || options.hybridCulling) && rewardModelName.is_initialized()) {
+                    if((options.clippingThresholdInit > 0 || options.hybridClipping) && rewardModelName.is_initialized()) {
                         underApproximation->setExtremeValueBound(pomdpValueBounds.extremePomdpValueBound);
                     }
                     buildUnderApproximation(targetObservations, min, rewardModelName.is_initialized(), false, underApproxHeuristicPar, underApproxBeliefManager, underApproximation);
@@ -809,12 +808,12 @@ namespace storm {
 
             template<typename PomdpModelType, typename BeliefValueType>
             bool BeliefExplorationPomdpModelChecker<PomdpModelType, BeliefValueType>::buildUnderApproximation(std::set<uint32_t> const &targetObservations, bool min, bool computeRewards, bool refine, HeuristicParameters const& heuristicParameters, std::shared_ptr<BeliefManagerType>& beliefManager, std::shared_ptr<ExplorerType>& underApproximation) {
-                bool useBeliefCulling = heuristicParameters.cullingThreshold > storm::utility::zero<ValueType>() || options.hybridCulling;
+                bool useBeliefClipping = heuristicParameters.clippingThreshold > storm::utility::zero<ValueType>() || options.hybridClipping;
                 statistics.underApproximationBuildTime.start();
-                if(useBeliefCulling){
-                    STORM_PRINT_AND_LOG("Use Belief Culling with threshold " << storm::utility::to_string(heuristicParameters.cullingThreshold) << std::endl);
-                    statistics.nrCullingAttempts = 0;
-                    statistics.nrCulledStates = 0;
+                if(useBeliefClipping){
+                    STORM_PRINT_AND_LOG("Use Belief Clipping with threshold " << storm::utility::to_string(heuristicParameters.clippingThreshold) << std::endl);
+                    statistics.nrClippingAttempts = 0;
+                    statistics.nrClippedStates = 0;
                     if(options.disableClippingReduction){
                         STORM_PRINT_AND_LOG("Disable clipping candidate set reduction" << std::endl);
                     }
@@ -826,7 +825,7 @@ namespace storm {
                 if (!refine) {
                     // Build a new under approximation
                     if (computeRewards) {
-                        if(useBeliefCulling){
+                        if(useBeliefClipping){
                             // If we clip, use the sink state for infinite correction values
                             underApproximation->startNewExploration(storm::utility::zero<ValueType>(), storm::utility::infinity<ValueType>());
                         } else {
@@ -863,8 +862,9 @@ namespace storm {
                         underApproximation->addSelfloopTransition();
                     } else {
                         bool stopExploration = false;
-                        bool cullBelief = false;
+                        bool clipBelief = false;
                         if (timeLimitExceeded) {
+                            clipBelief = useBeliefClipping;
                             stopExploration = true;
                             underApproximation->setCurrentStateIsTruncated();
                         } else if (!stateAlreadyExplored) {
@@ -874,14 +874,14 @@ namespace storm {
                                 stopExploration = true;
                                 underApproximation->setCurrentStateIsTruncated();
                             } else if (underApproximation->getCurrentNumberOfMdpStates() >= heuristicParameters.sizeThreshold) {
-                                cullBelief = useBeliefCulling;
+                                clipBelief = useBeliefClipping;
                                 stopExploration = true;
                                 underApproximation->setCurrentStateIsTruncated();
                             }
                         }
-                        if(cullBelief){
-                            if(options.hybridCulling){
-                                // Add all transitions to states which are already in the MDP, cull all others to a grid
+                        if(clipBelief){
+                            if(options.hybridClipping){
+                                // Add all transitions to states which are already in the MDP, clip all others to a grid
                                 for (uint64 action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                                     auto rewardBound = storm::utility::zero<ValueType>();
                                     auto successors = beliefManager->expand(currId, action);
@@ -892,15 +892,15 @@ namespace storm {
                                         // Therefore no belief can be clipped to an already added successor
                                         bool added = underApproximation->addTransitionToBelief(action, successor.first, successor.second, true);
                                         if(!added){
-                                            statistics.nrCullingAttempts = statistics.nrCullingAttempts.get() + 1;
-                                            auto culling = beliefManager->cullBeliefToGrid(successor.first, options.culllingGridRes);
-                                            if (culling.isCullable) {
-                                                statistics.nrCulledStates = statistics.nrCulledStates.get() + 1;
-                                                underApproximation->addTransitionToBelief(action, culling.targetBelief, (storm::utility::one<ValueType>() - culling.delta) * successor.second, false);
-                                                absDelta += culling.delta * successor.second;
+                                            statistics.nrClippingAttempts = statistics.nrClippingAttempts.get() + 1;
+                                            auto clipping = beliefManager->clipBeliefToGrid(successor.first, options.clippingGridRes);
+                                            if (clipping.isClippable) {
+                                                statistics.nrClippedStates = statistics.nrClippedStates.get() + 1;
+                                                underApproximation->addTransitionToBelief(action, clipping.targetBelief, (storm::utility::one<ValueType>() - clipping.delta) * successor.second, false);
+                                                absDelta += clipping.delta * successor.second;
                                                 if (computeRewards) {
                                                     auto localRew = storm::utility::zero<ValueType>();
-                                                    for (auto const &deltaValue : culling.deltaValues) {
+                                                    for (auto const &deltaValue : clipping.deltaValues) {
                                                         localRew += (deltaValue.second * ((underApproximation->getExtremeValueBoundAtPOMDPState(deltaValue.first))));
                                                     }
                                                     rewardBound += localRew * successor.second;
@@ -918,7 +918,7 @@ namespace storm {
                                                     underApproximation->addTransitionsToExtraStates(action, storm::utility::zero<ValueType>(), absDelta);
                                                 } else {
                                                     underApproximation->addTransitionsToExtraStates(action, absDelta);
-                                                    underApproximation->addCullingRewardToCurrentState(action, rewardBound / absDelta);
+                                                    underApproximation->addClippingRewardToCurrentState(action, rewardBound / absDelta);
                                                 }
                                         } else {
                                             underApproximation->addTransitionsToExtraStates(action, storm::utility::zero<ValueType>(), absDelta);
@@ -930,12 +930,12 @@ namespace storm {
                                     ++addedActions;
                                 }
                             } else {
-                                // Use classic culling
+                                // Use classic clipping
                                 // Preprocess suitable candidate beliefs
                                 std::priority_queue<std::pair<ValueType, uint64_t>, std::vector<std::pair<ValueType, uint64_t>>, std::less<>> restrictedCandidates;
                                 uint64_t nrCandidates = 10;
                                 std::vector<uint64_t> candidates(nrCandidates);
-                                statistics.cullingPreTime.start();
+                                statistics.clippingPreTime.start();
                                 if(!options.disableClippingReduction) {
                                     for (auto const &candidateBelief : underApproximation->getBeliefsWithObservationInMdp(currObservation)) {
                                         if (!beliefManager->isEqual(candidateBelief, currId)) {
@@ -957,21 +957,21 @@ namespace storm {
                                         restrictedCandidates.pop();
                                     }
                                 }
-                                statistics.cullingPreTime.stop();
-                                // Belief is to be culled, find the best candidate from the restricted list
-                                statistics.nrCullingAttempts = statistics.nrCullingAttempts.get() + 1;
-                                statistics.cullWatch.start();
-                                auto cullingResult = beliefManager->cullBelief(currId, heuristicParameters.cullingThreshold, options.disableClippingReduction ? underApproximation->getBeliefsInMdp() : candidates);
-                                statistics.cullWatch.stop();
-                                if (cullingResult.isCullable) {
-                                    underApproximation->setCurrentStateIsCulled();
-                                    statistics.nrCulledStates = statistics.nrCulledStates.get() + 1;
-                                    bool addedSucc = underApproximation->addTransitionToBelief(0, cullingResult.targetBelief, storm::utility::one<ValueType>() - cullingResult.delta, true);
+                                statistics.clippingPreTime.stop();
+                                // Belief is to be clipped, find the best candidate from the restricted list
+                                statistics.nrClippingAttempts = statistics.nrClippingAttempts.get() + 1;
+                                statistics.clipWatch.start();
+                                auto clippingResult = beliefManager->clipBelief(currId, heuristicParameters.clippingThreshold, options.disableClippingReduction ? underApproximation->getBeliefsInMdp() : candidates);
+                                statistics.clipWatch.stop();
+                                if (clippingResult.isClippable) {
+                                    underApproximation->setCurrentStateIsClipped();
+                                    statistics.nrClippedStates = statistics.nrClippedStates.get() + 1;
+                                    bool addedSucc = underApproximation->addTransitionToBelief(0, clippingResult.targetBelief, storm::utility::one<ValueType>() - clippingResult.delta, true);
                                     if (computeRewards) {
                                         //Determine a sound reward bound for the transition to the target state
                                         //Compute an over-/underapproximation for the original belief
                                         auto rewardBound = storm::utility::zero<ValueType>();
-                                        for (auto const &deltaValue : cullingResult.deltaValues) {
+                                        for (auto const &deltaValue : clippingResult.deltaValues) {
                                             if(cc.isEqual(underApproximation->getExtremeValueBoundAtPOMDPState(deltaValue.first), storm::utility::infinity<ValueType>())){
                                                 rewardBound = storm::utility::infinity<ValueType>();
                                                 break;
@@ -980,22 +980,22 @@ namespace storm {
                                             }
                                         }
                                         if(cc.isEqual(rewardBound, storm::utility::infinity<ValueType>())){
-                                            underApproximation->addTransitionsToExtraStates(0, storm::utility::zero<ValueType>(), cullingResult.delta);
+                                            underApproximation->addTransitionsToExtraStates(0, storm::utility::zero<ValueType>(), clippingResult.delta);
                                         } else {
-                                            rewardBound /= cullingResult.delta;
+                                            rewardBound /= clippingResult.delta;
 
-                                            underApproximation->addTransitionsToExtraStates(0, cullingResult.delta);
-                                            underApproximation->addCullingRewardToCurrentState(0, rewardBound);
+                                            underApproximation->addTransitionsToExtraStates(0, clippingResult.delta);
+                                            underApproximation->addClippingRewardToCurrentState(0, rewardBound);
                                         }
                                         underApproximation->addRewardToCurrentState(0, storm::utility::zero<ValueType>());
                                     } else {
-                                        underApproximation->addTransitionsToExtraStates(0, storm::utility::zero<ValueType>(), cullingResult.delta);
+                                        underApproximation->addTransitionsToExtraStates(0, storm::utility::zero<ValueType>(), clippingResult.delta);
                                     }
                                     ++addedActions;
-                                } // end isCullable
+                                } // end isClippable
                             }
                         }
-                        //if (!options.hybridCulling || !stopExploration || gridClippingOpenStates.find(currId) != gridClippingOpenStates.end()) {
+                        //if (!options.hybridClipping || !stopExploration || gridClippingOpenStates.find(currId) != gridClippingOpenStates.end()) {
                             // Add successor transitions or cut-off transitions when exploration is stopped
                             for (uint64 action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                                 // Always restore old behavior if available
@@ -1027,7 +1027,7 @@ namespace storm {
                                     }
                                     if (computeRewards) {
                                         // The truncationValueBound will be added on top of the reward introduced by the current belief state.
-                                        if(!cullBelief) {
+                                        if(!clipBelief) {
                                             underApproximation->computeRewardAtCurrentState(action, truncationValueBound);
                                         } else {
                                             underApproximation->addRewardToCurrentState(addedActions + action, beliefManager->getBeliefActionReward(currId, action) + truncationValueBound);
@@ -1055,7 +1055,7 @@ namespace storm {
                 underApproximation->finishExploration();
                 statistics.underApproximationBuildTime.stop();
                 // FOR DEBUGGING, ALWAYS OUTPUT BELIEF-MDP
-                /*if (useBeliefCulling) {
+                /*if (useBeliefClipping) {
                     storm::api::exportSparseModelAsDot(std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(underApproximation->getExploredMdp()), "underapprox.dot");
                     storm::api::exportSparseModelAsDrn(std::static_pointer_cast<storm::models::sparse::Model<ValueType>>(underApproximation->getExploredMdp()), "underapprox.drn");
                 }*/
@@ -1119,10 +1119,10 @@ namespace storm {
                             if (stateAlreadyExplored) {
                                 underApproximation->restoreOldBehaviorAtCurrentState(action);
                             } else {
-                                // TODO Make this smarter (look at hybrid culling above)
+                                // TODO Make this smarter (look at hybrid clipping above)
                                 auto probSum = storm::utility::zero<ValueType>();
                                 auto truncationValueBound = storm::utility::zero<ValueType>();
-                                auto successors = beliefManager->expandAndCull(currId, action, observationResolutionVector);
+                                auto successors = beliefManager->expandAndClip(currId, action, observationResolutionVector);
                                 for (auto const &successor : successors) {
                                     bool added = underApproximation->addTransitionToBelief(action, successor.first, successor.second, false);
                                     probSum += successor.second;
@@ -1136,7 +1136,7 @@ namespace storm {
                                             currRewardBound += successor.second * (min ? underApproximation->computeUpperValueBoundAtBelief(successor.first)
                                                                                        : underApproximation->computeLowerValueBoundAtBelief(successor.first));
                                         }
-                                        underApproximation->addCullingRewardToCurrentState(action, currRewardBound);
+                                        underApproximation->addClippingRewardToCurrentState(action, currRewardBound);
                                     }
                                     underApproximation->computeRewardAtCurrentState(action);
                                 } else {
