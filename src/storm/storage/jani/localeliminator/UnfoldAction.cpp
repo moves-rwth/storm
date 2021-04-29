@@ -62,6 +62,14 @@ namespace storm {
                     session.addToLog("\t\t" + std::to_string(knownUnsatValues.size()) + " variable values never satisfy property");
                 }
 
+                // If true, this doesn't perform satisfiability checks and instead simply assumes that any location
+                // potentially satisfies the property unless it can be disproven.
+                bool avoidChecks = false;
+                // if (partOfPropCount > 3 && automaton.getNumberOfLocations() > partOfPropCount * 4){
+                //     avoidChecks = true;
+                // }
+
+                // These are just used for statistics:
                 uint64_t knownUnsatCounter = 0;
                 uint64_t satisfactionCheckCounter = 0;
                 uint64_t knownSatCounter = 0;
@@ -77,7 +85,11 @@ namespace storm {
                                     isPartOfProp = false;
                                     knownUnsatCounter++;
                                 }else{
-                                    isPartOfProp = session.computeIsPartOfProp(automatonName, valueIndexPair.second);
+                                    if (avoidChecks){
+                                        isPartOfProp = true;
+                                    }else{
+                                        isPartOfProp = session.computeIsPartOfProp(automatonName, valueIndexPair.second);
+                                    }
                                     satisfactionCheckCounter++;
                                 }
                             }else{

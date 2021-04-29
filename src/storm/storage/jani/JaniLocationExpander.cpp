@@ -115,7 +115,6 @@ namespace storm {
                 newAutomaton.addInitialLocation(locationVariableValueMap[initialLoc][initialValueIndex]);
             }
 
-
             for (auto const &edge : automaton.getEdges()) {
                 for (auto const &newValueAndLocation : locationVariableValueMap[edge.getSourceLocationIndex()]) {
                     int64_t currentValueIndex = newValueAndLocation.first;
@@ -128,6 +127,7 @@ namespace storm {
                     if (!newGuard.containsVariables() && !newGuard.evaluateAsBool()) {
                         // continue;
                     }
+                    bool isEdgeInvalid = false; // This is set when a destination leads to an out-of-range location. A warning will be emitted and the edge will not be added to the list of edges
                     std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(
                             newGuard);
 
@@ -159,6 +159,12 @@ namespace storm {
                             }
                         }
 
+                        if (newValueIndex < 0 || newValueIndex >= variableDomain.size()){
+                            STORM_LOG_WARN("Found edge that would lead to out-of-range location during unfolding. This edge will not be added to the unfolded model. It is possible that the edge guard is unsatisfiable, in which case this message can be ignored.");
+                            isEdgeInvalid = true;
+                            continue; // Abort this iteration to prevent weird behaviour below when accessing a non-existent element of locationVariableValueMap[destination.getLocationIndex()]
+                        }
+
                         if (!useTransientVariables)
                             STORM_LOG_THROW(true, storm::exceptions::NotImplementedException,
                                             "Unfolding without transient variables is not implemented");
@@ -171,10 +177,12 @@ namespace storm {
                                 substituteJaniExpression(destination.getProbability(), substitutionMap));
                     }
 
-                    newAutomaton.addEdge(storm::jani::Edge(newSourceIndex, edge.getActionIndex(), edge.hasRate()
-                                                                                                  ? boost::optional<storm::expressions::Expression>(
-                                    substituteJaniExpression(edge.getRate(), substitutionMap)) : boost::none,
-                                                           templateEdge, destinationLocationsAndProbabilities));
+                    if (!isEdgeInvalid){
+                        newAutomaton.addEdge(storm::jani::Edge(newSourceIndex, edge.getActionIndex(), edge.hasRate()
+                                                                                                      ? boost::optional<storm::expressions::Expression>(
+                                        substituteJaniExpression(edge.getRate(), substitutionMap)) : boost::none,
+                                                               templateEdge, destinationLocationsAndProbabilities));
+                    }
                 }
             }
             return newAutomaton;

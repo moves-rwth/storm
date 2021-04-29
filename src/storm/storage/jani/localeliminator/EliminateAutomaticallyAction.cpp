@@ -99,7 +99,7 @@ namespace storm {
                                         std::to_string(minNewEdges) + " new transitions)");
                             } else {
                                 std::string locName = automaton->getLocation(bestLocIndex).getName();
-                                session.addToLog("\tEliminating location " + locName);
+                                session.addToLog("\tEliminating location " + locName + " (" + std::to_string(minNewEdges) + " new edges)");
                                 EliminateAction action = EliminateAction(automatonName, locName);
                                 action.doAction(session);
                                 automaton = &session.getModel().getAutomaton(automatonName);

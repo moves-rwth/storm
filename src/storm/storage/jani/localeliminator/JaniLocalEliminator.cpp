@@ -186,13 +186,7 @@ namespace storm {
         }
 
         JaniLocalEliminator::Session::Session(Model model, Property property) : model(model), property(property), finished(false){
-            for (auto &aut : model.getAutomata()){
-                automataInfo[aut.getName()] =  AutomatonInfo();
-                for (auto &loc : aut.getLocations()){
-                    bool isPartOfProp = computeIsPartOfProp(aut.getName(), loc.getName());
-                    setPartOfProp(aut.getName(), loc.getName(), isPartOfProp);
-                }
-            }
+            buildAutomataInfo();
 
             for (auto &var : property.getUsedVariablesAndConstants()){
                 expressionVarsInProperty.insert(var.getIndex());
@@ -279,6 +273,21 @@ namespace storm {
 
         std::vector<std::string> JaniLocalEliminator::Session::getLog() {
             return log;
+        }
+
+        void JaniLocalEliminator::Session::flatten_automata() {
+            model = model.flattenComposition();
+            automataInfo.clear();
+            buildAutomataInfo();
+        }
+
+        void JaniLocalEliminator::Session::buildAutomataInfo() {for (auto &aut : model.getAutomata()){
+                automataInfo[aut.getName()] =  AutomatonInfo();
+                for (auto &loc : aut.getLocations()){
+                    bool isPartOfProp = computeIsPartOfProp(aut.getName(), loc.getName());
+                    setPartOfProp(aut.getName(), loc.getName(), isPartOfProp);
+                }
+            }
         }
     }
 }

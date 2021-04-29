@@ -21,7 +21,7 @@ namespace storm {
             void AutomaticAction::doAction(JaniLocalEliminator::Session &session) {
                 if (session.getModel().getAutomata().size() > 1) {
                     session.addToLog("Flattening model");
-                    session.setModel(session.getModel().flattenComposition());
+                    session.flatten_automata();
                 }
 
                 session.addToLog("Generating variable dependency graph");
@@ -37,34 +37,21 @@ namespace storm {
 
                 session.addToLog("Performing automatic elimination");
 
-                EliminateAutomaticallyAction eliminateAction(autName,
-                                                             EliminateAutomaticallyAction::EliminationOrder::NewTransitionCount,
-                                                             20000);
-                eliminateAction.doAction(session);
+                EliminateAutomaticallyAction eliminatePropertyAction(autName,
+                                                                     EliminateAutomaticallyAction::EliminationOrder::NewTransitionCount,
+                                                                     20000);
+                eliminatePropertyAction.doAction(session);
 
-                RebuildWithoutUnreachableAction rebuildAction;
-                rebuildAction.doAction(session);
+                RebuildWithoutUnreachableAction rebuildAfterPropertyAction;
+                rebuildAfterPropertyAction.doAction(session);
 
                 while (session.getModel().getAutomaton(0).getLocations().size() < 40) {
-//                    std::set<uint32_t> potentialUnfolds = dependencyGraph.getGroupsWithNoDependencies();
-//
-//                    if (potentialUnfolds.empty()){
-//                        session.addToLog("No more unfoldable variables found");
-//                        break;
-//                    }
-//
-//                    session.addToLog("Potential next unfolds:");
-//                    for (uint32_t unf : potentialUnfolds)
-//                        session.addToLog("\t" + dependencyGraph.variableGroups[unf].getVariablesAsString());
-//                    uint32_t chosen = *potentialUnfolds.begin();
-
                     auto nextUnfold = chooseNextUnfold(session, autName, dependencyGraph);
                     if (!nextUnfold){
                         break;
                     }
 
                     unfoldGroupAndDependencies(session, autName, dependencyGraph, nextUnfold.get());
-
 
                     EliminateAutomaticallyAction eliminateAction(autName,
                                                                  EliminateAutomaticallyAction::EliminationOrder::NewTransitionCount,

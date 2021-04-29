@@ -27,6 +27,9 @@ namespace storm {
                 void addToLog(std::string item);
                 std::vector<std::string> getLog();
 
+                void buildAutomataInfo();
+                void flatten_automata();
+
                 expressions::Expression getNewGuard(const Edge& edge, const EdgeDestination& dest, const Edge& outgoing);
                 expressions::Expression getProbability(const EdgeDestination& first, const EdgeDestination& then);
                 OrderedAssignments executeInSequence(const EdgeDestination& first, const EdgeDestination& then);

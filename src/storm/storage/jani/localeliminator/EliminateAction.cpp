@@ -87,8 +87,6 @@ namespace storm {
                     if (!outEdge.getGuard().containsVariables() && !outEdge.getGuard().evaluateAsBool())
                         continue;
 
-                    // STORM_LOG_THROW(actionIndex == outEdge.getActionIndex(), storm::exceptions::NotImplementedException, "Elimination of edges with different action indices is not implemented");
-
                     expressions::Expression newGuard = session.getNewGuard(edge, dest, outEdge);
                     std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(newGuard);
                     std::vector<std::pair<uint64_t, storm::expressions::Expression>> destinationLocationsAndProbabilities;
