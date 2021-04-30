@@ -24,11 +24,15 @@ namespace storm {
                     session.flatten_automata();
                 }
 
+                std::string const& autName = session.getModel().getAutomata()[0].getName();
+
+                session.addToLog("Adding missing guards");
+                session.addMissingGuards(autName);
+
                 session.addToLog("Generating variable dependency graph");
                 UnfoldDependencyGraph dependencyGraph(session.getModel());
                 session.addToLog(dependencyGraph.toString());
 
-                std::string const& autName = session.getModel().getAutomata()[0].getName();
 
                 if (!unfoldPropertyVariable(session, autName, dependencyGraph)){
                     return;
@@ -81,12 +85,12 @@ namespace storm {
                             // variable is global or not. This isn't  really a problem, as there is just one automaton
                             // due to the flattening done previously (and the name of that is stored in autName)
                             session.addToLog("\tUnfolding global variable " + variable.janiVariableName);
-                            UnfoldAction unfoldAction(autName, variable.janiVariableName);
+                            UnfoldAction unfoldAction(autName, variable.janiVariableName, variable.expressionVariableName);
                             unfoldAction.doAction(session);
                         } else {
                             session.addToLog("\tUnfolding variable " + variable.janiVariableName + " (automaton: " +
                                              variable.automatonName + ")");
-                            UnfoldAction unfoldAction(variable.automatonName, variable.janiVariableName);
+                            UnfoldAction unfoldAction(variable.automatonName, variable.janiVariableName, variable.expressionVariableName);
                             unfoldAction.doAction(session);
                         }
                     }

@@ -41,8 +41,9 @@ namespace storm {
                             bool possiblyInitial = session.isPossiblyInitial(automatonName, loc.getName());
                             bool partOfProp = session.isPartOfProp(automatonName, loc.getName());
                             bool hasLoops = session.hasLoops(automatonName, loc.getName());
+                            bool isDeadlock = automaton->getEdgesFromLocation(loc.getName()).empty();
 
-                            bool isUneliminable = possiblyInitial || partOfProp || hasLoops;
+                            bool isUneliminable = possiblyInitial || partOfProp || hasLoops || isDeadlock;
                             uneliminable.insert(std::pair<std::string, bool>(loc.getName(), isUneliminable));
 
                             std::string eliminationStatus = "\t" + loc.getName() + ": ";
@@ -54,6 +55,8 @@ namespace storm {
                                     eliminationStatus += "part of prop, ";
                                 if (hasLoops)
                                     eliminationStatus += "has loops, ";
+                                if (hasLoops)
+                                    eliminationStatus += "has no outgoing edges, ";
                                 eliminationStatus = eliminationStatus.substr(0, eliminationStatus.size() - 2) + ")";
                             }else{
                                 eliminationStatus += "Eliminable";

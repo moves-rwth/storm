@@ -38,7 +38,7 @@ namespace storm {
             Automaton &automaton = model.getAutomaton(automatonName);
             uint64_t locationIndex = automaton.getLocationIndex(locationName);
             for (Edge edge : automaton.getEdgesFromLocation(locationIndex)) {
-                for (EdgeDestination dest : edge.getDestinations()){
+                for (const EdgeDestination& dest : edge.getDestinations()){
                     if (dest.getLocationIndex() == locationIndex)
                         return true;
                 }
@@ -49,7 +49,7 @@ namespace storm {
         bool JaniLocalEliminator::Session::isPossiblyInitial(const std::string &automatonName, std::string const& locationName) {
             Automaton &automaton = model.getAutomaton(automatonName);
             auto location = automaton.getLocation(automaton.getLocationIndex(locationName));
-            for (auto asg : location.getAssignments()){
+            for (const auto& asg : location.getAssignments()){
                 if (!asg.isTransient())
                     continue;
                 if (asg.getAssignedExpression().containsVariables() || asg.getVariable().getInitExpression().containsVariables())
@@ -267,7 +267,7 @@ namespace storm {
             return expressionVarsInProperty.count(expressionVariableIndex) != 0;
         }
 
-        void JaniLocalEliminator::Session::addToLog(std::string item) {
+        void JaniLocalEliminator::Session::addToLog(const std::string& item) {
             log.push_back(item);
         }
 
@@ -279,6 +279,49 @@ namespace storm {
             model = model.flattenComposition();
             automataInfo.clear();
             buildAutomataInfo();
+        }
+
+
+
+        void JaniLocalEliminator::Session::addMissingGuards(const std::string& automatonName) {
+            auto &automaton = model.getAutomaton(automatonName);
+
+            std::string sinkName = "sink_location";
+            while (automaton.hasLocation(sinkName)){
+                sinkName += "_";
+            }
+            Location sink(sinkName, OrderedAssignments());
+            automaton.addLocation(sink);
+            uint64_t sinkIndex = automaton.getNumberOfLocations() - 1;
+
+            for (uint64_t i = 0; i < automaton.getNumberOfLocations(); i++){
+                if (i == sinkIndex)
+                    continue;
+                auto outgoingEdges = automaton.getEdgesFromLocation(i);
+                expressions::Expression allGuards;
+                allGuards = model.getExpressionManager().boolean(false);
+                for (const auto &edge : outgoingEdges){
+                    allGuards = allGuards || edge.getGuard();
+                }
+                expressions::Expression newGuard = !allGuards;
+
+//                // Manually construct new guard to check where my error is:
+//                auto &expressionManager = model.getExpressionManager();
+//                newGuard = (expressionManager.getVariableExpression("s") == expressionManager.integer(0))
+//                        && (expressionManager.getVariableExpression("r") == expressionManager.integer(4))
+//                        && (expressionManager.getVariableExpression("k") == expressionManager.integer(0))
+//                        && expressionManager.getVariableExpression("T");
+
+                std::vector<std::pair<uint64_t, storm::expressions::Expression>> destinationLocationsAndProbabilities;
+                std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(newGuard);
+                TemplateEdgeDestination ted((OrderedAssignments()));
+                templateEdge->addDestination(ted);
+                destinationLocationsAndProbabilities.emplace_back(sinkIndex, model.getExpressionManager().rational(1.0));
+
+                automaton.addEdge(storm::jani::Edge(i, 0, boost::none, templateEdge, destinationLocationsAndProbabilities));
+
+                std::cout << "Guard: " << newGuard << std::endl;
+            }
         }
 
         void JaniLocalEliminator::Session::buildAutomataInfo() {for (auto &aut : model.getAutomata()){

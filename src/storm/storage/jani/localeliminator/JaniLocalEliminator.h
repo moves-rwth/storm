@@ -24,11 +24,12 @@ namespace storm {
                 bool getFinished();
                 void setFinished(bool finished);
 
-                void addToLog(std::string item);
+                void addToLog(const std::string& item);
                 std::vector<std::string> getLog();
 
                 void buildAutomataInfo();
                 void flatten_automata();
+                void addMissingGuards(const std::string& automatonName);
 
                 expressions::Expression getNewGuard(const Edge& edge, const EdgeDestination& dest, const Edge& outgoing);
                 expressions::Expression getProbability(const EdgeDestination& first, const EdgeDestination& then);

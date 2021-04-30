@@ -9,6 +9,12 @@ namespace storm {
             UnfoldAction::UnfoldAction(const std::string &automatonName, const std::string &variableName) {
                 this->automatonName = automatonName;
                 this->variableName = variableName;
+                this->expressionVariableName = variableName;
+            }
+            UnfoldAction::UnfoldAction(const std::string &automatonName, const std::string &janiVariableName, const std::string &expressionVariableName) {
+                this->automatonName = automatonName;
+                this->variableName = janiVariableName;
+                this->expressionVariableName = expressionVariableName;
             }
 
             std::string UnfoldAction::getDescription() {
@@ -40,7 +46,7 @@ namespace storm {
 
                 // First, we check whether the variable is even contained in the property. If not, we can just use the
                 // isPartOfProp values of the old locations.
-                bool variablePartOfProperty = session.isVariablePartOfProperty(variableName);
+                bool variablePartOfProperty = session.isVariablePartOfProperty(expressionVariableName);
 
                 // If we have many locations that potentially satisfy the property, we can try to exploit symmetries. For
                 // example, if the property is a conjunction that contains "testVar = 4" and we're unfolding testVar, we
@@ -51,7 +57,7 @@ namespace storm {
                 // check if we have at least 3 locations that potentially satisfy the property.
                 if (partOfPropCount >= 3) {
                     std::map<expressions::Variable, expressions::Expression> substitutionMap;
-                    expressions::Variable variable = session.getModel().getExpressionManager().getVariable(variableName);
+                    expressions::Variable variable = session.getModel().getExpressionManager().getVariable(expressionVariableName);
                     for (uint64_t i = 0; i < expander.variableDomain.size(); i++){
                         substitutionMap[variable] = expander.variableDomain[i];
                         bool satisfiesProperty = session.computeIsPartOfProp(substitutionMap);
