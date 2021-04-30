@@ -11,8 +11,10 @@ namespace storm {
         private:
             class AutomatonInfo{
             public:
-                explicit AutomatonInfo() = default;
+                explicit AutomatonInfo();
                 std::set<uint64_t> potentiallyPartOfProp;
+                bool hasSink;
+                uint64_t sinkIndex;
             };
         public:
             class Session {
@@ -27,6 +29,7 @@ namespace storm {
                 void addToLog(const std::string& item);
                 std::vector<std::string> getLog();
 
+                AutomatonInfo &getAutomatonInfo(const std::string& name);
                 void buildAutomataInfo();
                 void flatten_automata();
                 void addMissingGuards(const std::string& automatonName);

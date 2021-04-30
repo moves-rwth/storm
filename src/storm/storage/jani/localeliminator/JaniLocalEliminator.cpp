@@ -294,6 +294,9 @@ namespace storm {
             automaton.addLocation(sink);
             uint64_t sinkIndex = automaton.getNumberOfLocations() - 1;
 
+            automataInfo[automatonName].hasSink = true;
+            automataInfo[automatonName].sinkIndex = sinkIndex;
+
             for (uint64_t i = 0; i < automaton.getNumberOfLocations(); i++){
                 if (i == sinkIndex)
                     continue;
@@ -301,16 +304,9 @@ namespace storm {
                 expressions::Expression allGuards;
                 allGuards = model.getExpressionManager().boolean(false);
                 for (const auto &edge : outgoingEdges){
-                    allGuards = allGuards || edge.getGuard();
+                    allGuards = edge.getGuard() || allGuards;
                 }
                 expressions::Expression newGuard = !allGuards;
-
-//                // Manually construct new guard to check where my error is:
-//                auto &expressionManager = model.getExpressionManager();
-//                newGuard = (expressionManager.getVariableExpression("s") == expressionManager.integer(0))
-//                        && (expressionManager.getVariableExpression("r") == expressionManager.integer(4))
-//                        && (expressionManager.getVariableExpression("k") == expressionManager.integer(0))
-//                        && expressionManager.getVariableExpression("T");
 
                 std::vector<std::pair<uint64_t, storm::expressions::Expression>> destinationLocationsAndProbabilities;
                 std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(newGuard);
@@ -319,8 +315,6 @@ namespace storm {
                 destinationLocationsAndProbabilities.emplace_back(sinkIndex, model.getExpressionManager().rational(1.0));
 
                 automaton.addEdge(storm::jani::Edge(i, 0, boost::none, templateEdge, destinationLocationsAndProbabilities));
-
-                std::cout << "Guard: " << newGuard << std::endl;
             }
         }
 
@@ -331,6 +325,14 @@ namespace storm {
                     setPartOfProp(aut.getName(), loc.getName(), isPartOfProp);
                 }
             }
+        }
+
+        JaniLocalEliminator::AutomatonInfo &JaniLocalEliminator::Session::getAutomatonInfo(const std::string& name) {
+            return automataInfo[name];
+        }
+
+        JaniLocalEliminator::AutomatonInfo::AutomatonInfo()  : hasSink(false), sinkIndex(0){
+
         }
     }
 }

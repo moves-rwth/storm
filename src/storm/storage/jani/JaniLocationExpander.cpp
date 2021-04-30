@@ -92,22 +92,34 @@ namespace storm {
             for (auto const &loc : automaton.getLocations()) {
                 uint64_t origIndex = automaton.getLocationIndex(loc.getName());
 
-                for (int64_t i = 0; i < variableDomain.size(); i++) {
-                    std::string newLocationName =
-                            loc.getName() + "_" + variableName + "_" + variableDomain[i].toString();
-                    substitutionMap[eliminatedExpressionVariable] = variableDomain[i];
+                if (excludedLocations.count(origIndex) > 0){
+                    STORM_LOG_THROW(loc.getAssignments().empty(), storm::exceptions::IllegalArgumentException, "Locations with assignments cannot be excluded during expansion");
+                    STORM_LOG_THROW(automaton.getEdgesFromLocation(origIndex).empty(), storm::exceptions::IllegalArgumentException, "Locations with outgoing edges cannot be excluded during expansion");
 
-                    OrderedAssignments newAssignments = loc.getAssignments().clone();
-                    newAssignments.substitute(substitutionMap);
-
-                    Location newLoc(newLocationName, newAssignments);
-
-                    if (useTransientVariables)
-                        newLoc.addTransientAssignment(Assignment(newVariablePointer, variableDomain[i], 0));
-
-
+                    Location newLoc(loc.getName(), OrderedAssignments());
                     uint64_t newLocationIndex = newAutomaton.addLocation(newLoc);
-                    locationVariableValueMap[origIndex][i] = newLocationIndex;
+                    excludedLocationsToNewIndices[origIndex] = newLocationIndex;
+                    for (int64_t i = 0; i < variableDomain.size(); i++) {
+                        locationVariableValueMap[origIndex][i] = newLocationIndex;
+                    }
+                }else{
+                    for (int64_t i = 0; i < variableDomain.size(); i++) {
+                        std::string newLocationName =
+                                loc.getName() + "_" + variableName + "_" + variableDomain[i].toString();
+                        substitutionMap[eliminatedExpressionVariable] = variableDomain[i];
+
+                        OrderedAssignments newAssignments = loc.getAssignments().clone();
+                        newAssignments.substitute(substitutionMap);
+
+                        Location newLoc(newLocationName, newAssignments);
+
+                        if (useTransientVariables)
+                            newLoc.addTransientAssignment(Assignment(newVariablePointer, variableDomain[i], 0));
+
+
+                        uint64_t newLocationIndex = newAutomaton.addLocation(newLoc);
+                        locationVariableValueMap[origIndex][i] = newLocationIndex;
+                    }
                 }
             }
 
@@ -125,7 +137,7 @@ namespace storm {
                     storm::expressions::Expression newGuard = substituteJaniExpression(edge.getGuard(),
                                                                                        substitutionMap).simplify();
                     if (!newGuard.containsVariables() && !newGuard.evaluateAsBool()) {
-                        // continue;
+                        continue;
                     }
                     bool isEdgeInvalid = false; // This is set when a destination leads to an out-of-range location. A warning will be emitted and the edge will not be added to the list of edges
                     std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(
@@ -186,6 +198,10 @@ namespace storm {
                 }
             }
             return newAutomaton;
+        }
+
+        void JaniLocationExpander::excludeLocation(uint64_t index) {
+            excludedLocations.insert(index);
         }
     }
 }

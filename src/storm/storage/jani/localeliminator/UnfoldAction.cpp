@@ -38,9 +38,20 @@ namespace storm {
 
                 session.addToLog("\t\t" + std::to_string(partOfPropCount) + " old locations potentially satisfy property");
 
+                auto &automatonInfo = session.getAutomatonInfo(automatonName);
+
                 JaniLocationExpander expander = JaniLocationExpander(session.getModel());
+
+                if (automatonInfo.hasSink) {
+                    expander.excludeLocation(automatonInfo.sinkIndex);
+                }
+
                 expander.transform(automatonName, variableName);
                 session.setModel(expander.getResult());
+
+                if (automatonInfo.hasSink) {
+                    automatonInfo.sinkIndex = expander.excludedLocationsToNewIndices[automatonInfo.sinkIndex];
+                }
 
                 // After executing the expander, we can now determine which new locations satisfy the property:
 

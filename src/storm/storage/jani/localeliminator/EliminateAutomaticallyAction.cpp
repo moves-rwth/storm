@@ -55,7 +55,7 @@ namespace storm {
                                     eliminationStatus += "part of prop, ";
                                 if (hasLoops)
                                     eliminationStatus += "has loops, ";
-                                if (hasLoops)
+                                if (isDeadlock)
                                     eliminationStatus += "has no outgoing edges, ";
                                 eliminationStatus = eliminationStatus.substr(0, eliminationStatus.size() - 2) + ")";
                             }else{

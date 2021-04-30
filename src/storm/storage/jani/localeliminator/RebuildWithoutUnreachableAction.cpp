@@ -117,6 +117,11 @@ namespace storm {
                         session.setPartOfProp(oldAutomaton.getName(), oldToNewLocationIndices[oldLocationIndex], true);
                     }
 
+                    auto &automatonInfo = session.getAutomatonInfo(oldAutomaton.getName());
+                    if (automatonInfo.hasSink) {
+                        automatonInfo.sinkIndex = oldToNewLocationIndices[automatonInfo.sinkIndex];
+                    }
+
                     session.addToLog("\tNew automaton has " +  std::to_string(newAutomaton.getEdges().size()) + " edges.");
                     session.getModel().replaceAutomaton(session.getModel().getAutomatonIndex(oldAutomaton.getName()), newAutomaton);
                 }
