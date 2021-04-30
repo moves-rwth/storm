@@ -256,7 +256,7 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
-        void BeliefMdpExplorer<PomdpType, BeliefValueType>::computeRewardAtCurrentState(uint64 const &localActionIndex, ValueType extraReward) {
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::computeRewardAtCurrentState(uint64_t const &localActionIndex, ValueType extraReward) {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
             if (getCurrentNumberOfMdpChoices() > mdpActionRewards.size()) {
                 mdpActionRewards.resize(getCurrentNumberOfMdpChoices(), storm::utility::zero<ValueType>());
@@ -266,7 +266,7 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
-        void BeliefMdpExplorer<PomdpType, BeliefValueType>::addRewardToCurrentState(uint64 const &localActionIndex, ValueType rewardValue) {
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::addRewardToCurrentState(uint64_t const &localActionIndex, ValueType rewardValue) {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
             if (getCurrentNumberOfMdpChoices() > mdpActionRewards.size()) {
                 mdpActionRewards.resize(getCurrentNumberOfMdpChoices(), storm::utility::zero<ValueType>());
@@ -276,7 +276,7 @@ namespace storm {
         }
 
         template<typename PomdpType, typename BeliefValueType>
-        void BeliefMdpExplorer<PomdpType, BeliefValueType>::addClippingRewardToCurrentState(uint64 const &localActionIndex, ValueType rewardValue) {
+        void BeliefMdpExplorer<PomdpType, BeliefValueType>::addClippingRewardToCurrentState(uint64_t const &localActionIndex, ValueType rewardValue) {
             STORM_LOG_ASSERT(status == Status::Exploring, "Method call is invalid in current status.");
             uint64_t row = getStartOfCurrentRowGroup() + localActionIndex;
             clippingTransitionRewards[row] = rewardValue;

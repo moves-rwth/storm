@@ -84,7 +84,7 @@ namespace storm {
              */
             bool addTransitionToBelief(uint64_t const &localActionIndex, BeliefId const &transitionTarget, ValueType const &value, bool ignoreNewBeliefs);
 
-            void computeRewardAtCurrentState(uint64 const &localActionIndex, ValueType extraReward = storm::utility::zero<ValueType>());
+            void computeRewardAtCurrentState(uint64_t const &localActionIndex, ValueType extraReward = storm::utility::zero<ValueType>());
 
             /*!
              * Adds the provided reward value to the given action of the current state
@@ -92,7 +92,7 @@ namespace storm {
              * @param localActionIndex
              * @param rewardValue
              */
-            void addRewardToCurrentState(uint64 const &localActionIndex, ValueType rewardValue);
+            void addRewardToCurrentState(uint64_t const &localActionIndex, ValueType rewardValue);
 
             void setCurrentStateIsTarget();
 
@@ -195,7 +195,7 @@ namespace storm {
 
             std::vector<BeliefId> getBeliefsInMdp();
 
-            void addClippingRewardToCurrentState(uint64 const &localActionIndex, ValueType rewardValue);
+            void addClippingRewardToCurrentState(uint64_t const &localActionIndex, ValueType rewardValue);
 
             ValueType getTrivialUpperBoundAtPOMDPState(uint64_t const &pomdpState);
 

@@ -705,7 +705,7 @@ namespace storm {
                             }
                         }
                         bool expandedAtLeastOneAction = false;
-                        for (uint64 action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
+                        for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                             bool expandCurrentAction = exploreAllActions || truncateAllActions;
                             if (checkRewireForAllActions) {
                                 assert(refine);
@@ -882,7 +882,7 @@ namespace storm {
                         if(clipBelief){
                             if(options.hybridClipping){
                                 // Add all transitions to states which are already in the MDP, clip all others to a grid
-                                for (uint64 action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
+                                for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                                     auto rewardBound = storm::utility::zero<ValueType>();
                                     auto successors = beliefManager->expand(currId, action);
                                     auto absDelta = storm::utility::zero<ValueType>();
@@ -997,7 +997,7 @@ namespace storm {
                         }
                         //if (!options.hybridClipping || !stopExploration || gridClippingOpenStates.find(currId) != gridClippingOpenStates.end()) {
                             // Add successor transitions or cut-off transitions when exploration is stopped
-                            for (uint64 action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
+                            for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                                 // Always restore old behavior if available
                                 if (stateAlreadyExplored) {
                                     underApproximation->restoreOldBehaviorAtCurrentState(action);
@@ -1114,7 +1114,7 @@ namespace storm {
                         underApproximation->setCurrentStateIsTarget();
                         underApproximation->addSelfloopTransition();
                     } else {
-                        for (uint64 action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
+                        for (uint64_t action = 0, numActions = beliefManager->getBeliefNumberOfChoices(currId); action < numActions; ++action) {
                             // Always restore old behavior if available
                             if (stateAlreadyExplored) {
                                 underApproximation->restoreOldBehaviorAtCurrentState(action);

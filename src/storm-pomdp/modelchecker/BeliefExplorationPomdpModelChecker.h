@@ -1,7 +1,6 @@
 #include "storm/api/storm.h"
 #include "storm/models/sparse/Pomdp.h"
 #include "storm/utility/logging.h"
-#include "storm-pomdp/storage/Belief.h"
 #include "storm-pomdp/storage/BeliefManager.h"
 #include "storm-pomdp/modelchecker/BeliefExplorationPomdpModelCheckerOptions.h"
 #include "storm-pomdp/builder/BeliefMdpExplorer.h"
