@@ -156,6 +156,7 @@ void processOptions() {
             importanceMeasureName = dftIOSettings.getImportanceMeasure();
         }
 
+        auto const additionalRelevantEventNames {faultTreeSettings.getRelevantEvents()};
         storm::api::analyzeDFTBdd<ValueType>(dft,
                 isExportToBddDot,
                 filename,
@@ -166,6 +167,7 @@ void processOptions() {
                 importanceMeasureName,
                 timepoints,
                 manuallyInputtedProperties,
+                additionalRelevantEventNames,
                 chunksize);
 
         // don't perform other analysis if analyzeWithBdds is set

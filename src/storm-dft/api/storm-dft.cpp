@@ -9,6 +9,7 @@
 #include "storm-dft/modelchecker/dft/DFTModularizer.h"
 #include "storm-dft/modelchecker/dft/SFTBDDPropertyFormulaAdapter.h"
 #include "storm-dft/storage/SylvanBddManager.h"
+#include "storm-dft/storage/dft/DFT.h"
 #include "storm-dft/transformations/SftToBddTransformator.h"
 #include "storm-dft/utility/MTTFHelper.h"
 #include <memory>
@@ -28,6 +29,7 @@ namespace storm {
                 std::string const importanceMeasureName,
                 std::vector<double> const &timepoints,
                 std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
+                std::vector<std::string> const& additionalRelevantEventNames,
                 size_t const chunksize) {
             if(calculateMttf) {
                 std::cout << "The numerically approximated MTTF is " << storm::dft::utility::MTTFHelperProceeding(dft) << '\n';
@@ -67,7 +69,8 @@ namespace storm {
             }
 
             auto sylvanBddManager{std::make_shared<storm::storage::SylvanBddManager>()};
-            storm::adapters::SFTBDDPropertyFormulaAdapter adapter{dft, properties, {}, sylvanBddManager};
+            storm::utility::RelevantEvents relevantEvents{additionalRelevantEventNames.begin(), additionalRelevantEventNames.end()};
+            storm::adapters::SFTBDDPropertyFormulaAdapter adapter{dft, properties, relevantEvents, sylvanBddManager};
             auto checker{adapter.getSFTBDDChecker()};
 
             if(exportToDot) {
@@ -176,6 +179,7 @@ namespace storm {
                 std::string const importanceMeasureName,
                 std::vector<double> const &timepoints,
                 std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
+                std::vector<std::string> const& additionalRelevantEventNames,
                 size_t const chunksize) {
             STORM_LOG_THROW(false, storm::exceptions::NotSupportedException, "BDD analysis is not supportet for this data type.");
         }

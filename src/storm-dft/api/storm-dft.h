@@ -200,6 +200,7 @@ namespace storm {
                 std::string const importanceMeasureName,
                 std::vector<double> const &timepoints,
                 std::vector<std::shared_ptr<storm::logic::Formula const>> const& properties,
+                std::vector<std::string> const& additionalRelevantEventNames,
                 size_t const chunksize);
 
         /*!
