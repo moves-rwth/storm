@@ -81,7 +81,7 @@ namespace storm {
                 // 8: Compute the length of the approximated single moving average
                 const ConstantType lengthApproxSMA = maxLengthApproxSMA - ((2 * (stepNum + 1) * squaredAverageDecayPow) / (1 - squaredAverageDecayPow));
                 // 9: If the variance is tractable, i.e. lengthApproxSMA > 4, then
-                if (lengthApproxSMA > 5) {
+                if (lengthApproxSMA > 4) {
                     // 10: Compute adaptive learning rate
                     const ConstantType adaptiveLearningRate = constantTypeSqrt((1 - squaredAverageDecayPow) / radam->decayingStepAverageSquared[steppingParameter]);
                     // 11: Compute the variance rectification term
@@ -147,12 +147,12 @@ namespace storm {
                 } else {
                     step = nesterov->learningRate * gradient.at(steppingParameter);
                 }
-                step -= nesterov->momentumTerm * nesterov->pastStep[steppingParameter];
+                step -= (nesterov->predictedLastStep[steppingParameter] - nesterov->actualLastStep[steppingParameter]);
 
-                step += nesterov->momentumTerm * nesterov->pastStep.at(steppingParameter);
-                nesterov->pastStep[steppingParameter] = step;
+                nesterov->actualLastStep[steppingParameter] = step + nesterov->momentumTerm * nesterov->actualLastStep[steppingParameter];
+                nesterov->predictedLastStep[steppingParameter] = nesterov->actualLastStep[steppingParameter] + nesterov->momentumTerm * step;
 
-                step += nesterov->momentumTerm * step;
+                step = nesterov->predictedLastStep[steppingParameter];
             } else {
                 STORM_LOG_ERROR("GradientDescentType was not a known one");
             }
