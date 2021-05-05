@@ -159,11 +159,11 @@ namespace storm {
         template class ConstantsComparator<storm::storage::sparse::state_type>;
 
 #ifdef STORM_HAVE_CARL
-#if defined(STORM_HAVE_CLN)
+#if defined(STORM_HAVE_CLN) && !defined(STORM_USE_CLN_EA)
         template class ConstantsComparator<ClnRationalNumber>;
 #endif
 
-#if defined(STORM_HAVE_GMP)
+#if defined(STORM_HAVE_GMP) && defined(STORM_USE_CLN_EA)
         template class ConstantsComparator<GmpRationalNumber>;
 #endif
 
