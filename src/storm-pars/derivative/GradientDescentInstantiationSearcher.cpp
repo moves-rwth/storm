@@ -147,12 +147,8 @@ namespace storm {
                 } else {
                     step = nesterov->learningRate * gradient.at(steppingParameter);
                 }
-                step -= (nesterov->predictedLastStep[steppingParameter] - nesterov->actualLastStep[steppingParameter]);
-
-                nesterov->actualLastStep[steppingParameter] = step + nesterov->momentumTerm * nesterov->actualLastStep[steppingParameter];
-                nesterov->predictedLastStep[steppingParameter] = nesterov->actualLastStep[steppingParameter] + nesterov->momentumTerm * step;
-
-                step = nesterov->predictedLastStep[steppingParameter];
+                step += nesterov->momentumTerm * nesterov->pastStep.at(steppingParameter);
+                nesterov->pastStep[steppingParameter] = step;
             } else {
                 STORM_LOG_ERROR("GradientDescentType was not a known one");
             }
@@ -245,8 +241,19 @@ namespace storm {
                     }
                 }
 
+                // If nesterov is enabled, we need to compute the gradient on the predicted position
+                std::map<VariableType<ValueType>, CoefficientType<ValueType>> nesterovPredictedPosition(position);
+                if (Nesterov* nesterov = boost::get<Nesterov>(&gradientDescentType)) {
+                    for (auto const& parameter : miniBatch) {
+                        nesterovPredictedPosition[parameter] += storm::utility::convertNumber<CoefficientType<ValueType>>(nesterov->momentumTerm)
+                            * storm::utility::convertNumber<CoefficientType<ValueType>>(nesterov->pastStep[parameter]);
+                        const auto precision = storm::utility::convertNumber<CoefficientType<ValueType>>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+                        nesterovPredictedPosition[parameter] = utility::max(utility::zero<CoefficientType<ValueType>>() + precision, nesterovPredictedPosition[parameter]);
+                        nesterovPredictedPosition[parameter] = utility::min(utility::one<CoefficientType<ValueType>>() - precision, nesterovPredictedPosition[parameter]);
+                    }
+                }
                 for (auto const& parameter : miniBatch) {
-                    ConstantType delta = derivativeEvaluationHelper->calculateDerivative(env, parameter, position, valueVector); 
+                    ConstantType delta = derivativeEvaluationHelper->calculateDerivative(env, parameter, nesterovPredictedPosition, valueVector); 
                     if (optimalityType == storm::OptimizationDirection::Minimize) {
                         delta *= -1;
                     }

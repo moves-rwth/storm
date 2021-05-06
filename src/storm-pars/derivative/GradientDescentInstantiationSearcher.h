@@ -192,8 +192,7 @@ namespace storm {
                         // TODO Document this
                         nesterov.momentumTerm = averageDecay;
                         for (auto const& parameter : parameters) {
-                            nesterov.predictedLastStep[parameter] = 0;
-                            nesterov.actualLastStep[parameter] = 0;
+                            nesterov.pastStep[parameter] = 0;
                         }
                         gradientDescentType = nesterov;
                         if (method == GradientDescentMethod::NESTEROV_SIGN) {
@@ -282,8 +281,7 @@ namespace storm {
             struct Nesterov {
                 double learningRate;
                 double momentumTerm;
-                std::map<typename utility::parametric::VariableType<ValueType>::type, ConstantType> actualLastStep;
-                std::map<typename utility::parametric::VariableType<ValueType>::type, ConstantType> predictedLastStep;
+                std::map<typename utility::parametric::VariableType<ValueType>::type, ConstantType> pastStep;
             };
             typedef boost::variant<Adam, RAdam, RmsProp, Plain, Momentum, Nesterov> GradientDescentType;
             GradientDescentType gradientDescentType;
