@@ -216,13 +216,36 @@ namespace storm {
                 
                 ConstantType oldValue = currentValue;
 
+                // If nesterov is enabled, we need to compute the gradient on the predicted position
+                std::map<VariableType<ValueType>, CoefficientType<ValueType>> nesterovPredictedPosition(position);
+                if (Nesterov* nesterov = boost::get<Nesterov>(&gradientDescentType)) {
+                    for (auto const& parameter : miniBatch) {
+                        nesterovPredictedPosition[parameter] += storm::utility::convertNumber<CoefficientType<ValueType>>(nesterov->momentumTerm)
+                            * storm::utility::convertNumber<CoefficientType<ValueType>>(nesterov->pastStep[parameter]);
+                        const auto precision = storm::utility::convertNumber<CoefficientType<ValueType>>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
+                        nesterovPredictedPosition[parameter] = utility::max(utility::zero<CoefficientType<ValueType>>() + precision, nesterovPredictedPosition[parameter]);
+                        nesterovPredictedPosition[parameter] = utility::min(utility::one<CoefficientType<ValueType>>() - precision, nesterovPredictedPosition[parameter]);
+                    }
+                }
+
                 // Compute the value of our position and terminate if it satisfies the bound or is
                 // zero or one when computing probabilities. The "valueVector" (just the probability/expected
                 // reward for eventually reaching the target from every state) is also used for computing
                 // the gradient later. We only need one computation of the "valueVector" per mini-batch.
-                std::unique_ptr<storm::modelchecker::CheckResult> result = instantiationModelChecker->check(env, position);
-                std::vector<ConstantType> valueVector = result->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
-                currentValue = valueVector[initialState];
+                //
+                // If nesterov is activated, we need to do this twice. First, to check the value of the current position.
+                // Second, to compute the valueVector at the nesterovPredictedPosition.
+                
+                // If nesterov is deactivated, then nesterovPredictedPosition == position.
+                std::unique_ptr<storm::modelchecker::CheckResult> intermediateResult = instantiationModelChecker->check(env, nesterovPredictedPosition);
+                std::vector<ConstantType> valueVector = intermediateResult->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                if (Nesterov* nesterov = boost::get<Nesterov>(&gradientDescentType)) {
+                    std::unique_ptr<storm::modelchecker::CheckResult> terminationResult = instantiationModelChecker->check(env, position);
+                    std::vector<ConstantType> terminationValueVector = terminationResult->asExplicitQuantitativeCheckResult<ConstantType>().getValueVector();
+                    currentValue = terminationValueVector[initialState];
+                } else {
+                    currentValue = valueVector[initialState];
+                }
                 
                 if (bound && bound->isSatisfied(currentValue)) {
                     std::cout << "Satisfied the bound! Done!" << std::endl;
@@ -241,17 +264,6 @@ namespace storm {
                     }
                 }
 
-                // If nesterov is enabled, we need to compute the gradient on the predicted position
-                std::map<VariableType<ValueType>, CoefficientType<ValueType>> nesterovPredictedPosition(position);
-                if (Nesterov* nesterov = boost::get<Nesterov>(&gradientDescentType)) {
-                    for (auto const& parameter : miniBatch) {
-                        nesterovPredictedPosition[parameter] += storm::utility::convertNumber<CoefficientType<ValueType>>(nesterov->momentumTerm)
-                            * storm::utility::convertNumber<CoefficientType<ValueType>>(nesterov->pastStep[parameter]);
-                        const auto precision = storm::utility::convertNumber<CoefficientType<ValueType>>(storm::settings::getModule<storm::settings::modules::GeneralSettings>().getPrecision());
-                        nesterovPredictedPosition[parameter] = utility::max(utility::zero<CoefficientType<ValueType>>() + precision, nesterovPredictedPosition[parameter]);
-                        nesterovPredictedPosition[parameter] = utility::min(utility::one<CoefficientType<ValueType>>() - precision, nesterovPredictedPosition[parameter]);
-                    }
-                }
                 for (auto const& parameter : miniBatch) {
                     ConstantType delta = derivativeEvaluationHelper->calculateDerivative(env, parameter, nesterovPredictedPosition, valueVector); 
                     if (optimalityType == storm::OptimizationDirection::Minimize) {
@@ -263,7 +275,7 @@ namespace storm {
                 // Log position and probability information for later use in visualizing the descent, if wished.
                 if (recordRun) {
                     VisualizationPoint point;
-                    point.position = position;
+                    point.position = nesterovPredictedPosition;
                     point.value = currentValue;
                     walk.push_back(point);
                 }
