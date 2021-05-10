@@ -6,12 +6,10 @@
 #include <boost/container/flat_map.hpp>
 
 #include "storm/storage/sparse/StateType.h"
+#include "storm/utility/ConstantsComparator.h"
 
 namespace storm {
-    namespace utility {
-        template <typename ValueType>
-        class ConstantsComparator;
-    }
+
     
     namespace storage {
         
