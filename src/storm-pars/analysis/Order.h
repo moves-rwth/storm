@@ -322,7 +322,7 @@ namespace storm {
                      * @param state the considered state
                      * @param action the action that should be taken by this scheduler at the state
                      */
-                    void addToMdpScheduler(uint64_t state, uint64_t action);
+                    void addToMdpScheduler(uint_fast64_t state, uint_fast64_t action);
 
                     /*!
                      * Gives the best action for a state in an mdp
@@ -330,7 +330,9 @@ namespace storm {
                      * @param state the considered state
                      * @return the best action to be taken according to mdpScheduler
                      */
-                    uint64_t getActionAtState(uint64_t state);
+                    uint64_t getActionAtState(uint_fast64_t state);
+
+                    bool isActionSetAtState(uint_fast64_t state);
 
                     bool isInvalid() const;
 

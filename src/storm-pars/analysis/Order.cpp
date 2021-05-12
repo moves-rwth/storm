@@ -807,7 +807,7 @@ namespace storm {
             return invalid;
         }
 
-        void Order::addToMdpScheduler(uint64_t state, uint64_t action) {
+        void Order::addToMdpScheduler(uint_fast64_t state, uint_fast64_t action) {
             if (!mdpScheduler){
                 mdpScheduler = std::vector<uint64_t>(numberOfStates);
                 std::fill(mdpScheduler->begin(), mdpScheduler->end(), std::numeric_limits<uint64_t>::max());
@@ -815,9 +815,14 @@ namespace storm {
             mdpScheduler.get()[state] = action;
         }
 
-        uint64_t Order::getActionAtState(uint64_t state) {
+        uint64_t Order::getActionAtState(uint_fast64_t state) {
             assert(mdpScheduler != boost::none);
             return mdpScheduler.get()[state];
+        }
+
+        bool Order::isActionSetAtState(uint_fast64_t state){
+            if (mdpScheduler == boost::none) return false;
+            return mdpScheduler.get()[state] != std::numeric_limits<uint64_t>::max();
         }
 
     }
