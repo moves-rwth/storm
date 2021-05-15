@@ -23,6 +23,7 @@
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 #include "storm/modelchecker/helper/infinitehorizon/SparseNondeterministicInfiniteHorizonHelper.h"
 #include "storm/modelchecker/helper/finitehorizon/SparseNondeterministicStepBoundedHorizonHelper.h"
+#include "storm/modelchecker/helper/ltl/SparseLTLHelper.h"
 #include "storm/modelchecker/helper/utility/SetInformationFromCheckTask.h"
 
 #include "storm/modelchecker/prctl/helper/rewardbounded/QuantileHelper.h"
@@ -166,7 +167,6 @@ namespace storm {
             STORM_LOG_INFO("Extracting maximal state formulas and computing satisfaction sets for path formula: " << pathFormula);
 
             std::map<std::string, storm::storage::BitVector> apSets;
-
             for (auto& p : extracted) {
                 STORM_LOG_INFO(" Computing satisfaction set for atomic proposition \"" << p.first << "\" <=> " << *p.second << "...");
 
@@ -193,31 +193,25 @@ namespace storm {
                 subTask = checkTask.substituteFormula(*ltlFormula);
             }
 
-            STORM_LOG_INFO("Resulting LTL path formula: " << *ltlFormula);
-            STORM_LOG_INFO(" in prefix format: " << ltlFormula->toPrefixString());
-
-            std::shared_ptr<storm::automata::DeterministicAutomaton> da = storm::automata::LTL2DeterministicAutomaton::ltl2da(*ltlFormula);
-
-            STORM_LOG_INFO("Deterministic automaton for LTL formula has "
-                    << da->getNumberOfStates() << " states, "
-                    << da->getAPSet().size() << " atomic propositions and "
-                    << *da->getAcceptance()->getAcceptanceExpression() << " as acceptance condition.");
-
             const SparseMdpModelType& mdp = this->getModel();
             storm::solver::SolveGoal<ValueType> goal(mdp, subTask);
 
-            std::vector<ValueType> numericResult = computeDAProductProbabilities(env, std::move(goal), *da, apSets, checkTask.isQualitativeSet());
+            storm::modelchecker::helper::SparseLTLHelper<ValueType, SparseMdpModelType, true> helper(mdp, mdp.getTransitionMatrix());
+            storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, subTask, mdp);
+            std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, storm::solver::SolveGoal<ValueType>(this->getModel(), subTask), *ltlFormula, apSets);
 
-            if (minimize) {
+            if(minimize) {
                 // compute 1-Pmax[!ltl]
                 for (auto& value : numericResult) {
                     value = storm::utility::one<ValueType>() - value;
                 }
             }
+
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
         }
 
 
+        /*
         template<typename SparseMdpModelType>
         std::vector<typename SparseMdpPrctlModelChecker<SparseMdpModelType>::ValueType> SparseMdpPrctlModelChecker<SparseMdpModelType>::computeDAProductProbabilities(Environment const& env, storm::solver::SolveGoal<typename SparseMdpPrctlModelChecker<SparseMdpModelType>::ValueType>&& goal, storm::automata::DeterministicAutomaton const& da, std::map<std::string, storm::storage::BitVector>& apSatSets, bool qualitative) const {
             STORM_LOG_THROW(goal.hasDirection() && goal.direction() == OptimizationDirection::Maximize, storm::exceptions::InvalidPropertyException, "Can only compute maximizing probabilties for DA product with MDP");
@@ -295,6 +289,7 @@ namespace storm {
             std::vector<ValueType> numericResult = product->projectToOriginalModel(this->getModel(), prodNumericResult);
             return numericResult;
         }
+        */
 
 
         template<typename SparseMdpModelType>

@@ -25,6 +25,9 @@ namespace storm {
                 }
                 // Scheduler Production
 			    helper.setProduceScheduler(checkTask.isProduceSchedulersSet());
+
+                // Qualitative flag
+                helper.setQualitative(checkTask.isQualitativeSet());
             }
             
             /*!
@@ -40,6 +43,10 @@ namespace storm {
 			    if (checkTask.isBoundSet()) {
 			        helper.setValueThreshold(checkTask.getBoundComparisonType(), checkTask.getBoundThreshold());
 			    }
+
+			    // Qualitative flag
+			    helper.setQualitative(checkTask.isQualitativeSet());
+
             }
         }
     }

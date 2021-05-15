@@ -100,11 +100,22 @@ namespace storm {
                  * @return whether an optimal scheduler shall be constructed during the computation
                  */
                 bool isProduceSchedulerSet() const;
+
+                /*!
+                * Sets whether the property needs to be checked qualitatively
+                */
+                void setQualitative(bool value);
+
+                /*!
+                 * @return whether the property needs to be checked qualitatively
+                 */
+                bool isQualitativeSet() const;
                 
             private:
                 boost::optional<storm::solver::OptimizationDirection> _optimizationDirection;
                 boost::optional<std::pair<storm::logic::ComparisonType, ValueType>> _valueThreshold;
                 bool _produceScheduler;
+                bool _isQualitativeSet;
             };
         }
     }
