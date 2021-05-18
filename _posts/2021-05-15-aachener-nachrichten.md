@@ -8,4 +8,6 @@ tags: ['article']
 The newspaper *Aachener Nachrichten* published the article [Storm findet sicherheitskritische Softwarefehler](https://www.aachener-nachrichten.de/wirtschaft/storm-findet-sicherheitskritische-softwarefehler_aid-57974823).
 <!--more-->
 
-The article addresses Storm and its applications in industry.
+The article addresses Storm and its applications in industry. It was published in the newspaper on May 15, 2021.
+
+![Article]({{ site.github.url }}/pics/storm-aachener-nachrichten.jpg "Article")
