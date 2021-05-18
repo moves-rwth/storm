@@ -10,4 +10,4 @@ The newspaper *Aachener Nachrichten* published the article [Storm findet sicherh
 
 The article addresses Storm and its applications in industry. It was published in the newspaper on May 15, 2021.
 
-![Article]({{ site.github.url }}/pics/storm-aachener-nachrichten.jpg "Article")
+![Article]({{ site.github.url }}/pics/storm-aachener-nachrichten.jpg "Article"){: .center-image width="800"}
