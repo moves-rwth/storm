@@ -718,8 +718,6 @@ namespace {
     }
 
     TYPED_TEST(DtmcPrctlModelCheckerTest, LtlProbabilitiesDie) {
-        setenv("LTL2DA", "ltl2da-ltl2tgba", true);
-
         std::string formulasString = "P=? [(X s>0) U (s=7 & d=2)]";
         formulasString += "; P=? [  X (((s=1) U (s=3)) U (s=7))]";
         formulasString += "; P=? [ (F (X (s=6 & (XX s=5)))) & (F G (d!=5))]";
@@ -765,8 +763,6 @@ namespace {
     }
 
     TYPED_TEST(DtmcPrctlModelCheckerTest, LtlProbabilitiesSynchronousLeader) {
-        setenv("LTL2DA", "ltl2da-ltl2tgba", true);
-
         std::string formulasString = "P=? [X (u1=true U \"elected\")]";
         formulasString += "; P=? [X !(u1=true U \"elected\")]";
         formulasString += "; P=? [X v1=2 & X v1=1]";
