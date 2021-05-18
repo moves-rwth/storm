@@ -17,8 +17,7 @@ namespace storm {
             typedef storm::storage::SparseMatrix<typename Model::ValueType> matrix_type;
 
             template <typename ProductOperator>
-            static typename Product<Model>::ptr buildProduct(const Model& originalModel, ProductOperator& prodOp, const storm::storage::BitVector& statesOfInterest) {
-                const matrix_type& originalMatrix = originalModel.getTransitionMatrix();
+            static typename Product<Model>::ptr buildProduct(const matrix_type& originalMatrix , ProductOperator& prodOp, const storm::storage::BitVector& statesOfInterest) {
                 bool deterministic = originalMatrix.hasTrivialRowGrouping();
 
                 typedef storm::storage::sparse::state_type state_type;

@@ -3,9 +3,6 @@
 #include "storm/transformer/DAProductBuilder.h"
 #include "storm/automata/LTL2DeterministicAutomaton.h"
 
-#include "storm/models/sparse/Dtmc.h"
-#include "storm/models/sparse/Mdp.h"
-
 #include "storm/modelchecker/prctl/helper/SparseDtmcPrctlHelper.h"
 #include "storm/modelchecker/prctl/helper/SparseMdpPrctlHelper.h"
 
@@ -19,13 +16,13 @@ namespace storm {
     namespace modelchecker {
         namespace helper {
 
-            template <typename ValueType, typename Model, bool Nondeterministic>
-            SparseLTLHelper<ValueType, Model, Nondeterministic>::SparseLTLHelper(Model const& model, storm::storage::SparseMatrix<ValueType> const& transitionMatrix) : _model(model), _transitionMatrix(transitionMatrix) {
+            template <typename ValueType, bool Nondeterministic>
+            SparseLTLHelper<ValueType, Nondeterministic>::SparseLTLHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::size_t numberOfStates) : _transitionMatrix(transitionMatrix), _numberOfStates(numberOfStates) {
                 // Intentionally left empty.
             }
 
-            template<typename ValueType, typename Model, bool Nondeterministic>
-            std::vector<ValueType> SparseLTLHelper<ValueType, Model, Nondeterministic>::computeDAProductProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::automata::DeterministicAutomaton const& da, std::map<std::string, storm::storage::BitVector>& apSatSets, bool qualitative) {
+            template<typename ValueType, bool Nondeterministic>
+            std::vector<ValueType> SparseLTLHelper<ValueType, Nondeterministic>::computeDAProductProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::automata::DeterministicAutomaton const& da, std::map<std::string, storm::storage::BitVector>& apSatSets, bool qualitative) {
                 STORM_LOG_THROW((!Nondeterministic) || goal.hasDirection() && goal.direction() == OptimizationDirection::Maximize, storm::exceptions::InvalidPropertyException, "Can only compute maximizing probabilties for DA product with MDP");
 
 
@@ -44,14 +41,14 @@ namespace storm {
                     statesOfInterest = goal.relevantValues();
                 } else {
                     // product from all model states
-                    statesOfInterest = storm::storage::BitVector(this->_model.getNumberOfStates(), true);
+                    statesOfInterest = storm::storage::BitVector(this->_numberOfStates, true);
                 }
 
 
                 STORM_LOG_INFO("Building "+ (Nondeterministic ? std::string("MDP-DA") : std::string("DTMC-DA")) +"product with deterministic automaton, starting from " << statesOfInterest.getNumberOfSetBits() << " model states...");
                 storm::transformer::DAProductBuilder productBuilder(da, apLabels);
 
-                auto product = productBuilder.build(this->_model, statesOfInterest);
+                auto product = productBuilder.build<productModelType>(this->_transitionMatrix, statesOfInterest);
 
                 STORM_LOG_INFO("Product "+ (Nondeterministic ? std::string("MDP-DA") : std::string("DTMC")) +" has " << product->getProductModel().getNumberOfStates() << " states and "
                                                    << product->getProductModel().getNumberOfTransitions() << " transitions.");
@@ -59,7 +56,7 @@ namespace storm {
                 if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
                     STORM_LOG_TRACE("Writing model to model.dot");
                     std::ofstream modelDot("model.dot");
-                    this->_model.writeDotToStream(modelDot);
+                    // this->_model.writeDotToStream(modelDot); // TODO
                     modelDot.close();
 
                     STORM_LOG_TRACE("Writing product model to product.dot");
@@ -82,7 +79,7 @@ namespace storm {
                     accepting = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeSurelyAcceptingPmaxStates(*product->getAcceptance(), product->getProductModel().getTransitionMatrix(), product->getProductModel().getBackwardTransitions());
                     if (accepting.empty()) {
                         STORM_LOG_INFO("No accepting states, skipping probability computation.");
-                        std::vector<ValueType> numericResult(this->_model.getNumberOfStates(), storm::utility::zero<ValueType>());
+                        std::vector<ValueType> numericResult(this->_numberOfStates, storm::utility::zero<ValueType>());
                         return numericResult;
                     }
 
@@ -108,12 +105,12 @@ namespace storm {
 
                     if (acceptingBSCCs == 0) {
                         STORM_LOG_INFO("No accepting BSCCs, skipping probability computation.");
-                        std::vector<ValueType> numericResult(this->_model.getNumberOfStates(), storm::utility::zero<ValueType>());
+                        std::vector<ValueType> numericResult(this->_numberOfStates, storm::utility::zero<ValueType>());
                         return numericResult;
                     }
                 }
 
-                STORM_LOG_INFO("Computing probabilities for reaching accepting BSCCs...");
+                STORM_LOG_INFO("Computing probabilities for reaching accepting components...");
 
                 storm::storage::BitVector bvTrue(product->getProductModel().getNumberOfStates(), true);
 
@@ -124,8 +121,7 @@ namespace storm {
                 std::vector<ValueType> prodNumericResult;
 
                 if (Nondeterministic) {
-                    prodNumericResult
-                            = std::move(storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(env,
+                    prodNumericResult = std::move(storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(env,
                                                                                                                                 std::move(solveGoalProduct),
                                                                                                                                 product->getProductModel().getTransitionMatrix(),
                                                                                                                                 product->getProductModel().getBackwardTransitions(),
@@ -145,13 +141,13 @@ namespace storm {
                                                                                                                    qualitative);
                     }
 
-                std::vector<ValueType> numericResult = product->projectToOriginalModel(this->_model, prodNumericResult);
+                std::vector<ValueType> numericResult = product->projectToOriginalModel(this->_numberOfStates, prodNumericResult);
                 return numericResult;
             }
 
 
-            template<typename ValueType, typename RewardModelType, bool Nondeterministic>
-            std::vector <ValueType> SparseLTLHelper<ValueType, RewardModelType, Nondeterministic>::computeLTLProbabilities(Environment const &env, storm::solver::SolveGoal<ValueType>&& goal, storm::logic::Formula const& ltlFormula, std::map<std::string, storm::storage::BitVector>& apSatSets) {
+            template<typename ValueType, bool Nondeterministic>
+            std::vector <ValueType> SparseLTLHelper<ValueType, Nondeterministic>::computeLTLProbabilities(Environment const &env, storm::solver::SolveGoal<ValueType>&& goal, storm::logic::Formula const& ltlFormula, std::map<std::string, storm::storage::BitVector>& apSatSets) {
                 STORM_LOG_INFO("Resulting LTL path formula: " << ltlFormula);
                 STORM_LOG_INFO(" in prefix format: " << ltlFormula.toPrefixString());
 
@@ -165,6 +161,7 @@ namespace storm {
 
                 std::vector<ValueType> numericResult = computeDAProductProbabilities(env, std::move(goal), *da, apSatSets, this->isQualitativeSet());
 
+                // TODO
                 /*
                 if(Nondeterministic && this->getOptimizationDirection()==OptimizationDirection::Minimize) {
                     // compute 1-Pmax[!ltl]
@@ -177,13 +174,13 @@ namespace storm {
                 return numericResult;
             }
 
-            template class SparseLTLHelper<double, storm::models::sparse::Dtmc<double>, false>;
-            template class SparseLTLHelper<double, storm::models::sparse::Mdp<double>, true>;
+            template class SparseLTLHelper<double, false>;
+            template class SparseLTLHelper<double, true>;
 
 #ifdef STORM_HAVE_CARL
-            template class SparseLTLHelper<storm::RationalNumber, storm::models::sparse::Dtmc<storm::RationalNumber>, false>;
-            template class SparseLTLHelper<storm::RationalNumber, storm::models::sparse::Mdp<storm::RationalNumber>, true>;
-            template class SparseLTLHelper<storm::RationalFunction,  storm::models::sparse::Dtmc<storm::RationalFunction>, false>;
+            template class SparseLTLHelper<storm::RationalNumber, false>;
+            template class SparseLTLHelper<storm::RationalNumber, true>;
+            template class SparseLTLHelper<storm::RationalFunction, false>;
 
 #endif
 

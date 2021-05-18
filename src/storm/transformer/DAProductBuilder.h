@@ -18,10 +18,15 @@ namespace storm {
 
             template <typename Model>
             typename DAProduct<Model>::ptr build(const Model& originalModel, const storm::storage::BitVector& statesOfInterest) const {
-                typename Product<Model>::ptr product = ProductBuilder<Model>::buildProduct(originalModel, *this, statesOfInterest);
+                return build<Model>(originalModel.getTransitionMatrix(), statesOfInterest);
+            }
+
+            template <typename Model>
+            typename DAProduct<Model>::ptr build(const storm::storage::SparseMatrix<typename Model::ValueType>& originalMatrix, const storm::storage::BitVector& statesOfInterest) const { //todo transition matrix
+                typename Product<Model>::ptr product = ProductBuilder<Model>::buildProduct(originalMatrix, *this, statesOfInterest);
                 storm::automata::AcceptanceCondition::ptr prodAcceptance
-                    = da.getAcceptance()->lift(product->getProductModel().getNumberOfStates(),
-                                               [&product](std::size_t prodState) {return product->getAutomatonState(prodState);});
+                        = da.getAcceptance()->lift(product->getProductModel().getNumberOfStates(),
+                                                   [&product](std::size_t prodState) {return product->getAutomatonState(prodState);});
 
                 return typename DAProduct<Model>::ptr(new DAProduct<Model>(std::move(*product), prodAcceptance));
             }

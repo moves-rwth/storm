@@ -196,7 +196,7 @@ namespace storm {
             const SparseMdpModelType& mdp = this->getModel();
             storm::solver::SolveGoal<ValueType> goal(mdp, subTask);
 
-            storm::modelchecker::helper::SparseLTLHelper<ValueType, SparseMdpModelType, true> helper(mdp, mdp.getTransitionMatrix());
+            storm::modelchecker::helper::SparseLTLHelper<ValueType, true> helper(mdp.getTransitionMatrix(), this->getModel().getNumberOfStates());
             storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, subTask, mdp);
             std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, storm::solver::SolveGoal<ValueType>(this->getModel(), subTask), *ltlFormula, apSets);
 
@@ -209,88 +209,6 @@ namespace storm {
 
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
         }
-
-
-        /*
-        template<typename SparseMdpModelType>
-        std::vector<typename SparseMdpPrctlModelChecker<SparseMdpModelType>::ValueType> SparseMdpPrctlModelChecker<SparseMdpModelType>::computeDAProductProbabilities(Environment const& env, storm::solver::SolveGoal<typename SparseMdpPrctlModelChecker<SparseMdpModelType>::ValueType>&& goal, storm::automata::DeterministicAutomaton const& da, std::map<std::string, storm::storage::BitVector>& apSatSets, bool qualitative) const {
-            STORM_LOG_THROW(goal.hasDirection() && goal.direction() == OptimizationDirection::Maximize, storm::exceptions::InvalidPropertyException, "Can only compute maximizing probabilties for DA product with MDP");
-
-            const storm::automata::APSet& apSet = da.getAPSet();
-
-            std::vector<storm::storage::BitVector> apLabels;
-            for (const std::string& ap : apSet.getAPs()) {
-                auto it = apSatSets.find(ap);
-                STORM_LOG_THROW(it != apSatSets.end(), storm::exceptions::InvalidOperationException, "Deterministic automaton has AP " << ap << ", does not appear in formula");
-
-                apLabels.push_back(std::move(it->second));
-            }
-
-            const SparseMdpModelType& mdp = this->getModel();
-
-            storm::storage::BitVector statesOfInterest;
-            if (goal.hasRelevantValues()) {
-                statesOfInterest = goal.relevantValues();
-            } else {
-                // product from all model states
-                statesOfInterest = storm::storage::BitVector(mdp.getNumberOfStates(), true);
-            }
-
-            STORM_LOG_INFO("Building MDP-DA product with deterministic automaton, starting from " << statesOfInterest.getNumberOfSetBits() << " model states...");
-            storm::transformer::DAProductBuilder productBuilder(da, apLabels);
-            auto product = productBuilder.build(mdp, statesOfInterest);
-            STORM_LOG_INFO("Product MDP has " << product->getProductModel().getNumberOfStates() << " states and "
-                    << product->getProductModel().getNumberOfTransitions() << " transitions.");
-
-            if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
-                STORM_LOG_TRACE("Writing model to model.dot");
-                std::ofstream modelDot("model.dot");
-                mdp.writeDotToStream(modelDot);
-                modelDot.close();
-
-                STORM_LOG_TRACE("Writing product model to product.dot");
-                std::ofstream productDot("product.dot");
-                product->getProductModel().writeDotToStream(productDot);
-                productDot.close();
-
-                STORM_LOG_TRACE("Product model mapping:");
-                std::stringstream str;
-                product->printMapping(str);
-                STORM_LOG_TRACE(str.str());
-            }
-
-            STORM_LOG_INFO("Computing accepting end components...");
-            storm::storage::BitVector accepting = storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeSurelyAcceptingPmaxStates(*product->getAcceptance(), product->getProductModel().getTransitionMatrix(), product->getProductModel().getBackwardTransitions());
-            if (accepting.empty()) {
-                STORM_LOG_INFO("No accepting states, skipping probability computation.");
-                std::vector<ValueType> numericResult(this->getModel().getNumberOfStates(), storm::utility::zero<ValueType>());
-                return numericResult;
-            }
-
-            STORM_LOG_INFO("Computing probabilities for reaching accepting BSCCs...");
-
-            storm::storage::BitVector bvTrue(product->getProductModel().getNumberOfStates(), true);
-
-            storm::solver::SolveGoal<ValueType> solveGoalProduct(goal);
-            storm::storage::BitVector soiProduct(product->getStatesOfInterest());
-            solveGoalProduct.setRelevantValues(std::move(soiProduct));
-
-            std::vector<ValueType> prodNumericResult
-                = std::move(storm::modelchecker::helper::SparseMdpPrctlHelper<ValueType>::computeUntilProbabilities(env,
-                                                                                                                    std::move(solveGoalProduct),
-                                                                                                                    product->getProductModel().getTransitionMatrix(),
-                                                                                                                    product->getProductModel().getBackwardTransitions(),
-                                                                                                                    bvTrue,
-                                                                                                                    accepting,
-                                                                                                                    qualitative,
-                                                                                                                    false  // no schedulers (at the moment)
-                                                                                                                   ).values);
-
-            std::vector<ValueType> numericResult = product->projectToOriginalModel(this->getModel(), prodNumericResult);
-            return numericResult;
-        }
-        */
-
 
         template<typename SparseMdpModelType>
         std::unique_ptr<CheckResult> SparseMdpPrctlModelChecker<SparseMdpModelType>::computeConditionalProbabilities(Environment const& env, CheckTask<storm::logic::ConditionalFormula, ValueType> const& checkTask) {

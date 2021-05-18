@@ -60,7 +60,12 @@ namespace storm {
 
             template <typename ValueType>
             std::vector<ValueType> projectToOriginalModel(const Model& originalModel, const std::vector<ValueType>& prodValues) {
-                std::vector<ValueType> origValues(originalModel.getNumberOfStates());
+                return projectToOriginalModel(originalModel.getNumberOfStates(), prodValues);
+            }
+
+            template <typename ValueType>
+            std::vector<ValueType> projectToOriginalModel(std::size_t numberOfStates, const std::vector<ValueType>& prodValues) {
+                std::vector<ValueType> origValues(numberOfStates);
                 for (state_type productState : productModel.getStateLabeling().getStates(productStateOfInterestLabel)) {
                     state_type originalState = getModelState(productState);
                     origValues.at(originalState) = prodValues.at(productState);
