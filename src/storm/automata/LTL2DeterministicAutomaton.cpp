@@ -11,6 +11,9 @@
 #include "spot/tl/parse.hh"
 #include "spot/twaalgos/translate.hh"
 #include "spot/twaalgos/hoa.hh"
+#include "spot/twaalgos/totgba.hh"
+#include "spot/twaalgos/toparity.hh"
+#include "spot/twa/acc.hh"
 #endif
 
 namespace storm {
@@ -35,6 +38,11 @@ namespace storm {
             trans.set_pref(spot::postprocessor::Deterministic | spot::postprocessor::SBAcc | spot::postprocessor::Complete);
             STORM_LOG_INFO("Construct deterministic automaton for "<< spotFormula);
             auto aut = trans.run(spotFormula);
+
+            // TODO necessary for MDP LTL-MC
+            if(!(aut->get_acceptance().is_dnf())){
+                aut->set_acceptance(aut->get_acceptance().to_dnf());
+            }
 
             std::stringstream autStream;
             // Print reachable states in HOA format, implicit edges (i), state-based acceptance (s)
