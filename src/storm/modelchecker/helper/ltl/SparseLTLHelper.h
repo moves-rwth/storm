@@ -45,7 +45,7 @@ namespace storm {
                  * Computes the ltl probabilities ...todo
                  * @return a value for each state
                  */
-                std::vector<ValueType> computeLTLProbabilities(Environment const &env, storm::logic::Formula const& f, std::map<std::string, storm::storage::BitVector>& apSatSets);  //todo was brauchen wir hier aps und ..?
+                std::vector<ValueType> computeLTLProbabilities(Environment const &env, storm::logic::Formula const& formula, std::map<std::string, storm::storage::BitVector>& apSatSets);  //todo was brauchen wir hier aps und ..?
 
 
             private:

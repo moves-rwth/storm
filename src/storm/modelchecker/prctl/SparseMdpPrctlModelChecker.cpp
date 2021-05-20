@@ -179,22 +179,7 @@ namespace storm {
                 apSets[p.first] = std::move(sat);
             }
 
-            bool minimize = false;
-            CheckTask<storm::logic::Formula, ValueType> subTask(checkTask);
-
-            if (checkTask.getOptimizationDirection() == OptimizationDirection::Minimize) {
-                minimize = true;
-                // negate
-                ltlFormula = std::make_shared<storm::logic::UnaryBooleanPathFormula>(storm::logic::UnaryBooleanOperatorType::Not, ltlFormula);
-                STORM_LOG_INFO("Computing Pmin, proceeding with negated LTL formula.");
-
-                subTask = checkTask.negate().substituteFormula(*ltlFormula);
-            } else {
-                subTask = checkTask.substituteFormula(*ltlFormula);
-            }
-
             const SparseMdpModelType& mdp = this->getModel();
-            storm::solver::SolveGoal<ValueType> goal(mdp, subTask);  //todo remove, infos now in helper, see below
 
             // TODO
             if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
@@ -205,15 +190,8 @@ namespace storm {
             }
 
             storm::modelchecker::helper::SparseLTLHelper<ValueType, true> helper(mdp.getTransitionMatrix(), this->getModel().getNumberOfStates());
-            storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, subTask, mdp);
+            storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, checkTask, mdp);
             std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, *ltlFormula, apSets);
-
-            if(minimize) {
-                // compute 1-Pmax[!ltl]
-                for (auto& value : numericResult) {
-                    value = storm::utility::one<ValueType>() - value;
-                }
-            }
 
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
         }

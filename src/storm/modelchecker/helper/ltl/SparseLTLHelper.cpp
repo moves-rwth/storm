@@ -227,7 +227,7 @@ namespace storm {
                 storm::storage::BitVector bvTrue(product->getProductModel().getNumberOfStates(), true);
                 storm::storage::BitVector soiProduct(product->getStatesOfInterest());
 
-                // Create goal for computeUntilProbabilities, compute maximizing probabilties for DA product with MDP
+                // Create goal for computeUntilProbabilities, compute maximizing probabilities for DA product with MDP
                 storm::solver::SolveGoal<ValueType> solveGoalProduct;
                 if (this->isValueThresholdSet()) {
                     solveGoalProduct = storm::solver::SolveGoal<ValueType>(OptimizationDirection::Maximize, this->getValueThresholdComparisonType(), this->getValueThresholdValue(), std::move(soiProduct));
@@ -263,17 +263,23 @@ namespace storm {
                 return numericResult;
             }
 
-
-            //todo remove goal?
             template<typename ValueType, bool Nondeterministic>
-            std::vector <ValueType> SparseLTLHelper<ValueType, Nondeterministic>::computeLTLProbabilities(Environment const &env, storm::logic::Formula const& ltlFormula, std::map<std::string, storm::storage::BitVector>& apSatSets) {
-                // TODO optDir: helper.getOptimizationDirection for MDP
-                // negate formula etc ~ap?
+            std::vector <ValueType> SparseLTLHelper<ValueType, Nondeterministic>::computeLTLProbabilities(Environment const &env, storm::logic::Formula const& formula, std::map<std::string, storm::storage::BitVector>& apSatSets) {
+                std::shared_ptr<storm::logic::Formula const> ltlFormula;
+                STORM_LOG_THROW((!Nondeterministic) || this->isOptimizationDirectionSet(), storm::exceptions::InvalidPropertyException, "Formula needs to specify whether minimal or maximal values are to be computed on nondeterministic model.");
+                if (Nondeterministic && this->getOptimizationDirection() == OptimizationDirection::Minimize) {
+                    // negate formula in order to compute 1-Pmax[!formula]
+                    ltlFormula = std::make_shared<storm::logic::UnaryBooleanPathFormula>(storm::logic::UnaryBooleanOperatorType::Not, formula.asSharedPointer());
+                    STORM_LOG_INFO("Computing Pmin, proceeding with negated LTL formula.");
+                } else {
+                    ltlFormula = formula.asSharedPointer();
+                }
 
-                STORM_LOG_INFO("Resulting LTL path formula: " << ltlFormula);
-                STORM_LOG_INFO(" in prefix format: " << ltlFormula.toPrefixString());
 
-                std::shared_ptr<storm::automata::DeterministicAutomaton> da = storm::automata::LTL2DeterministicAutomaton::ltl2da(ltlFormula);
+                STORM_LOG_INFO("Resulting LTL path formula: " << ltlFormula->toString());
+                STORM_LOG_INFO(" in prefix format: " << ltlFormula->toPrefixString());
+
+                std::shared_ptr<storm::automata::DeterministicAutomaton> da = storm::automata::LTL2DeterministicAutomaton::ltl2da(*ltlFormula);
 
                 STORM_LOG_INFO("Deterministic automaton for LTL formula has "
                                        << da->getNumberOfStates() << " states, "
@@ -281,18 +287,16 @@ namespace storm {
                                        << *da->getAcceptance()->getAcceptanceExpression() << " as acceptance condition.");
 
 
-                //todo remove goal here? send dir instead?
+                // compute Pmax for MDP
                 std::vector<ValueType> numericResult = computeDAProductProbabilities(env, *da, apSatSets, this->isQualitativeSet());
 
-                // TODO optDir: helper.getOptimizationDirection for MDP
-                /* //for any path formula ψ: pmin(s, ψ) = 1- pmax(s, ¬ψ)
                 if(Nondeterministic && this->getOptimizationDirection()==OptimizationDirection::Minimize) {
-                    // compute 1-Pmax[!ltl]
+                    // compute 1-Pmax[!fomula]
                     for (auto& value : numericResult) {
                         value = storm::utility::one<ValueType>() - value;
                     }
                 }
-                */
+
 
                 return numericResult;
             }
