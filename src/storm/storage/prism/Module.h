@@ -58,6 +58,11 @@ namespace storm {
             Module& operator=(Module&& other) = default;
 
             /*!
+             * @return True iff the module contains at least one variable with infinite domain
+             */
+            bool hasUnboundedVariables() const;
+            
+            /*!
              * Retrieves the number of boolean variables in the module.
              *
              * @return the number of boolean variables in the module.

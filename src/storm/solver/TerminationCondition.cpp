@@ -69,7 +69,7 @@ namespace storm {
             
             if (useMinimum) {
                 if (this->strict) {
-                    for (auto const& pos : this->filter) {
+                    for (auto pos : this->filter) {
                         extremum = std::min(valueGetter(pos), extremum);
                         if (extremum <= this->threshold) {
                             cachedExtremumIndex = pos;
@@ -77,7 +77,7 @@ namespace storm {
                         }
                     }
                 } else {
-                    for (auto const& pos : this->filter) {
+                    for (auto pos : this->filter) {
                         extremum = std::min(valueGetter(pos), extremum);
                         if (extremum < this->threshold) {
                             cachedExtremumIndex = pos;
@@ -86,7 +86,7 @@ namespace storm {
                     }
                 }
             } else {
-                    for (auto const& pos : this->filter) {
+                    for (auto pos : this->filter) {
                     extremum = std::max(valueGetter(pos), extremum);
                 }
             }
@@ -118,12 +118,12 @@ namespace storm {
             }
             
             if (useMinimum) {
-                for (auto const& pos : this->filter) {
+                for (auto pos : this->filter) {
                     extremum = std::min(valueGetter(pos), extremum);
                 }
             } else {
                 if (this->strict) {
-                    for (auto const& pos : this->filter) {
+                    for (auto pos : this->filter) {
                         extremum = std::max(valueGetter(pos), extremum);
                         if (extremum >= this->threshold) {
                             cachedExtremumIndex = pos;
@@ -131,7 +131,7 @@ namespace storm {
                         }
                     }
                 } else {
-                    for (auto const& pos : this->filter) {
+                    for (auto pos : this->filter) {
                         extremum = std::max(valueGetter(pos), extremum);
                         if (extremum > this->threshold) {
                             cachedExtremumIndex = pos;

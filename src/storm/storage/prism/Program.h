@@ -94,6 +94,11 @@ namespace storm {
             bool isPartiallyObservable() const;
 
             /*!
+             * @return True iff the program contains at least one variable with infinite domain
+             */
+            bool hasUnboundedVariables() const;
+
+            /*!
              * Retrieves whether there are undefined constants of any type in the program.
              *
              * @return True iff there are undefined constants of any type in the program.

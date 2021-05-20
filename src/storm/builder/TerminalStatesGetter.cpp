@@ -26,7 +26,7 @@ namespace storm {
                 } else if (left.isAtomicLabelFormula()) {
                     terminalLabelCallback(left.asAtomicLabelFormula().getLabel(), false);
                 }
-            } else if (formula.isBoundedUntilFormula()) {
+            } else if (formula.isBoundedUntilFormula() && !formula.asBoundedUntilFormula().hasMultiDimensionalSubformulas()) {
                 storm::logic::BoundedUntilFormula const& boundedUntil = formula.asBoundedUntilFormula();
                 bool hasLowerBound = false;
                 for (uint64_t i = 0; i < boundedUntil.getDimension(); ++i) {

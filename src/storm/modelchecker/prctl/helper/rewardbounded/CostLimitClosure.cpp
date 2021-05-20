@@ -92,7 +92,7 @@ namespace storm {
 
                 bool CostLimitClosure::containsUpwardClosure(CostLimits const& costLimits) const {
                     CostLimits infinityProjection(costLimits);
-                    for (auto const& dim : downwardDimensions) {
+                    for (auto dim : downwardDimensions) {
                         infinityProjection[dim] = CostLimit::infinity();
                     }
                     return contains(infinityProjection);
@@ -104,7 +104,7 @@ namespace storm {
                 
                 bool CostLimitClosure::full() const {
                     CostLimits p(dimension(), CostLimit(0));
-                    for (auto const& dim : downwardDimensions) {
+                    for (auto dim : downwardDimensions) {
                         p[dim] = CostLimit::infinity();
                     }
                     return contains(p);
