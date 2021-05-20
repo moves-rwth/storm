@@ -163,7 +163,6 @@ namespace storm {
             STORM_LOG_INFO("Extracting maximal state formulas and computing satisfaction sets for path formula: " << pathFormula);
 
             std::map<std::string, storm::storage::BitVector> apSets;
-            // todo apSets =  computeApSets(env, checkTask);
             for (auto& p : extracted) {
                 STORM_LOG_INFO(" Computing satisfaction set for atomic proposition \"" << p.first << "\" <=> " << *p.second << "...");
 
@@ -178,9 +177,17 @@ namespace storm {
 
             const SparseDtmcModelType& dtmc = this->getModel();
 
+            // TODO
+            if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
+                STORM_LOG_TRACE("Writing model to model.dot");
+                std::ofstream modelDot("model.dot");
+                this->getModel().writeDotToStream(modelDot);
+                modelDot.close();
+            }
+
             storm::modelchecker::helper::SparseLTLHelper<ValueType, false> helper(dtmc.getTransitionMatrix(), this->getModel().getNumberOfStates());
             storm::modelchecker::helper::setInformationFromCheckTaskDeterministic(helper, checkTask, dtmc);
-            std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, storm::solver::SolveGoal<ValueType>(this->getModel(), checkTask), *ltlFormula, apSets);
+            std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, *ltlFormula, apSets);
 
             return std::unique_ptr<CheckResult>(new ExplicitQuantitativeCheckResult<ValueType>(std::move(numericResult)));
         }

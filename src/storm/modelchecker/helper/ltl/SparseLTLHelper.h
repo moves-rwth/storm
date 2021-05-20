@@ -35,19 +35,36 @@ namespace storm {
 
                 /*!
                  * todo
+                 * Computes maximizing(!) probabilties for DA product with MDP
                  * @return
                  */
-                std::vector<ValueType> computeDAProductProbabilities(Environment const& env, storm::solver::SolveGoal<ValueType>&& goal, storm::automata::DeterministicAutomaton const& da, std::map<std::string, storm::storage::BitVector>& apSatSets, bool qualitative);
+                std::vector<ValueType> computeDAProductProbabilities(Environment const& env, storm::automata::DeterministicAutomaton const& da, std::map<std::string, storm::storage::BitVector>& apSatSets, bool qualitative);
 
 
                 /*!
                  * Computes the ltl probabilities ...todo
                  * @return a value for each state
                  */
-                std::vector<ValueType> computeLTLProbabilities(Environment const &env, storm::solver::SolveGoal<ValueType>&& goal, storm::logic::Formula const& f, std::map<std::string, storm::storage::BitVector>& apSatSets);  //todo was brauchen wir hier aps und ..?
+                std::vector<ValueType> computeLTLProbabilities(Environment const &env, storm::logic::Formula const& f, std::map<std::string, storm::storage::BitVector>& apSatSets);  //todo was brauchen wir hier aps und ..?
 
 
             private:
+
+                /*! todo only relevant for MDP  -  enable_if_t ?
+                 * Compute a set S of states that admit a probability 1 strategy of satisfying the given acceptance conditon.
+                 * More precisely, let
+                 *   accEC be the set of states that are contained in end components that satisfy the acceptance condition
+                 *  and let
+                 *   P1acc be the set of states that satisfy Pmax=1[ F accEC ].
+                 * This function then computes a set that contains accEC and is contained by P1acc.
+                 * However, if the acceptance condition consists of 'true', the whole state space can be returned.
+                 */
+                static storm::storage::BitVector computeSurelyAcceptingPmaxStates(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions);
+
+                //todo only for dtmc, different to mdp: no backward tm
+                static storm::storage::BitVector computeAcceptingComponentStates(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix);
+
+
                 storm::storage::SparseMatrix<ValueType> const& _transitionMatrix;
                 std::size_t _numberOfStates;
 

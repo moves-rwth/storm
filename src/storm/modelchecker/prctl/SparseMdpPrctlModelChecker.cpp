@@ -194,11 +194,19 @@ namespace storm {
             }
 
             const SparseMdpModelType& mdp = this->getModel();
-            storm::solver::SolveGoal<ValueType> goal(mdp, subTask);
+            storm::solver::SolveGoal<ValueType> goal(mdp, subTask);  //todo remove, infos now in helper, see below
+
+            // TODO
+            if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
+                STORM_LOG_TRACE("Writing model to model.dot");
+                std::ofstream modelDot("model.dot");
+                this->getModel().writeDotToStream(modelDot);
+                modelDot.close();
+            }
 
             storm::modelchecker::helper::SparseLTLHelper<ValueType, true> helper(mdp.getTransitionMatrix(), this->getModel().getNumberOfStates());
             storm::modelchecker::helper::setInformationFromCheckTaskNondeterministic(helper, subTask, mdp);
-            std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, storm::solver::SolveGoal<ValueType>(this->getModel(), subTask), *ltlFormula, apSets);
+            std::vector<ValueType> numericResult = helper.computeLTLProbabilities(env, *ltlFormula, apSets);
 
             if(minimize) {
                 // compute 1-Pmax[!ltl]
