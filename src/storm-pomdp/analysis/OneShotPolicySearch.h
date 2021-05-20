@@ -55,9 +55,9 @@ namespace storm {
                 STORM_LOG_TRACE("Questionmark states: " <<  (~surelyReachSinkStates & ~targetStates));
                 bool result = analyze(k, ~surelyReachSinkStates & ~targetStates, pomdp.getInitialStates());
                 if (result) {
-                    STORM_PRINT_AND_LOG("From initial state, one can almost-surely reach the target.");
+                    STORM_PRINT_AND_LOG("From initial state, one can almost-surely reach the target." << std::endl);
                 } else {
-                    STORM_PRINT_AND_LOG("From initial state, one may not almost-surely reach the target .");
+                    STORM_PRINT_AND_LOG("From initial state, one may not almost-surely reach the target ." << std::endl);
                 }
             }
 

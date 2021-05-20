@@ -135,5 +135,5 @@ endrewards
 
 // target observation
 label "goal" = o=7;
-
+label "bad" = o=6;
 
