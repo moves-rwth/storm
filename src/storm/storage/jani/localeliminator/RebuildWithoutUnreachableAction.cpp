@@ -119,7 +119,12 @@ namespace storm {
 
                     auto &automatonInfo = session.getAutomatonInfo(oldAutomaton.getName());
                     if (automatonInfo.hasSink) {
-                        automatonInfo.sinkIndex = oldToNewLocationIndices[automatonInfo.sinkIndex];
+                        if (reachableLocs.count(automatonInfo.sinkIndex) == 0){
+                            automatonInfo.hasSink = false;
+                            session.addToLog("\tThe sink was eliminated.");
+                        } else {
+                            automatonInfo.sinkIndex = oldToNewLocationIndices[automatonInfo.sinkIndex];
+                        }
                     }
 
                     session.addToLog("\tNew automaton has " +  std::to_string(newAutomaton.getEdges().size()) + " edges.");

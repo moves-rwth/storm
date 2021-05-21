@@ -308,13 +308,55 @@ namespace storm {
                 }
                 expressions::Expression newGuard = !allGuards;
 
-                std::vector<std::pair<uint64_t, storm::expressions::Expression>> destinationLocationsAndProbabilities;
-                std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(newGuard);
-                TemplateEdgeDestination ted((OrderedAssignments()));
-                templateEdge->addDestination(ted);
-                destinationLocationsAndProbabilities.emplace_back(sinkIndex, model.getExpressionManager().rational(1.0));
+                // Before we add the edge, check whether it is satisfiable:
+                auto variables = newGuard.getVariables();
+                storm::solver::Z3SmtSolver solver(model.getExpressionManager());
+                solver.add(newGuard);
+                for (const auto &var : model.getGlobalVariables()){
+                    if (var.isBoundedIntegerVariable() && variables.count(var.getExpressionVariable()) > 0){
+                        auto &biVariable = var.asBoundedIntegerVariable();
+                        solver.add(var.getExpressionVariable().getExpression() >= biVariable.getLowerBound());
+                        solver.add(var.getExpressionVariable().getExpression() <= biVariable.getUpperBound());
+                    }
+                }
+                for (const auto &var : automaton.getVariables()){
+                    if (var.isBoundedIntegerVariable() && variables.count(var.getExpressionVariable()) > 0){
+                        auto &biVariable = var.asBoundedIntegerVariable();
+                        solver.add(var.getExpressionVariable().getExpression() >= biVariable.getLowerBound());
+                        solver.add(var.getExpressionVariable().getExpression() <= biVariable.getUpperBound());
+                    }
+                }
+                auto result = solver.check();
 
-                automaton.addEdge(storm::jani::Edge(i, 0, boost::none, templateEdge, destinationLocationsAndProbabilities));
+                if (result != storm::solver::SmtSolver::CheckResult::Unsat) {
+                    addToLog("\tAdding missing guard from location " + automaton.getLocation(i).getName());
+                    if (result == storm::solver::SmtSolver::CheckResult::Sat){
+                        auto satisfyingAssignment = solver.getModel();
+                        addToLog("\t\tThe guard was satisfiable with assignment ");
+                        for (auto &var : variables){
+                            if (var.hasIntegerType()){
+                                addToLog("\t\t\t" + var.getName() + ": " + std::to_string(satisfyingAssignment->getIntegerValue(var)));
+                            }
+                            else if (var.hasBooleanType()){
+                                addToLog("\t\t\t" + var.getName() + ": " + std::to_string(satisfyingAssignment->getBooleanValue(var)));
+                            }
+                            else if (var.hasRationalType()){
+                                addToLog("\t\t\t" + var.getName() + ": " + std::to_string(satisfyingAssignment->getRationalValue(var)));
+                            }
+                        }
+                    } else {
+                        addToLog("\t\tThe solver could not determine whether the guard was satisfiable");
+                    }
+                    std::vector<std::pair<uint64_t, storm::expressions::Expression>> destinationLocationsAndProbabilities;
+                    std::shared_ptr<storm::jani::TemplateEdge> templateEdge = std::make_shared<storm::jani::TemplateEdge>(newGuard);
+                    TemplateEdgeDestination ted((OrderedAssignments()));
+                    templateEdge->addDestination(ted);
+                    destinationLocationsAndProbabilities.emplace_back(sinkIndex, model.getExpressionManager().rational(1.0));
+
+                    automaton.addEdge(storm::jani::Edge(i, 0, boost::none, templateEdge, destinationLocationsAndProbabilities));
+                } else{
+                    addToLog("\tLocation " + automaton.getLocation(i).getName() +  " has no missing guard");
+                }
             }
         }
 

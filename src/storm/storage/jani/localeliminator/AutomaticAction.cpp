@@ -24,7 +24,7 @@ namespace storm {
                     session.flatten_automata();
                 }
 
-                std::string const& autName = session.getModel().getAutomata()[0].getName();
+                std::string const &autName = session.getModel().getAutomata()[0].getName();
 
                 session.addToLog("Adding missing guards");
                 session.addMissingGuards(autName);
@@ -34,10 +34,9 @@ namespace storm {
                 session.addToLog(dependencyGraph.toString());
 
 
-                if (!unfoldPropertyVariable(session, autName, dependencyGraph)){
+                if (!unfoldPropertyVariable(session, autName, dependencyGraph)) {
                     return;
                 }
-
 
                 session.addToLog("Performing automatic elimination");
 
@@ -51,7 +50,7 @@ namespace storm {
 
                 while (session.getModel().getAutomaton(0).getLocations().size() < 40) {
                     auto nextUnfold = chooseNextUnfold(session, autName, dependencyGraph);
-                    if (!nextUnfold){
+                    if (!nextUnfold) {
                         break;
                     }
 
@@ -64,6 +63,15 @@ namespace storm {
 
                     RebuildWithoutUnreachableAction rebuildAction;
                     rebuildAction.doAction(session);
+                }
+
+                session.addToLog("Finished automatic state-space reduction.");
+                if (session.getModel().getNumberOfAutomata() == 1) {
+                    session.addToLog("Final model size: "
+                                     + std::to_string(session.getModel().getAutomaton(0).getNumberOfEdges()) +
+                                     " edges, " +
+                                     std::to_string(session.getModel().getAutomaton(0).getNumberOfLocations()) +
+                                     " locations");
                 }
             }
 
