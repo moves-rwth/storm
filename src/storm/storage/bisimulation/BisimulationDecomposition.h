@@ -16,10 +16,6 @@
 #include "storm/utility/ConstantsComparator.h"
 
 namespace storm {
-    namespace utility {
-        template <typename ValueType> class ConstantsComparator;
-    }
-    
     namespace logic {
         class Formula;
     }
