@@ -174,8 +174,10 @@ TEST(PrismParser, NAryPredicates) {
     label "test" = atMostOneOf(s=0, s=3, s=4);
     label "test2" = exactlyOneOf(s=0, i, !i & s=3);
     )";
+    storm::prism::Program result;
 
-    EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput2, "testfile"));
+
+    EXPECT_NO_THROW(result = storm::parser::PrismParser::parseFromString(testInput, "testfile"));
 }
 
 TEST(PrismParser, IllegalInputTest) {
