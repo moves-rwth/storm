@@ -168,7 +168,8 @@ namespace storm {
                 if (onlyObservable && !integerVariable.observable)  {
                     continue;
                 }
-                result[integerVariable.getName()] = state.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth) + integerVariable.lowerBound;
+                STORM_LOG_ASSERT(integerVariable.bitWidth <= 63, "Only integer variables with at most 63 bits are supported");
+                result[integerVariable.getName()] = static_cast<int64_t>(state.getAsInt(integerVariable.bitOffset, integerVariable.bitWidth)) + integerVariable.lowerBound;
             }
             return result;
         }
