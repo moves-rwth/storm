@@ -765,6 +765,8 @@ namespace storm {
             // Creates the internal mappings.
             void createMappings();
 
+            uint64_t getHighestCommandIndex() const;
+
             // The type of the model.
             ModelType modelType;
 

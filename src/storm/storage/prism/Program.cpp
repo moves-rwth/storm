@@ -163,7 +163,8 @@ namespace storm {
                 }
             }
 
-            possiblySynchronizingCommands = storage::BitVector(this->getNumberOfCommands());
+            uint64_t highestGlobalIndex = this->getHighestCommandIndex();
+            possiblySynchronizingCommands = storage::BitVector(highestGlobalIndex + 1);
             std::set<uint64_t> possiblySynchronizingActionIndices;
             for(uint64_t syncAction : synchronizingActionIndices) {
                 if (getModuleIndicesByActionIndex(syncAction).size() > 1) {
@@ -173,7 +174,7 @@ namespace storm {
             for (auto const& module : getModules()) {
                 for (auto const& command : module.getCommands()) {
                     if (command.isLabeled()) {
-                        if (possiblySynchronizingActionIndices.count(command.getActionIndex())) {
+                        if (possiblySynchronizingActionIndices.count(command.getActionIndex()) > 0) {
                             possiblySynchronizingCommands.set(command.getGlobalIndex());
                         }
                     }
@@ -2098,6 +2099,16 @@ namespace storm {
                 newProperties = properties;  // Nothing to be done here. Notice that the copy operation is suboptimal.
             }
             return std::make_pair(janiModel, newProperties);
+        }
+
+        uint64_t Program::getHighestCommandIndex() const {
+            uint64_t highest = 0;
+            for (auto const& m : getModules()) {
+                for (auto const& c : m.getCommands()) {
+                    highest = std::max(highest, c.getGlobalIndex());
+                }
+            }
+            return highest;
         }
 
         storm::expressions::ExpressionManager& Program::getManager() const {
