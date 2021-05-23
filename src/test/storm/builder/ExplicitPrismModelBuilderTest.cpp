@@ -126,6 +126,20 @@ TEST(ExplicitPrismModelBuilderTest, Ma) {
     EXPECT_EQ(7ul, model->as<storm::models::sparse::MarkovAutomaton<double>>()->getMarkovianStates().getNumberOfSetBits());
 }
 
+TEST(ExplicitPrismModelBuilderTest, POMdp) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism");
+    program = storm::utility::prism::preprocess(program, "slippery=0.4");
+    std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
+
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism");
+    program = storm::utility::prism::preprocess(program, "sl=0.4");
+    model = storm::builder::ExplicitModelBuilder<double>(program).build();
+
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pomdp/refuel.prism");
+    program = storm::utility::prism::preprocess(program, "N=5");
+    model = storm::builder::ExplicitModelBuilder<double>(program).build();
+}
+
 TEST(ExplicitPrismModelBuilderTest, FailComposition) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/system_composition.nm");
 
