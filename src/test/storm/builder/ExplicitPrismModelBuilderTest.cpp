@@ -131,6 +131,9 @@ TEST(ExplicitPrismModelBuilderTest, POMdp) {
     program = storm::utility::prism::preprocess(program, "slippery=0.4");
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
 
+    program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pomdp/globalvars.prism");
+    model = storm::builder::ExplicitModelBuilder<double>(program).build();
+
     program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism");
     program = storm::utility::prism::preprocess(program, "sl=0.4");
     model = storm::builder::ExplicitModelBuilder<double>(program).build();

@@ -18,6 +18,7 @@ Version 1.6.x
 - API: Simulation of prism-models 
 - API: Model-builder takes a callback function to prevent extension of particular actions, prism-to-explicit mapping can be exported
 - API: Export of dice-formatted expressions
+- Prism-language/explicit builder: Allow action names in commands writing to global variables if these clearly do not write to actions. 
 - Prism-language: n-ary predicates are supported (e.g., ExactlyOneOf)
 - Added support for continuous integration with Github Actions.
 - `storm-pars`: Exploit monotonicity for computing extremal values and parameter space partitioning.

@@ -1,0 +1,11 @@
+pomdp
+
+global s : [0..4] init 0;
+
+module F1
+[a] true -> (s'=1);
+endmodule
+
+module F2
+[b] true -> (s'=2);
+endmodule
