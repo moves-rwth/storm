@@ -29,6 +29,12 @@ namespace storm {
             currentBeliefSupport = newBeliefSupport;
         }
 
+        template<typename ValueType>
+        void BeliefSupportTracker<ValueType>::reset() {
+            currentBeliefSupport = pomdp.getInitialStates();
+        }
+
+
         template class BeliefSupportTracker<double>;
         template class BeliefSupportTracker<storm::RationalNumber>;
 
