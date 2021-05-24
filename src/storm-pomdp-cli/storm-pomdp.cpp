@@ -185,7 +185,16 @@ namespace storm {
                         if (qualSettings.isWinningRegionSet()) {
                             search.computeWinningRegion(lookahead);
                         } else {
-                            search.analyzeForInitialStates(lookahead);
+                            bool result = search.analyzeForInitialStates(lookahead);
+                            if (result) {
+                                STORM_PRINT_AND_LOG("From initial state, one can almost-surely reach the target.");
+                            } else {
+                                if (k == pomdp.getNumberOfStates()) {
+                                    STORM_PRINT_AND_LOG("From initial state, one cannot almost-surely reach the target.");
+                                } else {
+                                    STORM_PRINT_AND_LOG("From initial state, one may not almost-surely reach the target.");
+                                }
+                            }
                         }
 
                         if (qualSettings.isPrintWinningRegionSet()) {
