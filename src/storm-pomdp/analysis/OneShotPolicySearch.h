@@ -49,16 +49,11 @@ namespace storm {
                 surelyReachSinkStates = surelyReachSink;
             }
 
-            void analyzeForInitialStates(uint64_t k) {
+            bool analyzeForInitialStates(uint64_t k) {
                 STORM_LOG_TRACE("Bad states: " << surelyReachSinkStates);
                 STORM_LOG_TRACE("Target states: " << targetStates);
                 STORM_LOG_TRACE("Questionmark states: " <<  (~surelyReachSinkStates & ~targetStates));
-                bool result = analyze(k, ~surelyReachSinkStates & ~targetStates, pomdp.getInitialStates());
-                if (result) {
-                    STORM_PRINT_AND_LOG("From initial state, one can almost-surely reach the target." << std::endl);
-                } else {
-                    STORM_PRINT_AND_LOG("From initial state, one may not almost-surely reach the target ." << std::endl);
-                }
+                return analyze(k, ~surelyReachSinkStates & ~targetStates, pomdp.getInitialStates());
             }
 
             bool analyze(uint64_t k, storm::storage::BitVector const& oneOfTheseStates, storm::storage::BitVector const& allOfTheseStates = storm::storage::BitVector());

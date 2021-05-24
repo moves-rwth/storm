@@ -158,9 +158,7 @@ namespace storm {
                 bool computedSomething = false;
                 if (qualSettings.isMemlessSearchSet()) {
                     computedSomething = true;
-                    storm::expressions::ExpressionManager expressionManager;
                     std::shared_ptr<storm::utility::solver::SmtSolverFactory> smtSolverFactory = std::make_shared<storm::utility::solver::Z3SmtSolverFactory>();
-                    storm::pomdp::MemlessSearchOptions options = fillMemlessSearchOptionsFromSettings();
                     uint64_t lookahead = qualSettings.getLookahead();
                     if (lookahead == 0) {
                         lookahead = pomdp.getNumberOfStates();
@@ -172,9 +170,15 @@ namespace storm {
                         if (qualSettings.isWinningRegionSet()) {
                             STORM_LOG_ERROR("Computing winning regions is not supported by the one-shot method.");
                         } else {
-                            memlessSearch.analyzeForInitialStates(lookahead);
+                            bool result = memlessSearch.analyzeForInitialStates(lookahead);
+                            if (result) {
+                                STORM_PRINT_AND_LOG("From initial state, one can almost-surely reach the target." << std::endl);
+                            } else {
+                                STORM_PRINT_AND_LOG("From initial state, one may not almost-surely reach the target ." << std::endl);
+                            }
                         }
                     } else if (qualSettings.getMemlessSearchMethod() == "iterative") {
+                        storm::pomdp::MemlessSearchOptions options = fillMemlessSearchOptionsFromSettings();
                         storm::pomdp::IterativePolicySearch<ValueType> search(pomdp, targetStates,
                                                                               surelyNotAlmostSurelyReachTarget,
                                                                               smtSolverFactory, options);
