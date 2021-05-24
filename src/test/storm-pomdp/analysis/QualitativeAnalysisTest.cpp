@@ -9,6 +9,8 @@
 #include "storm-pomdp/analysis/QualitativeAnalysisOnGraphs.h"
 #include "storm-pomdp/analysis/OneShotPolicySearch.h"
 #include "storm-pomdp/analysis/IterativePolicySearch.h"
+#include "storm-pomdp/analysis/JaniBeliefSupportMdpGenerator.h"
+
 
 #include "storm-pomdp/transformer/MakePOMDPCanonic.h"
 
@@ -82,6 +84,29 @@ void iterativesearch_test(std::string const& path, std::string const& constants,
 }
 
 
+void symbolicbelsup_test(std::string const& path, std::string const& constants, std::string formulaString, bool wr) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(path);
+    program = storm::utility::prism::preprocess(program, constants);
+    std::shared_ptr<storm::logic::Formula const> formula = storm::api::parsePropertiesForPrismProgram(formulaString, program).front().getRawFormula();
+    std::shared_ptr<storm::models::sparse::Pomdp<double>> pomdp = storm::api::buildSparseModel<double>(program, {formula})->as<storm::models::sparse::Pomdp<double>>();
+    storm::transformer::MakePOMDPCanonic<double> makeCanonic(*pomdp);
+    pomdp = makeCanonic.transform();
+
+    // Run graph algorithm
+    auto formulaInfo = storm::pomdp::analysis::getFormulaInformation(*pomdp, *formula);
+    storm::analysis::QualitativeAnalysisOnGraphs<double> qualitativeAnalysis(*pomdp);
+    storm::storage::BitVector surelyNotAlmostSurelyReachTarget = qualitativeAnalysis.analyseProbSmaller1(
+            formula->asProbabilityOperatorFormula());
+    pomdp->getTransitionMatrix().makeRowGroupsAbsorbing(surelyNotAlmostSurelyReachTarget);
+    storm::storage::BitVector targetStates = qualitativeAnalysis.analyseProb1(formula->asProbabilityOperatorFormula());
+
+    storm::pomdp::qualitative::JaniBeliefSupportMdpGenerator<double> janicreator(*pomdp);
+    janicreator.generate(targetStates, surelyNotAlmostSurelyReachTarget);
+    bool initialOnly = !wr;
+    janicreator.verifySymbolic(initialOnly);
+
+}
+
 
 
 TEST(QualitativeAnalysis, GraphAlgorithm_Simple) {
@@ -130,4 +155,24 @@ TEST(QualitativeAnalysis, Iterative_Maze) {
     iterativesearch_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.0", "Pmax=? [F \"goal\" ]", true);
     iterativesearch_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.4", "Pmax=? [!\"bad\" U \"goal\" ]", true);
     iterativesearch_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.0", "Pmax=? [!\"bad\" U \"goal\"]", true);
+}
+
+TEST(QualitativeAnalysis, SymbolicBelSup_Simple) {
+    symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "slippery=0.4", "Pmax=? [F \"goal\" ]", false);
+    symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "slippery=0.0", "Pmax=? [F \"goal\" ]", false);
+
+    symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "slippery=0.4", "Pmax=? [F \"goal\" ]", true);
+    symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/simple.prism", "slippery=0.0", "Pmax=? [F \"goal\" ]", true);
+}
+
+TEST(QualitativeAnalysis, SymbolicBelSup_Maze) {
+    symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.4", "Pmax=? [F \"goal\" ]", false);
+    symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.0", "Pmax=? [F \"goal\" ]", false);
+    symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.4", "Pmax=? [!\"bad\" U \"goal\" ]", false);
+    symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.0", "Pmax=? [!\"bad\" U \"goal\"]", false);
+
+    symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.4", "Pmax=? [F \"goal\" ]", true);
+    symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.0", "Pmax=? [F \"goal\" ]", true);
+    symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.4", "Pmax=? [!\"bad\" U \"goal\" ]", true);
+    symbolicbelsup_test(STORM_TEST_RESOURCES_DIR "/pomdp/maze2.prism", "sl=0.0", "Pmax=? [!\"bad\" U \"goal\"]", true);
 }
