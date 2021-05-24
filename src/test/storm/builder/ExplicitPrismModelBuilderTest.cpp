@@ -4,6 +4,7 @@
 #include "storm/models/sparse/MarkovAutomaton.h"
 #include "storm-parsers/parser/PrismParser.h"
 #include "storm/builder/ExplicitModelBuilder.h"
+#include "storm/storage/expressions/ExpressionManager.h"
 
 
 TEST(ExplicitPrismModelBuilderTest, Dtmc) {
@@ -153,4 +154,19 @@ TEST(ExplicitPrismModelBuilderTest, FailUnbounded) {
     storm::storage::SymbolicModelDescription modelDescription = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/unbounded.nm");
     storm::prism::Program program = modelDescription.preprocess("N=7").asPrismProgram();
     STORM_SILENT_ASSERT_THROW(storm::builder::ExplicitModelBuilder<double>(program).build(), storm::exceptions::WrongFormatException);
+}
+
+TEST(ExplicitPrismModelBuilderTest, ExportExplicitLookup) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/dtmc/die.pm");
+    storm::generator::NextStateGeneratorOptions generatorOptions;
+    generatorOptions.setBuildAllLabels();
+    auto builder = storm::builder::ExplicitModelBuilder<double>(program, generatorOptions);
+    std::shared_ptr<storm::models::sparse::Model<double>> model = builder.build();
+    auto lookup = builder.exportExplicitStateLookup();
+    auto svar = program.getModules()[0].getIntegerVariable("s").getExpressionVariable();
+    auto dvar = program.getModules()[0].getIntegerVariable("d").getExpressionVariable();
+    auto & manager = program.getManager();
+    EXPECT_EQ(model->getNumberOfStates(), lookup.lookup({{svar, manager.integer(1)}, {dvar, manager.integer(2)}}));
+    EXPECT_TRUE(model->getNumberOfStates() > lookup.lookup({{svar, manager.integer(7)}, {dvar, manager.integer(2)}}));
+    EXPECT_EQ(1ul, model->getLabelsOfState(lookup.lookup({{svar, manager.integer(7)}, {dvar, manager.integer(2)}})).count("two"));
 }
