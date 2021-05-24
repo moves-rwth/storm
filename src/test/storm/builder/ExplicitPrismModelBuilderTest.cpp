@@ -1,3 +1,4 @@
+#include <storm/generator/PrismNextStateGenerator.h>
 #include "test/storm_gtest.h"
 #include "storm-config.h"
 #include "storm/models/sparse/StandardRewardModel.h"
@@ -66,7 +67,6 @@ TEST(ExplicitPrismModelBuilderTest, Ctmc) {
 
 TEST(ExplicitPrismModelBuilderTest, Mdp) {
     storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/two_dice.nm");
-    
     std::shared_ptr<storm::models::sparse::Model<double>> model = storm::builder::ExplicitModelBuilder<double>(program).build();
     EXPECT_EQ(169ul, model->getNumberOfStates());
     EXPECT_EQ(436ul, model->getNumberOfTransitions());
@@ -169,4 +169,47 @@ TEST(ExplicitPrismModelBuilderTest, ExportExplicitLookup) {
     EXPECT_EQ(model->getNumberOfStates(), lookup.lookup({{svar, manager.integer(1)}, {dvar, manager.integer(2)}}));
     EXPECT_TRUE(model->getNumberOfStates() > lookup.lookup({{svar, manager.integer(7)}, {dvar, manager.integer(2)}}));
     EXPECT_EQ(1ul, model->getLabelsOfState(lookup.lookup({{svar, manager.integer(7)}, {dvar, manager.integer(2)}})).count("two"));
+}
+
+
+bool trivial_true_mask(storm::expressions::SimpleValuation const&, uint64_t) {
+    return true;
+}
+
+bool trivial_false_mask(storm::expressions::SimpleValuation const&, uint64_t) {
+    return false;
+}
+
+bool only_first_action_mask(storm::expressions::SimpleValuation const&, uint64_t actionIndex) {
+    return actionIndex <= 1;
+}
+
+TEST(ExplicitPrismModelBuilderTest, CallbackActionMask) {
+    storm::prism::Program program = storm::parser::PrismParser::parse(STORM_TEST_RESOURCES_DIR "/mdp/die_selection.nm");
+    storm::generator::NextStateGeneratorOptions generatorOptions;
+    generatorOptions.setBuildAllLabels();
+    generatorOptions.setBuildChoiceLabels();
+    std::shared_ptr<storm::generator::StateValuationFunctionMask<double>> mask_object = std::make_shared<storm::generator::StateValuationFunctionMask<double>>(trivial_true_mask);
+    std::shared_ptr<storm::generator::PrismNextStateGenerator<double>> generator = std::make_shared<storm::generator::PrismNextStateGenerator<double>>(program, generatorOptions, mask_object);
+    auto builder = storm::builder::ExplicitModelBuilder<double>(generator);
+
+    std::shared_ptr<storm::models::sparse::Model<double>> model = builder.build();
+    EXPECT_EQ(13ul, model->getNumberOfStates());
+    EXPECT_EQ(48ul, model->getNumberOfTransitions());
+
+    mask_object = std::make_shared<storm::generator::StateValuationFunctionMask<double>>(trivial_false_mask);
+    generator = std::make_shared<storm::generator::PrismNextStateGenerator<double>>(program, generatorOptions, mask_object);
+    builder = storm::builder::ExplicitModelBuilder<double>(generator);
+
+    model = builder.build();
+    EXPECT_EQ(1ul, model->getNumberOfStates());
+    EXPECT_EQ(1ul, model->getNumberOfTransitions());
+
+    mask_object = std::make_shared<storm::generator::StateValuationFunctionMask<double>>(only_first_action_mask);
+    generator = std::make_shared<storm::generator::PrismNextStateGenerator<double>>(program, generatorOptions, mask_object);
+    builder = storm::builder::ExplicitModelBuilder<double>(generator);
+
+    model = builder.build();
+    EXPECT_EQ(13ul, model->getNumberOfStates());
+    EXPECT_EQ(20ul, model->getNumberOfTransitions());
 }
