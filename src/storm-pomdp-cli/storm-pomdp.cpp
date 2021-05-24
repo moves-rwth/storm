@@ -189,11 +189,8 @@ namespace storm {
                             if (result) {
                                 STORM_PRINT_AND_LOG("From initial state, one can almost-surely reach the target.");
                             } else {
-                                if (k == pomdp.getNumberOfStates()) {
-                                    STORM_PRINT_AND_LOG("From initial state, one cannot almost-surely reach the target.");
-                                } else {
-                                    STORM_PRINT_AND_LOG("From initial state, one may not almost-surely reach the target.");
-                                }
+                                // TODO consider adding check for end components to improve this message.
+                                STORM_PRINT_AND_LOG("From initial state, one may not almost-surely reach the target.");
                             }
                         }
 
