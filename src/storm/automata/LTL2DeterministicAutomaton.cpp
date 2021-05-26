@@ -19,7 +19,7 @@
 namespace storm {
     namespace automata {
 
-        std::shared_ptr<DeterministicAutomaton> LTL2DeterministicAutomaton::ltl2da(storm::logic::Formula const& f) {
+        std::shared_ptr<DeterministicAutomaton> LTL2DeterministicAutomaton::ltl2da(storm::logic::Formula const& f, bool dnf) {
 #ifdef STORM_HAVE_SPOT
 
             std::string prefixLtl = f.toPrefixString();
@@ -40,7 +40,8 @@ namespace storm {
             auto aut = trans.run(spotFormula);
 
             // TODO necessary for MDP LTL-MC
-            if(!(aut->get_acceptance().is_dnf())){
+            if(!(aut->get_acceptance().is_dnf()) && dnf){
+                STORM_LOG_INFO("Convert acceptance condition into DNF...");
                 aut->set_acceptance(aut->get_acceptance().to_dnf());
             }
 

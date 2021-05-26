@@ -17,7 +17,7 @@ namespace storm {
 
         class LTL2DeterministicAutomaton {
         public:
-            static std::shared_ptr<DeterministicAutomaton> ltl2da(storm::logic::Formula const& f);
+            static std::shared_ptr<DeterministicAutomaton> ltl2da(storm::logic::Formula const&, bool dnf);
         };
 
     }
