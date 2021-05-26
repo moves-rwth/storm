@@ -700,6 +700,8 @@ namespace {
 #ifdef STORM_HAVE_LTL_MODELCHECKING_SUPPORT
         std::string formulasString = "Pmin=? [!(GF \"all_coins_equal_1\")]";
         formulasString += "; Pmax=? [F \"all_coins_equal_1\" U \"finished\"]";
+        // The following example results in an automaton with acceptance condition not in DNF (using spot)
+        formulasString += "; Pmax=?[ (GF !\"all_coins_equal_1\") & ((GF \"all_coins_equal_1\") | (FG \"finished\"))]";
 
         auto modelFormulas = this->buildModelFormulas(STORM_TEST_RESOURCES_DIR "/mdp/coin2-2.nm", formulasString);
         auto model = std::move(modelFormulas.first);
@@ -718,13 +720,18 @@ namespace {
             result = checker->check(this->env(), tasks[1]);
             EXPECT_NEAR(this->parseNumber("5/9"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
 
+            result = checker->check(this->env(), tasks[2]);
+            EXPECT_NEAR(this->parseNumber("79/128"), this->getQuantitativeResultAtInitialState(model, result), this->precision());
+
+
         } else {
             EXPECT_FALSE(checker->canHandle(tasks[0]));
         }
-    }
 #else
-    GTEST_SKIP();
+        GTEST_SKIP();
 #endif
+    }
+
 
 
 }

@@ -718,6 +718,7 @@ namespace {
     }
 
     TYPED_TEST(DtmcPrctlModelCheckerTest, LtlProbabilitiesDie) {
+#ifdef STORM_HAVE_LTL_MODELCHECKING_SUPPORT
         std::string formulasString = "P=? [(X s>0) U (s=7 & d=2)]";
         formulasString += "; P=? [  X (((s=1) U (s=3)) U (s=7))]";
         formulasString += "; P=? [ (F (X (s=6 & (XX s=5)))) & (F G (d!=5))]";
@@ -760,9 +761,13 @@ namespace {
         } else {
             EXPECT_FALSE(checker->canHandle(tasks[0]));
         }
+#else
+        GTEST_SKIP();
+#endif
     }
 
     TYPED_TEST(DtmcPrctlModelCheckerTest, LtlProbabilitiesSynchronousLeader) {
+#ifdef STORM_HAVE_LTL_MODELCHECKING_SUPPORT
         std::string formulasString = "P=? [X (u1=true U \"elected\")]";
         formulasString += "; P=? [X !(u1=true U \"elected\")]";
         formulasString += "; P=? [X v1=2 & X v1=1]";
@@ -798,6 +803,9 @@ namespace {
         } else {
             EXPECT_FALSE(checker->canHandle(tasks[0]));
         }
+#else
+        GTEST_SKIP();
+#endif
     }
 
 }
