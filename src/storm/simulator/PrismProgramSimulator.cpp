@@ -41,9 +41,7 @@ namespace storm {
             // TODO: This low-level code currently expands all actions, while this is not necessary.
             // However, using the next state generator ensures compatibliity with the model generator.
             behavior = stateGenerator->expand(stateToIdCallback);
-            if (behavior.getStateRewards().size() > 0) {
-                STORM_LOG_ASSERT(behavior.getStateRewards().size() == lastActionRewards.size(), "Reward vectors should have same length.");
-            }
+            STORM_LOG_ASSERT(behavior.getStateRewards().size() == lastActionRewards.size(), "Reward vectors should have same length.");            
             for(uint64_t i = 0; i < behavior.getStateRewards().size(); i++) {
                 lastActionRewards[i] += behavior.getStateRewards()[i];
             }
