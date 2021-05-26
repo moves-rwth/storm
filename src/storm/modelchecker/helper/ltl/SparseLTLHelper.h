@@ -12,7 +12,7 @@ namespace storm {
         namespace helper {
 
             /*!
-             * Helper class for todo...
+             * Helper class for LTL model checking
              * @tparam ValueType the type a value can have
              * @tparam Nondeterministic true if there is nondeterminism in the Model (MDP)
              */
@@ -22,47 +22,59 @@ namespace storm {
             public:
 
                 /*!
-                 * The type of the product automaton model // todo
+                 * The type of the product automaton (DTMC or MDP) that is used during the computation.
                  */
                 using productModelType = typename std::conditional<Nondeterministic, storm::models::sparse::Mdp<ValueType>, storm::models::sparse::Dtmc<ValueType>>::type;
 
 
                 /*!
-                 * Initializes the helper for a discrete time (i.e. DTMC, MDP)
+                 * Initializes the helper for a discrete time model (i.e. DTMC, MDP)
+                 * @param the transition matrix of the model
+                 * @param the number of states of the model
                  */
                 SparseLTLHelper(storm::storage::SparseMatrix<ValueType> const& transitionMatrix, std::size_t numberOfSates);
 
 
                 /*!
-                 * todo
-                 * Computes maximizing(!) probabilties for DA product with MDP
-                 * @return
+                 * Computes the LTL probabilities
+                 * @param the LTL formula
+                 * @param the atomic propositions and satisfaction sets
+                 * @return a value for each state
+                 */
+                std::vector<ValueType> computeLTLProbabilities(Environment const &env, storm::logic::Formula const& formula, std::map<std::string, storm::storage::BitVector>& apSatSets);
+
+                /*!
+                 * Computes the (maximizing) probabilities for the constructed DA product
+                 * @param the DA to build the product with
+                 * @param the atomic propositions and satisfaction sets
+                 * @param a flag indicating whether qualitative model checking is performed
+                 * @return a value for each state
                  */
                 std::vector<ValueType> computeDAProductProbabilities(Environment const& env, storm::automata::DeterministicAutomaton const& da, std::map<std::string, storm::storage::BitVector>& apSatSets, bool qualitative);
 
 
-                /*!
-                 * Computes the ltl probabilities ...todo
-                 * @return a value for each state
-                 */
-                std::vector<ValueType> computeLTLProbabilities(Environment const &env, storm::logic::Formula const& formula, std::map<std::string, storm::storage::BitVector>& apSatSets);  //todo was brauchen wir hier aps und ..?
-
-
             private:
 
-                /*! todo only relevant for MDP  -  enable_if_t ?
-                 * Compute a set S of states that admit a probability 1 strategy of satisfying the given acceptance conditon.
+                /*!
+                 * Compute a set S of states that admit a probability 1 strategy of satisfying the given acceptance condition (in DNF).
                  * More precisely, let
                  *   accEC be the set of states that are contained in end components that satisfy the acceptance condition
                  *  and let
                  *   P1acc be the set of states that satisfy Pmax=1[ F accEC ].
                  * This function then computes a set that contains accEC and is contained by P1acc.
                  * However, if the acceptance condition consists of 'true', the whole state space can be returned.
+                 * @param the acceptance condition (in DNF)
+                 * @param the transition matrix of the model
+                 * @param the reversed transition relation
                  */
-                static storm::storage::BitVector computeSurelyAcceptingPmaxStates(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions);
+                static storm::storage::BitVector computeAcceptingECs(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions);
 
-                //todo only for dtmc, different to mdp: no backward tm
-                static storm::storage::BitVector computeAcceptingComponentStates(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix);
+                /**
+                * Compute a set S of states that are contained in BSCCs that satisfy the given acceptance conditon.
+                * @tparam the acceptance condition
+                * @tparam the transition matrix of the model
+                */
+                static storm::storage::BitVector computeAcceptingBCCs(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix);
 
 
                 storm::storage::SparseMatrix<ValueType> const& _transitionMatrix;

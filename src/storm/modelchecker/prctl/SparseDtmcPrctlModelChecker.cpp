@@ -177,7 +177,6 @@ namespace storm {
 
             const SparseDtmcModelType& dtmc = this->getModel();
 
-            // TODO
             if (storm::settings::getModule<storm::settings::modules::DebugSettings>().isTraceSet()) {
                 STORM_LOG_TRACE("Writing model to model.dot");
                 std::ofstream modelDot("model.dot");

@@ -120,7 +120,7 @@ namespace storm {
             STORM_LOG_INFO("Resulting LTL path formula: " << *ltlFormula);
             STORM_LOG_INFO(" in prefix format: " << ltlFormula->toPrefixString());
 
-            std::shared_ptr<storm::automata::DeterministicAutomaton> da = storm::automata::LTL2DeterministicAutomaton::ltl2da(*ltlFormula);
+            std::shared_ptr<storm::automata::DeterministicAutomaton> da = storm::automata::LTL2DeterministicAutomaton::ltl2da(*ltlFormula, false);
 
             STORM_LOG_INFO("Deterministic automaton for LTL formula has "
                     << da->getNumberOfStates() << " states, "

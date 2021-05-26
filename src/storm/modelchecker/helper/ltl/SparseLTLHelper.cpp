@@ -23,9 +23,8 @@ namespace storm {
             }
 
 
-            // todo only for MDP and change name!
             template <typename ValueType, bool Nondeterministic>
-            storm::storage::BitVector SparseLTLHelper<ValueType, Nondeterministic>::computeSurelyAcceptingPmaxStates(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
+            storm::storage::BitVector SparseLTLHelper<ValueType, Nondeterministic>::computeAcceptingECs(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix, storm::storage::SparseMatrix<ValueType> const& backwardTransitions) {
                 STORM_LOG_INFO("Computing accepting states for acceptance condition " << *acceptance.getAcceptanceExpression());
                 if (acceptance.getAcceptanceExpression()->isTRUE()) {
                     STORM_LOG_INFO(" TRUE -> all states accepting (assumes no deadlock in the model)");
@@ -135,9 +134,8 @@ namespace storm {
                 return acceptingStates;
             }
 
-            // todo only for dtmc and change name!
             template <typename ValueType, bool Nondeterministic>
-            storm::storage::BitVector SparseLTLHelper<ValueType, Nondeterministic>::computeAcceptingComponentStates(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix) {
+            storm::storage::BitVector SparseLTLHelper<ValueType, Nondeterministic>::computeAcceptingBCCs(automata::AcceptanceCondition const& acceptance, storm::storage::SparseMatrix<ValueType> const& transitionMatrix) {
                 storm::storage::StronglyConnectedComponentDecomposition<ValueType> bottomSccs(transitionMatrix, storage::StronglyConnectedComponentDecompositionOptions().onlyBottomSccs().dropNaiveSccs());
                 //storm::storage::BitVector acceptingStates = storm::storage::BitVector(product->getProductModel().getNumberOfStates());
                 storm::storage::BitVector acceptingStates(transitionMatrix.getRowGroupCount(), false);
@@ -179,7 +177,6 @@ namespace storm {
                 }
 
 
-                // todo change text
                 STORM_LOG_INFO("Building "+ (Nondeterministic ? std::string("MDP-DA") : std::string("DTMC-DA")) +"product with deterministic automaton, starting from " << statesOfInterest.getNumberOfSetBits() << " model states...");
                 storm::transformer::DAProductBuilder productBuilder(da, apLabels);
 
@@ -200,19 +197,15 @@ namespace storm {
                     STORM_LOG_TRACE(str.str());
                 }
 
-                // DTMC: BCC
-                // MDP: computeSurelyAcceptingPmaxStates
+                // Compute accepting states
                 storm::storage::BitVector acceptingStates;
                 if (Nondeterministic) {
-                    STORM_LOG_INFO("Computing accepting end components...");
-                    // todo compute accepting states, same as below
-                    acceptingStates = computeSurelyAcceptingPmaxStates(*product->getAcceptance(), product->getProductModel().getTransitionMatrix(), product->getProductModel().getBackwardTransitions());
-
+                    STORM_LOG_INFO("Computing MECs and checking for acceptance...");
+                    acceptingStates = computeAcceptingECs(*product->getAcceptance(), product->getProductModel().getTransitionMatrix(), product->getProductModel().getBackwardTransitions());
 
                 } else {
                     STORM_LOG_INFO("Computing BSCCs and checking for acceptance...");
-                    // todo compute accepting states, (no btm)
-                    acceptingStates = computeAcceptingComponentStates(*product->getAcceptance(), product->getProductModel().getTransitionMatrix());
+                    acceptingStates = computeAcceptingBCCs(*product->getAcceptance(), product->getProductModel().getTransitionMatrix());
 
                 }
 
@@ -227,7 +220,7 @@ namespace storm {
                 storm::storage::BitVector bvTrue(product->getProductModel().getNumberOfStates(), true);
                 storm::storage::BitVector soiProduct(product->getStatesOfInterest());
 
-                // Create goal for computeUntilProbabilities, compute maximizing probabilities for DA product with MDP
+                // Create goal for computeUntilProbabilities, always compute maximizing probabilities
                 storm::solver::SolveGoal<ValueType> solveGoalProduct;
                 if (this->isValueThresholdSet()) {
                     solveGoalProduct = storm::solver::SolveGoal<ValueType>(OptimizationDirection::Maximize, this->getValueThresholdComparisonType(), this->getValueThresholdValue(), std::move(soiProduct));
@@ -263,6 +256,7 @@ namespace storm {
                 return numericResult;
             }
 
+
             template<typename ValueType, bool Nondeterministic>
             std::vector <ValueType> SparseLTLHelper<ValueType, Nondeterministic>::computeLTLProbabilities(Environment const &env, storm::logic::Formula const& formula, std::map<std::string, storm::storage::BitVector>& apSatSets) {
                 std::shared_ptr<storm::logic::Formula const> ltlFormula;
@@ -279,7 +273,7 @@ namespace storm {
                 STORM_LOG_INFO("Resulting LTL path formula: " << ltlFormula->toString());
                 STORM_LOG_INFO(" in prefix format: " << ltlFormula->toPrefixString());
 
-                std::shared_ptr<storm::automata::DeterministicAutomaton> da = storm::automata::LTL2DeterministicAutomaton::ltl2da(*ltlFormula);
+                std::shared_ptr<storm::automata::DeterministicAutomaton> da = storm::automata::LTL2DeterministicAutomaton::ltl2da(*ltlFormula, Nondeterministic);
 
                 STORM_LOG_INFO("Deterministic automaton for LTL formula has "
                                        << da->getNumberOfStates() << " states, "
@@ -287,7 +281,6 @@ namespace storm {
                                        << *da->getAcceptance()->getAcceptanceExpression() << " as acceptance condition.");
 
 
-                // compute Pmax for MDP
                 std::vector<ValueType> numericResult = computeDAProductProbabilities(env, *da, apSatSets, this->isQualitativeSet());
 
                 if(Nondeterministic && this->getOptimizationDirection()==OptimizationDirection::Minimize) {
@@ -296,7 +289,6 @@ namespace storm {
                         value = storm::utility::one<ValueType>() - value;
                     }
                 }
-
 
                 return numericResult;
             }
